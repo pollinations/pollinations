@@ -1,111 +1,128 @@
-# Guidelines & Terms
+# Terms of Service
 
-*Welcome! We're an open source project making AI accessible to everyone. By using this platform, you're joining our community.*
+**Updated: 2026-05-11**
 
----
+_2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
-## 🌸 About This Project
+## What Myceli.AI Is
 
-pollinations.ai is an **open source**, **community-driven** production-ready infrastructure for running, routing, and scaling AI models. The codebase handles orchestration, load-balancing, and API-key storage.
+We operate commercial, hosted services (dashboard & APIs) built on the open-source pollinations.ai codebase. We handle billing and support; the OSS remains under its repository licences.
 
-We believe in:
-
-- **Open Access** — AI tools for everyone
-- **Your Ownership** — You own everything you create here
-- **Privacy First** — We don't store your creations or personal data
-- **Community Driven** — Built by contributors, for creators
-
-**Open Source:**
-- Our code is on [GitHub](https://github.com/pollinations)
-- Licensed under permissive open source licenses (MIT/Apache-2.0)
-- Contributions welcome!
-
-> - The AI models we use have their own licenses. Check model licenses before commercial use.
-> - This covers the non-commercial site and open-source code. Paid services are governed by the [Myceli.AI Terms](https://enter.pollinations.ai/terms).
+**Company identity:**  
+Myceli.AI OÜ  
+Registry code: 17186693  
+VAT number: EE102877908  
+Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
+Email: hi@myceli.ai
 
 ---
 
-## 🚀 Using the Platform
+## 1) Accounts, Keys & App Access
 
-- Explore, learn, and contribute
-- Community tools/demos are **non-commercial** and offered without uptime commitments
-- Age requirement: community features are intended for users **16+** (or local equivalent)
+Provide accurate registration/billing details and keep credentials secure. Secret API keys are for server-side use. Publishable App Keys identify apps on Pollinations consent screens and may be used in client-side authorization flows.
 
----
+When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and Pollen spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-## 📜 Your Rights & Licensing
+Third-party app developers are responsible for their own apps, claims, user interfaces, and end-user relationships. Unless we say otherwise, third-party apps are not operated by us. Betas/experiments are provided "as is".
 
-**Your Creations:**
-- **You own what you make**
-- You're responsible for rights in your inputs/outputs
-- **Minimal license to us** to operate/protect the site (e.g., caching, moderation)
-- Content is processed **transiently**; aside from necessary logs, we discard it
-- **No training without opt-in:** we don't use your prompts/outputs to train models unless you choose to share
+## 2) Beta Services
 
-**Our Code:**
-- **Open-source code:** use and contributions follow each repository's license (e.g., MIT/Apache-2.0)
-- **Contributions:** by contributing you comply with **DCO 1.1** and license contributions under the repo's primary OSS license unless stated otherwise
-- **No trademark license:** names/logos/brands require permission
+Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time with in-product notice. This includes changes to:
 
-**AI Model Licenses:**
-- Each model has its own license
-- Some allow commercial use, some don't
-- **Always check the specific model's license before use**
+- Tier structures and associated benefits (for example Pollen allocations and daily/hourly limits)
+- Model availability, capabilities, and per-model pricing
+- Developer-earnings rates and markup percentages
+- Usage limits, quotas, and rate limits
+- Feature availability and functionality
 
----
+Beta features carry no service level commitments. By using beta features, you acknowledge this flexibility and agree that we are not liable for changes made during the beta period.
 
-## 🤝 Community Conduct
+## 3) The Service
 
-Help us keep this a welcoming space for everyone:
+Hosted access to model-powered APIs and tools per your plan, balance, and usage limits. Model outputs vary and may be incomplete, inaccurate, unsafe, unavailable, or unsuitable for your intended use. You are responsible for reviewing outputs before relying on them.
 
-**Be Respectful:**
-- Use the platform ethically and legally
-- Don't infringe rights, break laws, or harass others
-- Don't abuse services or try to bypass security/rate limits
-- No scraping personal data at scale or doxxing
+We may make non-breaking changes and will notify you of material reductions where practical.
 
----
+## 4) Customer Data & Privacy
 
-## 🚫 Safety Rules
+You retain all rights to data you submit ("Customer Data"). How personal data is collected, stored, and processed — including our no-training-without-opt-in commitment, retention periods, and sub-processors — is governed by our **[Privacy Policy](/privacy)**.
 
-To protect our community and comply with laws:
+## 5) Acceptable Use & Safety
 
-**Prohibited Content:**
-- **No deepfakes** of real people without consent
-- **Absolutely no CSAM** (child sexual abuse material) of any kind, real or fictional
-- No sexual content involving minors
-- No illegal content or content that violates privacy/publicity rights
+Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
 
-We take these seriously to keep the platform safe and legal for everyone.
+## 6) Pollen, Fees, Taxes & Billing
 
----
+Fees are per plan/order/invoice; currency is by default USD.
 
-## ⚖️ Legal
+**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
-The platform, code, and models are provided **"as is"** without warranties. 
+**Balances.** Your wallet may include:
 
-To the extent permitted by law:
-- Our liability is capped at **€100**
-- We're not liable for indirect damages, lost profits, or lost data
+- **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
+- **Paid balance:** purchased Pollen and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
 
-This protects our open source community and contributors.
+**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
----
+**Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future refills or top-ups.
 
-## 📝 Updates & Changes
+**Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 
-We may update these terms as the project evolves. Changes are effective when we post a new date. We'll keep you posted on major changes.
+Developer earnings are credited as Pollen to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
----
+**Taxes.** Prices include applicable VAT or similar transaction taxes where required. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
-## 🌍 Law & Venue
+**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-This is a community project based in **Estonia**. Disputes are subject to **Estonian law** and the jurisdiction of **Harju County Court (Tallinn)**.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through future tier refills or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
----
+**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
 
-## 📧 Contact
+## 7) Refunds & Cancellations
 
-Questions? Reach out at **[hi@myceli.ai](mailto:hi@myceli.ai)**
+Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Nothing in these Terms limits non-waivable statutory rights.
 
-**Operated by:** Myceli.AI OÜ, Estonia
+## 8) IP & Open-Source
+
+We and our licensors own the Service, models, and documentation. The Service may include or run against OSS; those components are governed by their licences. **Model licences vary**; verify before commercial use. Feedback may be used to improve the Service.
+
+## 9) Service Level & Support
+
+Commercially reasonable efforts to maintain availability (target 99.5% monthly). Support is provided through the channels on our site. We do not offer SLA credits.
+
+## 10) Warranties & Liability
+
+We warrant reasonable skill and care. Otherwise the Service is **"as is"**.
+**Cap:** each party's aggregate liability is limited to **12 months of fees paid** by you.
+**Exclusions:** no indirect/special/incidental/consequential damages or lost profits/data.
+**Exceptions:** caps/exclusions do not apply to payment obligations, confidentiality breaches, IP indemnity, or wilful misconduct.
+
+## 11) Confidentiality
+
+Each party protects the other's confidential information and uses it only for this relationship.
+
+## 12) Term; Suspension; Termination
+
+Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
+
+## 13) Publicity; Export; Changes; Misc.
+
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If these Terms and the DPA conflict, the DPA controls for personal-data processing.
+
+## 14) Governing Law & Venue
+
+**Estonia** / **Harju County Court (Tallinn)**.
+
+## 15) DPA and Sub-Processors
+
+When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) is maintained at this location. Categories of **sub-processors** we may use are listed below. The full named list is available on request, and we provide at least **14 days'** prior notice of material changes to sub-processors.
+
+**Categories of sub-processors** we may use to deliver the Service:
+
+- **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
+- **CDN/WAF & edge routing**
+- **Cloud infrastructure & storage**
+- **Analytics / data pipeline**
+- **Model / inference compute providers** (for text/image/video generation)
+
+**Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.

@@ -1,152 +1,153 @@
 # 📱 Pollinations Apps
 
-Build cool **frontend-only** apps with Pollinations AI. Pure HTML/CSS/JS or React - no backend needed!
+Contains quest based community built projects and the app collection that has been submitted to pollinations & has successfully been reviewed and merged by a maintainer. 
 
-## What Goes Here?
 
-Frontend apps that use Pollinations APIs (text/image generation). Each app gets its own folder.
+## Submit Your App
 
-**Two Types of Apps:**
+Build something with Pollinations? Get it on the [showcase](https://pollinations.ai/apps) and bump up to **flower tier**. One approved app per GitHub account does it.
 
-### 1. **Pure HTML** (simplest)
 
--   Single `index.html` file with inline CSS/JS
--   No build step, just open in browser
--   Perfect for quick tools and demos
+## 1. Quest based App Submissions
 
-### 2. **React + Vite** (for complex apps)
+Apps are those are built from [QUEST] are **auto-deployed to Cloudflare Pages** when merged to `main`.
 
--   Uses React for UI
--   Vite for dev server and building
--   Still frontend-only, no backend
+**Trigger:** Any change in `apps/{app-name}/` → deploys to `https://{app-name}.pollinations.ai`
 
-**Requirements:**
+**What happens:**
+1. PWA assets generated (favicon, og-image, manifest)
+2. Dependencies installed
+3. App built (if `buildCommand` in `apps.json`)
+4. Deployed to Cloudflare Pages
 
--   ✅ Actually works (no broken features)
--   ✅ Has a README explaining what it does
--   ✅ Uses Pollinations API meaningfully
--   ✅ Frontend-only (no backend/server code)
+### Adding a New App
 
-**Bonus points:**
-
--   🔥 Auto-deployed preview (GitHub Pages)
--   🎨 Screenshots/GIFs
--   💯 Clean, readable code
--   ✨ Does something unique
-
-## Structure
-
-### Pure HTML App:
-
-```
-apps/
-├── your-app-name/
-│   ├── README.md
-│   └── index.html    # everything in one file
+#### 1. Create from template
+```bash
+cp -r apps/_templates/react apps/my-app
 ```
 
-### React App:
-
+#### 2. Register in `apps.json`
+```json
+{
+  "my-app": {
+    "subdomain": "my-app",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "title": "My App",
+    "description": "What my app does"
+  }
+}
 ```
-apps/
-├── your-app-name/
-│   ├── README.md
-│   ├── package.json
-│   ├── index.html
-│   ├── vite.config.js
-│   └── src/
-│       └── App.jsx
+
+#### 3. Push to main
+```bash
+git add apps/my-app apps/apps.json
+git commit -m "Add my-app"
+git push
 ```
 
-## How to Submit
+Your app will be live at `https://my-app.pollinations.ai`
 
-### Step 1: Propose Your App Idea (Recommended)
+### Manual Deploy
 
-Before building, **create a GitHub issue** with your app idea:
+```bash
+# Deploy a single app
+./apps/_scripts/deploy.sh <app-name>
 
-1. Go to [Issues](https://github.com/pollinations/pollinations/issues/new) and select "SubmitApp"
-2. Fill out the app submission form
-3. Wait for feedback from maintainers
+# Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID env vars
+```
 
-**Why propose first?**
+### App Types
 
--   Get early feedback on your idea
--   Avoid building something that won't be accepted
--   Maintainers can suggest improvements
--   Shows you're serious about contributing
+| Type | Build | Example |
+|------|-------|---------|
+| **Pure HTML** | None | catgpt |
+| **React + Vite** | `npm run build` | reimagine, chat |
 
-### Step 2: Build Your App
+### PWA Assets (Auto-Generated)
 
-Once your idea is approved (or if you're feeling confident):
+Each app gets:
+- `favicon.ico`, `favicon-*.png`
+- `icon-192.png`, `icon-512.png`
+- `apple-touch-icon.png`
+- `manifest.json`
+- `og-image.png` (1200×630 social preview)
 
-1. Fork this repo
-2. Create your app folder in `apps/`
-3. Build something that actually works
-4. Test it from a fresh clone (seriously, do this)
-5. PR with title: `Add [App Name]`
-6. Link to your original issue in the PR description
+# 2. Community Created App Submissions 
 
-## Setup
+### What Makes a Good App Submission
 
-1. Get a free ImgBB API key from https://api.imgbb.com/
-2. Copy `.env.example` to `.env`
-3. Add your API key to `.env`
+> To increase the chances of approval during app review, submitted apps should meet the following criteria:
 
-## Templates & Examples
+- Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
+- Be on **seed tier** or above
+- Your app actively uses the Pollinations API — image, text, audio, or video
+- Be **open-source** with a public GitHub repository
+- Include a working demo URL (auto-deployed or external)
+- Include a clear `README.md` in the app folder explaining what it does, which Pollinations models/APIs it uses, and how to run it locally
 
-**Templates:**
+### What We're Looking For
 
--   **[TEMPLATE-HTML](./TEMPLATE-HTML/)** - Single-file HTML app (easiest)
--   **[TEMPLATE-REACT](./TEMPLATE-REACT/)** - React + Vite app (for complex UIs)
+- **It works.** Not a 404, not "coming soon", not an empty shell
+- **It does something.** Beyond a raw API call — some custom UI, workflow, or actual user experience
+- **It credits us.** "Powered by Pollinations" somewhere visible
+- **It's not malicious.** No spam, no deceptive tools, no scams
+- **Focused scope.** One clear purpose, clean and usable UI
 
-**Example Apps:**
+### How to Submit
 
--   **[CatGPT](./example-catgpt/)** - Pure HTML meme generator 🐱
--   **[Elevator Challenge](./example-elevator-challenge/)** - React + Vite game 🚀
+Open an issue with the [submission template](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml) and fill out the fields. If your integration isn't obvious from poking at the app, drop in a screenshot or short clip — otherwise skip it.
 
-## App Ideas
+### What Happens Next
 
-**Creative:**
+- A bot checks the basics (registered, not a duplicate, attribution present)
+- A maintainer takes a look
+- If it's good, your app lands on [pollinations.ai/apps](https://pollinations.ai/apps) and your tier bumps to **flower**
+- If something's off, we'll comment with what to fix
 
--   AI meme generator (like CatGPT!)
--   Character design tool
--   Album cover creator
--   Story illustration generator
--   Tarot card reader
+### After
 
-**Productivity:**
+- Keep your app working — broken apps get delisted after a heads-up
+- Changing your URL or name? Open a new PR
 
--   Thumbnail generator for blogs
--   Social media content creator
--   Placeholder generator
+### Common Reasons for Rejection
 
-**Fun:**
+- No clear Pollinations API usage
+- Vague or incomplete app descriptions
+- Missing or private repository
+- Spam, affiliate links, or misleading "money earning" claims
+- Very low-effort generators
 
--   "Guess the AI prompt" game
--   Millionaire quiz game
--   AI chat interface
+## Attribution
 
-**Dev Tools:**
+"Powered by Pollinations" is the one hard requirement. Pick whichever fits your app:
 
--   Graphics editor with AI
--   SVG feedback tool
--   LLM feedback interface
+### 1. Plain Text
+
+Drop "Powered by Pollinations" or "Built with Pollinations" into your footer, about page, splash screen, or readme.
+
+### 2. The Badge
+
+[`Built With pollinations.ai`](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge&logoColor=white&labelColor=6a0dad)
+
+```markdown
+[`Built With pollinations.ai`](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge&logoColor=white&labelColor=6a0dad)
+```
+
+### 3. The Logo
+
+Grab a logo and link it to [pollinations.ai](https://pollinations.ai): [mark](https://pollinations.ai/logo.svg) · [wordmark (white)](https://pollinations.ai/wordmark-white.svg) · [wordmark (black)](https://pollinations.ai/wordmark-black.svg)
+
+## Community Showcase
+
+- 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category
+- 📋 [**All Apps**](APPS.md) — Full table for community created apps.
+- 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
+- ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
 
 ## Resources
 
--   [API Docs](../APIDOCS.md)
--   [Main README](../README.md)
--   [Contributing Guide](../CONTRIBUTING.md)
--   [Discord](https://discord.gg/pollinations-ai-885844321461485618)
-
-## Recognition
-
-Good apps might get:
-
--   Featured on pollinations.ai
--   Tier upgrades (flower/nectar access)
--   Community recognition
-
----
-
-**Let's build something fire 🔥**
+- [API Docs](../APIDOCS.md)
+- [App Ideas](IDEAS.md)
+- [Discord](https://discord.gg/pollinations-ai-885844321461485618)

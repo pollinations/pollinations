@@ -1,41 +1,122 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AUDIO_SERVICES } from "../../../../shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "../../../../shared/registry/embeddings.ts";
+import { IMAGE_SERVICES } from "../../../../shared/registry/image.ts";
+import { TEXT_SERVICES } from "../../../../shared/registry/text.ts";
 
 // Tinybird config
 // Note: This is a READ-ONLY public token, safe to expose in client code
 const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const TINYBIRD_TOKEN =
-    "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g";
+const TINYBIRD_PUBLIC_READ_TOKEN =
+    "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
 // Model list endpoints
 const MODEL_ENDPOINTS = {
     image: "https://gen.pollinations.ai/image/models",
     text: "https://gen.pollinations.ai/text/models",
+    audio: "https://gen.pollinations.ai/audio/models",
+    embedding: "https://gen.pollinations.ai/embeddings/models",
 };
 
-// Tinybird pipes for different aggregation windows
-const TINYBIRD_PIPES = {
-    "60m": "model_health_60m",
-    "5m": "model_health",
+// Minutes parameter for the parameterized model_health pipe
+const WINDOW_MINUTES = {
+    "7d": 10080,
+    "24h": 1440,
+    "4h": 240,
+    "60m": 60,
+    "5m": 5,
 };
 
 // Poll intervals based on aggregation window
 const POLL_INTERVALS = {
+    "7d": 300000, // 5 minutes for 7-day view
+    "24h": 120000, // 2 minutes for 24-hour view
+    "4h": 60000, // 1 minute for 4-hour view
     "60m": 60000, // 1 minute for stable 60m view
     "5m": 15000, // 15 seconds for live 5m view
 };
-const SPARKLINE_POINTS = 20; // Keep 20 data points for sparklines (~5 min at 15s intervals)
-const TREND_SAMPLES = 8; // Compare current to 8 samples ago (~2 min baseline)
-const MIN_TREND_SAMPLES = 4; // Need at least 1 min of data before showing trends
+const SPARKLINE_POINTS = 20; // Keep the last 20 poll snapshots for sparklines
+const TREND_SAMPLES = 8; // Compare against the oldest retained snapshot
+const MIN_TREND_SAMPLES = 4; // Need at least 4 snapshots before showing trends
+
+function resolveDisplayType(model, endpointType) {
+    const out = model.output_modalities;
+    if (endpointType === "image" && out?.includes("video")) return "video";
+    return endpointType;
+}
+
+function registryServicesToModels(services, endpointType) {
+    return Object.entries(services).map(([name, service]) => ({
+        name,
+        aliases: service.aliases,
+        description: service.description,
+        input_modalities: service.inputModalities,
+        output_modalities: service.outputModalities,
+        paid_only: service.paidOnly,
+        hidden: Boolean(service.hidden),
+        provider: service.provider,
+        brand: service.brand,
+        type: resolveDisplayType(
+            { output_modalities: service.outputModalities },
+            endpointType,
+        ),
+        endpointType,
+    }));
+}
+
+const ALL_REGISTERED_MODELS = [
+    ...registryServicesToModels(TEXT_SERVICES, "text"),
+    ...registryServicesToModels(IMAGE_SERVICES, "image"),
+    ...registryServicesToModels(AUDIO_SERVICES, "audio"),
+    ...registryServicesToModels(EMBEDDING_SERVICES, "embedding"),
+];
+
+const VISIBLE_REGISTERED_MODELS = ALL_REGISTERED_MODELS.filter(
+    (m) => !m.hidden,
+);
+
+const VISIBLE_REGISTERED_MODELS_BY_ENDPOINT = VISIBLE_REGISTERED_MODELS.reduce(
+    (acc, model) => {
+        if (!acc[model.endpointType]) acc[model.endpointType] = [];
+        acc[model.endpointType].push(model);
+        return acc;
+    },
+    {},
+);
+
+const REGISTERED_MODELS_BY_SIGNATURE = new Map(
+    ALL_REGISTERED_MODELS.map((m) => [`${m.endpointType}:${m.name}`, m]),
+);
+
+const REGISTERED_MODELS_BY_NAME = ALL_REGISTERED_MODELS.reduce((acc, model) => {
+    if (!acc[model.name]) acc[model.name] = [];
+    acc[model.name].push(model);
+    return acc;
+}, {});
+
+function normalizeModelEntry(model, endpointType, source = "endpoint") {
+    const registryMatch = REGISTERED_MODELS_BY_SIGNATURE.get(
+        `${endpointType}:${model.name}`,
+    );
+    const merged = {
+        ...registryMatch,
+        ...model,
+        endpointType,
+    };
+
+    return {
+        ...merged,
+        type: resolveDisplayType(merged, endpointType),
+        hidden: registryMatch?.hidden ?? Boolean(model.hidden),
+        catalogStatus: source,
+    };
+}
 
 // Helper to extract metrics from stats
 function extractMetrics(stats) {
     if (!stats) return null;
     const total = stats.total_requests || 0;
-    const err5xx =
-        (stats.errors_500 || 0) +
-        (stats.errors_502 || 0) +
-        (stats.errors_503 || 0) +
-        (stats.errors_504 || 0);
+    const err5xx = stats.errors_5xx || 0;
     return {
         p95: stats.latency_p95_ms || 0,
         err5xxPct: total > 0 ? (err5xx / total) * 100 : 0,
@@ -43,7 +124,7 @@ function extractMetrics(stats) {
     };
 }
 
-// Compute trend by comparing current to oldest sample (2 min baseline)
+// Compute trend by comparing current metrics to the oldest retained snapshot
 function computeTrend(currentMetrics, samples) {
     if (!currentMetrics || samples.length < MIN_TREND_SAMPLES) return null;
 
@@ -74,8 +155,10 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [endpointStatus, setEndpointStatus] = useState({
         image: null,
         text: null,
+        audio: null,
+        embedding: null,
     });
-    const tinybirdConfigured = !!TINYBIRD_TOKEN;
+    const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
 
     // History for trends and sparklines
@@ -84,37 +167,51 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
-        let imageOk = false;
-        let textOk = false;
-        let imageModels = [];
-        let textModels = [];
+        const entries = await Promise.all(
+            Object.entries(MODEL_ENDPOINTS).map(async ([type, url]) => {
+                try {
+                    const res = await fetch(url);
+                    return [
+                        type,
+                        {
+                            ok: res.ok,
+                            models: res.ok ? await res.json() : [],
+                        },
+                    ];
+                } catch (err) {
+                    console.error(`Failed to fetch ${type} models:`, err);
+                    return [type, { ok: false, models: [] }];
+                }
+            }),
+        );
 
-        try {
-            const imageRes = await fetch(MODEL_ENDPOINTS.image);
-            imageOk = imageRes.ok;
-            if (imageOk) imageModels = await imageRes.json();
-        } catch (err) {
-            console.error("Failed to fetch image models:", err);
-        }
+        const results = Object.fromEntries(entries);
 
-        try {
-            const textRes = await fetch(MODEL_ENDPOINTS.text);
-            textOk = textRes.ok;
-            if (textOk) textModels = await textRes.json();
-        } catch (err) {
-            console.error("Failed to fetch text models:", err);
-        }
+        setEndpointStatus({
+            image: results.image?.ok ?? null,
+            text: results.text?.ok ?? null,
+            audio: results.audio?.ok ?? null,
+            embedding: results.embedding?.ok ?? null,
+        });
 
-        setEndpointStatus({ image: imageOk, text: textOk });
-
-        const allModels = [
-            ...imageModels.map((m) => ({ ...m, type: "image" })),
-            ...textModels.map((m) => ({ ...m, type: "text" })),
-        ].sort((a, b) => a.name.localeCompare(b.name));
+        const allModels = Object.entries(results)
+            .flatMap(([type, { ok, models }]) =>
+                (ok
+                    ? models
+                    : VISIBLE_REGISTERED_MODELS_BY_ENDPOINT[type] || []
+                ).map((m) =>
+                    normalizeModelEntry(
+                        m,
+                        type,
+                        ok ? "visible" : "endpoint-fallback",
+                    ),
+                ),
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
 
         setModels(allModels);
 
-        if (!imageOk && !textOk) {
+        if (Object.values(results).every((r) => !r.ok)) {
             setError("Failed to fetch model list");
         } else {
             setError(null);
@@ -123,16 +220,16 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     // Fetch health stats from Tinybird
     const fetchHealthStats = useCallback(async () => {
-        if (!TINYBIRD_TOKEN) {
+        if (!TINYBIRD_PUBLIC_READ_TOKEN) {
             // Use mock data when Tinybird not configured
             setHealthStats([]);
             return;
         }
 
         try {
-            const pipeName =
-                TINYBIRD_PIPES[aggregationWindow] || TINYBIRD_PIPES["60m"];
-            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_TOKEN}`;
+            const minutes =
+                WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
+            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}&minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -149,8 +246,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, [aggregationWindow]);
 
-    // Separate gateway stats (undefined model = auth/validation failures before model resolution)
-    const gatewayStats = healthStats.filter((s) => s.model === "undefined");
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
     // Get history and compute trends for a model
@@ -191,7 +286,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
             // Extract metrics for this sample
             const metrics = extractMetrics(stats);
 
-            // Add to samples (keep last TREND_SAMPLES for 2-min baseline)
+            // Add to samples (keep the most recent poll snapshots)
             const samples = [...history.samples, metrics].slice(-TREND_SAMPLES);
 
             // Update sparkline with new point
@@ -204,34 +299,81 @@ export function useModelMonitor(aggregationWindow = "60m") {
         });
     }, [healthStats, lastUpdated]);
 
-    // Merge models with health stats, trends, and sparklines
+    // Merge models with health stats, trends, and sparklines.
+    // Use endpointType (original API endpoint) for Tinybird matching since
+    // Tinybird reports e.g. generate.image for video models served from /image/models.
     const mergedModels = models.map((model) => {
-        const modelKey = `${model.type}-${model.name}`;
-        const stats = modelStats.find(
-            (s) =>
-                s.model === model.name &&
-                s.event_type === `generate.${model.type}`,
-        );
+        const statsType = model.endpointType || model.type;
+        const modelKey = `${statsType}-${model.name}`;
+        const stats =
+            modelStats.find(
+                (s) =>
+                    s.model === model.name &&
+                    s.event_type === `generate.${statsType}`,
+            ) ?? null;
         const { trend, sparkline } = getModelTrend(modelKey, stats);
-        return { ...model, stats: stats || null, trend, sparkline };
+        return { ...model, stats, trend, sparkline };
     });
 
-    // Add models from health stats that aren't in the registered model list (but not "undefined")
+    // Add models from health stats that aren't in the visible model list (but not "undefined")
     const unmatchedStats = modelStats.filter(
         (s) =>
             !models.some(
                 (m) =>
-                    m.name === s.model && `generate.${m.type}` === s.event_type,
+                    m.name === s.model &&
+                    `generate.${m.endpointType || m.type}` === s.event_type,
             ),
     );
     const extraModels = unmatchedStats.map((s) => {
-        const modelKey = `${s.event_type?.replace("generate.", "") || "unknown"}-${s.model}`;
-        const { trend, sparkline } = getModelTrend(modelKey, s);
+        const statsType = s.event_type?.replace("generate.", "") || "unknown";
+        const modelKey = `${statsType}-${s.model}`;
+        const stats = s;
+        const { trend, sparkline } = getModelTrend(modelKey, stats);
+        const registeredExact = REGISTERED_MODELS_BY_SIGNATURE.get(
+            `${statsType}:${s.model}`,
+        );
+        const sameNameMatches = REGISTERED_MODELS_BY_NAME[s.model] || [];
+
+        let modelMeta;
+        if (registeredExact) {
+            modelMeta = {
+                ...registeredExact,
+                catalogStatus: registeredExact.hidden
+                    ? "hidden"
+                    : "registry-only",
+            };
+        } else if (sameNameMatches.length > 0) {
+            const registeredTypes = [
+                ...new Set(sameNameMatches.map((m) => m.type)),
+            ].sort();
+            modelMeta = {
+                name: s.model || "(unknown)",
+                type: statsType,
+                endpointType: statsType,
+                description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
+                catalogStatus: "anomaly",
+            };
+        } else if (endpointStatus[statsType] === false) {
+            modelMeta = {
+                name: s.model || "(unknown)",
+                type: statsType,
+                endpointType: statsType,
+                description: `Unknown ${statsType} model while catalog endpoint is unavailable`,
+                catalogStatus: "catalog-unavailable",
+            };
+        } else {
+            modelMeta = {
+                name: s.model || "(unknown)",
+                type: statsType,
+                endpointType: statsType,
+                description: "Unregistered model",
+                catalogStatus: "unregistered",
+            };
+        }
+
         return {
-            name: s.model || "(unknown)",
-            type: s.event_type?.replace("generate.", "") || "unknown",
-            description: "Unregistered model",
-            stats: s,
+            ...modelMeta,
+            stats,
             trend,
             sparkline,
         };
@@ -271,7 +413,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     return {
         models: allModels,
-        gatewayStats, // Pre-model auth/validation failures
         refresh,
         pollInterval,
         lastUpdated,

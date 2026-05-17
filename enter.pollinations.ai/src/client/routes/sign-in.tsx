@@ -1,12 +1,35 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
-import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/footer.tsx";
-import { Header } from "../components/header.tsx";
-import { NewsBanner } from "../components/news-banner.tsx";
-import { Pricing } from "../components/pricing/index.ts";
+import {
+    type DashboardPage,
+    DashboardShell,
+} from "../components/layout/dashboard-shell.tsx";
+import {
+    DASHBOARD_NAV_ITEMS,
+    isDashboardPage,
+} from "../components/layout/dashboard-theme.ts";
+import { Models } from "../components/models";
+import { NewsFaq } from "../components/news-faq";
+import { Button } from "../components/ui/button.tsx";
+
+const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
+    "news-faq",
+    "models",
+]);
+
+const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
+    SIGNED_OUT_PAGES.has(item.id),
+);
+
+function pageFromHash(hash: string): DashboardPage {
+    const page = hash.replace(/^#/, "");
+    if (isDashboardPage(page) && SIGNED_OUT_PAGES.has(page)) return page;
+    if (page === "news" || page === "faq" || page === "updates")
+        return "news-faq";
+    if (page === "pricing") return "models";
+    return "news-faq";
+}
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -29,7 +52,7 @@ export const Route = createFileRoute("/sign-in")({
                         models: null,
                         budget: null,
                         expiry: null,
-                        permissions: null,
+                        scope: null,
                     },
                 });
             }
@@ -40,6 +63,18 @@ export const Route = createFileRoute("/sign-in")({
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
+    const [activePage, setActivePage] = useState<DashboardPage>(() =>
+        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
+    );
+
+    useEffect(() => {
+        function syncPageFromHash(): void {
+            setActivePage(pageFromHash(window.location.hash));
+        }
+
+        window.addEventListener("hashchange", syncPageFromHash);
+        return () => window.removeEventListener("hashchange", syncPageFromHash);
+    }, []);
 
     const handleSignIn = async () => {
         setLoading(true);
@@ -52,41 +87,50 @@ function RouteComponent() {
         }
     };
 
+    function handlePageChange(page: DashboardPage): void {
+        setActivePage(page);
+        try {
+            history.replaceState(null, "", `#${page}`);
+        } catch {
+            // Hash updates are cosmetic; navigation still works without them.
+        }
+        window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
     return (
-        <div className="flex flex-col gap-6">
-            <NewsBanner />
-            <div className="flex flex-col gap-20">
-                <Header>
-                    <div className="relative">
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={loading}
-                            className="bg-amber-200 text-amber-900 hover:brightness-105 whitespace-nowrap"
-                        >
-                            {loading ? "Signing in..." : "Sign in with Github"}
-                        </Button>
-                        <a
-                            href="https://github.com/pollinations/pollinations/issues/5543"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
-                        >
-                            more options?
-                        </a>
-                    </div>
-                    <Button
-                        as="a"
-                        href="/api/docs"
-                        className="bg-gray-900 text-white hover:brightness-90! whitespace-nowrap"
-                    >
-                        API Ref.
-                    </Button>
-                </Header>
-                <FAQ />
-                <Pricing />
-                <Footer />
-            </div>
-        </div>
+        <DashboardShell
+            activePage={activePage}
+            navItems={SIGNED_OUT_NAV_ITEMS}
+            onPageChange={handlePageChange}
+            accountArea={
+                <SignedOutAccountArea
+                    loading={loading}
+                    onSignIn={handleSignIn}
+                />
+            }
+        >
+            {activePage === "news-faq" && <NewsFaq />}
+            {activePage === "models" && <Models />}
+        </DashboardShell>
+    );
+}
+
+function SignedOutAccountArea({
+    loading,
+    onSignIn,
+}: {
+    loading: boolean;
+    onSignIn: () => void;
+}) {
+    return (
+        <Button
+            as="button"
+            onClick={onSignIn}
+            disabled={loading}
+            theme="amber"
+            className="w-full justify-center text-center"
+        >
+            {loading ? "Signing in..." : "Sign in with GitHub"}
+        </Button>
     );
 }

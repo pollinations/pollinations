@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
-import { LegalPageLayout } from "../components/LegalPageLayout";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/privacy")({
-    component: PrivacyComponent,
+    beforeLoad: () => {
+        throw redirect({ href: "https://pollinations.ai/privacy" });
+    },
+    component: RedirectComponent,
 });
 
-function PrivacyComponent() {
-    return <LegalPageLayout markdown={privacyMarkdown} currentPage="privacy" />;
+function RedirectComponent() {
+    return null;
 }

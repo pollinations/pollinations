@@ -1,6 +1,13 @@
 
+# Temp test scripts (may contain API keys)
+temp/
+
 # Crush
 .crush/
+
+# Local-only design planning docs (kept out of the repo)
+/DESIGN_REFACTOR_PLAN.md
+/Design Audit.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -139,6 +146,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 node_modules/
+lefthook.yml
 .DS_Store
 
 # Tmp folder
@@ -343,8 +351,29 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+.claude/scheduled_tasks.lock
 
 # Vim swap files
 *.swp
 *.swo
 *~
+
+# Script results (local output)
+enter.pollinations.ai/scripts/results/
+
+# Agent communication file (temporary)
+agent-communication.md
+.claude/settings.local.json
+.claude/MAIN.md
+.claude/SETUP.md
+.claude/settings.json
+enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-enriched.csv
+enter.pollinations.ai/src/tier-progression/spore-to-microbe-report-reviewed.csv
+enter.pollinations.ai/src/tier-progression/abuse-ledger.csv
+apps/operation/finance/secrets/vendors.json
+apps/operation/finance/secrets/update-live.err
+apps/operation/finance/secrets/pool-history.json
+apps/operation/finance/secrets/input/2026-03.csv
+apps/operation/finance/secrets/input/2026-02.csv
+apps/operation/finance/secrets/input/2026-01.csv
+apps/operation/finance/config.local.json

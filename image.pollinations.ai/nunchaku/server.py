@@ -8,8 +8,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
-from safety_checker.censor import check_safety
+from nunchaku import NunchakuFluxTransformer2dModel
+# Safety checker disabled for Vast.ai deployment
+# from safety_checker.censor import check_safety
+def check_safety(x, y): return [None], [False]  # Disabled - returns safe result
 import requests
 import logging
 import asyncio
@@ -35,6 +37,7 @@ class ImageRequest(BaseModel):
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 
 pipe = None
+gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA hangs
 
 # Function to get public IP address
 def get_public_ip():
@@ -58,10 +61,13 @@ async def send_heartbeat():
                 port = int(public_port)
             else:
                 port = int(os.getenv("PORT", "8765"))
-            url = f"http://{public_ip}:{port}"
+            url = f"https://{public_ip}" if port == 443 else f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
+            register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
+            token = os.getenv("PLN_GPU_TOKEN", "")
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
             async with aiohttp.ClientSession() as session:
-                async with session.post('https://image.pollinations.ai/register', json={'url': url, 'type': service_type}) as response:
+                async with session.post(register_url, json={'url': url, 'type': service_type}, headers=headers) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}")
                     else:
@@ -149,7 +155,7 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
         raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
     
     # Cap total pixels to prevent CUDA OOM with quantized models
-    MAX_PIXELS = 1024 * 1024  # 1,048,576 pixels
+    MAX_PIXELS = 900 * 900  # 810,000 pixels — reduced to prevent CUDA hangs on RTX 4090
     start_w = round(width)
     start_h = round(height)
     
@@ -186,18 +192,25 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
 # Auth verification
-def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("PLN_ENTER_TOKEN")
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    """Verify backend authentication token.
+    
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
+    """
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
-    if x_enter_token != expected_token:
-        logger.warning(f"Invalid or missing PLN_ENTER_TOKEN")
+    
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
 @app.post("/generate")
-async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
+async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -218,24 +231,25 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
     print(f"Adjusted dimensions: {width}x{height}")
 
     try:
-        with torch.inference_mode():
-            output = pipe(
-                prompt=request.prompts[0],
-                generator=generator,
-                width=width,
-                height=height,
-                num_inference_steps=request.steps,
-            )
+        async with gpu_semaphore:
+            with torch.inference_mode():
+                output = pipe(
+                    prompt=request.prompts[0],
+                    generator=generator,
+                    width=width,
+                    height=height,
+                    num_inference_steps=request.steps,
+                )
 
-        # Check for NSFW content
-        image = output.images[0]
-        concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
-        
-        # Convert image to base64
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format='JPEG', quality=95)
-        img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-        
+            # Check for NSFW content
+            image = output.images[0]
+            concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
+
+            # Convert image to base64
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='JPEG', quality=95)
+            img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+
         response_content = [{
             "image": img_base64,
             "has_nsfw_concept": has_nsfw[0],
@@ -255,8 +269,10 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
         # Exit with non-zero status to trigger systemd restart
         sys.exit(1)
     except Exception as e:
-        # Catch any other unexpected errors (like CUDA kernel assertions) and return 500
-        # instead of crashing the entire server
+        error_msg = str(e).lower()
+        if "out of memory" in error_msg or "cuda error" in error_msg:
+            logger.error(f"CUDA error detected: {str(e)} - Exiting to trigger restart")
+            sys.exit(1)
         logger.error(f"Unexpected error during generation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 

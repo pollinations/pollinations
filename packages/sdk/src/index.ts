@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations/sdk';
+ * import { generateImage, generateText } from '@pollinations_ai/sdk';
  *
  * const image = await generateImage('a cat in space');
  * await image.saveToFile('cat.png');
@@ -17,100 +17,142 @@
 
 // Main client class
 export { Pollinations } from "./client.js";
-
-// Helper functions
-export {
-    configure,
-    resetClient,
-    imageUrl,
-    generateImage,
-    videoUrl,
-    generateVideo,
-    generateText,
-    generateTextStream,
-    chat,
-    chatStream,
-    generateAudio,
-    getTextModels,
-    getImageModels,
-    getModels,
-    conversation,
-} from "./helpers.js";
-
 // Extra utilities
 export {
-    // Extended response types with helpers
-    type ImageResponseExt,
-    type VideoResponseExt,
+    type AudioResponseExt,
+    type AwaitOptions,
     type ChatResponseExt,
-    // Batch generation (multiple different prompts)
-    generateImages,
-    generateVideos,
     // Conversation class
     Conversation,
-    // Browser helpers
-    showImage,
     displayImage,
-    // Token estimation
-    estimateTokens,
-    estimateMessageTokens,
+    // Batch generation (multiple different prompts)
+    generateImages,
     // Progress tracking
     generateImageWithProgress,
-    type AwaitOptions,
+    generateVideos,
+    // Extended response types with helpers
+    type ImageResponseExt,
+    // Browser helpers
+    showImage,
+    type VideoResponseExt,
+    wrapAudioResponse,
+    wrapChatResponse,
     // Response wrappers (for advanced use)
     wrapImageResponse,
     wrapVideoResponse,
-    wrapChatResponse,
 } from "./extras.js";
+// Helper functions
+export {
+    authorizeDevice,
+    authorizeUrl,
+    chat,
+    chatStream,
+    configure,
+    conversation,
+    createKey,
+    editImage,
+    generateAudio,
+    generateImage,
+    generateText,
+    generateTextStream,
+    generateVideo,
+    getBalance,
+    getDailyUsage,
+    getImageModels,
+    getModels,
+    getProfile,
+    getTextModels,
+    getUsage,
+    imageGenerate,
+    imageUrl,
+    listKeys,
+    resetClient,
+    revokeKey,
+    transcribe,
+    upload,
+    userInfo,
+    validateKey,
+    videoUrl,
+} from "./helpers.js";
 
 // Export all types
 export type {
-    // Config
-    PollinationsConfig,
-    RequestOptions,
+    AccountBalance,
+    AccountKey,
+    AccountPermission,
+    AccountProfile,
+    AudioBinaryResponse,
+    AudioContentPart,
+    AudioFormat,
+    AudioGenerateOptions,
+    // Audio
+    AudioModel,
+    AudioResponse,
+    AudioVoice,
+    AuthorizeDeviceOptions,
+    AuthorizeOptions,
+    BuiltInToolType,
+    ChatChoice,
+    ChatOptions,
+    ChatResponse,
+    ChatStreamChunk,
+    CompletionUsage,
+    CreatedKey,
+    CreateKeyOptions,
+    DailyUsageRecord,
+    DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
+    FileContentPart,
+    FunctionDefinition,
+    ImageContentPart,
+    ImageEditOptions,
+    ImageGenerateOptions,
+    ImageGenerateV1Options,
     // Image
     ImageModel,
     ImageQuality,
-    ImageGenerateOptions,
     ImageResponse,
-    // Video
-    VideoModel,
-    VideoGenerateOptions,
-    VideoResponse,
-    // Text
-    TextModel,
-    MessageRole,
-    TextContentPart,
-    ImageContentPart,
-    VideoContentPart,
-    AudioContentPart,
-    FileContentPart,
-    MessageContentPart,
-    MessageContent,
-    Message,
-    TextGenerateOptions,
-    ResponseFormat,
     JsonSchema,
-    Tool,
-    FunctionDefinition,
-    BuiltInToolType,
-    ThinkingOptions,
-    ChatOptions,
-    ToolCall,
-    CompletionUsage,
-    ChatChoice,
-    ChatResponse,
-    ChatStreamChunk,
-    // Audio
-    AudioVoice,
-    AudioFormat,
-    AudioGenerateOptions,
-    AudioResponse,
+    KeyAccountPermission,
+    KeyInfo,
+    Message,
+    MessageContent,
+    MessageContentPart,
+    MessageRole,
+    ModelInfo,
     // Models
     ModelTier,
-    ModelInfo,
+    // Config
+    PollinationsConfig,
     // Errors
     PollinationsErrorDetails,
+    RequestOptions,
+    ResponseFormat,
+    TextContentPart,
+    TextGenerateOptions,
+    // Text
+    TextModel,
+    ThinkingOptions,
+    Tool,
+    ToolCall,
+    TranscribeOptions,
+    TranscriptionModel,
+    TranscriptionResponse,
+    TranscriptionResponseFormat,
+    TranscriptionVerboseResponse,
+    UploadOptions,
+    UploadResponse,
+    UsageOptions,
+    UsageRecord,
+    UsageResponse,
+    UserInfo,
+    VideoContentPart,
+    VideoGenerateOptions,
+    // Video
+    VideoModel,
+    VideoResponse,
 } from "./types.js";
 
 // Export the error class

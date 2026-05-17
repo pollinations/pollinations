@@ -1,38 +1,69 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
+    pageTitle: "community",
+    pageDescription:
+        "Contribute to pollinations.ai — open source, open roadmap, open community",
+    // Section 1 — Hero
     title: "Contribute",
+    subtitlePrefix: "🌸 pollinations.ai is open source.",
+    subtitleBold: "Builders shape the platform directly.",
+    subtitleSuffix:
+        " Share what you need, meet the people using it, and help build what comes next. 🌿",
+    heroStat1: "17K+",
+    heroStat1Label: "Discord members",
+    heroStat2: "4K+",
+    heroStat2Label: "GitHub stars",
+    heroStat3: "500+",
+    heroStat3Label: "live apps",
 
-    subtitle:
-        "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
+    // Section 2 — Build with the community
+    contributeTitle: "Build with the community",
+    contributeBody:
+        "Meet other builders, talk with users, and work directly on the open source platform.",
+    contributeCard1Title: "Ship an app",
+    contributeCard1Body:
+        "Share what you built, get feedback, and help users discover it.",
+    contributeCard2Title: "Fix a bug or improve the docs",
+    contributeCard2Body:
+        "Open a PR, close an issue, improve examples, or make the docs clearer.",
+    contributeCard3Title: "Help in Discord",
+    contributeCard3Body:
+        "Answer questions, share experiments, and tell the team what feels missing.",
+    contributeNotePre: "Community feedback shapes the roadmap: ",
+    contributeNoteLink: "models, wallets, docs, and developer tools",
+    contributeNotePost: " all improve through what builders report and ship.",
+    learnAboutTiersButton: "Join the conversation",
 
-    // News section
-    newsTitle: "What's New",
-
-    discordTitle: "💬 Discord",
-
-    discordSubtitle:
-        "Chat with builders, get help, share what you're working on. We're friendly!",
-
-    githubTitle: "🛠️ GitHub",
-
-    githubSubtitle:
-        "Contribute code, report bugs, submit your app to the showcase, or just star us!",
+    // Section 3 — Jump In
+    jumpInTitle: "Where to start",
+    discordTitle: "Discord",
+    discordEmoji: "💬",
+    discordDesc1: "Chat with builders, ",
+    discordDesc1Em: "get help",
+    discordDesc1End: ", share what you're working on.",
+    discordDesc2Pre: "Start in ",
+    discordDesc2Link: "#pollen-beta",
+    discordDesc2Post: " if you're new.",
+    githubTitle: "GitHub",
+    githubEmoji: "🛠️",
+    githubDesc: "Contribute code, report bugs, review PRs, or just ",
+    githubDescBold: "star us",
+    githubDescEnd: ".",
+    submitAppTitle: "Submit Your App",
+    submitEmoji: "🚀",
+    submitDesc: "Built something with Pollinations? ",
+    submitDescBold: "Add it to the showcase.",
 
     // Buttons
     joinDiscordButton: "Join Discord",
-    pollenBetaButton: "🧪 #pollen-beta",
-    starContributeButton: "⭐ Star & Contribute",
-    submitAppButton: "🚀 Submit App",
-    contributeButton: "Contribute",
+    pollenBetaButton: "#pollen-beta",
+    starContributeButton: "Star & Contribute",
+    goodFirstIssuesButton: "Good First Issues",
+    submitAppButton: "Submit App",
 
-    // Voting section
-    votingTitle: "Have Your Say",
-
-    votingSubtitle:
-        "We build what the community wants. Vote on what matters to you:",
-
-    // Vote counts are approximate and need manual updates
+    // Section 4 — Voting + Contributors
+    votingTitle: "Have your say",
     votingIssues: [
         {
             emoji: "🤖",
@@ -54,12 +85,24 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
-    supportersTitle: "Supporters",
+    // Top Contributors
+    topContributorsTitle: "Most active contributors",
+    topContributorsDescription:
+        "These folks are actively building and improving the platform.",
+    topContributorsCta: "Want to join them? Check out our",
+    githubRepositoryLink: "GitHub repository",
+    overThePastYear: "and get started.",
+    commitsLabel: "commits",
+    commitLabel: "commit",
+    votesLabel: "votes",
 
+    // Section 5 — Build Diary + Supporters
+    buildDiaryTitle: "Build diary",
+    buildDiarySubtitle: "A visual log of what we ship every day.",
+
+    supportersTitle: "Supporters",
     supportersSubtitle:
         "We're grateful to our supporters for their contributions to the platform.",
-
-    // Supporters data
     supportersList: [
         {
             name: "Perplexity AI",
@@ -112,24 +155,10 @@ export const COMMUNITY_PAGE = {
             description: "High-performance AI infrastructure",
         },
         {
-            name: "NavyAI",
-            url: "https://api.navy/",
-            description: "AI API provider for OpenAI o3 and Gemini models",
-        },
-        {
             name: "Nebius",
             url: "https://nebius.com/",
             description:
                 "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
         },
     ],
-
-    // Top Contributors section
-    topContributorsTitle: "Most Active Contributors",
-    topContributorsDescription:
-        "Meet the most active contributors to the pollinations.ai",
-    githubRepositoryLink: "GitHub repository",
-    overThePastYear: "over the past year.",
-    commitsLabel: "commits",
-    commitLabel: "commit",
 };

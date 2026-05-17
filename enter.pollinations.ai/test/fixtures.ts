@@ -1,15 +1,19 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    createFetchMock,
+    teardownFetchMock,
+} from "@shared/test/mocks/fetch.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
-import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockGithub } from "./mocks/github.ts";
-import { createMockPolar } from "./mocks/polar.ts";
-import { createMockTinybird } from "./mocks/tinybird.ts";
-import { createMockVcr } from "./mocks/vcr.ts";
+import { createMockStripe } from "./mocks/stripe.ts";
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -22,10 +26,9 @@ const createAuthClientInstance = () =>
     });
 
 const createMocks = () => ({
-    polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
-    vcr: createMockVcr(globalThis.fetch),
+    stripe: createMockStripe(),
 });
 
 type Mocks = ReturnType<typeof createMocks>;
@@ -36,6 +39,8 @@ type Fixtures = {
     auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
     apiKey: string;
+    /** API key for a user with pack balance (can use paidOnly models) */
+    paidApiKey: string;
     pubApiKey: string;
     /** API key restricted to only ["openai-fast", "flux"] models */
     restrictedApiKey: string;
@@ -50,21 +55,24 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
-    log: async (_, use) => {
+    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
+    log: async ({}, use) => {
         await ensureConfigured({ level: "trace" });
         await use(getLogger(["test"]));
     },
-    mocks: async (_, use) => {
+    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
+    mocks: async ({}, use) => {
         const mocks = createFetchMock(createMocks(), { logRequests: true });
         await use(mocks);
         await teardownFetchMock();
     },
-    auth: async (_, use) => {
+    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
+    auth: async ({}, use) => {
         const auth = createAuthClientInstance();
         await use(auth);
     },
     sessionToken: async ({ mocks }, use) => {
-        await mocks.enable("github", "polar", "tinybird");
+        await mocks.enable("github", "tinybird");
         const signupUrl = new URL(
             "http://localhost:3000/api/auth/sign-in/social",
         );
@@ -136,6 +144,27 @@ export const test = base.extend<Fixtures>({
         const apiKey = createApiKeyResponse.data.key;
         // expect(apiKey.startsWith("sk_")).toBe(true);
         await use(apiKey);
+    },
+    /**
+     * API key for a user with pack balance, enabling paidOnly model access.
+     * Grants 100 pollen pack balance via direct DB update.
+     */
+    paidApiKey: async ({ auth, sessionToken }, use) => {
+        // Each test has an isolated DB with exactly one user — update all users
+        const db = drizzle(env.DB);
+        await db.update(userTable).set({ packBalance: 100 });
+
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "paid-test-api-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create paid API key");
+        await use(createApiKeyResponse.data.key);
     },
     pubApiKey: async ({ auth, sessionToken }, use) => {
         const createApiKeyResponse = await auth.apiKey.create({

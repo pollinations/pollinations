@@ -63,12 +63,12 @@ jobs:
           GITHUB_USERNAME: ${{ github.event.issue.user.login }}
         run: |
           npm install -g wrangler
-          cd enter.pollinations.ai
           npm install
+          cd enter.pollinations.ai
           
           echo "Checking registration for $GITHUB_USERNAME..."
           
-          if npx tsx scripts/tier-update-user.ts check-user \
+          if npx tsx src/tier-progression/shared/tier-update-user.ts check-user \
             --githubUsername "$GITHUB_USERNAME" \
             --env production 2>&1 | grep -q "EXISTS"; then
             echo "registered=true" >> $GITHUB_OUTPUT
@@ -84,13 +84,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           GITHUB_USERNAME: ${{ github.event.issue.user.login }}
         run: |
           cd enter.pollinations.ai
           
           echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
-          OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
+          OUTPUT=$(npx tsx src/tier-progression/shared/tier-update-user.ts update-tier \
             --githubUsername "$GITHUB_USERNAME" \
             --tier flower \
             --env production 2>&1) || true
@@ -102,9 +101,9 @@ jobs:
             echo "✅ User already at flower tier or higher - skipping"
             echo "success=skipped" >> $GITHUB_OUTPUT
           elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-            # Verify the tier was actually set correctly in both D1 and Polar
+            # Verify the tier was actually set correctly in D1
             echo "🔍 Verifying tier upgrade for $GITHUB_USERNAME..."
-            VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+            VERIFY_OUTPUT=$(npx tsx src/tier-progression/shared/tier-update-user.ts verify-tier \
               --githubUsername "$GITHUB_USERNAME" \
               --tier flower \
               --env production 2>&1) || true
@@ -166,21 +165,22 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
+                body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **0.4 pollen per hour**!\n\n⏰ **How it works:** Your pollen balance refills every hour. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
               });
               
-              // Update labels - swap to COMPLETE
+              // Remove INCOMPLETE label and close the issue
               try {
                 await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, name: 'TIER-APP-INCOMPLETE' });
               } catch (e) { /* label might not exist */ }
-              
-              await github.rest.issues.addLabels({
+
+              await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                labels: ['TIER-APP-COMPLETE']
+                state: 'closed',
+                state_reason: 'completed'
               });
-              
+
               console.log(`✅ Upgraded ${username} to Flower tier`);
             } else if (!registered) {
               // Still not registered - gentle reminder

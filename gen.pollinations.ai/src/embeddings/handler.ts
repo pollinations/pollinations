@@ -1,0 +1,177 @@
+import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
+import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import {
+    badRequest,
+    inputToGeminiParts,
+    inputToText,
+    normalizeInputs,
+} from "./input.ts";
+import { callOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
+import type { EmbeddingRequest } from "./types.ts";
+import {
+    callGeminiEmbed,
+    extractModalityUsage,
+    syncGoogleEnvironment,
+} from "./vertex.ts";
+
+type EmbeddingData = {
+    object: "embedding";
+    embedding: number[] | string;
+    index: number;
+};
+
+const OPENAI_MAX_DIMENSIONS: Record<string, number> = {
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+};
+
+export async function generateEmbeddings(
+    env: CloudflareBindings,
+    request: EmbeddingRequest,
+    serviceDef: ModelDefinition,
+    responseModel: string = request.model,
+): Promise<Response> {
+    if (serviceDef.provider === "google") {
+        return await generateGeminiEmbeddings(env, request, responseModel);
+    }
+
+    if (serviceDef.provider === "openai") {
+        return await generateOpenAIEmbeddings(env, request, responseModel);
+    }
+
+    throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
+}
+
+async function generateGeminiEmbeddings(
+    env: CloudflareBindings,
+    request: EmbeddingRequest,
+    responseModel: string,
+): Promise<Response> {
+    syncGoogleEnvironment(env);
+    const inputs = normalizeInputs(request.input);
+    const aggregatedUsage: Usage = {};
+
+    const data = await Promise.all(
+        inputs.map(async (singleInput, index) => {
+            const parts = await inputToGeminiParts(singleInput);
+            const result = await callGeminiEmbed(
+                request.model,
+                parts,
+                request.task_type,
+                request.dimensions,
+            );
+            const usage = extractModalityUsage(result);
+
+            addUsage(aggregatedUsage, usage);
+
+            return {
+                object: "embedding" as const,
+                embedding: encodeEmbedding(
+                    result.embedding.values,
+                    request.encoding_format,
+                ),
+                index,
+            };
+        }),
+    );
+
+    return embeddingsResponse(responseModel, data, aggregatedUsage);
+}
+
+async function generateOpenAIEmbeddings(
+    env: CloudflareBindings,
+    request: EmbeddingRequest,
+    responseModel: string,
+): Promise<Response> {
+    if (request.task_type) {
+        badRequest("task_type is only supported by Gemini embedding models");
+    }
+
+    validateOpenAIDimensions(request, responseModel);
+
+    const inputs = normalizeInputs(request.input);
+    const textInputs = inputs.map(inputToText);
+
+    if (textInputs.length === 0) {
+        return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
+    }
+
+    const result = await callOpenAIEmbed(
+        env,
+        request.model,
+        textInputs,
+        request.dimensions,
+    );
+    const usage = extractOpenAIUsage(result);
+
+    const data = [...result.data]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding" as const,
+            embedding: encodeEmbedding(embedding, request.encoding_format),
+            index,
+        }));
+
+    return embeddingsResponse(responseModel, data, usage);
+}
+
+function validateOpenAIDimensions(
+    request: EmbeddingRequest,
+    responseModel: string,
+) {
+    if (!request.dimensions) return;
+
+    const maxDimensions = OPENAI_MAX_DIMENSIONS[request.model];
+
+    if (maxDimensions && request.dimensions > maxDimensions) {
+        badRequest(
+            `${responseModel} supports dimensions up to ${maxDimensions}`,
+        );
+    }
+}
+
+function encodeEmbedding(
+    values: number[],
+    encodingFormat: EmbeddingRequest["encoding_format"],
+): number[] | string {
+    if (encodingFormat === "base64") {
+        return Buffer.from(new Float32Array(values).buffer).toString("base64");
+    }
+
+    return values;
+}
+
+function addUsage(target: Usage, usage: Usage) {
+    for (const [key, value] of Object.entries(usage) as [
+        keyof Usage,
+        number,
+    ][]) {
+        target[key] = (target[key] ?? 0) + value;
+    }
+}
+
+function embeddingsResponse(
+    responseModel: string,
+    data: EmbeddingData[],
+    usage: Usage,
+): Response {
+    const promptTokens = Object.values(usage).reduce(
+        (sum, value) => sum + value,
+        0,
+    );
+
+    return new Response(
+        JSON.stringify({
+            object: "list",
+            data,
+            model: responseModel,
+            usage: { prompt_tokens: promptTokens, total_tokens: promptTokens },
+        }),
+        {
+            headers: {
+                "Content-Type": "application/json",
+                ...buildUsageHeaders(responseModel, usage),
+            },
+        },
+    );
+}

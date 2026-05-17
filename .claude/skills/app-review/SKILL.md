@@ -11,15 +11,19 @@ Process app submissions from GitHub issues. Validation (registration, duplicates
 
 ## Categories
 
-Pick the best fit: `Creative`, `Chat`, `Games`, `Dev_Tools`, `Vibes`, `Social_Bots`, `Learn`
+Pick the best fit: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`
 
 ---
 
 ## APPS.md Row Format
 
 ```
-| EMOJI | Name | Web_URL | Description (~80 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | YYYY-MM-DD |
+| EMOJI | Name | Web_URL | Description (~200 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |
 ```
+
+- **Submitted_Date**: Issue creation date (when user submitted)
+- **Issue_URL**: Link to original GitHub issue
+- **Approved_Date**: PR merge date (when app was approved)
 
 ---
 
@@ -48,15 +52,15 @@ git fetch origin main
 # Else: git checkout -b auto/app-${ISSUE_NUMBER}-slug origin/main
 
 # 5. Add row
-export NEW_ROW="| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | $(date +%Y-%m-%d) |"
+export NEW_ROW="| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | SUBMITTED_DATE | ISSUE_URL | $(date +%Y-%m-%d) |"
 node .github/scripts/app-prepend-row.js
 node .github/scripts/app-update-readme.js
 
 # 6. Commit and push
 git add -A && git commit -m "Add NAME to CATEGORY" && git push origin HEAD --force-with-lease
 
-# 7. Create PR if new (label: TIER-APP-REVIEW-PR)
-gh pr create --title "Add NAME to CATEGORY" --body "Fixes #$ISSUE_NUMBER" --label "TIER-APP-REVIEW-PR"
+# 7. Create PR if new
+gh pr create --title "Add NAME to CATEGORY" --body "Fixes #$ISSUE_NUMBER"
 
 # 8. Update issue label
 gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --add-label "TIER-APP-REVIEW"
@@ -70,5 +74,6 @@ gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --add-label "TIER-APP-REVI
 |-------|---------|
 | `TIER-APP` | New submission |
 | `TIER-APP-INCOMPLETE` | Waiting for user fix |
-| `TIER-APP-REVIEW` | PR created |
+| `TIER-APP-REVIEW` | AI reviewed, awaiting maintainer |
+| `TIER-APP-APPROVED` | Maintainer approved, PR created |
 | `TIER-APP-REJECTED` | Rejected (duplicate, etc.) |

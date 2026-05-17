@@ -1,4 +1,4 @@
-import type { Usage, UsageType } from "./registry.js";
+import type { Usage, UsageType } from "./registry.ts";
 
 /**
  * Mapping from Usage field names to HTTP header names
@@ -7,7 +7,9 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
+    promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
+    promptVideoTokens: "x-usage-prompt-video-tokens",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
@@ -25,19 +27,21 @@ export function openaiUsageToUsage(openaiUsage: {
     completion_tokens: number;
     total_tokens: number;
     prompt_tokens_details?: {
-        cached_tokens?: number;
-        audio_tokens?: number;
+        cached_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
     } | null;
     completion_tokens_details?: {
-        reasoning_tokens?: number;
-        audio_tokens?: number;
-        accepted_prediction_tokens?: number;
-        rejected_prediction_tokens?: number;
+        reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
     const promptDetailTokens =
         (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.audio_tokens || 0);
+        (openaiUsage.prompt_tokens_details?.audio_tokens || 0) +
+        (openaiUsage.prompt_tokens_details?.image_tokens || 0);
 
     const completionDetailTokens =
         (openaiUsage.completion_tokens_details?.accepted_prediction_tokens ||
@@ -55,6 +59,8 @@ export function openaiUsageToUsage(openaiUsage: {
             openaiUsage.prompt_tokens_details?.cached_tokens || 0,
         promptAudioTokens: 
             openaiUsage.prompt_tokens_details?.audio_tokens || 0,
+        promptImageTokens:
+            openaiUsage.prompt_tokens_details?.image_tokens || 0,
         completionTextTokens:
             openaiUsage.completion_tokens - completionDetailTokens,
         completionAudioTokens:
@@ -97,13 +103,79 @@ export function parseUsageHeaders(
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    // Iterate in reverse to parse headers back to usage
+    const FLOAT_USAGE_TYPES: Set<string> = new Set([
+        "promptAudioSeconds",
+        "completionAudioSeconds",
+        "completionVideoSeconds",
+    ]);
+
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = parseInt(value, 10);
+            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
+                ? parseFloat(value)
+                : parseInt(value, 10);
         }
     }
 
     return usage;
+}
+
+/**
+ * Helper for image services: create TokenUsage with only image tokens
+ */
+export function createImageTokenUsage(completionImageTokens: number): Usage {
+    return {
+        completionImageTokens,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video seconds (Veo)
+ */
+export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
+    return {
+        completionVideoSeconds,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video tokens (Seedance)
+ */
+export function createVideoTokenUsage(completionVideoTokens: number): Usage {
+    return {
+        completionVideoTokens,
+    };
+}
+
+/**
+ * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
+ * ElevenLabs bills by character count, so we use completionAudioTokens
+ */
+export function createAudioTokenUsage(completionAudioTokens: number): Usage {
+    return {
+        completionAudioTokens,
+    };
+}
+
+/**
+ * Helper for audio transcription (Whisper): create Usage with audio seconds
+ * Used for duration-based billing (e.g., OVH Whisper at $0.0000445/sec)
+ */
+export function createAudioSecondsUsage(promptAudioSeconds: number): Usage {
+    return {
+        promptAudioSeconds,
+    };
+}
+
+/**
+ * Helper for music generation: create Usage with completion audio seconds
+ * Used for duration-based billing (e.g., ElevenLabs Music at $0.005/sec)
+ */
+export function createCompletionAudioSecondsUsage(
+    completionAudioSeconds: number,
+): Usage {
+    return {
+        completionAudioSeconds,
+    };
 }

@@ -1,15 +1,24 @@
 // PlayPage content configuration
 
+// Keys that should never be translated (code-adjacent placeholders, API labels)
+export const PLAY_PAGE_NO_TRANSLATE = new Set([
+    "urlPlaceholderPrompt", // URL placeholder shown in code — must stay in English
+    "urlPlaceholderText", // URL placeholder shown in code — must stay in English
+    "urlApiKeyPlaceholder", // API key placeholder in code example
+    "urlApiKeyParam", // URL param name "key"
+    "imageAltGenerated", // generic alt text for generated image
+    "imageAltReferencePrefix", // "Reference " prefix in alt text
+]);
+
 export const PLAY_PAGE = {
+    pageTitle: "play",
+    pageDescription: "playground for poking at models",
     // Page titles and navigation
     createTitle: "Create",
-    watchTitle: "Watch",
-    createDescription:
-        "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
-    feedDescription:
-        "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
-    toggleWatchOthers: "Watch what others are making",
-    toggleBackToPlay: "Back to Play",
+    subtitlePrefix: "🎛️ A",
+    subtitleBold: "playground",
+    subtitleSuffix: " for poking at models. 🧪",
+    pricingLinkText: "See pricing",
 
     // PlayGenerator UI labels
     modelsLabel: "Models",
@@ -18,6 +27,8 @@ export const PLAY_PAGE = {
     promptLabel: "Prompt",
     imagePlaceholder: "Describe the image you want...",
     textPlaceholder: "Enter your question or prompt...",
+    audioPlaceholder: "Enter the text to speak...",
+    videoPlaceholder: "Describe the video you want...",
     addImagesLabel: "Add Images (Optional)",
     upToFourLabel: "up to 4",
 
@@ -29,11 +40,22 @@ export const PLAY_PAGE = {
     enhanceLabel: "Enhance",
     logoLabel: "Logo",
 
+    // Reference images
+    referenceImagesLabel: "Reference images",
+    referenceImagesCount: "/4 images",
+    imageUrlPlaceholder: "Image URL",
+    uploadImageLabel: "📎 Upload image",
+    uploadingLabel: "Uploading…",
+    uploadTooLarge: "Image too large — please use an image under 5MB.",
+    uploadFailed: "Image upload failed. Please try again.",
+
     // Button states
     generatingText: "Generating...",
     generateImageButton: "Generate Image",
     generateTextButton: "Generate Text",
     generateAudioButton: "Generate Audio",
+    generateVideoButton: "Generate Video",
+    loginToGenerateButton: "Log in to generate",
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",
@@ -46,16 +68,6 @@ export const PLAY_PAGE = {
     // Voice selector
     voiceLabel: "Voice",
 
-    // Image feed
-    waitingForImages: "Waiting for images...",
-    waitingForContent: "Waiting for content...",
-    listeningTo: "Listening to",
-    feedPromptLabel: "Prompt",
-    feedModelLabel: "Model",
-    noPromptAvailable: "No prompt available",
-    noPromptFallback: "No prompt",
-    noModelFallback: "-",
-
     // Auth
     loginButton: "Login",
     logoutButton: "Logout",
@@ -65,9 +77,9 @@ export const PLAY_PAGE = {
     pollenUnit: "Pollen",
 
     // Login CTA
-    loginCtaText: "Login to unlock all models · Get API keys at",
-    loginCtaLink: "enter.pollinations.ai",
-    loggedInCtaText: "🔓 Selected models are now unlocked!",
+    loginCtaLogin: "Login",
+    loginCtaSuffix: "to unlock all models and get API keys",
+    loggedInCtaText: "Selected models are now unlocked!",
 
     // Validation
     enterPromptFirst: "First, enter a prompt",
@@ -75,11 +87,48 @@ export const PLAY_PAGE = {
     // Gated model tooltip
     gatedModelTooltip:
         "Login to unlock · Get API keys at enter.pollinations.ai",
-
-    // Reference images
-    imageUrlPlaceholder: "Image URL",
+    gatedModelTooltipLoggedIn:
+        "Top up your pollen balance to unlock this model · enter.pollinations.ai",
 
     // Error messages
     somethingWentWrong: "Something went wrong",
     noResponse: "No response",
+
+    // Integrate section (API URL + Auth combined)
+    integrateTitle: "Integrate",
+    integrateIntro:
+        "Simple GET URLs for image, text, and audio. Embed in <img> tags, fetch, or open in a browser. An API key is required for all requests.",
+    copyButton: "Copy",
+    copiedLabel: "Copied!",
+    fullApiDocsButton: "Full API Docs",
+    agentPromptButton: "Agent Prompt",
+
+    // Authentication
+    authTitle: "Authentication",
+    authIntro:
+        "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
+    secretLabel: "Secret",
+    secretFeature1: "🔒 Server-side only",
+    secretFeature2: "🚀 No rate limits",
+    secretWarning:
+        "Never expose in client-side code, git repos, or public URLs",
+    appKeyLabel: "App Key",
+    appKeyFeature1: "🌼 Identifies your app in the BYOP consent screen",
+    appKeyFeature2: "📈 Traffic attribution",
+    appKeyNote:
+        "For developers building apps where users bring their own Pollen. Create one at enter.pollinations.ai.",
+    byopLabel: "Bring Your Own Pollen",
+    byopDescription: "Building an app? Let users bring their own Pollen.",
+    getKeyButton: "Get Your Key",
+    byopButton: "Learn more",
+
+    // URL display — not translated (code examples)
+    urlPlaceholderPrompt: "your-prompt-here",
+    urlPlaceholderText: "your-text-here",
+    urlApiKeyPlaceholder: "YOUR_API_KEY",
+    urlApiKeyParam: "key",
+
+    // Alt text
+    imageAltGenerated: "Generated",
+    imageAltReferencePrefix: "Reference",
 };

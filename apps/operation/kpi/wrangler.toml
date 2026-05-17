@@ -1,0 +1,23 @@
+name = "myceli-kpi"
+# account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
+main = "src/worker/index.ts"
+compatibility_date = "2024-01-01"
+workers_dev = true
+
+# Custom domain not yet configured in Cloudflare
+# routes = [
+#     { pattern = "kpi.myceli.ai", custom_domain = true }
+# ]
+
+[site]
+bucket = "./dist"
+
+[vars]
+TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
+POLAR_API = "https://api.polar.sh"
+GITHUB_REPO = "pollinations/pollinations"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# - TINYBIRD_READ_TOKEN (read-only)
+# - POLAR_ACCESS_TOKEN (read-only)
+# - GITHUB_TOKEN (optional, for higher rate limits)

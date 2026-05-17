@@ -19,7 +19,7 @@ Must run from the `pollinations` repo root.
 
 | Environment | Gateway (Cloudflare Worker) | Text/Image Services (EC2) |
 |-------------|----------------------------|---------------------------|
-| **Production** | `enter.pollinations.ai` | `3.80.56.235` (ports 16384/16385) |
+| **Production** | `enter.pollinations.ai` | `54.147.14.220` (ports 16384/16385) |
 | **Staging** | `staging.enter.pollinations.ai` | `44.222.254.250` (ports 16384/16385) |
 
 ---
@@ -30,15 +30,15 @@ Add to `~/.ssh/config`:
 ```
 # Production instance
 Host enter-services
-  HostName 3.80.56.235
+  HostName 54.147.14.220
   User ubuntu
-  IdentityFile ~/.ssh/enter-services-shared-key
+  IdentityFile ~/.ssh/enter-services-shared
 
 # Staging instance
 Host enter-services-staging
   HostName 44.222.254.250
   User ubuntu
-  IdentityFile ~/.ssh/enter-services-staging-key
+  IdentityFile ~/.ssh/enter-services-staging
 ```
 
 ---
@@ -116,11 +116,9 @@ bash enter.pollinations.ai/scripts/setup-services.sh /home/ubuntu/pollinations
 
 # 5. From your LOCAL machine - decrypt and copy env files
 cd /path/to/pollinations
-sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > /tmp/text.env
-sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env
-scp /tmp/text.env enter-services-staging:/home/ubuntu/pollinations/text.pollinations.ai/.env
+sops --output-type dotenv -d gen.pollinations.ai/secrets/prod.vars.json > /tmp/image.env
 scp /tmp/image.env enter-services-staging:/home/ubuntu/pollinations/image.pollinations.ai/.env
-rm /tmp/text.env /tmp/image.env
+rm /tmp/image.env
 
 # 6. Restart services
 ssh enter-services-staging "sudo systemctl restart text-pollinations.service image-pollinations.service"

@@ -4,9 +4,7 @@ import {
     InstagramIcon,
     LinkedinIcon,
     RedditIcon,
-    TiktokIcon,
     XIcon,
-    YoutubeIcon,
 } from "../../ui/assets/SocialIcons";
 
 export const SOCIAL_LINKS = {
@@ -45,24 +43,10 @@ export const SOCIAL_LINKS = {
         width: "20px",
         height: "20px",
     },
-    youtube: {
-        label: "YouTube",
-        icon: YoutubeIcon,
-        url: "https://www.youtube.com/c/pollinations",
-        width: "28px",
-        height: "28px",
-    },
-    tiktok: {
-        label: "Tiktok",
-        icon: TiktokIcon,
-        url: "https://tiktok.com/@pollinations.ai",
-        width: "27px",
-        height: "27px",
-    },
     reddit: {
         label: "Reddit",
         icon: RedditIcon,
-        url: "https://www.reddit.com/r/pollinations/",
+        url: "https://www.reddit.com/r/pollinations_ai/",
         width: "24px",
         height: "24px",
     },
@@ -70,8 +54,32 @@ export const SOCIAL_LINKS = {
 
 // Additional links (not rendered as social icons)
 export const LINKS = {
+    enter: "https://enter.pollinations.ai",
+    enterDocs: "https://gen.pollinations.ai/docs",
+    enterApiDocs: "https://gen.pollinations.ai/docs",
+    enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
+    enterModels: "https://enter.pollinations.ai#models",
+    apidocsRaw:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:
         "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+    byopDocs:
+        "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
+    githubFork: "https://github.com/pollinations/pollinations/fork",
+    githubGoodFirstIssue:
+        "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
+    githubNewIssue: "https://github.com/pollinations/pollinations/issues/new",
+    docsText: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation",
+    docsStreaming:
+        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
+    docsImage:
+        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image-generation",
+    docsAudio: "https://gen.pollinations.ai/docs#tag/-audio-generation",
+    docsAuth: "https://gen.pollinations.ai/docs#description/-authentication",
+    highlightsSource:
+        "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+    polliCli:
+        "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

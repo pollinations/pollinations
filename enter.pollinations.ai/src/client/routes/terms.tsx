@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
-import { LegalPageLayout } from "../components/LegalPageLayout";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/terms")({
-    component: TermsComponent,
+    beforeLoad: () => {
+        throw redirect({ href: "https://pollinations.ai/terms" });
+    },
+    component: RedirectComponent,
 });
 
-function TermsComponent() {
-    return <LegalPageLayout markdown={termsMarkdown} currentPage="terms" />;
+function RedirectComponent() {
+    return null;
 }

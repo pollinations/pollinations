@@ -1,3 +1,4 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -9,35 +10,50 @@ import { logger } from "./middleware/logger.ts";
 import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { appLookupRoutes } from "./routes/app-lookup.ts";
+import { customerRoutes } from "./routes/customer.ts";
+import { deviceRoutes } from "./routes/device.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
-import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
-import { polarRoutes } from "./routes/polar.ts";
-import { proxyRoutes } from "./routes/proxy.ts";
+import { stripeRoutes } from "./routes/stripe.ts";
+import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { webhooksRoutes } from "./routes/webhooks.ts";
-import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
-    return await createAuth(c.env).handler(c.req.raw);
+    return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
 });
 
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
-    .route("/polar", polarRoutes)
-    .route("/nowpayments", nowpaymentsRoutes)
+    .route("/customer", customerRoutes)
+    .route("/stripe", stripeRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
+    .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
-    .route("/webhooks", webhooksRoutes)
-    .route("/webhooks", webhooksCryptoRoutes)
+    .route("/device", deviceRoutes)
+    .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
-    .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes);
+    .route("/model-stats", modelStatsRoutes);
 
 export type ApiRoutes = typeof api;
 
-const docsRoutes = createDocsRoutes(api);
+function stripTrailingSlash(path: string): string {
+    return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+function isApiDocsPath(path: string): boolean {
+    return path === "/api/docs" || path.startsWith("/api/docs/");
+}
+
+function redirectLegacyDocs(c: Context<Env>): Response {
+    const url = new URL(c.req.url);
+    url.protocol = "https:";
+    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+    url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
+    url.pathname = stripTrailingSlash(url.pathname);
+    return c.redirect(url.toString(), 301);
+}
 
 const app = new Hono<Env>()
     // Permissive CORS for all API endpoints (all require API keys for auth)
@@ -46,17 +62,38 @@ const app = new Hono<Env>()
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: ["Content-Type", "Authorization"],
+            allowHeaders: [], // reflect Access-Control-Request-Headers (permissive; origin already "*")
             exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),
     )
     .use("*", requestId())
     .use("*", logger)
-    .route("/api", api)
-    .route("/api/docs", docsRoutes);
+    // Prevent search engines from indexing API responses (except docs)
+    .use("/api/*", async (c, next) => {
+        await next();
+        if (!isApiDocsPath(c.req.path)) {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
+    })
+    .route("/api/docs", createDocsRoutes(api))
+    .all("/api/docs", redirectLegacyDocs)
+    .all("/api/docs/", redirectLegacyDocs)
+    .all("/api/docs/*", redirectLegacyDocs)
+    .all("/api/generate/*", (c) => {
+        const url = new URL(c.req.url);
+        url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+        url.pathname = url.pathname.replace(/^\/api\/generate/, "");
+        c.header("Deprecation", "true");
+        c.header(
+            "Link",
+            '<https://gen.pollinations.ai>; rel="successor-version"',
+        );
+        return c.redirect(url.toString(), 308);
+    })
+    .route("/api", api);
 
-app.notFound(async (c) => {
+app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);
 });
 
@@ -64,9 +101,14 @@ app.onError(handleError);
 
 export type AppRoutes = typeof app;
 
-// Export Durable Object for pollen-based rate limiting
-export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
-
 export default {
     fetch: app.fetch,
+    async scheduled(
+        _event: ScheduledController,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) {
+        const { runTierRefill } = await import("./routes/admin.ts");
+        await runTierRefill(env, ctx);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

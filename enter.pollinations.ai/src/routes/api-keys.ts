@@ -1,28 +1,108 @@
+import {
+    createApiKeyForUser,
+    validateRedirectUriFormat,
+} from "@shared/auth/api-key-creation.ts";
+import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { parseMetadata } from "./metadata-utils.ts";
+
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
+function setPrivateNoStoreHeaders(c: {
+    header: (name: string, value: string) => void;
+}): void {
+    c.header("Cache-Control", "private, no-store, max-age=0");
+    c.header("Pragma", "no-cache");
+}
 
 /**
- * Parse metadata that may be double-serialized by better-auth.
- * Handles both: '{"key":"value"}' and '"{\\"key\\":\\"value\\"}"'
+ * Build updated permissions object based on changes.
+ * Returns undefined if no permission fields were provided.
  */
-function parseMetadata(metadata: string): Record<string, unknown> | null {
+function buildUpdatedPermissions(
+    existing: Record<string, string[]>,
+    allowedModels?: string[] | null,
+    accountPermissions?: string[] | null,
+): Record<string, string[]> | undefined {
+    if (allowedModels === undefined && accountPermissions === undefined) {
+        return undefined;
+    }
+    const updated = { ...existing };
+    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(updated, "account", accountPermissions);
+    return updated;
+}
+
+function applyPermissionField(
+    target: Record<string, string[]>,
+    key: string,
+    value: string[] | null | undefined,
+): void {
+    if (value === undefined) return;
+    if (value === null) {
+        delete target[key];
+    } else {
+        target[key] = value;
+    }
+}
+
+/**
+ * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ */
+function parsePermissions(raw: string): Record<string, string[]> | null {
     try {
-        let parsed = JSON.parse(metadata);
-        if (typeof parsed === "string") {
-            parsed = JSON.parse(parsed);
-        }
-        return parsed;
+        const parsed = JSON.parse(raw);
+        return Object.keys(parsed).length > 0 ? parsed : null;
     } catch {
         return null;
     }
+}
+
+/**
+ * Verify the authenticated user owns the API key, returning the key row.
+ * Throws 404 if not found or not owned by the user.
+ */
+async function requireOwnedKey(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    keyId: string,
+    userId: string,
+) {
+    const key = await db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, keyId),
+            eq(schema.apikey.userId, userId),
+        ),
+    });
+    if (!key) {
+        throw new HTTPException(404, { message: "API key not found" });
+    }
+    return key;
+}
+
+/**
+ * Update metadata on an API key row, merging with existing metadata.
+ */
+async function updateKeyMetadata(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    keyId: string,
+    metadataPatch: Record<string, unknown>,
+    existingRaw: string | null | undefined,
+): Promise<Record<string, unknown>> {
+    const merged = { ...parseMetadata(existingRaw), ...metadataPatch };
+    await db
+        .update(schema.apikey)
+        .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
+        .where(eq(schema.apikey.id, keyId));
+    return merged;
 }
 
 /**
@@ -31,9 +111,10 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: ["flux", "openai"] = restrict to specific models
- * - account: ["balance", "usage"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
+    name: z.string().optional().describe("Name for the API key"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -48,7 +129,76 @@ const UpdateApiKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe('Account permissions: ["balance", "usage"]. null = none'),
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
+    expiresAt: z
+        .string()
+        .datetime()
+        .nullable()
+        .optional()
+        .transform((val) => (val ? new Date(val) : val))
+        .describe("Expiration date for the key. null = no expiry"),
+});
+
+const CreateApiKeySchema = z.object({
+    name: z.string().min(1).max(253).describe("Name for the API key"),
+    type: z
+        .enum(["secret", "publishable"])
+        .optional()
+        .default("secret")
+        .describe("Key type: secret (sk_) or publishable (pk_)"),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * SECONDS_PER_DAY)
+        .optional()
+        .describe("Expiry in seconds from now (max 365 days)"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models allowed"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap for this key. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+/**
+ * Schema for updating metadata on an API key.
+ * Only caller-owned fields are accepted. Server-controlled fields like
+ * keyType, createdVia, and plaintextKey cannot be modified after creation.
+ */
+const UrlWithSchemeSchema = z.string().refine(
+    (val) => {
+        if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val)) return false;
+        try {
+            return new URL(val).hash === "";
+        } catch {
+            return false;
+        }
+    },
+    {
+        message:
+            "Must be a valid URL with a scheme and no fragment (e.g. https://...)",
+    },
+);
+
+const UpdateMetadataSchema = z.object({
+    description: z.string().optional(),
+    redirectUris: z.array(UrlWithSchemeSchema).optional(),
+    earningsEnabled: z.boolean().optional(),
 });
 
 /**
@@ -59,13 +209,53 @@ const UpdateApiKeySchema = z.object({
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
+     * Create an API key for the authenticated dashboard/BYOP session.
+     * Centralizes key creation so validation happens before Better Auth creates
+     * the key, avoiding the old create-then-metadata-update flow.
+     */
+    .post(
+        "/",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Create an API key for the current session user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", CreateApiKeySchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const createdVia =
+                typeof input.metadata?.redirectUri === "string" ||
+                typeof input.metadata?.deviceUserCode === "string"
+                    ? "redirect-auth"
+                    : "dashboard";
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: input.name,
+                type: input.type,
+                expiresIn: input.expiresIn,
+                allowedModels: input.allowedModels,
+                pollenBudget: input.pollenBudget,
+                accountPermissions: input.accountPermissions,
+                metadata: input.metadata,
+                allowAccountKeysPermission: true,
+                defaultCreatedVia: createdVia,
+            });
+
+            return c.json(created);
+        },
+    )
+    /**
      * List all API keys for the current user with pollenBalance from D1.
      * Extends better-auth's native list with custom D1 columns.
      */
     .get(
         "/",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description:
                 "List all API keys for the current user with pollenBalance.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
@@ -73,6 +263,7 @@ export const apiKeysRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
+            setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
                 where: eq(schema.apikey.userId, user.id),
@@ -88,10 +279,11 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? parsePermissions(key.permissions)
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    byopClientKeyId: key.byopClientKeyId,
                 })),
             });
         },
@@ -103,7 +295,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -112,82 +304,109 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels, pollenBudget, accountPermissions } =
-                c.req.valid("json");
+            const {
+                name,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                expiresAt,
+            } = c.req.valid("json");
 
-            // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
+            const existingKey = await requireOwnedKey(db, id, user.id);
 
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
+            const existingPermissions = existingKey.permissions
+                ? JSON.parse(existingKey.permissions as string)
+                : {};
 
-            // Build permissions object
-            // Format: { models?: string[], account?: string[] }
-            const existingPermissions =
-                (existingKey.permissions as Record<string, string[]> | null) ??
-                {};
-            let newPermissions: Record<string, string[]> | null | undefined;
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Dashboard-only endpoint, so "keys" is allowed here.
+            const sanitizedAccountPerms =
+                accountPermissions === undefined
+                    ? undefined
+                    : sanitizeAuthorizeAccountPermissions(accountPermissions);
 
-            // Handle allowedModels: null = remove, [...] = set
-            if (allowedModels === null) {
-                newPermissions = { ...existingPermissions };
-                delete newPermissions.models;
-            } else if (allowedModels && allowedModels.length > 0) {
-                newPermissions = {
-                    ...existingPermissions,
-                    models: allowedModels,
-                };
-            }
+            const updatedPermissions = buildUpdatedPermissions(
+                existingPermissions,
+                allowedModels,
+                sanitizedAccountPerms,
+            );
 
-            // Handle accountPermissions: null = remove, [...] = set
-            if (accountPermissions === null) {
-                newPermissions = newPermissions ?? { ...existingPermissions };
-                delete newPermissions.account;
-            } else if (accountPermissions && accountPermissions.length > 0) {
-                newPermissions = newPermissions ?? { ...existingPermissions };
-                newPermissions.account = accountPermissions;
-            }
-
-            // Only call better-auth's updateApiKey if we have permission changes
-            // (it throws "No values to update" if permissions is undefined)
-            if (newPermissions !== undefined) {
+            if (updatedPermissions) {
                 await authClient.api.updateApiKey({
                     body: {
                         keyId: id,
                         userId: user.id,
-                        permissions: newPermissions,
+                        permissions: updatedPermissions,
                     },
                 });
             }
 
-            // Update pollenBalance directly in D1 if provided
-            // null = remove budget (unlimited), number = set budget
-            if (pollenBudget !== undefined) {
+            const d1Updates: Record<string, string | number | Date | null> = {};
+            if (name !== undefined) d1Updates.name = name;
+            if (pollenBudget !== undefined)
+                d1Updates.pollenBalance = pollenBudget;
+            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+
+            if (Object.keys(d1Updates).length > 0) {
                 await db
                     .update(schema.apikey)
-                    .set({
-                        pollenBalance: pollenBudget,
-                    })
+                    .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
             }
 
-            // Fetch updated key to return current state
-            const finalKey = await db.query.apikey.findFirst({
+            const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
             return c.json({
-                id: finalKey?.id ?? id,
-                name: finalKey?.name,
-                permissions: finalKey?.permissions,
-                pollenBalance: finalKey?.pollenBalance ?? null,
+                id: updated?.id ?? id,
+                name: updated?.name,
+                permissions: updated?.permissions,
+                pollenBalance: updated?.pollenBalance ?? null,
+                expiresAt: updated?.expiresAt ?? null,
             });
+        },
+    )
+    /**
+     * Update metadata for an API key directly via DB.
+     */
+    .post(
+        "/:id/metadata",
+        describeRoute({
+            tags: ["Account"],
+            description: "Update metadata for an API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", UpdateMetadataSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const metadataUpdate = c.req.valid("json");
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+
+            if (metadataUpdate.redirectUris) {
+                for (const uri of metadataUpdate.redirectUris) {
+                    validateRedirectUriFormat(uri);
+                }
+            }
+            if (
+                metadataUpdate.earningsEnabled !== undefined &&
+                existingKey.prefix !== "pk"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
+            const metadata = await updateKeyMetadata(
+                db,
+                id,
+                metadataUpdate,
+                existingKey.metadata,
+            );
+            return c.json({ id, metadata });
         },
     );

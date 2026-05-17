@@ -20,21 +20,21 @@ export const RoadmapItem = React.forwardRef<HTMLDivElement, RoadmapItemProps>(
             <div
                 ref={ref}
                 className={cn(
-                    "flex items-start gap-4 p-4 rounded-sub-card bg-surface-card border-l-4 border-border-highlight",
+                    "flex items-start gap-4 p-4 rounded-sub-card bg-cream border-l-4 border-dark",
                     className,
                 )}
                 {...props}
             >
-                <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-button-focus-ring/20 text-xl">
+                <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-white text-xl">
                     <span role="img" aria-label={title}>
                         {icon}
                     </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                    <p className="font-headline text-xs font-black text-dark mb-1">
                         {title}
                     </p>
-                    <p className="font-body text-xs text-text-body-secondary leading-relaxed">
+                    <p className="font-body text-xs text-muted leading-relaxed">
                         {description}
                     </p>
                 </div>

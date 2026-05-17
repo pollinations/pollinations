@@ -1,0 +1,20 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    GitHub user IDs (numeric, stable across renames) of users who have ever
+    completed a paid Stripe checkout. Used by
+    .github/scripts/project-manager.py to flag support issues from paid
+    customers as Urgent priority.
+
+NODE paid_customers_node
+SQL >
+    SELECT DISTINCT u.github_id AS github_id
+    FROM stripe_event s
+    INNER JOIN d1_user u ON s.user_id = u.id
+    WHERE s.event_type = 'checkout.session.completed'
+        AND s.payment_status = 'paid'
+        AND s.livemode = 1
+        AND u.github_id IS NOT NULL
+        AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
+
+TYPE endpoint

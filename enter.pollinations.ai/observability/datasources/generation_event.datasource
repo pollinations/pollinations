@@ -1,4 +1,5 @@
-TOKEN generation_event_append APPEND
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
 
 DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
@@ -28,6 +29,10 @@ SCHEMA >
 `api_key_id`            String                  `json:$.apiKeyId` DEFAULT 'undefined',
 `api_key_name`          String                  `json:$.apiKeyName` DEFAULT 'undefined',
 `api_key_type`          LowCardinality(String)  `json:$.apiKeyType` DEFAULT 'undefined',
+`api_key_created_via`   LowCardinality(String)  `json:$.apiKeyCreatedVia` DEFAULT 'undefined',
+`api_key_created_for_app` String                `json:$.apiKeyCreatedForApp` DEFAULT 'undefined',
+`api_key_created_for_user_id` String            `json:$.apiKeyCreatedForUserId` DEFAULT 'undefined',
+`api_key_client_id`     String                  `json:$.apiKeyClientId` DEFAULT 'undefined',
 
 -- Meter
 `selected_meter_id`     LowCardinality(String)  `json:$.selectedMeterId` DEFAULT 'undefined',
@@ -50,24 +55,32 @@ SCHEMA >
 `token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
 `token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
 `token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
+`token_price_prompt_video`         Float64  `json:$.tokenPricePromptVideo` DEFAULT 0,
 `token_price_completion_text`      Float64  `json:$.tokenPriceCompletionText` DEFAULT 0,
 `token_price_completion_reasoning` Float64  `json:$.tokenPriceCompletionReasoning` DEFAULT 0,
 `token_price_completion_audio`     Float64  `json:$.tokenPriceCompletionAudio` DEFAULT 0,
 `token_price_completion_image`     Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
+`token_price_completion_video_seconds` Float64 `json:$.tokenPriceCompletionVideoSeconds` DEFAULT 0,
+`token_price_completion_video_tokens`  Float64 `json:$.tokenPriceCompletionVideoTokens` DEFAULT 0,
 
 -- Usage
 `token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
 `token_count_prompt_audio`         UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
 `token_count_prompt_cached`        UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,
 `token_count_prompt_image`         UInt32   `json:$.tokenCountPromptImage` DEFAULT 0,
+`token_count_prompt_video`         UInt32   `json:$.tokenCountPromptVideo` DEFAULT 0,
 `token_count_completion_text`      UInt32   `json:$.tokenCountCompletionText` DEFAULT 0,
 `token_count_completion_reasoning` UInt32   `json:$.tokenCountCompletionReasoning` DEFAULT 0,
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
+`token_count_completion_video_seconds` UInt32 `json:$.tokenCountCompletionVideoSeconds` DEFAULT 0,
+`token_count_completion_video_tokens`  UInt32 `json:$.tokenCountCompletionVideoTokens` DEFAULT 0,
 
 -- Totals
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
+`dev_price`     Float64 `json:$.devPrice` DEFAULT 0,
+`markup_rate` Float64 `json:$.markupRate` DEFAULT 0,
 
 -- Prompt Moderation
 `moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
@@ -98,76 +111,11 @@ SCHEMA >
 `error_stack`                String                  `json:$.errorStack` DEFAULT 'undefined',
 `error_details`              String                  `json:$.errorDetails` DEFAULT 'undefined',
 
-ENGINE "MergeTree" 
+-- Network
+`ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined'
+
+ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
 ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
-
-FORWARD_QUERY >
-  SELECT 
-    event_id,
-    event_processing_id,
-    request_id,
-    request_path,
-    start_time,
-    end_time,
-    response_time,
-    response_status,
-    environment,
-    event_type,
-    user_id,
-    user_tier,
-    user_github_id,
-    user_github_username,
-    api_key_id,
-    api_key_name,
-    api_key_type,
-    selected_meter_id, 
-    selected_meter_slug, 
-    balances,
-    referrer_url,
-    referrer_domain,
-    model_requested,
-    resolved_model_requested,
-    model_used,
-    model_provider_used,
-    is_billed_usage,
-    token_price_prompt_text,
-    token_price_prompt_cached,
-    token_price_prompt_audio,
-    token_price_prompt_image,
-    token_price_completion_text,
-    token_price_completion_reasoning,
-    token_price_completion_audio,
-    token_price_completion_image,
-    token_count_prompt_text,
-    token_count_prompt_audio,
-    token_count_prompt_cached,
-    token_count_prompt_image,
-    token_count_completion_text,
-    token_count_completion_reasoning,
-    token_count_completion_audio,
-    token_count_completion_image,
-    total_cost,
-    total_price,
-    moderation_prompt_hate_severity,
-    moderation_prompt_self_harm_severity,
-    moderation_prompt_sexual_severity,
-    moderation_prompt_violence_severity,
-    moderation_prompt_jailbreak_detected,
-    moderation_completion_hate_severity,
-    moderation_completion_self_harm_severity,
-    moderation_completion_sexual_severity,
-    moderation_completion_violence_severity,
-    moderation_completion_protected_material_code_detected,
-    moderation_completion_protected_material_text_detected,
-    cache_hit,
-    cache_type,
-    cache_semantic_similarity,
-    cache_semantic_threshold,
-    cache_key,
-    error_response_code,
-    error_source,
-    error_message,
-    error_stack,
-    error_details

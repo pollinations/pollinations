@@ -51,12 +51,16 @@ async def send_heartbeat():
     if public_ip:
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
-            url = f"http://{public_ip}:{port}"
+            url = f"https://{public_ip}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
+            register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
+            token = os.getenv("PLN_GPU_TOKEN", "")
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    'https://image.pollinations.ai/register',
-                    json={'url': url, 'type': service_type}
+                    register_url,
+                    json={'url': url, 'type': service_type},
+                    headers=headers,
                 ) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")
@@ -81,7 +85,7 @@ async def periodic_heartbeat():
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-SPAN_MODEL_PATH = "model_cache/span/2x-NomosUni_span_multijpg.pth"
+SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.safetensors"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size
@@ -269,13 +273,20 @@ def is_safety_checker_enabled() -> bool:
     return _truthy_env(enable_value)
 
 
-def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("PLN_ENTER_TOKEN")
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    """Verify backend authentication token.
+    
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
+    """
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
-    if x_enter_token != expected_token:
-        logger.warning("Invalid or missing PLN_ENTER_TOKEN")
+    
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
@@ -309,7 +320,7 @@ def check_nsfw(image_array, safety_checker_adj: float = 0.0):
 
 
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

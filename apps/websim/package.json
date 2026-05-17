@@ -1,7 +1,7 @@
 {
     "name": "html-wrapper",
     "version": "1.0.0",
-    "description": "Wrapper service for text.pollinations.ai/openai that returns HTML content",
+    "description": "Wrapper service for gen.pollinations.ai/v1/chat/completions that returns HTML content",
     "main": "worker.js",
     "type": "module",
     "scripts": {

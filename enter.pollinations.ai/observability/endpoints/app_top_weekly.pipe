@@ -1,0 +1,73 @@
+DESCRIPTION >
+    Top registered community apps by verified app-attributed request count
+    over the last 7 days.
+    Source of truth is App Keys: publishable keys with a non-empty redirectUris allowlist.
+    Current attribution only counts BYOP requests minted through redirect-auth
+    for that registered app.
+
+TOKEN tinybird_read READ
+
+NODE banned_users
+SQL >
+    SELECT github_username
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+      AND banned = 1
+    GROUP BY github_username
+
+NODE registered_apps
+SQL >
+    SELECT
+        id AS app_key_id,
+        user_id AS owner_user_id,
+        name AS app_name,
+        JSONExtractString(metadata, 'redirectUris', 1) AS app_url
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+      AND prefix = 'pk'
+      AND JSONExtractString(metadata, 'keyType') = 'publishable'
+      AND JSONExtractString(metadata, 'redirectUris', 1) != ''
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), 'localhost') = 0
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), '127.0.0.1') = 0
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), 'pollinations.ai') = 0
+
+NODE byop_requests
+SQL >
+    SELECT
+        ra.app_url,
+        ra.app_name,
+        ra.owner_user_id,
+        ge.start_time
+    FROM generation_event ge
+    INNER JOIN registered_apps ra
+        ON ge.api_key_created_via = 'redirect-auth'
+       AND ge.api_key_client_id = ra.app_key_id
+    WHERE ge.start_time > now() - INTERVAL 7 DAY
+      AND ge.environment = 'production'
+      AND ge.response_status >= 200 AND ge.response_status < 300
+      AND ge.total_price > 0
+      AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)
+
+NODE latest_users
+SQL >
+    SELECT
+        id AS user_id,
+        github_username
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+
+NODE app_top_weekly_node
+SQL >
+    SELECT
+        requests.app_url,
+        any(requests.app_name) AS app_name,
+        any(users.github_username) AS owner,
+        count() AS request_count,
+        max(requests.start_time) AS last_seen
+    FROM byop_requests requests
+    LEFT JOIN latest_users users ON requests.owner_user_id = users.user_id
+    GROUP BY requests.app_url
+    ORDER BY request_count DESC, last_seen DESC
+    LIMIT 10
+
+TYPE endpoint

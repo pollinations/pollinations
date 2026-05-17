@@ -1,41 +1,41 @@
 #!/usr/bin/env python3
 """
-Backfill labels, dates, and priority for issues/PRs in a GitHub project.
+Backfill labels and priority for issues/PRs in a GitHub project.
 
 Usage:
     # Full backfill (replace all)
     python project-backfill-labels.py --project dev
-    
+
     # Only fill missing fields (don't replace existing)
     python project-backfill-labels.py --project dev --only-missing
-    
+
     # Include priority updates
     python project-backfill-labels.py --project dev --with-priority --only-missing
-    
-    # Skip specific updates
+
+    # Skip labels (useful for priority-only runs)
     python project-backfill-labels.py --project dev --skip-labels --with-priority
-    
+
     # Process PRs
     python project-backfill-labels.py --project dev --include-prs
     python project-backfill-labels.py --project dev --prs-only
 
 Options:
-    --project        Required. Project to process: dev, support, news, tier
+    --project        Required. Project to process: dev, support, apps
     --dry-run        Preview changes without applying
     --with-priority  Also update priority field (dev/support only)
     --only-missing   Only fill missing fields, don't replace existing values
-    --skip-labels    Skip label updates (useful for priority/date only)
-    --skip-dates     Skip date (Opened) updates
+    --skip-labels    Skip label updates
     --include-prs    Include PRs along with issues
     --prs-only       Process only PRs, not issues
 
 Notes:
     Priority is determined by AI based on issue content.
-    Labels like DEV-TRACKING, DEV-QUEST, DEV-VOTING don't need priority.
+    Labels like DEV-TRACKING and DEV-VOTING don't need priority.
 
 Environment:
     GITHUB_TOKEN        GitHub token with repo/project access
     POLLINATIONS_TOKEN  pollinations.ai API key for classification
+    TINYBIRD_READ_TOKEN Tinybird token for paid-customer lookup (support only)
 """
 
 import argparse
@@ -67,13 +67,13 @@ read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
-set_date_field = pm.set_date_field
+is_paid_customer = pm.is_paid_customer
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 
 
-def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None, opened_field_id: str = None) -> list:
+def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None) -> list:
     """Fetch all open issues (and optionally PRs) in a project with their project item IDs."""
     query = """
     query($projectId: ID!, $cursor: String) {
@@ -89,10 +89,6 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                     field { ... on ProjectV2SingleSelectField { id } }
                                     name
                                 }
-                                ... on ProjectV2ItemFieldDateValue {
-                                    field { ... on ProjectV2Field { id } }
-                                    date
-                                }
                             }
                         }
                         content {
@@ -104,7 +100,7 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login }
+                                author { login ... on User { databaseId } }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -117,7 +113,7 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 body
                                 state
                                 createdAt
-                                author { login }
+                                author { login ... on User { databaseId } }
                                 labels(first: 20) {
                                     nodes { name }
                                 }
@@ -129,15 +125,15 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
         }
     }
     """
-    
+
     all_items = []
     cursor = None
-    
+
     while True:
         data = graphql_request(query, {"projectId": project_id, "cursor": cursor})
         node = data.get("node", {})
         items = node.get("items", {})
-        
+
         for item in items.get("nodes", []):
             content = item.get("content")
             if not content or content.get("state") != "OPEN":
@@ -146,19 +142,13 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
             if typename == "Issue" or (include_prs and typename == "PullRequest"):
                 content["_item_id"] = item.get("id")
                 content["_is_pr"] = typename == "PullRequest"
-                # Extract current field values
                 current_priority = None
-                current_opened = None
                 for fv in item.get("fieldValues", {}).get("nodes", []):
                     field = fv.get("field", {})
                     field_id = field.get("id")
                     if field_id == priority_field_id and fv.get("name"):
                         current_priority = fv.get("name")
-                    if field_id == opened_field_id and fv.get("date"):
-                        current_opened = fv.get("date")
                 content["_current_priority"] = current_priority
-                content["_current_opened"] = current_opened
-                # Store existing labels from GraphQL response
                 content["_current_labels"] = [l.get("name") for l in content.get("labels", {}).get("nodes", [])]
                 all_items.append(content)
         
@@ -190,16 +180,20 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # Current SERVICE labels
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
+        # TOPIC label
+        "TIER",
         # Old labels to clean up during migration
         "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
         "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
     }
+    dev_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-VOTING"}
     if project_key == "dev":
-        to_remove = [l for l in current_labels if l.startswith("DEV-")]
+        # Strip stale DEV-* (to be re-applied) and stale support labels (left over from past Support membership)
+        to_remove = [l for l in current_labels if l.startswith("DEV-") or l in support_labels or l.upper() in support_labels]
     elif project_key == "support":
-        # Match both exact and uppercase (for old labels)
-        to_remove = [l for l in current_labels if l in support_labels or l.upper() in support_labels]
+        # Strip support labels (to be re-applied) and any stray DEV-* (Support items should not have DEV-*)
+        to_remove = [l for l in current_labels if l in support_labels or l.upper() in support_labels or l.upper() in dev_labels]
     else:
         to_remove = []
     
@@ -225,17 +219,19 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
     return [l for l in current_labels if l not in to_remove]
 
 
-def classify_issue(title: str, body: str, author: str, is_internal: bool) -> dict:
-    """Classify an issue using the AI (same as project-manager.py)."""
+def classify_issue(title: str, body: str, author: str, is_internal: bool, is_pr: bool = False) -> dict:
+    """Classify an issue or PR using the AI (same as project-manager.py)."""
     base_prompt = read_prompt_file()
-    
+    item_kind = "pull request" if is_pr else "issue"
+
     system_prompt = f"""{base_prompt}
 
 ---
-**Context:** Author type is {"internal" if is_internal else "external"}
+**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
 """
 
     user_prompt = f"""
+Item Type: {item_kind}
 Author: {author}
 Author Type: {"Internal" if is_internal else "External"}
 Title: {title}
@@ -278,6 +274,31 @@ Body: {(body or "")[:2000]}
     return {}
 
 
+def add_to_project(project_id: str, content_node_id: str) -> str:
+    """Add an issue/PR to a project. Returns new project item id."""
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+        addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+            item { id }
+        }
+    }
+    """
+    data = graphql_request(mutation, {"projectId": project_id, "contentId": content_node_id})
+    return data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
+
+
+def delete_from_project(project_id: str, item_id: str) -> bool:
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!) {
+        deleteProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) {
+            deletedItemId
+        }
+    }
+    """
+    data = graphql_request(mutation, {"projectId": project_id, "itemId": item_id})
+    return bool(data.get("deleteProjectV2Item", {}).get("deletedItemId"))
+
+
 def add_labels(issue_number: int, labels: list, dry_run: bool):
     """Add labels to an issue."""
     if not labels:
@@ -314,38 +335,95 @@ def get_real_author(author: str, body: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Backfill labels for project issues")
-    parser.add_argument("--project", required=True, choices=["dev", "support", "news", "tier"],
+    parser.add_argument("--project", required=True, choices=["dev", "support", "apps"],
                         help="Project to process")
     parser.add_argument("--dry-run", action="store_true", help="Preview without applying")
     parser.add_argument("--with-priority", action="store_true", help="Also update priority (dev/support)")
     parser.add_argument("--prs-only", action="store_true", help="Process only PRs, not issues")
     parser.add_argument("--include-prs", action="store_true", help="Include PRs along with issues")
     # Control what to update
-    parser.add_argument("--only-missing", action="store_true", 
-                        help="Only fill missing fields, don't replace existing (applies to labels, dates, priority)")
+    parser.add_argument("--only-missing", action="store_true",
+                        help="Only fill missing fields, don't replace existing (applies to labels and priority)")
     parser.add_argument("--skip-labels", action="store_true", help="Skip label updates")
-    parser.add_argument("--skip-dates", action="store_true", help="Skip date updates")
+    parser.add_argument("--issues", help="Comma-separated issue numbers to process (filters project items to just these)")
+    parser.add_argument("--migrate-to", choices=["dev"], help="Migrate items from --project into the named project (currently only 'dev' supported, intended for moving PRs Support -> Dev)")
     args = parser.parse_args()
-    
+
     project_key = args.project
     project = CONFIG["projects"].get(project_key)
-    
+
     if not project:
         log_error(f"Unknown project: {project_key}")
         sys.exit(1)
-    
+
     include_prs = args.include_prs or args.prs_only
     priority_field_id = project.get("priority_field_id")
-    opened_field_id = project.get("opened_field_id")
     log_debug(f"Fetching open items from {project['name']} project (include_prs={include_prs})...")
-    items = get_project_issues(project["id"], include_prs=include_prs, priority_field_id=priority_field_id, opened_field_id=opened_field_id)
+    items = get_project_issues(project["id"], include_prs=include_prs, priority_field_id=priority_field_id)
     
     if args.prs_only:
         items = [i for i in items if i.get("_is_pr")]
         log_debug(f"Found {len(items)} open PRs")
     else:
         log_debug(f"Found {len(items)} open items")
-    
+
+    if args.issues:
+        wanted = {int(n.strip()) for n in args.issues.split(",") if n.strip()}
+        items = [i for i in items if i["number"] in wanted]
+        log_debug(f"Filtered to {len(items)} items matching --issues {sorted(wanted)}")
+
+    if args.migrate_to == "dev":
+        if project_key == "dev":
+            log_error("--migrate-to dev requires --project to be the source (e.g. support), not dev")
+            sys.exit(1)
+        dev_project = CONFIG["projects"]["dev"]
+        log_debug(f"Migration mode: {len(items)} items from {project['name']} -> {dev_project['name']}")
+        for issue in items:
+            issue_number = issue["number"]
+            title = issue["title"]
+            body = issue.get("body", "") or ""
+            author = (issue.get("author") or {}).get("login", "")
+            is_pr = issue.get("_is_pr", False)
+            content_node_id = issue.get("id")
+            source_item_id = issue.get("_item_id")
+
+            log_debug(f"\n--- Migrating #{issue_number} ({'PR' if is_pr else 'issue'}): {title[:60]}...")
+
+            real_author = get_real_author(author, body)
+            is_internal = pm.is_org_member(real_author)
+            classification = classify_issue(title, body, real_author, is_internal, is_pr=is_pr)
+            if not classification:
+                log_error(f"Failed to classify #{issue_number}; skipping migration")
+                time.sleep(1)
+                continue
+
+            # Force dev labels regardless of AI's project choice (the new rule for PRs)
+            raw_labels = classification.get("labels", [])
+            dev_label = next(
+                (l.upper() for l in raw_labels if l.upper() in VALID_LABELS["dev"]),
+                "DEV-CHORE",  # safe default
+            )
+
+            if args.dry_run:
+                log_debug(f"[DRY-RUN] Would strip support labels from #{issue_number}")
+                log_debug(f"[DRY-RUN] Would add label {dev_label} to #{issue_number}")
+                log_debug(f"[DRY-RUN] Would add #{issue_number} to Dev project")
+                log_debug(f"[DRY-RUN] Would remove #{issue_number} from {project['name']} project")
+            else:
+                remove_project_labels(issue_number, project_key, dry_run=False)
+                add_labels(issue_number, [dev_label], dry_run=False)
+                new_item_id = add_to_project(dev_project["id"], content_node_id)
+                if new_item_id:
+                    log_debug(f"Added #{issue_number} to Dev project: item_id={new_item_id}")
+                    if source_item_id:
+                        deleted = delete_from_project(project["id"], source_item_id)
+                        log_debug(f"{'Removed' if deleted else 'FAILED to remove'} #{issue_number} from {project['name']}")
+                else:
+                    log_error(f"Failed to add #{issue_number} to Dev; not removing from source")
+            time.sleep(1)
+        log_debug(f"\nDone! Migrated {len(items)} items.")
+        return
+
     for issue in items:
         issue_number = issue["number"]
         title = issue["title"]
@@ -358,15 +436,12 @@ def main():
         current_labels = issue.get("_current_labels", [])
         current_labels_upper = [l.upper() for l in current_labels]
         current_priority = issue.get("_current_priority")
-        current_opened = issue.get("_current_opened")
         protected = PROTECTED_LABELS.get(project_key, set())
         has_protected = protected & set(current_labels_upper)
-        
-        # Check what needs to be done
-        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT") for l in current_labels)
+
+        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER") for l in current_labels)
         needs_labels = not args.skip_labels and (not args.only_missing or not has_project_labels)
         needs_priority = args.with_priority and project_key in ("dev", "support") and (not args.only_missing or not current_priority)
-        needs_date = not args.skip_dates and (not args.only_missing or not current_opened)
         
         classification = None
         
@@ -401,6 +476,13 @@ def main():
             
             if classification:
                 priority = classification.get("priority")
+                if project_key == "support" and priority not in {"High", "Low"}:
+                    log_debug(f"Backfill: AI returned non-{{High,Low}} priority '{priority}' for #{issue_number}; clamping to Low")
+                    priority = "Low"
+                author_id = (issue.get("author") or {}).get("databaseId")
+                if project_key == "support" and is_paid_customer(author_id):
+                    log_debug(f"Author {author} (id={author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")
+                    priority = "Urgent"
                 priority_option = project.get("priority_options", {}).get(priority)
                 item_id = issue.get("_item_id")
                 if priority_option and project.get("priority_field_id") and item_id:
@@ -411,22 +493,7 @@ def main():
                         log_debug(f"Set priority to {priority} for #{issue_number}")
         elif current_priority:
             log_debug(f"Priority already set to '{current_priority}' for #{issue_number}, skipping")
-        
-        # Date processing
-        if needs_date:
-            item_id = issue.get("_item_id")
-            created_at = issue.get("createdAt")
-            opened_fid = project.get("opened_field_id")
-            if item_id and created_at and opened_fid:
-                if args.dry_run:
-                    log_debug(f"[DRY-RUN] Would set Opened to {created_at[:10]} for #{issue_number}")
-                else:
-                    set_date_field(project["id"], item_id, opened_fid, created_at)
-                    log_debug(f"Set Opened to {created_at[:10]} for #{issue_number}")
-        elif current_opened:
-            log_debug(f"Opened date already set to '{current_opened}' for #{issue_number}, skipping")
-        
-        # Rate limit
+
         time.sleep(1)
     
     log_debug(f"\nDone! Processed {len(items)} items.")

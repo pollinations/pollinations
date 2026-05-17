@@ -1,0 +1,49 @@
+name: Deploy media.pollinations.ai
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'media.pollinations.ai/**'
+      - '.github/workflows/deploy-media-cloudflare.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pollinations-cloudflare-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./media.pollinations.ai
+
+      - name: Test
+        run: npm test
+        working-directory: ./media.pollinations.ai
+
+      - name: Apply R2 lifecycle rules
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run apply-lifecycle:production
+        working-directory: ./media.pollinations.ai
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:production
+        working-directory: ./media.pollinations.ai

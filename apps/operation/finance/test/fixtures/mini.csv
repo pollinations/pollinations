@@ -1,0 +1,4 @@
+counterparty,date,bank_account,category,amount_eur,status
+Acme Cloud Inc.,2025-01-15,Test Wallet,Compute,-100.50,confirmed
+"Beta, LLC",2025-01-20,Test Wallet,Office,-42.00,
+Gamma Revenue,2025-01-28,Test Wallet,API Sell,500.00,confirmed

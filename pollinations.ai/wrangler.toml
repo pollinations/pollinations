@@ -20,3 +20,10 @@ run_worker_first = ["/api/*"]
 
 # API Proxy handled by Worker in src/worker.ts
 # Secret: npx wrangler secret put PLN_APPS_KEY
+
+[env.staging]
+
+[[env.staging.routes]]
+pattern = "staging.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true

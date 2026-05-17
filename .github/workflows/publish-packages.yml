@@ -1,0 +1,202 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/sdk/**"
+      - "packages/mcp/**"
+      - "packages/polli-cli/**"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      sdk: ${{ steps.changes.outputs.sdk }}
+      mcp: ${{ steps.changes.outputs.mcp }}
+      polli-cli: ${{ steps.changes.outputs.polli-cli }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed packages
+        id: changes
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD)
+          echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "mcp=$(echo "$changed" | grep -q '^packages/mcp/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "polli-cli=$(echo "$changed" | grep -q '^packages/polli-cli/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "Changed files:"
+          echo "$changed" | grep '^packages/' || true
+
+  publish-sdk:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.sdk == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies & build
+        working-directory: packages/sdk
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/sdk
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/sdk
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/sdk
+        run: |
+          # GitHub Packages requires scope matching the repo owner
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/sdk';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/sdk' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-mcp:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        working-directory: packages/mcp
+        run: npm ci --ignore-scripts
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/mcp
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/mcp
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/mcp
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/mcp';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/mcp' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-polli-cli:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.polli-cli == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies & build
+        working-directory: packages/polli-cli
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/polli-cli
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if npm view "@pollinations_ai/cli@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/polli-cli
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/polli-cli
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/cli';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/polli-cli' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

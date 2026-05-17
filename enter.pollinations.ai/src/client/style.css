@@ -28,30 +28,6 @@
     font-display: swap;
 }
 
-@font-face {
-    font-family: "Maven Pro";
-    src: url("./fonts/maven-pro-v40-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Mako";
-    src: url("./fonts/mako-v19-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Duru Sans";
-    src: url("./fonts/duru-sans-v21-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
 *,
 ::before,
 ::after {
@@ -62,7 +38,173 @@
     --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
+    --text-micro: 10px;
     --text-base: 16px;
+
+    /* ─── Layer 1: hue ramp constants ────────────────────────── */
+    /* Paid + Tier — 3 values per concept. Used everywhere paid or tier
+       identity appears: wallet, chart bars, chips, page backgrounds.
+       pale = large + repeated surfaces (wallet cards, chips,
+              chart bars) — light wash that pairs with deep text;
+       soft = small identity markers (drawer dots, tier-explanation
+              segments) — mid-tone with enough chroma that paid vs
+              tier read as distinct hues even at 8px;
+       deep = text + bold headline numbers.
+
+       Paid uses amber so it unifies with the Pollen page chrome (top-up
+       buttons, page theme), reinforcing "this is where you buy paid".
+       Tier uses the warm orange family. */
+    --color-paid-pale: oklch(0.93 0.09 95.746);
+    --color-paid-soft: oklch(0.85 0.16 95.746);
+    --color-paid-deep: #78350f;
+    --color-tier-pale: oklch(0.93 0.06 55);
+    --color-tier-soft: oklch(0.83 0.13 55);
+    --color-tier-deep: #7C3F1E;
+}
+
+/* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
+[data-theme="amber"] {
+    --theme-text-base:    var(--color-amber-900);
+    --theme-text-strong:  var(--color-amber-950);
+    --theme-text-soft:    var(--color-amber-700);
+
+    --theme-border-idle:    var(--color-amber-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-amber-200);
+    --theme-bg-hover:       var(--color-amber-300);
+
+    --theme-bg-pale:    var(--color-amber-100);
+
+
+}
+
+[data-theme="blue"] {
+    --theme-text-base:    var(--color-blue-900);
+    --theme-text-strong:  var(--color-blue-950);
+    --theme-text-soft:    var(--color-blue-700);
+
+    --theme-border-idle:    var(--color-blue-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-blue-200);
+    --theme-bg-hover:       var(--color-blue-300);
+
+    --theme-bg-pale:    var(--color-blue-100);
+
+
+}
+
+[data-theme="pink"] {
+    --theme-text-base:    var(--color-pink-900);
+    --theme-text-strong:  var(--color-pink-950);
+    --theme-text-soft:    var(--color-pink-700);
+
+    --theme-border-idle:    var(--color-pink-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-pink-200);
+    --theme-bg-hover:       var(--color-pink-300);
+
+    --theme-bg-pale:    var(--color-pink-100);
+
+
+}
+
+[data-theme="teal"] {
+    --theme-text-base:    var(--color-teal-900);
+    --theme-text-strong:  var(--color-teal-950);
+    --theme-text-soft:    var(--color-teal-700);
+
+    --theme-border-idle:    var(--color-teal-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-teal-200);
+    --theme-bg-hover:       var(--color-teal-300);
+
+    --theme-bg-pale:    var(--color-teal-100);
+
+
+}
+
+[data-theme="violet"] {
+    --theme-text-base:    var(--color-violet-900);
+    --theme-text-strong:  var(--color-violet-950);
+    --theme-text-soft:    var(--color-violet-700);
+
+    --theme-border-idle:    var(--color-violet-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-violet-200);
+    --theme-bg-hover:       var(--color-violet-300);
+
+    --theme-bg-pale:    var(--color-violet-100);
+
+
+}
+
+/* Green is also the chrome default — :root fallback so unwrapped routes
+   (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
+:root,
+[data-theme="green"] {
+    --theme-text-base:    var(--color-green-900);
+    --theme-text-strong:  var(--color-green-950);
+    --theme-text-soft:    var(--color-green-700);
+
+    --theme-border-idle:    var(--color-green-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-green-200);
+    --theme-bg-hover:       var(--color-green-300);
+
+    --theme-bg-pale:    var(--color-green-100);
+
+
+}
+
+/* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
+:root {
+    /* Danger — deeper than red-600 with reduced chroma so it reads as
+       alert, not neon. Light variant has warmth so error surfaces feel
+       intentional, not washed-out. */
+    --intent-danger-bg-light:    oklch(0.935 0.045 25);
+    --intent-danger-text:        oklch(0.48 0.18 25);
+    --intent-danger-border:      oklch(0.78 0.115 25);
+
+    /* News — Chip only. Soft green label for newly-added models. */
+
+    /* Alpha — Chip only. Saturated "warning sign" yellow + deep amber text. */
+
+    /* Paid + Tier intents reuse the canonical money colors above —
+       Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
+       No duplicate intent vars; one source of truth lives in Layer 1. */
+}
+
+/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
+@theme inline {
+    --color-theme-text-base:         var(--theme-text-base);
+    --color-theme-text-strong:       var(--theme-text-strong);
+    --color-theme-text-soft:         var(--theme-text-soft);
+
+    --color-theme-border:            var(--theme-border-idle);
+
+    --color-theme-bg-subtle:         var(--theme-bg-subtle);
+    --color-theme-bg-active:         var(--theme-bg-active);
+    --color-theme-bg-hover:          var(--theme-bg-hover);
+
+
+    --color-theme-bg-pale:           var(--theme-bg-pale);
+
+
+
+    --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
+    --color-intent-danger-text:        var(--intent-danger-text);
+    --color-intent-danger-border:      var(--intent-danger-border);
+
+
+
+    --color-surface-white:             oklch(1 0 0 / 0.8);
 }
 
 @layer base {
@@ -86,6 +228,18 @@
         @apply mx-auto px-4 sm:px-6 md:px-8 pt-4 overflow-x-hidden;
     }
 
+    html.dashboard-shell,
+    body.dashboard-shell {
+        max-width: none;
+        height: 100dvh;
+        @apply p-0 m-0 overflow-hidden;
+    }
+
+    body.dashboard-shell #root {
+        height: 100dvh;
+        min-height: 0;
+    }
+
     h1 {
         @apply font-heading text-5xl;
     }
@@ -98,10 +252,16 @@
         @apply font-subheading text-2xl tracking-tight;
     }
 
-    h4,
-    h5,
+    h4 {
+        @apply font-body text-lg font-semibold;
+    }
+
+    h5 {
+        @apply font-body text-base font-semibold;
+    }
+
     h6 {
-        @apply text-xl;
+        @apply font-body text-sm font-semibold;
     }
 
     /* Hide scrollbars while keeping functionality */
@@ -113,9 +273,78 @@
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
     }
+
+    .scrollbar-subtle {
+        --scrollbar-thumb-color: rgba(120, 113, 108, 0.65);
+        scrollbar-width: thin;
+        scrollbar-color: transparent transparent;
+    }
+
+    .scrollbar-theme-green {
+        --scrollbar-thumb-color: rgba(22, 163, 74, 0.6);
+    }
+
+    .scrollbar-theme-amber {
+        --scrollbar-thumb-color: rgba(217, 119, 6, 0.6);
+    }
+
+    .scrollbar-theme-blue {
+        --scrollbar-thumb-color: rgba(37, 99, 235, 0.6);
+    }
+
+    .scrollbar-theme-pink {
+        --scrollbar-thumb-color: rgba(219, 39, 119, 0.55);
+    }
+
+    .scrollbar-theme-violet {
+        --scrollbar-thumb-color: rgba(124, 58, 237, 0.6);
+    }
+
+    .scrollbar-theme-teal {
+        --scrollbar-thumb-color: rgba(13, 148, 136, 0.6);
+    }
+
+    .scrollbar-theme-gray {
+        --scrollbar-thumb-color: rgba(75, 85, 99, 0.6);
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-thumb {
+        background-color: transparent;
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 9999px;
+        transition: background-color 160ms ease;
+    }
+
+    .scrollbar-subtle[data-scrollbar-active="true"] {
+        scrollbar-color: var(--scrollbar-thumb-color) transparent;
+    }
+
+    .scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb-color);
+    }
+
+    .input-number-clean::-webkit-inner-spin-button,
+    .input-number-clean::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .input-number-clean {
+        -moz-appearance: textfield;
+    }
 }
 
-/* NEW badge glow animation */
+/* NEW badge glow animation (green) */
 @keyframes glow {
     0%, 100% {
         box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
@@ -123,4 +352,106 @@
     50% {
         box-shadow: 0 0 12px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.4);
     }
+}
+
+/* PAID ONLY badge glow animation (purple) */
+@keyframes glow-purple {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(192, 132, 252, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(192, 132, 252, 0.8), 0 0 20px rgba(192, 132, 252, 0.4);
+    }
+}
+
+/* Diamond shimmer animation for payment buttons */
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+.btn-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 8s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Pulsing emoji animation for toggle buttons */
+@keyframes emoji-pulse {
+    0%, 100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.emoji-pulse {
+    filter: grayscale(1) opacity(0.6);
+    animation: emoji-pulse 1.5s ease-in-out infinite;
+}
+
+/* Pollen pack range slider — amber thumb on transparent track (gradient set inline) */
+.pollen-pack-slider {
+    @apply h-2 w-full cursor-grab appearance-none rounded-full outline-none transition;
+}
+
+.pollen-pack-slider:active {
+    @apply cursor-grabbing;
+}
+
+.pollen-pack-slider:disabled {
+    @apply cursor-not-allowed opacity-60;
+}
+
+.pollen-pack-slider:focus-visible {
+    @apply ring-2 ring-amber-500 ring-offset-2 ring-offset-white;
+}
+
+.pollen-pack-slider::-webkit-slider-runnable-track {
+    @apply h-2 rounded-full bg-transparent;
+}
+
+.pollen-pack-slider::-moz-range-track {
+    @apply h-2 rounded-full bg-transparent;
+}
+
+.pollen-pack-slider::-webkit-slider-thumb {
+    @apply mt-[-7px] h-[22px] w-[22px] appearance-none rounded-full border-[3px] border-amber-600 bg-white transition-transform;
+    box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35);
+}
+
+.pollen-pack-slider::-moz-range-thumb {
+    @apply h-[22px] w-[22px] rounded-full border-[3px] border-amber-600 bg-white transition-transform;
+    box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35);
+}
+
+.pollen-pack-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+}
+
+.pollen-pack-slider:active::-webkit-slider-thumb {
+    transform: scale(1.05);
 }

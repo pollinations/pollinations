@@ -1,69 +1,81 @@
-// API utilities for Pollinations chat - Enhanced version from vanilla
-import { DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
+// Pollinations API utilities — updated to match gen.pollinations.ai spec
+const BASE_URL = "https://gen.pollinations.ai";
+const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || "";
+export const BYOP_STORAGE_KEY = "pollinations_byop_api_key";
 
-const BASE_IMAGE_URL = "https://gen.pollinations.ai/image";
-const TEXT_MODELS_ENDPOINT = "https://gen.pollinations.ai/v1/models";
-const IMAGE_MODELS_ENDPOINT = "https://gen.pollinations.ai/image/models";
-const BALANCE_ENDPOINT = "https://enter.pollinations.ai/customer/d1-balance";
-const FALLBACK_API_TOKEN =
-    import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
-
-// Current API token - can be updated by setApiToken
-let currentApiToken = FALLBACK_API_TOKEN;
+const getApiToken = () => {
+    if (typeof window !== "undefined") {
+        try {
+            const userKey = window.localStorage.getItem(BYOP_STORAGE_KEY);
+            if (userKey) return userKey;
+        } catch {
+            /* ignore localStorage failures */
+        }
+    }
+    return ENV_API_TOKEN;
+};
 
 let textModels = [];
 let imageModels = [];
 let videoModels = [];
+let audioModels = [];
 let abortController = null;
 
-// Cache for models to avoid repeated API calls
 let modelsCache = null;
 let modelsCacheTime = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
-/**
- * Set the API token to be used for all API calls
- * @param {string} token - The API token to use
- */
-export const setApiToken = (token) => {
-    // Validate token format - must be sk_ (secret key) or plln_pk_ (publishable key) or pk_ (legacy publishable key)
-    if (token && !isValidApiKey(token)) {
-        console.warn(
-            "Invalid API token format. Expected token to start with sk_, plln_pk_, or pk_",
-        );
-    }
-    currentApiToken = token || DEFAULT_API_KEY;
-    // Clear models cache when token changes to reload with new permissions
-    modelsCache = null;
-    modelsCacheTime = null;
-};
-
-/**
- * Get the current API token
- * @returns {string} The current API token
- */
-export const getApiToken = () => currentApiToken;
-
-// Format model names
-const _formatModelName = (modelId) => {
-    if (typeof modelId !== "string") return "Unknown Model";
-    return modelId
-        .split("/")
-        .pop()
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-};
-
-// Use real model ID as name instead of formatted version
 const getRealModelName = (modelId) => {
     if (typeof modelId !== "string") return "Unknown Model";
     return modelId;
 };
 
-// Load available models from API
+// Map server response → sanitized client-facing error.
+// We intentionally do NOT surface raw server messages: the user sees a
+// short, friendly summary, and the UI uses `errorType` to decide how to
+// react (e.g. show the BYOP button on auth failures).
+const buildClientError = (code) => {
+    let errorType = "unknown";
+    let message = "Something went wrong. Please try again.";
+
+    if (code === 401) {
+        errorType = "auth";
+        message = "Authentication failed. Add your own API key to continue.";
+    } else if (code === 402) {
+        errorType = "balance";
+        message = "Out of Pollen credits. Top up or use your own API key.";
+    } else if (code === 403) {
+        errorType = "permission";
+        message = "This API key doesn't have access to that model.";
+    } else if (code === 429) {
+        errorType = "rate_limit";
+        message = "You're sending requests too quickly. Try again in a moment.";
+    } else if (code >= 500) {
+        errorType = "server";
+        message = "The service is temporarily unavailable. Please try again.";
+    } else if (code >= 400) {
+        errorType = "client";
+        message = "Request could not be completed.";
+    }
+
+    const err = new Error(message);
+    err.code = code;
+    err.errorType = errorType;
+    return err;
+};
+
+const parseApiError = async (response) => {
+    // Drain the body so the connection isn't left open, but never reflect
+    // its contents back to the user.
+    try {
+        await response.text();
+    } catch {
+        /* ignore */
+    }
+    return buildClientError(response.status);
+};
+
 export const loadModels = async () => {
-    // Check cache first
     if (
         modelsCache &&
         modelsCacheTime &&
@@ -72,205 +84,156 @@ export const loadModels = async () => {
         return modelsCache;
     }
 
-    try {
-        const [textResponse, imageResponse] = await Promise.allSettled([
-            fetch(TEXT_MODELS_ENDPOINT, {
-                headers: {
-                    "Authorization": `Bearer ${currentApiToken}`,
-                },
-            }),
-            fetch(IMAGE_MODELS_ENDPOINT, {
-                headers: {
-                    "Authorization": `Bearer ${currentApiToken}`,
-                },
-            }),
-        ]);
+    const token = getApiToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        if (textResponse.status === "fulfilled" && textResponse.value.ok) {
-            const textData = await textResponse.value.json();
-            // Handle both array format and OpenAI format with data array
-            const modelsArray = Array.isArray(textData)
-                ? textData
-                : textData.data;
-            if (Array.isArray(modelsArray)) {
-                textModels = modelsArray.map((model) => ({
-                    id: model.id || model.name || model,
-                    name:
-                        model.description ||
-                        getRealModelName(model.id || model.name || model),
-                    description:
-                        model.description || model.id || model.name || model,
-                    type: "text",
-                    ownedBy: model.owned_by || "unknown",
-                    created: model.created,
-                    supportsVision: model.vision === true,
-                    supportsAudio: model.audio === true,
-                    inputModalities: model.input_modalities || ["text"],
-                    outputModalities: model.output_modalities || ["text"],
-                    tier: model.tier || "unknown",
-                    community: model.community || false,
-                }));
-            }
-        } else {
-            console.error("❌ Failed to load text models from endpoint");
-            textModels = [];
+    const [textRes, imageRes, audioRes] = await Promise.allSettled([
+        fetch(`${BASE_URL}/v1/models`, { headers }),
+        fetch(`${BASE_URL}/image/models`, { headers }),
+        fetch(`${BASE_URL}/audio/models`, { headers }),
+    ]);
+
+    // Text models
+    if (textRes.status === "fulfilled" && textRes.value.ok) {
+        const data = await textRes.value.json();
+        const arr = Array.isArray(data) ? data : data.data;
+        if (Array.isArray(arr)) {
+            textModels = arr.map((m) => ({
+                id: m.id || m.name || m,
+                name: m.description || getRealModelName(m.id || m.name || m),
+                description: m.description || m.id || m.name || m,
+                type: "text",
+                ownedBy: m.owned_by || "unknown",
+                created: m.created,
+                supportsVision: m.vision === true,
+                supportsAudio: m.audio === true,
+                inputModalities: m.input_modalities || ["text"],
+                outputModalities: m.output_modalities || ["text"],
+                tier: m.tier || "unknown",
+                community: m.community || false,
+            }));
         }
-
-        if (imageResponse.status === "fulfilled" && imageResponse.value.ok) {
-            const imageData = await imageResponse.value.json();
-            if (Array.isArray(imageData)) {
-                // Separate image and video models based on output_modalities
-                const allMediaModels = imageData.map((model) => {
-                    const modelId =
-                        typeof model === "string"
-                            ? model
-                            : model.name || model.id || model;
-                    const outputModalities = model.output_modalities || [
-                        "image",
-                    ];
-                    return {
-                        id: modelId,
-                        name:
-                            typeof model === "object" && model.description
-                                ? model.description
-                                : getRealModelName(modelId),
-                        description: model.description || modelId,
-                        type: outputModalities.includes("video")
-                            ? "video"
-                            : "image",
-                        tier: model.tier || "unknown",
-                        outputModalities,
-                    };
-                });
-
-                imageModels = allMediaModels.filter((m) => m.type === "image");
-                videoModels = allMediaModels.filter((m) => m.type === "video");
-            }
-        } else {
-            console.error("❌ Failed to load image models from endpoint");
-            imageModels = [];
-            videoModels = [];
-        }
-
-        // Cache the results
-        const result = { textModels, imageModels, videoModels };
-        modelsCache = result;
-        modelsCacheTime = Date.now();
-
-        return result;
-    } catch (error) {
-        console.error("❌ Error loading models:", error);
-        return { textModels: [], imageModels: [], videoModels: [] };
+    } else {
+        textModels = [];
     }
+
+    // Image + video models
+    if (imageRes.status === "fulfilled" && imageRes.value.ok) {
+        const data = await imageRes.value.json();
+        if (Array.isArray(data)) {
+            const all = data.map((m) => {
+                const id = typeof m === "string" ? m : m.name || m.id || m;
+                const outputMods = m.output_modalities || ["image"];
+                return {
+                    id,
+                    name:
+                        typeof m === "object" && m.description
+                            ? m.description
+                            : getRealModelName(id),
+                    description: m.description || id,
+                    type: outputMods.includes("video") ? "video" : "image",
+                    tier: m.tier || "unknown",
+                    outputModalities: outputMods,
+                };
+            });
+            imageModels = all.filter((m) => m.type === "image");
+            videoModels = all.filter((m) => m.type === "video");
+        }
+    } else {
+        imageModels = [];
+        videoModels = [];
+    }
+
+    // Audio models
+    if (audioRes.status === "fulfilled" && audioRes.value.ok) {
+        const data = await audioRes.value.json();
+        const arr = Array.isArray(data) ? data : data.data;
+        if (Array.isArray(arr)) {
+            audioModels = arr.map((m) => {
+                const id = typeof m === "string" ? m : m.name || m.id || m;
+                return {
+                    id,
+                    name:
+                        typeof m === "object" && m.description
+                            ? m.description
+                            : getRealModelName(id),
+                    description: m.description || id,
+                    type: "audio",
+                    tier: m.tier || "unknown",
+                };
+            });
+        }
+    }
+
+    const result = { textModels, imageModels, videoModels, audioModels };
+    modelsCache = result;
+    modelsCacheTime = Date.now();
+    return result;
 };
 
-// Get all models
-export const getModels = () => {
-    return { textModels, imageModels, videoModels };
-};
+export const getModels = () => ({
+    textModels,
+    imageModels,
+    videoModels,
+    audioModels,
+});
 
-// Initialize models (will be called from App.jsx)
 export const initializeModels = async () => {
     const {
-        textModels: loadedTextModels,
-        imageModels: loadedImageModels,
-        videoModels: loadedVideoModels,
+        textModels: tm,
+        imageModels: im,
+        videoModels: vm,
+        audioModels: am,
     } = await loadModels();
-
-    // Populate MODELS object with text models
-    const textModelsObj = {};
-    loadedTextModels.forEach((model) => {
-        textModelsObj[model.id] = { name: model.name, ...model };
-    });
-
-    // Populate image models object
-    const imageModelsObj = {};
-    loadedImageModels.forEach((model) => {
-        imageModelsObj[model.id] = { name: model.name, ...model };
-    });
-
-    // Populate video models object
-    const videoModelsObj = {};
-    loadedVideoModels.forEach((model) => {
-        videoModelsObj[model.id] = { name: model.name, ...model };
-    });
-
+    const toObj = (arr) =>
+        Object.fromEntries(arr.map((m) => [m.id, { name: m.name, ...m }]));
     return {
-        textModels: textModelsObj,
-        imageModels: imageModelsObj,
-        videoModels: videoModelsObj,
+        textModels: toObj(tm),
+        imageModels: toObj(im),
+        videoModels: toObj(vm),
+        audioModels: toObj(am),
     };
 };
 
-// Get current model info
-const getCurrentModelInfo = (modelId) => {
-    const allModels = [...textModels, ...imageModels, ...videoModels];
-    return allModels.find((m) => m.id === modelId);
-};
-
-// Get latest image from messages
-const _getLatestImage = (messages) => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
-        if (msg.role === "user" && msg.image && msg.image.src) {
-            return msg.image.src;
-        }
-    }
-    return null;
+const _getCurrentModelInfo = (modelId) => {
+    return [...textModels, ...imageModels, ...videoModels, ...audioModels].find(
+        (m) => m.id === modelId,
+    );
 };
 
 const extractBase64FromDataUrl = (dataUrl) => {
     if (typeof dataUrl !== "string") return { base64: "", mimeType: null };
     const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
-    if (match) {
-        return { base64: match[2], mimeType: match[1] };
-    }
+    if (match) return { base64: match[2], mimeType: match[1] };
     const commaIndex = dataUrl.indexOf(",");
-    if (commaIndex >= 0) {
+    if (commaIndex >= 0)
         return { base64: dataUrl.slice(commaIndex + 1), mimeType: null };
-    }
     return { base64: dataUrl, mimeType: null };
 };
 
-// Update formatMessagesForAPI to ensure consistent array format
-export const formatMessagesForAPI = (messages, modelId) => {
-    const currentModel = getCurrentModelInfo(modelId);
-    const _supportsVision = currentModel?.supportsVision;
+export const formatMessagesForAPI = (messages, _modelId) => {
     return messages.map((msg) => {
         const parts = [];
         const textContent = typeof msg.content === "string" ? msg.content : "";
-
-        if (textContent) {
-            parts.push({
-                type: "text",
-                text: textContent,
-            });
-        }
+        if (textContent) parts.push({ type: "text", text: textContent });
 
         const attachments = Array.isArray(msg.attachments)
             ? msg.attachments
             : [];
         const legacyImage =
-            !attachments.length && msg.image && msg.image.src
+            !attachments.length && msg.image?.src
                 ? [
                       {
                           name: msg.image.name || "image",
                           data: msg.image.src,
-                          mimeType:
-                              msg.image.mimeType ||
-                              (msg.image.src.startsWith("data:")
-                                  ? msg.image.src
-                                        .split(";")[0]
-                                        .replace("data:", "")
-                                  : "image/png"),
+                          mimeType: msg.image.mimeType || "image/png",
                           isImage: true,
                       },
                   ]
                 : [];
 
-        [...attachments, ...legacyImage].forEach((attachment) => {
-            if (!attachment) return;
-
+        for (const attachment of [...attachments, ...legacyImage]) {
+            if (!attachment) continue;
             let base64Data = attachment.data || attachment.base64 || "";
             let mimeType =
                 attachment.mimeType ||
@@ -278,83 +241,47 @@ export const formatMessagesForAPI = (messages, modelId) => {
                 "application/octet-stream";
 
             if (!base64Data && attachment.preview) {
-                const extracted = extractBase64FromDataUrl(attachment.preview);
-                base64Data = extracted.base64;
-                if (
-                    extracted.mimeType &&
-                    (!attachment.mimeType || attachment.mimeType === "")
-                ) {
-                    mimeType = extracted.mimeType;
-                }
+                const e = extractBase64FromDataUrl(attachment.preview);
+                base64Data = e.base64;
+                if (e.mimeType && !attachment.mimeType) mimeType = e.mimeType;
             }
-
             if (!base64Data && typeof attachment.src === "string") {
-                const extracted = extractBase64FromDataUrl(attachment.src);
-                base64Data = extracted.base64;
-                if (extracted.mimeType) {
-                    mimeType = extracted.mimeType;
-                }
+                const e = extractBase64FromDataUrl(attachment.src);
+                base64Data = e.base64;
+                if (e.mimeType) mimeType = e.mimeType;
             }
-
-            if (!base64Data) return;
+            if (!base64Data) continue;
 
             const isImage = attachment.isImage ?? mimeType.startsWith("image/");
-
-            // Use image_url format for remote images
             if (isImage && attachment.preview?.startsWith("http")) {
                 parts.push({
                     type: "image_url",
-                    image_url: {
-                        url: attachment.preview,
-                    },
+                    image_url: { url: attachment.preview },
                 });
-                return;
+                continue;
             }
-
-            // For local base64, include as image_url with data URL
             if (isImage && base64Data) {
                 parts.push({
                     type: "image_url",
-                    image_url: {
-                        url: `data:${mimeType};base64,${base64Data}`,
-                    },
+                    image_url: { url: `data:${mimeType};base64,${base64Data}` },
                 });
             }
-        });
-
-        // If only text, return string content for compatibility
-        if (parts.length === 1 && parts[0].type === "text") {
-            return {
-                role: msg.role,
-                content: parts[0].text,
-            };
         }
 
-        // If multiple parts or has images, return array
-        if (parts.length > 0) {
-            return {
-                role: msg.role,
-                content: parts,
-            };
-        }
-
-        return {
-            role: msg.role,
-            content: textContent || "",
-        };
+        if (parts.length === 1 && parts[0].type === "text")
+            return { role: msg.role, content: parts[0].text };
+        if (parts.length > 0) return { role: msg.role, content: parts };
+        return { role: msg.role, content: textContent || "" };
     });
 };
 
 const containsChartRequest = (messages = []) => {
     if (!Array.isArray(messages) || messages.length === 0) return false;
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== "user") return false;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "user") return false;
     const content =
-        typeof lastMessage.content === "string"
-            ? lastMessage.content.toLowerCase()
-            : "";
-    if (!content) return false;
-    return /(chart|graph|plot|visualiz|scatter|line|bar|pie|histogram|trend)/.test(
+        typeof last.content === "string" ? last.content.toLowerCase() : "";
+    return /(chart|graph|plot|visualiz|scatter|line\s+chart|bar\s+chart|pie\s+chart|histogram|trend)/.test(
         content,
     );
 };
@@ -367,15 +294,10 @@ export const sendMessage = async (
     modelId,
     generationConfig = {},
 ) => {
-    const selectedModelId =
-        modelId || localStorage.getItem("selectedModelId") || "openai-large";
-
+    const selectedModelId = modelId || "openai-large";
     const { maxTokens = 2000, temperature = 0.7, topP = 1 } = generationConfig;
-
-    // For Claude models with thinking enabled, temperature must be 1
     const isClaude = selectedModelId.includes("claude");
     const finalTemperature = isClaude ? 1 : temperature;
-
     const chartRequested = containsChartRequest(messages);
 
     const tools = [
@@ -394,52 +316,24 @@ export const sendMessage = async (
                         },
                         data: {
                             type: "array",
-                            items: {
-                                type: "object",
-                                description:
-                                    "Data points where each object represents a row with keys for x/y values.",
-                            },
-                            description:
-                                "Array of data objects, each containing keys for the chart axes.",
+                            items: { type: "object" },
+                            description: "Array of data objects.",
                         },
                         series: {
                             type: "array",
                             items: {
                                 type: "object",
                                 properties: {
-                                    key: {
-                                        type: "string",
-                                        description:
-                                            "The key in data objects for this series",
-                                    },
-                                    name: {
-                                        type: "string",
-                                        description:
-                                            "Display name for this series",
-                                    },
-                                    color: {
-                                        type: "string",
-                                        description:
-                                            "Hex color for this series",
-                                    },
+                                    key: { type: "string" },
+                                    name: { type: "string" },
+                                    color: { type: "string" },
                                 },
                                 required: ["key", "name"],
                             },
-                            description: "Series definitions for the chart.",
                         },
-                        xKey: {
-                            type: "string",
-                            description:
-                                "The key in data objects to use for x-axis values.",
-                        },
-                        xLabel: {
-                            type: "string",
-                            description: "Label for the x-axis.",
-                        },
-                        yLabel: {
-                            type: "string",
-                            description: "Label for the y-axis.",
-                        },
+                        xKey: { type: "string" },
+                        xLabel: { type: "string" },
+                        yLabel: { type: "string" },
                     },
                     required: ["title", "data", "series", "xKey"],
                 },
@@ -455,10 +349,6 @@ export const sendMessage = async (
             messages,
             selectedModelId,
         );
-
-        // Build request body - only include thinking parameters for Claude models
-        // Note: Some Bedrock models don't support both temperature and top_p together,
-        // so we only include top_p when it differs from the default value of 1
         const requestBody = {
             model: selectedModelId,
             messages: formattedMessages,
@@ -470,35 +360,25 @@ export const sendMessage = async (
                 : "auto",
             stream: true,
         };
-
-        // Only include top_p if it differs from the default value of 1
-        // This avoids conflicts with Bedrock models that don't support both temperature and top_p
-        if (topP !== 1) {
-            requestBody.top_p = topP;
-        }
-
-        // Only add thinking parameters for Claude models
+        if (topP !== 1) requestBody.top_p = topP;
         if (isClaude) {
             requestBody.thinking = { type: "enabled" };
             requestBody.reasoning_effort = "high";
         }
 
-        const response = await fetch(
-            "https://gen.pollinations.ai/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${currentApiToken}`,
-                },
-                body: JSON.stringify(requestBody),
-                signal: abortController.signal,
-            },
-        );
+        const headers = { "Content-Type": "application/json" };
+        const token = getApiToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody),
+            signal: abortController.signal,
+        });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API Error ${response.status}: ${errorText}`);
+            throw await parseApiError(response);
         }
 
         const reader = response.body.getReader();
@@ -519,9 +399,7 @@ export const sendMessage = async (
             sseBuffer = events.pop() ?? "";
 
             for (const event of events) {
-                const lines = event.split("\n");
-
-                for (const line of lines) {
+                for (const line of event.split("\n")) {
                     if (!line.startsWith("data: ")) continue;
                     const payload = line.slice(6).trim();
                     if (!payload || payload === "[DONE]") continue;
@@ -533,8 +411,7 @@ export const sendMessage = async (
                     try {
                         parsed = JSON.parse(dataString);
                         pendingData = "";
-                    } catch (_parseError) {
-                        // Hold onto partial JSON until the rest of the chunk arrives.
+                    } catch {
                         pendingData = dataString;
                         continue;
                     }
@@ -557,98 +434,51 @@ export const sendMessage = async (
                         const argChunk = fn?.arguments || "";
                         if (!functionBuffers[name]) functionBuffers[name] = "";
                         functionBuffers[name] += argChunk;
-
-                        let parsedArgs = null;
                         try {
                             const attempt = JSON.parse(functionBuffers[name]);
-                            parsedArgs =
-                                typeof attempt === "string"
-                                    ? JSON.parse(attempt)
-                                    : attempt;
-                        } catch (_err) {
-                            parsedArgs = null;
-                        }
-
-                        if (parsedArgs !== null) {
                             collectedFunctionCalls.push({
                                 name,
-                                arguments: parsedArgs,
+                                arguments:
+                                    typeof attempt === "string"
+                                        ? JSON.parse(attempt)
+                                        : attempt,
                             });
                             delete functionBuffers[name];
-                        }
-                    }
-
-                    const legacyCall = delta?.function_call;
-                    if (legacyCall) {
-                        const name =
-                            legacyCall?.name ||
-                            lastFunctionName ||
-                            "unknown_function";
-                        if (legacyCall?.name)
-                            lastFunctionName = legacyCall.name;
-                        const argChunk = legacyCall?.arguments || "";
-                        if (!functionBuffers[name]) functionBuffers[name] = "";
-                        functionBuffers[name] += argChunk;
-
-                        let parsedArgs = null;
-                        try {
-                            const attempt = JSON.parse(functionBuffers[name]);
-                            parsedArgs =
-                                typeof attempt === "string"
-                                    ? JSON.parse(attempt)
-                                    : attempt;
-                        } catch (_err) {
-                            parsedArgs = null;
-                        }
-
-                        if (parsedArgs !== null) {
-                            collectedFunctionCalls.push({
-                                name,
-                                arguments: parsedArgs,
-                            });
-                            delete functionBuffers[name];
+                        } catch {
+                            /* accumulating */
                         }
                     }
                 }
             }
         }
 
-        let finalContent = fullContent;
-        if (typeof finalContent === "string") {
-            finalContent = finalContent
-                .replace(/\s+$/g, "")
-                .replace(/\n{3,}/g, "\n\n");
-        }
-        if (collectedFunctionCalls.length > 0) {
-            for (const call of collectedFunctionCalls) {
-                if (call.name === "create_chart") {
-                    try {
-                        const args = call.arguments;
-                        // Use Nuxt-style format directly from function arguments
-                        const chartData = {
-                            type: "chart",
-                            output: {
-                                title: args.title,
-                                data: args.data,
-                                series: args.series,
-                                xKey: args.xKey,
-                                xLabel: args.xLabel || "X Axis",
-                                yLabel: args.yLabel || "Y Axis",
-                            },
-                        };
-                        finalContent += `\n\n__CHART__${JSON.stringify(chartData)}__CHART__`;
-                    } catch (chartError) {
-                        console.error(
-                            "Failed to parse chart arguments:",
-                            chartError,
-                        );
-                    }
+        let finalContent =
+            typeof fullContent === "string"
+                ? fullContent.replace(/\s+$/g, "").replace(/\n{3,}/g, "\n\n")
+                : fullContent;
+
+        for (const call of collectedFunctionCalls) {
+            if (call.name === "create_chart") {
+                try {
+                    const args = call.arguments;
+                    finalContent += `\n\n__CHART__${JSON.stringify({
+                        type: "chart",
+                        output: {
+                            title: args.title,
+                            data: args.data,
+                            series: args.series,
+                            xKey: args.xKey,
+                            xLabel: args.xLabel || "X Axis",
+                            yLabel: args.yLabel || "Y Axis",
+                        },
+                    })}__CHART__`;
+                } catch {
+                    /* skip malformed chart */
                 }
             }
         }
 
         if (onComplete) onComplete(finalContent, "");
-
         abortController = null;
         return finalContent;
     } catch (error) {
@@ -657,7 +487,6 @@ export const sendMessage = async (
             if (onError) onError(new Error("User aborted"));
             return null;
         }
-        console.error("Request error:", error);
         if (onError) onError(error);
         throw error;
     }
@@ -669,183 +498,91 @@ export const stopGeneration = () => {
         abortController = null;
     }
 };
-// Generate image from text prompt
+
 export const generateImage = async (prompt, options = {}) => {
-    try {
-        const {
-            model = "flux",
-            width = 1024,
-            height = 1024,
-            seed = Math.floor(Math.random() * 2147483647),
-            nologo = false,
-            enhance = false,
-            nofeed = false,
-            safe = false,
-            quality = "medium",
-        } = options;
+    const {
+        model = "flux",
+        width = 1024,
+        height = 1024,
+        seed = Math.floor(Math.random() * 2147483647),
+        nologo = false,
+        enhance = false,
+        nofeed = false,
+        safe = false,
+        quality = "medium",
+    } = options;
 
-        // Build URL with prompt in path and parameters as query string
-        const params = new URLSearchParams({
-            model,
-            width: width.toString(),
-            height: height.toString(),
-            seed: seed.toString(),
-            enhance: enhance.toString(),
-            nologo: nologo.toString(),
-            nofeed: nofeed.toString(),
-            safe: safe.toString(),
-            quality,
-        });
+    const params = new URLSearchParams({
+        model,
+        width,
+        height,
+        seed,
+        enhance,
+        nologo,
+        nofeed,
+        safe,
+        quality,
+    });
+    const url = `${BASE_URL}/image/${encodeURIComponent(prompt)}?${params}`;
+    const token = getApiToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw await parseApiError(response);
 
-        // Encode the prompt for URL path
-        const encodedPrompt = encodeURIComponent(prompt);
-        const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
-
-        console.log(`🎨 Generating image with prompt: "${prompt}"`);
-        console.log(
-            `📐 Parameters: ${width}x${height}, model: ${model}, seed: ${seed}`,
-        );
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${currentApiToken}`,
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-                `Image generation failed: ${response.status} - ${errorText}`,
-            );
-        }
-
-        // Get the image as a blob
-        const blob = await response.blob();
-
-        // Convert blob to base64 data URL for display
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                console.log(`✅ Image generated successfully`);
-                resolve({
-                    url: reader.result,
-                    prompt,
-                    model,
-                    width,
-                    height,
-                    seed,
-                });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error("❌ Image generation error:", error);
-        throw error;
-    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () =>
+            resolve({ url: reader.result, prompt, model, width, height, seed });
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 };
 
-// Generate video from text prompt
 export const generateVideo = async (prompt, options = {}) => {
-    try {
-        const {
-            model = "veo",
-            seed = Math.floor(Math.random() * 2147483647),
-            nologo = false,
-            nofeed = false,
-        } = options;
+    const {
+        model = "veo",
+        seed = Math.floor(Math.random() * 2147483647),
+        nologo = false,
+        nofeed = false,
+    } = options;
 
-        // Build URL with prompt in path and parameters as query string
-        const params = new URLSearchParams({
-            model,
-            seed: seed.toString(),
-            nologo: nologo.toString(),
-            nofeed: nofeed.toString(),
-        });
+    const params = new URLSearchParams({ model, seed, nologo, nofeed });
+    // Correct endpoint: /video/{prompt}  (not /image/{prompt})
+    const url = `${BASE_URL}/video/${encodeURIComponent(prompt)}?${params}`;
+    const token = getApiToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw await parseApiError(response);
 
-        // Encode the prompt for URL path
-        const encodedPrompt = encodeURIComponent(prompt);
-        const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
-
-        console.log(`🎬 Generating video with prompt: "${prompt}"`);
-        console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${currentApiToken}`,
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-                `Video generation failed: ${response.status} - ${errorText}`,
-            );
-        }
-
-        // Get the video as a blob
-        const blob = await response.blob();
-
-        // Convert blob to base64 data URL for display
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                console.log(`✅ Video generated successfully`);
-                resolve({
-                    url: reader.result,
-                    prompt,
-                    model,
-                    seed,
-                });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error("❌ Video generation error:", error);
-        throw error;
-    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () =>
+            resolve({ url: reader.result, prompt, model, seed });
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 };
 
-/**
- * Fetch the user's pollen balance
- * Only works with user API keys (sk_), not publishable keys
- * @param {string} apiToken - The API token to use for fetching balance
- * @returns {Promise<{totalBalance: number, tierBalance: number, packBalance: number, cryptoBalance: number} | null>}
- */
-export const fetchPollenBalance = async (apiToken) => {
-    try {
-        // Only fetch balance if using a user key (secret key starting with sk_)
-        if (!apiToken || !apiToken.startsWith("sk_")) {
-            return null;
-        }
+// Generate speech/audio — GET /audio/{text}?voice=...
+export const generateAudio = async (text, options = {}) => {
+    const { voice = "nova", model = "openai-audio" } = options;
 
-        const response = await fetch(BALANCE_ENDPOINT, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${apiToken}`,
-            },
-        });
+    const params = new URLSearchParams({ voice, model });
+    const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;
+    const token = getApiToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw await parseApiError(response);
 
-        if (!response.ok) {
-            console.warn("Failed to fetch pollen balance:", response.status);
-            return null;
-        }
-
-        const data = await response.json();
-        const { tierBalance = 0, packBalance = 0, cryptoBalance = 0 } = data;
-        const totalBalance = tierBalance + packBalance + cryptoBalance;
-
-        return {
-            totalBalance,
-            tierBalance,
-            packBalance,
-            cryptoBalance,
-        };
-    } catch (error) {
-        console.error("Error fetching pollen balance:", error);
-        return null;
-    }
+    const blob = await response.blob();
+    const mimeType = blob.type || "audio/mpeg";
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () =>
+            resolve({ url: reader.result, text, voice, model, mimeType });
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 };

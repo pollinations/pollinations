@@ -1,0 +1,21 @@
+{
+  "name": "@pollinations/finance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runway tracker for Pollinations. Ingests transaction CSVs, writes a Google Sheet via gog CLI.",
+  "bin": {
+    "finance-rebuild": "./bin/rebuild-sheet.mjs",
+    "finance-add-month": "./bin/add-month.mjs",
+    "finance-forecast": "./bin/forecast.mjs"
+  },
+  "scripts": {
+    "test": "node --test 'test/**/*.test.mjs'",
+    "rebuild": "node bin/rebuild-sheet.mjs",
+    "add-month": "node bin/add-month.mjs",
+    "forecast": "node bin/forecast.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

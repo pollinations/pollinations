@@ -13,8 +13,11 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ErrorRouteImport } from './routes/error'
+import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InternalDesignRouteImport } from './routes/internal.design'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -36,6 +39,16 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeviceRoute = DeviceRouteImport.update({
+  id: '/device',
+  path: '/device',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthorizeRoute = AuthorizeRouteImport.update({
   id: '/authorize',
   path: '/authorize',
@@ -46,60 +59,94 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InternalDesignRoute = InternalDesignRouteImport.update({
+  id: '/internal/design',
+  path: '/internal/design',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/internal.design.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
+  '/device': typeof DeviceRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
+  '/device': typeof DeviceRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
+  '/device': typeof DeviceRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/authorize'
+    | '/device'
+    | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/internal/design'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/authorize' | '/privacy' | '/refunds' | '/sign-in' | '/terms'
+  to:
+    | '/'
+    | '/authorize'
+    | '/device'
+    | '/error'
+    | '/privacy'
+    | '/refunds'
+    | '/sign-in'
+    | '/terms'
+    | '/internal/design'
   id:
     | '__root__'
     | '/'
     | '/authorize'
+    | '/device'
+    | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/internal/design'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthorizeRoute: typeof AuthorizeRoute
+  DeviceRoute: typeof DeviceRoute
+  ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  InternalDesignRoute: typeof InternalDesignRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +179,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/device': {
+      id: '/device'
+      path: '/device'
+      fullPath: '/device'
+      preLoaderRoute: typeof DeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/authorize': {
       id: '/authorize'
       path: '/authorize'
@@ -146,16 +207,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/internal/design': {
+      id: '/internal/design'
+      path: '/internal/design'
+      fullPath: '/internal/design'
+      preLoaderRoute: typeof InternalDesignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthorizeRoute: AuthorizeRoute,
+  DeviceRoute: DeviceRoute,
+  ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  InternalDesignRoute: InternalDesignRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

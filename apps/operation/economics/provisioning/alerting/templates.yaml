@@ -1,0 +1,11 @@
+apiVersion: 1
+
+templates:
+  - orgId: 1
+    name: minimal-discord
+    template: |
+      {{ define "minimal.message" }}
+      {{ range .Alerts }}
+      {{ if eq .Status "firing" }}{{ if eq .Labels.severity "critical" }}🔴{{ else }}🟠{{ end }} {{ .Labels.model }} {{ printf "%.0f" .Values.B.Value }}%{{ end }}
+      {{ end }}
+      {{ end }}

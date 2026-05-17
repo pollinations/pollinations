@@ -2,9 +2,9 @@
 
 > 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
 
-> Quick reference for testing image and text models via **enter.pollinations.ai**
+> Quick reference for testing image and text models via **gen.pollinations.ai**. Enter keeps the dashboard and internal `/api/*` control-plane routes.
 
-> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+> ⚠️ **Note**: Generation routes now live on gen without an internal `/api/generate` prefix.
 
 ---
 
@@ -12,9 +12,9 @@
 
 ### Endpoints
 
-- **Image:** `GET /api/generate/image/{prompt}?model=flux`
-- **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
-- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+- **Image:** `GET /image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /v1/chat/completions` with JSON body
+- **Text (Simple):** `GET /text/{prompt}?model=openai`
 
 ### Authentication
 
@@ -23,8 +23,8 @@
 
 ### Model Discovery
 
-- **Image models:** `/api/generate/image/models`
-- **Text models:** `/api/generate/v1/models`
+- **Image models:** `/image/models`
+- **Text models:** `/v1/models`
 
 ---
 
@@ -359,6 +359,54 @@ curl "$BASE_URL/generate/image/test?model=flux" \
 
 ---
 
+## 💳 Local Stripe Webhook Testing
+
+To test Stripe pack purchases locally, you need to forward webhooks to your local dev server.
+
+### One-Time Setup
+
+1. **Install Stripe CLI**: https://stripe.com/docs/stripe-cli
+
+2. **Login to the correct Stripe account**:
+   ```bash
+   stripe login
+   ```
+   Authenticate with the **Myceli.AI OÜ** test account (`acct_1SrYSy6O03AauPe8`)
+
+3. **Decrypt secrets**:
+   ```bash
+   npm run decrypt-vars
+   ```
+
+### Running Local Webhook Testing
+
+```bash
+# Start webhook forwarding (uses permanent secret from Stripe Dashboard)
+stripe listen --forward-to localhost:3000 --load-from-webhooks-api
+```
+
+> **CRITICAL**: Do NOT add `/api/webhooks/stripe` to the `--forward-to` URL! The `--load-from-webhooks-api` flag already includes the path from Stripe Dashboard. Adding it manually causes path duplication (`/api/webhooks/stripe/api/webhooks/stripe`) and 404 errors.
+
+Then in another terminal:
+```bash
+npm run dev
+```
+
+### Testing a Purchase
+
+1. Go to `http://localhost:3000`
+2. Click a pack purchase button (e.g., "+ $10")
+3. Complete checkout with test card: `4242 4242 4242 4242`
+4. Watch terminal for: `Stripe: Credited X pollen to user...`
+
+### Troubleshooting
+
+- **Wrong account**: If `--load-from-webhooks-api` fails, run `stripe login` again
+- **Webhook secret mismatch**: Ensure `.dev.vars` has the correct `STRIPE_WEBHOOK_SECRET`
+- **Async crypto error**: The code uses `constructEventAsync` for Cloudflare Workers compatibility
+
+---
+
 ## Batch Testing
 
 ### Generate Multiple Images
@@ -532,41 +580,52 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ---
 
-## 🔐 OAuth Authorization Flow
+## 🔐 BYOP Authorization Flow
 
-Third-party apps can redirect users to the authorize page to get an API key with pre-selected permissions.
+Third-party apps redirect users to get an API key. With `app_key`, the consent screen shows app name + developer GitHub.
 
 ### Base URL
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL
+https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_yourkey
 ```
 
-### Optional Preselection Parameters
+### Parameters
 
 | Param | Description | Example |
 |-------|-------------|---------|
+| `app_key` | Publishable key (shows app name + author) | `pk_abc123` |
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,balance,usage` |
+| `permissions` | Account permissions | `profile,usage` |
 
 ### Account Permissions
 
 - `profile`: Read user's name, email, GitHub username
-- `balance`: Read pollen balance
-- `usage`: Read usage history
+- `usage`: Read usage history and pollen balance
+
+### App Registration
+
+Register a `pk_` key at enter.pollinations.ai with at least one **Redirect URI** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
 
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&permissions=profile,balance&expiry=7&models=flux,openai
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,usage&expiry=7
 ```
 
-After authorization, the user is redirected back with the API key in the URL fragment:
+After authorization, the user is redirected back with an `sk_` key in the URL fragment:
 ```
-https://myapp.com/callback#api_key=pk_xxxxx
+https://myapp.com/callback#api_key=sk_xxxxx
 ```
+
+### App Lookup Endpoint
+
+`GET /api/app-lookup` — resolves app attribution (no auth required):
+- `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
+
+URL-based identity lookup was removed — identity is derived from `client_id` only, never from the redirect URL. When `client_id` is present, the requested `redirect_uri` must exactly match one registered redirect URI. See PR #10447.
 
 ---
 
@@ -576,13 +635,13 @@ https://myapp.com/callback#api_key=pk_xxxxx
 
 ### Tier Levels
 
-| Tier   | Emoji | Pollen/Day | Criteria                 |
-| ------ | ----- | ---------- | ------------------------ |
-| spore  | 🍄    | 5          | Default (new accounts)   |
-| seed   | 🌱    | 10         | GitHub engagement        |
-| flower | 🌸    | 15         | Contributed code/project |
-| nectar | 🍯    | 20         | Strategic partners       |
-| router | 🔌    | 100        | Infrastructure partners  |
+| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
+| ------ | ----- | -------- | ------- | ------------------------ |
+| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
+| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
+| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
+| flower | 🌸    | 0.4      | hourly  | Contributor              |
+| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
 
 ### Quick Tier Update
 
@@ -597,9 +656,6 @@ npx wrangler d1 execute DB --remote --env production \
 npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
 
-# 3. Update Polar subscription
-export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
 ```
 
 ### Evaluate User for Upgrade
@@ -619,3 +675,73 @@ npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier f
 - **DB tier** = what user CAN activate
 - **Polar subscription** = what user HAS activated
 - If no Polar subscription, user must click "Activate" at enter.pollinations.ai
+
+---
+
+## API Documentation Pipeline
+
+The API reference at `gen.pollinations.ai/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
+
+### How It Works
+
+```
+Source files (routes + Zod schemas)
+        │
+        ▼
+hono-openapi introspects describeRoute() + validators
+        │
+        ▼
+OpenAPI 3.x JSON served at /docs/open-api/generate-schema
+        │
+        ├──► Scalar UI at gen.pollinations.ai/docs (interactive, runtime)
+        ├──► /docs/llm.txt (compact plain text for AI agents)
+        └──► gen.pollinations.ai/scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
+```
+
+### Source Files (what you edit)
+
+| File | What it controls |
+|------|-----------------|
+| `src/routes/proxy.ts` | Endpoint descriptions, summaries, response schemas, error codes |
+| `src/routes/account.ts` | Account endpoint descriptions |
+| `src/routes/docs.ts` | OpenAPI info/intro text, tag descriptions, code samples, LLM doc, schema transformations |
+| `src/schemas/image.ts` | Image/video query param definitions (auto-become OpenAPI params) |
+| `src/schemas/text.ts` | Text query param definitions |
+| `src/schemas/openai.ts` | OpenAI-compatible request/response schemas |
+| `src/utils/api-docs.ts` | `errorResponseDescriptions()` helper |
+| `src/error.ts` | Known error status codes list |
+
+### Key Concepts
+
+- **`describeRoute()`** — each route declares its tags, summary, description, and response schemas inline
+- **Zod schemas with `.meta()`** — query/body params become OpenAPI parameters automatically (types, defaults, descriptions, enums)
+- **`transformOpenAPISchema()`** in `docs.ts` does three things:
+  1. Strips `/generate/` prefix from paths (internal mount point → public API paths)
+  2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
+  3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
+- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
+- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
+
+### Three Output Surfaces
+
+1. **Scalar UI** (`gen.pollinations.ai/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+2. **LLM text** (`/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
+3. **APIDOCS.md** — markdown version, generated offline by `gen.pollinations.ai/scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
+
+### Regenerating APIDOCS.md
+
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
+
+### Where to Make Changes
+
+| Want to change... | Edit this |
+|-------------------|----------|
+| Endpoint description or summary | `describeRoute()` in the route file (`proxy.ts`, `account.ts`) |
+| Query/body parameters | Zod schema in `src/schemas/` |
+| Error response codes shown | `errorResponseDescriptions()` call in the route |
+| Tag descriptions (sidebar categories) | `tags` array in `docs.ts` OpenAPI config |
+| Code samples (curl/Python/JS tabs) | `CODE_SAMPLES` object in `docs.ts` |
+| API intro text (Quick Start, Auth, Errors) | `documentation.info.description` in `docs.ts` |
+| LLM doc content | `generateLLMDoc()` in `docs.ts` |
+| Model lists in enums | Model registries in `shared/registry/` (auto-picked up) |

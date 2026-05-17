@@ -1,7 +1,7 @@
 {
-    "name": "pollinations.ai - beta",
-    "short_name": "enter.pollinations.ai",
-    "description": "Developer console for APIs, pollen grants, and usage",
+    "name": "pollinations.ai - Developer Console",
+    "short_name": "Pollinations",
+    "description": "Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps.",
     "icons": [{
             "src": "/icon-192.png",
             "sizes": "192x192",
@@ -13,8 +13,8 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#5b2dd8",
-    "background_color": "#5b2dd8",
+    "theme_color": "#D1FAE4",
+    "background_color": "#110518",
     "display": "standalone",
     "start_url": "/"
 }

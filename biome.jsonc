@@ -15,6 +15,9 @@
             "complexity": {
                 "useLiteralKeys": "off",
                 "noBannedTypes": "off"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "off"
             }
         }
     },
@@ -24,6 +27,7 @@
             // exclude dependencies
             ".github/**",
             "!**/node_modules/**",
+            "!**/reddit/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
             "!**/build/**",
@@ -35,8 +39,48 @@
             "!**/worker-runtime.d.ts",
             "!**/worker-bindins.d.ts",
             "!**/better-auth.ts",
-            "!**/routeTree.gen.ts"
+            "!**/routeTree.gen.ts",
+            // exclude CSS - Biome doesn't support Tailwind v4 syntax
+            "!**/*.css",
+            // exclude YAML and Markdown - not natively formatted by Biome
+            "!**/*.yml",
+            "!**/*.md"
         ]
+    },
+    "overrides": [
+        {
+            "includes": ["apps/chat/**"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off",
+                        "useButtonType": "off",
+                        "noStaticElementInteractions": "off",
+                        "useKeyWithClickEvents": "off",
+                        "useKeyWithMouseEvents": "off",
+                        "noLabelWithoutControl": "off",
+                        "useMediaCaption": "off",
+                        "useSemanticElements": "off"
+                    },
+                    "suspicious": {
+                        "noArrayIndexKey": "off",
+                        "noAssignInExpressions": "off"
+                    },
+                    "correctness": {
+                        "useExhaustiveDependencies": "off",
+                        "noInvalidUseBeforeDeclaration": "off"
+                    }
+                }
+            }
+        }
+    ],
+    "css": {
+        "formatter": {
+            "enabled": false
+        },
+        "linter": {
+            "enabled": false
+        }
     },
     "json": {
         "formatter": {

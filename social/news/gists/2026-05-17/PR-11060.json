@@ -1,0 +1,35 @@
+{
+  "pr_number": 11060,
+  "title": "Add X spinoff to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11060",
+  "merged_at": "2026-05-17T16:37:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [X spinoff](https://tweet-composition-and-publication-x.netlify.app/) to writing\n- Adds AI features to X via X spinoff.\n\nFixes #9948",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "X Marks the Bot",
+    "blurb": "A new community app just landed in the greenhouse! 'X spinoff' brings AI-powered writing features directly to your tweeting workflow.",
+    "summary": "Added the 'X spinoff' app to the community showcase, providing AI-assisted tweet composition and publication features.",
+    "impact": "Users can now explore a new community-built tool for generating and publishing content to X.",
+    "keywords": [
+      "community",
+      "app",
+      "twitter",
+      "x",
+      "writing"
+    ],
+    "visual_concept": "Polly the bee acting as a writer/journalist, interacting with a little blue bird or a retro terminal displaying short messages, representing the new X/Twitter writing app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny journalist hat, typing on a retro mechanical keyboard next to a glowing blue pixel bird. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11060.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny journalist hat, typing on a retro mechanical keyboard next to a glowing blue pixel bird. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-17T16:38:04.666519+00:00",
+  "app_name": "X spinoff",
+  "app_url": "https://tweet-composition-and-publication-x.netlify.app/"
+}

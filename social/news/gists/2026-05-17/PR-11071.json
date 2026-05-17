@@ -1,0 +1,35 @@
+{
+  "pr_number": 11071,
+  "title": "Add Prompt Evolution Engine to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11071",
+  "merged_at": "2026-05-17T17:13:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Prompt Evolution Engine](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) to image\n- Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine.\n\nFixes #9995",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Evolving your prompts",
+    "blurb": "The Prompt Evolution Engine just landed in the Greenhouse! Watch your simple ideas grow into cinematic masterpieces through a 5-step interactive AI journey.",
+    "summary": "Added the Prompt Evolution Engine to the community apps directory, a tool that transforms simple prompts into cinematic visuals through a 5-step interactive AI process.",
+    "impact": "Users can now discover and use the Prompt Evolution Engine to iteratively refine their basic prompts into highly detailed, cinematic image generation prompts with real-time visual feedback.",
+    "keywords": [
+      "community",
+      "apps",
+      "prompt-engineering",
+      "images",
+      "greenhouse"
+    ],
+    "visual_concept": "Metaphor of evolution and growth. Polly the bee and the Monitor Robot tending to a sequence of 5 plants that grow from a tiny seed into a massive cinematic glowing flower, representing the 5-step prompt evolution process.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot tending to a row of five lime green (#ecf874) flower pots. In the first pot is a tiny glowing seed, and in each successive pot, the plant evolves, culminating in a massive, cinematic glowing flower in the final pot. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EVOLVE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11071.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot tending to a row of five lime green (#ecf874) flower pots. In the first pot is a tiny glowing seed, and in each successive pot, the plant evolves, culminating in a massive, cinematic glowing flower in the final pot. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EVOLVE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:14:02.301526+00:00",
+  "app_name": "Prompt Evolution Engine",
+  "app_url": "https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/"
+}

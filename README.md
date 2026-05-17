@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✂️ AI Clip Finder](https://kenz1s-ai-clip-finder.hf.space/) | Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation. | [@PixelTMT](https://github.com/PixelTMT) |
 | [🍽️ TaqniX](https://taqnix.hexabizsolutions.cloud) | Transforms a WhatsApp number into an automated sales channel that manages the full restaurant ordering lifecycle—greeting, menu browsing, OTP confirmation, and kitchen dispatch for TaqniX. | [@zakrya6665](https://github.com/zakrya6665) |
 | [🤖 2012's bot](https://2012hhh2012.qzz.io/2012sbot/) | Entertain users and provide server utilities via 2012's bot for Discord, including AI-powered features and image generation using pollinations.ai API. | [@2012hhh2012](https://github.com/2012hhh2012) |
 | [🧰 CreatorPack AI](https://creatorpack.qhero.net/) | CreatorPack AI generates multilingual social media content packs, built by Qhero. | [@qhero256](https://github.com/qhero256) |
@@ -29,7 +30,6 @@
 | [🖼️ Pollinations Image Generator](https://mikehuge79-max.github.io/pollinations-image-generator/) | Generate AI images in-browser via Pollinations.ai API with Pollinations Image Generator, supporting 21 models with free/paid tiers, aspect presets, seed control, prompt enhancement, and PNG download. | [@mikehuge79-max](https://github.com/mikehuge79-max) |
 | [🧠 AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) | Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and | [@cyber-sec0](https://github.com/cyber-sec0) |
 | [🚀 TubeBoost AI](https://tubeboost.kr) | TubeBoost AI helps creators translate YouTube video metadata such as titles. | [@Johau91](https://github.com/Johau91) |
-| [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

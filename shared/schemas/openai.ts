@@ -506,7 +506,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     model: z.string(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
-    usage: CompletionUsageSchema.optional(),
+    usage: CompletionUsageSchema.nullish(),
     user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
@@ -557,13 +557,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
     model: z.string(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion.chunk"),
-    usage: z
-        .object({
-            completion_tokens: z.number().int(),
-            prompt_tokens: z.number().int(),
-            total_tokens: z.number().int(),
-        })
-        .optional(),
+    usage: CompletionUsageSchema.nullish(),
 });
 
 const OpenAIModelSchema = z

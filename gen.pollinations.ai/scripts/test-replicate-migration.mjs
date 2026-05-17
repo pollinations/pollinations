@@ -16,7 +16,7 @@
  * Requires REPLICATE_API_TOKEN in .dev.vars or env.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,11 +56,14 @@ async function runPrediction({ model, input }) {
     let polls = 0;
     while (pred.status === "starting" || pred.status === "processing") {
         if (polls >= 60) {
-            throw new Error(`Prediction ${pred.id} stuck (${pred.status}) after 5 min`);
+            throw new Error(
+                `Prediction ${pred.id} stuck (${pred.status}) after 5 min`,
+            );
         }
         await new Promise((r) => setTimeout(r, 5000));
         const pollResp = await fetch(
-            pred.urls?.get || `https://api.replicate.com/v1/predictions/${pred.id}`,
+            pred.urls?.get ||
+                `https://api.replicate.com/v1/predictions/${pred.id}`,
             { headers: { Authorization: `Bearer ${TOKEN}` } },
         );
         pred = await pollResp.json();
@@ -95,8 +98,7 @@ const tests = [
             const pred = await runPrediction({
                 model: "bytedance/seedream-5-lite",
                 input: {
-                    prompt:
-                        "A bright red apple sitting on an old wooden kitchen table, soft window light, photographic",
+                    prompt: "A bright red apple sitting on an old wooden kitchen table, soft window light, photographic",
                     size: "2K",
                     aspect_ratio: "1:1",
                     image_input: [],
@@ -106,7 +108,9 @@ const tests = [
                     seed: 42,
                 },
             });
-            const url = Array.isArray(pred.output) ? pred.output[0] : pred.output;
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
             seedImageUrl = url;
             const file = await downloadToFile(url, "1-seedream5-t2i.png");
             return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s url=${url.slice(0, 60)}...`;
@@ -119,8 +123,7 @@ const tests = [
             const pred = await runPrediction({
                 model: "bytedance/seedream-5-lite",
                 input: {
-                    prompt:
-                        "Add a small green leaf to the apple's stem. Keep the table and lighting identical.",
+                    prompt: "Add a small green leaf to the apple's stem. Keep the table and lighting identical.",
                     size: "2K",
                     aspect_ratio: "match_input_image",
                     image_input: [seedImageUrl],
@@ -129,7 +132,9 @@ const tests = [
                     max_images: 1,
                 },
             });
-            const url = Array.isArray(pred.output) ? pred.output[0] : pred.output;
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
             const file = await downloadToFile(url, "2-seedream5-i2i.png");
             return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s`;
         },
@@ -148,7 +153,10 @@ const tests = [
                     camera_fixed: false,
                 },
             });
-            const file = await downloadToFile(pred.output, "3-seedance-t2v.mp4");
+            const file = await downloadToFile(
+                pred.output,
+                "3-seedance-t2v.mp4",
+            );
             return `output=${file.sizeKB}KB duration=${pred.metrics?.video_output_duration_seconds || "?"}s`;
         },
     },
@@ -167,7 +175,10 @@ const tests = [
                     camera_fixed: false,
                 },
             });
-            const file = await downloadToFile(pred.output, "4-seedance-i2v.mp4");
+            const file = await downloadToFile(
+                pred.output,
+                "4-seedance-i2v.mp4",
+            );
             return `output=${file.sizeKB}KB duration=${pred.metrics?.video_output_duration_seconds || "?"}s`;
         },
     },
@@ -185,7 +196,10 @@ const tests = [
                     camera_fixed: false,
                 },
             });
-            const file = await downloadToFile(pred.output, "5-seedance-pro-t2v.mp4");
+            const file = await downloadToFile(
+                pred.output,
+                "5-seedance-pro-t2v.mp4",
+            );
             return `output=${file.sizeKB}KB duration=${pred.metrics?.video_output_duration_seconds || "?"}s`;
         },
     },
@@ -204,7 +218,10 @@ const tests = [
                     camera_fixed: false,
                 },
             });
-            const file = await downloadToFile(pred.output, "6-seedance-pro-i2v.mp4");
+            const file = await downloadToFile(
+                pred.output,
+                "6-seedance-pro-i2v.mp4",
+            );
             return `output=${file.sizeKB}KB duration=${pred.metrics?.video_output_duration_seconds || "?"}s`;
         },
     },
@@ -222,7 +239,9 @@ for (const t of tests) {
         results.push({ name: t.name, ok: true });
     } catch (err) {
         const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-        console.log(`  ✗ ${t.name}  [${elapsed}s]  ${err.message?.slice(0, 200)}`);
+        console.log(
+            `  ✗ ${t.name}  [${elapsed}s]  ${err.message?.slice(0, 200)}`,
+        );
         results.push({ name: t.name, ok: false });
     }
 }

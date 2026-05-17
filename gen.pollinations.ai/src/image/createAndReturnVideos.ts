@@ -20,6 +20,7 @@ import { callWanAPI, callWanFastAPI } from "./models/wanVideoModel.ts";
 import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
+
 export type { VideoGenerationResult };
 
 import type { ImageModelName } from "@shared/registry/image.ts";

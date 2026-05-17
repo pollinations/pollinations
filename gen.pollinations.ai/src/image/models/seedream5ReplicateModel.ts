@@ -158,7 +158,9 @@ export async function callSeedream5API(
     logOps("Seedream 5.0 input:", {
         ...input,
         prompt: prompt.slice(0, 80),
-        image_input: imageInput.length ? `[${imageInput.length} data uris]` : [],
+        image_input: imageInput.length
+            ? `[${imageInput.length} data uris]`
+            : [],
     });
 
     progress.updateBar(
@@ -196,10 +198,7 @@ export async function callSeedream5API(
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(
-            "Seedream 5.0 returned no images",
-            500,
-        );
+        throw new HttpError("Seedream 5.0 returned no images", 500);
     }
 
     progress.updateBar(
@@ -218,7 +217,12 @@ export async function callSeedream5API(
         "KB",
     );
 
-    progress.updateBar(requestId, 95, "Success", "Seedream generation completed");
+    progress.updateBar(
+        requestId,
+        95,
+        "Success",
+        "Seedream generation completed",
+    );
 
     return {
         buffer: imageBuffer,

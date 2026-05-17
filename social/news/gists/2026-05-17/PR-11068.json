@@ -1,0 +1,35 @@
+{
+  "pr_number": 11068,
+  "title": "Add Famous quotes to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11068",
+  "merged_at": "2026-05-17T17:03:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Famous quotes](https://juanrivera126.github.io/Famous-quotes/) to image\n- A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us\n\nFixes #9990",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Picture Perfect Quotes",
+    "blurb": "A new community app just landed in the greenhouse! 'Famous Quotes' turns words of wisdom into beautiful AI-generated posters.",
+    "summary": "Added 'Famous Quotes' by juanrivera126 to the community showcase, a web app that generates artistic posters from specific or random quotes using the Pollinations API.",
+    "impact": "Users can now explore and draw inspiration from this new community project that beautifully combines text generation and image synthesis.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "quotes",
+      "posters"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot in a cozy art studio, admiring a freshly generated poster on an easel. Represents the creation of artistic quote posters.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, admiring a beautiful framed poster on a wooden easel. A chunky pixel robot with a CRT monitor head stands nearby holding a glowing quill pen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11068.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, admiring a beautiful framed poster on a wooden easel. A chunky pixel robot with a CRT monitor head stands nearby holding a glowing quill pen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-17T17:04:22.284609+00:00",
+  "app_name": "Famous quotes",
+  "app_url": "https://juanrivera126.github.io/Famous-quotes/"
+}

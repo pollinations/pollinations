@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🕹️ | Pixel-Colony-God |  | Runs a sandbox web game using pollinations. | en | games | web | @yava-code | 185186582 | https://github.com/yava-code/Pixel-Colony-God | | projectgrplayer | | 2026-04-06 | https://github.com/pollinations/pollinations/issues/10006 | 2026-05-17 |  |  |
 | 🎬 | Prompt Evolution Engine | https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/ | Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine. | en | image | web | @ErBharatMalhotra | 85725773 |  | | a_good.friend | | 2026-04-06 | https://github.com/pollinations/pollinations/issues/9995 | 2026-05-17 |  |  |
 | 🎨 | imggenpro | https://imggengpt.pro/ | Create and enhance. | en | image | web | @ramankamboj300 | 75909071 |  | |  | | 2026-04-06 | https://github.com/pollinations/pollinations/issues/9994 | 2026-05-17 |  |  |
 | 🎨 | AI Image Generator | https://unique-chebakia-44dbdc.netlify.app/ | Generate images with AI Image Generator. | en | image | web | @CryptoRepublic | 59357352 |  | |  | | 2026-04-06 | https://github.com/pollinations/pollinations/issues/9991 | 2026-05-17 |  |  |

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11075,
+  "title": "Add Pixel Asset Forge to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11075",
+  "merged_at": "2026-05-17T17:24:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pixel Asset Forge](https://pixelassetforge.com/) to image\n- Generate professional-grade game assets from text and reference images using neural networks with Pixel Asset Forge. Built for indie game developers, artists, and creators.\n\nFixes #10015",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The pixel forge is hot",
+    "blurb": "Pixel Asset Forge just landed in the community showcase! Now you can generate professional-grade game assets from text and reference images using neural networks.",
+    "summary": "Added Pixel Asset Forge to the community showcase, a new tool built for indie developers to generate game assets from text and reference images.",
+    "impact": "Creators can now discover and use Pixel Asset Forge directly from the ecosystem to streamline their 2D game asset creation workflow.",
+    "keywords": [
+      "community",
+      "app",
+      "pixel-art",
+      "game-assets",
+      "showcase"
+    ],
+    "visual_concept": "A blacksmith's forge, but for digital pixels. Polly the bee acting as a blacksmith, forging a pixelated game asset (like a sword or potion) on an anvil, representing the 'Pixel Asset Forge'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny blacksmith apron, striking a glowing pixelated sword on a small anvil. A chunky robot companion with a CRT monitor head watches excitedly, screen glowing lime green (#ecf874). Soft pastel gradient background with warm lighting radiating from the forge. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11075.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny blacksmith apron, striking a glowing pixelated sword on a small anvil. A chunky robot companion with a CRT monitor head watches excitedly, screen glowing lime green (#ecf874). Soft pastel gradient background with warm lighting radiating from the forge. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-05-17T17:25:31.246166+00:00",
+  "app_name": "Pixel Asset Forge",
+  "app_url": "https://pixelassetforge.com/"
+}

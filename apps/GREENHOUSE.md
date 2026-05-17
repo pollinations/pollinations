@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **778** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **779** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |  | 🫧 |
 | [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |  | 🫧 |
 | [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |  | 🫧 |
 | [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎬 Prompt Evolution Engine](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) | Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  | 🫧 |
 | [🎨 imggenpro](https://imggengpt.pro/) | Create and enhance. | [@ramankamboj300](https://github.com/ramankamboj300) |  | 🫧 |
 | [🎨 AI Image Generator](https://unique-chebakia-44dbdc.netlify.app/) | Generate images with AI Image Generator. | [@CryptoRepublic](https://github.com/CryptoRepublic) |  | 🫧 |
-| [🖼️ Famous quotes](https://juanrivera126.github.io/Famous-quotes/) | A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🫧 |
 
 ---
 
@@ -707,7 +707,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📲 GPT_Project](https://t.me/gpt_project_official_bot) | Telegram AI assistant for work/study: chat, images, voice, TTS, analysis. | [@Lorodn4x](https://github.com/Lorodn4x) |  | 🐝 |
 | [🧙‍♂️ Sage](https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8) | Discord bot offering assistant-style features and server utilities. | [@BokX1](https://github.com/BokX1) | 4 |  |
 
-<details><summary>Show all 53 apps</summary>
+<details><summary>Show all 54 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -719,6 +719,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) | 1 | 🫧 |
 | [📈 BorsaciAI - BIST Financial Analysis Bot](https://t.me/ai_borsaci_bot) | Provides open-source Telegram assistant to summarize companies listed on Borsa Istanbul and combine market data for quick financial analysis; BorsaciAI - BIST Financial Analysis Bot | [@azsaritas](https://github.com/azsaritas) | 1 |  |
 | [🤖 Raphael](https://github.com/GhazanfarAteeb/raphael-discord-bot) | Discord bot for moderation, economy, entertainment, community, plus AI chat. | [@GhazanfarAteeb](https://github.com/GhazanfarAteeb) | 1 |  |
+| [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |  | 🫧 |
 | [🎨 rynzen](https://rynzen.uk/) | Generate images in Discord by typing prompts in a specific channel; rynzen uses pollinations ais flux or flux schnell model to produce the images. | [@MINEOGO](https://github.com/MINEOGO) |  | 🫧 |
 | [🤖 DuOgent](https://duogent.onrender.com/) | Refines AI outputs using DuOgent, a two-agent system with one agent for planning and review and another for execution that iteratively improves results. | [@iFreaku](https://github.com/iFreaku) |  | 🫧 |
 | [🤖 2012's bot](https://2012hhh2012.qzz.io/2012sbot/) | Entertain users and provide server utilities via 2012's bot for Discord, including AI-powered features and image generation using pollinations.ai API. | [@2012hhh2012](https://github.com/2012hhh2012) |  | 🫧 |

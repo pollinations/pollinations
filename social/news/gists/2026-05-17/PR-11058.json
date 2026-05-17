@@ -1,0 +1,35 @@
+{
+  "pr_number": 11058,
+  "title": "Add Psy-Path-AI to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11058",
+  "merged_at": "2026-05-17T16:31:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Psy-Path-AI](https://psy-path-ai.vercel.app/) to learn\n- Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance.\n\nFixes #9944",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Engineering your career path",
+    "blurb": "Psy-Path-AI just landed in the community greenhouse. It mixes MBTI, Holland codes, and AI chat to help engineering students figure out what to do with their lives.",
+    "summary": "Added Psy-Path-AI to the community showcase, a new app that combines psychological profiling (MBTI and Holland codes) with AI-driven chat to provide career guidance for engineering students.",
+    "impact": "Users can now explore a new community-built tool that demonstrates how to use Pollinations for personalized educational and career counseling.",
+    "keywords": [
+      "community",
+      "showcase",
+      "education",
+      "career",
+      "chat"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot acting as career counselors. The robot displaying a branching path or brain icon, while Polly holds a tiny clipboard, set in a cozy study room.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a small clipboard, standing next to a chunky monitor-head robot. The robot's screen displays a glowing branching path diagram. Soft lime green (#ecf874) and warm peach gradient background. A cozy study room setting with code-plants in pots. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11058.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a small clipboard, standing next to a chunky monitor-head robot. The robot's screen displays a glowing branching path diagram. Soft lime green (#ecf874) and warm peach gradient background. A cozy study room setting with code-plants in pots. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-17T16:32:31.882339+00:00",
+  "app_name": "Psy-Path-AI",
+  "app_url": "https://psy-path-ai.vercel.app/"
+}

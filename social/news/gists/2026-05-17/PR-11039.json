@@ -1,0 +1,35 @@
+{
+  "pr_number": 11039,
+  "title": "feat: log request inputs in error events",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11039",
+  "merged_at": "2026-05-17T17:20:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `request_inputs` as a JSON blob on existing Tinybird `error_event` rows.\n- Captures route params, query params, and request body without per-parameter columns.\n- Keeps direct `return c.json(..., 500)` paths unchanged and out of `error_event`.\n- Extends `error_event` retention and `recent_server_errors` default lookback from 3h to 24h.\n- Requires Tinybird validation before merge: `tb --cloud deploy --check --wait`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Better bug hunting",
+    "blurb": "We've upgraded our internal error tracking to capture exactly what inputs caused a hiccup, making it easier for us to squash bugs faster.",
+    "summary": "Added a `request_inputs` JSON blob to Tinybird error events to capture route parameters, query parameters, and request bodies, while extending the error lookback window from 3 to 24 hours.",
+    "impact": "Developers can now debug server errors more effectively with full context of the request that triggered the failure.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "debugging",
+      "logging",
+      "errors"
+    ],
+    "visual_concept": "Polly the bee acting as a detective, examining code inputs. The Nomnom creature eating error logs. Represents capturing and processing error data.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, using a magnifying glass to inspect glowing lime green (#ecf874) code crumbs on a retro terminal screen. The round Nomnom creature sits nearby, happily munching on a stack of error logs. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11039.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, using a magnifying glass to inspect glowing lime green (#ecf874) code crumbs on a retro terminal screen. The round Nomnom creature sits nearby, happily munching on a stack of error logs. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-17T17:21:09.114926+00:00"
+}

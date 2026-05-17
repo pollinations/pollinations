@@ -1,0 +1,36 @@
+{
+  "pr_number": 11050,
+  "title": "Add AI Clip Finder to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11050",
+  "merged_at": "2026-05-17T16:03:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Clip Finder](https://kenz1s-ai-clip-finder.hf.space/) to video_audio\n- Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation.\n\nFixes #8919",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Director's cut, automated",
+    "blurb": "Someone built a tool to watch your long videos and find the good parts so you don't have to. AI Clip Finder is now in the community showcase.",
+    "summary": "Added AI Clip Finder to the community showcase, a FastAPI backend that transcribes long videos and uses LLMs to automatically extract high-impact moments.",
+    "impact": "Video creators can now automate the tedious process of finding social-ready clips from long-form content.",
+    "keywords": [
+      "community",
+      "app",
+      "video",
+      "clipping",
+      "llm",
+      "fastapi"
+    ],
+    "visual_concept": "Polly the bee acting as a video editor, cutting a glowing film strip with pixelated scissors, alongside the Monitor Robot displaying video frames.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, using pixelated scissors to cut a glowing film strip. A chunky retro monitor robot sits nearby displaying a video frame on its screen. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11050.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, using pixelated scissors to cut a glowing film strip. A chunky retro monitor robot sits nearby displaying a video frame on its screen. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-05-17T16:05:03.834093+00:00",
+  "app_name": "AI Clip Finder",
+  "app_url": "https://kenz1s-ai-clip-finder.hf.space/"
+}

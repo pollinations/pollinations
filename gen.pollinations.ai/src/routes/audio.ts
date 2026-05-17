@@ -224,7 +224,6 @@ export async function transcribeWithElevenLabs(opts: {
     responseFormat?: string;
     apiKey: string;
     log: Logger;
-    diarize?: boolean;
     numSpeakers?: number;
 }): Promise<Response> {
     const {
@@ -233,7 +232,6 @@ export async function transcribeWithElevenLabs(opts: {
         responseFormat = "json",
         apiKey,
         log,
-        diarize,
         numSpeakers,
     } = opts;
 
@@ -267,9 +265,9 @@ export async function transcribeWithElevenLabs(opts: {
     if (language) {
         formData.append("language_code", language);
     }
-    const shouldDiarize = diarize || responseFormat === "diarized_json";
+    const wantsDiarizedJson = responseFormat === "diarized_json";
 
-    if (shouldDiarize) {
+    if (wantsDiarizedJson) {
         formData.append("diarize", "true");
         if (numSpeakers !== undefined) {
             formData.append("num_speakers", String(numSpeakers));
@@ -311,10 +309,6 @@ export async function transcribeWithElevenLabs(opts: {
         duration: Math.round(duration * 10) / 10,
     });
 
-    const utterances = shouldDiarize
-        ? groupScribeUtterances(elevenLabsData.words)
-        : [];
-
     // Return response based on format
     if (responseFormat === "text") {
         return new Response(elevenLabsData.text, {
@@ -333,22 +327,11 @@ export async function transcribeWithElevenLabs(opts: {
             language: elevenLabsData.language_code || "unknown",
             duration,
             words:
-                elevenLabsData.words?.map((w) => {
-                    const entry: {
-                        word: string;
-                        start: number;
-                        end: number;
-                        speaker?: string | null;
-                    } = {
-                        word: w.text,
-                        start: w.start,
-                        end: w.end,
-                    };
-                    if (w.speaker_id !== undefined && w.speaker_id !== null) {
-                        entry.speaker = w.speaker_id;
-                    }
-                    return entry;
-                }) ?? [],
+                elevenLabsData.words?.map((w) => ({
+                    word: w.text,
+                    start: w.start,
+                    end: w.end,
+                })) ?? [],
             segments: [
                 {
                     id: 0,
@@ -358,13 +341,11 @@ export async function transcribeWithElevenLabs(opts: {
                 },
             ],
         };
-        if (utterances.length > 0) {
-            verboseResponse.utterances = utterances;
-        }
         return Response.json(verboseResponse, { headers: usageHeaders });
     }
 
     if (responseFormat === "diarized_json") {
+        const utterances = groupScribeUtterances(elevenLabsData.words);
         return Response.json(
             {
                 task: "transcribe",
@@ -381,11 +362,10 @@ export async function transcribeWithElevenLabs(opts: {
     }
 
     // Default: json format
-    const body: Record<string, unknown> = { text: elevenLabsData.text };
-    if (utterances.length > 0) {
-        body.utterances = utterances;
-    }
-    return Response.json(body, { headers: usageHeaders });
+    return Response.json(
+        { text: elevenLabsData.text },
+        { headers: usageHeaders },
+    );
 }
 
 function groupScribeUtterances(
@@ -1090,18 +1070,12 @@ export const audioRoutes = new Hono<Env>()
                                     description:
                                         "Sampling temperature between 0 and 1. Lower is more deterministic.",
                                 },
-                                speaker_labels: {
-                                    type: "boolean",
-                                    default: false,
-                                    description:
-                                        "Compatibility alias to enable speaker diarization on `scribe`, `universal-2`, and `universal-3-pro`. Prefer `response_format=diarized_json` for OpenAI-compatible diarized output.",
-                                },
                                 speakers_expected: {
                                     type: "integer",
                                     minimum: 1,
                                     maximum: 32,
                                     description:
-                                        "Optional hint for the number of speakers. For AssemblyAI this is the exact `speakers_expected` hint; for ElevenLabs Scribe it maps to `num_speakers`. Only honored when diarization is requested.",
+                                        "Optional provider hint for the number of speakers. Only honored with `response_format=diarized_json`.",
                                 },
                             },
                         },
@@ -1117,28 +1091,6 @@ export const audioRoutes = new Hono<Env>()
                                 type: "object",
                                 properties: {
                                     text: { type: "string" },
-                                    utterances: {
-                                        type: "array",
-                                        description:
-                                            "Provider-style speaker-attributed segments. Present for `json` / `verbose_json` when `speaker_labels=true` and the model supports diarization.",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                speaker: {
-                                                    oneOf: [
-                                                        { type: "string" },
-                                                        { enum: [null] },
-                                                    ],
-                                                },
-                                                text: { type: "string" },
-                                                start: { type: "number" },
-                                                end: { type: "number" },
-                                                confidence: {
-                                                    type: "number",
-                                                },
-                                            },
-                                        },
-                                    },
                                     segments: {
                                         type: "array",
                                         description:
@@ -1201,16 +1153,11 @@ export const audioRoutes = new Hono<Env>()
                 temperatureRaw !== null && temperatureRaw !== ""
                     ? Number(temperatureRaw)
                     : undefined;
-            const speakerLabels = parseStrictBoolean(
-                formData.get("speaker_labels"),
-                "speaker_labels",
-            );
             const speakersExpected = parsePositiveInt(
                 formData.get("speakers_expected"),
                 "speakers_expected",
             );
             const wantsDiarizedJson = responseFormat === "diarized_json";
-            const diarizationRequested = speakerLabels || wantsDiarizedJson;
             const supportsDiarization =
                 c.var.model.resolved === "scribe" ||
                 c.var.model.resolved === "universal-2" ||
@@ -1222,10 +1169,10 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            if (speakersExpected !== undefined && !diarizationRequested) {
+            if (speakersExpected !== undefined && !wantsDiarizedJson) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
                     message:
-                        "speakers_expected requires speaker diarization (`response_format=diarized_json` or `speaker_labels=true`)",
+                        "speakers_expected requires response_format=diarized_json",
                 });
             }
 
@@ -1238,7 +1185,7 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            if (diarizationRequested && !supportsDiarization) {
+            if (wantsDiarizedJson && !supportsDiarization) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
                     message:
                         "Speaker diarization is only supported by scribe, universal-2, and universal-3-pro",
@@ -1256,7 +1203,6 @@ export const audioRoutes = new Hono<Env>()
                     responseFormat: responseFormat || undefined,
                     apiKey: elevenLabsApiKey,
                     log,
-                    diarize: diarizationRequested,
                     numSpeakers: speakersExpected,
                 });
 
@@ -1281,7 +1227,6 @@ export const audioRoutes = new Hono<Env>()
                     model: c.var.model.resolved,
                     apiKey: assemblyAiApiKey,
                     log,
-                    speakerLabels: diarizationRequested,
                     speakersExpected,
                 });
 
@@ -1341,21 +1286,6 @@ export const audioRoutes = new Hono<Env>()
             return result;
         },
     );
-
-export function parseStrictBoolean(
-    value: FormDataEntryValue | null,
-    field: string,
-): boolean {
-    if (value === null) return false;
-    if (typeof value !== "string") return false;
-    const v = value.trim().toLowerCase();
-    if (v === "") return false;
-    if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
-    if (v === "false" || v === "0" || v === "no" || v === "off") return false;
-    throw new UpstreamError(400 as ContentfulStatusCode, {
-        message: `${field} must be a boolean (true/false)`,
-    });
-}
 
 export function parsePositiveInt(
     value: FormDataEntryValue | null,

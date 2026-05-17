@@ -1,29 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePositiveInt, parseStrictBoolean } from "../src/routes/audio.ts";
-
-describe("parseStrictBoolean", () => {
-    it("accepts truthy variants", () => {
-        for (const v of ["true", "1", "yes", "on", "TRUE", "  YES  "]) {
-            expect(parseStrictBoolean(v, "speaker_labels")).toBe(true);
-        }
-    });
-
-    it("accepts falsy variants", () => {
-        for (const v of ["false", "0", "no", "off", "", "FALSE", "  No  "]) {
-            expect(parseStrictBoolean(v, "speaker_labels")).toBe(false);
-        }
-    });
-
-    it("returns false on null", () => {
-        expect(parseStrictBoolean(null, "speaker_labels")).toBe(false);
-    });
-
-    it("throws on unknown values rather than silently flipping to false", () => {
-        expect(() =>
-            parseStrictBoolean("maybe", "speaker_labels"),
-        ).toThrowError(/speaker_labels must be a boolean/);
-    });
-});
+import { parsePositiveInt } from "../src/routes/audio.ts";
 
 describe("parsePositiveInt", () => {
     it("returns undefined for null/empty input", () => {

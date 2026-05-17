@@ -1,0 +1,35 @@
+{
+  "pr_number": 11078,
+  "title": "Add AI-Image-Generator-Pollinations.ai to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11078",
+  "merged_at": "2026-05-17T17:49:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) to image\n- Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai.\n\nFixes #10039",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New Sprout in the Greenhouse",
+    "blurb": "A new community-built image generator just landed in the Greenhouse! Built by Vitalii-in-IT, it's a fresh way to interact with our image API.",
+    "summary": "Added 'AI-Image-Generator-Pollinations.ai' by Vitalii-in-IT to the community apps showcase and Greenhouse.",
+    "impact": "Users can now discover and explore this new open-source image generation interface in the Pollinations ecosystem.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "image-generation",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener in a digital greenhouse, welcoming a new 'app' sprout. The sprout takes the form of a glowing picture frame or canvas, representing an image generator.",
+    "image_prompt": "Cozy pixel art scene inside a glowing digital greenhouse. The cute bee mascot wearing a tiny gardener's apron is watering a new code-plant that has sprouted a glowing picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11078.jpg",
+    "prompt": "Cozy pixel art scene inside a glowing digital greenhouse. The cute bee mascot wearing a tiny gardener's apron is watering a new code-plant that has sprouted a glowing picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:50:22.435062+00:00",
+  "app_name": "AI-Image-Generator-Pollinations.ai",
+  "app_url": "https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-"
+}

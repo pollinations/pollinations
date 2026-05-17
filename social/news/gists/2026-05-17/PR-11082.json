@@ -1,0 +1,35 @@
+{
+  "pr_number": 11082,
+  "title": "Add AGI Desktop Personal Assistant (AGI-DPA) to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11082",
+  "merged_at": "2026-05-17T17:57:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) to bots\n- Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA).\n\nFixes #10059",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Dual personalities on desktop",
+    "blurb": "The greenhouse is growing! AGI-DPA just landed in our community showcase, bringing a dual-personality AI desktop assistant to your local machine.",
+    "summary": "Added the AGI Desktop Personal Assistant (AGI-DPA), a dual-personality AI desktop bot, to the community showcase and greenhouse directories.",
+    "impact": "Users can now discover and explore AGI-DPA from the community apps list to run an AI-powered assistant directly on their desktop.",
+    "keywords": [
+      "community",
+      "showcase",
+      "desktop",
+      "assistant",
+      "bot"
+    ],
+    "visual_concept": "A retro desktop computer with a split screen or two different faces on the monitor, representing the dual personality. Polly the bee interacting with the computer.",
+    "image_prompt": "Cozy pixel art scene of a retro desktop computer with a split-screen monitor showing two different cute pixel faces, representing a dual-personality AI assistant. The cute bee mascot Polly, wearing tiny reading glasses, sits on the keyboard looking up at the screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11082.jpg",
+    "prompt": "Cozy pixel art scene of a retro desktop computer with a split-screen monitor showing two different cute pixel faces, representing a dual-personality AI assistant. The cute bee mascot Polly, wearing tiny reading glasses, sits on the keyboard looking up at the screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-17T17:58:02.246882+00:00",
+  "app_name": "AGI Desktop Personal Assistant (AGI-DPA)",
+  "app_url": "https://github.com/ydsgangge-ux/AGI-DPA"
+}

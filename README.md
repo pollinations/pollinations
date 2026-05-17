@@ -21,6 +21,8 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [🧰 CreatorPack AI](https://creatorpack.qhero.net/) | CreatorPack AI generates multilingual social media content packs, built by Qhero. | [@qhero256](https://github.com/qhero256) |
+| [🧠 Pixel](https://pixel.aesth.lol) | Pixel is a Discord bot with an economy system and multiple AI features. | [@Scoopala7-source](https://github.com/Scoopala7-source) |
+| [🤖 SimpleAgent](https://pypi.org/project/weirenong-simpleagent/) | SimpleAgent is a lightweight Python framework for building autonomous agents. It runs a core execution loop to manage reasoning and actions, perform tasks, and use tools within a secure environment. | [@weirenong](https://github.com/weirenong) |
 | [👗 Kalos Master](https://kalos-master.vercel.app) | Kalos Master is an AI-powered garment design studio that converts imagination into detailed garment visuals in seconds without requiring design skills or software. | [@UrdipShah](https://github.com/UrdipShah) |
 | [🖼️ Pollinations Image Generator](https://mikehuge79-max.github.io/pollinations-image-generator/) | Generate AI images in-browser via Pollinations.ai API with Pollinations Image Generator, supporting 21 models with free/paid tiers, aspect presets, seed control, prompt enhancement, and PNG download. | [@mikehuge79-max](https://github.com/mikehuge79-max) |
 | [🧠 AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) | Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and | [@cyber-sec0](https://github.com/cyber-sec0) |

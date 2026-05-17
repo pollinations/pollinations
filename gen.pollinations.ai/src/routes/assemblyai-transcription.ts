@@ -82,10 +82,17 @@ export async function transcribeWithAssemblyAi(opts: {
 
     if (
         responseFormat &&
-        !["json", "text", "verbose_json", "srt", "vtt"].includes(responseFormat)
+        ![
+            "json",
+            "text",
+            "verbose_json",
+            "srt",
+            "vtt",
+            "diarized_json",
+        ].includes(responseFormat)
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt`,
+            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt, diarized_json`,
         });
     }
     if (
@@ -116,7 +123,7 @@ export async function transcribeWithAssemblyAi(opts: {
         language,
         prompt,
         temperature,
-        speakerLabels,
+        speakerLabels: speakerLabels || responseFormat === "diarized_json",
         speakersExpected,
         apiKey,
     });
@@ -353,6 +360,22 @@ function buildAssemblyAiTranscriptResponse(opts: {
         return Response.json(body, { headers: usageHeaders });
     }
 
+    if (responseFormat === "diarized_json") {
+        return Response.json(
+            {
+                task: "transcribe",
+                duration,
+                text,
+                segments: toOpenAiDiarizedSegments(utterances),
+                usage: {
+                    type: "duration",
+                    seconds: duration,
+                },
+            },
+            { headers: usageHeaders },
+        );
+    }
+
     const body: Record<string, unknown> = { text };
     if (utterances.length > 0) {
         body.utterances = utterances;
@@ -464,4 +487,24 @@ function toOpenAiUtterances(
             return entry;
         }) ?? []
     );
+}
+
+function toOpenAiDiarizedSegments(
+    utterances: ReturnType<typeof toOpenAiUtterances>,
+): {
+    type: "transcript.text.segment";
+    id: string;
+    start: number;
+    end: number;
+    text: string;
+    speaker: string;
+}[] {
+    return utterances.map((utterance, index) => ({
+        type: "transcript.text.segment",
+        id: `seg_${String(index + 1).padStart(3, "0")}`,
+        start: utterance.start,
+        end: utterance.end,
+        text: utterance.text,
+        speaker: utterance.speaker ?? "unknown",
+    }));
 }

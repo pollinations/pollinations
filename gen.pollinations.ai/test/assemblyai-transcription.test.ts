@@ -220,6 +220,85 @@ describe("transcribeWithAssemblyAi", () => {
         expect(words[3]).toMatchObject({ word: "kenobi", speaker: "B" });
     });
 
+    it("supports OpenAI-compatible diarized_json responses", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    upload_url: "https://cdn.assemblyai.com/upload/test-audio",
+                }),
+            )
+            .mockResolvedValueOnce(jsonResponse({ id: "transcript-id" }))
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    id: "transcript-id",
+                    status: "completed",
+                    text: "hello there general kenobi",
+                    audio_duration: 8,
+                    language_code: "en_us",
+                    speech_model_used: "universal-3-pro",
+                    utterances: [
+                        {
+                            speaker: "A",
+                            text: "hello there",
+                            start: 0,
+                            end: 1200,
+                        },
+                        {
+                            speaker: "B",
+                            text: "general kenobi",
+                            start: 2000,
+                            end: 3400,
+                        },
+                    ],
+                }),
+            );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await transcribeWithAssemblyAi({
+            file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
+            model: "universal-3-pro",
+            apiKey: "test-key",
+            responseFormat: "diarized_json",
+            log,
+        });
+
+        const submitBody = JSON.parse(
+            (fetchMock.mock.calls[1][1] as RequestInit).body as string,
+        );
+        expect(submitBody).toMatchObject({
+            speaker_labels: true,
+        });
+
+        await expect(response.json()).resolves.toMatchObject({
+            task: "transcribe",
+            duration: 8,
+            text: "hello there general kenobi",
+            segments: [
+                {
+                    type: "transcript.text.segment",
+                    id: "seg_001",
+                    speaker: "A",
+                    text: "hello there",
+                    start: 0,
+                    end: 1.2,
+                },
+                {
+                    type: "transcript.text.segment",
+                    id: "seg_002",
+                    speaker: "B",
+                    text: "general kenobi",
+                    start: 2,
+                    end: 3.4,
+                },
+            ],
+            usage: {
+                type: "duration",
+                seconds: 8,
+            },
+        });
+    });
+
     it("omits speaker_labels from upstream when not requested", async () => {
         const fetchMock = vi
             .fn()

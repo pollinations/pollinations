@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Famous quotes](https://juanrivera126.github.io/Famous-quotes/) | A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us | [@Juanrivera126](https://github.com/Juanrivera126) |
 | [🧠 Cognitive Engine - AI-powered economic analysis -](https://www.anansebi.com/) | Perform AI-powered economic analysis using Cognitive Engine - AI-powered economic analysis - (Motor Cognitivo). | [@iagoinacio](https://github.com/iagoinacio) |
 | [🌐 MruKnowne9](https://mruknowne9.pages.dev) | Provide the app description for MruKnowne9. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [🎨 PolyDreamer](https://polydreamer.amitinfotech.net/) | Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier. | [@amitpatole](https://github.com/amitpatole) |
@@ -29,7 +30,6 @@
 | [🖼️ AI Image Generator](https://play.google.com/store/apps/details?id=com.monu.aiimagegenerator) | Generate high-quality images from text prompts on Android with AI Image Generator using the Pollinations AI API. | [@monu9898](https://github.com/monu9898) |
 | [🪶 X spinoff](https://tweet-composition-and-publication-x.netlify.app/) | Adds AI features to X via X spinoff. | [@nnafis-007](https://github.com/nnafis-007) |
 | [🌀 AI Package](https://cyclonelib.pages.dev/) | Mentions Apple Shortcuts. | [@dsewerek](https://github.com/dsewerek) |
-| [🧭 Psy-Path-AI](https://psy-path-ai.vercel.app/) | Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance. | [@unKnownNG](https://github.com/unKnownNG) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

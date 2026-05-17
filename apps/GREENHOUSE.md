@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **779** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **780** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧚‍♀️ Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) | Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei | [@DanieleMorais](https://github.com/DanieleMorais) |  | 🫧 |
 | [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |  | 🫧 |
 | [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |  | 🫧 |
 | [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🕹️ Pixel-Colony-God](https://github.com/yava-code/Pixel-Colony-God) | Runs a sandbox web game using pollinations. | [@yava-code](https://github.com/yava-code) |  | 🫧 |
 | [🎬 Prompt Evolution Engine](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) | Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  | 🫧 |
 | [🎨 imggenpro](https://imggengpt.pro/) | Create and enhance. | [@ramankamboj300](https://github.com/ramankamboj300) |  | 🫧 |
-| [🎨 AI Image Generator](https://unique-chebakia-44dbdc.netlify.app/) | Generate images with AI Image Generator. | [@CryptoRepublic](https://github.com/CryptoRepublic) |  | 🫧 |
 
 ---
 
@@ -634,7 +634,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🗣️ Practica un segundo idioma](https://proyectodescartes.org/IATools/131_Practica_el_segundo_idioma/) | Practica un segundo idioma con ejercicios de conversación, vocabulario y comprensión auditiva y seguimiento del progreso. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 | [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |  | 🏵️ |
 
-<details><summary>Show all 59 apps</summary>
+<details><summary>Show all 60 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -647,6 +647,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 AI homework solver](https://github.com/The-Lazybone/ONLUYEN-HOMEWORK-AUTO-SOLVER) | Browser-based automation tool that solves MCQ, short answers, true/false, and blanks. | [@The-Lazybone](https://github.com/The-Lazybone) | 4 |  |
 | [🎨 Ecoverse AI](https://ecoverse.cc) | Identify and classify waste from user photos using multi-model analysis and Pollinations models, and return disposal guidance. | [@achyuthhq](https://github.com/achyuthhq) | 4 |  |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) | 1 | 🫧 |
+| [🧚‍♀️ Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) | Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei | [@DanieleMorais](https://github.com/DanieleMorais) |  | 🫧 |
 | [🧭 Psy-Path-AI](https://psy-path-ai.vercel.app/) | Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance. | [@unKnownNG](https://github.com/unKnownNG) |  | 🫧 |
 | [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |

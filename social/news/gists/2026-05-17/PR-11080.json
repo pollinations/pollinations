@@ -1,0 +1,35 @@
+{
+  "pr_number": 11080,
+  "title": "Add GigScale to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11080",
+  "merged_at": "2026-05-17T17:51:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [GigScale](https://gigscale.app) to business\n- Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale.\n\nFixes #10043",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Freelance glow-up",
+    "blurb": "GigScale has joined the Pollinations ecosystem! This clever new app audits your Upwork and Fiverr profiles to help you land more freelance gigs.",
+    "summary": "Added GigScale to the community apps showcase, a tool that audits Upwork and Fiverr profiles for SEO gaps and generates a Profile Strength Index.",
+    "impact": "Freelancers can now discover and use GigScale to optimize their gig economy profiles and improve their conversion rates.",
+    "keywords": [
+      "community",
+      "app",
+      "gigscale",
+      "freelance",
+      "seo"
+    ],
+    "visual_concept": "The scene should represent freelancing, auditing, and profiles. A cozy pixel art office or desk setup. The bee mascot (Polly) wearing a tiny business tie or holding a clipboard, reviewing a pixelated resume or profile. The Monitor Robot is there showing a 'Profile Strength' chart (a little bar graph going up).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny business tie, holding a clipboard and reviewing a pixelated resume. Next to her, a chunky retro monitor robot displays a rising bar graph on its screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11080.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny business tie, holding a clipboard and reviewing a pixelated resume. Next to her, a chunky retro monitor robot displays a rising bar graph on its screen. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:52:36.571584+00:00",
+  "app_name": "GigScale",
+  "app_url": "https://gigscale.app"
+}

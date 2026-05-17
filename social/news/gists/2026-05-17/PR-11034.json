@@ -1,0 +1,35 @@
+{
+  "pr_number": 11034,
+  "title": "Add CreatorPack AI to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11034",
+  "merged_at": "2026-05-17T08:37:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [CreatorPack AI](https://creatorpack.qhero.net/) to build\n- CreatorPack AI generates multilingual social media content packs, built by Qhero.\n\nFixes #10908",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "CreatorPack AI joins the garden",
+    "blurb": "Qhero just planted CreatorPack AI in our community greenhouse! It's a slick new tool for generating multilingual social media content packs on the fly.",
+    "summary": "Added CreatorPack AI, a tool by Qhero for generating multilingual social media content packs, to the community apps showcase.",
+    "impact": "Users can now discover and use CreatorPack AI from the community greenhouse to streamline their social media content creation across multiple languages.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "social-media",
+      "multilingual"
+    ],
+    "visual_concept": "The PR is about a social media content pack generator (CreatorPack AI). Visual symbols: social media icons, language/translation symbols (speech bubbles), packing/boxes (packs). Characters: Polly the bee and the Monitor Robot packing boxes of social media posts.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot packing glowing social media icons and colorful speech bubbles into a wooden crate. Soft lime green (#ecf874) and lavender gradient background. The bee wears a tiny postal worker hat. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11034.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor robot packing glowing social media icons and colorful speech bubbles into a wooden crate. Soft lime green (#ecf874) and lavender gradient background. The bee wears a tiny postal worker hat. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T08:38:52.432271+00:00",
+  "app_name": "CreatorPack AI",
+  "app_url": "https://creatorpack.qhero.net/"
+}

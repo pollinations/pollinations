@@ -1,0 +1,35 @@
+{
+  "pr_number": 11062,
+  "title": "Add AI Image Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11062",
+  "merged_at": "2026-05-17T16:41:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Image Studio](https://home.liukun.com/Projects/ImgStudio/) to image\n- AI Image Studio is a full-pipeline AI image generation and refinement workbench powered by Pollinations.ai. It integrates the Pollinations REST API as the primary text-to-image engine, featuring autom\n\nFixes #9953",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Welcome to the Studio",
+    "blurb": "A brand new full-pipeline AI image generation workbench just landed in the Greenhouse. Powered by our REST API, AI Image Studio gives you a complete toolkit for crafting and refining your pixels.",
+    "summary": "Added AI Image Studio, a full-pipeline AI image generation and refinement workbench powered by the Pollinations REST API, to the community apps showcase.",
+    "impact": "Users can now discover and use AI Image Studio from our apps directory to generate and refine images using a dedicated workbench UI.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "workbench",
+      "showcase"
+    ],
+    "visual_concept": "An artist's studio or digital workbench. Polly the bee acting as a digital artist, working at a retro computer or drafting table, generating images.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, working at a retro digital drafting table in a sunlit studio. Glowing lime green (#ecf874) screens show beautiful pixel landscapes being generated. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11062.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, working at a retro digital drafting table in a sunlit studio. Glowing lime green (#ecf874) screens show beautiful pixel landscapes being generated. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-17T16:42:49.357409+00:00",
+  "app_name": "AI Image Studio",
+  "app_url": "https://home.liukun.com/Projects/ImgStudio/"
+}

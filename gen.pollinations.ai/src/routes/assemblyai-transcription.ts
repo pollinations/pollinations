@@ -23,6 +23,17 @@ interface AssemblyAiWord {
     word?: string;
     start?: number;
     end?: number;
+    confidence?: number;
+    speaker?: string | null;
+}
+
+interface AssemblyAiUtterance {
+    text?: string;
+    start?: number;
+    end?: number;
+    confidence?: number;
+    speaker?: string | null;
+    words?: AssemblyAiWord[] | null;
 }
 
 interface AssemblyAiTranscriptResponse {
@@ -34,6 +45,7 @@ interface AssemblyAiTranscriptResponse {
     language_code?: string | null;
     speech_model_used?: string | null;
     words?: AssemblyAiWord[] | null;
+    utterances?: AssemblyAiUtterance[] | null;
 }
 
 export async function transcribeWithAssemblyAi(opts: {
@@ -45,6 +57,8 @@ export async function transcribeWithAssemblyAi(opts: {
     model: string;
     apiKey: string;
     log: Logger;
+    speakerLabels?: boolean;
+    speakersExpected?: number;
 }): Promise<Response> {
     const {
         file,
@@ -55,6 +69,8 @@ export async function transcribeWithAssemblyAi(opts: {
         model,
         apiKey,
         log,
+        speakerLabels,
+        speakersExpected,
     } = opts;
 
     if (!apiKey) {
@@ -100,6 +116,8 @@ export async function transcribeWithAssemblyAi(opts: {
         language,
         prompt,
         temperature,
+        speakerLabels,
+        speakersExpected,
         apiKey,
     });
     const transcript = await pollAssemblyAiTranscript({
@@ -167,10 +185,20 @@ async function submitAssemblyAiTranscript(opts: {
     language?: string;
     prompt?: string;
     temperature?: number;
+    speakerLabels?: boolean;
+    speakersExpected?: number;
     apiKey: string;
 }): Promise<{ id: string }> {
-    const { uploadUrl, speechModels, language, prompt, temperature, apiKey } =
-        opts;
+    const {
+        uploadUrl,
+        speechModels,
+        language,
+        prompt,
+        temperature,
+        speakerLabels,
+        speakersExpected,
+        apiKey,
+    } = opts;
     const transcriptRequest: Record<string, unknown> = {
         audio_url: uploadUrl,
         speech_models: speechModels,
@@ -186,6 +214,12 @@ async function submitAssemblyAiTranscript(opts: {
         if (prompt) transcriptRequest.prompt = prompt;
         if (temperature !== undefined)
             transcriptRequest.temperature = temperature;
+    }
+    if (speakerLabels) {
+        transcriptRequest.speaker_labels = true;
+        if (speakersExpected !== undefined) {
+            transcriptRequest.speakers_expected = speakersExpected;
+        }
     }
 
     const transcriptUrl = `${ASSEMBLYAI_API_BASE}/v2/transcript`;
@@ -286,6 +320,7 @@ function buildAssemblyAiTranscriptResponse(opts: {
 }): Response {
     const { transcript, responseFormat, duration, usageHeaders } = opts;
     const text = transcript.text || "";
+    const utterances = toOpenAiUtterances(transcript.utterances);
 
     if (responseFormat === "text") {
         return new Response(text, {
@@ -297,27 +332,32 @@ function buildAssemblyAiTranscriptResponse(opts: {
     }
 
     if (responseFormat === "verbose_json") {
-        return Response.json(
-            {
-                text,
-                task: "transcribe",
-                language: transcript.language_code || "unknown",
-                duration,
-                words: toOpenAiWords(transcript.words),
-                segments: [
-                    {
-                        id: 0,
-                        start: 0,
-                        end: duration,
-                        text,
-                    },
-                ],
-            },
-            { headers: usageHeaders },
-        );
+        const body: Record<string, unknown> = {
+            text,
+            task: "transcribe",
+            language: transcript.language_code || "unknown",
+            duration,
+            words: toOpenAiWords(transcript.words),
+            segments: [
+                {
+                    id: 0,
+                    start: 0,
+                    end: duration,
+                    text,
+                },
+            ],
+        };
+        if (utterances.length > 0) {
+            body.utterances = utterances;
+        }
+        return Response.json(body, { headers: usageHeaders });
     }
 
-    return Response.json({ text }, { headers: usageHeaders });
+    const body: Record<string, unknown> = { text };
+    if (utterances.length > 0) {
+        body.utterances = utterances;
+    }
+    return Response.json(body, { headers: usageHeaders });
 }
 
 function delay(ms: number): Promise<void> {
@@ -369,14 +409,59 @@ function getAssemblyAiDuration(
     return 0;
 }
 
-function toOpenAiWords(
-    words: AssemblyAiWord[] | null | undefined,
-): { word: string; start: number; end: number }[] {
+function toOpenAiWords(words: AssemblyAiWord[] | null | undefined): {
+    word: string;
+    start: number;
+    end: number;
+    speaker?: string | null;
+}[] {
     return (
-        words?.map((word) => ({
-            word: word.text || word.word || "",
-            start: typeof word.start === "number" ? word.start / 1000 : 0,
-            end: typeof word.end === "number" ? word.end / 1000 : 0,
-        })) ?? []
+        words?.map((word) => {
+            const entry: {
+                word: string;
+                start: number;
+                end: number;
+                speaker?: string | null;
+            } = {
+                word: word.text || word.word || "",
+                start: typeof word.start === "number" ? word.start / 1000 : 0,
+                end: typeof word.end === "number" ? word.end / 1000 : 0,
+            };
+            if (word.speaker !== undefined && word.speaker !== null) {
+                entry.speaker = word.speaker;
+            }
+            return entry;
+        }) ?? []
+    );
+}
+
+function toOpenAiUtterances(
+    utterances: AssemblyAiUtterance[] | null | undefined,
+): {
+    speaker: string | null;
+    text: string;
+    start: number;
+    end: number;
+    confidence?: number;
+}[] {
+    return (
+        utterances?.map((u) => {
+            const entry: {
+                speaker: string | null;
+                text: string;
+                start: number;
+                end: number;
+                confidence?: number;
+            } = {
+                speaker: u.speaker ?? null,
+                text: u.text || "",
+                start: typeof u.start === "number" ? u.start / 1000 : 0,
+                end: typeof u.end === "number" ? u.end / 1000 : 0,
+            };
+            if (typeof u.confidence === "number") {
+                entry.confidence = u.confidence;
+            }
+            return entry;
+        }) ?? []
     );
 }

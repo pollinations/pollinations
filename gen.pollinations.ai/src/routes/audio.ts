@@ -213,6 +213,8 @@ interface ElevenLabsTranscriptionResponse {
         text: string;
         start: number;
         end: number;
+        speaker_id?: string | null;
+        type?: string;
     }[];
 }
 
@@ -222,8 +224,18 @@ export async function transcribeWithElevenLabs(opts: {
     responseFormat?: string;
     apiKey: string;
     log: Logger;
+    diarize?: boolean;
+    numSpeakers?: number;
 }): Promise<Response> {
-    const { file, language, responseFormat = "json", apiKey, log } = opts;
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        apiKey,
+        log,
+        diarize,
+        numSpeakers,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -252,6 +264,12 @@ export async function transcribeWithElevenLabs(opts: {
     formData.append("model_id", "scribe_v2");
     if (language) {
         formData.append("language_code", language);
+    }
+    if (diarize) {
+        formData.append("diarize", "true");
+        if (numSpeakers !== undefined) {
+            formData.append("num_speakers", String(numSpeakers));
+        }
     }
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/speech-to-text";
@@ -289,6 +307,10 @@ export async function transcribeWithElevenLabs(opts: {
         duration: Math.round(duration * 10) / 10,
     });
 
+    const utterances = diarize
+        ? groupScribeUtterances(elevenLabsData.words)
+        : [];
+
     // Return response based on format
     if (responseFormat === "text") {
         return new Response(elevenLabsData.text, {
@@ -301,17 +323,28 @@ export async function transcribeWithElevenLabs(opts: {
 
     if (responseFormat === "verbose_json") {
         // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse = {
+        const verboseResponse: Record<string, unknown> = {
             text: elevenLabsData.text,
             task: "transcribe",
             language: elevenLabsData.language_code || "unknown",
             duration,
             words:
-                elevenLabsData.words?.map((w) => ({
-                    word: w.text,
-                    start: w.start,
-                    end: w.end,
-                })) ?? [],
+                elevenLabsData.words?.map((w) => {
+                    const entry: {
+                        word: string;
+                        start: number;
+                        end: number;
+                        speaker?: string | null;
+                    } = {
+                        word: w.text,
+                        start: w.start,
+                        end: w.end,
+                    };
+                    if (w.speaker_id !== undefined && w.speaker_id !== null) {
+                        entry.speaker = w.speaker_id;
+                    }
+                    return entry;
+                }) ?? [],
             segments: [
                 {
                     id: 0,
@@ -321,14 +354,82 @@ export async function transcribeWithElevenLabs(opts: {
                 },
             ],
         };
+        if (utterances.length > 0) {
+            verboseResponse.utterances = utterances;
+        }
         return Response.json(verboseResponse, { headers: usageHeaders });
     }
 
     // Default: json format
-    return Response.json(
-        { text: elevenLabsData.text },
-        { headers: usageHeaders },
-    );
+    const body: Record<string, unknown> = { text: elevenLabsData.text };
+    if (utterances.length > 0) {
+        body.utterances = utterances;
+    }
+    return Response.json(body, { headers: usageHeaders });
+}
+
+function groupScribeUtterances(
+    words:
+        | {
+              text: string;
+              start: number;
+              end: number;
+              speaker_id?: string | null;
+              type?: string;
+          }[]
+        | undefined,
+): { speaker: string | null; text: string; start: number; end: number }[] {
+    if (!words || words.length === 0) return [];
+
+    const utterances: {
+        speaker: string | null;
+        text: string;
+        start: number;
+        end: number;
+    }[] = [];
+    let current: {
+        speaker: string | null;
+        words: typeof words;
+    } | null = null;
+
+    for (const w of words) {
+        // Skip non-word tokens (Scribe emits spacing/punctuation entries with
+        // type "spacing"); the text of those gets concatenated into the
+        // owning utterance below via the word stream order.
+        const speaker = w.speaker_id ?? null;
+        if (current && current.speaker === speaker) {
+            current.words.push(w);
+        } else {
+            if (current) utterances.push(finalizeScribeUtterance(current));
+            current = { speaker, words: [w] };
+        }
+    }
+    if (current) utterances.push(finalizeScribeUtterance(current));
+
+    return utterances;
+}
+
+function finalizeScribeUtterance(group: {
+    speaker: string | null;
+    words: {
+        text: string;
+        start: number;
+        end: number;
+        type?: string;
+    }[];
+}): { speaker: string | null; text: string; start: number; end: number } {
+    const first = group.words[0];
+    const last = group.words[group.words.length - 1];
+    const text = group.words
+        .map((w) => w.text)
+        .join("")
+        .trim();
+    return {
+        speaker: group.speaker,
+        text,
+        start: first?.start ?? 0,
+        end: last?.end ?? first?.start ?? 0,
+    };
 }
 
 export async function generateMusic(opts: {
@@ -948,6 +1049,18 @@ export const audioRoutes = new Hono<Env>()
                                     description:
                                         "Sampling temperature between 0 and 1. Lower is more deterministic.",
                                 },
+                                speaker_labels: {
+                                    type: "boolean",
+                                    default: false,
+                                    description:
+                                        "Enable speaker diarization. Honored on `scribe`, `universal-2`, `universal-3-pro`. When true, the response includes an `utterances` array and per-word `speaker` fields in `verbose_json`. Ignored for Whisper.",
+                                },
+                                speakers_expected: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    description:
+                                        "Optional hint for the number of speakers. For AssemblyAI this is the exact `speakers_expected` hint; for ElevenLabs Scribe it maps to `num_speakers` (max 32). Only honored when `speaker_labels` is true.",
+                                },
                             },
                         },
                     },
@@ -962,6 +1075,23 @@ export const audioRoutes = new Hono<Env>()
                                 type: "object",
                                 properties: {
                                     text: { type: "string" },
+                                    utterances: {
+                                        type: "array",
+                                        description:
+                                            "Speaker-attributed segments. Present when `speaker_labels=true` and the model supports diarization.",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                speaker: { type: "string" },
+                                                text: { type: "string" },
+                                                start: { type: "number" },
+                                                end: { type: "number" },
+                                                confidence: {
+                                                    type: "number",
+                                                },
+                                            },
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -1003,10 +1133,35 @@ export const audioRoutes = new Hono<Env>()
                 temperatureRaw !== null && temperatureRaw !== ""
                     ? Number(temperatureRaw)
                     : undefined;
+            const speakerLabels = parseStrictBoolean(
+                formData.get("speaker_labels"),
+                "speaker_labels",
+            );
+            const speakersExpected = parsePositiveInt(
+                formData.get("speakers_expected"),
+                "speakers_expected",
+            );
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
                     message: "Missing required field: file",
+                });
+            }
+
+            if (speakersExpected !== undefined && !speakerLabels) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "speakers_expected requires speaker_labels=true",
+                });
+            }
+
+            if (
+                c.var.model.resolved === "scribe" &&
+                speakersExpected !== undefined &&
+                (speakersExpected < 1 || speakersExpected > 32)
+            ) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "speakers_expected must be between 1 and 32 for scribe",
                 });
             }
 
@@ -1021,6 +1176,8 @@ export const audioRoutes = new Hono<Env>()
                     responseFormat: responseFormat || undefined,
                     apiKey: elevenLabsApiKey,
                     log,
+                    diarize: speakerLabels,
+                    numSpeakers: speakersExpected,
                 });
 
                 // Override tracking with final response
@@ -1044,6 +1201,8 @@ export const audioRoutes = new Hono<Env>()
                     model: c.var.model.resolved,
                     apiKey: assemblyAiApiKey,
                     log,
+                    speakerLabels,
+                    speakersExpected,
                 });
 
                 c.var.track.overrideResponseTracking(response.clone());
@@ -1102,6 +1261,36 @@ export const audioRoutes = new Hono<Env>()
             return result;
         },
     );
+
+export function parseStrictBoolean(
+    value: FormDataEntryValue | null,
+    field: string,
+): boolean {
+    if (value === null) return false;
+    if (typeof value !== "string") return false;
+    const v = value.trim().toLowerCase();
+    if (v === "") return false;
+    if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+    if (v === "false" || v === "0" || v === "no" || v === "off") return false;
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `${field} must be a boolean (true/false)`,
+    });
+}
+
+export function parsePositiveInt(
+    value: FormDataEntryValue | null,
+    field: string,
+): number | undefined {
+    if (value === null) return undefined;
+    if (typeof value !== "string" || value.trim() === "") return undefined;
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 1) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${field} must be a positive integer`,
+        });
+    }
+    return n;
+}
 
 function extractWhisperUsage(responseBody: string, log: Logger): number {
     const json = JSON.parse(responseBody);

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11064,
+  "title": "Add Perplexio to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11064",
+  "merged_at": "2026-05-17T16:48:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Perplexio](http://tcp.ap-northeast-1.clawcloudrun.com:47049/) to chat\n- Host Perplexio as a self-hosted Perplexity-style AI search assistant using pollinations.ai as its LLM backend via the OpenAI-compatible API endpoint.\n\nFixes #9957",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Perplexio joins the hive",
+    "blurb": "Perplexio just landed in the Greenhouse! It's a self-hosted, Perplexity-style search assistant that uses our OpenAI-compatible endpoint to power its answers.",
+    "summary": "Added Perplexio, a self-hosted Perplexity-style AI search assistant, to the community apps showcase.",
+    "impact": "Developers can now discover and deploy a ready-made search tool that natively uses the pollinations.ai API for its LLM backend.",
+    "keywords": [
+      "community",
+      "apps",
+      "search",
+      "perplexio",
+      "showcase"
+    ],
+    "visual_concept": "A search and discovery theme. Polly the bee using a magnifying glass to inspect glowing data or a search bar. A retro terminal showing search results, representing the Perplexio app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering and looking through a giant magnifying glass at a glowing lime green (#ecf874) search bar on a retro terminal. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11064.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot hovering and looking through a giant magnifying glass at a glowing lime green (#ecf874) search bar on a retro terminal. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T16:49:09.318711+00:00",
+  "app_name": "Perplexio",
+  "app_url": "http://tcp.ap-northeast-1.clawcloudrun.com:47049/"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11069,
+  "title": "Add AI Image Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11069",
+  "merged_at": "2026-05-17T17:08:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Image Generator](https://unique-chebakia-44dbdc.netlify.app/) to image\n- Generate images with AI Image Generator.\n\nFixes #9991",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New bloom: AI Image Generator",
+    "blurb": "A brand new AI Image Generator just sprouted in our community greenhouse. Come see what the hive is building!",
+    "summary": "Added the community-built AI Image Generator app to the pollinations.ai showcase and greenhouse directories.",
+    "impact": "Users can now discover and try out this new image generation interface directly from the community apps list.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "greenhouse",
+      "showcase"
+    ],
+    "visual_concept": "The PR is about a new image generator app added to the 'Greenhouse' (community apps). Visuals should include Polly the bee in a greenhouse or garden setting, looking at a glowing canvas or picture frame (representing the image generator) sprouting like a plant.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, watering a glowing picture frame sprouting from a lime green (#ecf874) flower pot inside a digital greenhouse. Soft pastel gradient background with warm sunlight filtering through the glass. Chunky retro sprites, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11069.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, watering a glowing picture frame sprouting from a lime green (#ecf874) flower pot inside a digital greenhouse. Soft pastel gradient background with warm sunlight filtering through the glass. Chunky retro sprites, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:09:08.347102+00:00",
+  "app_name": "AI Image Generator",
+  "app_url": "https://unique-chebakia-44dbdc.netlify.app/"
+}

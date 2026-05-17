@@ -193,11 +193,17 @@ const MODEL_REGISTRY = Object.fromEntries(
  * @throws Error if model is not found
  */
 export function resolveModelName(model: string): ModelName {
-    if (MODEL_REGISTRY[model as ModelName]) {
-        return model as ModelName;
+    // Normalize whitespace and case so callers can pass e.g. " ZIMAGE\n" —
+    // registry keys and aliases are all lowercase, so this is a no-op for
+    // already-canonical input but tolerates common client-side template
+    // artifacts (trailing newlines from n8n/Make, uppercased UI strings).
+    const normalized =
+        typeof model === "string" ? model.trim().toLowerCase() : model;
+    if (MODEL_REGISTRY[normalized as ModelName]) {
+        return normalized as ModelName;
     }
     for (const [modelName, service] of Object.entries(MODEL_REGISTRY)) {
-        if (service.aliases.includes(model)) {
+        if (service.aliases.includes(normalized)) {
             return modelName as ModelName;
         }
     }

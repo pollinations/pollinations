@@ -20,7 +20,11 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Image model params
     model: z
         .preprocess(
-            (val) => (val === "" ? undefined : val),
+            (val) => {
+                if (typeof val !== "string") return val;
+                const normalized = val.trim().toLowerCase();
+                return normalized === "" ? undefined : normalized;
+            },
             z
                 .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
                 .optional()

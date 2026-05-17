@@ -40,6 +40,27 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
+test("resolveModelName tolerates surrounding whitespace", () => {
+    for (const raw of ["zimage ", "  zimage", " zimage\n", "\tzimage\t"]) {
+        expect(resolveModelName(raw)).toBe("zimage");
+    }
+});
+
+test("resolveModelName lower-cases the input", () => {
+    expect(resolveModelName("ZIMAGE")).toBe("zimage");
+    expect(resolveModelName("Flux")).toBe("flux");
+});
+
+test("resolveModelName normalizes aliases too", () => {
+    expect(resolveModelName(" Z-Image ")).toBe("zimage");
+});
+
+test("resolveModelName still throws on unknown models", () => {
+    expect(() => resolveModelName("definitely-not-a-real-model")).toThrow(
+        /Invalid model or alias/,
+    );
+});
+
 test("cost lookup uses the public model name instead of collapsing shared provider ids", () => {
     const usage = {
         promptTextTokens: 1_000_000,

@@ -1,0 +1,28 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Per-model revenue breakdown for successful requests, grouped by model and event type.
+Splits revenue by which balance bucket actually paid:
+  - paid_revenue: requests billed to a pack (paid top-up) meter
+  - tier_value:   requests billed to tier allowance
+Only successful (2xx) requests are summed.
+PRIVATE: uses `tinybird_read` only (not `tinybird_read_public`) — exposes monetization
+data per model, not suitable for the public model monitor token.
+Time window controlled by the `minutes` parameter (default 60).
+
+NODE model_revenue_stats
+SQL >
+    %
+    SELECT
+        resolved_model_requested as model,
+        event_type,
+        count() as total_requests,
+        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack' AND response_status >= 200 AND response_status < 300), 4) as paid_revenue,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as tier_value
+    FROM generation_event
+    WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
+    GROUP BY resolved_model_requested, event_type
+    ORDER BY paid_revenue DESC
+
+TYPE endpoint

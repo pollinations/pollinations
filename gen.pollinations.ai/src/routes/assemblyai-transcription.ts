@@ -25,6 +25,13 @@ interface AssemblyAiWord {
     end?: number;
 }
 
+interface AssemblyAiUtterance {
+    text?: string;
+    start?: number;
+    end?: number;
+    speaker?: string | null;
+}
+
 interface AssemblyAiTranscriptResponse {
     id?: string;
     status?: "queued" | "processing" | "completed" | "error";
@@ -34,6 +41,7 @@ interface AssemblyAiTranscriptResponse {
     language_code?: string | null;
     speech_model_used?: string | null;
     words?: AssemblyAiWord[] | null;
+    utterances?: AssemblyAiUtterance[] | null;
 }
 
 export async function transcribeWithAssemblyAi(opts: {
@@ -45,6 +53,7 @@ export async function transcribeWithAssemblyAi(opts: {
     model: string;
     apiKey: string;
     log: Logger;
+    speakersExpected?: number;
 }): Promise<Response> {
     const {
         file,
@@ -55,6 +64,7 @@ export async function transcribeWithAssemblyAi(opts: {
         model,
         apiKey,
         log,
+        speakersExpected,
     } = opts;
 
     if (!apiKey) {
@@ -66,10 +76,17 @@ export async function transcribeWithAssemblyAi(opts: {
 
     if (
         responseFormat &&
-        !["json", "text", "verbose_json", "srt", "vtt"].includes(responseFormat)
+        ![
+            "json",
+            "text",
+            "verbose_json",
+            "srt",
+            "vtt",
+            "diarized_json",
+        ].includes(responseFormat)
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt`,
+            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt, diarized_json`,
         });
     }
     if (
@@ -100,6 +117,8 @@ export async function transcribeWithAssemblyAi(opts: {
         language,
         prompt,
         temperature,
+        speakerLabels: responseFormat === "diarized_json",
+        speakersExpected,
         apiKey,
     });
     const transcript = await pollAssemblyAiTranscript({
@@ -167,10 +186,20 @@ async function submitAssemblyAiTranscript(opts: {
     language?: string;
     prompt?: string;
     temperature?: number;
+    speakerLabels?: boolean;
+    speakersExpected?: number;
     apiKey: string;
 }): Promise<{ id: string }> {
-    const { uploadUrl, speechModels, language, prompt, temperature, apiKey } =
-        opts;
+    const {
+        uploadUrl,
+        speechModels,
+        language,
+        prompt,
+        temperature,
+        speakerLabels,
+        speakersExpected,
+        apiKey,
+    } = opts;
     const transcriptRequest: Record<string, unknown> = {
         audio_url: uploadUrl,
         speech_models: speechModels,
@@ -186,6 +215,12 @@ async function submitAssemblyAiTranscript(opts: {
         if (prompt) transcriptRequest.prompt = prompt;
         if (temperature !== undefined)
             transcriptRequest.temperature = temperature;
+    }
+    if (speakerLabels) {
+        transcriptRequest.speaker_labels = true;
+        if (speakersExpected !== undefined) {
+            transcriptRequest.speakers_expected = speakersExpected;
+        }
     }
 
     const transcriptUrl = `${ASSEMBLYAI_API_BASE}/v2/transcript`;
@@ -297,21 +332,35 @@ function buildAssemblyAiTranscriptResponse(opts: {
     }
 
     if (responseFormat === "verbose_json") {
+        const body: Record<string, unknown> = {
+            text,
+            task: "transcribe",
+            language: transcript.language_code || "unknown",
+            duration,
+            words: toOpenAiWords(transcript.words),
+            segments: [
+                {
+                    id: 0,
+                    start: 0,
+                    end: duration,
+                    text,
+                },
+            ],
+        };
+        return Response.json(body, { headers: usageHeaders });
+    }
+
+    if (responseFormat === "diarized_json") {
         return Response.json(
             {
-                text,
                 task: "transcribe",
-                language: transcript.language_code || "unknown",
                 duration,
-                words: toOpenAiWords(transcript.words),
-                segments: [
-                    {
-                        id: 0,
-                        start: 0,
-                        end: duration,
-                        text,
-                    },
-                ],
+                text,
+                segments: toOpenAiDiarizedSegments(transcript.utterances),
+                usage: {
+                    type: "duration",
+                    seconds: duration,
+                },
             },
             { headers: usageHeaders },
         );
@@ -369,14 +418,41 @@ function getAssemblyAiDuration(
     return 0;
 }
 
-function toOpenAiWords(
-    words: AssemblyAiWord[] | null | undefined,
-): { word: string; start: number; end: number }[] {
+function toOpenAiWords(words: AssemblyAiWord[] | null | undefined): {
+    word: string;
+    start: number;
+    end: number;
+}[] {
     return (
         words?.map((word) => ({
             word: word.text || word.word || "",
             start: typeof word.start === "number" ? word.start / 1000 : 0,
             end: typeof word.end === "number" ? word.end / 1000 : 0,
+        })) ?? []
+    );
+}
+
+function toOpenAiDiarizedSegments(
+    utterances: AssemblyAiUtterance[] | null | undefined,
+): {
+    type: "transcript.text.segment";
+    id: string;
+    start: number;
+    end: number;
+    text: string;
+    speaker: string;
+}[] {
+    return (
+        utterances?.map((utterance, index) => ({
+            type: "transcript.text.segment",
+            id: `seg_${String(index + 1).padStart(3, "0")}`,
+            start:
+                typeof utterance.start === "number"
+                    ? utterance.start / 1000
+                    : 0,
+            end: typeof utterance.end === "number" ? utterance.end / 1000 : 0,
+            text: utterance.text || "",
+            speaker: utterance.speaker ?? "unknown",
         })) ?? []
     );
 }

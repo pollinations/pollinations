@@ -85,10 +85,12 @@ jobs:
           fi
 
       # Uses a single stable branch `docs/apidocs-sync` instead of timestamped
-      # branches. If a PR is already open, new regenerations push follow-up
-      # commits to the same branch (updating the existing PR in place) rather
-      # than stacking new PRs. APIDOCS.md is only ever modified by this
-      # workflow, so the sync branch can be fast-forwarded without rebasing.
+      # branches, so a long-lived PR can be updated in place rather than
+      # stacking new PRs. Each run resets the branch to current `main` and
+      # force-pushes the freshly regenerated file on top — the branch carries
+      # no history worth preserving (the regen output is fully derived from
+      # the live spec) and resetting prevents conflicts when humans edit
+      # APIDOCS.md directly on main between runs.
       # PR creation gating:
       # - workflow_run (post-deploy): always create/update the PR on diff
       # - workflow_dispatch: only when `create_pr` input is true
@@ -105,31 +107,31 @@ jobs:
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
 
-          # Save the regenerated file so we can re-apply it after switching branches
+          # Save the regenerated file so we can re-apply it after resetting the branch
           cp APIDOCS.md /tmp/APIDOCS.md.new
+          # Discard the dirty worktree change so the upcoming checkout to
+          # origin/main can't fail with "local changes would be overwritten"
+          # when main has advanced (or the input ref differs from main).
+          git checkout -- APIDOCS.md
 
-          git fetch origin "$BRANCH" || true
-
-          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
-            # Branch exists remotely — check it out and add a follow-up commit
-            git checkout -B "$BRANCH" "origin/$BRANCH"
-          else
-            # First run — create the branch from the current main checkout
-            git checkout -b "$BRANCH"
-          fi
+          # Reset the sync branch to current main so the PR can never conflict
+          # with human edits to APIDOCS.md that landed on main since last run.
+          git fetch origin main
+          git checkout -B "$BRANCH" origin/main
 
           cp /tmp/APIDOCS.md.new APIDOCS.md
 
           if git diff --quiet APIDOCS.md; then
-            echo "Sync branch already matches freshly generated docs; nothing to push."
+            echo "Generated docs already match main; nothing to push."
             exit 0
           fi
 
           git add APIDOCS.md
           git commit -m "docs: regenerate APIDOCS.md"
-          git push -u origin "$BRANCH"
+          git push -f -u origin "$BRANCH"
 
-          # Create the PR only if one doesn't already exist for this branch
+          # Create the PR only if one doesn't already exist for this branch,
+          # then enable auto-merge so it lands once required checks pass.
           EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' || echo "")
           if [ -z "$EXISTING" ]; then
             gh pr create \
@@ -137,8 +139,13 @@ jobs:
               --body "Auto-generated from OpenAPI spec changes after a successful production deploy." \
               --base main \
               --head "$BRANCH"
+            EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
           else
             echo "PR #$EXISTING already open — updated in place."
           fi
+
+          # Fail loud if auto-merge can't be enabled — otherwise the docs PR
+          # could sit open indefinitely while the workflow reports success.
+          gh pr merge --auto --squash "$EXISTING"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

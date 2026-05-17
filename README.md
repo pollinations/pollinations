@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |
-| [🛠️ Pollenforge-CLI](https://github.com/ganya002/Pollenforge-CLI/tree/main) | Convert Markdown content to a formatted output using Pollenforge-CLI. | [@ganya002](https://github.com/ganya002) |
-| [👻 The room](https://theroom-8mc4.vercel.app/) | Triggers a ghost jumpscare in The room. | [@tuidienanhvan](https://github.com/tuidienanhvan) |
-| [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@titosoriano](https://github.com/titosoriano) |
-| [🎨 AI Art Gallery](https://juanrivera126.github.io/Gallery-Pollinations/) | AI Art Gallery uses Galera Pollinations to generate images from text prompts, create image variations, and download generated artwork. | [@Juanrivera126](https://github.com/Juanrivera126) |
-| [🏗️ anyproject (beta)](https://alkonsafe.ct.ws/anyproject/beta) | anyproject is a platform where people can play and share ai generated sites with each other! it uses pollinations in the backend with node.js's native fetch() to gen.pollinations.ai where the ai retur | [@alkonsafe](https://github.com/alkonsafe) |
-| [🤖 AI Chat](https://github.com/JoJoGamer2020/AI-Chat) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@JoJoGamer2020](https://github.com/JoJoGamer2020) |
-| [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@craygen9](https://github.com/craygen9) |
-| [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@dragonprimordial12-netizen](https://github.com/dragonprimordial12-netizen) |
-| [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |
+| [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
+| [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
+| [🖼️ ZhenxiJS AI Image Editor (朕喜AI图片编辑器)](https://imgedit.zhenxijs.com/) | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | [@TargetCenter](https://github.com/TargetCenter) |
+| [🧚‍♀️ Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) | Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei | [@DanieleMorais](https://github.com/DanieleMorais) |
+| [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |
+| [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |
+| [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |
+| [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |
+| [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |
+| [🎨 Pixel Asset Forge](https://pixelassetforge.com/) | Generate professional-grade game assets from text and reference images using neural networks with Pixel Asset Forge. Built for indie game developers, artists, and creators. | [@aldunnaeyonus](https://github.com/aldunnaeyonus) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-15** – **🤖 GPT-5.4-Mini added** OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.
+- **2026-05-15** – **🚀 Mistral 4 arrives** Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier.
+- **2026-05-15** – **🔓 DeepSeek V4 Flash is free** We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it.
+- **2026-05-15** – **⚡ Faster Qwen Vision** Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there.
+- **2026-05-15** – **🎨 PromptArt Telegram Bot** A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot) <!-- app -->
+- **2026-05-14** – **⚡ ElevenLabs Flash v2.5** Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost.
 - **2026-05-13** – **🗺️ Public Roadmap** The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)
 - **2026-05-13** – **📖 Docs Cleanup** We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.
 - **2026-05-13** – **💳 Pollen Packs** Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.
 - **2026-05-13** – **🎵 Cheaper Audio** ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)
-- **2026-05-13** – **🧹 Community Polish** Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)
-- **2026-05-12** – **🛠️ Pollenforge-CLI** A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main) <!-- app -->
-- **2026-05-12** – **🎲 Storytale** Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net) <!-- app -->
-- **2026-05-11** – **📈 Developer Earnings Dashboard** Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).
-- **2026-05-08** – **🤖 Gemma 4 26B** The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)
-- **2026-05-08** – **🚀 Command Line Canvas** Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage) <!-- app -->
 ---
 
 ## 🌱 Introduction

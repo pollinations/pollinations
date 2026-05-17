@@ -42,6 +42,21 @@ export function extractRequestShape(
     });
 }
 
+export function mergeRequestShapes(
+    upstreamShape: RequestShape | undefined,
+    capturedShape: RequestShape | undefined,
+    streamRequested: boolean | undefined,
+): RequestShape | undefined {
+    const merged = removeUndefined({
+        ...(upstreamShape ?? {}),
+        ...(streamRequested !== undefined ? { streamRequested } : {}),
+        ...(capturedShape ?? {}),
+    });
+    return Object.values(merged).some((value) => value !== undefined)
+        ? merged
+        : undefined;
+}
+
 function asRecord(value: unknown): JsonRecord | undefined {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
         return undefined;

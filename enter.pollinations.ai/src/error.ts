@@ -2,6 +2,7 @@ import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import {
     extractRequestShape,
+    mergeRequestShapes,
     type RequestShape,
 } from "@shared/observability/request-shape.ts";
 import { APIError } from "better-auth";
@@ -490,21 +491,6 @@ function toTinybirdErrorEvent(
         user_tier: envelope.userTier,
         api_key_id: envelope.apiKeyId,
     };
-}
-
-function mergeRequestShapes(
-    upstreamShape: RequestShape | undefined,
-    capturedShape: RequestShape | undefined,
-    streamRequested: boolean | undefined,
-): RequestShape | undefined {
-    const merged = {
-        ...(upstreamShape ?? {}),
-        ...(streamRequested !== undefined ? { streamRequested } : {}),
-        ...(capturedShape ?? {}),
-    };
-    return Object.values(merged).some((value) => value !== undefined)
-        ? merged
-        : undefined;
 }
 
 function truncateString(

@@ -1,0 +1,36 @@
+{
+  "pr_number": 11083,
+  "title": "Add Universidade Fada Madrinha to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11083",
+  "merged_at": "2026-05-17T17:59:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) to learn\n- Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei\n\nFixes #10058",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fairy Godmother of Dropshipping",
+    "blurb": "A touch of magic for Brazilian entrepreneurs! Universidade Fada Madrinha just landed in our app showcase, bringing AI-powered dropshipping education and a whole suite of tools to the hive.",
+    "summary": "Added Universidade Fada Madrinha, an AI-powered educational dropshipping platform for Brazilian entrepreneurs featuring 13 virtual assistants and 30+ tools, to the community showcase.",
+    "impact": "The community can now discover and explore this comprehensive Brazilian e-commerce and AI toolset in the apps directory.",
+    "keywords": [
+      "community",
+      "showcase",
+      "dropshipping",
+      "education",
+      "brazil",
+      "apps"
+    ],
+    "visual_concept": "'Fada Madrinha' translates to Fairy Godmother. The scene should feature Polly the bee dressed as a fairy godmother (wand, little hat) sprinkling magic over e-commerce elements like shipping boxes or a digital storefront, representing the dropshipping education platform.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny sparkly fairy hat and holding a star wand, sprinkling magic dust over a small digital storefront and chunky pixel shipping boxes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11083.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny sparkly fairy hat and holding a star wand, sprinkling magic dust over a small digital storefront and chunky pixel shipping boxes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T18:00:19.488526+00:00",
+  "app_name": "Universidade Fada Madrinha",
+  "app_url": "https://app.comunidadefadamadrinha.com"
+}

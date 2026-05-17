@@ -1,0 +1,35 @@
+{
+  "pr_number": 11081,
+  "title": "Add Lunere Image Gen to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11081",
+  "merged_at": "2026-05-17T17:54:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lunere Image Gen](https://lunere-image-gen.vercel.app/) to image\n- Generate images with Lunere Image Gen using pollinations.ai.\n\nFixes #10050",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Lunere joins the garden",
+    "blurb": "Another day, another app. Lunere Image Gen just dropped into the community greenhouse, ready to turn your prompts into pixels.",
+    "summary": "Added the community-built Lunere Image Gen app to the APPS.md and GREENHOUSE.md directories.",
+    "impact": "Users exploring the pollinations ecosystem can now discover and launch Lunere Image Gen directly from the showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee welcoming a new moon-themed painting easel or canvas into a lush greenhouse. 'Lunere' evokes lunar/moon imagery. The scene should feel like a new plant or tool being added to a cozy garden.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot setting up a glowing moon-themed painting easel in a lush digital greenhouse filled with code-plants. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11081.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot setting up a glowing moon-themed painting easel in a lush digital greenhouse filled with code-plants. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:55:21.449056+00:00",
+  "app_name": "Lunere Image Gen",
+  "app_url": "https://lunere-image-gen.vercel.app/"
+}

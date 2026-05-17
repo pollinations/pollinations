@@ -1,0 +1,36 @@
+{
+  "pr_number": 11065,
+  "title": "Add PolyDreamer to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11065",
+  "merged_at": "2026-05-17T16:50:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PolyDreamer](https://polydreamer.amitinfotech.net/) to image\n- Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier.\n\nFixes #9978",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Welcome, PolyDreamer!",
+    "blurb": "A new app has sprouted in the greenhouse. PolyDreamer lets you generate images and videos from text prompts, hooking right into the hive's API.",
+    "summary": "Added PolyDreamer, a community-built interface for generating images and videos from text prompts, to the apps showcase and greenhouse.",
+    "impact": "Users can now discover PolyDreamer in the community directory to create AI media using either their own API key or the free tier.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "polydreamer",
+      "video",
+      "image"
+    ],
+    "visual_concept": "The app is called 'PolyDreamer' and focuses on generating images and videos. A 'dreaming' motif fits perfectly. Polly the bee wearing a tiny nightcap, watching a retro monitor that is generating a beautiful, glowing dreamscape.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, looking at a retro CRT monitor that displays a glowing, magical dreamscape. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11065.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, looking at a retro CRT monitor that displays a glowing, magical dreamscape. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-17T16:51:19.737308+00:00",
+  "app_name": "PolyDreamer",
+  "app_url": "https://polydreamer.amitinfotech.net/"
+}

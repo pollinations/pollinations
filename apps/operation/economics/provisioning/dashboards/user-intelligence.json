@@ -2267,7 +2267,7 @@
       "id": 111,
       "type": "table",
       "title": "Risky Users — High Payment Failures",
-      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status, tier, github) and the latest scoring_snapshot (trust score, account age). Sort by fraudulent_attempts to find carders, by attempted_amount_usd to find big bets, or by failed_attempts for raw volume. Click the github_username to open the profile.",
+      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status, tier, github), latest scoring_snapshot (trust score, account age) AND their successful purchases. Watch success_rate_pct: legitimate customers who hit a decline or two usually still convert >70%; carders are <10%. Click the github_username to open the profile.",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -2618,6 +2618,131 @@
                 "value": "dateTimeAsIso"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "successful_purchases"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 3
+                    },
+                    {
+                      "color": "green",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pollen_bought_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 2
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "green",
+                      "value": 25
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success_rate_pct"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 10
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 40
+                    },
+                    {
+                      "color": "green",
+                      "value": 70
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       },
@@ -2646,7 +2771,7 @@
             "uid": "PAD1A0A25CD30D457"
           },
           "format": 1,
-          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)') AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email) AS email,\n  u.tier AS tier,\n  if(u.banned = 1, 'BANNED', 'active') AS banned,\n  f.failed_attempts,\n  f.fraudulent_attempts,\n  f.attempted_amount_usd,\n  coalesce(s.trust_score, 100) AS trust_score,\n  round(coalesce(s.total_score, 0), 1) AS total_score,\n  coalesce(s.github_age_days, 0)       AS github_age_days,\n  coalesce(s.pollinations_age_days, 0) AS pollinations_age_days,\n  f.last_failure_at\nFROM failed_payments f\nLEFT JOIN latest_users  u ON f.user_id = u.id\nLEFT JOIN latest_scores s ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
+          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  successful_payments AS (\n    SELECT\n      user_id,\n      count() AS successful_purchases,\n      round(sum(amount_cents) / 100.0, 2) AS pollen_bought_usd\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)')                              AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email)                                     AS email,\n  u.tier                                                                              AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                                AS banned,\n  coalesce(sp.successful_purchases, 0)                                                AS successful_purchases,\n  f.failed_attempts                                                                   AS failed_attempts,\n  f.fraudulent_attempts                                                               AS fraudulent_attempts,\n  round(100.0 * coalesce(sp.successful_purchases, 0)\n        / nullIf(coalesce(sp.successful_purchases, 0) + f.failed_attempts, 0), 1)     AS success_rate_pct,\n  coalesce(sp.pollen_bought_usd, 0)                                                   AS pollen_bought_usd,\n  f.attempted_amount_usd                                                              AS attempted_amount_usd,\n  coalesce(s.trust_score, 100)                                                        AS trust_score,\n  round(coalesce(s.total_score, 0), 1)                                                AS total_score,\n  coalesce(s.github_age_days, 0)                                                      AS github_age_days,\n  coalesce(s.pollinations_age_days, 0)                                                AS pollinations_age_days,\n  f.last_failure_at                                                                   AS last_failure_at\nFROM failed_payments f\nLEFT JOIN successful_payments sp ON f.user_id = sp.user_id\nLEFT JOIN latest_users         u  ON f.user_id = u.id\nLEFT JOIN latest_scores        s  ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
           "refId": "A"
         }
       ]

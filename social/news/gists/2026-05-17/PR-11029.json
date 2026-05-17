@@ -1,0 +1,35 @@
+{
+  "pr_number": 11029,
+  "title": "Add AI Everywhere to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11029",
+  "merged_at": "2026-05-17T07:04:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) to chat\n- Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and\n\nFixes #10949",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "AI Everywhere joins the hive",
+    "blurb": "A new community project has sprouted! 'AI Everywhere' brings a floating AI menu to your browser for quick definitions, translations, and image generation.",
+    "summary": "Added the 'AI Everywhere' userscript to the community apps showcase, featuring a floating menu for quick text and image generation tasks directly from the browser.",
+    "impact": "Users can now discover and install the AI Everywhere script from the apps directory to access Pollinations AI capabilities from any webpage.",
+    "keywords": [
+      "community",
+      "app",
+      "userscript",
+      "browser",
+      "integration"
+    ],
+    "visual_concept": "The PR is about a floating AI menu/userscript that works everywhere. Visuals: Polly the bee interacting with floating digital menus or browser windows, representing the 'everywhere' aspect of the script.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee flying next to a floating digital menu panel filled with tiny glowing icons. A chunky retro computer monitor sits in the background displaying a web page. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11029.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee flying next to a floating digital menu panel filled with tiny glowing icons. A chunky retro computer monitor sits in the background displaying a web page. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-17T07:05:25.349461+00:00",
+  "app_name": "AI Everywhere",
+  "app_url": "https://greasyfork.org/en/scripts/419825-aigpt-everywhere"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11070,
+  "title": "Add imggenpro to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11070",
+  "merged_at": "2026-05-17T17:10:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [imggenpro](https://imggengpt.pro/) to image\n- Create and enhance.\n\nFixes #9994",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new sprout: imggenpro",
+    "blurb": "The greenhouse gets a little more crowded. imggenpro just dropped into the community showcase for all your image creation needs.",
+    "summary": "Added imggenpro, a new image creation and enhancement tool, to the community app showcase in the Greenhouse.",
+    "impact": "The community can now discover imggenpro alongside other community-built tools in the apps directory.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "imggenpro",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds a new app to the 'Greenhouse' (community showcase). Visuals should feature Polly the bee in a cozy greenhouse setting, tending to a new 'sprout' that looks like a glowing picture frame or canvas, representing the image generation app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, watering a glowing picture frame sprouting from a lime green (#ecf874) flower pot inside a glass greenhouse. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11070.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's hat, watering a glowing picture frame sprouting from a lime green (#ecf874) flower pot inside a glass greenhouse. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:11:28.600906+00:00",
+  "app_name": "imggenpro",
+  "app_url": "https://imggengpt.pro/"
+}

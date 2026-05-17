@@ -1,0 +1,35 @@
+{
+  "pr_number": 11059,
+  "title": "Add AI Package to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11059",
+  "merged_at": "2026-05-17T16:34:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Package](https://cyclonelib.pages.dev/) to build\n- Mentions Apple Shortcuts.\n\nFixes #9947",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Shortcuts to the hive",
+    "blurb": "A new community app just landed in the greenhouse. 'AI Package' brings Pollinations directly to your Apple Shortcuts.",
+    "summary": "Added 'AI Package' to the community showcase, integrating Pollinations AI capabilities with Apple Shortcuts.",
+    "impact": "Users can now explore how to trigger AI image and text generation directly from their iOS devices using Apple Shortcuts.",
+    "keywords": [
+      "community",
+      "apps",
+      "apple-shortcuts",
+      "ios",
+      "integration"
+    ],
+    "visual_concept": "Polly the bee interacting with a retro smartphone or Apple Shortcuts-style icon in a cozy digital greenhouse, representing iOS automation meeting the Pollinations ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny glowing smartphone showing an automation icon. She is hovering in a lush digital greenhouse with code-plants sprouting from lime green (#ecf874) pots. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11059.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny glowing smartphone showing an automation icon. She is hovering in a lush digital greenhouse with code-plants sprouting from lime green (#ecf874) pots. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T16:35:10.971532+00:00",
+  "app_name": "AI Package",
+  "app_url": "https://cyclonelib.pages.dev/"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-05-17",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-16",
+  "generated_at": "2026-05-17T06:55:42.330783+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/twitter.jpg"
+    }
+  ],
+  "text": "60 PRs merged this week. we finally stopped returning 500s for user typos (honest error codes). also shipped a dev earnings dashboard, automated github-based quest payouts, and ltx-2 video. plus 24 new apps built by you all. the greenhouse is getting crowded."
+}

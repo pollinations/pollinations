@@ -107,9 +107,9 @@ export interface VideoGenerateOptions extends RequestOptions {
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation (default: false). wan always has audio */
+    /** Enable audio generation where supported by the selected video model */
     audio?: boolean;
-    /** Reference image URL(s) for image-to-video */
+    /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
     /** Keep generation private (default: false) */
     private?: boolean;

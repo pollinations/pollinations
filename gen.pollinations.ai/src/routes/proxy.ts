@@ -19,6 +19,7 @@ import { handleImageEdit, handleImageGeneration } from "./images.ts";
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { extractRequestShape } from "@shared/observability/request-shape.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
@@ -112,10 +113,12 @@ const chatCompletionHandlers = factory.createHandlers(
     generationAccess,
     async (c) => {
         // Use resolved model from middleware for the backend request
-        const requestBody = await applySafetyToChatRequest(c, {
+        const rawRequestBody = {
             ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
             model: c.var.model.resolved,
-        });
+        };
+        c.set("requestShape", extractRequestShape(rawRequestBody));
+        const requestBody = await applySafetyToChatRequest(c, rawRequestBody);
 
         const response = await handleChatCompletionLocal(c, requestBody);
 
@@ -571,12 +574,17 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         async (c) => {
-            const requestBody = await applySafetyToChatRequest(c, {
+            const rawRequestBody = {
                 ...(c.req.valid(
                     "json" as never,
                 ) as CreateChatCompletionRequest),
                 model: c.var.model.resolved,
-            });
+            };
+            c.set("requestShape", extractRequestShape(rawRequestBody));
+            const requestBody = await applySafetyToChatRequest(
+                c,
+                rawRequestBody,
+            );
 
             const response = await handleTextContentLocal(c, requestBody);
             if (c.var.track.streamRequested) {

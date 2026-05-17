@@ -2,7 +2,7 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
 Recent actionable server-side failures from the rolling Tinybird error_event datasource.
-Defaults to the last 3 hours and returns newest failures first.
+Defaults to the last 24 hours and returns newest failures first.
 
 NODE recent_server_errors_node
 SQL >
@@ -23,11 +23,20 @@ SQL >
         upstream_body,
         model_requested,
         resolved_model_requested,
+        stream_requested,
+        message_count,
+        tool_count,
+        has_tool_choice,
+        has_response_format,
+        image_count,
+        audio_count,
+        max_tokens,
+        temperature,
         user_id,
         user_tier,
         api_key_id
     FROM error_event
-    WHERE timestamp >= now() - interval {{Int32(minutes, 180)}} minute
+    WHERE timestamp >= now() - interval {{Int32(minutes, 1440)}} minute
     AND environment = {{String(environment, 'production')}}
     ORDER BY timestamp DESC
     LIMIT {{Int32(limit, 200)}}

@@ -1,3 +1,4 @@
+import type { RequestShape } from "@shared/observability/request-shape.ts";
 import type { RequestIdVariables } from "hono/request-id";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
@@ -9,6 +10,7 @@ import type { TrackVariables } from "./middleware/track.ts";
 
 export type ErrorVariables = {
     error?: Error;
+    requestShape?: RequestShape;
 };
 
 export type Env = {

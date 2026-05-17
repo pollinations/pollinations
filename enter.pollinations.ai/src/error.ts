@@ -1,5 +1,9 @@
 import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
+import {
+    extractRequestShape,
+    type RequestShape,
+} from "@shared/observability/request-shape.ts";
 import { APIError } from "better-auth";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -159,6 +163,15 @@ type ServerErrorEnvelope = {
     upstreamBody?: string;
     modelRequested?: string;
     resolvedModelRequested?: string;
+    streamRequested?: boolean;
+    messageCount?: number;
+    toolCount?: number;
+    hasToolChoice?: boolean;
+    hasResponseFormat?: boolean;
+    imageCount?: number;
+    audioCount?: number;
+    maxTokens?: number;
+    temperature?: number;
     userId?: string;
     userTier?: string;
     apiKeyId?: string;
@@ -378,7 +391,18 @@ function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             resolved: string;
         };
         requestStartedAt: number;
+        requestShape: RequestShape;
+        track: {
+            streamRequested?: boolean;
+        };
     }>;
+    const requestShape = mergeRequestShapes(
+        error instanceof UpstreamError
+            ? extractRequestShape(error.requestBody)
+            : undefined,
+        vars.requestShape,
+        vars.track?.streamRequested,
+    );
     const message =
         truncateString(
             error.message || getDefaultErrorMessage(status),
@@ -416,6 +440,15 @@ function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
                 : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
+        streamRequested: requestShape?.streamRequested,
+        messageCount: requestShape?.messageCount,
+        toolCount: requestShape?.toolCount,
+        hasToolChoice: requestShape?.hasToolChoice,
+        hasResponseFormat: requestShape?.hasResponseFormat,
+        imageCount: requestShape?.imageCount,
+        audioCount: requestShape?.audioCount,
+        maxTokens: requestShape?.maxTokens,
+        temperature: requestShape?.temperature,
         userId: vars.auth?.user?.id,
         userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,
@@ -444,10 +477,34 @@ function toTinybirdErrorEvent(
         upstream_body: envelope.upstreamBody,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,
+        stream_requested: envelope.streamRequested,
+        message_count: envelope.messageCount,
+        tool_count: envelope.toolCount,
+        has_tool_choice: envelope.hasToolChoice,
+        has_response_format: envelope.hasResponseFormat,
+        image_count: envelope.imageCount,
+        audio_count: envelope.audioCount,
+        max_tokens: envelope.maxTokens,
+        temperature: envelope.temperature,
         user_id: envelope.userId,
         user_tier: envelope.userTier,
         api_key_id: envelope.apiKeyId,
     };
+}
+
+function mergeRequestShapes(
+    upstreamShape: RequestShape | undefined,
+    capturedShape: RequestShape | undefined,
+    streamRequested: boolean | undefined,
+): RequestShape | undefined {
+    const merged = {
+        ...(upstreamShape ?? {}),
+        ...(streamRequested !== undefined ? { streamRequested } : {}),
+        ...(capturedShape ?? {}),
+    };
+    return Object.values(merged).some((value) => value !== undefined)
+        ? merged
+        : undefined;
 }
 
 function truncateString(

@@ -1,0 +1,36 @@
+{
+  "pr_number": 11035,
+  "title": "Add Pixel to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11035",
+  "merged_at": "2026-05-17T07:39:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pixel](https://pixel.aesth.lol) to bots\n- Pixel is a Discord bot with an economy system and multiple AI features.\n\nFixes #10906",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pixel perfect",
+    "blurb": "A new Discord bot called Pixel just sprouted in the greenhouse! It brings a fun economy system and multiple AI features right to your server.",
+    "summary": "Added Pixel, a Discord bot featuring an economy system and multiple AI capabilities, to the community app showcase.",
+    "impact": "Users can now discover and invite the Pixel bot to their Discord servers directly from the pollinations.ai greenhouse.",
+    "keywords": [
+      "discord",
+      "bot",
+      "community",
+      "app",
+      "showcase",
+      "economy"
+    ],
+    "visual_concept": "Polly the bee welcoming a cute robot (representing the Discord bot) into a greenhouse setting. The robot can hold a coin to represent the economy system.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot welcoming a cute chunky robot companion into a lush digital greenhouse filled with code-plants. The robot has a CRT monitor head displaying a happy face and holds a shiny gold coin. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11035.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot welcoming a cute chunky robot companion into a lush digital greenhouse filled with code-plants. The robot has a CRT monitor head displaying a happy face and holds a shiny gold coin. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T07:39:56.124093+00:00",
+  "app_name": "Pixel",
+  "app_url": "https://pixel.aesth.lol"
+}

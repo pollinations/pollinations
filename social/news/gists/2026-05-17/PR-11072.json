@@ -1,0 +1,35 @@
+{
+  "pr_number": 11072,
+  "title": "Add Pixel-Colony-God to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11072",
+  "merged_at": "2026-05-17T17:16:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pixel-Colony-God](https://github.com/yava-code/Pixel-Colony-God) to games\n- Runs a sandbox web game using pollinations.\n\nFixes #10006",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Playing God in pixels",
+    "blurb": "A brand new sandbox web game called Pixel-Colony-God just landed in our community apps. Time to build, manage, and rule your own tiny pixelated world powered by Pollinations!",
+    "summary": "Added the community-built sandbox web game Pixel-Colony-God to the apps showcase and Greenhouse directory.",
+    "impact": "Users can now discover and play Pixel-Colony-God, a new AI-powered sandbox game, directly from the community apps list.",
+    "keywords": [
+      "community",
+      "games",
+      "sandbox",
+      "apps",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee acting as a benevolent 'god' over a tiny sandbox colony. She could be wearing a tiny toga or holding a small staff, looking down at a miniature world of tiny pixel buildings and villagers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toga, looking down proudly at a miniature sandbox world filled with tiny pixelated buildings and villagers. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11072.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toga, looking down proudly at a miniature sandbox world filled with tiny pixelated buildings and villagers. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:17:38.627749+00:00",
+  "app_name": "Pixel-Colony-God",
+  "app_url": "https://github.com/yava-code/Pixel-Colony-God"
+}

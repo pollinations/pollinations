@@ -60,7 +60,6 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
-    reference_images?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -86,8 +85,13 @@ export async function callSeedanceV2API(
     // Positional image[] contract:
     //   length=1 → first-frame only (I2V)
     //   length=2 → image[0] first frame, image[1] last frame
-    //   length>2 → image[0] first frame, image[1] last frame, image[2..] reference images
     const images = safeParams.image ?? [];
+    if (images.length > 2) {
+        throw new HttpError(
+            "Seedance 2.0 supports at most two images: image[0] as first frame and image[1] as last frame.",
+            400,
+        );
+    }
 
     const input: SeedanceV2Input = {
         prompt,
@@ -101,18 +105,12 @@ export async function callSeedanceV2API(
     }
     if (images.length >= 1) input.image = images[0];
     if (images.length >= 2) input.last_frame_image = images[1];
-    if (images.length > 2) {
-        input.reference_images = images.slice(2, 11); // up to 9 refs
-    }
 
     logOps("Seedance 2.0 input:", {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
-        reference_images: input.reference_images
-            ? `[${input.reference_images.length} url(s)]`
-            : undefined,
     });
 
     progress.updateBar(

@@ -760,6 +760,13 @@ export interface CreatedKey {
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 
+/** Per-model video frame-control capabilities (video models only) */
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
+
 /** Model information */
 export interface ModelInfo {
     name: string;
@@ -769,6 +776,7 @@ export interface ModelInfo {
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
+    video_capabilities?: VideoCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;

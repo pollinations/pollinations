@@ -294,7 +294,10 @@ async function callWanAlibabaAPI(
     );
 
     // Download image(s) and convert to base64 data URI for reliability
-    // (DashScope can't fetch URLs that redirect or require special headers)
+    // (DashScope can't fetch URLs that redirect or require special headers).
+    // For KF2V (wan2.2-kf2v-flash), Alibaba's docs nominally require public
+    // HTTP/HTTPS URLs for first_frame_url/last_frame_url, but DashScope
+    // empirically accepts data: URIs — verified end-to-end on 2026-05-16.
     const toDataUri = async (url: string): Promise<string> => {
         logOps("Downloading image for base64 encoding:", url);
         const { buffer, mimeType } = await downloadUserImage(url);

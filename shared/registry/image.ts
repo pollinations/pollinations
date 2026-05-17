@@ -419,7 +419,7 @@ export const IMAGE_SERVICES = {
             "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: ["start_frame", "end_frame"],
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],

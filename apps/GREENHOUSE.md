@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **775** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **776** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |  | 🫧 |
 | [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |  | 🫧 |
 | [🎨 Pixel Asset Forge](https://pixelassetforge.com/) | Generate professional-grade game assets from text and reference images using neural networks with Pixel Asset Forge. Built for indie game developers, artists, and creators. | [@aldunnaeyonus](https://github.com/aldunnaeyonus) |  | 🫧 |
 | [🕹️ Pixel-Colony-God](https://github.com/yava-code/Pixel-Colony-God) | Runs a sandbox web game using pollinations. | [@yava-code](https://github.com/yava-code) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Famous quotes](https://juanrivera126.github.io/Famous-quotes/) | A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🫧 |
 | [🧠 Cognitive Engine - AI-powered economic analysis -](https://www.anansebi.com/) | Perform AI-powered economic analysis using Cognitive Engine - AI-powered economic analysis - (Motor Cognitivo). | [@iagoinacio](https://github.com/iagoinacio) |  | 🫧 |
 | [🌐 MruKnowne9](https://mruknowne9.pages.dev) | Provide the app description for MruKnowne9. | [@ismailbanouigu](https://github.com/ismailbanouigu) |  | 🫧 |
-| [🎨 PolyDreamer](https://polydreamer.amitinfotech.net/) | Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier. | [@amitpatole](https://github.com/amitpatole) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧑‍🎨 Pollinations Avatar Gen](https://github.com/Nidelon/pollinations-avatar-gen) | An extension for SillyTavern that generates character avatars based on their text descriptions using the Pollinations.ai API. Everything is done at the click of a button. | [@Nidelon](https://github.com/Nidelon) |  | 🐝 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 |
 
-<details><summary>Show all 190 apps</summary>
+<details><summary>Show all 191 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -130,6 +130,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |  | 🫧 |
 | [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |  | 🫧 |
 | [🎨 Pixel Asset Forge](https://pixelassetforge.com/) | Generate professional-grade game assets from text and reference images using neural networks with Pixel Asset Forge. Built for indie game developers, artists, and creators. | [@aldunnaeyonus](https://github.com/aldunnaeyonus) |  | 🫧 |
 | [🎬 Prompt Evolution Engine](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) | Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  | 🫧 |

@@ -1,0 +1,1914 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Lightweight cash and pollen flow view: bought, issued, spent, granted, and current balances.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Period Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Cash collected from paid checkout sessions in the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#73BF69",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sum(amount_cents) / 100.0, 2) AS usd_bought\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n  AND payment_status = 'paid'\n  AND livemode = 1",
+          "refId": "A"
+        }
+      ],
+      "title": "USD Bought",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Paid pollen credited from purchases, including pack bonuses.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E0B400",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sum(pollen_issued), 2) AS paid_pollen_issued\nFROM (\n  SELECT\n    if(\n      metadata_pollen > 0,\n      metadata_pollen,\n      multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n    ) AS pollen_issued\n  FROM (\n    SELECT\n      amount_cents,\n      toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n      toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n      AND payment_status = 'paid'\n      AND livemode = 1\n  )\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "Paid Issued",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Paid pollen spent from pack balances in the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#73BF69",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  round(sum(total_price), 2) AS paid_pollen_spent\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND environment = 'production'\n  AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+          "refId": "A"
+        }
+      ],
+      "title": "Paid Spent",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Free tier pollen spent in the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF9830",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 9,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  round(sum(total_price), 2) AS tier_pollen_spent\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND environment = 'production'\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Spent",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Average cash paid per paid pollen issued after pack bonuses.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5794F2",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 15,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(if(sum(pollen_issued) > 0, sum(usd_collected) / sum(pollen_issued), 0), 4) AS effective_usd_per_pollen\nFROM (\n  SELECT\n    amount_cents / 100.0 AS usd_collected,\n    if(\n      metadata_pollen > 0,\n      metadata_pollen,\n      multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n    ) AS pollen_issued\n  FROM (\n    SELECT\n      amount_cents,\n      toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n      toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n      AND payment_status = 'paid'\n      AND livemode = 1\n  )\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "Sale Price",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Current unspent paid pollen from the latest D1 snapshot.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5794F2",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 18,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sum(coalesce(pack_balance, 0)), 2) AS paid_balance\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0",
+          "refId": "A"
+        }
+      ],
+      "title": "Paid Balance",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 200,
+      "panels": [],
+      "title": "Daily Flow",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily pollen spent split by paid pack balance and free tier balance.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen_spent"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid spent"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tier_pollen_spent"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Tier spent"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_share"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid share"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "%"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.stacking",
+                "value": {
+                  "group": "A",
+                  "mode": "none"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) AS time,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS paid_pollen_spent,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_pollen_spent,\n  if(paid_pollen_spent + tier_pollen_spent > 0, paid_pollen_spent / (paid_pollen_spent + tier_pollen_spent), 0) AS paid_share\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND environment = 'production'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND selected_meter_slug IN ('v1:meter:pack', 'local:pack', 'v1:meter:tier', 'local:tier')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Pollen Spent",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Daily USD collected and paid pollen issued from checkout purchases.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "usd_collected"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "USD collected"
+              },
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen_issued"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid pollen issued"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E0B400",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 1 DAY) AS time,\n  round(sum(amount_cents) / 100.0, 2) AS usd_collected,\n  round(sum(pollen_issued), 2) AS paid_pollen_issued\nFROM (\n  SELECT\n    timestamp,\n    amount_cents,\n    if(\n      metadata_pollen > 0,\n      metadata_pollen,\n      multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n    ) AS pollen_issued\n  FROM (\n    SELECT\n      timestamp,\n      amount_cents,\n      toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n      toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n      AND payment_status = 'paid'\n      AND livemode = 1\n  )\n)\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Credit Bought",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily paid pollen issued from purchases versus paid pollen spent. Ratio omitted because issuance is lumpy.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen_issued"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid issued"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E0B400",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_pollen_spent"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid spent"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "burn_ratio"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Spent / issued"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "%"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  time,\n  round(sum(paid_pollen_issued), 2) AS paid_pollen_issued,\n  round(sum(paid_pollen_spent), 2) AS paid_pollen_spent\nFROM (\n  SELECT\n    toStartOfInterval(timestamp, INTERVAL 1 DAY) AS time,\n    sum(pollen_issued) AS paid_pollen_issued,\n    0.0 AS paid_pollen_spent\n  FROM (\n    SELECT\n      timestamp,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued\n    FROM (\n      SELECT\n        timestamp,\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n  GROUP BY time\n  UNION ALL\n  SELECT\n    toStartOfInterval(start_time, INTERVAL 1 DAY) AS time,\n    0.0 AS paid_pollen_issued,\n    sum(total_price) AS paid_pollen_spent\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND environment = 'production'\n    AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time\n)\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Paid Sold vs Spent",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier pollen spent valued at the selected-period blended sale price. Directional, not FIFO.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tier_pollen_spent"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Tier spent"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "subsidy_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Subsidy value"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "USD"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\npurchases AS (\n  SELECT\n    sum(usd_collected) AS usd_collected,\n    sum(pollen_issued) AS paid_pollen_issued\n  FROM (\n    SELECT\n      amount_cents / 100.0 AS usd_collected,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued\n    FROM (\n      SELECT\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n),\nblended_price AS (\n  SELECT if(paid_pollen_issued > 0, usd_collected / paid_pollen_issued, 0) AS usd_per_pollen\n  FROM purchases\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) AS time,\n  round(sum(total_price), 2) AS tier_pollen_spent,\n  round(sum(total_price) * (SELECT usd_per_pollen FROM blended_price), 2) AS subsidy_value\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND environment = 'production'\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Subsidy Over Time",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 300,
+      "panels": [],
+      "title": "Breakdowns",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier pollen spent by tier when tier behavior matters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n)\nSELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) AS time,\n  sumIf(total_price, user_tier = 'microbe') AS microbe,\n  sumIf(total_price, user_tier = 'spore') AS spore,\n  sumIf(total_price, user_tier = 'seed') AS seed,\n  sumIf(total_price, user_tier = 'flower') AS flower,\n  sumIf(total_price, user_tier = 'nectar') AS nectar\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND environment = 'production'\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Spend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier pollen spent by tier, valued at selected-period blended sale price. Directional, not realized emission.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tier_pollen_spent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "subsidy_value"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 12,
+      "options": {
+        "footer": {
+          "fields": [
+            "tier_pollen_granted",
+            "tier_pollen_spent"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "subsidy_value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\npurchases AS (\n  SELECT\n    sum(usd_collected) AS usd_collected,\n    sum(pollen_issued) AS paid_pollen_issued\n  FROM (\n    SELECT\n      amount_cents / 100.0 AS usd_collected,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued\n    FROM (\n      SELECT\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n),\nblended_price AS (\n  SELECT if(paid_pollen_issued > 0, usd_collected / paid_pollen_issued, 0) AS usd_per_pollen\n  FROM purchases\n)\nSELECT\n  tier,\n  round(tier_pollen_spent, 2) AS tier_pollen_spent,\n  round(tier_pollen_spent * (SELECT usd_per_pollen FROM blended_price), 2) AS subsidy_value,\n  users,\n  requests\nFROM (\n  SELECT\n    user_tier AS tier,\n    sum(total_price) AS tier_pollen_spent,\n    uniq(user_github_id) AS users,\n    count() AS requests\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND environment = 'production'\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY user_tier\n)\nORDER BY subsidy_value DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Subsidy",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Purchase mix by pack size, including bonus pollen and effective price.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "usd_collected"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "effective_usd_per_pollen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bonus_pct"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 13,
+      "options": {
+        "footer": {
+          "fields": [
+            "purchases",
+            "usd_collected",
+            "paid_pollen_issued",
+            "bonus_pollen"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "pack"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  pack,\n  purchases,\n  usd_collected,\n  paid_pollen_issued,\n  bonus_pollen,\n  if(base_pollen > 0, bonus_pollen / base_pollen, 0) AS bonus_pct,\n  effective_usd_per_pollen\nFROM (\n  SELECT\n    pack_usd,\n    concat('$', toString(pack_usd)) AS pack,\n    count() AS purchases,\n    round(sum(amount_cents) / 100.0, 2) AS usd_collected,\n    round(sum(pollen_issued), 2) AS paid_pollen_issued,\n    round(sum(base_pollen), 2) AS base_pollen,\n    round(sum(bonus_pollen), 2) AS bonus_pollen,\n    round(if(sum(pollen_issued) > 0, sum(amount_cents) / 100.0 / sum(pollen_issued), 0), 4) AS effective_usd_per_pollen\n  FROM (\n    SELECT\n      amount_cents,\n      if(pack_usd_from_metadata > 0, pack_usd_from_metadata, toInt32(round(amount_cents / 100.0))) AS pack_usd,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued,\n      toFloat64(pack_usd) AS base_pollen,\n      greatest(pollen_issued - base_pollen, 0) AS bonus_pollen\n    FROM (\n      SELECT\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd_from_metadata,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n  GROUP BY pack_usd\n)\nORDER BY pack_usd",
+          "refId": "A"
+        }
+      ],
+      "title": "Pack Mix",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Period blended estimate only: not FIFO/cohort accounting, and assumes selected-period spend has selected-period blended sale price.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "usd_collected"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "estimated_paid_burn_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "effective_usd_per_pollen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_burn_ratio"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 14,
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\npurchases AS (\n  SELECT\n    sum(usd_collected) AS usd_collected,\n    sum(pollen_issued) AS paid_pollen_issued,\n    sum(bonus_pollen) AS bonus_pollen\n  FROM (\n    SELECT\n      amount_cents / 100.0 AS usd_collected,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued,\n      greatest(pollen_issued - if(pack_usd > 0, pack_usd, amount_cents / 100.0), 0) AS bonus_pollen\n    FROM (\n      SELECT\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n),\nspend AS (\n  SELECT\n    sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS paid_pollen_spent,\n    sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_pollen_spent\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND environment = 'production'\n    AND selected_meter_slug IN ('v1:meter:pack', 'local:pack', 'v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n)\nSELECT\n  round(usd_collected, 2) AS usd_collected,\n  round(paid_pollen_issued, 2) AS paid_pollen_issued,\n  round(bonus_pollen, 2) AS bonus_pollen,\n  round(if(paid_pollen_issued > 0, usd_collected / paid_pollen_issued, 0), 4) AS effective_usd_per_pollen,\n  round(paid_pollen_spent, 2) AS paid_pollen_spent,\n  round(paid_pollen_spent * if(paid_pollen_issued > 0, usd_collected / paid_pollen_issued, 0), 2) AS estimated_paid_burn_usd,\n  if(paid_pollen_issued > 0, paid_pollen_spent / paid_pollen_issued, 0) AS paid_burn_ratio,\n  round(tier_pollen_spent, 2) AS tier_pollen_spent\nFROM purchases, spend",
+          "refId": "A"
+        }
+      ],
+      "title": "Blended Burn Estimate",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier pollen spent valued at selected-period blended sale price. Directional, not FIFO.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#73BF69",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 12,
+        "y": 1
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH banned_users AS (\n  SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username\n),\npurchases AS (\n  SELECT\n    sum(usd_collected) AS usd_collected,\n    sum(pollen_issued) AS paid_pollen_issued\n  FROM (\n    SELECT\n      amount_cents / 100.0 AS usd_collected,\n      if(\n        metadata_pollen > 0,\n        metadata_pollen,\n        multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n      ) AS pollen_issued\n    FROM (\n      SELECT\n        amount_cents,\n        toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd,\n        toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n      FROM stripe_event\n      WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n        AND payment_status = 'paid'\n        AND livemode = 1\n    )\n  )\n),\ntier_spend AS (\n  SELECT sum(total_price) AS tier_pollen_spent\n  FROM generation_event\n  WHERE start_time >= $__fromTime AND start_time < $__toTime\n    AND environment = 'production'\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n)\nSELECT\n  round(tier_pollen_spent * if(paid_pollen_issued > 0, usd_collected / paid_pollen_issued, 0), 2) AS subsidy_value\nFROM purchases, tier_spend",
+          "refId": "A"
+        }
+      ],
+      "title": "Subsidy Value",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Current unspent tier pollen from the latest D1 snapshot.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5794F2",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 1
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(sum(coalesce(tier_balance, 0)), 2) AS tier_balance\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Balance",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Outstanding paid pollen balance from daily D1 snapshots.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paid_balance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid balance"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  day AS time,\n  round(sum(paid_balance), 2) AS paid_balance\nFROM (\n  SELECT\n    toStartOfInterval(synced_at, INTERVAL 1 DAY) AS day,\n    id,\n    argMax(coalesce(pack_balance, 0), synced_at) AS paid_balance,\n    argMax(banned, synced_at) AS banned\n  FROM d1_user\n  WHERE synced_at >= $__fromTime AND synced_at < $__toTime\n  GROUP BY day, id\n)\nWHERE banned = 0\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Paid Liability",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Daily paid pollen issued by pack size; shows whether larger discounted packs are taking share.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 1 DAY) AS time,\n  concat('$', toString(pack_usd)) AS pack,\n  round(sum(pollen_issued), 2) AS paid_pollen_issued\nFROM (\n  SELECT\n    timestamp,\n    if(pack_usd_from_metadata > 0, pack_usd_from_metadata, toInt32(round(amount_cents / 100.0))) AS pack_usd,\n    if(\n      metadata_pollen > 0,\n      metadata_pollen,\n      multiIf(pack_usd = 2, 2, pack_usd = 5, 6, pack_usd = 10, 13, pack_usd = 20, 28, pack_usd = 50, 75, pack_usd = 100, 160, amount_cents / 100.0)\n    ) AS pollen_issued\n  FROM (\n    SELECT\n      timestamp,\n      amount_cents,\n      toInt32OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packAmount')) AS pack_usd_from_metadata,\n      toFloat64OrZero(JSONExtractString(payload, 'data', 'object', 'metadata', 'packPollenGrant')) AS metadata_pollen\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n      AND payment_status = 'paid'\n      AND livemode = 1\n  )\n)\nGROUP BY time, pack_usd\nORDER BY time, pack_usd",
+          "refId": "A"
+        }
+      ],
+      "title": "Pack Mix Over Time",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 40,
+  "tags": [
+    "economics",
+    "pollen",
+    "cashflow"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "quick_ranges": [
+      {
+        "display": "Last 1 day",
+        "from": "now-1d",
+        "to": "now"
+      },
+      {
+        "display": "Last 7 days",
+        "from": "now-7d",
+        "to": "now"
+      },
+      {
+        "display": "Last 1 month",
+        "from": "now-1M",
+        "to": "now"
+      }
+    ],
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "1h"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Pollen Flow",
+  "uid": "pollen-flow",
+  "version": 2,
+  "weekStart": ""
+}

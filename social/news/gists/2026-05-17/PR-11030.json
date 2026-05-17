@@ -1,0 +1,35 @@
+{
+  "pr_number": 11030,
+  "title": "Add Pollinations Image Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11030",
+  "merged_at": "2026-05-17T07:07:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations Image Generator](https://mikehuge79-max.github.io/pollinations-image-generator/) to image\n- Generate AI images in-browser via Pollinations.ai API with Pollinations Image Generator, supporting 21 models with free/paid tiers, aspect presets, seed control, prompt enhancement, and PNG download.\n\nFixes #10568",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fresh canvas in the Greenhouse",
+    "blurb": "A new community app just dropped! The Pollinations Image Generator brings 21 models, prompt enhancement, and seed control straight to your browser.",
+    "summary": "Added the community-built Pollinations Image Generator by mikehuge79-max to the app showcase, featuring in-browser generation across 21 models with seed control and prompt enhancement.",
+    "impact": "Users can now explore and use a feature-rich web interface for generating images via the Pollinations API, complete with aspect ratio presets and direct PNG downloads.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR is about a community-built image generator app being added to the 'Greenhouse' (our app showcase). Visuals: Polly the bee painting on a canvas or looking at a glowing picture frame in a cozy greenhouse setting, representing the new image generation UI.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse filled with code-plants. A chunky Monitor Robot stands nearby holding a palette of glowing pixels. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11030.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas inside a lush greenhouse filled with code-plants. A chunky Monitor Robot stands nearby holding a palette of glowing pixels. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic, emotionally warm."
+  },
+  "generated_at": "2026-05-17T07:08:53.370613+00:00",
+  "app_name": "Pollinations Image Generator",
+  "app_url": "https://mikehuge79-max.github.io/pollinations-image-generator/"
+}

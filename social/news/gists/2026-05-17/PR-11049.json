@@ -1,0 +1,35 @@
+{
+  "pr_number": 11049,
+  "title": "Add TaqniX to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11049",
+  "merged_at": "2026-05-17T15:56:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [TaqniX](https://taqnix.hexabizsolutions.cloud) to business\n- Transforms a WhatsApp number into an automated sales channel that manages the full restaurant ordering lifecycle—greeting, menu browsing, OTP confirmation, and kitchen dispatch for TaqniX.\n\nFixes #9984",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "TaqniX joins the hive",
+    "blurb": "TaqniX just landed in the greenhouse! They've built a slick WhatsApp bot that handles the entire restaurant ordering lifecycle—from greeting to kitchen dispatch.",
+    "summary": "Added TaqniX to the community apps showcase, featuring their WhatsApp-based automated sales channel for restaurant ordering.",
+    "impact": "The community can now explore how TaqniX manages the full restaurant ordering lifecycle—including menu browsing, OTP confirmation, and kitchen dispatch—directly through WhatsApp.",
+    "keywords": [
+      "community",
+      "apps",
+      "whatsapp",
+      "restaurant",
+      "automation"
+    ],
+    "visual_concept": "The PR is about a WhatsApp restaurant ordering bot (TaqniX). Visuals should include a restaurant/kitchen setting, a smartphone with chat bubbles (WhatsApp metaphor), and food. Polly the bee should be interacting with this, perhaps wearing a chef's hat or holding a smartphone taking an order.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny chef's hat, holding a smartphone with green chat bubbles. In the background, a warm, bustling pixelated restaurant kitchen with glowing ovens and fresh food. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11049.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny chef's hat, holding a smartphone with green chat bubbles. In the background, a warm, bustling pixelated restaurant kitchen with glowing ovens and fresh food. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T15:57:38.269893+00:00",
+  "app_name": "TaqniX",
+  "app_url": "https://taqnix.hexabizsolutions.cloud"
+}

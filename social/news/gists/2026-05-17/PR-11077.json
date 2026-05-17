@@ -1,0 +1,35 @@
+{
+  "pr_number": 11077,
+  "title": "Add SillyTavern-Localyze to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11077",
+  "merged_at": "2026-05-17T17:46:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) to image\n- Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation.\n\nFixes #10034",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tavern Tales Visualized",
+    "blurb": "SillyTavern-Localyze just joined the ecosystem! It automatically detects new locations in your roleplay and generates environment visuals on the fly.",
+    "summary": "Added SillyTavern-Localyze to the community showcase, an app that detects new locations in roleplay and autogenerates environment visuals using the Pollinations API.",
+    "impact": "Roleplayers can now automatically generate, refine, and toggle background visuals for their scenes as the story progresses.",
+    "keywords": [
+      "community",
+      "app",
+      "roleplay",
+      "sillytavern",
+      "image-generation"
+    ],
+    "visual_concept": "A cozy fantasy tavern setting representing 'SillyTavern' and roleplay. Polly the bee as a tiny wizard or adventurer, interacting with the Monitor Robot who is displaying a newly generated environment (like a forest or dungeon) on its screen.",
+    "image_prompt": "Cozy pixel art scene of a warm, dimly lit fantasy tavern. The cute bee mascot wearing a tiny wizard hat sits at a wooden table with a map, while the chunky monitor robot displays a beautiful glowing forest landscape on its screen. Soft lime green (#ecf874) and warm amber gradient lighting. Chunky retro sprites, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11077.jpg",
+    "prompt": "Cozy pixel art scene of a warm, dimly lit fantasy tavern. The cute bee mascot wearing a tiny wizard hat sits at a wooden table with a map, while the chunky monitor robot displays a beautiful glowing forest landscape on its screen. Soft lime green (#ecf874) and warm amber gradient lighting. Chunky retro sprites, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "generated_at": "2026-05-17T17:47:40.848866+00:00",
+  "app_name": "SillyTavern-Localyze",
+  "app_url": "https://github.com/ZapoVerde/SillyTavern-Localyze"
+}

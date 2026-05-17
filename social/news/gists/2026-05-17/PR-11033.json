@@ -1,0 +1,35 @@
+{
+  "pr_number": 11033,
+  "title": "Add SimpleAgent to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11033",
+  "merged_at": "2026-05-17T07:23:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [SimpleAgent](https://pypi.org/project/weirenong-simpleagent/) to bots\n- SimpleAgent is a lightweight Python framework for building autonomous agents. It runs a core execution loop to manage reasoning and actions, perform tasks, and use tools within a secure environment.\n\nFixes #10915",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "SimpleAgent joins the swarm",
+    "blurb": "The greenhouse is getting smarter. SimpleAgent just dropped into the bot directory—a lightweight Python framework for spinning up autonomous agents that can reason, act, and use tools.",
+    "summary": "Added SimpleAgent, a lightweight Python framework for building autonomous agents with a core execution loop for reasoning and tool use, to the community apps directory.",
+    "impact": "Developers can now discover SimpleAgent in the apps directory to help build and deploy their own secure, autonomous Python bots.",
+    "keywords": [
+      "agents",
+      "python",
+      "framework",
+      "community",
+      "bots"
+    ],
+    "visual_concept": "SimpleAgent is an autonomous bot framework added to the 'greenhouse'. Depict Polly the bee and the Monitor Robot working together in a cozy digital greenhouse, growing autonomous 'agent' plants.",
+    "image_prompt": "Cozy pixel art scene inside a glowing digital greenhouse where the cute bee mascot is helping a chunky monitor-head robot tend to sprouting lime green (#ecf874) code-plants. The robot's screen shows a happy face. Soft pastel lavender and peach gradient background with warm sunlight filtering through the glass roof. Lo-fi 8-bit aesthetic, Stardew Valley vibes, large visible pixels, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11033.jpg",
+    "prompt": "Cozy pixel art scene inside a glowing digital greenhouse where the cute bee mascot is helping a chunky monitor-head robot tend to sprouting lime green (#ecf874) code-plants. The robot's screen shows a happy face. Soft pastel lavender and peach gradient background with warm sunlight filtering through the glass roof. Lo-fi 8-bit aesthetic, Stardew Valley vibes, large visible pixels, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-05-17T07:24:34.433238+00:00",
+  "app_name": "SimpleAgent",
+  "app_url": "https://pypi.org/project/weirenong-simpleagent/"
+}

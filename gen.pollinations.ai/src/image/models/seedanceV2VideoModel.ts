@@ -13,6 +13,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -103,8 +104,15 @@ export async function callSeedanceV2API(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    if (images.length >= 1) input.image = images[0];
-    if (images.length >= 2) input.last_frame_image = images[1];
+    // Replicate fetches input URLs server-side and saves them under a temp
+    // path derived from the URL — query strings and missing extensions break
+    // it. Match the other video models: download here and pass data URIs.
+    const toDataUri = async (url: string): Promise<string> => {
+        const { buffer, mimeType } = await downloadUserImage(url);
+        return `data:${mimeType};base64,${buffer.toString("base64")}`;
+    };
+    if (images.length >= 1) input.image = await toDataUri(images[0]);
+    if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
     logOps("Seedance 2.0 input:", {
         ...input,

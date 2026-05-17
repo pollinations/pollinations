@@ -1,0 +1,35 @@
+{
+  "pr_number": 11047,
+  "title": "feat(audio): support OpenAI diarized transcriptions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11047",
+  "merged_at": "2026-05-17T18:52:27Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `response_format=diarized_json` on `/v1/audio/transcriptions` for diarized STT responses.\n- Maps OpenAI-style diarization internally to AssemblyAI `speaker_labels` and ElevenLabs Scribe `diarize`.\n- Returns OpenAI-compatible `segments[]` with speaker, text, start, and end.\n- Keeps `speakers_expected` as an optional provider hint for `diarized_json`.\n- Defers provider-specific speaker-count and model-support errors to the selected upstream.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Who said what?",
+    "blurb": "Added speaker diarization to our audio transcription API. Now you can easily tell exactly which bee is buzzing in your audio files.",
+    "summary": "Added `response_format=diarized_json` to the `/v1/audio/transcriptions` endpoint, returning OpenAI-compatible segments with speaker labels powered by AssemblyAI and ElevenLabs Scribe.",
+    "impact": "Developers can now automatically identify different speakers in audio files, receiving structured JSON with text, start/end times, and speaker IDs.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "diarization",
+      "api",
+      "stt"
+    ],
+    "visual_concept": "The bee mascot (Polly) wearing headphones, listening to a conversation between the monitor robot and the nomnom creature, taking notes to track who is speaking. Represents speaker diarization (identifying who said what).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, sitting at a glowing lime green (#ecf874) terminal and taking notes on a clipboard. Nearby, a chunky monitor robot and a round nomnom creature are having a conversation, with little pixel speech bubbles above them. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11047.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones, sitting at a glowing lime green (#ecf874) terminal and taking notes on a clipboard. Nearby, a chunky monitor robot and a round nomnom creature are having a conversation, with little pixel speech bubbles above them. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-17T18:53:18.091867+00:00"
+}

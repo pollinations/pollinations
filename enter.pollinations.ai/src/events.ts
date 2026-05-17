@@ -25,15 +25,7 @@ export type TinybirdErrorEvent = {
     upstream_body?: string;
     model_requested?: string;
     resolved_model_requested?: string;
-    stream_requested?: boolean;
-    message_count?: number;
-    tool_count?: number;
-    has_tool_choice?: boolean;
-    has_response_format?: boolean;
-    image_count?: number;
-    audio_count?: number;
-    max_tokens?: number;
-    temperature?: number;
+    request_inputs?: string;
     user_id?: string;
     user_tier?: string;
     api_key_id?: string;

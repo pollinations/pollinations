@@ -2,7 +2,6 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { extractRequestShape } from "@shared/observability/request-shape.ts";
 import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -20,8 +19,7 @@ function createTestApp() {
     app.use("*", requestId());
     app.use("*", logger);
     app.post("/v1/chat/completions", async (c) => {
-        const requestBody = await c.req.json();
-        c.set("requestShape", extractRequestShape(requestBody));
+        await c.req.json();
         c.set("model", {
             requested: "openai",
             resolved: "openai",
@@ -124,7 +122,10 @@ describe("error observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
-        const tinybirdPayload = await tinybirdRequests[0].json();
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
         expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             severity: "error",
@@ -139,18 +140,47 @@ describe("error observability", () => {
             upstream_body: "application/json",
             model_requested: "openai",
             resolved_model_requested: "openai",
-            stream_requested: true,
-            message_count: 2,
-            tool_count: 1,
-            has_tool_choice: true,
-            has_response_format: true,
-            image_count: 1,
-            audio_count: 1,
-            max_tokens: 256,
-            temperature: 0.7,
+            request_inputs: expect.any(String),
         });
-        expect(JSON.stringify(tinybirdPayload)).not.toContain(
-            "https://example.com/a.png",
-        );
+        expect(
+            JSON.parse(tinybirdPayload.request_inputs as string),
+        ).toMatchObject({
+            body: {
+                model: "openai",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "test" },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "https://example.com/a.png",
+                                },
+                            },
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    data: "abc",
+                                    format: "mp3",
+                                },
+                            },
+                        ],
+                    },
+                    { role: "assistant", content: "hello" },
+                ],
+                tools: [
+                    {
+                        type: "function",
+                        function: { name: "lookup" },
+                    },
+                ],
+                tool_choice: "auto",
+                response_format: { type: "json_object" },
+                max_tokens: 256,
+                temperature: 0.7,
+            },
+        });
     });
 });

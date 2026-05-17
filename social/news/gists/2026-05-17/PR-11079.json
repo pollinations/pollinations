@@ -1,0 +1,35 @@
+{
+  "pr_number": 11079,
+  "title": "feat(economics): buyer geography, payment methods & risky users on user intelligence dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11079",
+  "merged_at": "2026-05-17T17:55:38Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds a payments/abuse analytics layer to the User Intelligence Grafana dashboard at `apps/operation/economics/provisioning/dashboards/user-intelligence.json`. Default time window narrowed to 7d to keep Tinybird load reasonable.\n\n**Buyer Geography row**\n- Top countries by revenue (barchart)\n- Pack mix donut, $2/$5/$10/$20/$50/$100 with distinct fixed colors\n- Top countries × pack mix (stacked barchart)\n- Revenue by country over time (stacked timeseries, top 5 + Other)\n- ISO-3166 codes translated to full country names via ClickHouse `transform()` (279-entry lookup)\n\n**Payment Methods & Failures row**\n- Real payment method extracted by joining `checkout.session.completed` → `payment_intent.succeeded` on the PI ID and reading the `payment_method` column on the PI side (verified against Tinybird; the `charges`/`latest_charge` JSON paths are empty in our payloads)\n- Payment Method Mix donut, Top Countries × Payment Method, Failure Rate by Payment Method, Failures Country × Payment Method\n- Failure-reason drilldown: ranked decline codes with sample messages, and Country × Reason table\n- `checkout.session.expired` events relabeled from `unknown` to `abandoned` so the failure-rate row is read correctly\n\n**Risky Users panel**\n- Top users by failed-payment attempts, joined to `d1_user` (ban status, tier, github) and latest `scoring_snapshot` (trust score, account age)\n- Includes successful purchases, pollen bought, and success-rate% so carders are distinguishable from real customers\n- GitHub username links to the profile\n\nAlready running on the prod dashboard server (https://economics.myceli.ai) off this branch.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mapping the pollen flow",
+    "blurb": "Added a new payments and abuse analytics layer to our internal user intelligence dashboard. Now we can track buyer geography, payment methods, and spot risky behavior faster.",
+    "summary": "Added buyer geography, payment method analytics, and risky user tracking to the internal User Intelligence Grafana dashboard.",
+    "impact": "The operations team can now visualize revenue by country, track payment failure rates by method, and identify potential carding abuse by joining failed payment attempts with user trust scores.",
+    "keywords": [
+      "analytics",
+      "grafana",
+      "payments",
+      "abuse-prevention",
+      "dashboard"
+    ],
+    "visual_concept": "Polly the bee acting as a data analyst, looking at a retro computer monitor showing charts and maps. The robot companion helps analyze the data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying colorful bar charts and a world map. A chunky pixel robot companion points at the screen excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11079.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying colorful bar charts and a world map. A chunky pixel robot companion points at the screen excitedly. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-17T17:56:32.998455+00:00"
+}

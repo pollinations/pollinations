@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **781** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **782** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |  | 🫧 |
 | [🖼️ ZhenxiJS AI Image Editor (朕喜AI图片编辑器)](https://imgedit.zhenxijs.com/) | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | [@TargetCenter](https://github.com/TargetCenter) |  | 🫧 |
 | [🧚‍♀️ Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) | Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei | [@DanieleMorais](https://github.com/DanieleMorais) |  | 🫧 |
 | [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |  | 🫧 |
 | [🎨 Pixel Asset Forge](https://pixelassetforge.com/) | Generate professional-grade game assets from text and reference images using neural networks with Pixel Asset Forge. Built for indie game developers, artists, and creators. | [@aldunnaeyonus](https://github.com/aldunnaeyonus) |  | 🫧 |
 | [🕹️ Pixel-Colony-God](https://github.com/yava-code/Pixel-Colony-God) | Runs a sandbox web game using pollinations. | [@yava-code](https://github.com/yava-code) |  | 🫧 |
-| [🎬 Prompt Evolution Engine](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) | Transforms a simple prompt into cinematic visuals via an interactive AI 5-step evolution with real-time visual outputs using Prompt Evolution Engine. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  | 🫧 |
 
 ---
 
@@ -330,7 +330,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |  | 🏵️ 🫧 |
 | [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@tatn](https://github.com/tatn) |  | 🏵️ 🫧 |
 
-<details><summary>Show all 79 apps</summary>
+<details><summary>Show all 80 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -356,6 +356,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🗺️ AI World Generator  Narrative Extractor Standalone](https://latejedorademundos-prog.github.io/pollinationproject-extractor/) | Standalone extractor that pulls narrative content from AI world generator. | [@latejedorademundos-prog](https://github.com/latejedorademundos-prog) | 1 |  |
 | [📄 Scribe](https://github.com/nadinev6/scribe) | Provides a Markdown editor with rich/markdown/plain views, content management, Pollinations-generated header images, AI proofreading, and export tools. | [@nadinev6](https://github.com/nadinev6) | 1 |  |
 | [📚 StoryWeaver AI](https://storyweaver-ai-umber.vercel.app/) | Generate illustrated storybooks as SVG using the Gamini model via the Pollinations API. | [@Karannn3011](https://github.com/Karannn3011) | 1 |  |
+| [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |  | 🫧 |
 | [🪶 X spinoff](https://tweet-composition-and-publication-x.netlify.app/) | Adds AI features to X via X spinoff. | [@nnafis-007](https://github.com/nnafis-007) |  | 🫧 |
 | [🌙 睡前小故事 / Bedtime Stories](https://222.5918918.xyz/) | 睡前小故事 / Bedtime Stories。提供睡前故事内容给用户阅读。 | [@huakeyi2000b](https://github.com/huakeyi2000b) |  | 🫧 |
 | [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@rizperdana](https://github.com/rizperdana) |  |  |

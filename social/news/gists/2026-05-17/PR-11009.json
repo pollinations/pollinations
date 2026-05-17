@@ -1,0 +1,37 @@
+{
+  "pr_number": 11009,
+  "title": "feat(video): start+end frame via positional image[] across providers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11009",
+  "merged_at": "2026-05-17T14:15:34Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Uses a shared positional video image contract: `image[0]` = start frame, `image[1]` = end frame; one image remains normal I2V.\n- Adds end-frame support for `seedance`, `seedance-2.0`, `veo`, and `wan-fast`; unsupported video models continue to ignore `image[1]`.\n- Makes `seedance-2.0` reject more than two images with HTTP 400 and sends fetched image bytes as data URIs to Replicate.\n- Routes `wan-fast` start+end requests through Wan 2.2 KF2V, removes `audio_output` from its registry capabilities, and keeps rich capability metadata on `/models` and `/image/models`.\n- Updates docs, schemas, SDK types, MCP model listing, and CLI model capability display for `video_capabilities`.\n\n## Validation\n\n- GitHub checks: `Biome Check` ✅, `CodeQL` ✅\n- Local: `gen.pollinations.ai` typecheck ✅\n- Local: `packages/sdk` typecheck ✅\n- Local: `packages/polli-cli` build ✅\n- Local: focused video/model vitest coverage ✅\n- Staging: `seedance-2.0` with three images returns the new 400 ✅\n- Staging: `/image/models` reports `wan-fast` as `start_frame,end_frame` only ✅\n- Staging: start+end video generation works for `veo`, `seedance`, `seedance-2.0`, and `wan-fast` ✅\n\n## Notes\n\n`/v1/models` remains the OpenAI-compatible endpoint. Rich model metadata, including `video_capabilities`, is exposed through `/models` and `/image/models`.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Connecting the frames",
+    "blurb": "You can now pass two images to our video models to define both the start and end frames. Perfect for creating smooth transitions, morphs, or forcing a specific final state.",
+    "summary": "Added support for start and end frames in video generation via a positional image[] array (image[0] for start, image[1] for end) across the seedance, seedance-2.0, veo, and wan-fast models.",
+    "impact": "Developers can now generate video transitions between two specific images by passing an array of URLs, with full support rolled out to the API, SDK, CLI, and MCP tools.",
+    "keywords": [
+      "video",
+      "api",
+      "models",
+      "transitions",
+      "seedance",
+      "veo",
+      "wan-fast"
+    ],
+    "visual_concept": "The pollinations bee acting as a movie director. Key symbols: film strips, two distinct picture frames or polaroids representing the start and end states. The robot companion helping hold the frames. The metaphor is connecting point A to point B.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a clapperboard next to a glowing film strip that connects two polaroid pictures. A chunky robot with a CRT monitor head holds one of the polaroids, its screen showing a happy face. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11009.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a clapperboard next to a glowing film strip that connects two polaroid pictures. A chunky robot with a CRT monitor head holds one of the polaroids, its screen showing a happy face. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-17T14:16:26.634278+00:00"
+}

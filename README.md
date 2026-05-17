@@ -20,6 +20,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✂️ AI Clip Finder](https://kenz1s-ai-clip-finder.hf.space/) | Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation. | [@PixelTMT](https://github.com/PixelTMT) |
+| [🍽️ TaqniX](https://taqnix.hexabizsolutions.cloud) | Transforms a WhatsApp number into an automated sales channel that manages the full restaurant ordering lifecycle—greeting, menu browsing, OTP confirmation, and kitchen dispatch for TaqniX. | [@zakrya6665](https://github.com/zakrya6665) |
+| [🤖 2012's bot](https://2012hhh2012.qzz.io/2012sbot/) | Entertain users and provide server utilities via 2012's bot for Discord, including AI-powered features and image generation using pollinations.ai API. | [@2012hhh2012](https://github.com/2012hhh2012) |
 | [🧰 CreatorPack AI](https://creatorpack.qhero.net/) | CreatorPack AI generates multilingual social media content packs, built by Qhero. | [@qhero256](https://github.com/qhero256) |
 | [🧠 Pixel](https://pixel.aesth.lol) | Pixel is a Discord bot with an economy system and multiple AI features. | [@Scoopala7-source](https://github.com/Scoopala7-source) |
 | [🤖 SimpleAgent](https://pypi.org/project/weirenong-simpleagent/) | SimpleAgent is a lightweight Python framework for building autonomous agents. It runs a core execution loop to manage reasoning and actions, perform tasks, and use tools within a secure environment. | [@weirenong](https://github.com/weirenong) |
@@ -27,11 +30,6 @@
 | [🖼️ Pollinations Image Generator](https://mikehuge79-max.github.io/pollinations-image-generator/) | Generate AI images in-browser via Pollinations.ai API with Pollinations Image Generator, supporting 21 models with free/paid tiers, aspect presets, seed control, prompt enhancement, and PNG download. | [@mikehuge79-max](https://github.com/mikehuge79-max) |
 | [🧠 AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) | Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and | [@cyber-sec0](https://github.com/cyber-sec0) |
 | [🚀 TubeBoost AI](https://tubeboost.kr) | TubeBoost AI helps creators translate YouTube video metadata such as titles. | [@Johau91](https://github.com/Johau91) |
-| [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |
-| [🎨 MoodCanvas AI](https://moodcanvasai.netlify.app/) | Generate aesthetic mood boards in MoodCanvas AI from a single concept or theme. Uses the Pollinations Image API to create visual collections. | [@Shuqie22](https://github.com/Shuqie22) |
-| [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |
-| [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) |
-| [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

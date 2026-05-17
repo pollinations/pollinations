@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **748** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **752** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,9 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [✂️ AI Clip Finder](https://kenz1s-ai-clip-finder.hf.space/) | Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation. | [@PixelTMT](https://github.com/PixelTMT) |  | 🫧 |
+| [🍽️ TaqniX](https://taqnix.hexabizsolutions.cloud) | Transforms a WhatsApp number into an automated sales channel that manages the full restaurant ordering lifecycle—greeting, menu browsing, OTP confirmation, and kitchen dispatch for TaqniX. | [@zakrya6665](https://github.com/zakrya6665) |  | 🫧 |
+| [🤖 2012's bot](https://2012hhh2012.qzz.io/2012sbot/) | Entertain users and provide server utilities via 2012's bot for Discord, including AI-powered features and image generation using pollinations.ai API. | [@2012hhh2012](https://github.com/2012hhh2012) |  | 🫧 |
 | [🧰 CreatorPack AI](https://creatorpack.qhero.net/) | CreatorPack AI generates multilingual social media content packs, built by Qhero. | [@qhero256](https://github.com/qhero256) |  | 🫧 |
 | [🧠 Pixel](https://pixel.aesth.lol) | Pixel is a Discord bot with an economy system and multiple AI features. | [@Scoopala7-source](https://github.com/Scoopala7-source) |  | 🫧 |
 | [🤖 SimpleAgent](https://pypi.org/project/weirenong-simpleagent/) | SimpleAgent is a lightweight Python framework for building autonomous agents. It runs a core execution loop to manage reasoning and actions, perform tasks, and use tools within a secure environment. | [@weirenong](https://github.com/weirenong) |  | 🫧 |
@@ -51,11 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Pollinations Image Generator](https://mikehuge79-max.github.io/pollinations-image-generator/) | Generate AI images in-browser via Pollinations.ai API with Pollinations Image Generator, supporting 21 models with free/paid tiers, aspect presets, seed control, prompt enhancement, and PNG download. | [@mikehuge79-max](https://github.com/mikehuge79-max) |  | 🫧 |
 | [🧠 AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) | Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and | [@cyber-sec0](https://github.com/cyber-sec0) |  | 🫧 |
 | [🚀 TubeBoost AI](https://tubeboost.kr) | TubeBoost AI helps creators translate YouTube video metadata such as titles. | [@Johau91](https://github.com/Johau91) |  | 🫧 |
-| [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
-| [🎨 MoodCanvas AI](https://moodcanvasai.netlify.app/) | Generate aesthetic mood boards in MoodCanvas AI from a single concept or theme. Uses the Pollinations Image API to create visual collections. | [@Shuqie22](https://github.com/Shuqie22) |  | 🫧 |
-| [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |  | 🫧 |
-| [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) | 1 | 🫧 |
-| [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |  | 🐝 🫧 |
 
 ---
 
@@ -266,7 +264,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎬 SRTAudio  Video IA Pro](https://spiffy-licorice-92706f.netlify.app) | SRTAudio  Video IA Pro generates browser-based videos from uploaded MP3/WAV audio or SRT files and uses Pollinations Audio API and Whisper for transcription and timing. | [@ErasmoAA](https://github.com/ErasmoAA) |  | 🏵️ |
 | [🎬 Generador y Editor de Imgenes y Videos con Pollina](https://juanrivera126.github.io/Generador-y-Editor-de-Im-genes-y-Videos-con-Pollinations/) | Genera y edita imágenes y videos con modelos y plantillas. Generador y Editor de Imgenes y Videos con Pollina exporta en PNG, JPG y MP4, ajusta resolución, recorta clips y aplica filtros. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 
-<details><summary>Show all 35 apps</summary>
+<details><summary>Show all 36 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -277,6 +275,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@Rakesh-ada](https://github.com/Rakesh-ada) | 2 |  |
 | [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@aghartavault-ship-it](https://github.com/aghartavault-ship-it) | 1 | 🫧 |
 | [🎬 ViralFlow AI](https://fabioarieira.com/viralflow) | Auto-generates cinematic viral videos from a theme (script, TTS, visuals). | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 1 |  |
+| [✂️ AI Clip Finder](https://kenz1s-ai-clip-finder.hf.space/) | Transcribe long videos and identify high-impact moments using LLMs with AI Clip Finder, a FastAPI backend for automated video clipping and social media content creation. | [@PixelTMT](https://github.com/PixelTMT) |  | 🫧 |
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@gyanshupathak](https://github.com/gyanshupathak) |  |  |
 | [🎬 MUSINGWEI STUDIO](https://musingwei.com) | Generate images, audio, and video using the pollinations.ai APIs with MUSINGWEI STUDIO. | [@musingwei](https://github.com/musingwei) |  |  |
 | [🎬 V-AI-Powered YouTube Shorts Automation Platform](https://github.com/oguzgokyar/Video_Kur) | Generates YouTube Shorts videos automatically from news URLs and publishes them to multiple social media platforms. | [@oguzgokyar](https://github.com/oguzgokyar) |  |  |
@@ -689,7 +688,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📲 GPT_Project](https://t.me/gpt_project_official_bot) | Telegram AI assistant for work/study: chat, images, voice, TTS, analysis. | [@Lorodn4x](https://github.com/Lorodn4x) |  | 🐝 |
 | [🧙‍♂️ Sage](https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8) | Discord bot offering assistant-style features and server utilities. | [@BokX1](https://github.com/BokX1) | 4 |  |
 
-<details><summary>Show all 50 apps</summary>
+<details><summary>Show all 51 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -701,6 +700,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) | 1 | 🫧 |
 | [📈 BorsaciAI - BIST Financial Analysis Bot](https://t.me/ai_borsaci_bot) | Provides open-source Telegram assistant to summarize companies listed on Borsa Istanbul and combine market data for quick financial analysis; BorsaciAI - BIST Financial Analysis Bot | [@azsaritas](https://github.com/azsaritas) | 1 |  |
 | [🤖 Raphael](https://github.com/GhazanfarAteeb/raphael-discord-bot) | Discord bot for moderation, economy, entertainment, community, plus AI chat. | [@GhazanfarAteeb](https://github.com/GhazanfarAteeb) | 1 |  |
+| [🤖 2012's bot](https://2012hhh2012.qzz.io/2012sbot/) | Entertain users and provide server utilities via 2012's bot for Discord, including AI-powered features and image generation using pollinations.ai API. | [@2012hhh2012](https://github.com/2012hhh2012) |  | 🫧 |
 | [🧠 Pixel](https://pixel.aesth.lol) | Pixel is a Discord bot with an economy system and multiple AI features. | [@Scoopala7-source](https://github.com/Scoopala7-source) |  | 🫧 |
 | [🤖 SimpleAgent](https://pypi.org/project/weirenong-simpleagent/) | SimpleAgent is a lightweight Python framework for building autonomous agents. It runs a core execution loop to manage reasoning and actions, perform tasks, and use tools within a secure environment. | [@weirenong](https://github.com/weirenong) |  | 🫧 |
 | [🤖 Tawer_bot](https://t.me/tawer_vivybot) | Run a multifunction Telegram bot with AI chat and image generation used by 5000+ people, backed by Pollinations text and image endpoints. | [@tawerrd](https://github.com/tawerrd) |  |  |
@@ -888,7 +888,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) | Provides AI-powered nutrition guidance and calorie tracking in a web application with food analysis and logging features. | [@newnol](https://github.com/newnol) | 208 |  |
 | [🏃 Spix - Personal Fitness Companion](https://github.com/LuckyTheCookie/FitTrack) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@LuckyTheCookie](https://github.com/LuckyTheCookie) | 12 |  |
 
-<details><summary>Show all 47 apps</summary>
+<details><summary>Show all 48 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -897,6 +897,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@jfliu3265](https://github.com/jfliu3265) | 1 | 🫧 |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) | 1 | 🫧 |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@xfynder99-byte](https://github.com/xfynder99-byte) | 1 |  |
+| [🍽️ TaqniX](https://taqnix.hexabizsolutions.cloud) | Transforms a WhatsApp number into an automated sales channel that manages the full restaurant ordering lifecycle—greeting, menu browsing, OTP confirmation, and kitchen dispatch for TaqniX. | [@zakrya6665](https://github.com/zakrya6665) |  | 🫧 |
 | [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |  | 🫧 |
 | [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@titosoriano](https://github.com/titosoriano) |  | 🫧 |
 | [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@mindungil](https://github.com/mindungil) |  | 🫧 |

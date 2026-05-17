@@ -1,0 +1,35 @@
+{
+  "pr_number": 11043,
+  "title": "[codex] Add pollen flow dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11043",
+  "merged_at": "2026-05-17T11:56:23Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds a provisioned Grafana dashboard for pollen cashflow and usage analysis.\n- Tracks paid issued/spent, tier spent, subsidy estimate, paid liability, pack mix, and blended burn estimate.\n- Defaults to last 7 days with 1 day, 7 day, and 1 month quick ranges.\n- Validated with `jq empty`, `git diff --check`, and Grafana datasource API checks for every panel.\n\nNote: the online dashboard was already deployed directly per request.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tracking the nectar",
+    "blurb": "Added a new internal Grafana dashboard to track Pollen cashflow, usage, and pack mix. Keeping an eye on the hive's economy!",
+    "summary": "Added a provisioned Grafana dashboard to track Pollen cashflow, usage metrics, subsidy estimates, and pack mix over time.",
+    "impact": "Internal operations can now monitor paid versus tier spending, liabilities, and blended burn rates to better understand platform economics.",
+    "keywords": [
+      "grafana",
+      "dashboard",
+      "metrics",
+      "pollen",
+      "economics"
+    ],
+    "visual_concept": "The bee mascot acting as an analyst, looking at charts and graphs on the Monitor Robot's screen. Golden pollen drops or honey jars nearby to represent the 'cashflow'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at the chunky Monitor Robot whose screen displays colorful bar charts and graphs. A small glass jar filled with glowing golden pollen sits on a wooden desk. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11043.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at the chunky Monitor Robot whose screen displays colorful bar charts and graphs. A small glass jar filled with glowing golden pollen sits on a wooden desk. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T11:57:17.420769+00:00"
+}

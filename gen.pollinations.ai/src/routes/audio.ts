@@ -1073,7 +1073,6 @@ export const audioRoutes = new Hono<Env>()
                                 speakers_expected: {
                                     type: "integer",
                                     minimum: 1,
-                                    maximum: 32,
                                     description:
                                         "Optional provider hint for the number of speakers. Only honored with `response_format=diarized_json`.",
                                 },
@@ -1158,10 +1157,6 @@ export const audioRoutes = new Hono<Env>()
                 "speakers_expected",
             );
             const wantsDiarizedJson = responseFormat === "diarized_json";
-            const supportsDiarization =
-                c.var.model.resolved === "scribe" ||
-                c.var.model.resolved === "universal-2" ||
-                c.var.model.resolved === "universal-3-pro";
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -1173,22 +1168,6 @@ export const audioRoutes = new Hono<Env>()
                 throw new UpstreamError(400 as ContentfulStatusCode, {
                     message:
                         "speakers_expected requires response_format=diarized_json",
-                });
-            }
-
-            if (
-                speakersExpected !== undefined &&
-                (speakersExpected < 1 || speakersExpected > 32)
-            ) {
-                throw new UpstreamError(400 as ContentfulStatusCode, {
-                    message: "speakers_expected must be between 1 and 32",
-                });
-            }
-
-            if (wantsDiarizedJson && !supportsDiarization) {
-                throw new UpstreamError(400 as ContentfulStatusCode, {
-                    message:
-                        "Speaker diarization is only supported by scribe, universal-2, and universal-3-pro",
                 });
             }
 

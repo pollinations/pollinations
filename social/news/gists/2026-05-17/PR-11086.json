@@ -1,0 +1,35 @@
+{
+  "pr_number": 11086,
+  "title": "Add ContentPilot to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11086",
+  "merged_at": "2026-05-17T18:07:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ContentPilot](https://cp-frontend-alpha.vercel.app/) to writing\n- ContentPilot Repupose.\n\nFixes #10062",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "ContentPilot takes flight",
+    "blurb": "A new community app has landed in the greenhouse! ContentPilot is here to help you repurpose your writing with AI.",
+    "summary": "Added ContentPilot, a new AI writing and repurposing tool, to the community apps showcase.",
+    "impact": "Users can now discover and explore ContentPilot in the apps directory for their content repurposing needs.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "contentpilot",
+      "showcase"
+    ],
+    "visual_concept": "A pilot/aviation theme mixed with writing. The pollinations bee (Polly) wearing a tiny pilot's hat or aviator goggles, sitting at a retro terminal or typewriter, with paper airplanes flying around.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, sitting at a retro typewriter. Small pixelated paper airplanes fly around her. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11086.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles, sitting at a retro typewriter. Small pixelated paper airplanes fly around her. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T18:08:36.788078+00:00",
+  "app_name": "ContentPilot",
+  "app_url": "https://cp-frontend-alpha.vercel.app/"
+}

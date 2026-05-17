@@ -441,31 +441,79 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "user_tier" },
+            "matcher": {
+              "id": "byName",
+              "options": "user_tier"
+            },
             "properties": [
-              { "id": "displayName", "value": "User (spore)" },
-              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "User (spore)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "dev_tier" },
+            "matcher": {
+              "id": "byName",
+              "options": "dev_tier"
+            },
             "properties": [
-              { "id": "displayName", "value": "Dev (seed + flower + nectar)" },
-              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Dev (seed + flower + nectar)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "abuser_tier" },
+            "matcher": {
+              "id": "byName",
+              "options": "abuser_tier"
+            },
             "properties": [
-              { "id": "displayName", "value": "Abuser (microbe)" },
-              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Abuser (microbe)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "dead_tier" },
+            "matcher": {
+              "id": "byName",
+              "options": "dead_tier"
+            },
             "properties": [
-              { "id": "displayName", "value": "Dead (banned/deleted)" },
-              { "id": "color", "value": { "fixedColor": "semi-dark-purple", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Dead (banned/deleted)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
             ]
           }
         ]
@@ -703,7 +751,12 @@
       "type": "row",
       "title": "Buyer Geography",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
       "panels": []
     },
     {
@@ -711,14 +764,32 @@
       "type": "barchart",
       "title": "Top Countries by Revenue",
       "description": "Total Stripe revenue per buyer country (ISO-3166 alpha-2). Live payments only.",
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 43 },
-      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 43
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {},
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
           "unit": "currencyUSD"
         },
         "overrides": []
@@ -727,18 +798,28 @@
         "barRadius": 0,
         "barWidth": 0.8,
         "groupWidth": 0.7,
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
         "orientation": "horizontal",
         "stacking": "none",
-        "tooltip": { "mode": "single", "sort": "none" },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
         "xField": "country",
         "xTickLabelRotation": 0
       },
       "targets": [
         {
-          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
           "format": 1,
-          "rawSql": "SELECT\n  JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\nGROUP BY country\nHAVING country != ''\nORDER BY revenue DESC\nLIMIT 15",
+          "rawSql": "WITH JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\n  AND code != ''\nGROUP BY country\nORDER BY revenue DESC\nLIMIT 15",
           "refId": "A"
         }
       ]
@@ -748,27 +829,172 @@
       "type": "piechart",
       "title": "Pack Mix (Overall)",
       "description": "Share of paid checkouts by pack size. Derived from amount_cents (200 = $2, 500 = $5, 1000 = $10, ...).",
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 43 },
-      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 43
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
           "mappings": [],
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$20"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$50"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$100"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "displayLabels": ["name", "percent"],
-        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
         "pieType": "donut",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
-          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
           "format": 1,
           "rawSql": "SELECT\n  multiIf(\n    amount_cents = 200, '$2',\n    amount_cents = 500, '$5',\n    amount_cents = 1000, '$10',\n    amount_cents = 2000, '$20',\n    amount_cents = 5000, '$50',\n    amount_cents = 10000, '$100',\n    'Other'\n  ) AS pack,\n  count() AS purchases\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\nGROUP BY pack\nORDER BY purchases DESC",
           "refId": "A"
@@ -780,34 +1006,173 @@
       "type": "barchart",
       "title": "Top Countries × Pack Mix",
       "description": "Top 10 countries by purchase count, stacked by pack size. Shows whether each country leans toward small or large packs.",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 53 },
-      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 53
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "stacking": { "group": "A", "mode": "normal" } },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$20"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$50"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "$100"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8E8E8E"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "barRadius": 0,
         "barWidth": 0.8,
         "groupWidth": 0.7,
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "orientation": "horizontal",
         "stacking": "normal",
-        "tooltip": { "mode": "multi", "sort": "desc" },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
         "xField": "country",
         "xTickLabelRotation": 0
       },
       "targets": [
         {
-          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
           "format": 1,
-          "rawSql": "SELECT\n  JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS country,\n  countIf(amount_cents = 200)   AS \"$2\",\n  countIf(amount_cents = 500)   AS \"$5\",\n  countIf(amount_cents = 1000)  AS \"$10\",\n  countIf(amount_cents = 2000)  AS \"$20\",\n  countIf(amount_cents = 5000)  AS \"$50\",\n  countIf(amount_cents = 10000) AS \"$100\"\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\nGROUP BY country\nHAVING country != ''\n   AND (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") > 0\nORDER BY (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") DESC\nLIMIT 10",
+          "rawSql": "WITH JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\nSELECT\n  transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code) AS country,\n  countIf(amount_cents = 200)   AS \"$2\",\n  countIf(amount_cents = 500)   AS \"$5\",\n  countIf(amount_cents = 1000)  AS \"$10\",\n  countIf(amount_cents = 2000)  AS \"$20\",\n  countIf(amount_cents = 5000)  AS \"$50\",\n  countIf(amount_cents = 10000) AS \"$100\"\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'checkout.session.completed'\n  AND payment_status = 'paid'\n  AND livemode = 1\n  AND code != ''\nGROUP BY country\nHAVING (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") > 0\nORDER BY (\"$2\" + \"$5\" + \"$10\" + \"$20\" + \"$50\" + \"$100\") DESC\nLIMIT 10",
           "refId": "A"
         }
       ]
@@ -817,35 +1182,66 @@
       "type": "timeseries",
       "title": "Revenue by Country (Top 5 + Other)",
       "description": "Daily/weekly/monthly Stripe revenue, stacked by buyer country. Top 5 countries by total revenue in range, rest bucketed as 'Other'.",
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 65 },
-      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisPlacement": "auto",
             "drawStyle": "bars",
             "fillOpacity": 70,
             "lineWidth": 1,
             "showPoints": "never",
-            "stacking": { "group": "A", "mode": "normal" }
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
           },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
           "unit": "currencyUSD"
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
-          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
           "format": 0,
           "range": true,
-          "rawSql": "WITH top_countries AS (\n  SELECT JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS c\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n  GROUP BY c\n  HAVING c != ''\n  ORDER BY SUM(amount_cents) DESC\n  LIMIT 5\n)\nSELECT\n  toStartOfInterval(timestamp, INTERVAL 1 $granularity) AS time,\n  if(country IN (SELECT c FROM top_countries), country, 'Other') AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM (\n  SELECT\n    timestamp,\n    amount_cents,\n    JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS country\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n)\nGROUP BY time, country\nORDER BY time",
+          "rawSql": "WITH top_codes AS (\n  SELECT JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS c\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n  GROUP BY c\n  HAVING c != ''\n  ORDER BY SUM(amount_cents) DESC\n  LIMIT 5\n)\nSELECT\n  toStartOfInterval(timestamp, INTERVAL 1 $granularity) AS time,\n  if(\n    code IN (SELECT c FROM top_codes),\n    transform(code, ['AC','AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS','AT','AU','AW','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BU','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CU','CV','CW','CX','CY','CZ','DD','DE','DG','DJ','DK','DM','DO','DY','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','EZ','FI','FJ','FK','FM','FO','FR','FX','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','HV','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC','NE','NF','NG','NH','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','QO','RE','RH','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','SS','ST','SU','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TP','TR','TT','TV','TW','TZ','UA','UG','UK','UM','UN','US','UY','UZ','VA','VC','VD','VE','VG','VI','VN','VU','WF','WS','XA','XB','XK','YD','YE','YT','YU','ZA','ZM','ZR','ZW','ZZ'], ['Ascension Island','Andorra','United Arab Emirates','Afghanistan','Antigua & Barbuda','Anguilla','Albania','Armenia','Curaçao','Angola','Antarctica','Argentina','American Samoa','Austria','Australia','Aruba','Azerbaijan','Bosnia & Herzegovina','Barbados','Bangladesh','Belgium','Burkina Faso','Bulgaria','Bahrain','Burundi','Benin','St. Barthélemy','Bermuda','Brunei','Bolivia','Caribbean Netherlands','Brazil','Bahamas','Bhutan','Myanmar (Burma)','Bouvet Island','Botswana','Belarus','Belize','Canada','Cocos (Keeling) Islands','Congo - Kinshasa','Central African Republic','Congo - Brazzaville','Switzerland','Côte d’Ivoire','Cook Islands','Chile','Cameroon','China','Colombia','Clipperton Island','Sark','Costa Rica','Serbia','Cuba','Cape Verde','Curaçao','Christmas Island','Cyprus','Czechia','Germany','Germany','Diego Garcia','Djibouti','Denmark','Dominica','Dominican Republic','Benin','Algeria','Ceuta & Melilla','Ecuador','Estonia','Egypt','Western Sahara','Eritrea','Spain','Ethiopia','European Union','Eurozone','Finland','Fiji','Falkland Islands','Micronesia','Faroe Islands','France','France','Gabon','United Kingdom','Grenada','Georgia','French Guiana','Guernsey','Ghana','Gibraltar','Greenland','Gambia','Guinea','Guadeloupe','Equatorial Guinea','Greece','South Georgia & South Sandwich Islands','Guatemala','Guam','Guinea-Bissau','Guyana','Hong Kong SAR China','Heard & McDonald Islands','Honduras','Croatia','Haiti','Hungary','Burkina Faso','Canary Islands','Indonesia','Ireland','Israel','Isle of Man','India','British Indian Ocean Territory','Iraq','Iran','Iceland','Italy','Jersey','Jamaica','Jordan','Japan','Kenya','Kyrgyzstan','Cambodia','Kiribati','Comoros','St. Kitts & Nevis','North Korea','South Korea','Kuwait','Cayman Islands','Kazakhstan','Laos','Lebanon','St. Lucia','Liechtenstein','Sri Lanka','Liberia','Lesotho','Lithuania','Luxembourg','Latvia','Libya','Morocco','Monaco','Moldova','Montenegro','St. Martin','Madagascar','Marshall Islands','North Macedonia','Mali','Myanmar (Burma)','Mongolia','Macao SAR China','Northern Mariana Islands','Martinique','Mauritania','Montserrat','Malta','Mauritius','Maldives','Malawi','Mexico','Malaysia','Mozambique','Namibia','New Caledonia','Niger','Norfolk Island','Nigeria','Vanuatu','Nicaragua','Netherlands','Norway','Nepal','Nauru','Niue','New Zealand','Oman','Panama','Peru','French Polynesia','Papua New Guinea','Philippines','Pakistan','Poland','St. Pierre & Miquelon','Pitcairn Islands','Puerto Rico','Palestinian Territories','Portugal','Palau','Paraguay','Qatar','Outlying Oceania','Réunion','Zimbabwe','Romania','Serbia','Russia','Rwanda','Saudi Arabia','Solomon Islands','Seychelles','Sudan','Sweden','Singapore','St. Helena','Slovenia','Svalbard & Jan Mayen','Slovakia','Sierra Leone','San Marino','Senegal','Somalia','Suriname','South Sudan','São Tomé & Príncipe','Russia','El Salvador','Sint Maarten','Syria','Eswatini','Tristan da Cunha','Turks & Caicos Islands','Chad','French Southern Territories','Togo','Thailand','Tajikistan','Tokelau','Timor-Leste','Turkmenistan','Tunisia','Tonga','Timor-Leste','Türkiye','Trinidad & Tobago','Tuvalu','Taiwan','Tanzania','Ukraine','Uganda','United Kingdom','U.S. Outlying Islands','United Nations','United States','Uruguay','Uzbekistan','Vatican City','St. Vincent & Grenadines','Vietnam','Venezuela','British Virgin Islands','U.S. Virgin Islands','Vietnam','Vanuatu','Wallis & Futuna','Samoa','Pseudo-Accents','Pseudo-Bidi','Kosovo','Yemen','Yemen','Mayotte','Serbia','South Africa','Zambia','Congo - Kinshasa','Zimbabwe','Unknown Region'], code),\n    'Other'\n  ) AS country,\n  round(SUM(amount_cents) / 100.0, 2) AS revenue\nFROM (\n  SELECT\n    timestamp,\n    amount_cents,\n    JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS code\n  FROM stripe_event\n  WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n    AND event_type = 'checkout.session.completed'\n    AND payment_status = 'paid'\n    AND livemode = 1\n)\nGROUP BY time, country\nORDER BY time",
           "refId": "A"
         }
       ]

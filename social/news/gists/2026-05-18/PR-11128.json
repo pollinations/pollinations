@@ -1,0 +1,35 @@
+{
+  "pr_number": 11128,
+  "title": "feat(enter): isolate staging worker to its own tinybird workspace",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11128",
+  "merged_at": "2026-05-18T16:45:16Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Staging worker now writes events to a new dedicated `pollinations_enter_staging` workspace instead of co-mingling with prod (`TINYBIRD_INGEST_TOKEN` and `TINYBIRD_READ_TOKEN` swapped in `secrets/staging.vars.json`)\n- Drops the now-redundant `WHERE environment = 'production'` filters from 8 endpoint pipes — the prod workspace no longer receives non-prod traffic, so the filter became a no-op\n- Purged ~12.5M historical non-production rows from the prod workspace (one-off cleanup, done out-of-band)\n- New staging workspace was created and deployed with the identical schema; both workspaces are in sync as of merge\n- Deferred follow-ups (CI checks, auto-deploy, drift check, sync token, 3-tier dev workflow) tracked in #11127",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Separating the Staging Swarm",
+    "blurb": "We've given our staging environment its own dedicated Tinybird workspace. Production analytics are now cleaner, faster, and free of test data.",
+    "summary": "Isolated the staging worker to a dedicated Tinybird workspace (pollinations_enter_staging) and removed redundant environment filters from 8 production endpoint pipes.",
+    "impact": "Production analytics queries are cleaner and more efficient now that staging data is routed to its own isolated workspace.",
+    "keywords": [
+      "tinybird",
+      "observability",
+      "infrastructure",
+      "analytics",
+      "staging"
+    ],
+    "visual_concept": "The bee organizing data or separating things into two distinct boxes/workspaces. One box labeled 'PROD', one labeled 'STAGE'. The bee is sorting glowing data crystals.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, sorting glowing data crystals into two separate wooden crates labeled 'PROD' and 'STAGE'. A chunky retro monitor in the background displays clean bar charts. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11128.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, sorting glowing data crystals into two separate wooden crates labeled 'PROD' and 'STAGE'. A chunky retro monitor in the background displays clean bar charts. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-18T16:46:36.818418+00:00"
+}

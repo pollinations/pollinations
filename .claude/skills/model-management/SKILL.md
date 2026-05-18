@@ -8,8 +8,9 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 1. Update `.env` and `secrets/env.json` (sops) with credentials
 2. Update config/handler with model routing
 3. **Verify input/output modalities against the live upstream** (see [Verifying modalities](#verifying-modalities) below) — don't copy from vendor docs alone
-4. Update registry with **pricing**, **provider**, **`addedDate`**, and **verified `inputModalities` / `outputModalities`**
-5. Run tests (see [Testing](#testing) below)
+4. **Check whether the upstream returns cached prompt tokens** (see [Cached prompt tokens](#cached-prompt-tokens) below) — if yes, the registry cost block MUST include `promptCachedTokens`
+5. Update registry with **pricing** (including `promptCachedTokens` when applicable), **provider**, **`addedDate`**, and **verified `inputModalities` / `outputModalities`**
+6. Run tests (see [Testing](#testing) below)
 
 > ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.
 
@@ -103,6 +104,55 @@ If vendor docs say one thing and the live upstream says another, **trust the ups
 - Provider-side model swaps where the model card is updated but the deployment isn't
 
 When the test result contradicts vendor docs, note both in the PR description.
+
+---
+
+# Cached prompt tokens
+
+> ⚠️ **If the upstream returns `prompt_tokens_details.cached_tokens > 0` for a model and the registry cost block does NOT include `promptCachedTokens`, every cached request will silently drop its tracking event** — no Tinybird row, no Pollen deduction. This is a real revenue + observability leak. (See `shared/registry/registry.ts` `convertUsage` — it now logs `[registry] Missing conversion rate: model=X usageType=promptCachedTokens` instead of throwing, but the line is still billed at 0.)
+
+## When to add `promptCachedTokens` to the cost block
+
+Whenever the upstream model can return `cached_tokens > 0` in its usage payload. This includes:
+
+- **OpenAI-family models** (gpt-*, openai-fast, openai-large, openai-audio, gpt-5-nano, etc.) — implicit caching ≥1024-token prefix
+- **OpenRouter-routed models** — passes through whatever upstream reports (Mistral, DeepSeek, Kimi, GLM, etc. all expose `cached_tokens`)
+- **Gemini family** — implicit caching on large prompts
+- **Kimi / Moonshot** — context caching with their own discount
+- **Anthropic Claude** when prompt-cache headers are set (we don't currently send them through our chat path, but they show up if a wrapper does)
+
+## How to verify
+
+After registering the model, send 2 chat completions with an **identical >1024-token prefix** and any short user message, ~2 seconds apart. Inspect `usage.prompt_tokens_details.cached_tokens` in the second response:
+
+```bash
+TOKEN="sk_…"
+SYSTEM=$(python3 -c 'print("The quick brown fox jumps over the lazy dog.\n" * 200)')  # ~2K tokens
+for i in 1 2; do
+  curl -s "https://gen.pollinations.ai/v1/chat/completions" \
+    -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+    -d "$(jq -n --arg s "$SYSTEM" --arg m "<NEW-MODEL>" '{model:$m,max_tokens:10,messages:[{role:"system",content:$s},{role:"user",content:"hi"}]}')" \
+    | jq '.usage.prompt_tokens_details.cached_tokens'
+  sleep 2
+done
+```
+
+| Result | Verdict |
+|---|---|
+| Second call shows `cached_tokens > 0` | **MUST add `promptCachedTokens` to the cost block** |
+| Both calls return `cached_tokens: 0` or the field is missing | No cache — `promptCachedTokens` not needed |
+
+Note: real-world traffic can sometimes trigger caching even when synthetic tests don't (e.g. unusual provider quirks). When in doubt, deploy and watch wrangler tail for `[registry] Missing conversion rate: model=<NAME> usageType=promptCachedTokens` warnings — that's the smoking gun.
+
+## What rate to use
+
+Use the **same rate as `promptTextTokens`** unless the provider explicitly documents a cache discount. Common patterns:
+
+- **OpenAI**: cached input is ~10% of normal input (e.g. gpt-5.4 = $0.25/M cached vs $2.50/M input → `perMillion(0.25)`)
+- **OpenRouter / passthrough providers**: no documented discount → use the prompt rate
+- **Anthropic Claude prompt cache**: complicated tiering — check the provider's docs before adding
+
+It's safer to overbill cached (charge same as prompt) than to drop the line (bill 0). Lower the rate later if you confirm a discount.
 
 ---
 

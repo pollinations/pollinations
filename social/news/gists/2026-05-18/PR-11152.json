@@ -1,0 +1,34 @@
+{
+  "pr_number": 11152,
+  "title": "fix(error-handler): avoid c.var.log dependency",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11152",
+  "merged_at": "2026-05-18T21:56:26Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Stops `handleError` from reading the logger through `c.get(\"log\")` before calling `log.error(...)`.\n- Uses `getLogger([\"hono\"])` directly in both workers; LogTape returns the same logger singleton for that category.\n- Adds a regression test proving 5xx error handling still works when logger middleware never populated `c.var.log`.\n\n## Root cause\n\n`c.var.log` is middleware state, not an error-handler invariant. In Hono, `onError` can be called for failures that happen before later middleware runs. Since `cors` and `requestId` are registered before `logger`, any pre-logger failure reaches `handleError` with `c.get(\"log\") === undefined`. The old code then crashed inside the error handler and masked the original error.\n\nThe fix makes the error handler self-contained instead of depending on request middleware having completed.\n\n## Test plan\n\n- [x] `node node_modules/.bin/biome check --write gen.pollinations.ai/test/error-observability.test.ts`\n- [x] `/Users/thomash/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node ../node_modules/.bin/vitest run test/error-observability.test.ts`\n- [x] Gen typecheck passed locally before this test-only follow-up\n- [ ] Post-deploy: tail enter prod and confirm the masking exception is gone",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Catching the catcher",
+    "blurb": "Fixed a sneaky bug where our error handler would sometimes crash while trying to log an error. Now our logs are much more reliable when things go wrong early in a request.",
+    "summary": "The Hono error handler in both workers now fetches the logger directly via `getLogger` instead of relying on `c.var.log`, preventing crashes when errors occur before the logger middleware runs.",
+    "impact": "Early request failures will now correctly log their root cause instead of masking it behind an error handler exception.",
+    "keywords": [
+      "error-handling",
+      "logging",
+      "hono",
+      "observability"
+    ],
+    "visual_concept": "Polly the bee acting as a detective inspecting logs, with the Nomnom creature eating the bad code/errors. Represents fixing an observability/logging issue.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, inspecting a glowing retro terminal with a magnifying glass. The round tan Nomnom creature sits nearby happily eating a stack of error logs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11152.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, inspecting a glowing retro terminal with a magnifying glass. The round tan Nomnom creature sits nearby happily eating a stack of error logs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-18T21:57:21.524856+00:00"
+}

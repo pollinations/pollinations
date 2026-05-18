@@ -1,0 +1,35 @@
+{
+  "pr_number": 11139,
+  "title": "fix(gen): validate chat image model capabilities",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11139",
+  "merged_at": "2026-05-18T17:17:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Rejects chat requests with `image_url` parts when the requested model does not support image input\n- Runs validation globally after model resolution, before image fetching or upstream calls\n- Adds focused tests for text-only and vision-capable models\n\nValidation:\n- `./node_modules/.bin/biome check gen.pollinations.ai/src/text/generateTextPortkey.ts gen.pollinations.ai/src/text/transforms/validateInputModalities.ts gen.pollinations.ai/test/text/transforms/validateInputModalities.test.ts`\n- `../node_modules/.bin/tsc --noEmit`\n- `../node_modules/.bin/tsx --eval ...` smoke test\n\nNote: local Vitest could not start because Rollup's native optional dependency is blocked by macOS code signing in this environment; CI should run the normal test path.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No pictures, please",
+    "blurb": "We've added a quick vision check to our chat endpoints. If you try to show a picture to a text-only model, it'll now politely let you know instead of getting confused.",
+    "summary": "Chat requests containing `image_url` parts are now explicitly rejected during validation if the requested model does not support image inputs.",
+    "impact": "Developers will receive immediate, clear validation errors when sending images to text-only models, saving time and preventing confusing upstream failures.",
+    "keywords": [
+      "api",
+      "validation",
+      "vision",
+      "chat",
+      "models"
+    ],
+    "visual_concept": "Polly the bee acting as a helpful inspector, sorting text documents from photographs to ensure the right data goes to the right place.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny inspector glasses, holding a clipboard and sorting glowing text documents from pixelated photographs. A chunky retro terminal in the background displays a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11139.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny inspector glasses, holding a clipboard and sorting glowing text documents from pixelated photographs. A chunky retro terminal in the background displays a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-18T17:18:36.164162+00:00"
+}

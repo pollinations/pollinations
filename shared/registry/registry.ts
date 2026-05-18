@@ -38,20 +38,20 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
-// Dollar amounts per usage type, plus a total cost (what Pollinations pays the provider)
+// USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
 export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// Dollar amounts per usage type, plus a total price (what the user is billed)
+// Pollen amounts per usage type, plus what the user is billed.
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-// Conversion rates (dollars per usage unit) used to compute provider cost
+// Provider cost rates in USD-equivalent per usage unit.
 export type CostDefinition = { [K in UsageType]?: number };
 
-// Conversion rates used to compute user-facing price; derived from cost × multiplier
+// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
 export type ModelId =
@@ -78,8 +78,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     brand: string;
     category: Category;
     cost: CostDefinition;
-    // Per-model override for the cost→price multiplier. Defaults to 1.5 for
-    // paidOnly models and 1.0 for free models.
+    // Per-model override for the USD-cost to Pollen-price multiplier. Defaults
+    // to 1.5 for paidOnly models and 1.0 for free models.
     priceMultiplier?: number;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -101,11 +101,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
 };
 
-// Helper: Convert usage to dollar amounts
-function convertUsage(
-    usage: Usage,
-    conversionDefinition: CostDefinition,
-): Usage {
+// Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
+function convertUsage(usage: Usage, rateDefinition: CostDefinition): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
@@ -114,7 +111,7 @@ function convertUsage(
                     ? "completionTextTokens"
                     : usageType;
             const conversionRate =
-                conversionDefinition[usageTypeWithFallback as UsageType];
+                rateDefinition[usageTypeWithFallback as UsageType];
             if (conversionRate === undefined) {
                 throw new Error(
                     `Failed to get conversion rate for usage type: ${usageType}`,
@@ -131,19 +128,11 @@ function resolvePriceMultiplier(svc: ModelDefinition): number {
     return svc.priceMultiplier ?? (svc.paidOnly ? 1.5 : 1.0);
 }
 
-// Round derived rates to 15 decimals to suppress float-multiplication noise
-// (e.g. 0.05 * 1.5e-6 → 7.500000000000001e-8). Per-token rates can be as small
-// as 1e-9, so PRECISION=8 used elsewhere is too coarse here.
-const DERIVED_RATE_PRECISION = 15;
-
 function derivePrice(svc: ModelDefinition): PriceDefinition {
     const m = resolvePriceMultiplier(svc);
     if (m === 1) return svc.cost;
     return Object.fromEntries(
-        Object.entries(svc.cost).map(([k, v]) => [
-            k,
-            safeRound((v as number) * m, DERIVED_RATE_PRECISION),
-        ]),
+        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
     ) as PriceDefinition;
 }
 
@@ -255,7 +244,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 }
 
 /**
- * Get price definition for a public model name (cost × multiplier)
+ * Get Pollen price definition for a public model name (cost × multiplier)
  */
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];

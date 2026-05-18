@@ -157,7 +157,13 @@ function computeKpis(runningCashValues, months, currentMonth, config) {
 export function buildLayout(
     matrix,
     config,
-    { currentMonth, pools = {}, poolHistory = {}, unmatched = null } = {},
+    {
+        currentMonth,
+        pools = {},
+        poolHistory = {},
+        unmatched = null,
+        liveBankBalanceEur = null,
+    } = {},
 ) {
     const cells = [];
     const formats = [];
@@ -376,11 +382,42 @@ export function buildLayout(
     formats.push({
         label: "runningCash",
         range: sheetRange(cashRowIdx, 0, cashRowIdx, totalCol),
-        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor",
         format: {
             textFormat: {
                 bold: true,
                 italic: false,
+                fontSize: 11,
+                foregroundColor: INK,
+            },
+            backgroundColor: BG_CASH,
+        },
+    });
+
+    // Bank cash (live) — pulled from Wise balances API at rebuild time.
+    // Shown only in the current month column; other months display "—" because
+    // we don't snapshot the balance per month (only "right now" is meaningful).
+    // Useful to spot drift between the modeled Running cash projection and the
+    // real bank balance.
+    const liveRow = ["", "Bank cash (live, Wise)"];
+    for (const m of months) {
+        if (m === currentMonth && typeof liveBankBalanceEur === "number") {
+            liveRow.push(Number(liveBankBalanceEur.toFixed(2)));
+        } else {
+            liveRow.push("—");
+        }
+    }
+    liveRow.push("");
+    cells.push(liveRow);
+    const liveRowIdx = cells.length - 1;
+    formats.push({
+        label: "bankCashLive",
+        range: sheetRange(liveRowIdx, 0, liveRowIdx, totalCol),
+        fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.borders",
+        format: {
+            textFormat: {
+                bold: true,
+                italic: true,
                 fontSize: 11,
                 foregroundColor: INK,
             },

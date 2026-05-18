@@ -56,6 +56,12 @@ export async function loadVendors() {
     return JSON.parse(await readFile(VENDORS_PATH, "utf8"));
 }
 
+export async function loadPoolHistory() {
+    const path = join(APP_DIR, "secrets", "pool-history.json");
+    if (!existsSync(path)) return {};
+    return JSON.parse(await readFile(path, "utf8"));
+}
+
 export async function saveVendors(vendors) {
     await mkdir(dirname(VENDORS_PATH), { recursive: true });
     await writeFile(VENDORS_PATH, `${JSON.stringify(vendors, null, 2)}\n`);

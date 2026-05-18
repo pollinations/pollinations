@@ -93,7 +93,14 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
 };
+
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
 
 /** Sorts the cost and price definitions by date, in descending order */
 function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {

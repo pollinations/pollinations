@@ -281,6 +281,7 @@ export const IMAGE_SERVICES = {
         description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
     },
     "seedance": {
         aliases: [],
@@ -307,6 +308,7 @@ export const IMAGE_SERVICES = {
             "Seedance Lite - BytePlus video generation (better quality)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame"],
     },
     "seedance-pro": {
         aliases: [],
@@ -333,6 +335,7 @@ export const IMAGE_SERVICES = {
             "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -359,6 +362,7 @@ export const IMAGE_SERVICES = {
             "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -387,6 +391,7 @@ export const IMAGE_SERVICES = {
             "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "audio_output"],
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -414,6 +419,7 @@ export const IMAGE_SERVICES = {
             "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame"],
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -566,6 +572,7 @@ export const IMAGE_SERVICES = {
             "Grok Video Pro - xAI official video generation (720p, 1-15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -603,6 +610,7 @@ export const IMAGE_SERVICES = {
             "LTX-2.3 - Fast text/image-to-video generation with upscaler",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
@@ -677,6 +685,7 @@ export const IMAGE_SERVICES = {
             "Pruna p-video - Text/image-to-video generation (up to 1080p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -712,5 +721,6 @@ export const IMAGE_SERVICES = {
         description: "Nova Reel - Video Generation (6-120s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
     },
 } as const satisfies Record<string, ModelDefinition<string>>;

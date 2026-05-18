@@ -104,8 +104,6 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
-        // Last-frame image URL for video models that support first+last frame interpolation (Seedance 2.0)
-        last_frame_image: z.coerce.string().optional().catch(undefined),
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

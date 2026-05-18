@@ -2048,11 +2048,11 @@ Generate a video from a text prompt. Returns MP4.
 
 **Available models:** `veo`, `seedance`, `seedance-pro`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
-Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.
+Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
-You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.
+You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.
 
-Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).
+Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).
 
 #### Responses
 

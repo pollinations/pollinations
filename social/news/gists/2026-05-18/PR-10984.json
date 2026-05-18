@@ -1,0 +1,34 @@
+{
+  "pr_number": 10984,
+  "title": "refactor: simplify registry pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10984",
+  "merged_at": "2026-05-18T10:28:55Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Replaces dated `cost` / `price` arrays with one `cost` rate object plus `priceMultiplier`.\n- Defaults Pollen price multiplier to 1.5x for `paidOnly` models and 1x for free models, with overrides where needed to preserve historical effective prices.\n- Clarifies units: `cost` / `totalCost` are provider USD-equivalent; `price` / `totalPrice` are customer Pollen charges.\n- Keeps derived rates and provider costs unrounded in production; only the final Pollen charge keeps the current 8-decimal ledger precision.\n- Normalizes float noise in the effective-price snapshot for review readability.\n- Rounds displayed per-1M model prices to nearest cent instead of always ceiling them.\n\nIntentional price changes:\n- `gemini-fast` `promptAudioTokens`: $0.3 -> $0.9 per 1M tokens.\n- `scribe`: $0.33 -> $0.22 per hour.\n\nRenamed functions:\n- `getActiveCostDefinition` -> `getCostDefinition`\n- `getActivePriceDefinition` -> `getPriceDefinition`\n\nSafety net:\n- Adds an effective `{ cost, price }` snapshot for every model so future rate changes are explicit in PR diffs.\n\nVerification:\n- Biome clean for touched files.\n- `tsc -p enter.pollinations.ai --noEmit` clean.\n- `tsc -p gen.pollinations.ai --noEmit` clean.\n- Snapshot consistency checked against the current registry.\n- Local Vitest rerun is blocked in this Codex runtime by the Rollup native optional dependency code-signature issue; CI should run the full suite.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger gets a polish",
+    "blurb": "We've refactored how model pricing is calculated under the hood, making the math cleaner and adding snapshot tests to keep future changes explicit.",
+    "summary": "Refactored the pricing registry to use a single cost rate object with a price multiplier, clarifying USD vs Pollen units and adjusting prices for gemini-fast audio ($0.3 to $0.9/1M tokens) and scribe ($0.33 to $0.22/hr).",
+    "impact": "Users will see cleaner, rounded per-1M token prices in the UI, while the underlying billing logic is now more robust and easier to maintain.",
+    "keywords": [
+      "pricing",
+      "billing",
+      "registry",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant, using a retro calculator or ledger book. Nomnom creature eating old complicated receipts. Setting: a cozy garden office.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, using a chunky retro calculator on a wooden desk. The round Nomnom creature sits nearby, happily eating a stack of complicated paper receipts. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-10984.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, using a chunky retro calculator on a wooden desk. The round Nomnom creature sits nearby, happily eating a stack of complicated paper receipts. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T10:29:57.551136+00:00"
+}

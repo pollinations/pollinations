@@ -16,7 +16,8 @@ import {
 } from "./image";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
-const PRECISION = 8;
+// Current Pollen ledger precision for the final customer charge.
+const POLLEN_BILLING_PRECISION = 8;
 
 export type Category = "text" | "image" | "audio" | "video" | "embedding";
 
@@ -117,8 +118,7 @@ function convertUsage(usage: Usage, rateDefinition: CostDefinition): Usage {
                     `Failed to get conversion rate for usage type: ${usageType}`,
                 );
             }
-            const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
-            return [usageType, usageTypeCost];
+            return [usageType, amount * conversionRate];
         }),
     );
     return convertedUsage as Usage;
@@ -262,9 +262,9 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
             `Failed to get current cost for model: ${model.toString()}`,
         );
     const usageCost = convertUsage(usage, costDefinition);
-    const totalCost = safeRound(
-        Object.values(usageCost).reduce((total, cost) => total + cost, 0),
-        PRECISION,
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
     );
     return {
         ...usageCost,
@@ -284,7 +284,7 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),
-        PRECISION,
+        POLLEN_BILLING_PRECISION,
     );
     return {
         ...usagePrice,

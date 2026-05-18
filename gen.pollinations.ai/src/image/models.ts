@@ -13,8 +13,6 @@ interface ImageModelConfig {
     minPixels?: number; // Minimum total pixels required (width * height)
     // Video-specific options
     isVideo?: boolean;
-    defaultDuration?: number; // Default duration in seconds for video models
-    maxDuration?: number; // Maximum duration in seconds
     defaultResolution?: "480p" | "720p" | "1080p";
 }
 
@@ -101,8 +99,6 @@ export const IMAGE_CONFIG = {
         type: "vertex-ai-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 4, // Cheapest option: 4 seconds
-        maxDuration: 8,
         defaultResolution: "720p",
     },
 
@@ -111,8 +107,6 @@ export const IMAGE_CONFIG = {
         type: "bytedance-ark-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
         defaultResolution: "720p",
     },
 
@@ -121,8 +115,6 @@ export const IMAGE_CONFIG = {
         type: "bytedance-ark-video-pro",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
         defaultResolution: "720p",
     },
 
@@ -131,8 +123,6 @@ export const IMAGE_CONFIG = {
         type: "replicate-seedance-2",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 15,
         defaultResolution: "720p",
     },
 
@@ -141,8 +131,6 @@ export const IMAGE_CONFIG = {
         type: "alibaba-dashscope-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 15,
         defaultResolution: "720p",
     },
 
@@ -151,8 +139,6 @@ export const IMAGE_CONFIG = {
         type: "alibaba-dashscope-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 5,
         defaultResolution: "480p",
     },
 
@@ -196,8 +182,6 @@ export const IMAGE_CONFIG = {
         type: "xai-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 15,
         defaultResolution: "720p",
     },
 
@@ -227,8 +211,6 @@ export const IMAGE_CONFIG = {
         type: "vastai-ltx2",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
         defaultResolution: "720p",
     },
 
@@ -251,8 +233,6 @@ export const IMAGE_CONFIG = {
         type: "pruna-video",
         enhance: false,
         isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
         defaultResolution: "720p",
     },
 
@@ -268,8 +248,6 @@ export const IMAGE_CONFIG = {
         type: "nova-reel",
         enhance: false,
         isVideo: true,
-        defaultDuration: 6,
-        maxDuration: 120,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

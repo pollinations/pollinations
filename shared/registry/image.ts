@@ -565,3 +565,29 @@ export const IMAGE_SERVICES = {
         defaultDuration: 6,
     },
 } as const satisfies Record<string, ModelDefinition<string>>;
+
+export interface VideoDurationLimits {
+    min: number;
+    max: number;
+    default: number;
+}
+
+export function getVideoDurationLimits(
+    modelName: ImageModelName,
+): VideoDurationLimits {
+    const service: ModelDefinition = IMAGE_SERVICES[modelName];
+    if (
+        service.minDuration == null ||
+        service.maxDuration == null ||
+        service.defaultDuration == null
+    ) {
+        throw new Error(
+            `Model "${modelName}" does not have duration limits configured`,
+        );
+    }
+    return {
+        min: service.minDuration,
+        max: service.maxDuration,
+        default: service.defaultDuration,
+    };
+}

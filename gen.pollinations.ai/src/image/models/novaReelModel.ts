@@ -1,3 +1,4 @@
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
@@ -17,8 +18,12 @@ const NOVA_REEL_WIDTH = 1280;
 const NOVA_REEL_HEIGHT = 720;
 
 function getNovaReelDurationSeconds(duration?: number): number {
-    const requestedDuration = duration || 6;
-    return Math.min(120, Math.max(6, Math.round(requestedDuration / 6) * 6));
+    const dur = getVideoDurationLimits("nova-reel");
+    const requestedDuration = duration || dur.default;
+    return Math.min(
+        dur.max,
+        Math.max(dur.min, Math.round(requestedDuration / 6) * 6),
+    );
 }
 
 function getNovaReelInputErrorStatus(message: string): number {

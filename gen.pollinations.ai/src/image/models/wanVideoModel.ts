@@ -1,3 +1,7 @@
+import {
+    getVideoDurationLimits,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -20,9 +24,6 @@ interface WanModelConfig {
     i2vModel: string;
     /** Optional first-and-last-frame-to-video model id. Undefined = no kf2v support. */
     kf2vModel?: string;
-    minDuration: number;
-    maxDuration: number;
-    defaultDuration: number;
     defaultResolution: "480P" | "720P" | "1080P";
     trackingName: string;
     displayName: string;
@@ -32,9 +33,6 @@ const WAN_26_CONFIG: WanModelConfig = {
     t2vModel: "wan2.6-t2v",
     i2vModel: "wan2.6-i2v-flash",
     // Wan 2.6 has no documented kf2v variant — image[1] silently dropped.
-    minDuration: 2,
-    maxDuration: 15,
-    defaultDuration: 5,
     defaultResolution: "720P",
     trackingName: "wan",
     displayName: "Wan 2.6",
@@ -44,9 +42,6 @@ const WAN_22_CONFIG: WanModelConfig = {
     t2vModel: "wan2.2-t2v-plus",
     i2vModel: "wan2.2-i2v-flash",
     kf2vModel: "wan2.2-kf2v-flash",
-    minDuration: 5,
-    maxDuration: 5,
-    defaultDuration: 5,
     defaultResolution: "480P",
     trackingName: "wan-fast",
     displayName: "Wan 2.2",
@@ -164,13 +159,11 @@ function prepareVideoParameters(
     config: WanModelConfig,
     useKf2v = false,
 ) {
-    const rawDuration = safeParams.duration || config.defaultDuration;
+    const dur = getVideoDurationLimits(config.trackingName as ImageModelName);
+    const rawDuration = safeParams.duration || dur.default;
     const durationSeconds = useKf2v
         ? 5
-        : Math.max(
-              config.minDuration,
-              Math.min(config.maxDuration, rawDuration),
-          );
+        : Math.max(dur.min, Math.min(dur.max, rawDuration));
 
     const { aspectRatio, resolution } = calculateVideoResolution({
         width: safeParams.width,

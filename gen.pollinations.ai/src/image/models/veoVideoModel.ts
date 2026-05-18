@@ -1,3 +1,4 @@
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -110,8 +111,12 @@ export const callVeoAPI = async (
         throw new HttpError("Failed to get Google Cloud access token", 500);
     }
 
-    // Determine video parameters - pass through to Veo API, let it validate
-    const durationSeconds = safeParams.duration || 4;
+    // Determine video parameters - clamp to registry limits
+    const dur = getVideoDurationLimits("veo");
+    const durationSeconds = Math.max(
+        dur.min,
+        Math.min(dur.max, safeParams.duration || dur.default),
+    );
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
 

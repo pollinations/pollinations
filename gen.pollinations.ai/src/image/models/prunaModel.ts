@@ -1,3 +1,4 @@
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -7,7 +8,6 @@ import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, bufferToUint8Array } from "../utils/imageDownload.ts";
-
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
@@ -468,8 +468,12 @@ export async function callPrunaVideoAPI(
             logOps("T2V aspect ratio:", closest.ar, "resolution:", resolution);
         }
 
-        // Duration (1-10s, default 5)
-        const duration = Math.max(1, Math.min(10, safeParams.duration || 5));
+        // Duration — clamp to registry limits
+        const dur = getVideoDurationLimits("p-video");
+        const duration = Math.max(
+            dur.min,
+            Math.min(dur.max, safeParams.duration || dur.default),
+        );
         input.duration = duration;
 
         // FPS (24 or 48)

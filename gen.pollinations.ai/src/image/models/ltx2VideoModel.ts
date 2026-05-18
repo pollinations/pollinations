@@ -1,3 +1,4 @@
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
@@ -287,7 +288,11 @@ export const callLtx2API = async (
         "Starting LTX-2 video generation...",
     );
 
-    const durationSeconds = safeParams.duration || 5;
+    const dur = getVideoDurationLimits("ltx-2");
+    const durationSeconds = Math.max(
+        dur.min,
+        Math.min(dur.max, safeParams.duration || dur.default),
+    );
     const frameCount = durationToFrameCount(durationSeconds);
     const { width, height } = calculateDimensions(
         safeParams.width ? Number(safeParams.width) : undefined,

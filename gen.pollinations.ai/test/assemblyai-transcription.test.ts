@@ -114,6 +114,121 @@ describe("transcribeWithAssemblyAi", () => {
         );
     });
 
+    it("supports OpenAI-compatible diarized_json responses", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    upload_url: "https://cdn.assemblyai.com/upload/test-audio",
+                }),
+            )
+            .mockResolvedValueOnce(jsonResponse({ id: "transcript-id" }))
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    id: "transcript-id",
+                    status: "completed",
+                    text: "hello there general kenobi",
+                    audio_duration: 8,
+                    language_code: "en_us",
+                    speech_model_used: "universal-3-pro",
+                    utterances: [
+                        {
+                            speaker: "A",
+                            text: "hello there",
+                            start: 0,
+                            end: 1200,
+                        },
+                        {
+                            speaker: "B",
+                            text: "general kenobi",
+                            start: 2000,
+                            end: 3400,
+                        },
+                    ],
+                }),
+            );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await transcribeWithAssemblyAi({
+            file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
+            model: "universal-3-pro",
+            apiKey: "test-key",
+            responseFormat: "diarized_json",
+            speakersExpected: 2,
+            log,
+        });
+
+        const submitBody = JSON.parse(
+            (fetchMock.mock.calls[1][1] as RequestInit).body as string,
+        );
+        expect(submitBody).toMatchObject({
+            speaker_labels: true,
+            speakers_expected: 2,
+        });
+
+        await expect(response.json()).resolves.toMatchObject({
+            task: "transcribe",
+            duration: 8,
+            text: "hello there general kenobi",
+            segments: [
+                {
+                    type: "transcript.text.segment",
+                    id: "seg_001",
+                    speaker: "A",
+                    text: "hello there",
+                    start: 0,
+                    end: 1.2,
+                },
+                {
+                    type: "transcript.text.segment",
+                    id: "seg_002",
+                    speaker: "B",
+                    text: "general kenobi",
+                    start: 2,
+                    end: 3.4,
+                },
+            ],
+            usage: {
+                type: "duration",
+                seconds: 8,
+            },
+        });
+    });
+
+    it("omits speaker_labels from upstream when not requested", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    upload_url: "https://cdn.assemblyai.com/upload/test-audio",
+                }),
+            )
+            .mockResolvedValueOnce(jsonResponse({ id: "transcript-id" }))
+            .mockResolvedValueOnce(
+                jsonResponse({
+                    id: "transcript-id",
+                    status: "completed",
+                    text: "hi",
+                    audio_duration: 1,
+                    speech_model_used: "universal-2",
+                }),
+            );
+        vi.stubGlobal("fetch", fetchMock);
+
+        await transcribeWithAssemblyAi({
+            file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
+            model: "universal-2",
+            apiKey: "test-key",
+            log,
+        });
+
+        const submitBody = JSON.parse(
+            (fetchMock.mock.calls[1][1] as RequestInit).body as string,
+        );
+        expect(submitBody).not.toHaveProperty("speaker_labels");
+        expect(submitBody).not.toHaveProperty("speakers_expected");
+    });
+
     it("classifies bad audio AssemblyAI failures as client errors", async () => {
         const clientErrorMessages = [
             "language_detection cannot be performed on files with no spoken audio.",

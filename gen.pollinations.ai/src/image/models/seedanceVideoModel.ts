@@ -93,6 +93,7 @@ interface SeedanceModelConfig {
     i2vModel: string;
     trackingLabel: string;
     displayName: string;
+    supportsEndFrame: boolean;
 }
 
 const SEEDANCE_LITE_CONFIG: SeedanceModelConfig = {
@@ -100,6 +101,7 @@ const SEEDANCE_LITE_CONFIG: SeedanceModelConfig = {
     i2vModel: SEEDANCE_LITE_I2V,
     trackingLabel: "seedance",
     displayName: "Seedance Lite",
+    supportsEndFrame: true,
 };
 
 const SEEDANCE_PRO_CONFIG: SeedanceModelConfig = {
@@ -107,6 +109,7 @@ const SEEDANCE_PRO_CONFIG: SeedanceModelConfig = {
     i2vModel: SEEDANCE_PRO_FAST, // Pro-Fast uses same model for T2V and I2V
     trackingLabel: "seedance-pro",
     displayName: "Seedance Pro",
+    supportsEndFrame: false,
 };
 
 /**
@@ -179,37 +182,49 @@ async function generateSeedanceVideo(
         content: [{ type: "text", text: textCommand }],
     };
 
-    // Add image for I2V generation
+    // Add image(s) for I2V generation.
+    // Positional contract: image[0] = first frame, image[1] = last frame (Lite only).
     if (hasImage) {
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
+        const imageArr = Array.isArray(safeParams.image)
+            ? safeParams.image
+            : [safeParams.image];
+        const firstFrameUrl = imageArr[0];
+        const lastFrameUrl =
+            config.supportsEndFrame && imageArr.length >= 2
+                ? imageArr[1]
+                : undefined;
 
-        logOps("Adding first frame image for I2V:", imageUrl);
         progress.updateBar(
             requestId,
             40,
             "Processing",
-            "Processing reference image...",
+            lastFrameUrl
+                ? "Processing first + last frame images..."
+                : "Processing reference image...",
         );
 
-        try {
-            const { buffer, mimeType } = await downloadUserImage(imageUrl);
-            requestBody.content.push({
-                type: "image_url",
-                image_url: {
-                    url: `data:${mimeType};base64,${buffer.toString("base64")}`,
-                },
-                role: "first_frame",
-            });
-            logOps("Image processed successfully");
-        } catch (error) {
-            logError("Error processing reference image:", error.message);
-            throw new HttpError(
-                `Failed to process reference image: ${error.message}`,
-                400,
-            );
-        }
+        const addFrame = async (url: string, role: string) => {
+            logOps(`Adding ${role} image for I2V:`, url);
+            try {
+                const { buffer, mimeType } = await downloadUserImage(url);
+                requestBody.content.push({
+                    type: "image_url",
+                    image_url: {
+                        url: `data:${mimeType};base64,${buffer.toString("base64")}`,
+                    },
+                    role,
+                });
+            } catch (error) {
+                logError(`Error processing ${role} image:`, error.message);
+                throw new HttpError(
+                    `Failed to process ${role} image: ${error.message}`,
+                    400,
+                );
+            }
+        };
+
+        await addFrame(firstFrameUrl, "first_frame");
+        if (lastFrameUrl) await addFrame(lastFrameUrl, "last_frame");
     }
 
     // Log request (hide base64)

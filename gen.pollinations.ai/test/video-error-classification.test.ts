@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveSeedanceV2AspectRatio } from "@/image/models/seedanceV2VideoModel.ts";
+import {
+    callSeedanceV2API,
+    resolveSeedanceV2AspectRatio,
+} from "@/image/models/seedanceV2VideoModel.ts";
 import { classifyByteplusError } from "@/image/models/seedanceVideoModel.ts";
+import { ProgressManager } from "@/image/progressBar.ts";
 import {
     classifyReplicateHttpStatus,
     classifyReplicatePredictionError,
@@ -163,5 +167,41 @@ describe("resolveSeedanceV2AspectRatio", () => {
         expect(() => resolveSeedanceV2AspectRatio("9:21")).toThrow(
             /not supported by Seedance 2\.0/,
         );
+    });
+});
+
+describe("callSeedanceV2API input validation", () => {
+    it("rejects more than two positional images", async () => {
+        await expect(
+            callSeedanceV2API(
+                "animate the scene",
+                {
+                    model: "seedance-2.0",
+                    image: [
+                        "https://example.com/start.png",
+                        "https://example.com/end.png",
+                        "https://example.com/reference.png",
+                    ],
+                    width: 1024,
+                    height: 1024,
+                    seed: 42,
+                    enhance: false,
+                    negative_prompt: "worst quality, blurry",
+                    nofeed: false,
+                    safe: false,
+                    quality: "medium",
+                    transparent: false,
+                    reasoning: "balanced",
+                    duration: 5,
+                    audio: true,
+                },
+                new ProgressManager(),
+                "test-request",
+            ),
+        ).rejects.toMatchObject({
+            name: "HttpError",
+            status: 400,
+            message: expect.stringContaining("at most two images"),
+        });
     });
 });

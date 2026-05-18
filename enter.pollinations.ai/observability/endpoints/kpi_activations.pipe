@@ -25,7 +25,6 @@ SQL >
         min(start_time) AS first_activity_time
     FROM generation_event
     WHERE start_time >= fromUnixTimestamp({{Int64(min_created_at, 0)}})
-        AND environment = 'production'
         AND user_id != 'undefined'
         AND user_id != ''
     GROUP BY user_id

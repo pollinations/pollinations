@@ -368,10 +368,6 @@ async function generateVideo(params) {
         }
     }
 
-    if (audio && model !== "veo") {
-        console.warn("Warning: audio parameter is only supported by veo model");
-    }
-
     const encodedPrompt = encodeURIComponent(prompt);
     const queryParams = buildQueryParams({
         model,
@@ -631,6 +627,7 @@ async function listImageModels(_params) {
                 outputModalities: m.output_modalities,
                 supportsImageToVideo:
                     m.input_modalities?.includes("image") || false,
+                videoCapabilities: m.video_capabilities || [],
             })),
             imageToImageCapable: imageToImageModels.map((m) => m.name),
             summary: {
@@ -760,20 +757,21 @@ const videoParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Video model (default: 'veo'). Common options: veo (4/6/8s, audio, single image input), " +
-                "seedance (2-10s, multi-image), seedance-pro (2-10s, multi-image, best quality). " +
+            "Video model (default: 'veo'). Common options: veo, seedance, seedance-2.0, wan, wan-fast. " +
                 "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
         .number()
         .int()
         .min(2)
-        .max(10)
+        .max(120)
         .optional()
         .describe(
             "Video duration in seconds:\n" +
                 "- veo: 4, 6, or 8 seconds only\n" +
-                "- seedance/seedance-pro: 2-10 seconds",
+                "- seedance/seedance-pro: 2-10 seconds\n" +
+                "- seedance-2.0/wan: up to 15 seconds\n" +
+                "- nova-reel: up to 120 seconds",
         ),
     aspectRatio: z
         .string()
@@ -785,14 +783,14 @@ const videoParamsSchema = {
         .boolean()
         .optional()
         .describe(
-            "Enable audio generation (default: false). Only supported by veo model",
+            "Enable audio generation where supported. Check videoCapabilities from listImageModels for per-model support.",
         ),
     image: z
         .string()
         .optional()
         .describe(
             "Reference image URL(s) for image-to-video generation. " +
-                "veo: single image only. seedance/seedance-pro: multi-image (separate with | or comma).",
+                "For video models, image[0] is the start frame and image[1] is the end frame when videoCapabilities includes end_frame.",
         ),
     seed: z
         .number()

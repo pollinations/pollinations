@@ -8,9 +8,9 @@ Overview of which external services each environment connects to.
 |---------|-----------|---------|------------|
 | **D1 Database** | `development-pollinations-enter-db` | `staging-pollinations-enter-db` | `pollinations-enter-db` |
 | **Stripe** | Sandbox | Sandbox | **Live** |
-| **TinyBird** | Production* | Production* | Production |
+| **TinyBird** | `pollinations_enter_staging` | `pollinations_enter_staging` | `pollinations_enter` |
 
-> *TinyBird uses a single production workspace for all environments. Events include an `environment` column to distinguish source.
+> Each worker writes to a different Tinybird workspace, selected purely by the `TINYBIRD_INGEST_TOKEN` baked into its sops-encrypted secrets file (`secrets/{dev,staging,prod}.vars.json`). The ingest URL is the same regional host for both workspaces. Local dev and staging both target the staging workspace; only the production worker writes to the prod workspace.
 
 ## Stripe Webhooks
 
@@ -22,7 +22,7 @@ Overview of which external services each environment connects to.
 
 ## Notes
 
-- **TinyBird**: All environments log to the same TinyBird workspace (`pollinations_enter`). Use `livemode` column (for Stripe) or `environment` column to filter.
+- **Tinybird**: Two workspaces in the same region. Prod traffic lands in `pollinations_enter`; staging + local-dev traffic lands in `pollinations_enter_staging`. The `environment` column is still populated on each row but is no longer used by pipes for filtering — token-scoped routing handles environment separation. Pipes and datasources must be deployed to **both** workspaces (manually for now — no CI auto-deploy).
 - **Stripe Test Cards**: Use `4242 4242 4242 4242` for sandbox testing.
 
 ## Configuration Files

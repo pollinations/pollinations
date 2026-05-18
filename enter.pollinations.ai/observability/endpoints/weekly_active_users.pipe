@@ -24,7 +24,6 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND environment = 'production'
     AND user_id != 'undefined'
     AND user_id != ''
     GROUP BY week_start

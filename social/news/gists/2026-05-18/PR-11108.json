@@ -1,0 +1,34 @@
+{
+  "pr_number": 11108,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11108",
+  "merged_at": "2026-05-18T14:00:49Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The sacred texts, updated",
+    "blurb": "Our API documentation just got an automated refresh to match the latest production deploy. Keep building with the freshest specs!",
+    "summary": "Automated sync of APIDOCS.md to reflect the latest OpenAPI specification changes from production.",
+    "impact": "Developers have access to the most up-to-date API documentation for their integrations.",
+    "keywords": [
+      "docs",
+      "api",
+      "openapi",
+      "automation"
+    ],
+    "visual_concept": "The Nomnom creature eating old documentation pages while Polly the bee mascot prints out fresh new API docs from a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating old paper documents while Polly the bee mascot prints fresh new API docs from a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11108.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating old paper documents while Polly the bee mascot prints fresh new API docs from a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-05-18T14:01:51.832346+00:00"
+}

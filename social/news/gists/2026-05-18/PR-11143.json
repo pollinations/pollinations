@@ -1,0 +1,35 @@
+{
+  "pr_number": 11143,
+  "title": "docs: update for dual tinybird workspace (prod + staging)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11143",
+  "merged_at": "2026-05-18T17:45:19Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "After the staging-workspace split (#11128, #11135, #11140), several docs and skills still described the old single-workspace model. Updates 11 files to reflect the new architecture:\n\n- `pollinations_enter` = prod traffic only\n- `pollinations_enter_staging` = staging + dev + local-dev traffic\n- Token-scoped routing per environment via `secrets/{prod,staging,dev}.vars.json`\n- Pipes/datasources must be deployed to both workspaces (no CI auto-deploy yet)\n\n### Critical (architecture facts)\n- `enter.pollinations.ai/ENVIRONMENT-CONFIG.md` — Tinybird row in service matrix\n- `.claude/skills/tinybird-deploy/SKILL.md` — workspace table, deploy-to-both flow, fix stale token path\n- `apps/operation/economics/README.md` — clarify which workspace the dashboard reads\n\n### High (skills that would query wrong workspace)\n- `.claude/skills/spending-analysis/SKILL.md`\n- `.claude/skills/abuse-detection/SKILL.md`\n- `.claude/skills/model-debugging/SKILL.md`\n\n### Medium (rotation + onboarding)\n- `tools/scripts/rotation/README.md` — workspace-scoped token table\n- `enter.pollinations.ai/.dev.vars.example` — local-dev points at staging WS\n- `AGENTS.md` — Tinybird Deployment Safety section\n\n### Low\n- `.claude/skills/provider-billing/SKILL.md` — per-workspace billing TODO\n- `tools/scripts/rotation/STATUS.md` — staging tokens not yet rotated by script\n\nAddresses #11127",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two Birds, Two Nests",
+    "blurb": "Updated our internal docs and AI skills to support the new dual-workspace Tinybird setup. Production and staging traffic now have their own cozy, separate nests.",
+    "summary": "Updated documentation and internal Claude skills to reflect the new Tinybird dual-workspace architecture, separating production (pollinations_enter) from staging and dev traffic (pollinations_enter_staging).",
+    "impact": "Internal AI agents and developers will now correctly route queries and deployments to the appropriate Tinybird workspace based on their environment.",
+    "keywords": [
+      "tinybird",
+      "documentation",
+      "staging",
+      "architecture",
+      "claude-skills"
+    ],
+    "visual_concept": "Two birdhouses (Tinybird metaphor) being tended to by Polly the bee. One is for production, one for staging. Data flows into them separately.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, organizing glowing data streams into two separate wooden birdhouses. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'PROD' and 'STAGING' on the birdhouses. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11143.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, organizing glowing data streams into two separate wooden birdhouses. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'PROD' and 'STAGING' on the birdhouses. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-18T17:46:16.963925+00:00"
+}

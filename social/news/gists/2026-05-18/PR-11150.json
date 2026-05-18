@@ -1,0 +1,34 @@
+{
+  "pr_number": 11150,
+  "title": "fix(observability): prevent error-handler crash on c.req.param()",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11150",
+  "merged_at": "2026-05-18T19:45:10Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- `collectRequestInputs` calls `c.req.param()` to enrich error envelopes, but Hono's `param()` throws `TypeError: Cannot read properties of undefined (reading '1')` when the request didn't match a route. When that fires inside the error handler, the original error gets masked and the user sees a generic 500.\n- Wrap the call in `safeParams()` (try/catch returning `{}`) so the error handler can never crash.\n- Adds a regression test for an unmatched-route 5xx error path to ensure request-input collection stays best-effort.\n\n## Impact\n\nObserved ~36 unhandled exceptions per hour on `enter.pollinations.ai` prod from a single bot pattern (~864/day), all the same stack:\n\n```\nTypeError: Cannot read properties of undefined (reading '1')\n  at #getAllDecodedParams         (hono request.js:30)\n  at HonoRequest.param\n  at collectRequestInputs\n  at createServerErrorEnvelope\n  at emitServerError\n  at Hono2.handleError\n```\n\nModule is shared, so both `enter.pollinations.ai` and `gen.pollinations.ai` are fixed.\n\n## Test plan\n\n- [x] TypeScript compile-check passes for both workers (`tsc --noEmit`)\n- [x] Biome lint clean\n- [x] `PATH=/Users/thomash/.nvm/versions/node/v22.20.0/bin:$PATH ../node_modules/.bin/vitest run test/error-observability.test.ts`\n- [ ] CI vitest suite (local full Workers suite still deferred to GitHub Actions)\n- [ ] Post-deploy: monitor enter prod wrangler tail for 10 min; `outcome=exception` count for this stack should drop to 0",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Catching the catchers",
+    "blurb": "Fixed a sneaky bug where our error handler would crash on unmatched routes. Now, errors are properly logged and handled without masking the original issue.",
+    "summary": "Wrapped Hono's c.req.param() in a try/catch block within the error handler to prevent crashes on unmatched routes.",
+    "impact": "This ensures original errors are properly logged and returned instead of being masked by a generic 500 error.",
+    "keywords": [
+      "bug-fix",
+      "observability",
+      "hono",
+      "error-handling"
+    ],
+    "visual_concept": "The pollinations bee wearing a hard hat, safely catching falling error logs (represented as red pixel blocks) with a soft net. A chunky robot monitor looks relieved.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, safely catching glowing red error blocks in a soft butterfly net. A chunky retro robot with a CRT monitor head stands nearby looking relieved. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11150.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, safely catching glowing red error blocks in a soft butterfly net. A chunky retro robot with a CRT monitor head stands nearby looking relieved. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-18T19:46:35.388677+00:00"
+}

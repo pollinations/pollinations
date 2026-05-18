@@ -38,7 +38,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | OpenRouter | [providers/openrouter.md](providers/openrouter.md) | ✅ Production candidate — `/credits` exposes total credits/usage; key management API supports rolling rotation. | 2026-05-06 |
 | Replicate | [providers/replicate.md](providers/replicate.md) | ✅ Production candidate — single token, no public credit/balance API, no token CRUD API (UI-only). Pay-as-you-go via Wise. Per-second video pricing tiered by resolution + audio. | 2026-05-07 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
-| Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
+| Tinybird | `providers/tinybird.md` | ⏳ TODO — two workspaces now (`pollinations_enter` prod + `pollinations_enter_staging`); billing playbook should cover per-workspace cost. See also `tinybird-deploy` skill for deploys. | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |
 | Vast.ai | `providers/vast.md` | ⏳ TODO | — |
 | OVH | `providers/ovh.md` | ⏳ TODO | — |

@@ -10,9 +10,11 @@ No CI workflows — operators run scripts from their own machine with admin cred
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
 | `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
-| `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
-| `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
+| `TINYBIRD_INGEST_TOKEN` | enter+gen runtime → Tinybird append | enter+gen `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
+| `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
+
+**Workspace routing** (as of 2026-05-18): each token is workspace-scoped. `prod.vars.json` files hold tokens for the `pollinations_enter` workspace; `staging.vars.json` and `dev.vars.json` files hold tokens for the new `pollinations_enter_staging` workspace. The rotation script (`rotate-ops-tinybird.sh`) currently only rotates the prod workspace tokens — staging workspace tokens must be rotated manually until that script is updated (tracked in #11127). The `TINYBIRD_SYNC_TOKEN` in staging/dev files still points at the prod workspace because no staging sync token exists yet (also in #11127).
 
 `TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/economics`) lives in the retired `pollinations_ai` workspace and is not rotated by any script — rotate manually or migrate economics off the legacy workspace.
 

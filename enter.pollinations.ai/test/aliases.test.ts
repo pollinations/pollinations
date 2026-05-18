@@ -62,12 +62,10 @@ test("gemini-fast can expose a higher public price than provider cost", () => {
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiFastPrice = calculatePrice("gemini-fast", usage);
 
-    expect(priceDefinition).toMatchObject({
-        promptTextTokens: 0.0000003,
-        promptCachedTokens: 0.00000003,
-        promptAudioTokens: 0.0000009,
-        completionTextTokens: 0.0000012,
-    });
+    expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.0000003, 15);
+    expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.00000003, 15);
+    expect(priceDefinition?.promptAudioTokens).toBeCloseTo(0.0000009, 15);
+    expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.0000012, 15);
     expect(geminiFastCost.totalCost).toBeCloseTo(0.81, 8);
     expect(geminiFastPrice.totalPrice).toBeCloseTo(2.43, 8);
     expect(geminiFastPrice.totalPrice).toBeGreaterThan(

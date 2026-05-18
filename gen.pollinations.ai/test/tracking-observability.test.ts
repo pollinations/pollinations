@@ -21,6 +21,28 @@ afterEach(() => {
 function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
     user?: AuthUser,
+    responseFactory: () => Response = () =>
+        new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "500",
+                },
+            },
+        ),
 ) {
     const app = new Hono<Env>();
 
@@ -51,32 +73,7 @@ function createTestApp(
         });
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(
-                JSON.stringify({
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                }),
-                {
-                    headers: {
-                        "content-type": "application/json",
-                        "x-model-used": "gpt-5-nano-2025-08-07",
-                        "x-usage-prompt-text-tokens": "1000",
-                        "x-usage-completion-text-tokens": "500",
-                    },
-                },
-            ),
-    );
+    app.post("/v1/chat/completions", track("generate.text"), responseFactory);
 
     return app;
 }
@@ -149,6 +146,81 @@ describe("tracking observability", () => {
         });
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("preserves modelUsed for cached responses without billing usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            consumePollen,
+            undefined,
+            () =>
+                new Response(
+                    JSON.stringify({
+                        id: "chatcmpl_cached",
+                        object: "chat.completion",
+                        choices: [],
+                    }),
+                    {
+                        headers: {
+                            "content-type": "application/json",
+                            "x-cache": "HIT",
+                            "x-cache-key": "cached-key",
+                            "x-model-used": "gpt-5-nano-2025-08-07",
+                            "x-usage-prompt-text-tokens": "1000",
+                            "x-usage-completion-text-tokens": "500",
+                        },
+                    },
+                ),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "cf-connecting-ip": "203.0.113.42",
+                },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            responseStatus: 200,
+            cacheHit: true,
+            cacheKey: "cached-key",
+            modelUsed: "gpt-5-nano-2025-08-07",
+            isBilledUsage: false,
+            tokenCountPromptText: 0,
+            tokenCountCompletionText: 0,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {

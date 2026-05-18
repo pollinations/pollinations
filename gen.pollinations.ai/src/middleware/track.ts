@@ -392,12 +392,22 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
-    if (!response.ok || cacheInfo.cacheHit) {
+    if (!response.ok) {
         return {
             responseOk: response.ok,
             responseStatus: response.status,
             cacheData: cacheInfo,
             isBilledUsage: false,
+        };
+    }
+    if (cacheInfo.cacheHit) {
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+            modelUsed:
+                extractModelUsedHeader(response) ?? resolvedModelRequested,
         };
     }
 
@@ -418,6 +428,7 @@ async function trackResponse(
                 responseStatus: response.status,
                 cacheData: cacheInfo,
                 isBilledUsage: false,
+                modelUsed: extractModelUsedHeader(response),
             };
         }
     }
@@ -435,6 +446,7 @@ async function trackResponse(
                 responseStatus: response.status,
                 cacheData: cacheInfo,
                 isBilledUsage: false,
+                modelUsed: extractModelUsedHeader(response),
             };
         }
     }
@@ -457,6 +469,7 @@ async function trackResponse(
                 responseStatus: response.status,
                 cacheData: cacheInfo,
                 isBilledUsage: false,
+                modelUsed: extractModelUsedHeader(response),
             };
         }
     }
@@ -475,6 +488,7 @@ async function trackResponse(
             responseStatus: response.status,
             cacheData: cacheInfo,
             isBilledUsage: false,
+            modelUsed: extractModelUsedHeader(response),
             contentFilterResults,
         };
     }
@@ -656,8 +670,13 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     return false;
 }
 
-function extractUsageHeaders(response: Response): ModelUsage {
+function extractModelUsedHeader(response: Response): string | undefined {
     const modelUsed = response.headers.get("x-model-used");
+    return modelUsed || undefined;
+}
+
+function extractUsageHeaders(response: Response): ModelUsage {
+    const modelUsed = extractModelUsedHeader(response);
     if (!modelUsed) {
         throw new Error(
             "Failed to determine model: x-model-used header was missing",

@@ -13,7 +13,7 @@
  *   gen.pollinations.ai/text/*        -> text generation
  *   gen.pollinations.ai/audio/*       -> audio generation
  *   gen.pollinations.ai/video/*       -> video generation
- *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
+ *   gen.pollinations.ai/v1/*          -> OpenAI-compatible and provider-native generation
  */
 
 import { type Context, Hono } from "hono";
@@ -26,6 +26,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { replicateRoutes } from "./routes/replicate.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
@@ -122,6 +123,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
+    .route("/v1/replicate", replicateRoutes)
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

@@ -69,6 +69,7 @@ export type TinybirdEvent = {
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
+    tokenPriceBillingDollars: number;
 
     // Usage
     tokenCountPromptText: number;
@@ -82,6 +83,7 @@ export type TinybirdEvent = {
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
+    tokenCountBillingDollars: number;
 
     // Totals
     totalCost: number;
@@ -133,6 +135,7 @@ export type GenerationEventPriceParams = {
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
+    tokenPriceBillingDollars: number;
 };
 
 export type GenerationEventUsageParams = {
@@ -147,6 +150,7 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
+    tokenCountBillingDollars: number;
 };
 
 export function priceToEventParams(
@@ -179,6 +183,8 @@ export function priceToEventParams(
             priceDefinition?.completionVideoSeconds || 0,
         tokenPriceCompletionVideoTokens:
             priceDefinition?.completionVideoTokens || 0,
+        tokenPriceBillingDollars:
+            priceDefinition?.billingDollars || 0,
     };
 }
 
@@ -195,6 +201,7 @@ export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
         tokenCountCompletionVideoSeconds: usage?.completionVideoSeconds || 0,
         tokenCountCompletionVideoTokens: usage?.completionVideoTokens || 0,
+        tokenCountBillingDollars: usage?.billingDollars || 0,
     };
 }
 

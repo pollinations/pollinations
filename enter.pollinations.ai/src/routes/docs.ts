@@ -1124,333 +1124,451 @@ function transformOpenAPISchema(
 // ---------------------------------------------------------------------------
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
-    return new Hono<Env>()
-        .get("/", (c) => {
-            const url = new URL(c.req.url);
-            url.protocol = "https:";
-            url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
-            url.pathname = "/docs";
-            return c.redirect(url.toString(), 301);
-        })
-        .get("/llm.txt", (c) => {
-            c.header("Cache-Control", "public, max-age=3600");
-            return c.text(LLM_DOC_TEXT);
-        })
-        .get("/open-api/generate-schema", async (c, next) => {
-            const handler = openAPIRouteHandler(apiRouter, {
-                documentation: {
-                    servers: [{ url: "https://gen.pollinations.ai" }],
-                    info: {
-                        title: "Pollinations API",
-                        version: "0.3.0",
-                        description: [
-                            "## Introduction",
-                            "",
-                            "Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
-                            "",
-                            "**Base URL:** `https://gen.pollinations.ai`",
-                            "",
-                            "**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)",
-                            "",
-                            "## Overview",
-                            "",
-                            "| Capability | Endpoint | Format |",
-                            "|---|---|---|",
-                            "| ✍️ **Text Generation** | `POST /v1/chat/completions` | OpenAI-compatible |",
-                            "| ✍️ **Simple Text** | `GET /text/{prompt}` | Plain text |",
-                            "| 🖼️ **Image Generation** | `GET /image/{prompt}` | JPEG / PNG |",
-                            "| 🎬 **Video Generation** | `GET /video/{prompt}` | MP4 |",
-                            "| 🔊 **Text-to-Speech** | `GET /audio/{text}` | MP3 |",
-                            "| 🔊 **Music Generation** | `GET /audio/{text}` | MP3 |",
-                            "| 🔊 **Transcription** | `POST /v1/audio/transcriptions` | JSON |",
-                            "| 🤖 **Model Discovery** | `GET /v1/models` | JSON |",
-                            "",
-                            "## Quick Start",
-                            "",
-                            "### Generate an Image",
-                            "",
-                            "Paste this URL in your browser — no code needed:",
-                            "",
-                            "```",
-                            "https://gen.pollinations.ai/image/a%20cat%20in%20space",
-                            "```",
-                            "",
-                            "Or use it directly in HTML:",
-                            "",
-                            "```html",
-                            '<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space" />',
-                            "```",
-                            "",
-                            "### Generate Text (OpenAI-compatible)",
-                            "",
-                            "```bash",
-                            "curl https://gen.pollinations.ai/v1/chat/completions \\",
-                            '  -H "Authorization: Bearer YOUR_API_KEY" \\',
-                            '  -H "Content-Type: application/json" \\',
-                            '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello!"}]}\'',
-                            "```",
-                            "",
-                            "### Generate Speech",
-                            "",
-                            "```bash",
-                            'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
-                            '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
-                            "```",
-                            "",
-                            "## 🖥️ CLI",
-                            "",
-                            "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
-                            "",
-                            "```bash",
-                            "npm install -g @pollinations_ai/cli",
-                            "polli auth login",
-                            'polli gen image "a cat in space" --model flux --output cat.png',
-                            'polli gen text "summarize this" < notes.md',
-                            "polli models --type image",
-                            "```",
-                            "",
-                            "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
-                            "",
-                            "## 🔐 Authentication",
-                            "",
-                            "All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.",
-                            "",
-                            "**Two key types:**",
-                            "",
-                            "| Type | Prefix | Use case | Rate limits |",
-                            "|------|--------|----------|-------------|",
-                            "| Secret | `sk_` | Server-side apps | None |",
-                            "| Publishable | `pk_` | Client-side apps (beta) | 1 pollen/IP/hour |",
-                            "",
-                            "**How to authenticate:**",
-                            "",
-                            "```bash",
-                            "# Option 1: Authorization header (recommended)",
-                            'curl -H "Authorization: Bearer YOUR_API_KEY" ...',
-                            "",
-                            "# Option 2: Query parameter",
-                            'curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"',
-                            "```",
-                            "",
-                            "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
-                            "",
-                            "## ❌ Errors",
-                            "",
-                            "All errors return JSON with a consistent format:",
-                            "",
-                            "```json",
-                            "{",
-                            '  "status": 400,',
-                            '  "success": false,',
-                            '  "error": {',
-                            '    "code": "BAD_REQUEST",',
-                            '    "message": "Description of what went wrong"',
-                            "  }",
-                            "}",
-                            "```",
-                            "",
-                            "| Status | Meaning |",
-                            "|--------|---------|",
-                            "| `400` | Invalid parameters or malformed request |",
-                            "| `401` | Missing or invalid API key |",
-                            "| `402` | Insufficient pollen balance |",
-                            "| `403` | API key lacks required permission |",
-                            "| `500` | Internal server error |",
-                        ].join("\n"),
-                    },
-                    components: {
-                        securitySchemes: {
-                            bearerAuth: {
-                                type: "http",
-                                scheme: "bearer",
-                                bearerFormat: "API Key",
-                                description:
-                                    "API key from [enter.pollinations.ai](https://enter.pollinations.ai)",
+    return (
+        new Hono<Env>()
+            .get("/", (c) => {
+                const url = new URL(c.req.url);
+                url.protocol = "https:";
+                url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+                url.pathname = "/docs";
+                return c.redirect(url.toString(), 301);
+            })
+            .get("/llm.txt", (c) => {
+                c.header("Cache-Control", "public, max-age=3600");
+                return c.text(LLM_DOC_TEXT);
+            })
+            .get("/search", (c) => {
+                return c.json({
+                    name: "Pollinations Documentation Search",
+                    version: "1.0.0",
+                    description:
+                        "Search across the Pollinations API documentation to find relevant information, code examples, API references, and guides.",
+                    endpoints: {
+                        search: {
+                            method: "POST",
+                            path: "/api/docs/search",
+                            description:
+                                "Keyword search over API documentation sections. Returns the top matching sections.",
+                            body: {
+                                query: {
+                                    type: "string",
+                                    required: true,
+                                    description:
+                                        "A search query to match against documentation sections.",
+                                },
                             },
                         },
+                        llm_txt: {
+                            method: "GET",
+                            path: "/api/docs/llm.txt",
+                            description:
+                                "Full LLM-optimized documentation in plain text.",
+                        },
                     },
-                    security: [{ bearerAuth: [] }],
-                    tags: [
-                        {
-                            name: "✍️ Text Generation",
-                            description: [
-                                "Generate text responses using AI models. Fully compatible with the [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat) — use any OpenAI SDK by changing the base URL.",
-                                "",
-                                "| Endpoint | Best for |",
-                                "|----------|----------|",
-                                "| `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |",
-                                "| `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |",
-                                "",
-                                "**Capabilities vary by model:** streaming, function calling, vision, structured JSON, reasoning, web search. See [`/text/models`](https://gen.pollinations.ai/text/models) for per-model details.",
-                            ].join("\n"),
-                        },
-                        {
-                            name: "🖼️ Image Generation",
-                            description: [
-                                "Generate images from text prompts via a simple GET request. Returns JPEG or PNG.",
-                                "",
-                                "**Quick start** — paste in your browser, no code needed:",
-                                "",
-                                "```",
-                                "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
-                                "```",
-                                "",
-                                `**Available models:** ${imageModelDisplayNames}`,
-                                "",
-                                "**Key parameters:** `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `image` (for editing), `quality`, `transparent`",
-                                "",
-                                '**OpenAI SDK:** Also available via `POST /v1/images/generations` and `POST /v1/images/edits` — use any OpenAI SDK with `base_url="https://gen.pollinations.ai/v1"`.',
-                            ].join("\n"),
-                        },
-                        {
-                            name: "🎬 Video Generation",
-                            description: [
-                                "Generate videos from text prompts or reference images. Returns MP4.",
-                                "",
-                                "```",
-                                "https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4",
-                                "```",
-                                "",
-                                `**Available models:** ${videoModelDisplayNames}`,
-                                "",
-                                "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames), `seed` (reproducibility; supported by veo, seedance, nova-reel)",
-                            ].join("\n"),
-                        },
-                        {
-                            name: "🔊 Audio Generation",
-                            description: [
-                                "Text-to-speech, music generation, and audio transcription.",
-                                "",
-                                "| Endpoint | Description |",
-                                "|----------|-------------|",
-                                "| `GET /audio/{text}` | Simple URL-based TTS or music generation |",
-                                "| `POST /v1/audio/speech` | OpenAI-compatible TTS |",
-                                "| `POST /v1/audio/transcriptions` | Speech-to-text transcription |",
-                                "",
-                                `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
-                            ].join("\n"),
-                        },
-                        {
-                            name: "🤖 Models",
-                            description: [
-                                "Discover available models with pricing, capabilities, and metadata. **No authentication required.**",
-                                "",
-                                "| Endpoint | Returns |",
-                                "|----------|---------|",
-                                '| `GET /v1/models` | Text models in OpenAI format (`{object: "list", data: [...]}`) |',
-                                "| `GET /text/models` | Text models with pricing, context window, tool support |",
-                                "| `GET /image/models` | Image & video models with capabilities and pricing |",
-                                "| `GET /audio/models` | Audio models with supported voices |",
-                            ].join("\n"),
-                        },
-                        {
-                            name: "👤 Account",
-                            description: [
-                                "Manage your account, check your pollen balance, and view usage history. All endpoints require authentication.",
-                                "",
-                                "| Endpoint | Description |",
-                                "|----------|-------------|",
-                                "| `GET /account/profile` | GitHub username and profile image |",
-                                "| `GET /account/balance` | Current pollen balance |",
-                                "| `GET /account/usage` | Per-request history with costs |",
-                                "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
-                                "| `GET /account/key` | API key validity, type, and permissions |",
-                                "",
-                                "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
-                            ].join("\n"),
-                        },
-                        {
-                            name: "📦 Media Storage",
-                            description: [
-                                "Content-addressed media storage. Upload and retrieve images, audio, and video by content hash.",
-                                "",
-                                "| Endpoint | Description |",
-                                "|----------|-------------|",
-                                "| `POST /upload` | Upload a file, receive a content-addressed URL |",
-                                "| `GET /{hash}` | Retrieve a previously uploaded file |",
-                                "| `GET /{hash}/metadata` | Get file metadata (hash, content type, size, uploadedAt) as JSON |",
-                                "",
-                                "**Base URL:** [media.pollinations.ai](https://media.pollinations.ai)",
-                            ].join("\n"),
-                        },
-                        {
-                            name: "🌸 Bring Your Own Pollen",
-                            description: BYOP_DOCS,
-                        },
-                    ],
-                },
-            });
+                });
+            })
 
-            const response = await handler(c, next);
-            if (!response) return;
+            /**
+             * POST /api/docs/search
+             * Keyword search over API documentation sections.
+             */
+            .post("/search", async (c) => {
+                let body: unknown;
+                try {
+                    body = await c.req.json();
+                } catch {
+                    return c.json(
+                        { error: "Invalid JSON in request body" },
+                        400,
+                    );
+                }
 
-            const schema = (await response.json()) as Record<string, unknown>;
-            const transformed = transformOpenAPISchema(schema) as Record<
-                string,
-                unknown
-            > & {
-                paths: Record<string, unknown>;
-                components: { schemas: Record<string, unknown> };
-            };
+                if (
+                    !body ||
+                    typeof body !== "object" ||
+                    !("query" in body) ||
+                    typeof (body as Record<string, unknown>).query !== "string"
+                ) {
+                    return c.json(
+                        {
+                            error: 'Missing or invalid "query" field. Expected a non-empty string.',
+                        },
+                        400,
+                    );
+                }
 
-            // Merge media.pollinations.ai spec (3 endpoints) into unified view
-            try {
-                const mediaRes = await fetch(
-                    "https://media.pollinations.ai/openapi.json",
-                );
-                if (mediaRes.ok) {
-                    const media = (await mediaRes.json()) as {
-                        paths?: Record<
-                            string,
-                            Record<string, unknown> & {
-                                servers?: { url: string }[];
-                            }
-                        >;
-                        components?: { schemas?: Record<string, unknown> };
-                    };
-                    if (media.paths) {
-                        // Add path-level servers and remap tags so Scalar groups them correctly
-                        for (const ops of Object.values(media.paths)) {
-                            ops.servers = [
-                                {
-                                    url: "https://media.pollinations.ai",
+                const { query } = body as { query: string };
+
+                if (query.trim().length === 0) {
+                    return c.json(
+                        { error: "query must be a non-empty string" },
+                        400,
+                    );
+                }
+
+                // Split the LLM-optimized docs into sections by headers
+                const sections = LLM_DOC_TEXT.split(/\n(?=#{2,3} )/);
+
+                // Simple keyword-based ranking
+                const searchTerms = query.toLowerCase().split(/\s+/);
+                const scoredSections = sections
+                    .map((content) => {
+                        const trimmed = content.trim();
+                        const title = trimmed.split("\n")[0].toLowerCase();
+                        const body = trimmed.toLowerCase();
+
+                        let score = 0;
+                        for (const term of searchTerms) {
+                            if (title.includes(term)) score += 10;
+                            if (body.includes(term)) score += 1;
+                        }
+
+                        return { content: trimmed, score };
+                    })
+                    .filter((s) => s.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 5);
+
+                if (scoredSections.length === 0) {
+                    return c.json({
+                        content: [
+                            {
+                                type: "text",
+                                text: `No specific matches found for "${query}". You can view the full documentation at https://enter.pollinations.ai/api/docs/llm.txt`,
+                            },
+                        ],
+                    });
+                }
+
+                return c.json({
+                    content: scoredSections.map((s) => ({
+                        type: "text",
+                        text: s.content,
+                    })),
+                });
+            })
+            .get("/open-api/generate-schema", async (c, next) => {
+                const handler = openAPIRouteHandler(apiRouter, {
+                    documentation: {
+                        servers: [{ url: "https://gen.pollinations.ai" }],
+                        info: {
+                            title: "Pollinations API",
+                            version: "0.3.0",
+                            description: [
+                                "## Introduction",
+                                "",
+                                "Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+                                "",
+                                "**Base URL:** `https://gen.pollinations.ai`",
+                                "",
+                                "**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)",
+                                "",
+                                "## Overview",
+                                "",
+                                "| Capability | Endpoint | Format |",
+                                "|---|---|---|",
+                                "| ✍️ **Text Generation** | `POST /v1/chat/completions` | OpenAI-compatible |",
+                                "| ✍️ **Simple Text** | `GET /text/{prompt}` | Plain text |",
+                                "| 🖼️ **Image Generation** | `GET /image/{prompt}` | JPEG / PNG |",
+                                "| 🎬 **Video Generation** | `GET /video/{prompt}` | MP4 |",
+                                "| 🔊 **Text-to-Speech** | `GET /audio/{text}` | MP3 |",
+                                "| 🔊 **Music Generation** | `GET /audio/{text}` | MP3 |",
+                                "| 🔊 **Transcription** | `POST /v1/audio/transcriptions` | JSON |",
+                                "| 🤖 **Model Discovery** | `GET /v1/models` | JSON |",
+                                "",
+                                "## Quick Start",
+                                "",
+                                "### Generate an Image",
+                                "",
+                                "Paste this URL in your browser — no code needed:",
+                                "",
+                                "```",
+                                "https://gen.pollinations.ai/image/a%20cat%20in%20space",
+                                "```",
+                                "",
+                                "Or use it directly in HTML:",
+                                "",
+                                "```html",
+                                '<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space" />',
+                                "```",
+                                "",
+                                "### Generate Text (OpenAI-compatible)",
+                                "",
+                                "```bash",
+                                "curl https://gen.pollinations.ai/v1/chat/completions \\",
+                                '  -H "Authorization: Bearer YOUR_API_KEY" \\',
+                                '  -H "Content-Type: application/json" \\',
+                                '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello!"}]}\'',
+                                "```",
+                                "",
+                                "### Generate Speech",
+                                "",
+                                "```bash",
+                                'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
+                                '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
+                                "```",
+                                "",
+                                "## 🖥️ CLI",
+                                "",
+                                "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+                                "",
+                                "```bash",
+                                "npm install -g @pollinations_ai/cli",
+                                "polli auth login",
+                                'polli gen image "a cat in space" --model flux --output cat.png',
+                                'polli gen text "summarize this" < notes.md',
+                                "polli models --type image",
+                                "```",
+                                "",
+                                "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
+                                "",
+                                "## 🔐 Authentication",
+                                "",
+                                "All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.",
+                                "",
+                                "**Two key types:**",
+                                "",
+                                "| Type | Prefix | Use case | Rate limits |",
+                                "|------|--------|----------|-------------|",
+                                "| Secret | `sk_` | Server-side apps | None |",
+                                "| Publishable | `pk_` | Client-side apps (beta) | 1 pollen/IP/hour |",
+                                "",
+                                "**How to authenticate:**",
+                                "",
+                                "```bash",
+                                "# Option 1: Authorization header (recommended)",
+                                'curl -H "Authorization: Bearer YOUR_API_KEY" ...',
+                                "",
+                                "# Option 2: Query parameter",
+                                'curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"',
+                                "```",
+                                "",
+                                "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
+                                "",
+                                "## ❌ Errors",
+                                "",
+                                "All errors return JSON with a consistent format:",
+                                "",
+                                "```json",
+                                "{",
+                                '  "status": 400,',
+                                '  "success": false,',
+                                '  "error": {',
+                                '    "code": "BAD_REQUEST",',
+                                '    "message": "Description of what went wrong"',
+                                "  }",
+                                "}",
+                                "```",
+                                "",
+                                "| Status | Meaning |",
+                                "|--------|---------|",
+                                "| `400` | Invalid parameters or malformed request |",
+                                "| `401` | Missing or invalid API key |",
+                                "| `402` | Insufficient pollen balance |",
+                                "| `403` | API key lacks required permission |",
+                                "| `500` | Internal server error |",
+                            ].join("\n"),
+                        },
+                        components: {
+                            securitySchemes: {
+                                bearerAuth: {
+                                    type: "http",
+                                    scheme: "bearer",
+                                    bearerFormat: "API Key",
+                                    description:
+                                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai)",
                                 },
-                            ];
-                            // Rename "media.pollinations.ai" tag to match our tag definition
-                            for (const op of Object.values(ops)) {
-                                if (
-                                    op &&
-                                    typeof op === "object" &&
-                                    "tags" in op &&
-                                    Array.isArray(
-                                        (op as { tags?: unknown }).tags,
-                                    )
-                                ) {
-                                    const operation = op as { tags: string[] };
-                                    operation.tags = operation.tags.map((t) =>
-                                        t === "media.pollinations.ai"
-                                            ? "📦 Media Storage"
-                                            : t,
-                                    );
+                            },
+                        },
+                        security: [{ bearerAuth: [] }],
+                        tags: [
+                            {
+                                name: "✍️ Text Generation",
+                                description: [
+                                    "Generate text responses using AI models. Fully compatible with the [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat) — use any OpenAI SDK by changing the base URL.",
+                                    "",
+                                    "| Endpoint | Best for |",
+                                    "|----------|----------|",
+                                    "| `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |",
+                                    "| `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |",
+                                    "",
+                                    "**Capabilities vary by model:** streaming, function calling, vision, structured JSON, reasoning, web search. See [`/text/models`](https://gen.pollinations.ai/text/models) for per-model details.",
+                                ].join("\n"),
+                            },
+                            {
+                                name: "🖼️ Image Generation",
+                                description: [
+                                    "Generate images from text prompts via a simple GET request. Returns JPEG or PNG.",
+                                    "",
+                                    "**Quick start** — paste in your browser, no code needed:",
+                                    "",
+                                    "```",
+                                    "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
+                                    "```",
+                                    "",
+                                    `**Available models:** ${imageModelDisplayNames}`,
+                                    "",
+                                    "**Key parameters:** `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `image` (for editing), `quality`, `transparent`",
+                                    "",
+                                    '**OpenAI SDK:** Also available via `POST /v1/images/generations` and `POST /v1/images/edits` — use any OpenAI SDK with `base_url="https://gen.pollinations.ai/v1"`.',
+                                ].join("\n"),
+                            },
+                            {
+                                name: "🎬 Video Generation",
+                                description: [
+                                    "Generate videos from text prompts or reference images. Returns MP4.",
+                                    "",
+                                    "```",
+                                    "https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4",
+                                    "```",
+                                    "",
+                                    `**Available models:** ${videoModelDisplayNames}`,
+                                    "",
+                                    "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames), `seed` (reproducibility; supported by veo, seedance, nova-reel)",
+                                ].join("\n"),
+                            },
+                            {
+                                name: "🔊 Audio Generation",
+                                description: [
+                                    "Text-to-speech, music generation, and audio transcription.",
+                                    "",
+                                    "| Endpoint | Description |",
+                                    "|----------|-------------|",
+                                    "| `GET /audio/{text}` | Simple URL-based TTS or music generation |",
+                                    "| `POST /v1/audio/speech` | OpenAI-compatible TTS |",
+                                    "| `POST /v1/audio/transcriptions` | Speech-to-text transcription |",
+                                    "",
+                                    `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                                ].join("\n"),
+                            },
+                            {
+                                name: "🤖 Models",
+                                description: [
+                                    "Discover available models with pricing, capabilities, and metadata. **No authentication required.**",
+                                    "",
+                                    "| Endpoint | Returns |",
+                                    "|----------|---------|",
+                                    '| `GET /v1/models` | Text models in OpenAI format (`{object: "list", data: [...]}`) |',
+                                    "| `GET /text/models` | Text models with pricing, context window, tool support |",
+                                    "| `GET /image/models` | Image & video models with capabilities and pricing |",
+                                    "| `GET /audio/models` | Audio models with supported voices |",
+                                ].join("\n"),
+                            },
+                            {
+                                name: "👤 Account",
+                                description: [
+                                    "Manage your account, check your pollen balance, and view usage history. All endpoints require authentication.",
+                                    "",
+                                    "| Endpoint | Description |",
+                                    "|----------|-------------|",
+                                    "| `GET /account/profile` | GitHub username and profile image |",
+                                    "| `GET /account/balance` | Current pollen balance |",
+                                    "| `GET /account/usage` | Per-request history with costs |",
+                                    "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
+                                    "| `GET /account/key` | API key validity, type, and permissions |",
+                                    "",
+                                    "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
+                                ].join("\n"),
+                            },
+                            {
+                                name: "📦 Media Storage",
+                                description: [
+                                    "Content-addressed media storage. Upload and retrieve images, audio, and video by content hash.",
+                                    "",
+                                    "| Endpoint | Description |",
+                                    "|----------|-------------|",
+                                    "| `POST /upload` | Upload a file, receive a content-addressed URL |",
+                                    "| `GET /{hash}` | Retrieve a previously uploaded file |",
+                                    "| `GET /{hash}/metadata` | Get file metadata (hash, content type, size, uploadedAt) as JSON |",
+                                    "",
+                                    "**Base URL:** [media.pollinations.ai](https://media.pollinations.ai)",
+                                ].join("\n"),
+                            },
+                            {
+                                name: "🌸 Bring Your Own Pollen",
+                                description: BYOP_DOCS,
+                            },
+                        ],
+                    },
+                });
+
+                const response = await handler(c, next);
+                if (!response) return;
+
+                const schema = (await response.json()) as Record<
+                    string,
+                    unknown
+                >;
+                const transformed = transformOpenAPISchema(schema) as Record<
+                    string,
+                    unknown
+                > & {
+                    paths: Record<string, unknown>;
+                    components: { schemas: Record<string, unknown> };
+                };
+
+                // Merge media.pollinations.ai spec (3 endpoints) into unified view
+                try {
+                    const mediaRes = await fetch(
+                        "https://media.pollinations.ai/openapi.json",
+                    );
+                    if (mediaRes.ok) {
+                        const media = (await mediaRes.json()) as {
+                            paths?: Record<
+                                string,
+                                Record<string, unknown> & {
+                                    servers?: { url: string }[];
+                                }
+                            >;
+                            components?: { schemas?: Record<string, unknown> };
+                        };
+                        if (media.paths) {
+                            // Add path-level servers and remap tags so Scalar groups them correctly
+                            for (const ops of Object.values(media.paths)) {
+                                ops.servers = [
+                                    {
+                                        url: "https://media.pollinations.ai",
+                                    },
+                                ];
+                                // Rename "media.pollinations.ai" tag to match our tag definition
+                                for (const op of Object.values(ops)) {
+                                    if (
+                                        op &&
+                                        typeof op === "object" &&
+                                        "tags" in op &&
+                                        Array.isArray(
+                                            (op as { tags?: unknown }).tags,
+                                        )
+                                    ) {
+                                        const operation = op as {
+                                            tags: string[];
+                                        };
+                                        operation.tags = operation.tags.map(
+                                            (t) =>
+                                                t === "media.pollinations.ai"
+                                                    ? "📦 Media Storage"
+                                                    : t,
+                                        );
+                                    }
                                 }
                             }
+                            transformed.paths = {
+                                ...transformed.paths,
+                                ...media.paths,
+                            };
                         }
-                        transformed.paths = {
-                            ...transformed.paths,
-                            ...media.paths,
-                        };
+                        if (media.components?.schemas) {
+                            transformed.components.schemas = {
+                                ...transformed.components.schemas,
+                                ...media.components.schemas,
+                            };
+                        }
                     }
-                    if (media.components?.schemas) {
-                        transformed.components.schemas = {
-                            ...transformed.components.schemas,
-                            ...media.components.schemas,
-                        };
-                    }
+                } catch {
+                    // Media service unavailable — skip, main docs still work
                 }
-            } catch {
-                // Media service unavailable — skip, main docs still work
-            }
 
-            return c.json(transformed);
-        });
+                return c.json(transformed);
+            })
+    );
 };

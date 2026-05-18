@@ -173,6 +173,13 @@ AI assistants can:
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 
+### Documentation Search API (for AI Assistants)
+
+We provide a lightweight docs-search API that AI assistants and tools can use to look up endpoints, models, and examples on the fly.
+
+**API info:** `GET https://enter.pollinations.ai/api/docs/search`  
+**Search:** `POST https://enter.pollinations.ai/api/docs/search` with `{"query": "..."}`
+
 ## 🔐 Authentication
 
 Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)

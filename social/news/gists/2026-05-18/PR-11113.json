@@ -1,0 +1,35 @@
+{
+  "pr_number": 11113,
+  "title": "fix(gen): remove artificial fetch timeouts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11113",
+  "merged_at": "2026-05-18T15:29:02Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Removes the 90s/300s timeout from generic OpenAI/Portkey fetches.\n- Removes manual timeout caps from Google token exchange and text image inlining.\n- Removes unused timeout helper code and Azure Content Safety Promise.race wrappers.\n- Keeps Tinybird ingest timeout and explicit async polling budgets.\n\n## Tests\n- npx biome check --write <changed files>\n- npx tsc --noEmit\n- npx vitest run test/text/genericOpenAIClient.test.ts test/text/transforms/imageUrlToBase64Transform.test.ts",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Let the models cook",
+    "blurb": "We smashed the artificial clocks on our backend fetches. Complex generations now have the time they need to finish without getting cut off early.",
+    "summary": "Removed the artificial 90s and 300s fetch timeouts from generic OpenAI and Portkey endpoints, alongside manual caps on Google token exchanges and image inlining.",
+    "impact": "Long-running text and image generations will no longer fail prematurely due to internal timeout wrappers, resulting in fewer interrupted API requests.",
+    "keywords": [
+      "timeout",
+      "api",
+      "reliability",
+      "openai",
+      "portkey"
+    ],
+    "visual_concept": "The bee mascot and the monitor robot relaxing patiently while a complex process finishes. A smashed hourglass represents the removal of the artificial timeouts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot relaxing in comfortable chairs, patiently watching a massive, intricate code-plant slowly bloom from a lime green (#ecf874) pot. A smashed hourglass lies on the wooden floor nearby. Soft pastel lavender and peach gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, peaceful, no rushing."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11113.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot relaxing in comfortable chairs, patiently watching a massive, intricate code-plant slowly bloom from a lime green (#ecf874) pot. A smashed hourglass lies on the wooden floor nearby. Soft pastel lavender and peach gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, peaceful, no rushing."
+  },
+  "generated_at": "2026-05-18T15:30:03.260728+00:00"
+}

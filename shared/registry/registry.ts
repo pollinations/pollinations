@@ -100,6 +100,9 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    minDuration?: number; // Video-only: minimum accepted duration in seconds
+    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    defaultDuration?: number; // Video-only: duration when caller omits the param
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

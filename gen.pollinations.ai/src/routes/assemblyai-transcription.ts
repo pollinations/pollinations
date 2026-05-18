@@ -8,7 +8,7 @@ import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 
 const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
-const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 120_000;
+const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 240_000;
 const ASSEMBLYAI_MODELS: Record<string, string[]> = {
     "universal-2": ["universal-2"],
     "universal-3-pro": ["universal-3-pro", "universal-2"],

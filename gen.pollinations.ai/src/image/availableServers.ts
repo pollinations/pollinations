@@ -13,9 +13,11 @@ type ServerEntry = {
 
 const SERVER_TIMEOUT = 180000;
 const REGISTRY_TTL_SECONDS = 240;
+const REGISTRY_WRITE_THROTTLE_MS = 30_000;
 
 let serverRegistry: KVNamespace | null = null;
 let registryEnvironment = "development";
+const recentWrites = new Map<string, number>();
 
 export function setServerRegistryBinding(
     binding: KVNamespace,
@@ -57,10 +59,20 @@ export const registerServer = async (
 ): Promise<void> => {
     const kv = getServerRegistry();
     const key = prefix(type) + (await urlHash(url));
-    const entry: ServerEntry = { url, lastHeartbeat: Date.now() };
+    const now = Date.now();
+    const lastWrite = recentWrites.get(key);
+    if (
+        lastWrite !== undefined &&
+        now - lastWrite < REGISTRY_WRITE_THROTTLE_MS
+    ) {
+        logServer(`Skipped throttled write for ${type} server ${url}`);
+        return;
+    }
+    const entry: ServerEntry = { url, lastHeartbeat: now };
     await kv.put(key, JSON.stringify(entry), {
         expirationTtl: REGISTRY_TTL_SECONDS,
     });
+    recentWrites.set(key, now);
     logServer(`Registered ${type} server ${url}`);
 };
 

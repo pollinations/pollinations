@@ -10,7 +10,7 @@ const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     const inputs: RequestInputs = {
-        params: removeEmptyRecord(c.req.param()),
+        params: removeEmptyRecord(safeParams(c)),
         query: removeEmptyRecord(queryParams(c)),
     };
 
@@ -20,6 +20,18 @@ export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     }
 
     return removeUndefined(inputs);
+}
+
+// Hono's c.req.param() throws TypeError when called on a request that didn't
+// match any route (e.g. when an error fires before routing completes, or in
+// the notFound/onError handlers). Since this helper exists to enrich error
+// envelopes, it must never crash the error handler.
+function safeParams(c: Context): Record<string, string> {
+    try {
+        return c.req.param();
+    } catch {
+        return {};
+    }
 }
 
 export function stringifyRequestInputs(inputs: RequestInputs | undefined) {

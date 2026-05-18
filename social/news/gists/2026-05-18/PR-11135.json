@@ -1,0 +1,35 @@
+{
+  "pr_number": 11135,
+  "title": "fix(gen): point staging worker at pollinations_enter_staging tinybird workspace",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11135",
+  "merged_at": "2026-05-18T17:08:54Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Complement to #11128. That PR swapped the enter staging worker's Tinybird token to write into the new `pollinations_enter_staging` workspace, but the gen staging worker still had its `TINYBIRD_INGEST_TOKEN` pointing at the prod workspace — so `generation_event` and `error_event` from `staging.gen.pollinations.ai` were still landing in prod.\n\n- Swaps `TINYBIRD_INGEST_TOKEN` in `gen.pollinations.ai/secrets/staging.vars.json` to the staging workspace ingest token\n- Pushed via `npm run push-secrets:staging`, worker auto-redeployed at 16:59\n- Verified end-to-end: 3 test `generation_event`s from staging.gen.pollinations.ai now landing in the staging workspace; prod workspace shows only `production` rows in the same window\n\nRelated: #11127",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Staging data stays in staging",
+    "blurb": "Fixed a tiny mix-up where our staging generation worker was sending its analytics events to the production workspace. Keep it clean, keep it separated!",
+    "summary": "Updated the Tinybird ingest token for the staging generation worker so that staging analytics events route to the correct staging workspace instead of production.",
+    "impact": "Production analytics are no longer polluted with staging generation and error events.",
+    "keywords": [
+      "infrastructure",
+      "analytics",
+      "tinybird",
+      "staging",
+      "telemetry"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature organizing data. Polly sorting glowing data crystals into two distinct colored boxes to represent separating staging data from production data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully sorting glowing data crystals into two separate wooden crates labeled 'STAGING' and 'PROD' in pixel font. The round tan nomnom creature happily eats a crystal from the staging crate. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11135.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully sorting glowing data crystals into two separate wooden crates labeled 'STAGING' and 'PROD' in pixel font. The round tan nomnom creature happily eats a crystal from the staging crate. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T17:10:09.827164+00:00"
+}

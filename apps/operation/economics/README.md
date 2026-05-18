@@ -28,13 +28,15 @@ open http://localhost:3000
 
 ### Tinybird (ClickHouse)
 - **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
-- **Database:** `default`
+- **Database:** `default` (workspace: `pollinations_enter` — production only)
 - **Token:** `TINYBIRD_READ_TOKEN`
 - **UID:** `PAD1A0A25CD30D456`
 
+> Staging traffic now lives in a separate `pollinations_enter_staging` workspace. This dashboard intentionally reads only prod; for staging analytics, use a staging read token against the staging workspace.
+
 ### Tinybird Stripe (ClickHouse)
 - **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
-- **Database:** `default` (workspace: `pollinations_enter`)
+- **Database:** `default` (workspace: `pollinations_enter` — production only)
 - **Token:** `TINYBIRD_READ_TOKEN`
 - **UID:** `PAD1A0A25CD30D457`
 - **Table:** `stripe_event`
@@ -61,7 +63,7 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 | `GF_ADMIN_PASSWORD` | Grafana admin password |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
-| `TINYBIRD_READ_TOKEN` | Read token for current-workspace Tinybird datasources |
+| `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` (prod) Tinybird workspace |
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for text_events (legacy workspace) |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 

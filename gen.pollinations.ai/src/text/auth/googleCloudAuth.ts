@@ -12,7 +12,6 @@ interface ServiceAccountKey {
 }
 
 const TOKEN_REFRESH_SKEW_MS = 60_000;
-const GOOGLE_TOKEN_TIMEOUT_MS = 10_000;
 
 let cachedToken: string | null = null;
 let tokenExpiration = 0;
@@ -78,7 +77,6 @@ async function exchangeJwtForAccessToken(
                 grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
                 assertion: jwt,
             }),
-            signal: AbortSignal.timeout(GOOGLE_TOKEN_TIMEOUT_MS),
         });
 
         if (!response.ok) {

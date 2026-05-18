@@ -28,7 +28,6 @@ class ImageFetchError extends Error {
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_TOTAL_IMAGE_BYTES = MAX_IMAGE_SIZE;
 const MAX_IMAGES_PER_REQUEST = 8;
-const IMAGE_FETCH_TIMEOUT_MS = 30_000;
 
 const BLOCKED_HOSTNAMES = /^localhost$/i;
 
@@ -163,7 +162,6 @@ async function fetchImageAsBase64(
         log(`Fetching image: ${validatedUrl.origin}${validatedUrl.pathname}`);
         const response = await fetch(validatedUrl, {
             redirect: "manual",
-            signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
             headers: { "User-Agent": "Pollinations/1.0" },
         });
 
@@ -237,14 +235,11 @@ async function fetchImageAsBase64(
 
         const error = thrown as {
             message?: string;
-            name?: string;
         };
         const message = error.message || "Unknown error";
         let errorMessage = `Failed to fetch image from ${url}: ${message}`;
 
-        if (error.name === "AbortError") {
-            errorMessage = `Image fetch timeout for ${url}: The server took too long to respond (>30 seconds). Please try a faster image host.`;
-        } else if (error instanceof TypeError) {
+        if (error instanceof TypeError) {
             if (/dns|domain|not found|resolve/i.test(message)) {
                 errorMessage = `Invalid image URL ${url}: The domain could not be found. Please check the URL is correct.`;
             } else if (/connect|refused|unreachable/i.test(message)) {

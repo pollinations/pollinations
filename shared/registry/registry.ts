@@ -103,7 +103,15 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
-function convertUsage(usage: Usage, rateDefinition: CostDefinition): Usage {
+// When a usage type is reported by upstream but the registry has no rate for it,
+// log a warning (so we know which (model, usageType) pair needs adding) and bill
+// that line as 0. Throwing here drops the whole tracking event and creates a
+// silent billing leak.
+function convertUsage(
+    usage: Usage,
+    rateDefinition: CostDefinition,
+    model: ModelName,
+): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
@@ -114,9 +122,10 @@ function convertUsage(usage: Usage, rateDefinition: CostDefinition): Usage {
             const conversionRate =
                 rateDefinition[usageTypeWithFallback as UsageType];
             if (conversionRate === undefined) {
-                throw new Error(
-                    `Failed to get conversion rate for usage type: ${usageType}`,
+                console.warn(
+                    `[registry] Missing conversion rate: model=${model.toString()} usageType=${usageType} amount=${amount} — billing 0 for this line`,
                 );
+                return [usageType, 0];
             }
             return [usageType, amount * conversionRate];
         }),
@@ -261,7 +270,7 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = convertUsage(usage, costDefinition);
+    const usageCost = convertUsage(usage, costDefinition, model);
     const totalCost = Object.values(usageCost).reduce(
         (total, cost) => total + cost,
         0,
@@ -281,7 +290,7 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usagePrice = convertUsage(usage, priceDefinition);
+    const usagePrice = convertUsage(usage, priceDefinition, model);
     const totalPrice = safeRound(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),
         POLLEN_BILLING_PRECISION,

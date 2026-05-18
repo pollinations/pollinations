@@ -1,0 +1,35 @@
+{
+  "pr_number": 11111,
+  "title": "fix(gen): capture upstream body when chat response fails schema validation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11111",
+  "merged_at": "2026-05-18T14:38:41Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Wrap chat-completion response parse in try/catch and re-throw as `UpstreamError` so the raw upstream body is logged via `error_event.upstream_body` when validation fails\n- Currently a plain `ZodError` is thrown and the malformed JSON is discarded — we get 22+ daily 500s on `mistral-large` with `usage:null` and no way to see what Portkey/Azure actually returned\n- Schema NOT loosened: we still reject responses without proper usage (billing depends on it); this PR just gives us debug visibility into the root cause\n\n## Background\n\nInvestigation of Mistral errors (#11039 logging) surfaced a pattern: `mistral-large` + `response_format: json_object` + non-streaming returns ZodError \"usage: expected object, received null\". Direct Azure + direct Portkey replays of the failing payload both return proper usage objects. Production fails with empty `upstream_body` because the Zod error path doesn't capture it.\n\n## Test plan\n- [x] `npx vitest run` (220/220 pass)\n- [x] `npx tsc --noEmit` clean on gen + enter\n- [ ] After deploy: confirm next `usage:null` 500 has populated `upstream_body` in Tinybird `error_event` so we can finally see what Portkey is returning\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Catching the crumbs",
+    "blurb": "We've upgraded our error catching to capture exactly what upstream providers send when they fail validation. Better logs mean faster fixes for those pesky 500 errors.",
+    "summary": "Wrapped chat-completion response parsing in a try/catch to throw an UpstreamError, capturing the raw upstream body when Zod schema validation fails.",
+    "impact": "This provides debug visibility into malformed JSON responses—specifically mistral-large returning usage: null—by logging the raw payload to Tinybird.",
+    "keywords": [
+      "logging",
+      "debugging",
+      "error-handling",
+      "api",
+      "mistral"
+    ],
+    "visual_concept": "The bee mascot acting as a detective, inspecting a broken piece of code or error log, while the Nomnom creature eats the malformed data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny detective glasses and holding a clipboard, inspecting a glowing red error log. Nearby, the round tan Nomnom creature is happily eating a malformed piece of code. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11111.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny detective glasses and holding a clipboard, inspecting a glowing red error log. Nearby, the round tan Nomnom creature is happily eating a malformed piece of code. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T14:39:42.769505+00:00"
+}

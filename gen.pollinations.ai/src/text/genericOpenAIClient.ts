@@ -17,8 +17,6 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
-const DEFAULT_UPSTREAM_TIMEOUT_MS = 90_000;
-const STREAM_UPSTREAM_TIMEOUT_MS = 300_000;
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
@@ -82,25 +80,6 @@ function createApiError(
     ) as ServiceError;
     error.status = response.status;
     error.details = details;
-    error.model = modelName;
-    return error;
-}
-
-function isAbortLikeError(error: unknown): boolean {
-    return (
-        error instanceof DOMException &&
-        (error.name === "AbortError" || error.name === "TimeoutError")
-    );
-}
-
-function createTimeoutError(
-    modelName: string,
-    timeoutMs: number,
-): ServiceError {
-    const error = new Error(
-        `Upstream provider timed out after ${timeoutMs}ms`,
-    ) as ServiceError;
-    error.status = 504;
     error.model = modelName;
     return error;
 }
@@ -190,23 +169,11 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const timeoutMs = normalizedOptions.stream
-            ? STREAM_UPSTREAM_TIMEOUT_MS
-            : DEFAULT_UPSTREAM_TIMEOUT_MS;
-        let response: Response;
-        try {
-            response = await fetch(endpointUrl, {
-                method: "POST",
-                headers,
-                body: JSON.stringify(requestBody),
-                signal: AbortSignal.timeout(timeoutMs),
-            });
-        } catch (thrown: unknown) {
-            if (isAbortLikeError(thrown)) {
-                throw createTimeoutError(modelName, timeoutMs);
-            }
-            throw thrown;
-        }
+        const response = await fetch(endpointUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody),
+        });
 
         if (!response.ok) {
             const errorText = await response.text();

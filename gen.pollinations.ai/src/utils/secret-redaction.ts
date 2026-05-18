@@ -6,7 +6,7 @@ const SECRET_KEY_PATTERN = /\bsk_[A-Za-z0-9][A-Za-z0-9_-]{6,}/g;
 const PUBLIC_KEY_PATTERN = /\bpk_[A-Za-z0-9][A-Za-z0-9_-]{6,}/g;
 const BEARER_TOKEN_PATTERN =
     /\bBearer\s+([A-Za-z0-9._~+/=-]|%[0-9A-Fa-f]{2}){8,}/gi;
-const STREAM_TAIL_LENGTH = 4096;
+const MAX_PENDING_LENGTH = 1024;
 
 export function redactSecrets(text: string): string;
 export function redactSecrets<T>(value: T): T;
@@ -34,15 +34,29 @@ export function createSecretRedactionStream(): TransformStream<
     return new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
             pending += decoder.decode(chunk, { stream: true });
-            if (pending.length <= STREAM_TAIL_LENGTH) return;
 
-            const safeLength = pending.length - STREAM_TAIL_LENGTH;
-            controller.enqueue(
-                encoder.encode(
-                    redactSecretString(pending.slice(0, safeLength)),
-                ),
+            if (pending.length > MAX_PENDING_LENGTH) {
+                controller.enqueue(encoder.encode(redactSecretString(pending)));
+                pending = "";
+                return;
+            }
+
+            const anchorIdx = Math.max(
+                pending.lastIndexOf("sk_"),
+                pending.lastIndexOf("pk_"),
+                pending.toLowerCase().lastIndexOf("bearer"),
             );
-            pending = pending.slice(safeLength);
+
+            if (anchorIdx === -1) {
+                controller.enqueue(encoder.encode(redactSecretString(pending)));
+                pending = "";
+            } else if (anchorIdx > 0) {
+                const safePart = pending.slice(0, anchorIdx);
+                controller.enqueue(
+                    encoder.encode(redactSecretString(safePart)),
+                );
+                pending = pending.slice(anchorIdx);
+            }
         },
         flush(controller) {
             const finalText = decoder.decode();

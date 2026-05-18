@@ -881,7 +881,10 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2026-02-24").getTime(),
-        cost: {},
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
         description:
             "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
         inputModalities: ["text", "image"],

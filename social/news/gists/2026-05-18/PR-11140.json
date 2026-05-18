@@ -1,0 +1,35 @@
+{
+  "pr_number": 11140,
+  "title": "fix(secrets): point local dev workers at staging tinybird workspace",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11140",
+  "merged_at": "2026-05-18T17:43:58Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Third leg of the staging-workspace isolation work (after #11128 and #11135). Today, running `npm run dev` in enter or gen writes events to the **prod** Tinybird workspace because:\n\n- `enter.pollinations.ai/secrets/dev.vars.json` has `TINYBIRD_INGEST_TOKEN` and `TINYBIRD_READ_TOKEN` pointing at prod\n- `gen.pollinations.ai/secrets/dev.vars.json` has `TINYBIRD_INGEST_TOKEN` pointing at prod\n\nLocal dev events get tagged `environment=\"local\"` but still land in prod tables.\n\nThis swaps those tokens to the staging workspace, so local dev pollutes staging instead of prod. `TINYBIRD_SYNC_TOKEN` left unchanged — sync isn't exercised during local dev, and a staging sync token doesn't exist yet (tracked in #11127).\n\nRelated: #11128, #11135, #11127",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Keeping the hive clean",
+    "blurb": "We've updated our local development environments to point to staging analytics instead of production. No more test data mixing with the real honey!",
+    "summary": "Local development environments for the enter and gen workers now write events to the staging Tinybird workspace instead of production.",
+    "impact": "Developers running local workers will no longer pollute production analytics tables with test events.",
+    "keywords": [
+      "infrastructure",
+      "tinybird",
+      "analytics",
+      "development",
+      "staging"
+    ],
+    "visual_concept": "Polly the bee sorting data seeds into a 'STAGING' bin, keeping them separate from the main 'PROD' garden. The monitor robot helping clean up.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sorting glowing data seeds into a small wooden box labeled 'STAGING', keeping them safely away from a larger 'PROD' garden bed. A chunky pixel robot with a CRT monitor head helps by holding a tiny broom. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11140.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sorting glowing data seeds into a small wooden box labeled 'STAGING', keeping them safely away from a larger 'PROD' garden bed. A chunky pixel robot with a CRT monitor head helps by holding a tiny broom. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-18T17:45:19.542243+00:00"
+}

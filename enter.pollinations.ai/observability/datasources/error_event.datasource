@@ -2,8 +2,8 @@ TOKEN tinybird_ingest APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-Rolling 3-hour window of actionable server-side failures for enter.pollinations.ai.
-Contains only structured 5xx/system/upstream errors with stack traces and routing context.
+Rolling 24-hour window of actionable server-side failures for Pollinations services.
+Contains only structured 5xx/system/upstream errors with stack traces, routing context, and request inputs.
 
 SCHEMA >
 `timestamp`                DateTime               `json:$.timestamp`,
@@ -24,6 +24,7 @@ SCHEMA >
 `upstream_body`            String                 `json:$.upstream_body` DEFAULT '',
 `model_requested`          LowCardinality(String) `json:$.model_requested` DEFAULT 'undefined',
 `resolved_model_requested` LowCardinality(String) `json:$.resolved_model_requested` DEFAULT 'undefined',
+`request_inputs`           String                 `json:$.request_inputs` DEFAULT '{}',
 `user_id`                  String                 `json:$.user_id` DEFAULT 'undefined',
 `user_tier`                LowCardinality(String) `json:$.user_tier` DEFAULT 'undefined',
 `api_key_id`               String                 `json:$.api_key_id` DEFAULT 'undefined'
@@ -31,4 +32,4 @@ SCHEMA >
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "timestamp"
 ENGINE_PRIMARY_KEY "timestamp"
-ENGINE_TTL "timestamp + toIntervalHour(3)"
+ENGINE_TTL "timestamp + toIntervalHour(24)"

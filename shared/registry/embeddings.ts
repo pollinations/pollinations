@@ -1,4 +1,4 @@
-import { COST_START_DATE, perMillion } from "./price-helpers";
+import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 // Embedding model IDs as returned by providers
@@ -23,24 +23,12 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2),
-                promptImageTokens: perMillion(0.45),
-                promptAudioTokens: perMillion(6.5),
-                promptVideoTokens: perMillion(12),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3),
-                promptImageTokens: perMillion(0.675),
-                promptAudioTokens: perMillion(9.75),
-                promptVideoTokens: perMillion(18),
-            },
-        ],
+        cost: {
+            promptTextTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.45),
+            promptAudioTokens: perMillion(6.5),
+            promptVideoTokens: perMillion(12),
+        },
         description:
             "Gemini Embedding 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],
@@ -54,18 +42,10 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.02),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.03),
-            },
-        ],
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(0.02),
+        },
         description:
             "Text Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
@@ -79,18 +59,10 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.13),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.195),
-            },
-        ],
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(0.13),
+        },
         description:
             "Text Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],

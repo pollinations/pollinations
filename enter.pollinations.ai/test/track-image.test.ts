@@ -1,7 +1,7 @@
 import type { ModelName, Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
-    getActivePriceDefinition,
+    getPriceDefinition,
 } from "@shared/registry/registry.ts";
 import { priceToEventParams } from "@shared/schemas/generation-event.ts";
 import { expect, test } from "vitest";
@@ -147,13 +147,13 @@ test("nanobanana models calculate reasoning token costs", () => {
 });
 
 test("nanobanana reasoning token event prices use text output rates", () => {
-    const flashPrice = getActivePriceDefinition("nanobanana-2");
+    const flashPrice = getPriceDefinition("nanobanana-2");
     const flashEventPrices = priceToEventParams(flashPrice);
     expect(flashEventPrices.tokenPriceCompletionReasoning).toBe(
         flashPrice?.completionTextTokens,
     );
 
-    const proPrice = getActivePriceDefinition("nanobanana-pro");
+    const proPrice = getPriceDefinition("nanobanana-pro");
     const proEventPrices = priceToEventParams(proPrice);
     expect(proEventPrices.tokenPriceCompletionReasoning).toBe(
         proPrice?.completionTextTokens,

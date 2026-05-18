@@ -16,7 +16,8 @@ import {
 } from "./image";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
-const PRECISION = 8;
+// Current Pollen ledger precision for the final customer charge.
+const POLLEN_BILLING_PRECISION = 8;
 
 export type Category = "text" | "image" | "audio" | "video" | "embedding";
 
@@ -38,23 +39,20 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
-// Dollar amounts per usage type, plus a total cost (what Pollinations pays the provider)
+// USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
 export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// Dollar amounts per usage type, plus a total price (what the user is billed)
+// Pollen amounts per usage type, plus what the user is billed.
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-// Conversion rates (dollars per usage unit) used to compute provider cost
-export type CostDefinition = {
-    date: number;
-} & { [K in UsageType]?: number };
+// Provider cost rates in USD-equivalent per usage unit.
+export type CostDefinition = { [K in UsageType]?: number };
 
-// Conversion rates used to compute user-facing price; must cover the same
-// usage keys as the cost definition at the same date (enforced at registry build).
+// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
 export type ModelId =
@@ -68,14 +66,22 @@ export type ModelName =
     | AudioModelName
     | EmbeddingServiceId;
 
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
     brand: string;
     category: Category;
-    cost: CostDefinition[];
-    price?: PriceDefinition[];
+    cost: CostDefinition;
+    // Per-model override for the USD-cost to Pollen-price multiplier. Defaults
+    // to 1.5 for paidOnly models and 1.0 for free models.
+    priceMultiplier?: number;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -93,18 +99,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
 };
 
-/** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
-    return definitions.sort((a, b) => b.date - a.date);
-}
-
-// Helper: Convert usage to dollar amounts
-function convertUsage(
-    usage: Usage,
-    conversionDefinition: CostDefinition,
-): Usage {
+// Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
+function convertUsage(usage: Usage, rateDefinition: CostDefinition): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
@@ -113,71 +112,36 @@ function convertUsage(
                     ? "completionTextTokens"
                     : usageType;
             const conversionRate =
-                conversionDefinition[usageTypeWithFallback as UsageType];
+                rateDefinition[usageTypeWithFallback as UsageType];
             if (conversionRate === undefined) {
                 throw new Error(
                     `Failed to get conversion rate for usage type: ${usageType}`,
                 );
             }
-            const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
-            return [usageType, usageTypeCost];
+            return [usageType, amount * conversionRate];
         }),
     );
     return convertedUsage as Usage;
 }
 
-type ModelRegistryEntry = ModelDefinition & {
-    price: PriceDefinition[];
-};
-
-function usageKeys(def: CostDefinition): UsageType[] {
-    return Object.keys(def).filter((k): k is UsageType => k !== "date");
+function resolvePriceMultiplier(svc: ModelDefinition): number {
+    return svc.priceMultiplier ?? (svc.paidOnly ? 1.5 : 1.0);
 }
 
-/**
- * When a model defines `price`, each price entry must cover the same usage
- * keys as the cost entry with the same date — otherwise `calculatePrice` throws
- * at runtime for any usage type missing a conversion rate.
- */
-function validatePriceShape(
-    name: string,
-    cost: CostDefinition[],
-    price: PriceDefinition[],
-): void {
-    for (const priceDef of price) {
-        const matchingCost = cost.find((c) => c.date === priceDef.date);
-        if (!matchingCost) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} has no matching cost entry`,
-            );
-        }
-        const costKeys = new Set(usageKeys(matchingCost));
-        const priceKeysSet = new Set(usageKeys(priceDef));
-        const missing = [...costKeys].filter((k) => !priceKeysSet.has(k));
-        if (missing.length > 0) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} missing usage keys: ${missing.join(", ")}`,
-            );
-        }
-    }
+function derivePrice(svc: ModelDefinition): PriceDefinition {
+    const m = resolvePriceMultiplier(svc);
+    if (m === 1) return svc.cost;
+    return Object.fromEntries(
+        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+    ) as PriceDefinition;
 }
 
-const MODEL_REGISTRY = Object.fromEntries(
-    Object.entries({
-        ...TEXT_SERVICES,
-        ...IMAGE_SERVICES,
-        ...AUDIO_SERVICES,
-        ...EMBEDDING_SERVICES,
-    }).map(([name, service]) => {
-        const cost = sortDefinitions([...service.cost]);
-        const explicitPrice = (service as ModelDefinition).price;
-        if (explicitPrice) {
-            validatePriceShape(name, cost, explicitPrice);
-        }
-        const price = sortDefinitions([...(explicitPrice ?? cost)]);
-        return [name, { ...service, cost, price } as ModelRegistryEntry];
-    }),
-) as Record<ModelName, ModelRegistryEntry>;
+const MODEL_REGISTRY = {
+    ...TEXT_SERVICES,
+    ...IMAGE_SERVICES,
+    ...AUDIO_SERVICES,
+    ...EMBEDDING_SERVICES,
+} as Record<ModelName, ModelDefinition>;
 
 /**
  * Resolve a model name from a canonical name or alias
@@ -256,7 +220,7 @@ export const getVisibleEmbeddingModels = () =>
 /**
  * Get a model definition by public model name
  */
-export function getModelDefinition(model: ModelName): ModelRegistryEntry {
+export function getModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
@@ -273,48 +237,34 @@ export function getModelAliases(model: ModelName): readonly string[] {
 }
 
 /**
- * Get active cost definition for a public model name
+ * Get cost definition for a public model name
  */
-export function getActiveCostDefinition(
-    model: ModelName,
-    date: Date = new Date(),
-): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.cost;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+export function getCostDefinition(model: ModelName): CostDefinition | null {
+    return MODEL_REGISTRY[model]?.cost ?? null;
 }
 
 /**
- * Get active price definition for a public model name
+ * Get Pollen price definition for a public model name (cost × multiplier)
  */
-export function getActivePriceDefinition(
-    model: ModelName,
-    date: Date = new Date(),
-): PriceDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.price;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+export function getPriceDefinition(model: ModelName): PriceDefinition | null {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc) return null;
+    return derivePrice(svc);
 }
 
 /**
  * Calculate cost for a model based on usage
  */
 export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getActiveCostDefinition(model);
+    const costDefinition = getCostDefinition(model);
     if (!costDefinition)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
     const usageCost = convertUsage(usage, costDefinition);
-    const totalCost = safeRound(
-        Object.values(usageCost).reduce((total, cost) => total + cost, 0),
-        PRECISION,
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
     );
     return {
         ...usageCost,
@@ -326,7 +276,7 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
  * Calculate price for a model based on usage
  */
 export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getActivePriceDefinition(model);
+    const priceDefinition = getPriceDefinition(model);
     if (!priceDefinition)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
@@ -334,7 +284,7 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),
-        PRECISION,
+        POLLEN_BILLING_PRECISION,
     );
     return {
         ...usagePrice,

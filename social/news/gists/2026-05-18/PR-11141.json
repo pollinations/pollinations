@@ -1,0 +1,34 @@
+{
+  "pr_number": 11141,
+  "title": "fix(registry): correct text-model inputModalities to match real upstream support",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11141",
+  "merged_at": "2026-05-18T17:39:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\nAudit via live test requests to gen.pollinations.ai exposed 5 mismatches between our registry's \\`inputModalities\\` and what the upstream provider actually accepts. Important prerequisite for #11139 (which uses this field to validate requests before forwarding).\n\n## Corrections\n\n| Model | Before | After | Evidence (1×1 PNG test) |\n|---|---|---|---|\n| \\`openai-audio\\` | \\`[\"text\",\"image\",\"audio\"]\\` | \\`[\"text\",\"audio\"]\\` | Azure: \\\"This model does not support image_url content\\\" |\n| \\`openai-audio-large\\` | \\`[\"text\",\"image\",\"audio\"]\\` | \\`[\"text\",\"audio\"]\\` | Azure: same error |\n| \\`perplexity-fast\\` | \\`[\"text\"]\\` | \\`[\"text\",\"image\"]\\` | 200 OK: \\\"Black\\\" |\n| \\`perplexity-reasoning\\` | \\`[\"text\"]\\` | \\`[\"text\",\"image\"]\\` | 200 OK |\n| \\`nova\\` (Nova 2 Lite) | \\`[\"text\"]\\` | \\`[\"text\",\"image\"]\\` | 200 OK: \\\"Black.\\\" |\n\n## Models verified correct (no change)\n\nText-only as marked: \\`qwen-coder\\`, \\`qwen-coder-large\\`, \\`qwen-safety\\`, \\`deepseek\\`, \\`deepseek-pro\\`, \\`glm\\`, \\`llama\\`, \\`minimax\\`, \\`nova-fast\\`. (Some return 200 but explicitly state they cannot see images; some 400 from upstream.)\n\n\\`midijourney\\` / \\`midijourney-large\\` are specialized music-composition wrappers around Claude. The underlying Claude model accepts images, but the product is intentionally text-only — left unchanged.\n\n## Test plan\n- [x] \\`npx tsc --noEmit\\` clean on both gen and enter\n- [x] \\`npx vitest run\\` (223/223 pass)\n- [x] biome clean\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Registry Reality Check",
+    "blurb": "We've updated our model registry to perfectly match what upstream providers actually accept. Just a little housekeeping to keep the hive running smoothly!",
+    "summary": "Corrected the inputModalities registry metadata for five models, removing image support from openai-audio and adding it to perplexity-fast, perplexity-reasoning, and nova.",
+    "impact": "This ensures our internal routing and future request validation perfectly match the actual capabilities of the upstream providers.",
+    "keywords": [
+      "registry",
+      "models",
+      "modalities",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee organizing files or checking a clipboard next to a retro terminal. The terminal shows a checklist of models. Nomnom creature eating a bad config file.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, holding a clipboard and checking off a list next to a retro terminal glowing with lime green (#ecf874) code. The round tan Nomnom creature sits nearby, happily eating a stack of old configuration files. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11141.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, holding a clipboard and checking off a list next to a retro terminal glowing with lime green (#ecf874) code. The round tan Nomnom creature sits nearby, happily eating a stack of old configuration files. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-18T17:41:07.314685+00:00"
+}

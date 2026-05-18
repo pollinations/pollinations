@@ -13,13 +13,18 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 - Must run from `enter.pollinations.ai/observability` directory
 - Authenticated to Tinybird (run `tb login` if needed)
 
-## Workspace Info
+## Workspaces
 
-| Property | Value |
-|----------|-------|
-| Workspace | `pollinations_enter` |
-| Region | `gcp-europe-west2` |
-| UI | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter |
+Two workspaces, same region (`gcp-europe-west2`). Pipes and datasources must be kept in sync across both.
+
+| Workspace | Receives traffic from | UI |
+|-----------|-----------------------|----|
+| `pollinations_enter` | production worker only | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter |
+| `pollinations_enter_staging` | staging worker + dev worker + local `npm run dev` | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter_staging |
+
+Workspace routing is purely **token-scoped** — same regional ingest URL, different `TINYBIRD_INGEST_TOKEN` per environment (set in `secrets/{prod,staging,dev}.vars.json`).
+
+The local `.tinyb` is gitignored and points to the prod workspace by default. To target the staging workspace, set `TB_TOKEN` to a staging admin token for any single command (don't run `tb workspace use` — it tends to fail; the env var is the reliable override).
 
 ## Directory Structure
 
@@ -43,14 +48,17 @@ enter.pollinations.ai/observability/
 
 ## Step 1: Validate (Dry Run)
 
-Always validate before deploying:
+Always validate before deploying. Dry-run is safe to run anytime against either workspace.
 
 ```bash
 cd enter.pollinations.ai/observability
-tb --cloud deploy --check --wait
-```
 
-This shows exactly what will change **without deploying**. Safe to run anytime.
+# Against prod workspace (default — uses local .tinyb token)
+tb --cloud deploy --check --wait
+
+# Against staging workspace
+TB_TOKEN=<staging_admin_token> tb --cloud deploy --check --wait
+```
 
 Example output:
 ```
@@ -61,24 +69,35 @@ Example output:
 
 ## Step 2: Deploy
 
-If validation passes:
+If validation passes, deploy to **both** workspaces. Recommended order: staging first, then prod — if staging breaks you catch it before touching prod.
 
 ```bash
+# 1. Deploy to staging first
+TB_TOKEN=<staging_admin_token> tb --cloud deploy --wait
+
+# 2. Verify behavior on staging (e.g. curl a pipe via staging read token)
+
+# 3. Deploy to prod
 tb --cloud deploy --wait
 ```
 
+> Skipping the staging step is a known drift vector — see issue #11127 for the planned CI auto-deploy that will enforce this.
+
 ## Step 3: Verify
 
-Test the deployed pipe:
+Test the deployed pipe. Use the read token for whichever workspace you deployed to.
 
 ```bash
-# Get Tinybird token from secrets
-TINYBIRD_TOKEN=$(sops -d ../kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')
+# Prod read token (decrypted from sops-encrypted prod secrets)
+TINYBIRD_TOKEN=$(SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s sops-age-key -w) \
+  sops -d ../secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 
 # Test the pipe
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq '.data | length'
 ```
+
+For staging, swap `prod.vars.json` → `staging.vars.json`.
 
 ---
 
@@ -98,18 +117,17 @@ curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.js
 ## Add a New Pipe
 
 1. Create `.pipe` file in `endpoints/`
-2. Validate: `tb --cloud deploy --check --wait`
-3. Deploy: `tb --cloud deploy --wait`
+2. Validate against both workspaces (or at least staging)
+3. Deploy to staging, verify, then prod (see Step 2 above)
 
 ## Modify Existing Pipe
 
-1. Edit the `.pipe` file
-2. Validate: `tb --cloud deploy --check --wait`
-3. Deploy: `tb --cloud deploy --wait`
+Same as above — edit, validate against both, deploy staging then prod.
 
 ## View Pipe in UI
 
-Open: https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter/pipes
+- Prod: https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter/pipes
+- Staging: https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter_staging/pipes
 
 ---
 

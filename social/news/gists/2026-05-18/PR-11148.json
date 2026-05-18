@@ -1,0 +1,35 @@
+{
+  "pr_number": 11148,
+  "title": "fix(registry): add promptCachedTokens cost for mistral + mistral-4",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11148",
+  "merged_at": "2026-05-18T18:33:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\n\nAfter #11147 made `convertUsage` warn-and-bill-0 instead of throwing, the new diagnostic surfaced one model dropping cached-token billing in production:\n\n```\n[registry] Missing conversion rate: model=mistral usageType=promptCachedTokens amount=192 — billing 0 for this line\n```\n\nCaptured during a 10-minute wrangler tail observation window — only `mistral` triggered, with cached amounts of 48, 96, 112, 192, 320, 1472, 1488, 1504, 1664, 2464, 4288. Pre-#11147 these requests would have dropped the entire tracking event (silent revenue + observability leak).\n\n## Changes\n\n1. **Registry**: Add `promptCachedTokens` to `mistral` and `mistral-4` cost blocks. Both are OpenRouter-routed (mistral-small-2503 / mistral-small-2603) and the upstream usage payload includes `prompt_tokens_details.cached_tokens`. Charged at the **same rate** as `promptTextTokens` — OpenRouter passes through what the upstream charges, and Mistral doesn't publish a cache discount.\n\n2. **Skill**: Add a \"Cached prompt tokens\" section to `model-management/SKILL.md` plus a checklist line. Going forward, anyone adding a model must verify whether the upstream returns `cached_tokens > 0` (recipe included: 2x identical >1024-token-prefix calls, inspect `usage.prompt_tokens_details.cached_tokens` on the second). If yes, the cost block MUST include `promptCachedTokens`. This is what was missed for Mistral.\n\n## Test plan\n\n- [x] `npx vitest run` — 223/223 passing\n- [x] `npx tsc --noEmit` — clean\n- [ ] After merge + deploy, confirm `[registry] Missing conversion rate` warnings for `mistral` stop appearing in wrangler tail.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Catching the cached tokens",
+    "blurb": "Fixed a sneaky bug where Mistral models were dropping cached-token billing. We've updated the registry to properly track and cost cached prompt tokens for Mistral and Mistral-4.",
+    "summary": "Added `promptCachedTokens` to the cost blocks for `mistral` and `mistral-4` to fix missing conversion rate warnings and ensure accurate usage tracking.",
+    "impact": "Internal tracking now correctly processes cached token usage from OpenRouter for Mistral models instead of dropping the events.",
+    "keywords": [
+      "billing",
+      "mistral",
+      "registry",
+      "bug-fix",
+      "tracking"
+    ],
+    "visual_concept": "The bee mascot catching or organizing tokens (coins/data blocks) that were slipping through a net or crack. Mistral theme (maybe a gentle breeze or wind).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny net catching glowing blue data tokens blowing in a gentle breeze. A chunky retro robot with a monitor head happily records the tokens on a clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11148.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny net catching glowing blue data tokens blowing in a gentle breeze. A chunky retro robot with a monitor head happily records the tokens on a clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-18T18:34:49.217938+00:00"
+}

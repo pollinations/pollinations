@@ -7,8 +7,9 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 1. Update `.env` and `secrets/env.json` (sops) with credentials
 2. Update config/handler with model routing
-3. Update registry with **pricing**, **provider**, and **`addedDate`**
-4. Run tests (see [Testing](#testing) below)
+3. **Verify input/output modalities against the live upstream** (see [Verifying modalities](#verifying-modalities) below) — don't copy from vendor docs alone
+4. Update registry with **pricing**, **provider**, **`addedDate`**, and **verified `inputModalities` / `outputModalities`**
+5. Run tests (see [Testing](#testing) below)
 
 > ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.
 
@@ -48,6 +49,63 @@ Format: `<Model Name> - <what it does or what makes it distinct>`. Keep it under
 
 ---
 
+# Verifying modalities
+
+> ⚠️ **Always verify modalities empirically against the live upstream before writing `inputModalities` / `outputModalities`.** Vendor docs and marketing pages frequently disagree with what the actual API endpoint accepts (e.g. wrapper layers, region differences, deployment variants). A wrong modality breaks request-validation downstream and either rejects legitimate calls or wastes upstream subrequests on calls that will 4xx.
+
+## Meaning of `inputModalities`
+
+`inputModalities` reflects **what our chat path actually supports end-to-end through `gen.pollinations.ai/v1/chat/completions`** — not the raw upstream model's theoretical capabilities. Our chat path currently inlines `image_url` parts and forwards everything else as-is; some providers silently drop content types we don't transform (notably `video_url` and `input_audio` on Bedrock/Nova). Mark only what the request actually round-trips with real model attention.
+
+If you genuinely want to expose a new modality (e.g. video), implement the transform in `gen.pollinations.ai/src/text/transforms/`, verify end-to-end, then add it to `inputModalities`.
+
+Required for **every new model** and **every provider/endpoint change**.
+
+## Image input — quick test
+
+Use a 1×1 transparent PNG so the cost is near-zero, then check whether the upstream accepts or rejects:
+
+```bash
+TOKEN="sk_…"                                                                  # paid local key
+IMG="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+curl -s "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"model\":\"<NEW-MODEL>\",\"max_tokens\":20,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"What color is this pixel?\"},{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/png;base64,$IMG\"}}]}]}" \
+  --max-time 30 -w "\nHTTP_%{http_code}\n"
+```
+
+| Response | Verdict |
+|---|---|
+| 200 with a sensible answer ("Black", "Transparent", etc.) | **`"image"` is real** — include in `inputModalities` |
+| 200 but the model says "I cannot see images, I'm text-only" | **`"image"` is fake** — exclude. The model silently ignores instead of rejecting |
+| 400 / 404 / 502 with "does not support image_url" / "no endpoints found that support image input" / "not a multimodal model" | **`"image"` is fake** — exclude |
+
+## Audio / video / tools
+
+Same approach — send the minimal valid payload for the modality, look at upstream's actual behavior:
+
+- **audio input**: send a base64-encoded short audio clip in `input_audio` content part
+- **audio output**: request `modalities:["text","audio"]` with `audio:{voice,format}` — verify a non-empty audio payload comes back
+- **video input**: send a small `video_url` content part (Gemini)
+- **tools**: send a single-tool request that should trigger a tool_call — verify `finish_reason: "tool_calls"`
+- **reasoning**: prompt that requires reasoning — verify `usage.completion_tokens_details.reasoning_tokens > 0`
+
+## Wrapper models (claude → midijourney, etc.)
+
+For specialized wrappers (e.g. system-prompted personas), the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy when it exists.
+
+## Empirical-over-docs principle
+
+If vendor docs say one thing and the live upstream says another, **trust the upstream**. Common reasons for drift:
+- Region/deployment variants (Azure deploys some models without vision adapters)
+- Wrapper layers (some Bedrock/Portkey wrappers strip image content)
+- Preview vs. GA capability gaps
+- Provider-side model swaps where the model card is updated but the deployment isn't
+
+When the test result contradicts vendor docs, note both in the PR description.
+
+---
+
 # Quick Actions
 
 | Action | `.env` | Config/Handler | Registry |
@@ -79,7 +137,7 @@ Seed a paid local key (`scripts/seed-key.mjs` or equivalent) and export `SK=sk_�
 
 ## 2. Modality matrix — verify every capability the registry claims
 
-For each model, run every test that matches its declared `inputModalities` / `outputModalities` / `tools` / `reasoning`:
+For each model, run every test that matches its declared `inputModalities` / `outputModalities` / `tools` / `reasoning`. **If a declared modality fails this test, fix the registry — don't fudge the test.** See [Verifying modalities](#verifying-modalities) for the rationale.
 
 | Capability | What to test |
 |---|---|

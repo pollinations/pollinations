@@ -295,6 +295,55 @@ app.get("/api/kpi/stripe-revenue", async (c) => {
     return c.json({ data: result.data });
 });
 
+// Tinybird: Revenue broken down by billing AND card-issuing country.
+// `card_country` is NULL until `charge.succeeded` events are persisted —
+// see stripe-webhooks.ts. Until then, only `billing_country` populates
+// for successful charges; failed charges expose both via a separate pipe.
+app.get("/api/kpi/stripe-country-revenue", async (c) => {
+    const daysBack = parseInt(c.req.query("days_back") || "15", 10);
+    const result = await fetchTinybird(c.env, "stripe_revenue_by_country", {
+        days_back: Math.min(Math.max(daysBack, 1), 90),
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
+});
+
+// Tinybird: Top buyers (smurf / reseller detector).
+app.get("/api/kpi/stripe-top-buyers", async (c) => {
+    const daysBack = parseInt(c.req.query("days_back") || "15", 10);
+    const minCharges = parseInt(c.req.query("min_charges") || "5", 10);
+    const limit = parseInt(c.req.query("limit") || "50", 10);
+    const result = await fetchTinybird(c.env, "stripe_top_buyers", {
+        days_back: Math.min(Math.max(daysBack, 1), 90),
+        min_charges: Math.min(Math.max(minCharges, 1), 1000),
+        limit: Math.min(Math.max(limit, 1), 200),
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
+});
+
+// Tinybird: Failed payment attempts (carding probes).
+app.get("/api/kpi/stripe-failed-attempts", async (c) => {
+    const daysBack = parseInt(c.req.query("days_back") || "15", 10);
+    const result = await fetchTinybird(c.env, "stripe_failed_attempts", {
+        days_back: Math.min(Math.max(daysBack, 1), 90),
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
+});
+
+// Tinybird: Charges where billing country differs from card country.
+app.get("/api/kpi/stripe-country-mismatch", async (c) => {
+    const daysBack = parseInt(c.req.query("days_back") || "15", 10);
+    const limit = parseInt(c.req.query("limit") || "50", 10);
+    const result = await fetchTinybird(c.env, "stripe_country_mismatch", {
+        days_back: Math.min(Math.max(daysBack, 1), 90),
+        limit: Math.min(Math.max(limit, 1), 200),
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
+});
+
 // Polar: Revenue (one-time pollen purchases only) - legacy, being phased out
 async function fetchPolarRevenue(
     env: Env,

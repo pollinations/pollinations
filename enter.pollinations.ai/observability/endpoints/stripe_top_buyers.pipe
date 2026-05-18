@@ -1,0 +1,39 @@
+DESCRIPTION >
+    Surfaces top buyer accounts in the configured window, flagging
+    multi-account / smurfing patterns. Returns email + per-account totals
+    plus the count of distinct Stripe Customer objects they generated
+    (a high ratio of customer-objects per email signals reseller / smurf
+    behaviour — Stripe creates a fresh Customer per checkout when the
+    buyer doesn't reuse a login).
+
+TOKEN tinybird_read READ
+
+NODE stripe_top_buyers_node
+SQL >
+    %
+    SELECT
+        JSONExtractString(payload,'data','object','customer_details','email') AS email,
+        count() AS charges,
+        uniq(JSONExtractString(payload,'data','object','customer')) AS distinct_stripe_customers,
+        round(sum(amount_cents)/100, 2) AS total_usd,
+        arraySort(arrayDistinct(groupArray(
+            JSONExtractString(payload,'data','object','customer_details','address','country')
+        ))) AS billing_countries,
+        arraySort(arrayDistinct(groupArray(
+            JSONExtractString(payload,'data','object','payment_method_details','type')
+        ))) AS payment_method_types,
+        min(timestamp) AS first_seen,
+        max(timestamp) AS last_seen
+    FROM stripe_event
+    WHERE
+        payment_status = 'paid'
+        AND livemode = 1
+        AND event_type = 'checkout.session.completed'
+        AND timestamp >= today() - INTERVAL {{ Int32(days_back, 15) }} DAY
+        AND JSONExtractString(payload,'data','object','customer_details','email') != ''
+    GROUP BY email
+    HAVING charges >= {{ Int32(min_charges, 5) }}
+    ORDER BY charges DESC
+    LIMIT {{ Int32(limit, 50) }}
+
+TYPE endpoint

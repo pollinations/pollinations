@@ -1,0 +1,35 @@
+DESCRIPTION >
+    Daily Stripe revenue split by both BILLING country (self-reported by
+    customer on the checkout form) and CARD-ISSUING country (returned by
+    the card network — only populated once `charge.succeeded` events are
+    being persisted; falls back to empty string until then).
+    Always read this pipe with both fields in mind — they often disagree.
+
+TOKEN tinybird_read READ
+
+NODE stripe_revenue_by_country_node
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        JSONExtractString(payload,'data','object','customer_details','address','country') AS billing_country,
+        coalesce(
+            nullIf(JSONExtractString(payload,'data','object','payment_method_details','card','country'), ''),
+            nullIf(JSONExtractString(payload,'data','object','charges','data',1,'payment_method_details','card','country'), '')
+        ) AS card_country,
+        JSONExtractString(payload,'data','object','payment_method_details','type') AS payment_method_type,
+        round(sum(amount_cents) / 100, 2) AS revenue_usd,
+        count() AS charges
+    FROM stripe_event
+    WHERE
+        payment_status = 'paid'
+        AND livemode = 1
+        AND event_type IN ('checkout.session.completed', 'charge.succeeded')
+        AND timestamp >= toDate('2025-10-01')
+        {% if defined(days_back) %}
+        AND timestamp >= today() - INTERVAL {{ Int32(days_back, 30) }} DAY
+        {% end %}
+    GROUP BY date, billing_country, card_country, payment_method_type
+    ORDER BY date DESC, revenue_usd DESC
+
+TYPE endpoint

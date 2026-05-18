@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Failed payment attempts (carding probes). Card-issuing country IS
+    populated for `payment_intent.payment_failed` events because Stripe
+    includes the attempted payment method on `last_payment_error`. Use
+    this to surface fraud / card-testing patterns separately from real
+    revenue.
+
+TOKEN tinybird_read READ
+
+NODE stripe_failed_attempts_node
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        JSONExtractString(payload,'data','object','last_payment_error','payment_method','billing_details','address','country') AS billing_country,
+        JSONExtractString(payload,'data','object','last_payment_error','payment_method','card','country') AS card_country,
+        JSONExtractString(payload,'data','object','last_payment_error','code') AS error_code,
+        JSONExtractString(payload,'data','object','last_payment_error','decline_code') AS decline_code,
+        count() AS attempts,
+        round(sum(amount_cents)/100, 2) AS attempted_usd
+    FROM stripe_event
+    WHERE
+        livemode = 1
+        AND event_type = 'payment_intent.payment_failed'
+        AND timestamp >= today() - INTERVAL {{ Int32(days_back, 30) }} DAY
+    GROUP BY date, billing_country, card_country, error_code, decline_code
+    ORDER BY date DESC, attempts DESC
+
+TYPE endpoint

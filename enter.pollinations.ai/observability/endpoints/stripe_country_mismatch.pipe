@@ -1,0 +1,66 @@
+DESCRIPTION >
+    Charges where billing-address country differs from card-issuing
+    country. Two main signals:
+      - successful charges with mismatch -> legitimate travel/expats
+        OR resale fronts (e.g. MO-billed + US-card pattern)
+      - failed charges with mismatch -> cardholder-not-present fraud
+        probes (carding)
+    Combines both directions: failed (card_country via
+    last_payment_error) and successful (card_country via charge events,
+    once captured).
+
+TOKEN tinybird_read READ
+
+NODE stripe_country_mismatch_node
+SQL >
+    %
+    WITH unified AS (
+        SELECT
+            toDate(timestamp) AS date,
+            'paid' AS status,
+            JSONExtractString(payload,'data','object','customer_details','address','country') AS billing_country,
+            coalesce(
+                nullIf(JSONExtractString(payload,'data','object','payment_method_details','card','country'), ''),
+                nullIf(JSONExtractString(payload,'data','object','charges','data',1,'payment_method_details','card','country'), '')
+            ) AS card_country,
+            JSONExtractString(payload,'data','object','payment_method_details','type') AS payment_method_type,
+            amount_cents
+        FROM stripe_event
+        WHERE
+            payment_status = 'paid'
+            AND livemode = 1
+            AND event_type IN ('checkout.session.completed', 'charge.succeeded')
+            AND timestamp >= today() - INTERVAL {{ Int32(days_back, 30) }} DAY
+
+        UNION ALL
+
+        SELECT
+            toDate(timestamp) AS date,
+            'failed' AS status,
+            JSONExtractString(payload,'data','object','last_payment_error','payment_method','billing_details','address','country') AS billing_country,
+            JSONExtractString(payload,'data','object','last_payment_error','payment_method','card','country') AS card_country,
+            JSONExtractString(payload,'data','object','last_payment_error','payment_method','type') AS payment_method_type,
+            amount_cents
+        FROM stripe_event
+        WHERE
+            livemode = 1
+            AND event_type = 'payment_intent.payment_failed'
+            AND timestamp >= today() - INTERVAL {{ Int32(days_back, 30) }} DAY
+    )
+    SELECT
+        status,
+        billing_country,
+        card_country,
+        payment_method_type,
+        count() AS charges,
+        round(sum(amount_cents)/100, 2) AS usd
+    FROM unified
+    WHERE
+        billing_country != ''
+        AND card_country != ''
+        AND billing_country != card_country
+    GROUP BY status, billing_country, card_country, payment_method_type
+    ORDER BY charges DESC
+    LIMIT {{ Int32(limit, 50) }}
+
+TYPE endpoint

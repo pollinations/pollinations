@@ -55,3 +55,43 @@ export async function getWeeklyAppSubmissions() {
     const data = await res.json();
     return data.data || [];
 }
+
+export async function getStripeCountryRevenue(daysBack = 15) {
+    const res = await fetch(
+        `/api/kpi/stripe-country-revenue?days_back=${daysBack}`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}
+
+export async function getStripeTopBuyers(
+    daysBack = 15,
+    minCharges = 5,
+    limit = 50,
+) {
+    const res = await fetch(
+        `/api/kpi/stripe-top-buyers?days_back=${daysBack}&min_charges=${minCharges}&limit=${limit}`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}
+
+export async function getStripeFailedAttempts(daysBack = 15) {
+    const res = await fetch(
+        `/api/kpi/stripe-failed-attempts?days_back=${daysBack}`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}
+
+export async function getStripeCountryMismatch(daysBack = 15, limit = 50) {
+    const res = await fetch(
+        `/api/kpi/stripe-country-mismatch?days_back=${daysBack}&limit=${limit}`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}

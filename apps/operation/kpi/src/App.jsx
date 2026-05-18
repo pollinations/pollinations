@@ -27,6 +27,7 @@ import { FunnelChart } from "./components/FunnelChart";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { RetentionTable } from "./components/RetentionTable";
 import { StatCard } from "./components/StatCard";
+import { StripePaymentsPanel } from "./components/StripePaymentsPanel";
 import { WeeklyChart } from "./components/WeeklyChart";
 
 export default function App() {
@@ -633,6 +634,9 @@ export default function App() {
                         dualAxis={true}
                     />
                 </div>
+
+                {/* Stripe payments forensics */}
+                <StripePaymentsPanel />
 
                 {/* Funnel & Retention */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

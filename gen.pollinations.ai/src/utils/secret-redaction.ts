@@ -23,6 +23,31 @@ export function redactSecrets(value: unknown): unknown {
     );
 }
 
+function getOverlapLength(text: string): number {
+    const lower = text.toLowerCase();
+    const prefixes = [
+        "bearer ",
+        "bearer",
+        "beare",
+        "bear",
+        "bea",
+        "be",
+        "b",
+        "sk_",
+        "sk",
+        "s",
+        "pk_",
+        "pk",
+        "p",
+    ];
+    for (const prefix of prefixes) {
+        if (lower.endsWith(prefix)) {
+            return prefix.length;
+        }
+    }
+    return 0;
+}
+
 export function createSecretRedactionStream(): TransformStream<
     Uint8Array,
     Uint8Array
@@ -48,8 +73,21 @@ export function createSecretRedactionStream(): TransformStream<
             );
 
             if (anchorIdx === -1) {
-                controller.enqueue(encoder.encode(redactSecretString(pending)));
-                pending = "";
+                const overlap = getOverlapLength(pending);
+                if (overlap > 0) {
+                    const safePart = pending.slice(0, pending.length - overlap);
+                    if (safePart) {
+                        controller.enqueue(
+                            encoder.encode(redactSecretString(safePart)),
+                        );
+                    }
+                    pending = pending.slice(pending.length - overlap);
+                } else {
+                    controller.enqueue(
+                        encoder.encode(redactSecretString(pending)),
+                    );
+                    pending = "";
+                }
             } else if (anchorIdx > 0) {
                 const safePart = pending.slice(0, anchorIdx);
                 controller.enqueue(

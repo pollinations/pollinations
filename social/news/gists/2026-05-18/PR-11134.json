@@ -1,0 +1,35 @@
+{
+  "pr_number": 11134,
+  "title": "fix(gen): throttle image server registry KV writes (1×/30s per key)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11134",
+  "merged_at": "2026-05-18T17:27:43Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Throttle \\`registerServer\\` KV writes to once-per-30s per key (in-memory Map, per-isolate)\n- Eliminates ~100 daily \\`KV PUT failed: 429 Too Many Requests\\` errors on \\`POST /register\\` caused by GPU servers heartbeat-registering faster than Cloudflare KV's 1-write/sec/key cap\n\n## Why this is safe\n- Previous write already sets \\`expirationTtl=240s\\`, so the registry entry stays fresh well past the 30s throttle\n- Per-isolate Map → different isolates each get one write; bounded by KV key count (a few dozen image GPU servers)\n- Throttled writes are logged but don't error out\n\n## Test plan\n- [x] \\`npx tsc --noEmit\\` clean\n- [x] \\`npx vitest run\\` (220/220 pass)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Calming the heartbeat",
+    "blurb": "We've smoothed out how our GPU servers check in with the hive, eliminating those pesky 429 errors from Cloudflare KV.",
+    "summary": "Throttled image server registry KV writes to once per 30 seconds per key to prevent Cloudflare KV 429 rate limit errors during GPU server heartbeats.",
+    "impact": "This eliminates roughly 100 daily failed registration errors, improving the stability of our internal server tracking without affecting server availability.",
+    "keywords": [
+      "cloudflare",
+      "kv",
+      "rate-limit",
+      "gpu-servers",
+      "backend"
+    ],
+    "visual_concept": "Polly the bee acting as a gentle traffic controller for a busy server rack, slowing down the rapid 'heartbeats' to a manageable pace. The monitor robot looks relieved.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic controller hat, gently holding up a stopwatch next to a glowing retro server rack. A chunky robot with a monitor head looks relieved as the server's blinking lights slow down to a calm rhythm. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11134.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic controller hat, gently holding up a stopwatch next to a glowing retro server rack. A chunky robot with a monitor head looks relieved as the server's blinking lights slow down to a calm rhythm. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T17:28:52.852393+00:00"
+}

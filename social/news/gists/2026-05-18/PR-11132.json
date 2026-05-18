@@ -1,0 +1,35 @@
+{
+  "pr_number": 11132,
+  "title": "fix(gen): bump AssemblyAI transcription poll timeout 120s → 240s",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11132",
+  "merged_at": "2026-05-18T17:23:57Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Real-world traffic shows ~7 daily transcription jobs timing out at exactly the 120s cap (measured durations 121-124s)\n- Doubling to 240s — same bounded-polling shape, more realistic room for longer audio files\n\n## Test plan\n- [x] \\`npx tsc --noEmit\\` clean\n- [x] transcription tests pass (5/5)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "More time to listen",
+    "blurb": "We've doubled the timeout for AssemblyAI transcriptions from 120s to 240s. Now your longer audio files have the breathing room they need to finish processing without getting cut off.",
+    "summary": "Increased the AssemblyAI transcription polling timeout from 120s to 240s to prevent longer audio files from failing.",
+    "impact": "Users transcribing longer audio files will no longer see jobs fail at the 2-minute mark.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "assemblyai",
+      "timeout",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot waiting patiently by a retro tape recorder or gramophone. The robot is holding a stopwatch, symbolizing the extended timeout.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sitting patiently next to a retro reel-to-reel tape recorder. The robot holds a tiny pixelated stopwatch. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11132.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sitting patiently next to a retro reel-to-reel tape recorder. The robot holds a tiny pixelated stopwatch. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T17:25:00.405812+00:00"
+}

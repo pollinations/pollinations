@@ -89,11 +89,18 @@ export function createSecretRedactionStream(): TransformStream<
                     pending = "";
                 }
             } else if (anchorIdx > 0) {
-                const safePart = pending.slice(0, anchorIdx);
-                controller.enqueue(
-                    encoder.encode(redactSecretString(safePart)),
-                );
-                pending = pending.slice(anchorIdx);
+                let splitAt = anchorIdx;
+                const before = pending.slice(0, anchorIdx);
+                const bearerMatch = before.match(/bearer\s+$/i);
+                if (bearerMatch) splitAt = anchorIdx - bearerMatch[0].length;
+
+                const safePart = pending.slice(0, splitAt);
+                if (safePart) {
+                    controller.enqueue(
+                        encoder.encode(redactSecretString(safePart)),
+                    );
+                }
+                pending = pending.slice(splitAt);
             }
         },
         flush(controller) {

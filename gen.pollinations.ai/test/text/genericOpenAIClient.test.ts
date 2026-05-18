@@ -12,6 +12,7 @@ describe("genericOpenAIClient", () => {
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
+                expect(init?.signal).toBeUndefined();
                 upstreamBody = JSON.parse(String(init?.body));
                 return Response.json({
                     id: "chatcmpl_test",

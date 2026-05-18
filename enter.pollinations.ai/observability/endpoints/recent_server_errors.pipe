@@ -29,7 +29,6 @@ SQL >
         api_key_id
     FROM error_event
     WHERE timestamp >= now() - interval {{Int32(minutes, 1440)}} minute
-    AND environment = {{String(environment, 'production')}}
     ORDER BY timestamp DESC
     LIMIT {{Int32(limit, 200)}}
 

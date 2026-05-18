@@ -60,13 +60,26 @@ export async function ensureUpstreamOk(
     const rawMessage =
         extractUpstreamMessage(responseBody) ||
         getDefaultErrorMessage(response.status);
-    throw new UpstreamError(remapUpstreamStatus(response.status), {
+    const status = isUserInputModalityRejection(response.status, rawMessage)
+        ? 400
+        : remapUpstreamStatus(response.status);
+    throw new UpstreamError(status, {
         message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
         requestUrl:
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
         upstreamStatus: response.status,
         responseBody,
     });
+}
+
+function isUserInputModalityRejection(
+    upstreamStatus: number,
+    message: string,
+): boolean {
+    return (
+        upstreamStatus === 404 &&
+        /no endpoints found that support image input/i.test(message)
+    );
 }
 
 function extractUpstreamMessage(body: string): string {

@@ -1,0 +1,179 @@
+{
+  "date": "2026-05-17",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-17",
+  "title": "Video generation now supports A-to-B transitions",
+  "summary": "Video transitions, audio speaker diarization, and a massive wave of thirty new community apps hitting the greenhouse.\n\nYou can now pass a positional image array to the video endpoints (image[0] for the start frame, image[1] for the end frame) and let models like seedance, veo, and wan-fast hallucinate the in-between. Full support is already rolled out across the API, SDK, CLI, and MCP tools.\n\nThe `/v1/audio/transcriptions` endpoint now accepts `response_format=diarized_json`. It returns OpenAI-compatible segments with speaker labels, powered by AssemblyAI and ElevenLabs Scribe. You can finally stop guessing who is talking in your hour-long meeting recordings.\n\nThe community shipped some serious infrastructure today. AI Clip Finder uses FastAPI and LLMs to automatically extract social-ready clips from long videos. Meanwhile, AI Image Studio and Lunere Image Gen both dropped full-pipeline workbenches for generating and refining images via the REST API.",
+  "pr_count": 42,
+  "prs": [
+    {
+      "number": 11009,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11029,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11030,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11032,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11033,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11034,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11035,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11047,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11048,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11049,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11050,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11051,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11052,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11053,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11054,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11056,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11057,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11058,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11059,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11060,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11061,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11062,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11063,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11064,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11065,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11066,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11067,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11068,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11069,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11070,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11071,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11072,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11075,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11077,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11078,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11080,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11081,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11082,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11083,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11084,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11086,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11087,
+      "date": "2026-05-17"
+    }
+  ],
+  "generated_at": "2026-05-18T07:18:06.704074+00:00"
+}

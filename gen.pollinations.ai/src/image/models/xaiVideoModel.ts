@@ -1,3 +1,4 @@
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -66,7 +67,11 @@ export async function callXaiVideoAPI(
         );
     }
 
-    const durationSeconds = Math.min(Math.max(safeParams.duration || 5, 1), 15);
+    const dur = getVideoDurationLimits("grok-video-pro");
+    const durationSeconds = Math.max(
+        dur.min,
+        Math.min(dur.max, safeParams.duration || dur.default),
+    );
 
     logOps("Calling xAI video API:", { prompt, durationSeconds });
     progress.updateBar(

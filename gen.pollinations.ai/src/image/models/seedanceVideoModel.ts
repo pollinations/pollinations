@@ -1,3 +1,7 @@
+import {
+    getVideoDurationLimits,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -139,8 +143,12 @@ async function generateSeedanceVideo(
         `Starting video generation with ${config.displayName}...`,
     );
 
-    // Video parameters
-    const durationSeconds = safeParams.duration || 2;
+    // Video parameters — read limits from the shared registry
+    const dur = getVideoDurationLimits(config.trackingLabel as ImageModelName);
+    const durationSeconds = Math.max(
+        dur.min,
+        Math.min(dur.max, safeParams.duration || dur.default),
+    );
 
     // Calculate resolution and aspect ratio from width/height or aspectRatio
     const { aspectRatio, resolution: resolutionUpper } =

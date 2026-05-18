@@ -7,6 +7,7 @@
  * "video_in" tier).
  */
 
+import { getVideoDurationLimits } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
@@ -76,11 +77,11 @@ export async function callSeedanceV2API(
         "Starting Seedance 2.0 video generation...",
     );
 
-    // Seedance 2.0 requires duration in [4, 15]. The schema enforces min=1
-    // so we only need to clamp into the upstream's accepted range.
+    // Seedance 2.0 — clamp to registry limits
+    const dur = getVideoDurationLimits("seedance-2.0");
     const duration = Math.max(
-        4,
-        Math.min(15, Math.floor(safeParams.duration ?? 5)),
+        dur.min,
+        Math.min(dur.max, Math.floor(safeParams.duration ?? dur.default)),
     );
 
     // Positional image[] contract:

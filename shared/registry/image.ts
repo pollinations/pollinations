@@ -230,6 +230,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        minDuration: 1,
+        maxDuration: 8,
+        defaultDuration: 4,
     },
     "seedance": {
         aliases: [],
@@ -248,6 +251,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
+        minDuration: 1,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "seedance-pro": {
         aliases: [],
@@ -266,6 +272,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
+        minDuration: 1,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -284,6 +293,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        minDuration: 4,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -303,6 +315,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
+        minDuration: 2,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -321,6 +336,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
+        minDuration: 5,
+        maxDuration: 5,
+        defaultDuration: 5,
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -422,6 +440,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
+        minDuration: 1,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -454,6 +475,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
+        minDuration: 1,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "p-image": {
         aliases: ["pruna-image", "pruna"],
@@ -502,6 +526,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
+        minDuration: 1,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -533,5 +560,34 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
+        minDuration: 6,
+        maxDuration: 120,
+        defaultDuration: 6,
     },
 } as const satisfies Record<string, ModelDefinition<string>>;
+
+export interface VideoDurationLimits {
+    min: number;
+    max: number;
+    default: number;
+}
+
+export function getVideoDurationLimits(
+    modelName: ImageModelName,
+): VideoDurationLimits {
+    const service: ModelDefinition = IMAGE_SERVICES[modelName];
+    if (
+        service.minDuration == null ||
+        service.maxDuration == null ||
+        service.defaultDuration == null
+    ) {
+        throw new Error(
+            `Model "${modelName}" does not have duration limits configured`,
+        );
+    }
+    return {
+        min: service.minDuration,
+        max: service.maxDuration,
+        default: service.defaultDuration,
+    };
+}

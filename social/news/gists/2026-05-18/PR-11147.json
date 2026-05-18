@@ -1,0 +1,35 @@
+{
+  "pr_number": 11147,
+  "title": "fix(registry): log missing conversion rates instead of throwing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11147",
+  "merged_at": "2026-05-18T18:23:03Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\n\n`convertUsage` in `shared/registry/registry.ts` throws when a model reports a usage type that has no rate in its cost block (e.g. `promptCachedTokens` for any of the ~17 text models + 3 nanobanana image models that don't list it).\n\nThat throw escapes the `c.executionCtx.waitUntil(...)` IIFE in `gen.pollinations.ai/src/middleware/track.ts:170-303`, which **silently drops the entire tracking event before it reaches Tinybird** — a billing leak. The user still gets HTTP 200 (the throw runs after the response), but:\n\n- No row is written to `generation_event` (Tinybird)\n- No pollen balance is deducted\n\nI verified this against 15 distinct `requestId`s captured from production wrangler-tail logs over a few minutes — zero of them are present in `generation_event`.\n\n## Change\n\n- Replace the throw with a `console.warn` that includes `model`, `usageType`, and `amount` so we can identify which (model, usageType) pairs need to be added to the registry.\n- Bill that line as 0 so the rest of the tracking event still ships.\n\nAfter this lands, the warning logs will tell us exactly which models are returning cached tokens (or other unexpected usage types), and follow-up PRs can add the right `promptCachedTokens` rates to those registry entries.\n\n## Test plan\n\n- [x] `npx vitest run` — 223/223 passing\n- [x] `npx tsc --noEmit` — clean\n- [x] Once deployed, monitor wrangler tail for `[registry] Missing conversion rate` warnings and capture the model names that surface.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Patching the pollen leak",
+    "blurb": "Fixed a sneaky bug where missing conversion rates were silently dropping tracking events. Now we log the missing rates and keep the data flowing.",
+    "summary": "Replaced a hard throw with a warning in the registry's usage conversion to prevent missing cost rates (like promptCachedTokens) from silently dropping Tinybird tracking events.",
+    "impact": "Tracking events now successfully write to Tinybird even if a model reports an unmapped usage type, preventing billing leaks.",
+    "keywords": [
+      "billing",
+      "tracking",
+      "bug-fix",
+      "tinybird",
+      "registry"
+    ],
+    "visual_concept": "Polly the bee fixing a leaking data pipe to ensure pollen/coins flow correctly, representing the fix to the billing leak.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, using a wrench to fix a glowing lime green (#ecf874) data pipe. Small golden pollen coins flow safely through the transparent pipe. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11147.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, using a wrench to fix a glowing lime green (#ecf874) data pipe. Small golden pollen coins flow safely through the transparent pipe. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T18:24:04.397939+00:00"
+}

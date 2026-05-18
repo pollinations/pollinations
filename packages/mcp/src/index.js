@@ -78,7 +78,7 @@ All requests go through: https://gen.pollinations.ai
 - Models are fetched dynamically from the API - always up to date!
 - Use listImageModels/listTextModels to see available options
 - Image-to-image: Use the 'image' parameter with kontext or seedream models
-- Video generation: veo (4/6/8s, audio), seedance (2-10s, multi-image)
+- Video generation: use listImageModels for live videoCapabilities, including start/end-frame and audio support
 - Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
 - Audio transcription: Use transcribeAudio with gemini-large
 - Reasoning: Use kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large`;

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11149,
+  "title": "fix(registry): suppress polly empty-cost warnings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11149",
+  "merged_at": "2026-05-18T18:55:43Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Polly's registry entry had `cost: {}` (free community model by @Itachi-1824)\n- Every request triggered `[registry] Missing conversion rate: model=polly usageType=promptTextTokens ...` warnings in production logs\n- Replaced with explicit `perMillion(0)` for the two usage types Polly actually returns\n\n## Why this is benign\n\n- Behavior unchanged: still bills 0 (warnings already returned 0 for missing rates)\n- Just silences log noise; clarifies intent in the registry\n\n## Verification\n\nAfter the deploy from PR #11147, only `mistral` (fixed in PR #11148) and `polly` were emitting these warnings. Mistral was a genuine billing leak; polly is intentionally free.\n\n## Test plan\n- [ ] Merge to main, sync to production\n- [ ] Verify `[registry] Missing conversion rate: model=polly` warnings stop appearing in wrangler tail",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quiet in the hive",
+    "blurb": "Polly is a free community model, but our billing logs didn't get the memo. We've explicitly set her cost to zero to stop the warning spam.",
+    "summary": "Explicitly set the cost of the free community model 'polly' to zero in the registry to suppress missing conversion rate warnings in production logs.",
+    "impact": "Reduces log noise for developers without changing the model's free billing behavior.",
+    "keywords": [
+      "logs",
+      "billing",
+      "polly",
+      "registry",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee holding a '0' sign while the Nomnom creature eats noisy warning logs from a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a small sign with a zero on it, while the round tan Nomnom creature happily eats a stack of noisy warning logs. A retro terminal in the background glows with soft lime green (#ecf874). Soft pastel gradient background, chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-18/PR-11149.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a small sign with a zero on it, while the round tan Nomnom creature happily eats a stack of noisy warning logs. A retro terminal in the background glows with soft lime green (#ecf874). Soft pastel gradient background, chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-18T18:56:49.447752+00:00"
+}

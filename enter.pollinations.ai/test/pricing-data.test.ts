@@ -1,11 +1,11 @@
-import { expect, test } from "vitest";
 import {
     calculateCost,
     calculatePrice,
     getModelDefinition,
     getPriceDefinition,
-} from "../../shared/registry/registry.ts";
-import { getModelPrices } from "../src/client/components/models/data.ts";
+} from "@shared/registry/registry.ts";
+import { expect, test } from "vitest";
+import { getModelPrices } from "../frontend/src/components/models/data.ts";
 
 test("pricing data applies the per-model price multiplier uniformly", () => {
     const geminiFast = getModelPrices().find(

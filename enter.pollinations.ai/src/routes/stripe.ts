@@ -1,12 +1,12 @@
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import {
     describePollenPack,
     getPollenPack,
     isPollenPackAmount,
     POLLEN_PACKS,
-} from "@/pollen-packs.ts";
+} from "@enter-shared/pollen-packs.ts";
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient } from "../utils/stripe.ts";

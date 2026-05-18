@@ -5,7 +5,7 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 
 - **[API Authentication Guide](./API_AUTHENTICATION.md)** - How to use API keys for server-to-server requests
 - **[API Documentation](https://gen.pollinations.ai/docs)** - Interactive API reference
-- **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing 
+- **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing
 
 # Local development
 1. **SOPS key setup** (one-time): Copy age key to `~/Library/Application Support/sops/age/keys.txt` on macOS

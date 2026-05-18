@@ -1,10 +1,10 @@
-import { expect, test } from "vitest";
 import {
     describePollenPack,
     getPollenPack,
     isPollenPackAmount,
     POLLEN_PACKS,
-} from "@/pollen-packs.ts";
+} from "@enter-shared/pollen-packs.ts";
+import { expect, test } from "vitest";
 
 test("pollen pack catalog includes the stepped beta bonus ladder", () => {
     expect(POLLEN_PACKS.map((pack) => pack.amountUsd)).toEqual([

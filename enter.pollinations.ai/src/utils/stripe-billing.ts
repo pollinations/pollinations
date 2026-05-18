@@ -1,3 +1,4 @@
+import { getPollenPack, type PollenPack } from "@enter-shared/pollen-packs.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -7,7 +8,6 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
-import { getPollenPack, type PollenPack } from "@/pollen-packs.ts";
 import { createStripeClient } from "./stripe.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";

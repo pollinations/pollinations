@@ -9,6 +9,8 @@ import { configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
 
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
+const frontendSrc = fileURLToPath(new URL("./frontend/src/", import.meta.url));
+const enterSharedSrc = fileURLToPath(new URL("./shared/", import.meta.url));
 
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
@@ -26,6 +28,14 @@ export default defineWorkersConfig(async ({ mode }) => {
                 {
                     find: /^@shared\/(.*)$/,
                     replacement: `${sharedSrc}$1`,
+                },
+                {
+                    find: /^@frontend\/(.*)$/,
+                    replacement: `${frontendSrc}$1`,
+                },
+                {
+                    find: /^@enter-shared\/(.*)$/,
+                    replacement: `${enterSharedSrc}$1`,
                 },
             ],
         },

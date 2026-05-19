@@ -38,16 +38,16 @@ export const IMAGE_CONFIG = {
         minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
     },
 
-    // Legacy (hidden): real Seedream 4.0
+    // ByteDance Seedream 4.0 via Replicate
     seedream: {
-        type: "seedream",
+        type: "replicate-seedream",
         enhance: false,
         defaultSideLength: 1024,
     },
 
-    // Legacy (hidden): real Seedream 4.5 Pro
+    // ByteDance Seedream 4.5 Pro via Replicate
     "seedream-pro": {
-        type: "seedream-pro",
+        type: "replicate-seedream-pro",
         enhance: false,
         defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels

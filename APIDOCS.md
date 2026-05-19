@@ -2348,7 +2348,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 

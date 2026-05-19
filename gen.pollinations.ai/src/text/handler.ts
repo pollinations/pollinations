@@ -272,7 +272,7 @@ function throwTextError(error: ServiceError, c: TextContext): never {
               ? error.code
               : 500;
     const mappedStatus =
-        error.name === "ModelResolutionError" || status === 429
+        error.name === "ModelResolutionError"
             ? status
             : remapUpstreamStatus(status);
 

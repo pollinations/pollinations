@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { handleError, UpstreamError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
+import { handleChatCompletionLocal } from "@/text/handler.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -33,6 +34,26 @@ function createTestApp() {
             responseBody: "application/json",
         });
     });
+    app.onError(handleError);
+
+    return app;
+}
+
+function createTextHandlerApp() {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("model", {
+            requested: "openai-fast",
+            resolved: "openai-fast",
+        });
+        await next();
+    });
+    app.post("/v1/chat/completions", async (c) =>
+        handleChatCompletionLocal(c, await c.req.json()),
+    );
     app.onError(handleError);
 
     return app;
@@ -292,6 +313,83 @@ describe("error observability", () => {
             route_path: "/before-logger",
             status: 500,
             error_class: "Error",
+        });
+    });
+
+    it("remaps text provider rate limits to server errors while preserving upstream status", async () => {
+        const tinybirdRequests: Request[] = [];
+        const portkeyRequests: Request[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("tinybird.test")) {
+                    tinybirdRequests.push(request);
+                    return new Response("ok");
+                }
+
+                portkeyRequests.push(request);
+                return Response.json(
+                    { error: { message: "provider rate limited" } },
+                    { status: 429, statusText: "Too Many Requests" },
+                );
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTextHandlerApp().fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(portkeyRequests).toHaveLength(1);
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            status: 502,
+            success: false,
+            error: {
+                code: "BAD_GATEWAY",
+                details: {
+                    name: "UpstreamError",
+                    upstreamStatus: 429,
+                    upstreamBody:
+                        '{"error":{"message":"provider rate limited"}}',
+                },
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            status: 502,
+            error_code: "BAD_GATEWAY",
+            error_class: "UpstreamError",
+            upstream_status: 429,
+            model_requested: "openai-fast",
+            resolved_model_requested: "openai-fast",
         });
     });
 });

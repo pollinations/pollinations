@@ -71,7 +71,7 @@ Pollen credit per pack stays USD-anchored (5-pollen pack always grants 5+1 polle
 
 ## What's shipped ✅
 
-All on the working tree of `wip/country-routed-checkout` (no git commits yet — awaiting PR), deployed to **staging** as worker version `e4058bf0-b0fe-41d1-9883-86c2a4935fe9`.
+All on branch `feat/country-routed-checkout-phase-1` (draft PR #11172), deployed to **staging** as worker version `a7daa56d-98e0-417a-aee4-86196805f5a8`.
 
 ### Code
 
@@ -83,12 +83,12 @@ All on the working tree of `wip/country-routed-checkout` (no git commits yet —
 | [enter.pollinations.ai/src/routes/stripe.ts](enter.pollinations.ai/src/routes/stripe.ts) `/checkout/:packKey` | Reads `CF-IPCountry` → resolves cohort → picks currency/AP/PMC. USD cohort sends USD cents directly (no FX call). Non-USD cohorts call `getUsdToEurRate` once. Metadata snapshot includes `cohort` for downstream observability. |
 | [enter.pollinations.ai/wrangler.toml](enter.pollinations.ai/wrangler.toml) | 4 new env vars per non-prod section: `STRIPE_PMC_USD`, `STRIPE_PMC_BR`, `STRIPE_PMC_APAC_ALIPAY`, `STRIPE_PMC_EU_CORE` (sandbox values). Production env block untouched (awaits live PMCs). Dead `[env.dev]` block and orphan `STRIPE_BUY_POLLEN_PMC_ID` removed from non-prod sections. |
 
-### Tests (113/113 green)
+### Tests (118/118 green)
 
 | File | Coverage |
 |---|---|
 | [enter.pollinations.ai/test/currency-router.test.ts](enter.pollinations.ai/test/currency-router.test.ts) | 41 tests — every country in every cohort, MO regression, case-insensitivity, null/undefined defaults |
-| [enter.pollinations.ai/test/fx-cache.test.ts](enter.pollinations.ai/test/fx-cache.test.ts) | 8 tests — KV cache hit/miss, frankfurter success, network failure, non-2xx, malformed JSON, missing rate field, zero rate, corrupt cache value |
+| [enter.pollinations.ai/test/fx-cache.test.ts](enter.pollinations.ai/test/fx-cache.test.ts) | 11 tests — KV cache hit/miss, frankfurter success, network failure, non-2xx, malformed JSON, missing rate field, zero rate, corrupt cache value, KV read/write/both-fail non-fatal |
 | [enter.pollinations.ai/test/pollen-packs.test.ts](enter.pollinations.ai/test/pollen-packs.test.ts) | 5 tests — catalog integrity + `getPackEurCents` derivation |
 | [enter.pollinations.ai/test/integration/stripe.test.ts](enter.pollinations.ai/test/integration/stripe.test.ts) | 59 stripe tests including 4 new cohort cases (BR/EU_CORE/APAC_ALIPAY/MO-regression) verifying per-cohort currency, AP, PMC, metadata, FX-derived unit_amount |
 | [shared/test/mocks/frankfurter.ts](shared/test/mocks/frankfurter.ts) | New fetch mock for frankfurter.dev, returns configurable rate, registered in the project's mock infrastructure |
@@ -110,7 +110,7 @@ All on the working tree of `wip/country-routed-checkout` (no git commits yet —
 ### Architecture decisions made along the way
 
 - **D1 schema unchanged.** Earlier plan added 5 audit-trail columns to `stripe_checkout_credits` (pack_key / currency / amount / presentment_currency / presentment_amount). Dropped — nothing in the codebase reads them, and Tinybird `stripe_event` is the system of record for analytics. D1 migration 0026 was never committed.
-- **Tinybird `stripe_event` already has 10 of the columns we need** — shipped via #11158 (card_country, card_brand, card_network, risk_level, risk_score, presentment_currency, presentment_amount, payment_method_raw, payment_method_wallet, payment_methods_offered). One column remains to add: `cohort`.
+- **Tinybird `stripe_event` already has 10 of the columns we need** — shipped via #11158 (card_country, card_brand, card_network, risk_level, risk_score, presentment_currency, presentment_amount, payment_method_raw, payment_method_wallet, payment_methods_offered). The `cohort` column was added on staging as part of Stage B (deployment #8 promoted live).
 - **No D1 `cohort` column either.** Cohort lives in Stripe metadata + Tinybird only.
 - **No feature flag for per-cohort rollout.** The earlier plan called for `CHECKOUT_VARIANT_COHORTS` to ramp per cohort. We're shipping all four at once because (a) the worst case per cohort is "shows the same payment options as before but in a slightly different currency", (b) MO-regression is covered by a regression test, (c) the simpler deploy avoids state-machine confusion.
 
@@ -320,8 +320,8 @@ Buyers see their local currency on the pack picker (≈ R$25,80 for BR-cohort bu
 
 **2026-05-19** — Heavy rewrite reflecting actual implementation state.
 
-- Phase 1 backend code is complete and on staging (`e4058bf0-...`).
-- Cohort routing wired into `stripe.ts` via `currency-router.ts` + `fx-cache.ts`. 113 tests green.
+- Phase 1 backend code is complete and on staging (`a7daa56d-...`), draft PR #11172.
+- Cohort routing wired into `stripe.ts` via `currency-router.ts` + `fx-cache.ts`. 118 tests green.
 - 4 sandbox PMCs created and bound to non-prod envs. Production env left empty.
 - D1 schema unchanged — earlier `0026_phase1_eur_checkout_columns.sql` migration dropped (Tinybird-only audit trail).
 - Hand-set EUR price table replaced with live FX from frankfurter.dev.

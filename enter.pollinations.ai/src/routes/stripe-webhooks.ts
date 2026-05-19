@@ -579,6 +579,28 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_failed": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Async payment failed for session ${session.id}`);
+                const methodsOffered = (
+                    session.payment_method_types ?? []
+                ).join(",");
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: session.id,
+                        userId: session.metadata?.userId || "",
+                        amountCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        paymentStatus: session.payment_status || "unpaid",
+                        paymentMethod: "unknown",
+                        paymentMethodsOffered: methodsOffered,
+                        cohort: session.metadata?.cohort,
+                        customerEmail: session.customer_email || "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
                 break;
             }
 

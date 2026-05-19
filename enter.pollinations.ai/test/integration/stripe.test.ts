@@ -2875,3 +2875,43 @@ test("POST /api/webhooks/stripe forwards cohort from event metadata to Tinybird"
         card_country: "BR",
     });
 });
+
+test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird with cohort", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    // Delayed-payment methods (BR Pix, EU SEPA) surface failure via
+    // checkout.session.async_payment_failed. Cohort flows from
+    // session.metadata.cohort set at checkout-session-creation time.
+    const failedEvent = {
+        id: "evt_test_async_failed",
+        type: "checkout.session.async_payment_failed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_async_failed",
+                object: "checkout.session",
+                amount_total: 429,
+                currency: "eur",
+                payment_status: "unpaid",
+                payment_method_types: ["sepa_debit"],
+                metadata: { userId: "u_test", cohort: "EU_CORE" },
+                customer_email: "buyer@example.com",
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(failedEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_id: "evt_test_async_failed",
+        event_type: "checkout.session.async_payment_failed",
+        cohort: "EU_CORE",
+        currency: "eur",
+        payment_status: "unpaid",
+        payment_methods_offered: "sepa_debit",
+    });
+});

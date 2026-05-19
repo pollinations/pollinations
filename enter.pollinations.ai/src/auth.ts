@@ -95,6 +95,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),
+            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -271,4 +272,76 @@ function onAfterUserCreate(
             });
         }
     };
+}
+
+/**
+ * Parse a comma-separated list of numeric GitHub user IDs.
+ * Invalid entries are dropped silently.
+ */
+export function parseGithubIdList(raw: string | undefined | null): Set<number> {
+    if (!raw) return new Set();
+    const ids = new Set<number>();
+    for (const part of raw.split(",")) {
+        const n = Number.parseInt(part.trim(), 10);
+        if (Number.isFinite(n) && n > 0) ids.add(n);
+    }
+    return ids;
+}
+
+/**
+ * Restricts sign-in on the staging environment to an allowlist of GitHub
+ * user IDs (numeric, immutable — usernames are mutable and unsafe to gate on).
+ * No-op outside staging. Gated by `env.STAGING_ALLOWED_GITHUB_IDS`.
+ *
+ * Why: staging holds production provider keys but a sandbox Stripe; any
+ * signed-up user could mint a key and bill us real OpenAI/Google money. See
+ * issue #11137.
+ */
+function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    if (env.ENVIRONMENT !== "staging") {
+        return { id: "staging-access" };
+    }
+    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
+    const deny = () => {
+        throw new APIError("FORBIDDEN", {
+            message: "staging is invite-only",
+        });
+    };
+    return {
+        id: "staging-access",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    user: {
+                        create: {
+                            before: async (user: GenericUser) => {
+                                const ghId = (user as { githubId?: number })
+                                    .githubId;
+                                if (!ghId || !allowed.has(Number(ghId))) deny();
+                                return { data: user };
+                            },
+                        },
+                    },
+                    session: {
+                        create: {
+                            before: async (session: { userId: string }) => {
+                                const db = drizzle(env.DB);
+                                const [row] = await db
+                                    .select({ githubId: userTable.githubId })
+                                    .from(userTable)
+                                    .where(eq(userTable.id, session.userId))
+                                    .limit(1);
+                                if (
+                                    !row?.githubId ||
+                                    !allowed.has(Number(row.githubId))
+                                )
+                                    deny();
+                                return { data: session };
+                            },
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
 }

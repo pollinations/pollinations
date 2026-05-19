@@ -96,6 +96,7 @@ declare namespace Cloudflare {
         STRIPE_SUCCESS_URL: "https://staging.enter.pollinations.ai";
         STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
         STRIPE_BUY_POLLEN_PMC_ID: "pmc_1TUpoC6O03AauPe8gaFzZxyM";
+        STAGING_ALLOWED_GITHUB_IDS: string;
         BETTER_AUTH_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
@@ -224,6 +225,7 @@ declare namespace Cloudflare {
         STRIPE_BUY_POLLEN_PMC_ID:
             | "pmc_1TUpoC6O03AauPe8gaFzZxyM"
             | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
+        STAGING_ALLOWED_GITHUB_IDS?: string;
         POLLEN_REFILL_PER_HOUR?: 1;
         BETTER_AUTH_SECRET: string;
         GITHUB_CLIENT_ID: string;

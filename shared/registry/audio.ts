@@ -136,8 +136,7 @@ export const AUDIO_SERVICES = {
             // ElevenLabs Scale plan: Scribe batch $0.22/hour
             promptAudioSeconds: 0.22 / 3600,
         },
-        description:
-            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        description: "Scribe v2 - Speech to text (90+ languages, diarization)",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },

@@ -93,7 +93,6 @@ interface Seedream5Input {
     output_format: "png" | "jpeg";
     sequential_image_generation: "disabled";
     max_images: 1;
-    seed?: number;
 }
 
 export async function callSeedream5API(
@@ -139,6 +138,9 @@ export async function callSeedream5API(
         );
     }
 
+    // Replicate's bytedance/seedream-5-lite schema doesn't accept a `seed`
+    // field. Older code conditionally appended it; the upstream silently
+    // dropped it. Match the schema exactly to avoid future strict-mode breaks.
     const input: Seedream5Input = {
         prompt,
         size: resolveSeedream5Size(safeParams.width, safeParams.height),
@@ -151,9 +153,6 @@ export async function callSeedream5API(
         sequential_image_generation: "disabled",
         max_images: 1,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
-        input.seed = safeParams.seed;
-    }
 
     logOps("Seedream 5.0 input:", {
         ...input,

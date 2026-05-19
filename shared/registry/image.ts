@@ -122,10 +122,6 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
-        // Replicate cost is $0.06/img — 1.5× the prior BytePlus cost. Lock
-        // priceMultiplier to 1.0 so the user-facing price stays at the
-        // previous $0.06 ($0.04 × default 1.5×) instead of jumping to $0.09.
-        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.06, // per image
         },

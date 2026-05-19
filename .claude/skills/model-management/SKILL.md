@@ -114,6 +114,13 @@ source _local/.env
 
 > **There are no "free" vs "paid" keys.** A key is a key. The `paidOnly` gate checks the user's `packBalance` (purchased Pollen pack balance), not the key prefix. To exercise the gate, use a token whose **owning user has `packBalance == 0`** — typically a freshly minted key (signup grants free Pollen, no pack) or one whose pack has been depleted. Don't confuse "free Pollen remaining" (signup grant, doesn't unlock paidOnly) with "pack balance" (purchased, does unlock).
 
+> **`_local/.env` token labels are not guaranteed to match where they actually validate.** Before assuming a 401 means "wrong/expired token," verify the token against gen's local D1 — only keys seeded in *gen's* `apikey` table validate there (enter's D1 is a separate sqlite, not shared with gen in local). Quick lookup (no secrets printed):
+> ```bash
+> GEN_DB=gen.pollinations.ai/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
+> sqlite3 $GEN_DB "SELECT name, start, prefix FROM apikey;"
+> ```
+> Match each `POLLINATIONS_TOKEN_*` env var's first 6 chars against the `start` column — the env var named `_LOCAL` is not necessarily the one seeded locally. Pick whichever env var matches a row whose `name` looks like a local test key (e.g., `local-battle-test`, `local-e2e-test-key`).
+
 Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` via SOPS — never in `_local/.env`. See §11.
 
 ---
@@ -527,6 +534,25 @@ sops set gen.pollinations.ai/secrets/prod.vars.json '["KEY_NAME"]' '"value"'
 ```
 
 > Never put Pollinations test tokens (`POLLINATIONS_TOKEN_*`) or admin/operator tokens in SOPS — recipient list is too broad. SOPS is for provider/runtime keys only.
+
+### When decrypt-vars fails with "no identity matched any of the recipients"
+
+The convention on this team is to keep the Pollinations age private key in **macOS Keychain** under service name `sops-age-key` (account = your local `$USER`). If `~/.config/sops/age/keys.txt` exists but contains an unrelated key, decrypt fails with all `.sops.yaml` recipients listed as `FAILED`. Restore from keychain — don't ask the user to paste secrets:
+
+```bash
+SOPS_KEY=$(security find-generic-password -s "sops-age-key" -a "$USER" -w 2>/dev/null) \
+  || { echo "Not in keychain — ask the user where their age key lives"; exit 1; }
+for KF in ~/.config/sops/age/keys.txt ~/Library/Application\ Support/sops/age/keys.txt; do
+  mkdir -p "$(dirname "$KF")"
+  grep -qF "$SOPS_KEY" "$KF" 2>/dev/null || {
+    printf '\n# pollinations (restored from keychain svce=sops-age-key)\n%s\n' "$SOPS_KEY" >> "$KF"
+    chmod 600 "$KF"
+  }
+done
+sops --decrypt gen.pollinations.ai/secrets/dev.vars.json >/dev/null && echo "decrypt OK"
+```
+
+If `-a "$USER"` doesn't match, try without `-a` (`security find-generic-password -s "sops-age-key" -w`) and let keychain pick the only one. Recipients can rotate — read the current expected public keys from `.sops.yaml` rather than hard-coding them here.
 
 ## 11.2 Description style
 

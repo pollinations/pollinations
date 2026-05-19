@@ -261,7 +261,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.5),
             promptCachedTokens: perMillion(0.05),
-            promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
+            promptAudioTokens: perMillion(1.0),
             completionTextTokens: perMillion(3.0),
         },
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",

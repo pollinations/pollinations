@@ -117,13 +117,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "gemini": {
     "cost": {
       "completionTextTokens": 0.000003,
-      "promptAudioTokens": 5e-7,
+      "promptAudioTokens": 0.000001,
       "promptCachedTokens": 5e-8,
       "promptTextTokens": 5e-7,
     },
     "price": {
       "completionTextTokens": 0.0000045,
-      "promptAudioTokens": 7.5e-7,
+      "promptAudioTokens": 0.0000015,
       "promptCachedTokens": 7.5e-8,
       "promptTextTokens": 7.5e-7,
     },

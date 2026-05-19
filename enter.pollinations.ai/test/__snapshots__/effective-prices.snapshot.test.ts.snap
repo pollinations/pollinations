@@ -142,6 +142,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000018,
     },
   },
+  "gemini-3.5-flash": {
+    "cost": {
+      "completionTextTokens": 0.000009,
+      "promptAudioTokens": 0.0000015,
+      "promptCachedTokens": 1.5e-7,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000135,
+      "promptAudioTokens": 0.00000225,
+      "promptCachedTokens": 2.25e-7,
+      "promptTextTokens": 0.00000225,
+    },
+  },
   "gemini-fast": {
     "cost": {
       "completionTextTokens": 4e-7,

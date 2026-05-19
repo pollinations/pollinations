@@ -1,0 +1,1199 @@
+{
+  "added": {
+    "text": [
+      {
+        "name": "gpt-5.4-mini",
+        "aliases": [
+          "gpt-5-mini",
+          "openai-mini"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000075",
+          "promptCachedTokens": "0.000000075",
+          "completionTextTokens": "0.0000045"
+        },
+        "description": "GPT-5.4 Mini - Balanced Speed & Cost",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "context_length": 400000,
+        "is_specialized": false
+      },
+      {
+        "name": "mistral-4",
+        "aliases": [
+          "mistral-small-4",
+          "mistral-small-2603"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000015",
+          "promptCachedTokens": "0.00000015",
+          "completionTextTokens": "0.0000006"
+        },
+        "description": "Mistral Small 4 - Unified Reasoning & Multimodal",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "context_length": 262144,
+        "is_specialized": false
+      },
+      {
+        "name": "qwen-vision-pro",
+        "aliases": [
+          "qwen3-vl-pro",
+          "qwen3-vl-235b",
+          "qwen3-vl-235b-a22b-thinking",
+          "qwen-vl-pro"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000026",
+          "completionTextTokens": "0.0000026"
+        },
+        "description": "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 262144,
+        "is_specialized": false
+      }
+    ],
+    "image": [
+      {
+        "name": "seedream",
+        "aliases": [],
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.045"
+        },
+        "description": "Seedream 4.0 - Photorealistic image generation (legacy)",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "paid_only": true
+      },
+      {
+        "name": "seedream-pro",
+        "aliases": [],
+        "pricing": {
+          "currency": "pollen",
+          "completionImageTokens": "0.06"
+        },
+        "description": "Seedream 4.5 Pro - Premium photorealistic image generation (legacy)",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "image"
+        ],
+        "paid_only": true
+      }
+    ],
+    "audio": [
+      {
+        "name": "elevenflash",
+        "aliases": [
+          "tts-flash",
+          "eleven-flash",
+          "flash"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "completionAudioTokens": "0.0001245"
+        },
+        "description": "ElevenLabs Flash v2.5 - Fast, low-latency TTS (~75ms, 32 languages)",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "voices": [
+          "alloy",
+          "echo",
+          "fable",
+          "onyx",
+          "nova",
+          "shimmer",
+          "ash",
+          "ballad",
+          "coral",
+          "sage",
+          "verse",
+          "rachel",
+          "domi",
+          "bella",
+          "elli",
+          "charlotte",
+          "dorothy",
+          "sarah",
+          "emily",
+          "lily",
+          "matilda",
+          "adam",
+          "antoni",
+          "arnold",
+          "josh",
+          "sam",
+          "daniel",
+          "charlie",
+          "james",
+          "fin",
+          "callum",
+          "liam",
+          "george",
+          "brian",
+          "bill"
+        ],
+        "paid_only": true
+      }
+    ],
+    "embeddings": []
+  },
+  "removed": {
+    "text": [],
+    "image": [
+      {
+        "name": "seedance",
+        "aliases": [],
+        "pricing": {
+          "currency": "pollen",
+          "completionVideoTokens": "0.0000027"
+        },
+        "description": "Seedance Lite - BytePlus video generation (better quality)",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "video"
+        ],
+        "paid_only": true
+      }
+    ],
+    "audio": [],
+    "embeddings": []
+  },
+  "changed": {
+    "text": [
+      {
+        "before": {
+          "name": "openai",
+          "aliases": [
+            "gpt-5.4-nano",
+            "gpt-5-mini"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002",
+            "promptCachedTokens": "0.00000002",
+            "completionTextTokens": "0.00000125"
+          },
+          "description": "GPT-5.4 Nano - Fast & Balanced",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 400000,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "openai",
+          "aliases": [
+            "gpt-5.4-nano"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002",
+            "promptCachedTokens": "0.00000002",
+            "completionTextTokens": "0.00000125"
+          },
+          "description": "GPT-5.4 Nano - Fast & Balanced",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 400000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "mistral",
+          "aliases": [
+            "mistral-small",
+            "mistral-small-3.1",
+            "mistral-small-2503",
+            "mistral-small-3.2",
+            "mistral-small-3.2-24b-instruct-2506"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "completionTextTokens": "0.0000003"
+          },
+          "description": "Mistral Small 3.1 - Efficient & Cost-Effective",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 131072,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "mistral",
+          "aliases": [
+            "mistral-small",
+            "mistral-small-3.1",
+            "mistral-small-2503",
+            "mistral-small-3.2",
+            "mistral-small-3.2-24b-instruct-2506"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000075",
+            "promptCachedTokens": "0.000000075",
+            "completionTextTokens": "0.0000002"
+          },
+          "description": "Mistral Small 3.2 - Improved Instruction Following & Function Calling",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 128000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "openai-audio",
+          "aliases": [
+            "gpt-audio-mini",
+            "gpt-audio-mini-2025-12-15",
+            "gpt-4o-mini-audio-preview",
+            "gpt-4o-mini-audio-preview-2024-12-17"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "completionTextTokens": "0.0000024",
+            "promptAudioTokens": "0.00001",
+            "completionAudioTokens": "0.00002"
+          },
+          "description": "GPT Audio Mini - Voice Input & Output",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio"
+          ],
+          "output_modalities": [
+            "audio",
+            "text"
+          ],
+          "tools": true,
+          "context_length": 128000,
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan"
+          ],
+          "is_specialized": false
+        },
+        "after": {
+          "name": "openai-audio",
+          "aliases": [
+            "gpt-audio-mini",
+            "gpt-audio-mini-2025-12-15",
+            "gpt-4o-mini-audio-preview",
+            "gpt-4o-mini-audio-preview-2024-12-17"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "completionTextTokens": "0.0000024",
+            "promptAudioTokens": "0.00001",
+            "completionAudioTokens": "0.00002"
+          },
+          "description": "GPT Audio Mini - Voice Input & Output",
+          "input_modalities": [
+            "text",
+            "audio"
+          ],
+          "output_modalities": [
+            "audio",
+            "text"
+          ],
+          "tools": true,
+          "context_length": 128000,
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan"
+          ],
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "openai-audio-large",
+          "aliases": [
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-2025-12-15"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000025",
+            "completionTextTokens": "0.00001",
+            "promptAudioTokens": "0.00004",
+            "completionAudioTokens": "0.00008"
+          },
+          "description": "GPT Audio 1.5 - Premium Voice Input & Output",
+          "input_modalities": [
+            "text",
+            "image",
+            "audio"
+          ],
+          "output_modalities": [
+            "audio",
+            "text"
+          ],
+          "tools": true,
+          "context_length": 128000,
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan"
+          ],
+          "is_specialized": false
+        },
+        "after": {
+          "name": "openai-audio-large",
+          "aliases": [
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-2025-12-15"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000025",
+            "completionTextTokens": "0.00001",
+            "promptAudioTokens": "0.00004",
+            "completionAudioTokens": "0.00008"
+          },
+          "description": "GPT Audio 1.5 - Premium Voice Input & Output",
+          "input_modalities": [
+            "text",
+            "audio"
+          ],
+          "output_modalities": [
+            "audio",
+            "text"
+          ],
+          "tools": true,
+          "context_length": 128000,
+          "voices": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan"
+          ],
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "deepseek",
+          "aliases": [
+            "deepseek-v4",
+            "deepseek-v4-flash",
+            "deepseek-v4-lite",
+            "deepseek-lite",
+            "deepseek-flash"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000014",
+            "promptCachedTokens": "0.000000028",
+            "completionTextTokens": "0.00000028"
+          },
+          "description": "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true
+        },
+        "after": {
+          "name": "deepseek",
+          "aliases": [
+            "deepseek-v4",
+            "deepseek-v4-flash",
+            "deepseek-v4-lite",
+            "deepseek-lite",
+            "deepseek-flash"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000126",
+            "promptCachedTokens": "0.0000000252",
+            "completionTextTokens": "0.000000252"
+          },
+          "description": "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "perplexity-fast",
+          "aliases": [
+            "sonar"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000001"
+          },
+          "description": "Perplexity Sonar - Fast & Affordable with Web Search",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 127072,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "perplexity-fast",
+          "aliases": [
+            "sonar"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000001"
+          },
+          "description": "Perplexity Sonar - Fast & Affordable with Web Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 127072,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "perplexity-reasoning",
+          "aliases": [
+            "sonar-reasoning",
+            "sonar-reasoning-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "completionTextTokens": "0.000008"
+          },
+          "description": "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "reasoning": true,
+          "context_length": 128000,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "perplexity-reasoning",
+          "aliases": [
+            "sonar-reasoning",
+            "sonar-reasoning-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "completionTextTokens": "0.000008"
+          },
+          "description": "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "reasoning": true,
+          "context_length": 128000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "nova",
+          "aliases": [
+            "nova-2-lite",
+            "amazon-nova-2-lite",
+            "nova-2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000033",
+            "completionTextTokens": "0.00000275"
+          },
+          "description": "Nova 2 Lite - 1M Context with Reasoning",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "nova",
+          "aliases": [
+            "nova-2-lite",
+            "amazon-nova-2-lite",
+            "nova-2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000033",
+            "completionTextTokens": "0.00000275"
+          },
+          "description": "Nova 2 Lite - 1M Context with Reasoning",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "llama-scout",
+          "aliases": [
+            "llama-4-scout",
+            "llama-scout-17b",
+            "llama-4-scout-17b-16e-instruct"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000016",
+            "completionTextTokens": "0.00000064"
+          },
+          "description": "Meta Llama 4 Scout 17B 16E Instruct",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 10000000,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "llama-scout",
+          "aliases": [
+            "llama-4-scout",
+            "llama-scout-17b",
+            "llama-4-scout-17b-16e-instruct"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000008",
+            "completionTextTokens": "0.0000003"
+          },
+          "description": "Meta Llama 4 Scout - Open-source MoE for long context & retrieval",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 327680,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "qwen-vision",
+          "aliases": [
+            "qwen3-vl",
+            "qwen3-vl-30b-a3b-thinking",
+            "qwen3-vl-thinking",
+            "qwen3-vl-plus",
+            "qwen-vl"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000008",
+            "completionTextTokens": "0.0000006"
+          },
+          "description": "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (Fireworks)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "qwen-vision",
+          "aliases": [
+            "qwen3-vl",
+            "qwen3-vl-30b-a3b-instruct",
+            "qwen3-vl-instruct",
+            "qwen3-vl-plus",
+            "qwen-vl"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013",
+            "completionTextTokens": "0.00000052"
+          },
+          "description": "Qwen3 VL 30B A3B Instruct - Fast vision-language model",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": false,
+          "context_length": 131072,
+          "is_specialized": false
+        }
+      }
+    ],
+    "image": [
+      {
+        "before": {
+          "name": "veo",
+          "aliases": [
+            "veo-3.1-fast",
+            "video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.15"
+          },
+          "description": "Veo 3.1 Fast - Google's video generation model (preview)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "veo",
+          "aliases": [
+            "veo-3.1-fast",
+            "video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.15"
+          },
+          "description": "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame",
+            "end_frame",
+            "audio_output"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "seedance-pro",
+          "aliases": [],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoTokens": "0.0000015"
+          },
+          "description": "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "seedance-pro",
+          "aliases": [],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.0375"
+          },
+          "description": "Seedance Pro-Fast - Text/image-to-video (720p, better prompt adherence)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "seedance-2.0",
+          "aliases": [
+            "seedance-2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.27"
+          },
+          "description": "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video",
+            "audio"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "seedance-2.0",
+          "aliases": [
+            "seedance-2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.27"
+          },
+          "description": "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video",
+            "audio"
+          ],
+          "video_capabilities": [
+            "start_frame",
+            "end_frame",
+            "audio_output"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "wan",
+          "aliases": [
+            "wan2.6",
+            "wan-i2v"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.075",
+            "completionAudioSeconds": "0.075"
+          },
+          "description": "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "wan",
+          "aliases": [
+            "wan2.6",
+            "wan-i2v"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.075",
+            "completionAudioSeconds": "0.075"
+          },
+          "description": "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame",
+            "audio_output"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "wan-fast",
+          "aliases": [
+            "wan2.2",
+            "wan-2.2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.015",
+            "completionAudioSeconds": "0.015"
+          },
+          "description": "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "wan-fast",
+          "aliases": [
+            "wan2.2",
+            "wan-2.2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.015",
+            "completionAudioSeconds": "0.015"
+          },
+          "description": "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame",
+            "end_frame"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "grok-video-pro",
+          "aliases": [
+            "grok-imagine-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.075"
+          },
+          "description": "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "grok-video-pro",
+          "aliases": [
+            "grok-imagine-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.075"
+          },
+          "description": "Grok Video Pro - xAI official video generation (720p, 1-15s)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "ltx-2",
+          "aliases": [
+            "ltx2",
+            "ltx-2.3",
+            "ltxvideo",
+            "ltx-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.005"
+          },
+          "description": "LTX-2.3 - Fast text-to-video generation with upscaler",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "video"
+          ]
+        },
+        "after": {
+          "name": "ltx-2",
+          "aliases": [
+            "ltx2",
+            "ltx-2.3",
+            "ltxvideo",
+            "ltx-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.005"
+          },
+          "description": "LTX-2.3 - Fast text/image-to-video generation with upscaler",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame"
+          ]
+        }
+      },
+      {
+        "before": {
+          "name": "p-video",
+          "aliases": [
+            "pruna-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.036"
+          },
+          "description": "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "p-video",
+          "aliases": [
+            "pruna-video"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.036"
+          },
+          "description": "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "nova-reel",
+          "aliases": [
+            "amazon-nova-reel"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.08"
+          },
+          "description": "Nova Reel - Bedrock Video Generation (6-120s, 720p)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ]
+        },
+        "after": {
+          "name": "nova-reel",
+          "aliases": [
+            "amazon-nova-reel"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.08"
+          },
+          "description": "Nova Reel - Video Generation (6-120s, 720p)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ],
+          "video_capabilities": [
+            "start_frame"
+          ]
+        }
+      }
+    ],
+    "audio": [],
+    "embeddings": []
+  }
+}

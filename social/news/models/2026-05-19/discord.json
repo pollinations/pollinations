@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-05-19",
+  "previous_date": "2026-05-13",
+  "generated_at": "2026-05-19T13:49:49.569726+00:00",
+  "text": "<@&1424461167883194418> New models live on Pollinations this week. 🚀\n\n**Text**\n- `gpt-5.4-mini` (OpenAI)\n- `mistral-4` (Mistral)\n- `qwen-vision-pro` (Qwen) — includes reasoning support\n- `openai` — removed `gpt-5-mini` alias\n- `mistral` — updated to version 3.2, context length decreased to 128k\n- `openai-audio` — removed vision support\n- `openai-audio-large` — removed vision support\n- `deepseek` — no longer paid-only\n- `perplexity-fast` — added vision support\n- `perplexity-reasoning` — added vision support\n- `nova` — added vision support\n- `llama-scout` — added tool calling, context length decreased to 327k\n- `qwen-vision` — removed reasoning support, context length decreased to 131k\n\n**Image**\n- `seedream` — paid-only\n- `seedream-pro` — paid-only\n- `veo` — added video capabilities (start/end frame, audio output)\n- `seedance-pro` — added video capabilities (start frame)\n- `seedance-2.0` — added video capabilities (start/end frame, audio output)\n- `wan` — added video capabilities (start frame, audio output)\n- `wan-fast` — added video capabilities (start/end frame)\n- `grok-video-pro` — added video capabilities (start frame)\n- `ltx-2` — added vision support and video capabilities (start frame)\n- `p-video` — added video capabilities (start frame)\n- `nova-reel` — added video capabilities (start frame)\n\n**Audio**\n- `elevenflash` (ElevenLabs) — paid-only\n\n**Removed**\n- `seedance` (was: image)\n\nTry them via /v1/models or read the docs at https://gen.pollinations.ai/docs"
+}

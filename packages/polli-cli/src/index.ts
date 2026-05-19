@@ -12,7 +12,6 @@ import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
-import { flavor } from "./lib/quotes.js";
 
 const pkg = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
@@ -34,7 +33,7 @@ program
     .description(
         "The Pollinations CLI — for humans, AI agents, and everything in between",
     )
-    .version(`${pkg.version} — ${flavor.version}`)
+    .version(pkg.version)
     .option("--json", "Output as JSON")
     .option("--key <key>", "Override stored API key for this command")
     .addHelpText(

@@ -43,13 +43,16 @@ export const usageCommand = new Command("usage")
         "Show pollen balance (default), usage history, or daily summary",
     )
     .option("--limit <n>", "Number of records", "20")
-    .option("--history", "Show individual request history")
-    .option("--daily", "Show daily summary instead of individual requests")
+    .option("--history", "Show current-key request history")
+    .option(
+        "--account",
+        "With --history, show account-wide history instead of current-key history",
+    )
+    .option("--daily", "Show account-wide daily summary")
     .action(async (opts) => {
         const key = requireKey();
 
         try {
-            // Default: show balance (unless --history or --daily)
             if (!opts.history && !opts.daily) {
                 const data = await gen<BalanceResponse>("/account/balance", {
                     apiKey: key,
@@ -92,7 +95,9 @@ export const usageCommand = new Command("usage")
                 process.exit(1);
             }
             const data = await gen<UsageResponse>(
-                `/account/usage?limit=${limit}`,
+                opts.account
+                    ? `/account/usage?limit=${limit}`
+                    : `/account/key/usage?limit=${limit}`,
                 { apiKey: key },
             );
             printTable(

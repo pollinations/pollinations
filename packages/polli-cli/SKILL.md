@@ -126,8 +126,9 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 ### Check usage and balance
 ```bash
 polli usage              # current pollen balance
-polli usage --history    # recent individual requests
-polli usage --daily      # daily cost summary
+polli usage --history    # recent individual requests for the current key
+polli usage --history --account  # account-wide; needs account:usage
+polli usage --daily      # account-wide daily cost summary
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
 
@@ -138,7 +139,7 @@ polli keys info                                                    # details abo
 polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` grants account-wide access such as `profile` or `usage`. Scoped keys can always generate, read their own usage with `polli usage --history`, and read their own budget; account-wide usage needs `usage` and `polli usage --history --account`. `"keys"` is auto-stripped so scoped keys cannot mint more keys. To inspect a specific key, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`; `keys info` is only for the current key.
 
 ### Read API docs
 ```bash

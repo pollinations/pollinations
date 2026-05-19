@@ -11,24 +11,17 @@ import {
 } from "../lib/config.js";
 import {
     getOutputMode,
-    link,
     printError,
     printInfo,
     printResult,
     printSuccess,
 } from "../lib/output.js";
-import { flavor } from "../lib/quotes.js";
 
 const NEXT_STEPS = [
-    'polli image "a sunset over kyoto" -o sunset.png',
-    'polli text "summarize node http"',
-    "polli whoami",
+    'polli gen image "a sunset over kyoto" -o sunset.png',
+    "polli --help",
 ];
 
-/**
- * Print the post-login "Try:" hint with example commands. Human/TTY only —
- * skipped for piped output and JSON callers so machine consumers stay clean.
- */
 function printNextStepsHint(): void {
     if (getOutputMode() !== "human") return;
     if (!process.stderr.isTTY) return;
@@ -52,16 +45,6 @@ interface ProfileResponse {
 
 interface BalanceResponse {
     balance?: number;
-}
-
-interface KeyInfoResponse {
-    valid?: boolean;
-    type?: "publishable" | "secret";
-    pollenBudget?: number | null;
-    permissions?: {
-        models?: string[] | null;
-        account?: string[] | null;
-    };
 }
 
 interface DeviceCodeResponse {
@@ -150,7 +133,6 @@ async function authenticateWithKey(key: string): Promise<void> {
     } else {
         printInfo("Key stored but could not verify. It may still be valid.");
     }
-    printInfo(flavor.login);
     printNextStepsHint();
 }
 
@@ -212,22 +194,11 @@ const login = new Command("login")
         }
 
         const deviceResp = (await res.json()) as DeviceCodeResponse;
-        const url = deviceResp.verification_uri_complete;
 
-        // Two-block layout: URL first (the action the user needs to take),
-        // then the code framed as a verification check (the security
-        // purpose of device-flow codes — confirm the consent screen shows
-        // the same code you see here, mitigating phishing). Polling line
-        // gets its own block so it doesn't visually compete.
-        if (getOutputMode() === "human") {
-            const arrow = chalk.hex("#a78bfa")("➜");
-            process.stderr.write(
-                `  ${arrow} Open this URL to approve:\n    ${link(url)}\n\n`,
-            );
-            process.stderr.write(
-                `  ${arrow} Confirm the code matches:  ${chalk.bold(deviceResp.user_code)}\n\n`,
-            );
-        }
+        printInfo(`\nYour code: ${chalk.bold(deviceResp.user_code)}\n`);
+
+        const url = deviceResp.verification_uri_complete;
+        printInfo(`Open this URL in your browser:\n  ${url}`);
 
         if (opts.browser !== false) {
             const open = (await import("open")).default;
@@ -272,16 +243,13 @@ const login = new Command("login")
                 "Key stored. Could not fetch profile, but auth is complete.",
             );
         }
-        printInfo(flavor.login);
         printNextStepsHint();
     });
 
 const logout = new Command("logout")
     .description("Clear stored credentials")
     .action(() => {
-        // Capture the masked key before clearing so the user sees which
-        // identity they actually logged out of — handy when juggling
-        // multiple accounts via env-var key overrides or shared machines.
+        // Capture the masked key before clearing it.
         const previous = resolveApiKey();
         clearCredentials();
 
@@ -293,11 +261,9 @@ const logout = new Command("logout")
                 : "";
             process.stderr.write(`\n  ${arrow} Logged out${tail}\n`);
             process.stderr.write(`    Cleared ${path}\n\n`);
-            process.stderr.write(`  ${chalk.dim(flavor.logout)}\n\n`);
             return;
         }
         printSuccess("Logged out. Credentials cleared.");
-        printInfo(flavor.logout);
     });
 
 export async function showAuthStatus(): Promise<void> {
@@ -312,14 +278,13 @@ export async function showAuthStatus(): Promise<void> {
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
-    const [profile, balance, keyInfo] = await Promise.all([
+    const [profile, balance] = await Promise.all([
         gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
             () => null,
         ),
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
             () => null,
         ),
-        gen<KeyInfoResponse>("/account/key", { apiKey: key }).catch(() => null),
     ]);
 
     if (!profile) {
@@ -331,25 +296,11 @@ export async function showAuthStatus(): Promise<void> {
         return;
     }
 
-    // /account/balance is overloaded server-side: it returns the *key's*
-    // remaining budget when the key has one set (the device-flow CLI key
-    // gets a default budget on mint), and only falls through to the user's
-    // full account total when the key has no budget AND has the
-    // `account:usage` scope. Surfacing that as "pollen" without context
-    // misleads users — a fresh device-flow login shows e.g. 5 (the budget)
-    // instead of their actual tier balance. Inspect /account/key to know
-    // which value we're actually showing and label it honestly.
-    const hasBudget = keyInfo?.pollenBudget != null;
-    const pollenLabel = hasBudget ? "budget" : "pollen";
-
     printResult({
         authenticated: true,
         key: masked,
         name: profile.githubUsername ?? "unknown",
-        [pollenLabel]: balance?.balance ?? "unknown",
-        ...(hasBudget && {
-            note: "shown is this key's remaining budget — not your account-wide pollen total",
-        }),
+        pollen: balance?.balance ?? "unknown",
     });
 }
 

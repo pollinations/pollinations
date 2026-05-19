@@ -14,7 +14,7 @@ npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 
 Point your coding agent (Claude Code, Cursor, Windsurf, Codex) at the skill file and it gets the full usage map — flags, stdin conventions, `--json` output shape, error codes, the lot:
 
-> Read [SKILL.md](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md) and follow the instructions to generate media with the `polli` CLI.
+> Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
 
 The skill also ships inside the package: `node_modules/@pollinations_ai/cli/SKILL.md`.
 
@@ -44,7 +44,6 @@ echo "context" | polli gen text "question"
 
 polli gen image "cyberpunk city at night" --model flux --output city.png
 polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
-polli gen image "make it sunset" --image ./photo.jpg --model grok-imagine    # local files auto-uploaded
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
@@ -69,14 +68,26 @@ polli docs --open            # open in browser
 
 ## Account
 
+Two kinds of keys:
+
+- **Secret (`sk_`)** — backend use, full access. Default.
+- **Publishable (`pk_`)** — safe to ship in frontend code.
+
 ```bash
 polli keys list
-polli keys create --name mybot --budget 100
-polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback
+polli keys create --name mybot --budget 100                    # secret (default)
+polli keys create --name myapp --type publishable              # API publishable
+polli keys create --name myapp --type publishable \            # 3rd-party app key
+  --redirect-uri https://myapp.com/callback --earnings
 polli keys revoke <id>
+```
 
+Keys can't be edited — to change a name, budget, or model list, revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+
+```bash
 polli usage                  # pollen balance
-polli usage --history        # recent requests
+polli usage --history        # recent requests for the current key
+polli usage --history --account  # account-wide; needs account:usage
 polli usage --daily          # daily spend
 ```
 

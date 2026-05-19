@@ -23,6 +23,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptImageTokens: perMillion(0.45),

@@ -63,6 +63,7 @@ const baseParams: ImageParams = {
     model: "seedream",
     width: 1024,
     height: 1024,
+    dimensionsExplicit: false,
     seed: 42,
     enhance: false,
     negative_prompt: "",
@@ -309,5 +310,162 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
         expect(input.aspect_ratio).toBe("9:16");
+    });
+});
+
+describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
+    it("uses size:custom + width/height when dimensions are explicit (T2I)", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            width: 1792,
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamAPI(
+            "test prompt",
+            params,
+            asProgress(makeProgress()),
+            "req-custom-t2i",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.size).toBe("custom");
+        expect(input.width).toBe(1792);
+        expect(input.height).toBe(1024);
+        // aspect_ratio must NOT be sent when size is "custom" — Replicate
+        // ignores it in that mode and the discriminated union forbids both.
+        expect(input.aspect_ratio).toBeUndefined();
+    });
+
+    it("uses size:custom for one-sided dimensions (width-only, height defaulted)", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        // Simulates `?width=1536` — schema fills height with model default
+        // (1024) but dimensionsExplicit stays true because width was set.
+        const params: ImageParams = {
+            ...baseParams,
+            width: 1536,
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-custom-onesided",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.size).toBe("custom");
+        expect(input.width).toBe(1536);
+        expect(input.height).toBe(1024);
+    });
+
+    it("uses size:custom for I2I when dimensions are explicit", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            width: 1792,
+            height: 1024,
+            dimensionsExplicit: true,
+            image: ["https://example.com/ref.jpg"],
+        };
+        await callSeedreamAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-custom-i2i",
+        );
+
+        const post = requests.find((r) =>
+            r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
+        );
+        if (!post) throw new Error("Replicate POST not captured");
+        const input = (post.body as { input: Record<string, unknown> }).input;
+        expect(input.size).toBe("custom");
+        expect(input.width).toBe(1792);
+        expect(input.height).toBe(1024);
+    });
+
+    it("falls back to match_input_image for I2I without explicit dimensions", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            image: ["https://example.com/ref.jpg"],
+            // dimensionsExplicit defaults to false in baseParams
+        };
+        await callSeedreamAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-i2i-no-explicit",
+        );
+
+        const post = requests.find((r) =>
+            r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
+        );
+        if (!post) throw new Error("Replicate POST not captured");
+        const input = (post.body as { input: Record<string, unknown> }).input;
+        expect(input.size).not.toBe("custom");
+        expect(input.aspect_ratio).toBe("match_input_image");
+    });
+
+    it("rejects out-of-range custom dimensions with 400", async () => {
+        mockReplicateFetch([]);
+
+        const params: ImageParams = {
+            ...baseParams,
+            width: 800, // below 1024 minimum
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+
+        await expect(
+            callSeedreamAPI(
+                "test",
+                params,
+                asProgress(makeProgress()),
+                "req-custom-oob",
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("seedream-pro (4.5) ignores dimensionsExplicit — no custom mode", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream-pro",
+            width: 1792,
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamProAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-pro-no-custom",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        // 4.5's size enum is only ["2K","4K"] — must stay on preset path
+        // and derive aspect_ratio from the dimensions.
+        expect(input.size).not.toBe("custom");
+        expect(input.size).toBe("2K");
+        expect(input.aspect_ratio).toBe("16:9");
+        expect(input.width).toBeUndefined();
+        expect(input.height).toBeUndefined();
     });
 });

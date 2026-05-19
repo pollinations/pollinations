@@ -70,14 +70,33 @@ function deriveAspectRatioFromDimensions(
 type Seedream4Size = "1K" | "2K" | "4K";
 type Seedream45Size = "2K" | "4K";
 
-interface SeedreamReplicateInput {
+// seedream-4 (4.0) supports two payload shapes; 4.5 does NOT support custom.
+//   - preset: size: "1K"|"2K"|"4K" + aspect_ratio
+//   - custom: size: "custom" + width + height (both 1024-4096)
+// Replicate's schema explicitly says aspect_ratio is ignored when
+// size === "custom", so they're mutually exclusive at the type level.
+type SeedreamPresetInput = {
     prompt: string;
     size: Seedream4Size | Seedream45Size;
     aspect_ratio: SeedreamAspectRatio;
     image_input: string[];
     sequential_image_generation: "disabled";
     max_images: 1;
-}
+};
+type SeedreamCustomInput = {
+    prompt: string;
+    size: "custom";
+    width: number;
+    height: number;
+    image_input: string[];
+    sequential_image_generation: "disabled";
+    max_images: 1;
+};
+type SeedreamReplicateInput = SeedreamPresetInput | SeedreamCustomInput;
+
+// Verified against the live bytedance/seedream-4 schema.
+const SEEDREAM4_CUSTOM_MIN = 1024;
+const SEEDREAM4_CUSTOM_MAX = 4096;
 
 interface SeedreamVariantConfig {
     replicateModel: string;
@@ -88,6 +107,8 @@ interface SeedreamVariantConfig {
     maxReferenceImages: number;
     /** Pick the size bucket for a given longer-side pixel value. */
     resolveSize(longerSide: number): Seedream4Size | Seedream45Size;
+    /** Whether the upstream accepts size:"custom" + width/height. Only 4.0. */
+    supportsCustom: boolean;
 }
 
 const SEEDREAM_VARIANTS: Record<
@@ -104,6 +125,7 @@ const SEEDREAM_VARIANTS: Record<
             if (longerSide > 1024) return "2K";
             return "1K";
         },
+        supportsCustom: true,
     },
     "seedream-pro": {
         replicateModel: "bytedance/seedream-4.5",
@@ -113,6 +135,8 @@ const SEEDREAM_VARIANTS: Record<
         resolveSize(longerSide) {
             return longerSide > 2048 ? "4K" : "2K";
         },
+        // 4.5's size enum is ["2K", "4K"] only — verified against live schema.
+        supportsCustom: false,
     },
 };
 
@@ -158,6 +182,56 @@ function resolveAspectRatio(
     );
 }
 
+function buildPresetInput(
+    prompt: string,
+    safeParams: ImageParams,
+    imageInput: string[],
+    variant: SeedreamVariantConfig,
+): SeedreamPresetInput {
+    const longerSide = Math.max(safeParams.width ?? 0, safeParams.height ?? 0);
+    return {
+        prompt,
+        size: variant.resolveSize(longerSide),
+        aspect_ratio: resolveAspectRatio(
+            safeParams,
+            imageInput.length > 0,
+            variant.displayName,
+        ),
+        image_input: imageInput,
+        sequential_image_generation: "disabled",
+        max_images: 1,
+    };
+}
+
+function buildCustomInput(
+    prompt: string,
+    safeParams: ImageParams,
+    imageInput: string[],
+    variant: SeedreamVariantConfig,
+): SeedreamCustomInput {
+    const { width, height } = safeParams;
+    if (
+        width < SEEDREAM4_CUSTOM_MIN ||
+        width > SEEDREAM4_CUSTOM_MAX ||
+        height < SEEDREAM4_CUSTOM_MIN ||
+        height > SEEDREAM4_CUSTOM_MAX
+    ) {
+        throw new HttpError(
+            `${variant.displayName} custom dimensions must be between ${SEEDREAM4_CUSTOM_MIN}-${SEEDREAM4_CUSTOM_MAX}px on each side (received ${width}×${height}).`,
+            400,
+        );
+    }
+    return {
+        prompt,
+        size: "custom",
+        width,
+        height,
+        image_input: imageInput,
+        sequential_image_generation: "disabled",
+        max_images: 1,
+    };
+}
+
 async function callSeedreamReplicateAPI(
     variantKey: "seedream" | "seedream-pro",
     prompt: string,
@@ -201,21 +275,18 @@ async function callSeedreamReplicateAPI(
         );
     }
 
-    const longerSide = Math.max(safeParams.width ?? 0, safeParams.height ?? 0);
     // Replicate's bytedance/seedream-4 and 4.5 schemas don't accept a `seed`
     // field — 4.5 strict-rejects unknown fields, 4 silently drops them.
-    const input: SeedreamReplicateInput = {
-        prompt,
-        size: variant.resolveSize(longerSide),
-        aspect_ratio: resolveAspectRatio(
-            safeParams,
-            imageInput.length > 0,
-            variant.displayName,
-        ),
-        image_input: imageInput,
-        sequential_image_generation: "disabled",
-        max_images: 1,
-    };
+    //
+    // seedream-4 (4.0) supports a "custom" size mode that takes raw width and
+    // height instead of a preset+aspect_ratio pair. When the caller actually
+    // passed dimensions (OpenAI `size:"1792x1024"`, GET `?width=…&height=…`),
+    // use that mode so we produce exact pixels instead of rounding to the
+    // nearest preset. 4.5 has no custom mode, so it stays on the preset path.
+    const input: SeedreamReplicateInput =
+        variant.supportsCustom && safeParams.dimensionsExplicit
+            ? buildCustomInput(prompt, safeParams, imageInput, variant)
+            : buildPresetInput(prompt, safeParams, imageInput, variant);
 
     logOps(`${variant.displayName} input:`, {
         ...input,

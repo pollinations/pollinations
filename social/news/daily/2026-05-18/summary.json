@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-18",
+  "period_start": "2026-05-18",
+  "period_end": "2026-05-18",
+  "title": "Letting long-running jobs actually finish",
+  "summary": "A day of tuning the engine: removing artificial timeouts for long-running jobs and adding better validation for vision models.\n\nWe stripped out some artificial timeouts that were killing heavy requests prematurely. OpenAI and Portkey endpoints no longer have arbitrary 90s or 300s caps, and AssemblyAI audio transcriptions now get 240 seconds to finish instead of timing out at the 2-minute mark.\n\nIf you send an image to a text-only model, the API now immediately rejects it with a clear validation error. Better to fail fast locally than pass it upstream and let it fail in mysterious ways.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11113,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11132,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11139,
+      "date": "2026-05-18"
+    }
+  ],
+  "generated_at": "2026-05-19T07:08:41.874282+00:00"
+}

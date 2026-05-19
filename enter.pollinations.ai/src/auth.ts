@@ -1,7 +1,6 @@
 import {
     assertStagingAccess,
     createApiKeyPlugin,
-    parseGithubIdList,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
@@ -280,62 +279,20 @@ function onAfterUserCreate(
 }
 
 /**
- * Looks up a user's GitHub ID for the staging access gate.
+ * Restricts new signups on staging to an allowlist of GitHub user IDs
+ * (immutable, unlike usernames). No-op outside staging.
  *
- * Reads `user.github_id` first; if NULL (legacy rows from before the column
- * existed), falls back to the `account` table — the OAuth flow stores the
- * numeric GitHub ID as `account.account_id` when `provider_id = "github"`.
- * Mirrors the same fallback used by {@link onAfterSessionCreate}.
- */
-async function resolveGithubIdForUser(
-    env: Cloudflare.Env,
-    userId: string,
-): Promise<number | null> {
-    const db = drizzle(env.DB);
-    const [row] = await db
-        .select({ githubId: userTable.githubId })
-        .from(userTable)
-        .where(eq(userTable.id, userId))
-        .limit(1);
-    if (row?.githubId) return Number(row.githubId);
-    const [acct] = await db
-        .select({ accountId: accountTable.accountId })
-        .from(accountTable)
-        .where(
-            and(
-                eq(accountTable.userId, userId),
-                eq(accountTable.providerId, "github"),
-            ),
-        )
-        .limit(1);
-    const n = Number(acct?.accountId);
-    return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-/**
- * Restricts sign-in on the staging environment to an allowlist of GitHub
- * user IDs (numeric, immutable — usernames are mutable and unsafe to gate on).
- * No-op outside staging. Gated by `env.STAGING_ALLOWED_GITHUB_IDS`.
- *
- * Why: staging holds production provider keys but a sandbox Stripe; any
- * signed-up user could mint a key and bill us real OpenAI/Google money. See
- * issue #11137.
- *
- * This plugin guards the OAuth flow (signup + session creation). Request-time
- * guards for pre-existing sessions and API keys live in `shared/auth/api-key.ts`
- * and the per-service auth middleware.
+ * This is a thin UX layer only — it rejects disallowed users during OAuth
+ * before a `user` row is created, so /error shows "staging is invite-only"
+ * instead of a 403 after they think they're logged in. The actual security
+ * boundary is {@link assertStagingAccess} called per-request in
+ * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
+ * blocks spend on the production provider keys held by staging-gen. See #11137.
  */
 function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
     if (env.ENVIRONMENT !== "staging") {
         return { id: "staging-access" };
     }
-    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
-    const denyAsAPIError = (e: unknown) => {
-        if (e instanceof StagingAccessDeniedError) {
-            throw new APIError("FORBIDDEN", { message: e.message });
-        }
-        throw e;
-    };
     return {
         id: "staging-access",
         init: () => ({
@@ -344,32 +301,21 @@ function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                     user: {
                         create: {
                             before: async (user: GenericUser) => {
-                                const ghId = (user as { githubId?: number })
-                                    .githubId;
                                 try {
                                     assertStagingAccess(env, {
-                                        githubId: ghId,
+                                        githubId: (
+                                            user as { githubId?: number }
+                                        ).githubId,
                                     });
                                 } catch (e) {
-                                    denyAsAPIError(e);
+                                    if (e instanceof StagingAccessDeniedError) {
+                                        throw new APIError("FORBIDDEN", {
+                                            message: e.message,
+                                        });
+                                    }
+                                    throw e;
                                 }
                                 return { data: user };
-                            },
-                        },
-                    },
-                    session: {
-                        create: {
-                            before: async (session: { userId: string }) => {
-                                const ghId = await resolveGithubIdForUser(
-                                    env,
-                                    session.userId,
-                                );
-                                if (!ghId || !allowed.has(ghId)) {
-                                    throw new APIError("FORBIDDEN", {
-                                        message: "staging is invite-only",
-                                    });
-                                }
-                                return { data: session };
                             },
                         },
                     },

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-18",
+  "period_start": "2026-05-18",
+  "period_end": "2026-05-18",
+  "generated_at": "2026-05-19T07:08:41.874282+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Sometimes things just need time to brew. Sometimes you need to know immediately that it won't work.\n\nMerged 3 PRs today dealing with time:\n\n1. Letting long jobs finish: removed artificial fetch timeouts and bumped the AssemblyAI transcription timeout to 240s. Let the audio process.\n2. Failing fast: added validation for chat image model capabilities. If a model doesn't support vision, we tell you right away instead of making you wait for an error.\n\nPatience where it counts, speed where it matters.\n\nCode is open. PRs #11113, #11132, #11139.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #backend #buildinpublic #devlife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -2834,3 +2834,44 @@ test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-
     ).first<{ count: number }>();
     expect(after?.count).toBe(before?.count);
 });
+
+test("POST /api/webhooks/stripe forwards cohort from event metadata to Tinybird", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    // charge.metadata.cohort flows from the session's payment_intent_data.metadata
+    // set at checkout-session-creation time (see stripe.ts cohort routing).
+    const chargeEvent = {
+        id: "evt_test_cohort_forward",
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_test_cohort_forward",
+                object: "charge",
+                amount: 429,
+                currency: "eur",
+                status: "succeeded",
+                metadata: { userId: "u_test", cohort: "BR" },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: { brand: "visa", country: "BR", network: "visa" },
+                },
+                outcome: { risk_level: "normal", risk_score: 10 },
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(chargeEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_id: "evt_test_cohort_forward",
+        cohort: "BR",
+        currency: "eur",
+        card_country: "BR",
+    });
+});

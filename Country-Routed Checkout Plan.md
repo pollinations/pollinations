@@ -122,22 +122,22 @@ Ordered. Each step has an owner: 🤖 = Claude (CLI/API automation), 👤 = you 
 
 > **CRITICAL rule throughout:** any **live-mode** Stripe write or any **production** deploy/migration needs explicit per-action approval from you in the same conversation. "Go" said earlier does not carry over. Every live write or prod step gets a fresh, specific instruction.
 
-### Stage A — Webhook cohort observability fix (code, before PR)
+### Stage A — Webhook cohort observability fix ✅ done
 
-The webhook handler currently does **not** forward `session.metadata.cohort` to Tinybird `stripe_event`. Without this, we lose per-cohort analytics on the rollout. Small additive change:
+The webhook handler now forwards `session.metadata.cohort` (and the equivalent `charge.metadata.cohort` / `paymentIntent.metadata.cohort` / `refund.metadata.cohort`) to Tinybird `stripe_event` on all 7 emit paths.
 
-- [ ] 🤖 Add `cohort?: string` to the `StripeEventData` interface in `enter.pollinations.ai/src/routes/stripe-webhooks.ts`
-- [ ] 🤖 Update the JSON payload in `sendStripeEventToTinybird` to include `cohort: data.cohort ?? ""`
-- [ ] 🤖 At every webhook call site that has access to `session.metadata`, pass `cohort: session.metadata?.cohort` through
-- [ ] 🤖 Add an integration test asserting cohort is forwarded for `checkout.session.completed`
-- [ ] 🤖 Add `cohort` column to `enter.pollinations.ai/observability/datasources/stripe_event.datasource`: `\`cohort\` LowCardinality(String) \`json:$.cohort\` DEFAULT ''`
+- [x] 🤖 Added `cohort?: string` to `StripeEventData` in [enter.pollinations.ai/src/routes/stripe-webhooks.ts](enter.pollinations.ai/src/routes/stripe-webhooks.ts)
+- [x] 🤖 `sendStripeEventToTinybird` JSON payload includes `cohort: data.cohort ?? ""`
+- [x] 🤖 All 7 webhook call sites updated to pass cohort from the relevant event's metadata
+- [x] 🤖 Integration test `POST /api/webhooks/stripe forwards cohort from event metadata to Tinybird` asserts the field lands
+- [x] 🤖 Added `cohort LowCardinality(String) json:$.cohort DEFAULT ''` to [enter.pollinations.ai/observability/datasources/stripe_event.datasource](enter.pollinations.ai/observability/datasources/stripe_event.datasource)
 
-### Stage B — Tinybird staging deploy (additive, no destructive op)
+### Stage B — Tinybird staging deploy ✅ done
 
-- [ ] 🤖 `cd enter.pollinations.ai/observability && tb --cloud deploy --check --wait` against **staging** workspace (uses local `.tinyb.staging` admin token)
-- [ ] 🤖 Verify row-count tripwire: staging `stripe_event` has ≪ 1000 rows (vs prod's tens of thousands)
-- [ ] 🤖 `tb --cloud deploy --wait` against staging
-- [ ] 🤖 Verify new `cohort` column on staging via `tb --cloud sql 'DESCRIBE stripe_event'`
+- [x] 🤖 `tb --cloud deploy --check --wait` clean
+- [x] 🤖 Row-count tripwire confirmed staging (40 rows vs prod's ~40k)
+- [x] 🤖 `tb --cloud deploy --wait` → deployment #8 promoted
+- [x] 🤖 `DESCRIBE stripe_event` confirms `cohort` column live (23 columns total)
 
 ### Stage C — PR + review
 

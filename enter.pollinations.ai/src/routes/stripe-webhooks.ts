@@ -30,6 +30,7 @@ interface StripeEventData {
     cardNetwork?: string;
     riskLevel?: string;
     riskScore?: number;
+    cohort?: string;
     customerEmail: string;
     livemode: boolean;
     payload: Stripe.Event;
@@ -248,6 +249,7 @@ async function sendStripeEventToTinybird(
         card_network: data.cardNetwork ?? "",
         risk_level: data.riskLevel ?? "",
         risk_score: data.riskScore ?? 0,
+        cohort: data.cohort ?? "",
         customer_email: data.customerEmail,
         livemode: data.livemode ? 1 : 0,
         payload: JSON.stringify(data.payload),
@@ -451,6 +453,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         cardNetwork: snapshot.cardNetwork,
                         riskLevel: snapshot.riskLevel,
                         riskScore: snapshot.riskScore,
+                        cohort: charge.metadata?.cohort,
                         customerEmail:
                             charge.billing_details?.email ||
                             charge.receipt_email ||
@@ -499,6 +502,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                                     result.presentmentCurrency ?? "",
                                 presentmentAmount:
                                     result.presentmentAmount ?? 0,
+                                cohort: session.metadata.cohort,
                                 customerEmail: session.customer_email || "",
                                 livemode: event.livemode,
                                 payload: event,
@@ -555,6 +559,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             presentmentCurrency:
                                 result.presentmentCurrency ?? "",
                             presentmentAmount: result.presentmentAmount ?? 0,
+                            cohort: session.metadata.cohort,
                             customerEmail: session.customer_email || "",
                             livemode: event.livemode,
                             payload: event,
@@ -590,6 +595,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         currency: session.currency || "usd",
                         paymentStatus: "expired",
                         paymentMethod: "unknown",
+                        cohort: session.metadata?.cohort,
                         customerEmail: session.customer_email || "",
                         livemode: event.livemode,
                         payload: event,
@@ -636,6 +642,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             cardNetwork: snapshot.cardNetwork,
                             riskLevel: snapshot.riskLevel,
                             riskScore: snapshot.riskScore,
+                            cohort: paymentIntent.metadata?.cohort,
                             customerEmail:
                                 paymentIntent.receipt_email ||
                                 (
@@ -725,6 +732,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             cardNetwork: failedSnapshot.cardNetwork,
                             riskLevel: failedSnapshot.riskLevel,
                             riskScore: failedSnapshot.riskScore,
+                            cohort: paymentIntent.metadata?.cohort,
                             customerEmail: paymentIntent.receipt_email || "",
                             livemode: event.livemode,
                             payload: event,
@@ -752,6 +760,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         currency: refund.currency || "usd",
                         paymentStatus: refund.status || "unknown",
                         paymentMethod: "refund",
+                        cohort: refund.metadata?.cohort,
                         customerEmail: "",
                         livemode: event.livemode,
                         payload: event,

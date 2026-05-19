@@ -603,48 +603,51 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "payment_intent.succeeded": {
                 const paymentIntent = event.data.object as Stripe.PaymentIntent;
                 console.log(`Payment intent succeeded: ${paymentIntent.id}`);
-                // Analytics-only path (no D1 write, fully inside waitUntil) — the
-                // existing user-intelligence dashboards join checkout rows to this
-                // event for payment_method, so we still retrieve the charge here.
-                // The credit-grant path (checkout.session.completed) intentionally
-                // does NOT do this fetch.
-                const charge = await fetchChargeForPaymentIntent(
-                    stripe,
-                    paymentIntent.id,
-                );
-                const snapshot = snapshotFromCharge(charge);
                 const methodsOffered = (
                     paymentIntent.payment_method_types ?? []
                 ).join(",");
+                // Analytics-only path: the charge fetch + Tinybird send both
+                // happen inside waitUntil so the webhook ACK is not blocked
+                // by a Stripe RTT. Dashboards join checkout sessions to this
+                // event for the real payment_method. The credit-grant path
+                // (checkout.session.completed) intentionally does NOT do
+                // this fetch.
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: paymentIntent.id,
-                        userId: paymentIntent.metadata?.userId || "",
-                        amountCents: paymentIntent.amount || 0,
-                        currency: paymentIntent.currency || "usd",
-                        paymentStatus: paymentIntent.status || "succeeded",
-                        paymentMethod: snapshot.paymentMethod,
-                        paymentMethodRaw: snapshot.paymentMethodRaw,
-                        paymentMethodWallet: snapshot.paymentMethodWallet,
-                        paymentMethodsOffered: methodsOffered,
-                        cardCountry: snapshot.cardCountry,
-                        cardBrand: snapshot.cardBrand,
-                        cardNetwork: snapshot.cardNetwork,
-                        riskLevel: snapshot.riskLevel,
-                        riskScore: snapshot.riskScore,
-                        customerEmail:
-                            paymentIntent.receipt_email ||
-                            (
-                                paymentIntent as unknown as {
-                                    customer_email?: string;
-                                }
-                            ).customer_email ||
-                            "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    (async () => {
+                        const charge = await fetchChargeForPaymentIntent(
+                            stripe,
+                            paymentIntent.id,
+                        );
+                        const snapshot = snapshotFromCharge(charge);
+                        await sendStripeEventToTinybird(c.env, {
+                            eventType: event.type,
+                            eventId: event.id,
+                            sessionId: paymentIntent.id,
+                            userId: paymentIntent.metadata?.userId || "",
+                            amountCents: paymentIntent.amount || 0,
+                            currency: paymentIntent.currency || "usd",
+                            paymentStatus: paymentIntent.status || "succeeded",
+                            paymentMethod: snapshot.paymentMethod,
+                            paymentMethodRaw: snapshot.paymentMethodRaw,
+                            paymentMethodWallet: snapshot.paymentMethodWallet,
+                            paymentMethodsOffered: methodsOffered,
+                            cardCountry: snapshot.cardCountry,
+                            cardBrand: snapshot.cardBrand,
+                            cardNetwork: snapshot.cardNetwork,
+                            riskLevel: snapshot.riskLevel,
+                            riskScore: snapshot.riskScore,
+                            customerEmail:
+                                paymentIntent.receipt_email ||
+                                (
+                                    paymentIntent as unknown as {
+                                        customer_email?: string;
+                                    }
+                                ).customer_email ||
+                                "",
+                            livemode: event.livemode,
+                            payload: event,
+                        });
+                    })().catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
@@ -689,36 +692,44 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "payment_intent.payment_failed": {
                 const paymentIntent = event.data.object as Stripe.PaymentIntent;
                 console.log(`Payment intent failed: ${paymentIntent.id}`);
-                const failedCharge = await fetchChargeForPaymentIntent(
-                    stripe,
-                    paymentIntent.id,
-                );
-                const failedSnapshot = snapshotFromCharge(failedCharge);
                 const failedMethodsOffered = (
                     paymentIntent.payment_method_types ?? []
                 ).join(",");
+                // Analytics-only: same shape as payment_intent.succeeded.
+                // Stripe doesn't fire charge.succeeded on a failed payment, so
+                // we retrieve the failed Charge here to capture card_country
+                // and Radar fields for the decline. Fetch + send live inside
+                // waitUntil so the webhook ACK isn't blocked.
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: paymentIntent.id,
-                        userId: paymentIntent.metadata?.userId || "",
-                        amountCents: paymentIntent.amount || 0,
-                        currency: paymentIntent.currency || "usd",
-                        paymentStatus: "failed",
-                        paymentMethod: failedSnapshot.paymentMethod,
-                        paymentMethodRaw: failedSnapshot.paymentMethodRaw,
-                        paymentMethodWallet: failedSnapshot.paymentMethodWallet,
-                        paymentMethodsOffered: failedMethodsOffered,
-                        cardCountry: failedSnapshot.cardCountry,
-                        cardBrand: failedSnapshot.cardBrand,
-                        cardNetwork: failedSnapshot.cardNetwork,
-                        riskLevel: failedSnapshot.riskLevel,
-                        riskScore: failedSnapshot.riskScore,
-                        customerEmail: paymentIntent.receipt_email || "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    (async () => {
+                        const failedCharge = await fetchChargeForPaymentIntent(
+                            stripe,
+                            paymentIntent.id,
+                        );
+                        const failedSnapshot = snapshotFromCharge(failedCharge);
+                        await sendStripeEventToTinybird(c.env, {
+                            eventType: event.type,
+                            eventId: event.id,
+                            sessionId: paymentIntent.id,
+                            userId: paymentIntent.metadata?.userId || "",
+                            amountCents: paymentIntent.amount || 0,
+                            currency: paymentIntent.currency || "usd",
+                            paymentStatus: "failed",
+                            paymentMethod: failedSnapshot.paymentMethod,
+                            paymentMethodRaw: failedSnapshot.paymentMethodRaw,
+                            paymentMethodWallet:
+                                failedSnapshot.paymentMethodWallet,
+                            paymentMethodsOffered: failedMethodsOffered,
+                            cardCountry: failedSnapshot.cardCountry,
+                            cardBrand: failedSnapshot.cardBrand,
+                            cardNetwork: failedSnapshot.cardNetwork,
+                            riskLevel: failedSnapshot.riskLevel,
+                            riskScore: failedSnapshot.riskScore,
+                            customerEmail: paymentIntent.receipt_email || "",
+                            livemode: event.livemode,
+                            payload: event,
+                        });
+                    })().catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );

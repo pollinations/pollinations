@@ -163,6 +163,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         cost: {
             promptTextTokens: perMillion(0.075),
+            promptCachedTokens: perMillion(0.075),
             completionTextTokens: perMillion(0.2),
         },
         description:
@@ -182,6 +183,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         cost: {
             promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
         description: "Mistral Small 4 - Unified Reasoning & Multimodal",
@@ -879,7 +881,10 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2026-02-24").getTime(),
-        cost: {},
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
         description:
             "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
         inputModalities: ["text", "image"],

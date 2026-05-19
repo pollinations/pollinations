@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🧾 | Duwit | https://duwit-45a37.web.app/ | Duwit — Brief Description | en | business | web | @Ashraf-Swaidan | 159012421 | https://github.com/Ashraf-Swaidan/Duwit | |  | | 2026-04-21 | https://github.com/pollinations/pollinations/issues/10389 | 2026-05-19 |  |  |
 | 🤖 | J.aRVIS |  | JARVIS: Cifik Intelegents 🤖🦾 | en | bots | web | @cifik1-lgtm | 282762495 | https://github.com/cifik1-lgtm/J.aRVIS | ⭐1 |  | | 2026-05-17 | https://github.com/pollinations/pollinations/issues/11037 | 2026-05-17 |  |  |
 | 🧭 | ContentPilot | https://cp-frontend-alpha.vercel.app/ | ContentPilot Repupose. | en | writing | web | @meenaharsh5432-tech | 268175083 |  | |  | | 2026-04-09 | https://github.com/pollinations/pollinations/issues/10062 | 2026-05-17 |  |  |
 | 🖼️ | ZhenxiJS AI Image Editor (朕喜AI图片编辑器) | https://imgedit.zhenxijs.com/ | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | zh-CN | image | web | @TargetCenter | 45513458 |  | |  | | 2026-04-09 | https://github.com/pollinations/pollinations/issues/10085 | 2026-05-17 |  | 4 |

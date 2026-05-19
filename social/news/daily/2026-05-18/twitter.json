@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-18",
+  "period_start": "2026-05-18",
+  "period_end": "2026-05-18",
+  "generated_at": "2026-05-19T07:08:41.874282+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some fixes for how we handle time. removed artificial fetch timeouts and doubled audio transcription polling limits so long jobs actually finish. on the flip side: added strict validation for chat image models so bad vision requests fail immediately."
+}

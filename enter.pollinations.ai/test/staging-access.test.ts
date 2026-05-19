@@ -1,5 +1,9 @@
+import {
+    assertStagingAccess,
+    parseGithubIdList,
+    StagingAccessDeniedError,
+} from "@shared/auth/api-key.ts";
 import { describe, expect, it } from "vitest";
-import { parseGithubIdList } from "@/auth.ts";
 
 describe("parseGithubIdList", () => {
     it("parses a comma-separated list of numeric IDs", () => {
@@ -15,16 +19,111 @@ describe("parseGithubIdList", () => {
         expect(ids.has(5099901)).toBe(true);
     });
 
-    it("drops non-numeric and non-positive entries", () => {
+    it("drops non-numeric, empty, and non-positive entries", () => {
         const ids = parseGithubIdList("36901823,abc,,-1,0,5099901");
         expect(Array.from(ids).sort((a, b) => a - b)).toEqual([
             5099901, 36901823,
         ]);
     });
 
+    it("strictly drops mixed entries like '123abc' (not silently truncated)", () => {
+        const ids = parseGithubIdList("123abc,4567");
+        expect(ids.has(123)).toBe(false);
+        expect(ids.has(4567)).toBe(true);
+        expect(ids.size).toBe(1);
+    });
+
     it("returns an empty set for empty / null / undefined", () => {
         expect(parseGithubIdList("").size).toBe(0);
         expect(parseGithubIdList(null).size).toBe(0);
         expect(parseGithubIdList(undefined).size).toBe(0);
+    });
+});
+
+describe("assertStagingAccess", () => {
+    const allowlist = "36901823,5099901";
+
+    it("is a no-op outside staging, even with no allowlist", () => {
+        expect(() =>
+            assertStagingAccess(
+                { ENVIRONMENT: "production" },
+                { githubId: 99 },
+            ),
+        ).not.toThrow();
+        expect(() =>
+            assertStagingAccess({ ENVIRONMENT: "local" }, { githubId: null }),
+        ).not.toThrow();
+        expect(() =>
+            assertStagingAccess({ ENVIRONMENT: "dev" }, null),
+        ).not.toThrow();
+    });
+
+    it("allows users whose githubId is in the staging allowlist", () => {
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                },
+                { githubId: 36901823 },
+            ),
+        ).not.toThrow();
+    });
+
+    it("denies users whose githubId is not in the allowlist", () => {
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                },
+                { githubId: 99999 },
+            ),
+        ).toThrow(StagingAccessDeniedError);
+    });
+
+    it("denies users with missing or null githubId (fails closed)", () => {
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                },
+                { githubId: null },
+            ),
+        ).toThrow(StagingAccessDeniedError);
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                },
+                {},
+            ),
+        ).toThrow(StagingAccessDeniedError);
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                },
+                null,
+            ),
+        ).toThrow(StagingAccessDeniedError);
+    });
+
+    it("denies everyone when the allowlist is empty or missing on staging", () => {
+        expect(() =>
+            assertStagingAccess(
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_GITHUB_IDS: "" },
+                { githubId: 36901823 },
+            ),
+        ).toThrow(StagingAccessDeniedError);
+        expect(() =>
+            assertStagingAccess(
+                { ENVIRONMENT: "staging" },
+                { githubId: 36901823 },
+            ),
+        ).toThrow(StagingAccessDeniedError);
     });
 });

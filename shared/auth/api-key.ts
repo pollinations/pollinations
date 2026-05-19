@@ -30,12 +30,58 @@ export interface ApiKeyAuthResult {
 
 export interface ApiKeyAuthBindings {
     DB: D1Database;
+    ENVIRONMENT?: string;
+    STAGING_ALLOWED_GITHUB_IDS?: string;
 }
 
 export class BannedAccountError extends Error {
     constructor(message = "Account banned") {
         super(message);
         this.name = "BannedAccountError";
+    }
+}
+
+export class StagingAccessDeniedError extends Error {
+    constructor() {
+        super("staging is invite-only");
+        this.name = "StagingAccessDeniedError";
+    }
+}
+
+/**
+ * Parse a comma-separated list of numeric GitHub user IDs.
+ * Strict: only entries matching /^\d+$/ are kept (so "123abc" is dropped,
+ * not silently truncated to 123).
+ */
+export function parseGithubIdList(raw: string | undefined | null): Set<number> {
+    if (!raw) return new Set();
+    const ids = new Set<number>();
+    for (const part of raw.split(",")) {
+        const trimmed = part.trim();
+        if (!/^\d+$/.test(trimmed)) continue;
+        const n = Number(trimmed);
+        if (n > 0) ids.add(n);
+    }
+    return ids;
+}
+
+/**
+ * Throws StagingAccessDeniedError if the env is staging and the user's
+ * GitHub ID is not in STAGING_ALLOWED_GITHUB_IDS. No-op outside staging.
+ * Fails closed: a missing githubId or empty/missing allowlist denies access.
+ *
+ * Called at request-time (every API-key or session-cookie request) to defend
+ * against pre-existing sessions/keys that predate the lockdown. See #11137.
+ */
+export function assertStagingAccess(
+    env: { ENVIRONMENT?: string; STAGING_ALLOWED_GITHUB_IDS?: string },
+    user: { githubId?: number | null } | null | undefined,
+): void {
+    if (env.ENVIRONMENT !== "staging") return;
+    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
+    const ghId = user?.githubId;
+    if (!ghId || !allowed.has(Number(ghId))) {
+        throw new StagingAccessDeniedError();
     }
 }
 
@@ -193,6 +239,7 @@ export async function authenticateApiKeyRequest(opts: {
     if (userData) {
         assertNotBanned(userData);
     }
+    assertStagingAccess(opts.env, userData);
 
     return {
         user: userData ?? undefined,

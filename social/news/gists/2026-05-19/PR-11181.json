@@ -1,0 +1,35 @@
+{
+  "pr_number": 11181,
+  "title": "add gemini-3.5-flash via vertex",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11181",
+  "merged_at": "2026-05-19T20:43:32Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "New paid text model wired through the existing `createVertexGeminiConfig(\"global\")` helper. Same transform pipeline as `gemini` (3-flash): tool sanitizer + `code_execution` + JSON-strip + `v3-flash` thinking.\n\nPricing pulled from https://ai.google.dev/gemini-api/docs/pricing (global region): $1.50 / $9.00 / $0.15 in / out / cached per 1M tokens, audio-in mirrored to text-in rate per existing 3-flash precedent. `priceMultiplier: 1.5` applied. Verified end-to-end against local gen: Tinybird `generation_event` row shows `token_price_completion_text = 1.35e-5` and `total_price = total_cost * 1.5`. Reasoning tokens correctly fall back to the completion-text rate per `registry.ts:118`. Wrangler log clean of `[registry] Missing conversion rate`.\n\nTest matrix passed: basic, streaming, max_tokens edge, image input, tools, reasoning, all five 4xx error paths, 5-way burst. Prompt cache returned `cached_tokens=0` on the second call — matches existing `gemini` (3-flash) behaviour; Vertex Gemini context caching wants an explicit `cachedContent` resource, not implicit prefix. `promptCachedTokens` kept in the cost block so it bills correctly once that path is wired.\n\nAlso:\n- `pricing-data.test.ts`: guard test fails on any negative cost value across all four registries (catches placeholder pricing left behind).\n- model-management skill: added a `_local/.env` token-verification step (token names don't always match where they validate) and a SOPS keychain restore recipe for when `decrypt-vars` fails.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A flash of genius",
+    "blurb": "We've wired up Gemini 3.5 Flash to the text API. Faster, smarter, and ready for your prompts.",
+    "summary": "Added Google's gemini-3.5-flash model via Vertex AI to the text endpoint, supporting tool sanitization, code execution, and v3-flash thinking.",
+    "impact": "Developers can now access gemini-3.5-flash for fast, reasoning-capable completions, priced at $1.50/$9.00 per 1M input/output tokens before the standard multiplier.",
+    "keywords": [
+      "gemini",
+      "models",
+      "vertex",
+      "text-generation",
+      "api"
+    ],
+    "visual_concept": "Polly the bee interacting with a glowing gem (Gemini) and lightning/speed motifs (Flash) in a cozy server environment.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing cool retro speed goggles, holding a glowing blue gem that emits soft sparkles. A chunky retro terminal in the background displays fast-scrolling code. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11181.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing cool retro speed goggles, holding a glowing blue gem that emits soft sparkles. A chunky retro terminal in the background displays fast-scrolling code. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T20:44:40.638932+00:00"
+}

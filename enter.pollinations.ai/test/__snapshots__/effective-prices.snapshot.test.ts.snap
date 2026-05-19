@@ -818,10 +818,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "seedream-pro": {
     "cost": {
-      "completionImageTokens": 0.06,
+      "completionImageTokens": 0.04,
     },
     "price": {
-      "completionImageTokens": 0.09,
+      "completionImageTokens": 0.06,
     },
   },
   "seedream5": {

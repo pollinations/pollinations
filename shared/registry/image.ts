@@ -127,7 +127,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.06, // per image
+            completionImageTokens: 0.04, // per image
         },
         description:
             "Seedream 4.5 Pro - Premium photorealistic image generation",

@@ -54,6 +54,15 @@ port = 8788
 # Production routes
 [env.production]
 
+# Pin Worker isolate to EU (Frankfurt) so outbound fetch() egresses from a
+# stable, non-flagged IP pool. Mitigates Cloudflare anti-bot challenges from
+# CF-protected upstreams (e.g. api.elevenlabs.io) that flag traffic from
+# certain colos (notably RU/CIS).
+# https://developers.cloudflare.com/workers/configuration/smart-placement/
+[env.production.placement]
+mode = "smart"
+region = "aws:eu-central-1"
+
 [env.production.images]
 binding = "IMAGES"
 

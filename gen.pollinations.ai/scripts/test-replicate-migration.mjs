@@ -241,7 +241,6 @@ const tests = [
                     image_input: [],
                     sequential_image_generation: "disabled",
                     max_images: 1,
-                    seed: 7,
                 },
             });
             const url = Array.isArray(pred.output)
@@ -285,7 +284,6 @@ const tests = [
                     image_input: [],
                     sequential_image_generation: "disabled",
                     max_images: 1,
-                    seed: 11,
                 },
             });
             const url = Array.isArray(pred.output)

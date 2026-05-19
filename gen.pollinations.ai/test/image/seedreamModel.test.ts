@@ -266,4 +266,48 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
             .input;
         expect(input.aspect_ratio).toBe("match_input_image");
     });
+
+    it("derives aspect_ratio from width/height when not explicitly set", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        // 1792×1024 reaches us via OpenAI `size:"1792x1024"` with no
+        // aspectRatio — must NOT silently default to 1:1.
+        const params: ImageParams = {
+            ...baseParams,
+            width: 1792,
+            height: 1024,
+        };
+        await callSeedreamAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-aspect-derived-16x9",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.aspect_ratio).toBe("16:9");
+    });
+
+    it("derives portrait aspect ratio from tall dimensions", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            width: 720,
+            height: 1280,
+        };
+        await callSeedreamAPI(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-aspect-derived-9x16",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.aspect_ratio).toBe("9:16");
+    });
 });

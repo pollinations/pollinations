@@ -46,6 +46,33 @@ const SEEDREAM5_ASPECT_RATIOS = [
 ] as const;
 type Seedream5AspectRatio = (typeof SEEDREAM5_ASPECT_RATIOS)[number];
 
+// Numeric presets only — "match_input_image" can't be derived from dimensions.
+const SEEDREAM5_NUMERIC_RATIOS = SEEDREAM5_ASPECT_RATIOS.filter(
+    (r) => r !== "match_input_image",
+) as readonly Exclude<Seedream5AspectRatio, "match_input_image">[];
+
+// When clients pass width/height without aspectRatio (e.g. OpenAI's
+// `size: "1792x1024"` shape), pick the closest preset by log-space distance
+// so 1920×1080 → 16:9, 720×1280 → 9:16. Without this, the resolver would
+// silently default to "1:1" and produce square output.
+function deriveAspectRatioFromDimensions(
+    width: number,
+    height: number,
+): Exclude<Seedream5AspectRatio, "match_input_image"> {
+    const target = Math.log(width / height);
+    let best: Exclude<Seedream5AspectRatio, "match_input_image"> = "1:1";
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const ar of SEEDREAM5_NUMERIC_RATIOS) {
+        const [w, h] = ar.split(":").map(Number);
+        const dist = Math.abs(Math.log(w / h) - target);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = ar;
+        }
+    }
+    return best;
+}
+
 /**
  * Map our ImageParams.aspectRatio enum (16:9, 4:3, 1:1, 3:4, 9:16, 21:9, 9:21,
  * adaptive) to Replicate's enum. "9:21" has no direct match — closest visual
@@ -53,10 +80,20 @@ type Seedream5AspectRatio = (typeof SEEDREAM5_ASPECT_RATIOS)[number];
  * "match_input_image" so the user gets what they intend when passing an image.
  */
 function resolveSeedream5AspectRatio(
-    requested: ImageParams["aspectRatio"] | undefined,
+    safeParams: ImageParams,
     hasImage: boolean,
 ): Seedream5AspectRatio {
-    if (!requested) return hasImage ? "match_input_image" : "1:1";
+    const requested = safeParams.aspectRatio;
+    if (!requested) {
+        if (hasImage) return "match_input_image";
+        if (safeParams.width && safeParams.height) {
+            return deriveAspectRatioFromDimensions(
+                safeParams.width,
+                safeParams.height,
+            );
+        }
+        return "1:1";
+    }
     if (requested === "adaptive") return "match_input_image";
     if (requested === "9:21") {
         throw new HttpError(
@@ -144,10 +181,7 @@ export async function callSeedream5API(
     const input: Seedream5Input = {
         prompt,
         size: resolveSeedream5Size(safeParams.width, safeParams.height),
-        aspect_ratio: resolveSeedream5AspectRatio(
-            safeParams.aspectRatio,
-            hasImage,
-        ),
+        aspect_ratio: resolveSeedream5AspectRatio(safeParams, hasImage),
         image_input: imageInput,
         output_format: "png",
         sequential_image_generation: "disabled",

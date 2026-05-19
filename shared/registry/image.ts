@@ -14,6 +14,7 @@ export const IMAGE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.04, // per image
         },
@@ -90,6 +91,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -102,31 +104,33 @@ export const IMAGE_SERVICES = {
     "seedream": {
         aliases: [],
         modelId: "seedream",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.03, // per image
         },
-        description: "Seedream 4.0 - Photorealistic image generation (legacy)",
+        description: "Seedream 4.0 - Photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "seedream-pro": {
         aliases: [],
         modelId: "seedream-pro",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.04, // per image
         },
         description:
-            "Seedream 4.5 Pro - Premium photorealistic image generation (legacy)",
+            "Seedream 4.5 Pro - Premium photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -137,6 +141,7 @@ export const IMAGE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -154,6 +159,7 @@ export const IMAGE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
+        priceMultiplier: 1,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -193,6 +199,7 @@ export const IMAGE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.001, // per image
         },
@@ -207,6 +214,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.002, // per image
         },
@@ -238,6 +246,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
         // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
@@ -258,6 +267,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
         cost: {
@@ -276,6 +286,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
@@ -295,6 +306,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionVideoSeconds: 0.01, // per sec
@@ -329,6 +341,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.075, // per image
@@ -366,6 +379,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.02, // per image
@@ -381,6 +395,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.07, // per image
@@ -397,6 +412,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionVideoSeconds: 0.05, // per sec at 720p
@@ -414,6 +430,7 @@ export const IMAGE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
+        priceMultiplier: 1,
         alpha: true,
         cost: {
             completionImageTokens: 0.01,
@@ -429,6 +446,7 @@ export const IMAGE_SERVICES = {
         brand: "Lightricks",
         category: "video",
         addedDate: new Date("2026-02-06").getTime(),
+        priceMultiplier: 1,
         alpha: true,
         cost: {
             completionVideoSeconds: 0.005,
@@ -446,6 +464,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.005, // per image
@@ -461,6 +480,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.01, // per image
@@ -476,6 +496,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             // $0.12 per run / 5s default = $0.024/sec
@@ -510,6 +531,7 @@ export const IMAGE_SERVICES = {
         brand: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        priceMultiplier: 1,
         cost: {
             completionVideoSeconds: 0.08, // per sec
         },

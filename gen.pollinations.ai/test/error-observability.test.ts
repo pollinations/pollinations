@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -18,7 +19,8 @@ function createTestApp() {
 
     app.use("*", requestId());
     app.use("*", logger);
-    app.post("/v1/chat/completions", (c) => {
+    app.post("/v1/chat/completions", async (c) => {
+        await c.req.json();
         c.set("model", {
             requested: "openai",
             resolved: "openai",
@@ -54,7 +56,38 @@ describe("error observability", () => {
                 body: JSON.stringify({
                     model: "openai",
                     stream: true,
-                    messages: [{ role: "user", content: "test" }],
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "test" },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://example.com/a.png",
+                                    },
+                                },
+                                {
+                                    type: "input_audio",
+                                    input_audio: {
+                                        data: "abc",
+                                        format: "mp3",
+                                    },
+                                },
+                            ],
+                        },
+                        { role: "assistant", content: "hello" },
+                    ],
+                    tools: [
+                        {
+                            type: "function",
+                            function: { name: "lookup" },
+                        },
+                    ],
+                    tool_choice: "auto",
+                    response_format: { type: "json_object" },
+                    max_tokens: 256,
+                    temperature: 0.7,
                 }),
             }),
             {
@@ -90,7 +123,11 @@ describe("error observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             severity: "error",
             environment: "test",
@@ -104,6 +141,157 @@ describe("error observability", () => {
             upstream_body: "application/json",
             model_requested: "openai",
             resolved_model_requested: "openai",
+            request_inputs: expect.any(String),
+        });
+        expect(
+            JSON.parse(tinybirdPayload.request_inputs as string),
+        ).toMatchObject({
+            body: {
+                model: "openai",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "test" },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "https://example.com/a.png",
+                                },
+                            },
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    data: "abc",
+                                    format: "mp3",
+                                },
+                            },
+                        ],
+                    },
+                    { role: "assistant", content: "hello" },
+                ],
+                tools: [
+                    {
+                        type: "function",
+                        function: { name: "lookup" },
+                    },
+                ],
+                tool_choice: "auto",
+                response_format: { type: "json_object" },
+                max_tokens: 256,
+                temperature: 0.7,
+            },
+        });
+    });
+
+    it("does not mask 5xx errors when no route matched", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.notFound((c) => {
+            c.set("log", {
+                error: vi.fn(),
+                trace: vi.fn(),
+                warn: vi.fn(),
+            } as never);
+            return handleError(new HTTPException(500), c);
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/unmatched?x=1"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "INTERNAL_ERROR",
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            route_path: "/unmatched",
+            status: 500,
+            error_class: "Error",
+            request_inputs: JSON.stringify({ query: { x: "1" } }),
+        });
+    });
+
+    it("does not require logger middleware state for 5xx errors", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.get("/before-logger", () => {
+            throw new Error("pre-logger failure");
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/before-logger"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "INTERNAL_ERROR",
+                message: "pre-logger failure",
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            route_path: "/before-logger",
+            status: 500,
+            error_class: "Error",
         });
     });
 });

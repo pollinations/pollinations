@@ -62,13 +62,23 @@ function resolveParams(opts: {
     size?: string;
     quality?: string;
     seed?: number;
-}) {
-    const [width, height] = (opts.size || "1024x1024")
-        .split("x")
-        .map((s) => Number.parseInt(s, 10));
+}): {
+    width?: number;
+    height?: number;
+    quality: string;
+    seed: number;
+} {
+    // Width/height are only emitted when the caller actually passed `size`.
+    // Leaving them undefined lets the image-param schema fill model-specific
+    // defaults AND preserves the dimensionsExplicit signal seedream-4 needs.
+    const sizeDims = opts.size
+        ? opts.size.split("x").map((s) => Number.parseInt(s, 10))
+        : undefined;
+    const width = sizeDims?.[0];
+    const height = sizeDims?.[1];
     return {
-        width: width || 1024,
-        height: height || 1024,
+        ...(Number.isInteger(width) ? { width } : {}),
+        ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
         seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
     };
@@ -99,7 +109,14 @@ async function parseEditInput(c: Context): Promise<{
     const contentType = c.req.header("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
-        const formData = c.get("formData") || (await c.req.formData());
+        let formData: FormData;
+        try {
+            formData = c.get("formData") || (await c.req.formData());
+        } catch {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: "Invalid multipart form data",
+            });
+        }
         const prompt = formData.get("prompt") as string;
         if (!prompt)
             throw new UpstreamError(400 as ContentfulStatusCode, {

@@ -7,10 +7,14 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 1. Update `.env` and `secrets/env.json` (sops) with credentials
 2. Update config/handler with model routing
-3. Update registry with **pricing** and **provider**
-4. Run tests (see [Testing](#testing) below)
+3. **Verify input/output modalities against the live upstream** (see [Verifying modalities](#verifying-modalities) below) — don't copy from vendor docs alone
+4. **Check whether the upstream returns cached prompt tokens** (see [Cached prompt tokens](#cached-prompt-tokens) below) — if yes, the registry cost block MUST include `promptCachedTokens`
+5. Update registry with **pricing** (including `promptCachedTokens` when applicable), **provider**, **`addedDate`**, and **verified `inputModalities` / `outputModalities`**
+6. Run tests (see [Testing](#testing) below)
 
 > ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.
+
+> ⚠️ **`addedDate` is set once and NEVER updated.** It drives the NEW chip on the dashboard (7-day window). Use `new Date("YYYY-MM-DD").getTime()` with today's date. Do not touch it when changing pricing, endpoint, or provider later — only the cost array gets new entries.
 
 ---
 
@@ -36,6 +40,122 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 ---
 
+# Description Style
+
+Format: `<Model Name> - <what it does or what makes it distinct>`. Keep it under ~70 chars when possible.
+
+- Say what the model **does** or what makes it **different** (e.g. "Fast & affordable image generation", "Long-context MoE for retrieval", "Speech to text transcription"). Capability over branding.
+- **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "ByteDance ARK", "OpenAI's", "Google's", "Bedrock", etc. The `provider` and `brand` fields already carry that.
+- **No filler.** "X - Image Generation Model" tells the reader nothing they didn't already get from the model name. If you can't say something specific, say less ("FLUX.2 Klein 4B - Fast image generation and editing" beats "FLUX.2 Klein 4B - Advanced Model").
+
+---
+
+# Verifying modalities
+
+> ⚠️ **Always verify modalities empirically against the live upstream before writing `inputModalities` / `outputModalities`.** Vendor docs and marketing pages frequently disagree with what the actual API endpoint accepts (e.g. wrapper layers, region differences, deployment variants). A wrong modality breaks request-validation downstream and either rejects legitimate calls or wastes upstream subrequests on calls that will 4xx.
+
+## Meaning of `inputModalities`
+
+`inputModalities` reflects **what our chat path actually supports end-to-end through `gen.pollinations.ai/v1/chat/completions`** — not the raw upstream model's theoretical capabilities. Our chat path currently inlines `image_url` parts and forwards everything else as-is; some providers silently drop content types we don't transform (notably `video_url` and `input_audio` on Bedrock/Nova). Mark only what the request actually round-trips with real model attention.
+
+If you genuinely want to expose a new modality (e.g. video), implement the transform in `gen.pollinations.ai/src/text/transforms/`, verify end-to-end, then add it to `inputModalities`.
+
+Required for **every new model** and **every provider/endpoint change**.
+
+## Image input — quick test
+
+Use a 1×1 transparent PNG so the cost is near-zero, then check whether the upstream accepts or rejects:
+
+```bash
+TOKEN="sk_…"                                                                  # paid local key
+IMG="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+curl -s "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"model\":\"<NEW-MODEL>\",\"max_tokens\":20,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"What color is this pixel?\"},{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/png;base64,$IMG\"}}]}]}" \
+  --max-time 30 -w "\nHTTP_%{http_code}\n"
+```
+
+| Response | Verdict |
+|---|---|
+| 200 with a sensible answer ("Black", "Transparent", etc.) | **`"image"` is real** — include in `inputModalities` |
+| 200 but the model says "I cannot see images, I'm text-only" | **`"image"` is fake** — exclude. The model silently ignores instead of rejecting |
+| 400 / 404 / 502 with "does not support image_url" / "no endpoints found that support image input" / "not a multimodal model" | **`"image"` is fake** — exclude |
+
+## Audio / video / tools
+
+Same approach — send the minimal valid payload for the modality, look at upstream's actual behavior:
+
+- **audio input**: send a base64-encoded short audio clip in `input_audio` content part
+- **audio output**: request `modalities:["text","audio"]` with `audio:{voice,format}` — verify a non-empty audio payload comes back
+- **video input**: send a small `video_url` content part (Gemini)
+- **tools**: send a single-tool request that should trigger a tool_call — verify `finish_reason: "tool_calls"`
+- **reasoning**: prompt that requires reasoning — verify `usage.completion_tokens_details.reasoning_tokens > 0`
+
+## Wrapper models (claude → midijourney, etc.)
+
+For specialized wrappers (e.g. system-prompted personas), the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy when it exists.
+
+## Empirical-over-docs principle
+
+If vendor docs say one thing and the live upstream says another, **trust the upstream**. Common reasons for drift:
+- Region/deployment variants (Azure deploys some models without vision adapters)
+- Wrapper layers (some Bedrock/Portkey wrappers strip image content)
+- Preview vs. GA capability gaps
+- Provider-side model swaps where the model card is updated but the deployment isn't
+
+When the test result contradicts vendor docs, note both in the PR description.
+
+---
+
+# Cached prompt tokens
+
+> ⚠️ **If the upstream returns `prompt_tokens_details.cached_tokens > 0` for a model and the registry cost block does NOT include `promptCachedTokens`, every cached request will silently drop its tracking event** — no Tinybird row, no Pollen deduction. This is a real revenue + observability leak. (See `shared/registry/registry.ts` `convertUsage` — it now logs `[registry] Missing conversion rate: model=X usageType=promptCachedTokens` instead of throwing, but the line is still billed at 0.)
+
+## When to add `promptCachedTokens` to the cost block
+
+Whenever the upstream model can return `cached_tokens > 0` in its usage payload. This includes:
+
+- **OpenAI-family models** (gpt-*, openai-fast, openai-large, openai-audio, gpt-5-nano, etc.) — implicit caching ≥1024-token prefix
+- **OpenRouter-routed models** — passes through whatever upstream reports (Mistral, DeepSeek, Kimi, GLM, etc. all expose `cached_tokens`)
+- **Gemini family** — implicit caching on large prompts
+- **Kimi / Moonshot** — context caching with their own discount
+- **Anthropic Claude** when prompt-cache headers are set (we don't currently send them through our chat path, but they show up if a wrapper does)
+
+## How to verify
+
+After registering the model, send 2 chat completions with an **identical >1024-token prefix** and any short user message, ~2 seconds apart. Inspect `usage.prompt_tokens_details.cached_tokens` in the second response:
+
+```bash
+TOKEN="sk_…"
+SYSTEM=$(python3 -c 'print("The quick brown fox jumps over the lazy dog.\n" * 200)')  # ~2K tokens
+for i in 1 2; do
+  curl -s "https://gen.pollinations.ai/v1/chat/completions" \
+    -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+    -d "$(jq -n --arg s "$SYSTEM" --arg m "<NEW-MODEL>" '{model:$m,max_tokens:10,messages:[{role:"system",content:$s},{role:"user",content:"hi"}]}')" \
+    | jq '.usage.prompt_tokens_details.cached_tokens'
+  sleep 2
+done
+```
+
+| Result | Verdict |
+|---|---|
+| Second call shows `cached_tokens > 0` | **MUST add `promptCachedTokens` to the cost block** |
+| Both calls return `cached_tokens: 0` or the field is missing | No cache — `promptCachedTokens` not needed |
+
+Note: real-world traffic can sometimes trigger caching even when synthetic tests don't (e.g. unusual provider quirks). When in doubt, deploy and watch wrangler tail for `[registry] Missing conversion rate: model=<NAME> usageType=promptCachedTokens` warnings — that's the smoking gun.
+
+## What rate to use
+
+Use the **same rate as `promptTextTokens`** unless the provider explicitly documents a cache discount. Common patterns:
+
+- **OpenAI**: cached input is ~10% of normal input (e.g. gpt-5.4 = $0.25/M cached vs $2.50/M input → `perMillion(0.25)`)
+- **OpenRouter / passthrough providers**: no documented discount → use the prompt rate
+- **Anthropic Claude prompt cache**: complicated tiering — check the provider's docs before adding
+
+It's safer to overbill cached (charge same as prompt) than to drop the line (bill 0). Lower the rate later if you confirm a discount.
+
+---
+
 # Quick Actions
 
 | Action | `.env` | Config/Handler | Registry |
@@ -49,21 +169,97 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 ---
 
-# Testing
+# Testing — battle-test before merge
 
-After updating model files, run these tests from `enter.pollinations.ai/`:
+> **Mandatory.** Any time you add a new model OR change the endpoint/provider/modelId of an existing one, every test below MUST pass locally before opening a PR. Unit tests don't catch upstream behavior changes. Boot the worker and hit it.
+
+## 1. Boot the local gen worker
 
 ```bash
-# 1. Alias resolution (fast, no network) — verifies aliases map to service IDs
-npx vitest run test/aliases.test.ts
-
-# 2. Integration tests for the specific model (uses VCR snapshots)
-npx vitest run test/integration/text.test.ts --testNamePattern="<service-name> "
+cd gen.pollinations.ai
+npm run decrypt-vars         # if .dev.vars not yet decrypted
+npx vite build --mode=development
+npx wrangler dev --port 8788 --local --persist-to .wrangler/state --show-interactive-dev-session false
+# wait for: until curl -sf http://localhost:8788/v1/models -o /dev/null; do sleep 2; done
 ```
 
-**Notes:**
-- VCR snapshots are auto-recorded on first run if the EC2 text service is reachable
-- Run `npm run decrypt-vars` first if you haven't already
+Seed a paid local key (`scripts/seed-key.mjs` or equivalent) and export `SK=sk_…` for the requests below.
+
+## 2. Modality matrix — verify every capability the registry claims
+
+For each model, run every test that matches its declared `inputModalities` / `outputModalities` / `tools` / `reasoning`. **If a declared modality fails this test, fix the registry — don't fudge the test.** See [Verifying modalities](#verifying-modalities) for the rationale.
+
+| Capability | What to test |
+|---|---|
+| **text-only** | plain prompt → finish=stop, content present, usage.completion_tokens > 0 |
+| **image input** | `content: [{type:text}, {type:image_url, image_url:{url:…}}]` with a public image — answer should reference the image |
+| **multi-image** | 2+ `image_url` entries in one message — model should reason over both |
+| **tools** | request with `tools:[{type:function, function:{…}}]` and a prompt that triggers it → finish=tool_calls, valid JSON args |
+| **streaming** | `stream:true` → count SSE chunks, last `data:` line should have finish_reason set, `data: [DONE]` present |
+| **max_tokens edge** | `max_tokens:1` → finish=length (NOT 4xx; PR #10968 only triggers when `completion_tokens=0`) |
+| **reasoning** | for thinking models, verify `usage.completion_tokens_details.reasoning_tokens > 0` |
+| **audio in/out** | only if model declares `audio` modality — send/expect base64-encoded audio |
+
+Use a **public, hot-link-friendly image URL** (Wikipedia blocks hot-linking; pollinations.ai images work):
+```
+IMG="https://image.pollinations.ai/prompt/a%20cat?width=512&height=512&seed=1&nologo=true"
+```
+
+## 3. Error-path matrix — every malformed request MUST return 4xx, never opaque 5xx
+
+| Path | Expected |
+|---|---|
+| unreachable image URL (404 source) | 400 with provider error message |
+| malformed image URL ("not-a-url") | 400 |
+| out-of-range temperature (e.g. 99) | 400 "JSON body validation failed" |
+| invalid tool schema (parameters not an object) | 400 |
+| empty `messages: []` | 400 "Messages must be a non-empty array" |
+| oversized prompt (beyond contextLength) | 400 |
+
+If any returns 5xx, the model wiring is leaking an upstream error — fix the classification before merging.
+
+## 4. Burst test — scale to real production load
+
+Sample current peak load before deciding concurrency:
+```bash
+TINYBIRD_TOKEN="..."  # public read token from apps/model-monitor/src/hooks/useModelMonitor.js
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN&window_minutes=60" \
+  | jq '.data[] | select(.model=="<model-name>") | {requests, errors_5xx, latency_p95_ms}'
+```
+
+Pick concurrency that matches or moderately exceeds observed peak per minute. For low-volume new models, default `n=5,15,30`. **You should TRY to touch the limit** so you know where it is — but document any 429s in the PR rather than letting them hide.
+
+```bash
+# Cache-bust each request — the local worker has a TEXT-CACHE that returns
+# in <100ms and will hide real upstream latency otherwise.
+for n in 5 15 30; do
+  for i in $(seq 1 $n); do
+    NONCE="$(uuidgen)-$i"
+    (curl -s -o /tmp/burst-$i.body \
+      -w "$i %{http_code} %{time_total}\n" \
+      --max-time 90 http://localhost:8788/v1/chat/completions \
+      -H "Authorization: Bearer $SK" -H "Content-Type: application/json" \
+      -d "{\"model\":\"<model>\",\"messages\":[{\"role\":\"user\",\"content\":\"echo: $NONCE\"}],\"max_tokens\":80}") &
+  done
+  wait
+done
+```
+
+**Acceptance gates:**
+- **0 5xx** at the chosen concurrency. If any 5xx, investigate before merging.
+- **No unexpected 429s.** A 429 only at very high n (well past production peak) is acceptable but document it.
+- **p95 latency** in line with the model class — text <5s, vision <15s, thinking <60s. Anything slower is a concern.
+- **Timeouts at exactly the worker `DEFAULT_UPSTREAM_TIMEOUT_MS` (90s)** are usually genuine upstream slowness on novel prompts (especially thinking models), not infra problems. Note the rate.
+
+## 5. Snapshot tests (after the live battle-test passes)
+
+Run from `enter.pollinations.ai/`:
+```bash
+npx vitest run test/aliases.test.ts                                                    # alias resolution
+npx vitest run test/integration/text.test.ts --testNamePattern="<service-name> "       # VCR snapshots
+```
+
+VCR snapshots are auto-recorded on first run when the upstream is reachable. Run `npm run decrypt-vars` first if needed.
 
 ---
 

@@ -2,7 +2,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { UpstreamError } from "@/error.ts";
+import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
 import {
     countFluxJobs,
     getRegisteredServers,
@@ -46,7 +46,6 @@ const IMAGE_ENV_KEYS = [
     "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    "BYTEDANCE_API_KEY",
     "DASHSCOPE_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
@@ -180,12 +179,13 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
 function throwImageError(error: unknown, c: ImageContext): never {
     if (error instanceof UpstreamError) throw error;
     if (error instanceof HttpError) {
-        throw new UpstreamError(error.status as ContentfulStatusCode, {
-            message: error.message,
+        const { status, message } = classifyImageHttpError(error);
+        throw new UpstreamError(status, {
+            message,
             requestUrl:
                 safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
             upstreamStatus: error.status,
-            responseBody: JSON.stringify(error.details || {}),
+            responseBody: imageResponseBody(error),
             cause: error,
         });
     }
@@ -195,6 +195,136 @@ function throwImageError(error: unknown, c: ImageContext): never {
         requestUrl: new URL(c.req.url),
         cause: error,
     });
+}
+
+type ParsedUpstreamBody = {
+    kind: "validation" | "message" | "none";
+    text: string | null;
+};
+
+/**
+ * Build the responseBody to thread through UpstreamError so clients see a real
+ * error message instead of `"{}"`. Prefer the upstream provider's raw body
+ * (already in details.body), then the HttpError message, then a JSON-encoded
+ * details bag as last resort.
+ */
+function imageResponseBody(error: HttpError): string {
+    const detailsBody = error.details?.body;
+    if (typeof detailsBody === "string" && detailsBody.length > 0) {
+        return detailsBody;
+    }
+    if (error.message) {
+        return JSON.stringify({ message: error.message });
+    }
+    return JSON.stringify(error.details || {});
+}
+
+function classifyImageHttpError(error: HttpError): {
+    status: ContentfulStatusCode;
+    message: string;
+} {
+    const parsed = parseUpstreamErrorBody(error);
+    const isValidation =
+        error.status === 422 ||
+        (error.status === 400 &&
+            (error.details?.validation === true ||
+                parsed.kind === "validation"));
+
+    if (isValidation) {
+        const text = parsed.text || error.message;
+        return {
+            status: 400,
+            message: text
+                ? `Invalid image request: ${text}`
+                : "Invalid image request",
+        };
+    }
+
+    if (error.status === 413) {
+        return {
+            status: remapUpstreamStatus(error.status),
+            message: "Image request payload is too large",
+        };
+    }
+
+    if (error.status >= 400 && error.status < 500) {
+        const text = parsed.text || error.message;
+        return {
+            status: remapUpstreamStatus(error.status),
+            message: text
+                ? `Image provider error: ${text}`
+                : "Image provider error",
+        };
+    }
+
+    return {
+        status: remapUpstreamStatus(error.status),
+        message: error.message,
+    };
+}
+
+function parseUpstreamErrorBody(error: HttpError): ParsedUpstreamBody {
+    const body =
+        typeof error.details?.body === "string" ? error.details.body : "";
+    if (!body) return { kind: "none", text: null };
+
+    let parsed: {
+        detail?:
+            | string
+            | Array<{
+                  loc?: unknown[];
+                  msg?: string;
+                  ctx?: Record<string, unknown>;
+              }>;
+        message?: string;
+        error?: string | { message?: string };
+    };
+    try {
+        parsed = JSON.parse(body);
+    } catch {
+        return { kind: "none", text: null };
+    }
+
+    if (Array.isArray(parsed.detail) && parsed.detail.length > 0) {
+        const text = parsed.detail
+            .map(formatImageValidationDetail)
+            .filter((m): m is string => Boolean(m))
+            .join("; ");
+        return { kind: "validation", text: text || null };
+    }
+    if (typeof parsed.detail === "string") {
+        return { kind: "validation", text: parsed.detail };
+    }
+    if (typeof parsed.message === "string") {
+        return { kind: "message", text: parsed.message };
+    }
+    if (typeof parsed.error === "string") {
+        return { kind: "message", text: parsed.error };
+    }
+    if (typeof parsed.error?.message === "string") {
+        return { kind: "message", text: parsed.error.message };
+    }
+    return { kind: "none", text: null };
+}
+
+function formatImageValidationDetail(detail: {
+    loc?: unknown[];
+    msg?: string;
+    ctx?: Record<string, unknown>;
+}): string | null {
+    const field = detail.loc
+        ?.filter((part) => part !== "body")
+        .map(String)
+        .join(".");
+    if (!detail.msg) return field || null;
+    const ctx = detail.ctx || {};
+    if (field && ctx.ge !== undefined) {
+        return `${field} must be at least ${ctx.ge}`;
+    }
+    if (field && ctx.le !== undefined) {
+        return `${field} must be at most ${ctx.le}`;
+    }
+    return field ? `${field}: ${detail.msg}` : detail.msg;
 }
 
 function assertNonEmptyMedia(buffer: Buffer, label: string): void {

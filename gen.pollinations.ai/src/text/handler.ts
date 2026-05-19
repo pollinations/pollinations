@@ -168,7 +168,7 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
         return new Response(base64ToArrayBuffer(audio.data), { headers });
     }
 
-    if (message.content) {
+    if (message.content !== undefined && message.content !== null) {
         let content = String(message.content);
         if (completion.citations?.length) {
             content += "\n\n---\nSources:\n";

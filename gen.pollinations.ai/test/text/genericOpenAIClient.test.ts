@@ -8,13 +8,12 @@ afterEach(() => {
 describe("genericOpenAIClient", () => {
     it("does not send internal gateway options in the upstream JSON body", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
-        let upstreamSignal: AbortSignal | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
+                expect(init?.signal).toBeUndefined();
                 upstreamBody = JSON.parse(String(init?.body));
-                upstreamSignal = init?.signal as AbortSignal;
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
@@ -73,7 +72,6 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
         expect(upstreamBody).not.toHaveProperty("userInfo");
-        expect(upstreamSignal).toBeInstanceOf(AbortSignal);
     });
 
     it("drops invalid optional message names before sending upstream", async () => {
@@ -221,6 +219,36 @@ describe("genericOpenAIClient", () => {
                 { endpoint: "https://portkey.test/chat" },
             ),
         ).rejects.toMatchObject({ status: 429 });
+    });
+
+    it("passes through successful empty completions", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "content_filter",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "blocked prompt" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]).toMatchObject({
+            message: { role: "assistant", content: "" },
+            finish_reason: "content_filter",
+        });
+        expect(completion.usage?.completion_tokens).toBe(0);
     });
 
     it("appends a DONE event when an upstream SSE stream omits it", async () => {

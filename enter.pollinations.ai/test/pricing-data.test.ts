@@ -2,12 +2,12 @@ import { expect, test } from "vitest";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
 } from "../../shared/registry/registry.ts";
 import { getModelPrices } from "../src/client/components/models/data.ts";
 
-test("pricing data uses explicit public price when a model defines one", () => {
+test("pricing data applies the per-model price multiplier uniformly", () => {
     const geminiFast = getModelPrices().find(
         (price) => price.name === "gemini-fast",
     );
@@ -15,10 +15,10 @@ test("pricing data uses explicit public price when a model defines one", () => {
     expect(geminiFast).toMatchObject({
         name: "gemini-fast",
         type: "text",
-        promptTextPrice: "0.3",
-        promptCachedPrice: "0.03",
-        promptAudioPrice: "0.3",
-        completionTextPrice: "1.2",
+        promptTextPrice: "0.15",
+        promptCachedPrice: "0.015",
+        promptAudioPrice: "0.45",
+        completionTextPrice: "0.6",
     });
 });
 
@@ -93,7 +93,7 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
 
     for (const model of ["grok", "grok-large"] as const) {
         const definition = getModelDefinition(model);
-        const priceDefinition = getActivePriceDefinition(model);
+        const priceDefinition = getPriceDefinition(model);
         const usage = model === "grok-large" ? reasoningUsage : inputUsage;
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);

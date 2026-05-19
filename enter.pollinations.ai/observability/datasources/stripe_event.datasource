@@ -14,6 +14,16 @@ SCHEMA >
 `currency` LowCardinality(String) `json:$.currency` DEFAULT '',
 `payment_status` LowCardinality(String) `json:$.payment_status` DEFAULT '',
 `payment_method` LowCardinality(String) `json:$.payment_method` DEFAULT '',
+`payment_method_raw` LowCardinality(String) `json:$.payment_method_raw` DEFAULT '',
+`payment_method_wallet` LowCardinality(String) `json:$.payment_method_wallet` DEFAULT '',
+`payment_methods_offered` String `json:$.payment_methods_offered` DEFAULT '',
+`presentment_currency` LowCardinality(String) `json:$.presentment_currency` DEFAULT '',
+`presentment_amount` UInt64 `json:$.presentment_amount` DEFAULT 0,
+`card_country` LowCardinality(String) `json:$.card_country` DEFAULT '',
+`card_brand` LowCardinality(String) `json:$.card_brand` DEFAULT '',
+`card_network` LowCardinality(String) `json:$.card_network` DEFAULT '',
+`risk_level` LowCardinality(String) `json:$.risk_level` DEFAULT '',
+`risk_score` UInt16 `json:$.risk_score` DEFAULT 0,
 `customer_email` String `json:$.customer_email` DEFAULT '',
 `livemode` UInt8 `json:$.livemode` DEFAULT 0,
 `payload` String `json:$.payload`
@@ -22,6 +32,3 @@ ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, event_type, user_id"
 ENGINE_PRIMARY_KEY "timestamp, event_type"
-
-FORWARD_QUERY >
-    SELECT timestamp, event_type, event_id, session_id, user_id, amount_cents, currency, payment_status, payment_method, defaultValueOfTypeName('String') AS customer_email, defaultValueOfTypeName('UInt8') AS livemode, payload

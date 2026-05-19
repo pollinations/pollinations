@@ -874,7 +874,7 @@ const sampleModels: readonly { value: string; label: string }[] = [
     { value: "klein", label: "Klein" },
     { value: "sana", label: "Sana" },
     { value: "z-image", label: "Z-Image" },
-    { value: "seedance", label: "Seedance" },
+    { value: "seedance-pro", label: "Seedance Pro" },
     { value: "ltx-2", label: "LTX-2" },
     { value: "wan", label: "Wan" },
     { value: "veo", label: "Veo" },

@@ -162,6 +162,59 @@ export async function fetchMonths(startMonth, endMonth) {
 }
 
 /**
+ * Fetch the live bank cash position from Wise across all balances on the
+ * business profile, expressed in EUR.
+ *
+ * EUR balances are taken as-is. USD balances are converted via `usdToEur`.
+ * Other non-zero currencies are summed at face value with a warning printed
+ * to stderr so we notice and add an explicit rate. Reserved amounts are
+ * subtracted (money locked behind pending transfers is not spendable).
+ *
+ * @param {number} usdToEur — FX rate from config.local.json (e.g. 0.92)
+ * @returns {Promise<{ total_eur: number, breakdown: Array<{currency: string, value: number, eur: number}> }>}
+ */
+export async function fetchLiveBankBalanceEur(usdToEur) {
+    const token = process.env.WISE_API_TOKEN;
+    const pid = process.env.WISE_BUSINESS_PROFILE_ID;
+    if (!token || !pid) {
+        throw new Error(
+            "WISE_API_TOKEN and WISE_BUSINESS_PROFILE_ID must be set in secrets/.env",
+        );
+    }
+
+    const url = `https://api.wise.com/v4/profiles/${pid}/balances?types=STANDARD`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+        throw new Error(
+            `Wise balances API HTTP ${res.status}: ${await res.text()}`,
+        );
+    }
+    const balances = await res.json();
+
+    const breakdown = [];
+    let total = 0;
+    for (const b of balances) {
+        const cur = b.currency;
+        const cash = Number(b.cashAmount?.value ?? 0);
+        if (cash === 0) continue;
+        let eur;
+        if (cur === "EUR") eur = cash;
+        else if (cur === "USD") eur = cash * usdToEur;
+        else {
+            process.stderr.write(
+                `WARN: Wise has ${cash} ${cur} — no FX rate known, summing at face value\n`,
+            );
+            eur = cash;
+        }
+        breakdown.push({ currency: cur, value: cash, eur });
+        total += eur;
+    }
+    return { total_eur: Number(total.toFixed(2)), breakdown };
+}
+
+/**
  * Fetch transactions for the current month up to today.
  *
  * @returns {Promise<Array<{ counterparty: string, date: string, amount_eur: number }>>}

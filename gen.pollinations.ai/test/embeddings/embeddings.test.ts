@@ -17,13 +17,13 @@ import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
-const TEST_AZURE_SMALL_MODEL = "openai-3-small";
-const TEST_AZURE_LARGE_MODEL = "openai-3-large";
-const TEST_AZURE_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
-const TEST_AZURE_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
+const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
+const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
+const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
+const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
-const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
+const OPENAI_HOST = "api.openai.com";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
 beforeEach(() => {
@@ -57,7 +57,7 @@ function buildEmbeddingsBody(extra: Record<string, unknown> = {}) {
 
 function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
-    env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
+    env.OPENAI_API_KEY = "test-openai-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
     return createFetchMock({
@@ -69,7 +69,7 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
-        azure: createAzureMock(),
+        openai: createOpenAIMock(),
         vertex: createVertexMock(),
     });
 }
@@ -126,7 +126,7 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
+function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     const state: { requests: unknown[]; urls: string[] } = {
         requests: [],
         urls: [],
@@ -134,7 +134,7 @@ function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     return {
         state,
         handlerMap: {
-            [AZURE_HOST]: async (request) => {
+            [OPENAI_HOST]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -146,7 +146,9 @@ function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                 const inputs = body.input ?? [];
                 const dimensions =
                     body.dimensions ??
-                    (body.model === TEST_AZURE_LARGE_MODEL ? 3072 : 1536);
+                    (body.model === TEST_OPENAI_LARGE_PROVIDER_MODEL
+                        ? 3072
+                        : 1536);
 
                 return Response.json({
                     object: "list",
@@ -346,7 +348,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -354,7 +356,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             }),
@@ -370,18 +372,18 @@ describe("POST /v1/embeddings", () => {
             model: string;
             usage: { prompt_tokens: number; total_tokens: number };
         };
-        expect(data.model).toBe(TEST_AZURE_SMALL_MODEL);
+        expect(data.model).toBe(TEST_OPENAI_SMALL_MODEL);
         expect(data.data).toHaveLength(2);
         expect(data.data[0].embedding).toHaveLength(512);
         expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
         expect(data.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
         expect(response.headers.get("x-model-used")).toBe(
-            TEST_AZURE_SMALL_MODEL,
+            TEST_OPENAI_SMALL_MODEL,
         );
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
-        expect(mocks.azure.state.requests).toEqual([
+        expect(mocks.openai.state.requests).toEqual([
             {
-                model: TEST_AZURE_SMALL_PROVIDER_MODEL,
+                model: TEST_OPENAI_SMALL_PROVIDER_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             },
@@ -393,9 +395,9 @@ describe("POST /v1/embeddings", () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
             eventType: "generate.embedding",
-            modelRequested: TEST_AZURE_SMALL_MODEL,
-            resolvedModelRequested: TEST_AZURE_SMALL_MODEL,
-            modelUsed: TEST_AZURE_SMALL_MODEL,
+            modelRequested: TEST_OPENAI_SMALL_MODEL,
+            resolvedModelRequested: TEST_OPENAI_SMALL_MODEL,
+            modelUsed: TEST_OPENAI_SMALL_MODEL,
             tokenCountPromptText: 8,
             isBilledUsage: true,
         });
@@ -405,7 +407,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -413,7 +415,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_LARGE_MODEL,
+                model: TEST_OPENAI_LARGE_MODEL,
                 input: TEST_EMBEDDING_INPUT,
                 dimensions: 256,
             }),
@@ -428,12 +430,12 @@ describe("POST /v1/embeddings", () => {
             data: { embedding: number[]; index: number }[];
             model: string;
         };
-        expect(data.model).toBe(TEST_AZURE_LARGE_MODEL);
+        expect(data.model).toBe(TEST_OPENAI_LARGE_MODEL);
         expect(data.data).toHaveLength(1);
         expect(data.data[0].embedding).toHaveLength(256);
-        expect(mocks.azure.state.requests).toEqual([
+        expect(mocks.openai.state.requests).toEqual([
             {
-                model: TEST_AZURE_LARGE_PROVIDER_MODEL,
+                model: TEST_OPENAI_LARGE_PROVIDER_MODEL,
                 input: [TEST_EMBEDDING_INPUT],
                 dimensions: 256,
             },
@@ -445,7 +447,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -453,7 +455,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 dimensions: 2048,
             }),
         });
@@ -461,7 +463,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("supports dimensions up to 1536");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -469,7 +471,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -477,7 +479,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 input: [
                     {
                         type: "image_url",
@@ -492,7 +494,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("text input only");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -500,7 +502,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -508,7 +510,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 task_type: "RETRIEVAL_QUERY",
             }),
         });
@@ -516,7 +518,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("task_type");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -639,11 +641,11 @@ describe("embedding models", () => {
                     output_modalities: ["embedding"],
                 }),
                 expect.objectContaining({
-                    name: TEST_AZURE_SMALL_MODEL,
+                    name: TEST_OPENAI_SMALL_MODEL,
                     output_modalities: ["embedding"],
                 }),
                 expect.objectContaining({
-                    name: TEST_AZURE_LARGE_MODEL,
+                    name: TEST_OPENAI_LARGE_MODEL,
                     output_modalities: ["embedding"],
                 }),
             ]),
@@ -666,11 +668,11 @@ describe("embedding models", () => {
                     supported_endpoints: ["/v1/embeddings"],
                 }),
                 expect.objectContaining({
-                    id: TEST_AZURE_SMALL_MODEL,
+                    id: TEST_OPENAI_SMALL_MODEL,
                     supported_endpoints: ["/v1/embeddings"],
                 }),
                 expect.objectContaining({
-                    id: TEST_AZURE_LARGE_MODEL,
+                    id: TEST_OPENAI_LARGE_MODEL,
                     supported_endpoints: ["/v1/embeddings"],
                 }),
             ]),

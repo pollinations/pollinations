@@ -2,24 +2,23 @@ import type { Usage } from "@shared/registry/registry.ts";
 
 import { ensureUpstreamOk } from "@/error.ts";
 
-const AZURE_EMBEDDINGS_ENDPOINT =
-    "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/v1/embeddings";
+const OPENAI_EMBEDDINGS_ENDPOINT = "https://api.openai.com/v1/embeddings";
 
-type AzureEmbeddingRequest = {
+type OpenAIEmbeddingRequest = {
     model: string;
     input: string[];
     dimensions?: number;
 };
 
-type AzureEmbeddingData = {
+type OpenAIEmbeddingData = {
     object: "embedding";
     embedding: number[];
     index: number;
 };
 
-export type AzureEmbeddingResponse = {
+export type OpenAIEmbeddingResponse = {
     object: "list";
-    data: AzureEmbeddingData[];
+    data: OpenAIEmbeddingData[];
     model?: string;
     usage?: {
         prompt_tokens?: number;
@@ -27,42 +26,42 @@ export type AzureEmbeddingResponse = {
     };
 };
 
-export async function callAzureEmbed(
+export async function callOpenAIEmbed(
     env: CloudflareBindings,
     modelId: string,
     input: string[],
     dimensions?: number,
-): Promise<AzureEmbeddingResponse> {
-    const apiKey = env.AZURE_MYCELI_PROD_API_KEY;
+): Promise<OpenAIEmbeddingResponse> {
+    const apiKey = env.OPENAI_API_KEY;
 
     if (!apiKey) {
-        throw new Error("AZURE_MYCELI_PROD_API_KEY is not configured");
+        throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    const body: AzureEmbeddingRequest = {
+    const body: OpenAIEmbeddingRequest = {
         model: modelId,
         input,
         ...(dimensions ? { dimensions } : {}),
     };
 
-    const response = await fetch(AZURE_EMBEDDINGS_ENDPOINT, {
+    const response = await fetch(OPENAI_EMBEDDINGS_ENDPOINT, {
         method: "POST",
         headers: {
             "content-type": "application/json",
-            "api-key": apiKey,
+            authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
     });
 
-    await ensureUpstreamOk(response, AZURE_EMBEDDINGS_ENDPOINT);
-    return response.json() as Promise<AzureEmbeddingResponse>;
+    await ensureUpstreamOk(response, OPENAI_EMBEDDINGS_ENDPOINT);
+    return response.json() as Promise<OpenAIEmbeddingResponse>;
 }
 
-export function extractAzureUsage(response: AzureEmbeddingResponse): Usage {
+export function extractOpenAIUsage(response: OpenAIEmbeddingResponse): Usage {
     const promptTextTokens = response.usage?.prompt_tokens;
 
     if (typeof promptTextTokens !== "number") {
-        throw new Error("Azure embedding response is missing prompt_tokens");
+        throw new Error("OpenAI embedding response is missing prompt_tokens");
     }
 
     return { promptTextTokens };

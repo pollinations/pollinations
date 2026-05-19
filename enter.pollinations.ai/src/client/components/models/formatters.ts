@@ -3,8 +3,16 @@
  */
 
 export const formatPricePer1M = (price: number): string => {
-    const per1M = price * 1000000;
-    const formatted = (Math.ceil(per1M * 100) / 100).toFixed(2);
+    const per1M = Number((price * 1000000).toPrecision(15));
+    // toFixed(2) loses precision below 1¢ (e.g. 0.015 → "0.01" via IEEE 754).
+    // Pick decimals dynamically: enough to show meaningful change at the cent
+    // tier (most prices), more for sub-cent rates like cached-token pricing.
+    let decimals: number;
+    if (per1M >= 1) decimals = 2;
+    else if (per1M >= 0.1) decimals = 3;
+    else if (per1M >= 0.01) decimals = 4;
+    else decimals = 5;
+    const formatted = per1M.toFixed(decimals);
     // Remove trailing zeros but keep at least .0 for whole numbers
     const result = formatted.replace(/0+$/, "");
     return result.endsWith(".") ? result + "0" : result;

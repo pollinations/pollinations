@@ -15,7 +15,7 @@
             }
         ]
     },
-    "description": "App ecosystem landscape — categories, platforms, BYOP share, and recruitment opportunities. Uses app_directory for category/platform enrichment and live generation_event data.",
+    "description": "App ecosystem landscape \u2014 categories, platforms, BYOP share, and recruitment opportunities. Uses app_directory for category/platform enrichment and live generation_event data.",
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 1,
@@ -356,16 +356,35 @@
             "type": "stat"
         },
         {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "id": 200,
+            "panels": [],
+            "title": "Top Performing Apps (Directory)",
+            "type": "row"
+        },
+        {
             "datasource": {
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Directory users with clean BYOP (redirect-auth) traffic in the selected period.",
+            "description": "All directory apps ranked by Pollen consumed. Attribution: events whose user_github_id matches the directory submitter's github_user_id (dev's own usage / dogfooding). End-user BYOP spend is shown in the BYOP drill-down below.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "green",
-                        "mode": "fixed"
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
                     },
                     "mappings": [],
                     "thresholds": {
@@ -376,97 +395,152 @@
                                 "value": null
                             }
                         ]
-                    },
-                    "unit": "none"
+                    }
                 },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 4,
-                "w": 4,
-                "x": 16,
-                "y": 1
-            },
-            "id": 6,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "12.4.0",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "grafana-clickhouse-datasource",
-                        "uid": "PAD1A0A25CD30D456"
-                    },
-                    "format": 0,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT countDistinct(ge.user_github_id) as users FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' AND ge.api_key_created_via = 'redirect-auth' AND ge.user_github_id != '' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
-                    "refId": "A"
-                }
-            ],
-            "title": "Users (clean BYOP)",
-            "type": "stat"
-        },
-        {
-            "datasource": {
-                "type": "grafana-clickhouse-datasource",
-                "uid": "PAD1A0A25CD30D456"
-            },
-            "description": "Directory users with heuristic BYOP traffic in the selected period.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "orange",
-                        "mode": "fixed"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "app"
+                        },
+                        "properties": [
                             {
-                                "color": "orange",
-                                "value": null
+                                "id": "custom.width",
+                                "value": 220
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "App"
                             }
                         ]
                     },
-                    "unit": "none"
-                },
-                "overrides": []
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "platform"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 130
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 150
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "byop"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 60
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "BYOP"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
-                "h": 4,
-                "w": 4,
-                "x": 20,
-                "y": 1
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 6
             },
-            "id": 7,
+            "id": 201,
             "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
                     "fields": "",
-                    "values": false
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
                 },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total \u03c1"
+                    }
+                ]
             },
             "pluginVersion": "12.4.0",
             "targets": [
@@ -475,13 +549,13 @@
                         "type": "grafana-clickhouse-datasource",
                         "uid": "PAD1A0A25CD30D456"
                     },
-                    "format": 0,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT countDistinct(ge.user_github_id) as users FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' AND ge.api_key_created_via != 'redirect-auth' AND ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%' AND ge.user_github_id != '' AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  concat(ad.emoji, ' ', ad.name) AS app,\n  ad.category AS category,\n  ad.platform AS platform,\n  ad.github_username AS developer,\n  if(ad.byop = 'true', '\u2713', '') AS byop,\n  count() AS requests,\n  countDistinct(ge.user_github_id) AS users,\n  sum(ge.total_price) AS total_pollen\nFROM generation_event ge\nINNER JOIN app_directory ad ON ge.user_github_id = ad.github_user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, category, platform, developer, byop\nORDER BY total_pollen DESC\nLIMIT 200",
                     "refId": "A"
                 }
             ],
-            "title": "Users (heuristic)",
-            "type": "stat"
+            "title": "Top Apps by Pollen",
+            "type": "table"
         },
         {
             "collapsed": false,
@@ -489,7 +563,233 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 5
+                "y": 20
+            },
+            "id": 210,
+            "panels": [],
+            "title": "Directory Apps with BYOP (clean or heuristic)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Directory apps with BYOP-detected events. Attribution via developer (api_key_created_for_user_id \u2192 d1_user.github_id \u2192 app_directory.github_user_id) \u2014 surfaces end-user spend correctly. 'Declared' indicates the APPS.md entry self-declares byop=true.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "app"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 220
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "App"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "category"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "platform"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 130
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 150
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "declared"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Declared"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "clean_events"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Clean events"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "heuristic_events"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 130
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Heuristic events"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "end_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "End users"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 4
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 21
+            },
+            "id": 211,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\ndevs AS (\n  SELECT id, toString(github_id) AS gh_user_id\n  FROM d1_user\n  WHERE github_id IS NOT NULL\n    AND github_username NOT IN (SELECT github_username FROM banned_users)\n)\nSELECT\n  concat(ad.emoji, ' ', ad.name) AS app,\n  ad.category AS category,\n  ad.platform AS platform,\n  ad.github_username AS developer,\n  if(ad.byop = 'true', '\u2713', '') AS declared,\n  countIf(ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined') AS clean_events,\n  countIf((ge.api_key_client_id = '' OR ge.api_key_client_id = 'undefined')\n          AND ge.api_key_type = 'secret'\n          AND ge.api_key_name LIKE '%.%') AS heuristic_events,\n  countDistinct(ge.user_github_id) AS end_users,\n  sum(ge.total_price) AS total_pollen\nFROM generation_event ge\nINNER JOIN devs du ON ge.api_key_created_for_user_id = du.id\nINNER JOIN app_directory ad ON du.gh_user_id = ad.github_user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND (\n    (ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined')\n    OR (ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%')\n  )\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, category, platform, developer, declared\nORDER BY total_pollen DESC\nLIMIT 200",
+                    "refId": "A"
+                }
+            ],
+            "title": "BYOP-Detected Directory Apps",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 35
             },
             "id": 101,
             "panels": [],
@@ -559,7 +859,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Tier ρ"
+                                "value": "Tier \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -583,7 +883,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Pack ρ"
+                                "value": "Pack \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -607,7 +907,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Total ρ"
+                                "value": "Total \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -702,7 +1002,7 @@
                 "h": 16,
                 "w": 12,
                 "x": 0,
-                "y": 6
+                "y": 36
             },
             "id": 8,
             "options": {
@@ -720,7 +1020,7 @@
                 "sortBy": [
                     {
                         "desc": true,
-                        "displayName": "Total ρ"
+                        "displayName": "Total \u03c1"
                     }
                 ]
             },
@@ -768,7 +1068,7 @@
                 "h": 16,
                 "w": 12,
                 "x": 12,
-                "y": 6
+                "y": 36
             },
             "id": 10,
             "options": {
@@ -851,7 +1151,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Tier ρ"
+                                "value": "Tier \u03c1"
                             },
                             {
                                 "id": "color",
@@ -870,7 +1170,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Pack ρ"
+                                "value": "Pack \u03c1"
                             },
                             {
                                 "id": "color",
@@ -887,7 +1187,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 12,
-                "y": 22
+                "y": 52
             },
             "id": 11,
             "options": {
@@ -968,7 +1268,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 0,
-                "y": 22
+                "y": 52
             },
             "id": 13,
             "options": {
@@ -995,7 +1295,7 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL 1 DAY) as time, ad.category as category, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' GROUP BY time, category ORDER BY time",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL ${bucket}) as time, ad.category as category, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.category != '' GROUP BY time, category ORDER BY time",
                     "refId": "A"
                 }
             ],
@@ -1008,7 +1308,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 32
+                "y": 62
             },
             "id": 104,
             "panels": [],
@@ -1044,7 +1344,7 @@
                 "h": 12,
                 "w": 12,
                 "x": 0,
-                "y": 33
+                "y": 63
             },
             "id": 15,
             "options": {
@@ -1127,7 +1427,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Tier ρ"
+                                "value": "Tier \u03c1"
                             },
                             {
                                 "id": "color",
@@ -1146,7 +1446,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Pack ρ"
+                                "value": "Pack \u03c1"
                             },
                             {
                                 "id": "color",
@@ -1163,7 +1463,7 @@
                 "h": 12,
                 "w": 12,
                 "x": 12,
-                "y": 33
+                "y": 63
             },
             "id": 16,
             "options": {
@@ -1244,7 +1544,7 @@
                 "h": 10,
                 "w": 24,
                 "x": 0,
-                "y": 45
+                "y": 75
             },
             "id": 18,
             "options": {
@@ -1271,7 +1571,7 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL 1 DAY) as time, ad.platform as platform, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.platform != '' GROUP BY time, platform ORDER BY time",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT toStartOfInterval(ge.start_time, INTERVAL ${bucket}) as time, ad.platform as platform, sum(ge.total_price) as pollen FROM generation_event ge LEFT JOIN app_directory ad ON ge.user_github_id = ad.github_user_id WHERE $__timeFilter(ge.start_time) AND ge.environment = 'production' AND ge.response_status >= 200 AND ge.response_status < 300 AND ge.total_price > 0 AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58')) AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users) AND ad.platform != '' GROUP BY time, platform ORDER BY time",
                     "refId": "A"
                 }
             ],
@@ -1284,7 +1584,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 55
+                "y": 85
             },
             "id": 106,
             "panels": [],
@@ -1296,7 +1596,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Top 50 users by pollen consumption who are NOT in the app directory. Potential recruitment targets — high-usage developers who could register their apps.",
+            "description": "Top 50 users by pollen consumption who are NOT in the app directory. Potential recruitment targets \u2014 high-usage developers who could register their apps.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1342,7 +1642,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Total ρ"
+                                "value": "Total \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -1379,7 +1679,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Tier ρ"
+                                "value": "Tier \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -1403,7 +1703,7 @@
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Pack ρ"
+                                "value": "Pack \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -1453,7 +1753,7 @@
                 "h": 10,
                 "w": 24,
                 "x": 0,
-                "y": 56
+                "y": 86
             },
             "id": 80,
             "options": {
@@ -1471,7 +1771,7 @@
                 "sortBy": [
                     {
                         "desc": true,
-                        "displayName": "Total ρ"
+                        "displayName": "Total \u03c1"
                     }
                 ]
             },
@@ -1494,14 +1794,52 @@
     "schemaVersion": 40,
     "tags": [
         "apps",
-        "ecosystem",
-        "economics"
+        "economics",
+        "ecosystem"
     ],
     "templating": {
-        "list": []
+        "list": [
+            {
+                "name": "bucket",
+                "label": "Bucket",
+                "type": "custom",
+                "description": "Time bucket for all timeseries panels",
+                "hide": 0,
+                "includeAll": false,
+                "multi": false,
+                "query": "Hourly : 1 HOUR,Daily : 1 DAY,Weekly : 1 WEEK,Monthly : 1 MONTH",
+                "current": {
+                    "text": "Daily",
+                    "value": "1 DAY",
+                    "selected": true
+                },
+                "options": [
+                    {
+                        "text": "Hourly",
+                        "value": "1 HOUR",
+                        "selected": false
+                    },
+                    {
+                        "text": "Daily",
+                        "value": "1 DAY",
+                        "selected": true
+                    },
+                    {
+                        "text": "Weekly",
+                        "value": "1 WEEK",
+                        "selected": false
+                    },
+                    {
+                        "text": "Monthly",
+                        "value": "1 MONTH",
+                        "selected": false
+                    }
+                ]
+            }
+        ]
     },
     "time": {
-        "from": "now-30d",
+        "from": "now-7d",
         "to": "now"
     },
     "timepicker": {},

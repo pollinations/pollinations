@@ -273,6 +273,32 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "gemini-3.5-flash": {
+        aliases: ["gemini-3.5-flash"],
+        modelId: "gemini-3.5-flash",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-19").getTime(),
+        priceMultiplier: 1.5,
+        paidOnly: true,
+        // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
+        // Non-global regions add ~10%; we route through global.
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
+            completionTextTokens: perMillion(9.0),
+        },
+        description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-flash-lite-3.1": {
         aliases: [
             "gemini-3.1-flash-lite",

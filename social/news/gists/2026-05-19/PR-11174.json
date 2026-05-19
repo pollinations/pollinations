@@ -1,0 +1,36 @@
+{
+  "pr_number": 11174,
+  "title": "finish may 19 announcement: byteplus migration + scribe + gemini paid-only",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11174",
+  "merged_at": "2026-05-19T15:54:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Closes the gap left by #11073, which migrated seedream5 + seedance-pro to Replicate but kept the legacy seedream 4.0 and 4.5 Pro handlers on the BytePlus ARK endpoint. After this PR, nothing in the codebase still calls `ark.ap-southeast.bytepluses.com` and `BYTEDANCE_API_KEY` is gone from env declarations, bindings, push-secrets list, vitest config, and the encrypted secrets files.\n\n**Mapping**\n- `seedream` (4.0) → `bytedance/seedream-4` on Replicate (cost \\$0.03/img — unchanged)\n- `seedream-pro` (4.5 Pro) → `bytedance/seedream-4.5` on Replicate (cost \\$0.04 → \\$0.06, see below)\n\n**Pricing**\n- `seedream-pro`: Replicate cost is 1.5× BytePlus. To keep user-facing price stable at \\$0.06/img I set `priceMultiplier: 1.0` explicitly (previously was the default 1.5× on top of \\$0.04 cost, same end price).\n- `seedream` (4.0): cost unchanged.\n\n**Scribe v2**\n- Adds `paidOnly: true` + explicit `priceMultiplier: 1.5` per the May 19 announcement. Free-Pollen users lose access; paid Pollen price moves to \\$0.0000917/sec (≈ \\$0.40/hr retail, matches what we announced).\n\n**Implementation**\n- New `seedreamReplicateModel.ts` modelled on `seedream5ReplicateModel.ts`; one variant table covers both 4.0 and 4.5 Pro and maps width/height to the right size enum (`1K`/`2K`/`4K`).\n- Same exports as before (`callSeedreamAPI`, `callSeedreamProAPI`), so `createAndReturnImages.ts` only changes its import path.\n- Deletes `seedreamModel.ts` and the unused `getScaledDimensions`/`scaleToMinPixels` helpers it relied on.\n- `BYTEDANCE_API_KEY` removed from all three `secrets/*.vars.json` via `sops unset`, plus `worker-bindings.d.ts`, `handler.ts` env key list, `wrangler.toml`, `vitest.config.ts`, and `push-generation-secrets.mjs`.\n- Extends `scripts/test-replicate-migration.mjs` with t2i + i2i for both new endpoints (scenarios 7–10).\n\n**Verification**\n- `tsc --noEmit` clean\n- `biome check` clean\n- gen.pollinations.ai: 200/200 vitest\n- enter.pollinations.ai: 389/390 (the one failure is an unrelated `acc",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Seedream's new home",
+    "blurb": "We've migrated our Seedream models to a new backend and updated access tiers for Scribe and Gemini. The hive's infrastructure is cleaner than ever!",
+    "summary": "Migrated Seedream 4.0 and 4.5 Pro from BytePlus to Replicate while maintaining the $0.06/img price, and updated Scribe v2 and Gemini to be paid-only models.",
+    "impact": "Seedream image generation now routes through Replicate with stable pricing, while Scribe v2 and Gemini are now exclusively available to users with Pollen credits.",
+    "keywords": [
+      "seedream",
+      "replicate",
+      "scribe",
+      "gemini",
+      "infrastructure",
+      "pricing"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot moving glowing seeds (Seedream) into a new, upgraded server box. Represents the backend migration.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky CRT monitor robot moving glowing digital seeds into a shiny new lime green (#ecf874) server box. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11174.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky CRT monitor robot moving glowing digital seeds into a shiny new lime green (#ecf874) server box. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T15:56:11.717183+00:00"
+}

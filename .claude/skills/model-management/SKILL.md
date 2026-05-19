@@ -540,22 +540,3 @@ Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
 
-## 11.4 Azure OpenAI gptimage — content-policy recovery
-
-Azure blocks the whole resource (not just one deployment) when its safety system flags abuse. Signs: all gptimage calls return 403 *"temporarily blocked because we detected behavior that may violate our content policy"*.
-
-| Resource | Region | Used for |
-|---|---|---|
-| `myceli-prod-eastus2` | East US 2 | `gptimage` (gpt-image-1-mini), `gptimage-large` (gpt-image-1.5) |
-| `myceli-prod-swedencentral` | Sweden Central | Flux Kontext, text models |
-
-Recovery:
-1. `az login --use-device-code` (thomas@myceli.ai)
-2. Find a region that supports the model: `az cognitiveservices model list -l <region> --query "[?model.name=='gpt-image-1-mini']" -o json`
-3. Create new resource: `az cognitiveservices account create --name myceli-prod-<region> --resource-group rg-myceli-prod --kind AIServices --sku S0 --location <region>`
-4. Deploy model: `az cognitiveservices account deployment create --name <resource> --resource-group rg-myceli-prod --deployment-name gpt-image-1-mini --model-name gpt-image-1-mini --model-version 2025-10-06 --model-format OpenAI --sku-capacity 60 --sku-name GlobalStandard`
-5. Get key: `az cognitiveservices account keys list --name <resource> --resource-group rg-myceli-prod --query 'key1' -o tsv`
-6. Add to SOPS: `sops set gen.pollinations.ai/secrets/prod.vars.json '["AZURE_MYCELI_PROD_EASTUS2_API_KEY"]' '"<key>"'`
-7. Update endpoint URLs in `createAndReturnImages.ts` → `AZURE_GPTIMAGE_CONFIGS`
-8. Delete broken deployments from old resource to free quota
-9. Test locally via §3 boot then §7.2 image matrix

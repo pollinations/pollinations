@@ -130,6 +130,8 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
         cost: {
             // ElevenLabs Scale plan: Scribe batch $0.22/hour
             promptAudioSeconds: 0.22 / 3600,

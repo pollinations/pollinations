@@ -102,7 +102,7 @@ export const IMAGE_SERVICES = {
     "seedream": {
         aliases: [],
         modelId: "seedream",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
@@ -110,23 +110,27 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // per image
         },
-        description: "Seedream 4.0 - Photorealistic image generation (legacy)",
+        description: "Seedream 4.0 - Photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "seedream-pro": {
         aliases: [],
         modelId: "seedream-pro",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
+        // Replicate cost is $0.06/img — 1.5× the prior BytePlus cost. Lock
+        // priceMultiplier to 1.0 so the user-facing price stays at the
+        // previous $0.06 ($0.04 × default 1.5×) instead of jumping to $0.09.
+        priceMultiplier: 1,
         cost: {
-            completionImageTokens: 0.04, // per image
+            completionImageTokens: 0.06, // per image
         },
         description:
-            "Seedream 4.5 Pro - Premium photorealistic image generation (legacy)",
+            "Seedream 4.5 Pro - Premium photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

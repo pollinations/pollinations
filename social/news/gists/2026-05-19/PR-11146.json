@@ -1,0 +1,35 @@
+{
+  "pr_number": 11146,
+  "title": "user-intelligence: add stripe smurf-watch panel + clarify billing-address country",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11146",
+  "merged_at": "2026-05-19T12:03:13Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Stripe forensics to the `user-intelligence` Grafana dashboard. Investigating where our Stripe revenue actually comes from surfaced Macao reported as the #1 country by billing address — but those charges are nearly all US-issued cards. There was no panel in the dashboard exposing this disagreement, and no equivalent of \"Risky Users\" for successful payments.\n\nThree new panels + one enhancement on `user-intelligence.json`:\n\n- **Top Buyers — Smurf Watch** (new) — successful-payment counterpart to \"Risky Users\". Surfaces emails with 5+ paid checkouts, `distinct_stripe_customers` (number of separate Stripe Customer objects the email generated), `smurf_ratio`, and `distinct_billing_countries`. Joined to `d1_user` for tier and ban. Enriched in the second commit with `card_countries`, `card_brands`, and a `billing_vs_card` match/mismatch pill (LEFT JOIN to `charge.succeeded` by payment-intent ID).\n\n- **Top Countries by Card Issuer (Verified)** (new) — bar chart at the bottom under a new \"Card Issuer Geography\" section, revenue grouped by the country that issued the card. Direct comparison target for the existing billing-address chart, which is renamed to make the self-reported limitation explicit.\n\n- **Billing × Card Country Mismatch** (new) — table of successful charges where billing ≠ card. Already shows `MO→US/amex 11 charges`, `ZA→US/amex 5 charges` in the first 2 days of data.\n\n- **Top Countries by Revenue** (existing, renamed) — now \"(Billing Address — self-reported)\" with an expanded description pointing at the carding pattern surfaced by the failures panels and the new mismatch panel.\n\nCard data flows from PR #11158 (charge.succeeded webhook + 10 new columns on `stripe_event`); only events after that deploy will have card columns populated, no backfill. Within a week of normal traffic the empties become the minority.\n\nValidated all SQL against live Tinybird. Deployed for preview on the droplet from this branch; once merged, re-deploy from `origin/main` with the ",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Following the digital paper trail",
+    "blurb": "Added new Stripe forensics panels to our internal dashboards to track payment patterns and card-issuer mismatches. Keeping the hive safe from sneaky smurfs!",
+    "summary": "Added Stripe forensics panels to the user-intelligence Grafana dashboard, including a 'Smurf Watch' panel and tracking for card-issuer versus billing-address mismatches.",
+    "impact": "Internal teams can now monitor suspicious payment behaviors, such as emails generating multiple Stripe customer objects or mismatches between self-reported billing addresses and actual card issuer countries.",
+    "keywords": [
+      "grafana",
+      "stripe",
+      "analytics",
+      "dashboard",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee as a detective analyzing data. Key symbols: magnifying glass, retro monitor with charts, detective hat.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat and holding a magnifying glass, inspecting a retro computer monitor displaying colorful bar charts and data tables. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11146.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat and holding a magnifying glass, inspecting a retro computer monitor displaying colorful bar charts and data tables. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T12:04:12.843670+00:00"
+}

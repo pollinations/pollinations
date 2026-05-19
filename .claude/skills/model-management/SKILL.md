@@ -20,6 +20,22 @@ description: "Add, update, or remove text/image/video/audio/embeddings models. C
 | Deleting a model | §6 (row "Delete") |
 | Debugging a live issue | See `model-debugging` skill (currently stale — scheduled for rewrite) |
 
+## Related skills — when to hand off
+
+This skill is self-contained for the model lifecycle. Hand off to a dedicated skill when the work clearly belongs elsewhere:
+
+| If you're doing… | Use this skill instead | What stays here |
+|---|---|---|
+| Adding/modifying a Tinybird **pipe or datasource schema** | `tinybird-deploy` | Querying existing pipes/SQL to verify billing rows |
+| Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
+| Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
+| Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
+| Running model-debugging-style ad-hoc tests on prod | `test-enter`, `test-image` | Local empirical tests in §7 |
+
+**Things kept inline (not extracted into their own skills) on purpose:**
+- **SOPS / secrets ops** for provider keys (§11.1) — three commands tightly scoped to `gen.pollinations.ai/secrets/`. Extracting it would add indirection without saving content.
+- **The test matrix (§7)** — we just absorbed `test-model` back into this skill because the change matrix (§6) and test matrix (§7) only make sense read together. Splitting them again would recreate drift.
+
 ---
 
 # 2. Empirical over documentation
@@ -38,31 +54,33 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, billing surfaces)
 ```
 
-**Generation does not go through Enter.** Gen reads the shared D1/KV bindings directly to validate tokens, check `packBalance`, and apply tier limits. The `ENTER` service binding is invoked in exactly three places in `gen.pollinations.ai/src/`:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check `packBalance`, and apply tier limits. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
-| `src/index.ts:78` | Proxy fallback for paths gen doesn't own (dashboard, auth UI, account APIs) |
-| `src/routes/docs.ts:531` | Forward docs paths to enter |
-| `src/middleware/track.ts:330` | Post the async `generation_event` to enter's Tinybird ingest |
+| `gen.pollinations.ai/src/index.ts:78` | Proxy fallback for paths gen doesn't own (dashboard, auth UI, account APIs) |
+| `gen.pollinations.ai/src/routes/docs.ts:531` | Forward docs paths to enter |
+| `gen.pollinations.ai/src/middleware/track.ts:330` | Trigger Stripe auto-top-up (`/api/stripe/auto-top-up/trigger`) for users with auto-top-up enabled |
 
-Implication: **local gen alone covers ~90% of model-management work.** You only need to boot local Enter when your change touches an Enter-owned surface.
+Implication: **local gen alone covers ~90% of model-management work** — including Tinybird billing verification. You only need to boot local Enter when your change touches an Enter-owned surface.
 
 | Target | Run locally | Token to use | Tinybird writes to |
 |---|---|---|---|
-| `http://localhost:8788` model tests (config, handler, registry, modalities) | gen only | `POLLINATIONS_TOKEN_LOCAL` | staging workspace (via prod tracking) |
+| `http://localhost:8788` model tests (config, handler, registry, modalities, billing) | gen only | `POLLINATIONS_TOKEN_LOCAL` | staging workspace |
 | Same, but change touches Enter (see list below) | gen **and** enter | `POLLINATIONS_TOKEN_LOCAL` | staging workspace |
 | `https://gen.pollinations.ai` | none | `POLLINATIONS_TOKEN_PROD` | prod workspace |
 | Staging deploy | n/a (deployed) | `POLLINATIONS_TOKEN_STAGING` | staging workspace |
 
 **Boot Enter locally only if the change touches any of:**
-- Dashboard, auth routes, account APIs
-- Pollen pack / `packBalance` logic, auto-top-up
-- Tier configs, `paidOnly` filtering, `/v1/models` per-tier filtering
-- Tinybird event schema (the event SHAPE — not the data inside it; gen writes the data)
-- DB seeding / migration
+- Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
+- Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
+- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
+- Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
+- DB seeding / migrations
 
-For pure model work (modelId, provider, registry modalities/aliases/description, handler code, cost block), local Enter is **not required** — generations work without it; only the async tracking POST will fail silently, which doesn't affect the test response itself.
+Note: **`/v1/models` filtering (including `paidOnly`) lives in gen**, not enter (`gen.pollinations.ai/src/routes/proxy.ts:170` `filterModelsByPermissions`). Test this against local gen alone.
+
+For pure model work (modelId, provider, registry modalities/aliases/description, handler code, cost block), local Enter is **not required** — generations and billing tracking both work without it. The only thing that won't fire is Stripe auto-top-up, which doesn't affect model-management testing.
 
 ## Booting
 
@@ -143,7 +161,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 
 | File | Controls |
 |---|---|
-| `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. **`completionReasoningTokens` falls back to `completionTextTokens` by design** — this is not a leak. |
+| `shared/registry/registry.ts` | `convertUsage()` — where missing cost keys log `[registry] Missing conversion rate`. `completionReasoningTokens` is rewritten to `completionTextTokens` **before** the rate lookup (line 118), so it never produces this warning. If you see the warning for reasoning, it actually means `completionTextTokens` is missing. |
 | `shared/registry/usage-headers.ts` | `x-usage-*` header builder/parser; defines every typed usage field (13 total) |
 | `shared/registry/price-helpers.ts` | `perMillion()`, `priceMultiplier` math (`price = usage × cost × priceMultiplier`, rounded to 8 decimals) |
 | `gen.pollinations.ai/src/middleware/track.ts` | Builds the `generation_event` row sent to Tinybird; cache HITs are flagged `isBilledUsage: false` (line 395) |
@@ -161,7 +179,7 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 
 | If you change… | …in these files | …re-verify |
 |---|---|---|
-| **Pricing (`cost` block + `priceMultiplier`)** | `shared/registry/{text,image,audio,embeddings}.ts` | §7 one request per declared modality + §8 (usage JSON + `x-usage-*` headers + Tinybird row with correct cost + tail clean of `[registry] Missing conversion rate` except for documented fallbacks) + §9 (field parity) |
+| **Pricing (`cost` block + `priceMultiplier`)** | `shared/registry/{text,image,audio,embeddings}.ts` | §7 one request per declared modality + §8 (usage JSON + `x-usage-*` headers + Tinybird row with correct cost + tail **completely clean** of `[registry] Missing conversion rate`) + §9 (field parity) |
 | **Provider** | config/handler + registry `provider` + SOPS keys | §7 **full modality matrix** (providers silently drop modalities — empirical only), pricing (often differs by provider), prompt-cache behavior, §8, §9 (**mandatory** — field-parity audit catches new usage fields the old provider didn't return) |
 | **modelId** (upstream identifier) | config only | One real call per modality returns 200; §8; §9 if the upstream version is new |
 | **Slug / service name** | `availableModels.ts` + registry `name` + every alias entry referencing it | `aliases.test.ts`; `/v1/models` lists new slug; old slug returns 404 or alias-redirects; `rg <old-slug>` across `apps/`, `pollinations.ai/`, `packages/sdk` for hardcoded refs |
@@ -199,7 +217,7 @@ MODEL="<your-model>"
 | image input | `content:[{type:text},{type:image_url,…}]` | answer references image | `prompt_tokens_details.image_tokens` if reported |
 | multi-image | 2+ `image_url` parts | reasons over both | `prompt_tokens` scales |
 | tools | `tools:[…]` + triggering prompt | finish=tool_calls, valid JSON args | n/a |
-| reasoning | thinking prompt | `completion_tokens_details.reasoning_tokens > 0` | reasoning tokens — **note: billed at `completionTextTokens` rate by design**, no separate cost entry required |
+| reasoning | thinking prompt | `completion_tokens_details.reasoning_tokens > 0` | reasoning tokens — billed at `completionTextTokens` rate by design (fallback in `registry.ts:118`); no separate cost entry required, but `completionTextTokens` itself must exist |
 | **prompt cache** | **same ≥1024-token prefix** in 2 calls, ~2s apart | call 2: `prompt_tokens_details.cached_tokens > 0` | cached_tokens line |
 
 **Image-input quick check** (1×1 transparent PNG, near-zero cost):
@@ -338,20 +356,40 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 ### C. Tinybird `generation_event` row
 - Local enter → staging workspace → `TINYBIRD_READ_STAGING`
 - Prod → prod workspace → `TINYBIRD_READ_PROD`
-- Confirm a row exists for your model with non-zero usage columns matching the JSON/headers.
+- Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
 - **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
+
+`model_health` returns counts/errors/latency only, no usage. Query `generation_event` directly to see token + price columns:
 ```bash
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_READ_STAGING&window_minutes=10" \
+TB="https://api.europe-west2.gcp.tinybird.co"
+SQL="SELECT resolved_model_requested AS model, start_time,
+  token_count_prompt_text, token_count_prompt_cached, token_count_prompt_image,
+  token_count_completion_text, token_count_completion_reasoning,
+  token_count_completion_image, token_count_completion_video_seconds,
+  total_cost, total_price, dev_price, markup_rate
+ FROM generation_event
+ WHERE resolved_model_requested = '$MODEL'
+   AND start_time >= now() - interval 10 minute
+ ORDER BY start_time DESC
+ LIMIT 5 FORMAT JSON"
+curl -s -G "$TB/v0/sql" \
+  --data-urlencode "q=$SQL" \
+  --data-urlencode "token=$TINYBIRD_READ_STAGING" | jq '.data'
+```
+
+For health/latency monitoring (separate concern from billing verification), `model_health` is the right pipe — note its param is `minutes`, not `window_minutes`:
+```bash
+curl -s "$TB/v0/pipes/model_health.json?token=$TINYBIRD_READ_STAGING&minutes=10" \
   | jq ".data[] | select(.model==\"$MODEL\")"
 ```
 
-### D. Worker tail — no `Missing conversion rate` warnings
+### D. Worker tail — zero `Missing conversion rate` warnings
 In a separate terminal during testing:
 ```bash
 (cd gen.pollinations.ai && npx wrangler tail)
 ```
 - Look for: `[registry] Missing conversion rate: model=… usageType=…`
-- The only acceptable "missing" line is for `completionReasoningTokens` (intentional fallback to text rate). Any other missing rate = registry cost block incomplete.
+- **No warning is acceptable.** Reasoning tokens fall back to `completionTextTokens` *before* the rate lookup (`shared/registry/registry.ts:118`) — they should never trigger the warning. If you see `Missing conversion rate: usageType=completionReasoningTokens`, it actually means `completionTextTokens` itself is missing from the cost block, and that line is billing 0. Any warning = cost block incomplete; fix before merging.
 
 ---
 
@@ -361,7 +399,7 @@ In a separate terminal during testing:
 
 **The contract.** For a new model or provider swap, every numeric field present in the upstream response's usage/billing block must:
 1. Map to one of the **13 typed usage fields** in `shared/registry/usage-headers.ts` (`promptTextTokens`, `promptCachedTokens`, `promptAudioTokens`, `promptAudioSeconds`, `promptImageTokens`, `promptVideoTokens`, `completionTextTokens`, `completionReasoningTokens`, `completionAudioTokens`, `completionAudioSeconds`, `completionImageTokens`, `completionVideoSeconds`, `completionVideoTokens`),
-2. AND have a corresponding entry in the registry `cost` block (or be the documented `completionReasoningTokens → completionTextTokens` fallback),
+2. AND have a corresponding entry in the registry `cost` block (reasoning tokens are an exception — they're rewritten to `completionTextTokens` in `registry.ts:118` before rate lookup, so they don't need a separate cost line; but `completionTextTokens` itself must exist),
 3. AND surface in the response headers as `x-usage-<kebab-case-name>`,
 4. AND land in the Tinybird `generation_event` row via `track.ts`,
 5. AND appear in the worker logs (`wrangler tail`) so we can audit historical drift.
@@ -389,10 +427,18 @@ jq -r '.usage | paths(numbers) | join(".")' /tmp/response.json | sort -u
 # 3. Confirm each non-zero field appears as an x-usage-* header
 grep -iE "^x-usage-" /tmp/headers.txt
 
-# 4. Pull the Tinybird row written for this call (wait ~5s for ingest)
+# 4. Pull the actual billing row Tinybird wrote (wait ~5s for ingest)
 sleep 5
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_READ_STAGING&window_minutes=2" \
-  | jq ".data[] | select(.model==\"$MODEL\")"
+TB="https://api.europe-west2.gcp.tinybird.co"
+SQL="SELECT * FROM generation_event
+ WHERE resolved_model_requested = '$MODEL'
+   AND start_time >= now() - interval 2 minute
+ ORDER BY start_time DESC LIMIT 1 FORMAT JSON"
+curl -s -G "$TB/v0/sql" \
+  --data-urlencode "q=$SQL" \
+  --data-urlencode "token=$TINYBIRD_READ_STAGING" | jq '.data[0]'
+# Confirm every non-zero usage field from step 2 has a non-zero token_count_* column,
+# and every cost line has a non-zero token_price_* column.
 
 # 5. Confirm wrangler tail shows the same usage fields logged
 # (in the gen wrangler dev terminal — look for the usage payload in the track log)

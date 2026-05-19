@@ -1,0 +1,35 @@
+{
+  "pr_number": 11179,
+  "title": "rewrite model-management skill, absorb test-model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11179",
+  "merged_at": "2026-05-19T18:48:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "The skill had drifted: stale file paths, missing audio/video/embeddings coverage, no causal \"if you change X, check Y\" structure, overlap with `test-model`, and no field-parity audit — which is exactly what leaked `promptCachedTokens` billing earlier this year.\n\nRewritten end-to-end:\n\n- §3 fixes the local topology. Gen calls Enter in only three places (`src/index.ts:78`, `src/routes/docs.ts:531`, `src/middleware/track.ts:330`) — generation itself goes direct. So local gen alone is the default for model work; you only boot Enter when the change touches dashboard / auth / pollen-pack / tier-config / tinybird-schema surfaces.\n- §6 change matrix and §7 test matrix are the new daily-driver tables. Covers add / update / delete across text / image / video / audio / embeddings, including aspect ratios, voices, durations, error paths, and burst.\n- §9 introduces a mandatory field-parity audit for new model and provider-change PRs. Every numeric field upstream returns must map to one of the 13 typed usage fields, a registry cost entry, an `x-usage-*` header, a Tinybird column, and a wrangler tail log. Bundled-modality exception (e.g. seedance video+audio) is documented.\n- Cache HITs are correctly documented as unbilled (`track.ts:395`) — media HITs drop `x-usage-*` headers, no Tinybird row written. The four-part billing check applies to MISS only.\n- `completionReasoningTokens` falls back to `completionTextTokens` by design; called out so we don't flag it as a missing rate.\n- `paidOnly` gating reframed around `packBalance` (free Pollen ≠ pack balance — they're different things).\n- `priceMultiplier` (current values 1 or 1.5) is now an explicit required field.\n- Output-cache tests require byte-identical requests across text / image / video / audio.\n- All `cd` snippets switched to subshell form `(cd dir && cmd)` per repo convention.\n- `_local/.env` is the single token source: `POLLINATIONS_TOKEN_{PROD,LOCAL,STAGING}` + `TINYBIRD_READ_{PROD,STAGING}` (staging token also covers dev ",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Teaching the hive mind",
+    "blurb": "We've completely rewritten our internal model-management skill for Claude, merging in the test-model skill and adding strict field-parity audits. Safer, faster model updates for everyone.",
+    "summary": "Rewrote the internal Claude model-management skill to absorb the test-model skill, adding a mandatory field-parity audit and comprehensive change matrices across all modalities.",
+    "impact": "AI agents and contributors now have a single, accurate source of truth for adding or updating models, ensuring correct billing and local testing topologies.",
+    "keywords": [
+      "claude",
+      "skills",
+      "model-management",
+      "internal-tooling",
+      "docs"
+    ],
+    "visual_concept": "Polly the bee teaching the Monitor Robot. Polly wears tiny reading glasses and points to a glowing matrix on the robot's screen, representing the new model-management skill and test matrices.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, pointing at a glowing matrix on the screen of a chunky robot with a CRT monitor head. The robot is happily holding a thick manual titled 'MODELS'. Soft lime green (#ecf874) and warm lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11179.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, pointing at a glowing matrix on the screen of a chunky robot with a CRT monitor head. The robot is happily holding a thick manual titled 'MODELS'. Soft lime green (#ecf874) and warm lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T18:48:58.699182+00:00"
+}

@@ -15,10 +15,10 @@ test("pricing data applies the per-model price multiplier uniformly", () => {
     expect(geminiFast).toMatchObject({
         name: "gemini-fast",
         type: "text",
-        promptTextPrice: "0.3",
-        promptCachedPrice: "0.03",
-        promptAudioPrice: "0.9",
-        completionTextPrice: "1.2",
+        promptTextPrice: "0.15",
+        promptCachedPrice: "0.015",
+        promptAudioPrice: "0.45",
+        completionTextPrice: "0.6",
     });
 });
 

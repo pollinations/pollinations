@@ -30,7 +30,6 @@ This skill is self-contained for the model lifecycle. Hand off to a dedicated sk
 | Investigating a live model error in prod (logs, error patterns, affected users) | `model-debugging` | Pre-merge empirical testing |
 | Verifying provider invoice ↔ our cost block math, monthly spend rollups | `provider-billing` | Setting the cost block from provider's posted rates |
 | Deploying gen/enter workers themselves | `enter-services` | Local-only testing before merge |
-| Running model-debugging-style ad-hoc tests on prod | `test-enter`, `test-image` | Local empirical tests in §7 |
 
 **Things kept inline (not extracted into their own skills) on purpose:**
 - **SOPS / secrets ops** for provider keys (§11.1) — three commands tightly scoped to `gen.pollinations.ai/secrets/`. Extracting it would add indirection without saving content.
@@ -50,8 +49,8 @@ Every row in the [Change matrix](#6-change-matrix--if-you-change-x-verify-y) and
 
 ```
 client → gen.pollinations.ai → upstream provider
-                ↓ (only for: proxy fallback, docs, async tracking POST)
-         enter.pollinations.ai (dashboard, auth, billing surfaces)
+                ↓ (only for: proxy fallback, docs, auto-top-up trigger)
+         enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
 **Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check `packBalance`, and apply tier limits. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
@@ -111,7 +110,7 @@ source _local/.env
 | `POLLINATIONS_TOKEN_LOCAL` | Local enter `sk_` (seeded into local KV) — calls against `localhost:8788` |
 | `POLLINATIONS_TOKEN_STAGING` | Staging enter `sk_` — calls against staging deploys |
 | `TINYBIRD_READ_PROD` | Read token, prod workspace |
-| `TINYBIRD_READ_STAGING` | Read token, staging workspace — **also covers DEV** (local enter writes to staging) |
+| `TINYBIRD_READ_STAGING` | Read token, staging workspace — **also covers DEV** (local gen writes to the staging workspace via its `TINYBIRD_INGEST_URL` binding) |
 
 > **There are no "free" vs "paid" keys.** A key is a key. The `paidOnly` gate checks the user's `packBalance` (purchased Pollen pack balance), not the key prefix. To exercise the gate, use a token whose **owning user has `packBalance == 0`** — typically a freshly minted key (signup grants free Pollen, no pack) or one whose pack has been depleted. Don't confuse "free Pollen remaining" (signup grant, doesn't unlock paidOnly) with "pack balance" (purchased, does unlock).
 
@@ -354,8 +353,8 @@ After every **MISS** call (cache HITs are explicitly NOT billed — see caveat b
 - For HIT: **text caches preserve `x-usage-*` headers** so the parsed usage matches the original MISS; **media (image/video/audio) caches drop `x-usage-*` headers** and only preserve selected safety metadata. Don't flag missing media usage headers on a HIT.
 
 ### C. Tinybird `generation_event` row
-- Local enter → staging workspace → `TINYBIRD_READ_STAGING`
-- Prod → prod workspace → `TINYBIRD_READ_PROD`
+- Local gen / dev → staging workspace → `TINYBIRD_READ_STAGING`
+- Prod gen → prod workspace → `TINYBIRD_READ_PROD`
 - Confirm a row exists for your model with non-zero `token_count_*` and `token_price_*` columns matching the JSON/headers (column list: `enter.pollinations.ai/observability/datasources/generation_event.datasource`).
 - **No row is written for cache HITs** (`isBilledUsage: false` at `gen.pollinations.ai/src/middleware/track.ts:395`). HIT-call verification stops at the `X-Cache: HIT` header.
 

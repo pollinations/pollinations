@@ -94,10 +94,11 @@ function snapshotFromCharge(
  * payment_method_details + card.country (only present on Charge, not on PI).
  * `latest_charge` is returned as an ID string without `expand`; we expand it.
  *
- * Only used by payment_intent.payment_failed — Stripe does not fire a
- * charge.succeeded event when a payment fails, so this is the only path that
- * still needs an extra retrieve. Successful payments populate card / Radar
- * fields from the charge.succeeded handler instead.
+ * Used by the two analytics-only event handlers — payment_intent.succeeded
+ * (for dashboards that join checkout sessions to the PI for the real method)
+ * and payment_intent.payment_failed (for card_country on declines, since
+ * Stripe doesn't fire charge.succeeded on failure). Never called on the
+ * credit-grant path (checkout.session.completed), which stays a pure D1 write.
  */
 async function fetchChargeForPaymentIntent(
     stripe: Stripe,
@@ -602,6 +603,16 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "payment_intent.succeeded": {
                 const paymentIntent = event.data.object as Stripe.PaymentIntent;
                 console.log(`Payment intent succeeded: ${paymentIntent.id}`);
+                // Analytics-only path (no D1 write, fully inside waitUntil) — the
+                // existing user-intelligence dashboards join checkout rows to this
+                // event for payment_method, so we still retrieve the charge here.
+                // The credit-grant path (checkout.session.completed) intentionally
+                // does NOT do this fetch.
+                const charge = await fetchChargeForPaymentIntent(
+                    stripe,
+                    paymentIntent.id,
+                );
+                const snapshot = snapshotFromCharge(charge);
                 const methodsOffered = (
                     paymentIntent.payment_method_types ?? []
                 ).join(",");
@@ -614,8 +625,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         amountCents: paymentIntent.amount || 0,
                         currency: paymentIntent.currency || "usd",
                         paymentStatus: paymentIntent.status || "succeeded",
-                        paymentMethod: "unknown",
+                        paymentMethod: snapshot.paymentMethod,
+                        paymentMethodRaw: snapshot.paymentMethodRaw,
+                        paymentMethodWallet: snapshot.paymentMethodWallet,
                         paymentMethodsOffered: methodsOffered,
+                        cardCountry: snapshot.cardCountry,
+                        cardBrand: snapshot.cardBrand,
+                        cardNetwork: snapshot.cardNetwork,
+                        riskLevel: snapshot.riskLevel,
+                        riskScore: snapshot.riskScore,
                         customerEmail:
                             paymentIntent.receipt_email ||
                             (

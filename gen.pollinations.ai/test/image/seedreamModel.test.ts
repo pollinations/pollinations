@@ -112,7 +112,9 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
         expect(input.image_input).toEqual([]);
         expect(input.sequential_image_generation).toBe("disabled");
         expect(input.max_images).toBe(1);
-        expect(input.seed).toBe(42);
+        // seed must NOT be sent — Replicate seedream-4 silently drops it,
+        // seedream-4.5 strict-rejects unknown fields.
+        expect(input.seed).toBeUndefined();
     });
 
     it("returns seedream as actualModel", async () => {

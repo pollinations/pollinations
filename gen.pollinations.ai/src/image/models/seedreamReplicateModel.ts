@@ -50,7 +50,6 @@ interface SeedreamReplicateInput {
     image_input: string[];
     sequential_image_generation: "disabled";
     max_images: 1;
-    seed?: number;
 }
 
 interface SeedreamVariantConfig {
@@ -162,6 +161,8 @@ async function callSeedreamReplicateAPI(
     }
 
     const longerSide = Math.max(safeParams.width ?? 0, safeParams.height ?? 0);
+    // Replicate's bytedance/seedream-4 and 4.5 schemas don't accept a `seed`
+    // field — 4.5 strict-rejects unknown fields, 4 silently drops them.
     const input: SeedreamReplicateInput = {
         prompt,
         size: variant.resolveSize(longerSide),
@@ -174,9 +175,6 @@ async function callSeedreamReplicateAPI(
         sequential_image_generation: "disabled",
         max_images: 1,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
-        input.seed = safeParams.seed;
-    }
 
     logOps(`${variant.displayName} input:`, {
         ...input,

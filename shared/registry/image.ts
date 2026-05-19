@@ -86,7 +86,7 @@ export const IMAGE_SERVICES = {
     "seedream5": {
         aliases: [],
         modelId: "seedream5",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
@@ -231,38 +231,22 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
     },
-    "seedance": {
-        aliases: [],
-        modelId: "seedance",
-        provider: "bytedance",
-        brand: "ByteDance",
-        category: "video",
-        addedDate: new Date("2025-12-01").getTime(),
-        paidOnly: true,
-        cost: {
-            // Token formula: (height × width × FPS × duration) / 1024
-            completionVideoTokens: perMillion(1.8), // per 1M tokens
-        },
-        description:
-            "Seedance Lite - BytePlus video generation (better quality)",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame", "end_frame"],
-    },
     "seedance-pro": {
         aliases: [],
         modelId: "seedance-pro",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
+        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
+        // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
+        // to 720p; revisit if/when the registry supports tiered pricing.
         cost: {
-            // Token formula: (height × width × FPS × duration) / 1024
-            completionVideoTokens: perMillion(1.0), // per 1M tokens
+            completionVideoSeconds: 0.025, // per sec at 720p
         },
         description:
-            "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
+            "Seedance Pro-Fast - Text/image-to-video (720p, better prompt adherence)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11073,
+  "title": "feat(image): migrate seedream5 + seedance-pro to Replicate; retire seedance",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/11073",
+  "merged_at": "2026-05-19T11:16:27Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Migrates the two viable Seedream/Seedance models to Replicate, where seedance-2.0 already lives. Consolidates inference on Replicate, consistent error handling, billing tied to where the rest of our infra is.\n\n- `seedream5` → `bytedance/seedream-5-lite` — price stays at **$0.0525/img** (Replicate's $0.035 × our 1.5× markup = existing price, no user impact)\n- `seedance-pro` → `bytedance/seedance-1-pro-fast` — switches from per-token to **$0.025/s at 720p**\n\n`seedance` (Lite) is **retired from the registry**. Replicate's `bytedance/seedance-1-lite` endpoint reproducibly fails with `Service is temporarily unavailable (E004) (1cah9wlWR9)` at every resolution (verified 2026-05-18 and 2026-05-19), and BytePlus is being deprecated, so neither path is viable. The model is removed entirely; revisit when Replicate restores Lite.\n\nBoth video models locked to 720p for now since the registry only carries a single per-second rate. Tiered 480p/1080p can come back in a follow-up when the registry grows per-resolution support. Model IDs/endpoints/response shapes for the two migrated models unchanged.\n\nOld BytePlus seedance handler (`seedanceVideoModel.ts`) is gone along with its `classifyByteplusError` test. The legacy `seedream` 4.0 / `seedream-pro` 4.5 paths are still BytePlus and untouched — they live in `seedreamModel.ts` and continue to need `BYTEDANCE_API_KEY`.\n\n`scripts/test-replicate-migration.mjs` is a small chained T2I → I2I/I2V harness for eyeballing output (output dir gitignored). Kept in-tree so the next Replicate model add has something to crib from.\n\nThe Replicate seedance-pro handler honors the documented schema contract: when clients pass `width`/`height` without `aspectRatio`, derives the closest Seedance-supported ratio (16:9, 4:3, 1:1, 3:4, 9:16, 21:9, 9:21).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Moving day for Seedance",
+    "blurb": "We've transplanted Seedream 5 and Seedance Pro to a new, more stable garden bed on Replicate. Enjoy crisp, reliable 720p video generations!",
+    "summary": "Migrated seedream5 and seedance-pro to Replicate for improved stability, standardizing video outputs at 720p ($0.025/s) and retiring the legacy seedance (Lite) model.",
+    "impact": "Users get more reliable inference for Seedream 5 and Seedance Pro, with video generation streamlined to a consistent 720p resolution.",
+    "keywords": [
+      "models",
+      "replicate",
+      "video",
+      "seedream",
+      "seedance"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot transplanting glowing digital seeds (representing the models) into a new, sturdy garden bed (representing Replicate).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron and a chunky monitor-head robot carefully transplanting glowing digital seeds into a fresh, sturdy lime green (#ecf874) garden bed. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11073.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron and a chunky monitor-head robot carefully transplanting glowing digital seeds into a fresh, sturdy lime green (#ecf874) garden bed. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-19T11:17:35.923726+00:00"
+}

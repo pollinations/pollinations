@@ -18,7 +18,7 @@ import {
 } from "../lib/output.js";
 
 const NEXT_STEPS = [
-    'polli gen image "a sunset over kyoto" -o sunset.png',
+    'polli gen image "a sunset over kyoto" --output sunset.png',
     "polli --help",
 ];
 

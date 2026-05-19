@@ -1,0 +1,34 @@
+{
+  "pr_number": 11166,
+  "title": "docs: update README — 2026-05-19",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11166",
+  "merged_at": "2026-05-19T08:14:00Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News + Recent Apps sections.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily bulletin",
+    "blurb": "Polly pinned the latest community news and apps to the hive's bulletin board.",
+    "summary": "Automated daily update to the README's Latest News and Recent Apps sections.",
+    "impact": "Repository visitors will see the most current community apps and news highlights.",
+    "keywords": [
+      "readme",
+      "news",
+      "automated",
+      "docs"
+    ],
+    "visual_concept": "Polly the bee pinning a new newspaper clipping or announcement to a cozy wooden bulletin board.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning a tiny newspaper clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11166.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning a tiny newspaper clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T08:14:56.920859+00:00"
+}

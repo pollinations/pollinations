@@ -24,20 +24,6 @@ import {
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
 
-function withTimeout<T>(
-    promise: Promise<T>,
-    ms: number,
-    label: string,
-): Promise<T> {
-    const timeout = new Promise<never>((_, reject) => {
-        setTimeout(
-            () => reject(new Error(`${label} timeout after ${ms / 1000}s`)),
-            ms,
-        );
-    });
-    return Promise.race([promise, timeout]);
-}
-
 /**
  * Calls the Azure Flux Kontext API to generate or edit images
  * Supports both text-to-image generation and image-to-image editing
@@ -74,13 +60,8 @@ export async function callAzureFluxKontext(
         logCloudflare("Using Azure Flux Kontext in generation mode");
     }
 
-    // Check prompt safety with Azure Content Safety (with 30s timeout)
     logCloudflare("Checking prompt safety...");
-    const promptSafetyResult = await withTimeout(
-        analyzeTextSafety(prompt),
-        30000,
-        "Azure Content Safety check",
-    );
+    const promptSafetyResult = await analyzeTextSafety(prompt);
 
     // Log the prompt with safety analysis results
     await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
@@ -143,13 +124,8 @@ export async function callAzureFluxKontext(
 
             const { buffer, mimeType } = await downloadUserImage(imageUrl);
 
-            // Check safety of input image (with 30s timeout)
             logCloudflare("Checking safety of input image");
-            const imageSafetyResult = await withTimeout(
-                analyzeImageSafety(buffer),
-                30000,
-                "Azure Image Safety check",
-            );
+            const imageSafetyResult = await analyzeImageSafety(buffer);
 
             if (!imageSafetyResult.safe) {
                 const errorMessage = `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`;

@@ -15,6 +15,8 @@ cd enter.pollinations.ai/observability
 tb --cloud sql "SELECT ... FROM generation_event ..."
 ```
 
+> **Workspace**: This skill is **prod-only**. The `.tinyb` in `observability/` points to the `pollinations_enter` workspace (prod traffic). Staging traffic lives in `pollinations_enter_staging` and has no real abuse signal — don't waste time analyzing it. To pin a query to staging anyway (e.g. testing a new scoring query), set `TB_TOKEN=<staging_admin_token>` for that one command.
+
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
 
 > **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API:

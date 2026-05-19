@@ -25,6 +25,8 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 - **generation_event**: Usage data with `user_tier`, `total_price`, `user_id`
 - Tracks all API requests with pricing and tier info
 
+> **Workspace**: Two workspaces exist now — `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). All queries below use a **prod** read token by design — staging contains no real revenue. The `environment = 'production'` filters below are redundant against prod-token queries (prod WS only has prod rows after the 2026-05-18 cleanup) but kept as defence-in-depth in case the token is later widened.
+
 ---
 
 # Quick Commands

@@ -6,7 +6,7 @@ import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "../../../../../shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
 import {
-    getActivePriceDefinition,
+    getPriceDefinition,
     type ModelName,
     type PriceDefinition,
 } from "../../../../../shared/registry/registry.ts";
@@ -36,7 +36,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     // Add text models
     for (const [serviceName, serviceConfig] of Object.entries(TEXT_SERVICES)) {
         if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
-        const latestPrice = getActivePriceDefinition(
+        const latestPrice = getPriceDefinition(
             serviceName as ModelName,
         ) as PriceDefinition | null;
         if (!latestPrice) continue;
@@ -75,7 +75,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     // Add image/video models
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
         if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
-        const latestPrice = getActivePriceDefinition(
+        const latestPrice = getPriceDefinition(
             serviceName as ModelName,
         ) as PriceDefinition | null;
         if (!latestPrice) continue;
@@ -146,7 +146,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     // Add embedding models — input-only pricing (output is a vector).
     // Gemini Embedding 2 bills every modality at its own per-million rate.
     for (const serviceName of Object.keys(EMBEDDING_SERVICES)) {
-        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+        const latestPrice = getPriceDefinition(serviceName as ModelName);
         if (!latestPrice) continue;
 
         prices.push({
@@ -175,7 +175,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     // Add audio models (TTS and STT)
     for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
         if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
-        const latestPrice = getActivePriceDefinition(
+        const latestPrice = getPriceDefinition(
             serviceName as ModelName,
         ) as PriceDefinition | null;
         if (!latestPrice) continue;

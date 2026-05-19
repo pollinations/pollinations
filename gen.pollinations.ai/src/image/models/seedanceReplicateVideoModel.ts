@@ -1,15 +1,15 @@
 /**
- * ByteDance Seedance 1.x video generation via Replicate.
+ * ByteDance Seedance Pro-Fast video generation via Replicate.
  *
- * Replaces the BytePlus ARK path (seedanceVideoModel.ts). Two variants share
- * one generator:
- *   - seedance      → bytedance/seedance-1-lite     (supports last_frame_image)
- *   - seedance-pro  → bytedance/seedance-1-pro-fast (first frame only)
+ * Replaces the BytePlus ARK path for seedance-pro. The `seedance` (Lite)
+ * model has been retired from the registry — Replicate's
+ * bytedance/seedance-1-lite endpoint is reproducibly broken (E004 incident
+ * 1cah9wlWR9 at all resolutions, May 2026) and BytePlus is being deprecated.
  *
  * v1: 720p locked, matching seedance-2.0. Replicate prices 480p / 720p / 1080p
- * differently ($0.018 / $0.036 / $0.072 per sec for lite); the registry only
- * carries a single per-second rate, so we ship 720p and revisit tiered pricing
- * as a follow-up rather than under-bill 1080p or over-bill 480p.
+ * differently ($0.015 / $0.025 / $0.06 per sec for pro-fast); the registry
+ * only carries a single per-second rate, so we ship 720p and revisit tiered
+ * pricing as a follow-up rather than under-bill 1080p or over-bill 480p.
  */
 
 import debug from "debug";
@@ -40,17 +40,48 @@ const SEEDANCE_ASPECT_RATIOS = [
 ] as const;
 type SeedanceAspectRatio = (typeof SEEDANCE_ASPECT_RATIOS)[number];
 
-function resolveSeedanceAspectRatio(
-    requested: ImageParams["aspectRatio"] | undefined,
+// When clients pass width/height without aspectRatio (documented schema
+// contract: "If not set, determined by width/height"), derive a Seedance-
+// supported ratio by minimum euclidean distance in log space, so 1920×1080
+// → 16:9, 720×1280 → 9:16, 800×800 → 1:1, etc.
+function deriveAspectRatioFromDimensions(
+    width: number,
+    height: number,
 ): SeedanceAspectRatio {
-    if (!requested) return "16:9";
-    if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-        return requested as SeedanceAspectRatio;
+    const target = Math.log(width / height);
+    let best: SeedanceAspectRatio = "16:9";
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const ar of SEEDANCE_ASPECT_RATIOS) {
+        const [w, h] = ar.split(":").map(Number);
+        const dist = Math.abs(Math.log(w / h) - target);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = ar;
+        }
     }
-    throw new HttpError(
-        `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
-        400,
-    );
+    return best;
+}
+
+function resolveSeedanceAspectRatio(
+    safeParams: ImageParams,
+): SeedanceAspectRatio {
+    const requested = safeParams.aspectRatio;
+    if (requested) {
+        if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
+            return requested as SeedanceAspectRatio;
+        }
+        throw new HttpError(
+            `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
+            400,
+        );
+    }
+    if (safeParams.width && safeParams.height) {
+        return deriveAspectRatioFromDimensions(
+            safeParams.width,
+            safeParams.height,
+        );
+    }
+    return "16:9";
 }
 
 interface SeedanceInput {
@@ -79,15 +110,6 @@ interface SeedanceModelConfig {
     /** Max duration accepted by the upstream (Replicate caps at 12). */
     maxDuration: number;
 }
-
-const SEEDANCE_LITE_CONFIG: SeedanceModelConfig = {
-    model: "bytedance/seedance-1-lite",
-    trackingLabel: "seedance",
-    displayName: "Seedance Lite",
-    supportsEndFrame: true,
-    defaultDuration: 5,
-    maxDuration: 10,
-};
 
 const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
@@ -142,7 +164,7 @@ async function generateSeedanceVideo(
         prompt,
         duration,
         resolution: "720p",
-        aspect_ratio: resolveSeedanceAspectRatio(safeParams.aspectRatio),
+        aspect_ratio: resolveSeedanceAspectRatio(safeParams),
         fps: 24,
         camera_fixed: false,
     };
@@ -232,23 +254,6 @@ async function generateSeedanceVideo(
         },
     };
 }
-
-/**
- * Seedance Lite via Replicate — supports T2V and I2V with optional last frame.
- */
-export const callSeedanceAPI = (
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<VideoGenerationResult> =>
-    generateSeedanceVideo(
-        SEEDANCE_LITE_CONFIG,
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
 
 /**
  * Seedance Pro-Fast via Replicate — T2V and I2V (first frame only).

@@ -1,4 +1,4 @@
-import type { Logger } from "@logtape/logtape";
+import { getLogger, type Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import {
     collectRequestInputs,
@@ -178,7 +178,10 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
     c: Context<TEnv>,
 ) {
-    const log = c.get("log");
+    // Use getLogger directly instead of c.get("log"). The error handler must
+    // never depend on logger middleware having run successfully — getLogger is
+    // idempotent (returns the same singleton for the same category).
+    const log = getLogger(["hono"]);
     const timestamp = new Date().toISOString();
 
     // Set the error on the context for it to be tracked

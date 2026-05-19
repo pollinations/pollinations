@@ -136,13 +136,23 @@ const chatCompletionHandlers = factory.createHandlers(
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {
-            const responseJson = await response.clone().json();
-            const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                responseJson,
-                { reportInput: true },
-            );
-            contentFilterHeaders =
-                contentFilterResultsToHeaders(parsedResponse);
+            const responseText = await response.clone().text();
+            try {
+                const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                    JSON.parse(responseText),
+                    { reportInput: true },
+                );
+                contentFilterHeaders =
+                    contentFilterResultsToHeaders(parsedResponse);
+            } catch (parseError) {
+                throw new UpstreamError(502, {
+                    message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+                    requestUrl: new URL(c.req.url),
+                    upstreamStatus: response.status,
+                    responseBody: responseText,
+                    cause: parseError,
+                });
+            }
         }
 
         return withSafetyHeaders(

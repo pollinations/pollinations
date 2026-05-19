@@ -43,7 +43,6 @@ SQL >
         ON ge.api_key_created_via = 'redirect-auth'
        AND ge.api_key_client_id = ra.app_key_id
     WHERE ge.start_time > now() - INTERVAL 7 DAY
-      AND ge.environment = 'production'
       AND ge.response_status >= 200 AND ge.response_status < 300
       AND ge.total_price > 0
       AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)

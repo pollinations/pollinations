@@ -7,10 +7,7 @@ import debug from "debug";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
-import {
-    callSeedanceAPI,
-    callSeedanceProAPI,
-} from "./models/seedanceReplicateVideoModel.ts";
+import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
     callVeoAPI,
@@ -46,14 +43,6 @@ export async function createAndReturnVideo(
     switch (safeParams.model) {
         case "veo":
             result = await callVeoAPI(prompt, safeParams, progress, requestId);
-            break;
-        case "seedance":
-            result = await callSeedanceAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
             break;
         case "seedance-pro":
             result = await callSeedanceProAPI(

@@ -106,17 +106,9 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // ByteDance Seedance Lite via Replicate (was BytePlus ARK)
-    seedance: {
-        type: "replicate-seedance",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
-        defaultResolution: "720p",
-    },
-
-    // ByteDance Seedance Pro-Fast via Replicate (was BytePlus ARK)
+    // ByteDance Seedance Pro-Fast via Replicate (was BytePlus ARK).
+    // `seedance` (Lite) is retired — Replicate's lite endpoint reproducibly
+    // fails (E004 1cah9wlWR9) and BytePlus is being deprecated.
     "seedance-pro": {
         type: "replicate-seedance-pro",
         enhance: false,

@@ -12,8 +12,8 @@ SQL >
         count() AS purchases
     FROM stripe_event
     WHERE
-        payment_status = 'paid'
-        AND event_type = 'checkout.session.completed'
+        payment_status IN ('paid', 'no_payment_required')
+        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
         AND timestamp >= toDate('2025-10-01')
         {% if defined(days_back) %}
         AND timestamp >= today() - INTERVAL {{ Int32(days_back, 90) }} DAY

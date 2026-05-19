@@ -150,10 +150,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 1e-7,
     },
     "price": {
-      "completionTextTokens": 0.0000012,
-      "promptAudioTokens": 9e-7,
-      "promptCachedTokens": 3e-8,
-      "promptTextTokens": 3e-7,
+      "completionTextTokens": 6e-7,
+      "promptAudioTokens": 4.5e-7,
+      "promptCachedTokens": 1.5e-8,
+      "promptTextTokens": 1.5e-7,
     },
   },
   "gemini-flash-lite-3.1": {

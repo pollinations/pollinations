@@ -297,7 +297,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 3,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
@@ -453,6 +453,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
+        paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(0.2), // per 1M tokens

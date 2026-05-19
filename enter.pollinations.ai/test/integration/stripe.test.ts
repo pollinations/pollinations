@@ -192,7 +192,7 @@ test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
     });
     expect(response.status).toBe(400);
     const data = (await response.json()) as { error: string };
-    expect(data.error).toBe("Invalid pack amount");
+    expect(data.error).toBe("Invalid pack");
 });
 
 test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async ({
@@ -227,7 +227,7 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     );
     expect(checkoutRequest?.body.customer).toBe("cus_mock_1");
     expect(checkoutRequest?.body.payment_method_configuration).toBe(
-        "pmc_1TUpoC6O03AauPe8gaFzZxyM",
+        "pmc_1TYjwI6O03AauPe8spSyH3ph",
     );
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
@@ -250,21 +250,30 @@ test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", a
     )?.body;
     expect(body).toBeTruthy();
 
-    // Line item: unit amount + product copy must match the $10 pack catalog.
+    // No cf-ipcountry header → USD default cohort: native USD pricing, no AP.
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1000");
     expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.["line_items[0][price_data][product_data][name]"]).toMatch(
         /10 Pollen \+ 3 FREE/,
     );
 
-    // Session metadata must snapshot the grant so the webhook credits
-    // exactly what was displayed at checkout time.
+    // Session metadata must snapshot the grant + pack identity so the webhook
+    // credits exactly what was displayed at checkout time. packCurrency /
+    // packAmountCents reflect the integration currency actually sent to
+    // Stripe; cohort identifies which routing branch was taken.
+    expect(body?.["metadata[packKey]"]).toBe("p10");
     expect(body?.["metadata[packAmount]"]).toBe("10");
+    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
+    expect(body?.["metadata[packCurrency]"]).toBe("usd");
+    expect(body?.["metadata[packAmountCents]"]).toBe("1000");
     expect(body?.["metadata[packPollenGrant]"]).toBe("13");
     expect(body?.["metadata[packBonusPollen]"]).toBe("3");
+    expect(body?.["metadata[cohort]"]).toBe("USD");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p10");
     expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("10");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("13");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("3");
@@ -288,17 +297,164 @@ test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
     )?.body;
     expect(body).toBeTruthy();
 
+    // No cf-ipcountry header → USD default cohort.
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("200");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.["line_items[0][price_data][product_data][name]"]).not.toMatch(
         /FREE/,
     );
 
+    expect(body?.["metadata[packKey]"]).toBe("p2");
     expect(body?.["metadata[packAmount]"]).toBe("2");
     expect(body?.["metadata[packPollenGrant]"]).toBe("2");
     expect(body?.["metadata[packBonusPollen]"]).toBe("0");
+    expect(body?.["metadata[cohort]"]).toBe("USD");
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
     expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
+});
+
+// Cohort routing: cf-ipcountry determines integration currency, AP behaviour,
+// and per-cohort PMC. Mock frankfurter.dev returns 0.93 USD/EUR by default.
+test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + BR PMC", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_eur");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    const response = await SELF.fetch(`${base}/checkout/5`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "BR",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // $5 × 100 × 0.93 = 465 EUR cents (€4.65). Stripe AP localizes EUR → BRL
+    // for the buyer's display, but the integration amount we send is EUR.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("465");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1TYjxa6O03AauPe8w1niCN1s",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("BR");
+    expect(body?.["metadata[packCurrency]"]).toBe("eur");
+    expect(body?.["metadata[packAmountCents]"]).toBe("465");
+    // Pollen grant stays USD-anchored ($5 + 1 bonus = 6 pollen).
+    expect(body?.["metadata[packAmountUsd]"]).toBe("5");
+    expect(body?.["metadata[packPollenGrant]"]).toBe("6");
+});
+
+test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP off + EU_CORE PMC", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_eur");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    const response = await SELF.fetch(`${base}/checkout/10`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "NL",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // $10 × 100 × 0.93 = 930 EUR cents (€9.30). EU buyers see EUR natively,
+    // so AP is off — avoids a redundant Stripe FX margin layer.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("930");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1TYjy16O03AauPe8QDf9zVag",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
+});
+
+test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + APAC PMC", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_eur");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    const response = await SELF.fetch(`${base}/checkout/20`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "CN",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // $20 × 100 × 0.93 = 1860 EUR cents (€18.60). AP localizes EUR → CNY.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1860");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1TYjxo6O03AauPe8hw5qidqt",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
+});
+
+test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIPAY)", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_eur");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    // The 5,000-charge live audit showed 99.8% of MO billing-country charges
+    // were US-issued cards. Routing MO into APAC_ALIPAY would hand abusers
+    // a richer payment-method menu. MO must drop to USD default.
+    const response = await SELF.fetch(`${base}/checkout/5`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "MO",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("500");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1TYjwI6O03AauPe8spSyH3ph",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("USD");
+    // USD cohort never calls FX cache (no fetch to frankfurter).
+    expect(mocks.frankfurter.state.callCount).toBe(0);
 });
 
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({

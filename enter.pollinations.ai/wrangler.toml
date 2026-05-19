@@ -46,7 +46,11 @@ STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 # Stripe Payment Method Configurations (sandbox)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
+# Phase 1 cohort PMCs (sandbox)
+STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
+STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
+STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
+STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
 
 
 [env.local]
@@ -84,7 +88,11 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
+# Phase 1 cohort PMCs (sandbox)
+STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
+STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
+STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
+STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
@@ -199,53 +207,11 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
-
-[env.dev]
-
-[[env.dev.routes]]
-pattern = "dev.enter.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
-
-[[env.dev.d1_databases]]
-binding = "DB"
-database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
-migrations_dir = "drizzle"
-
-[[env.dev.kv_namespaces]]
-# development-pollinations-enter-kv
-binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
-
-[[env.dev.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-remote = true
-
-[[env.dev.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-remote = true
-
-[env.dev.vars]
-ENVIRONMENT = "dev"
-USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
-LOG_LEVEL = "debug"
-LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
-TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-# TODO: Change back to staging image endpoint once staging services are available
-# Currently using prod services for simplicity
-# Stripe payments (sandbox for dev)
-STRIPE_MODE = "sandbox"
-STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
-STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
+# Phase 1 cohort PMCs (sandbox)
+STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
+STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
+STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
+STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
 
 [env.test]
 
@@ -291,4 +257,9 @@ TINYBIRD_SYNC_TOKEN = "test_tinybird_sync_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
+# Phase 1 cohort PMCs (test env reuses the real sandbox PMCs; mocked Stripe
+# just records what was sent so any string works, but real IDs avoid drift).
+STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
+STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
+STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
+STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"

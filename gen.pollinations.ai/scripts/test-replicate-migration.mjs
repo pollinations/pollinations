@@ -9,6 +9,10 @@
  *   4. seedance I2V animates the seed image (verifies image-to-video)
  *   5. seedance-pro T2V (standalone)
  *   6. seedance-pro I2V animates the seed image
+ *   7. seedream 4.0 T2I (legacy variant on Replicate)
+ *   8. seedream 4.0 I2I — edits the seed image
+ *   9. seedream-pro 4.5 T2I
+ *  10. seedream-pro 4.5 I2I — edits the seed image
  *
  * Usage:
  *   node scripts/test-replicate-migration.mjs
@@ -223,6 +227,92 @@ const tests = [
                 "6-seedance-pro-i2v.mp4",
             );
             return `output=${file.sizeKB}KB duration=${pred.metrics?.video_output_duration_seconds || "?"}s`;
+        },
+    },
+    {
+        name: "seedream 4.0: text-to-image — generates a fresh seed image",
+        run: async () => {
+            const pred = await runPrediction({
+                model: "bytedance/seedream-4",
+                input: {
+                    prompt: "A cozy ceramic mug of coffee on a wooden desk by a window, soft morning light",
+                    size: "1K",
+                    aspect_ratio: "1:1",
+                    image_input: [],
+                    sequential_image_generation: "disabled",
+                    max_images: 1,
+                },
+            });
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
+            const file = await downloadToFile(url, "7-seedream4-t2i.png");
+            return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s`;
+        },
+    },
+    {
+        name: "seedream 4.0: image-to-image — edits the seed image (add steam rising)",
+        run: async () => {
+            if (!seedImageUrl) throw new Error("No seed image from Test 1");
+            const pred = await runPrediction({
+                model: "bytedance/seedream-4",
+                input: {
+                    prompt: "Add gentle steam rising from the apple's surface. Keep everything else identical.",
+                    size: "2K",
+                    aspect_ratio: "match_input_image",
+                    image_input: [seedImageUrl],
+                    sequential_image_generation: "disabled",
+                    max_images: 1,
+                },
+            });
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
+            const file = await downloadToFile(url, "8-seedream4-i2i.png");
+            return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s`;
+        },
+    },
+    {
+        name: "seedream-pro 4.5: text-to-image",
+        run: async () => {
+            const pred = await runPrediction({
+                model: "bytedance/seedream-4.5",
+                input: {
+                    prompt: "A misty forest path at dawn, soft volumetric light, photorealistic",
+                    size: "2K",
+                    aspect_ratio: "16:9",
+                    image_input: [],
+                    sequential_image_generation: "disabled",
+                    max_images: 1,
+                },
+            });
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
+            const file = await downloadToFile(url, "9-seedream45-t2i.png");
+            return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s`;
+        },
+    },
+    {
+        name: "seedream-pro 4.5: image-to-image — edits the seed image (add water droplets)",
+        run: async () => {
+            if (!seedImageUrl) throw new Error("No seed image from Test 1");
+            const pred = await runPrediction({
+                model: "bytedance/seedream-4.5",
+                input: {
+                    prompt: "Add water droplets glistening on the apple's skin. Keep the table and lighting identical.",
+                    size: "2K",
+                    aspect_ratio: "match_input_image",
+                    image_input: [seedImageUrl],
+                    sequential_image_generation: "disabled",
+                    max_images: 1,
+                },
+            });
+            const url = Array.isArray(pred.output)
+                ? pred.output[0]
+                : pred.output;
+            const file = await downloadToFile(url, "10-seedream45-i2i.png");
+            return `output=${file.sizeKB}KB predict_time=${pred.metrics?.predict_time?.toFixed(1) || "?"}s`;
         },
     },
 ];

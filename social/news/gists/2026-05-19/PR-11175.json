@@ -1,0 +1,35 @@
+{
+  "pr_number": 11175,
+  "title": "Add Duwit to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11175",
+  "merged_at": "2026-05-19T13:07:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Duwit](https://duwit-45a37.web.app/) to business\n- Duwit — Brief Description\n\nFixes #10389",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Duwit joins the greenhouse",
+    "blurb": "Another beautiful app blooms in our community garden! Duwit has officially been added to the business showcase.",
+    "summary": "Added the community-built app Duwit to the business showcase and greenhouse directory.",
+    "impact": "Users can now discover and explore Duwit in the official Pollinations app showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse",
+      "business"
+    ],
+    "visual_concept": "The Pollinations bee (Polly) welcoming a new plant in a cozy greenhouse setting, representing the new community app addition. Polly is watering a fresh sprout in a lime green pot.",
+    "image_prompt": "Cozy pixel art scene inside a warm, glowing greenhouse where the cute bee mascot is watering a fresh new code-plant sprouting from a lime green (#ecf874) pot. Soft pastel gradient background with sunlight filtering through the glass. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-19/PR-11175.jpg",
+    "prompt": "Cozy pixel art scene inside a warm, glowing greenhouse where the cute bee mascot is watering a fresh new code-plant sprouting from a lime green (#ecf874) pot. Soft pastel gradient background with sunlight filtering through the glass. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-19T13:08:36.912456+00:00",
+  "app_name": "Duwit",
+  "app_url": "https://duwit-45a37.web.app/"
+}

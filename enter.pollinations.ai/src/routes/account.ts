@@ -636,7 +636,19 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of tier balance + paid balance)",
+            "Pollen visible to this caller. For budgeted API keys, this is the remaining key budget. Otherwise this is the account balance.",
+        ),
+    accountBalance: z
+        .object({
+            total: z
+                .number()
+                .describe("Total account pollen balance, tier plus paid"),
+            tier: z.number().describe("Tier-granted pollen balance"),
+            paid: z.number().describe("Paid pollen balance from purchases"),
+        })
+        .optional()
+        .describe(
+            "Account balance breakdown. Returned for session auth or API keys with `account:usage`.",
         ),
 });
 
@@ -753,7 +765,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope also receive the account balance breakdown. Paid-only models require paid pollen.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -774,14 +786,14 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const canReadAccountBalance =
+                !apiKey || !!apiKey.permissions?.account?.includes("usage");
 
-            // Keys with a budget always see their own budget — no scope needed.
-            if (apiKey?.pollenBalance != null) {
+            if (apiKey?.pollenBalance != null && !canReadAccountBalance) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Beyond that, reading account balance requires the `usage` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            if (!canReadAccountBalance) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
@@ -800,8 +812,16 @@ export const accountRoutes = new Hono<Env>()
 
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
+            const accountBalance = {
+                total: tierBalance + packBalance,
+                tier: tierBalance,
+                paid: packBalance,
+            };
 
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json({
+                balance: apiKey?.pollenBalance ?? accountBalance.total,
+                accountBalance,
+            });
         },
     )
     .get(

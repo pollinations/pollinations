@@ -59,6 +59,7 @@ export {
     getBalance,
     getDailyUsage,
     getImageModels,
+    getKeyUsage,
     getModels,
     getProfile,
     getTextModels,
@@ -78,6 +79,7 @@ export {
 // Export all types
 export type {
     AccountBalance,
+    AccountBalanceBreakdown,
     AccountKey,
     AccountPermission,
     AccountProfile,

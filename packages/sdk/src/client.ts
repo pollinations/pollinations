@@ -1862,7 +1862,10 @@ export class Pollinations {
     }
 
     /**
-     * Get account pollen balance
+     * Get the pollen balance visible to the current caller.
+     * Budgeted API keys see their remaining key budget in `balance`.
+     * Session auth and API keys with `account:usage` also receive
+     * `accountBalance` with total, tier, and paid pollen.
      *
      * @example
      * ```ts
@@ -1899,6 +1902,30 @@ export class Pollinations {
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
+    }
+
+    /**
+     * Get usage history for the API key used in this request.
+     * No account scope is required.
+     */
+    async accountKeyUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
         const response = await fetchWithTimeout(
             url,

@@ -12,7 +12,7 @@ SQL >
     FROM stripe_event s
     INNER JOIN d1_user u ON s.user_id = u.id
     WHERE s.event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
-        AND s.payment_status IN ('paid', 'no_payment_required')
+        AND s.payment_status = 'paid'
         AND s.livemode = 1
         AND u.github_id IS NOT NULL
         AND u.synced_at = (SELECT max(synced_at) FROM d1_user)

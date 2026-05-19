@@ -94,9 +94,10 @@ function snapshotFromCharge(
  * payment_method_details + card.country (only present on Charge, not on PI).
  * `latest_charge` is returned as an ID string without `expand`; we expand it.
  *
- * Used by the existing event handlers (checkout.session.completed,
- * payment_intent.succeeded, etc). The charge.succeeded handler doesn't need
- * this — the Charge IS the event payload.
+ * Only used by payment_intent.payment_failed — Stripe does not fire a
+ * charge.succeeded event when a payment fails, so this is the only path that
+ * still needs an extra retrieve. Successful payments populate card / Radar
+ * fields from the charge.succeeded handler instead.
  */
 async function fetchChargeForPaymentIntent(
     stripe: Stripe,
@@ -148,7 +149,6 @@ type CheckoutSessionResult = {
     message: string;
     pollenCredited?: number;
     duplicate?: boolean;
-    snapshot?: ChargeSnapshot;
     presentmentCurrency?: string;
     presentmentAmount?: number;
 };
@@ -282,7 +282,6 @@ const handleCheckoutSessionCompleted = async (
     event: Stripe.Event,
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
-    stripe: Stripe,
 ): Promise<CheckoutSessionResult> => {
     const metadata = session.metadata;
 
@@ -337,15 +336,11 @@ const handleCheckoutSessionCompleted = async (
         return { success: false, message: "User not found" };
     }
 
-    // Fetch the Charge to attribute the payment method correctly and capture
-    // card-issuer country / brand / network + Stripe Radar score. Without
-    // this fetch every wallet purchase collapses to "card" and every cohort
-    // dashboard would be blind to spoofed billing addresses.
-    const charge = await fetchChargeForPaymentIntent(
-        stripe,
-        session.payment_intent,
-    );
-    const snapshot = snapshotFromCharge(charge);
+    // Card-issuer country, brand, network, and Radar score arrive on the
+    // separate charge.succeeded webhook and are written to Tinybird from
+    // there. Keeping that data off the credit path keeps fulfillment fast
+    // and removes a synchronous Stripe RTT that would otherwise gate every
+    // pack purchase.
     const presentment = readPresentment(session);
     const sessionAmountTotal = session.amount_total ?? 0;
     const sessionCurrency = session.currency ?? "";
@@ -370,14 +365,13 @@ const handleCheckoutSessionCompleted = async (
     }
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, method: ${snapshot.paymentMethod}, card_country: ${snapshot.cardCountry || "n/a"}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
     );
 
     return {
         success: true,
         message: `Credited ${creditsToAdd} pollen to user ${userId}`,
         pollenCredited: creditsToAdd,
-        snapshot,
         presentmentCurrency: presentment.presentmentCurrency,
         presentmentAmount: presentment.presentmentAmount,
     };
@@ -477,7 +471,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         event,
                         session,
                         c.env,
-                        stripe,
                     );
 
                     if (result.duplicate) {
@@ -488,8 +481,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         const methodsOffered = (
                             session.payment_method_types ?? []
                         ).join(",");
-                        const snapshot =
-                            result.snapshot ?? EMPTY_CHARGE_SNAPSHOT;
 
                         c.executionCtx.waitUntil(
                             sendStripeEventToTinybird(c.env, {
@@ -501,20 +492,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                                 currency: session.currency || "usd",
                                 paymentStatus:
                                     session.payment_status || "unknown",
-                                paymentMethod: snapshot.paymentMethod,
-                                paymentMethodRaw: snapshot.paymentMethodRaw,
-                                paymentMethodWallet:
-                                    snapshot.paymentMethodWallet,
+                                paymentMethod: "unknown",
                                 paymentMethodsOffered: methodsOffered,
                                 presentmentCurrency:
                                     result.presentmentCurrency ?? "",
                                 presentmentAmount:
                                     result.presentmentAmount ?? 0,
-                                cardCountry: snapshot.cardCountry,
-                                cardBrand: snapshot.cardBrand,
-                                cardNetwork: snapshot.cardNetwork,
-                                riskLevel: snapshot.riskLevel,
-                                riskScore: snapshot.riskScore,
                                 customerEmail: session.customer_email || "",
                                 livemode: event.livemode,
                                 payload: event,
@@ -546,7 +529,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     event,
                     session,
                     c.env,
-                    stripe,
                 );
 
                 if (result.duplicate) {
@@ -557,7 +539,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     const methodsOffered = (
                         session.payment_method_types ?? []
                     ).join(",");
-                    const snapshot = result.snapshot ?? EMPTY_CHARGE_SNAPSHOT;
 
                     c.executionCtx.waitUntil(
                         sendStripeEventToTinybird(c.env, {
@@ -568,18 +549,11 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             amountCents: session.amount_total || 0,
                             currency: session.currency || "usd",
                             paymentStatus: session.payment_status || "unknown",
-                            paymentMethod: snapshot.paymentMethod,
-                            paymentMethodRaw: snapshot.paymentMethodRaw,
-                            paymentMethodWallet: snapshot.paymentMethodWallet,
+                            paymentMethod: "unknown",
                             paymentMethodsOffered: methodsOffered,
                             presentmentCurrency:
                                 result.presentmentCurrency ?? "",
                             presentmentAmount: result.presentmentAmount ?? 0,
-                            cardCountry: snapshot.cardCountry,
-                            cardBrand: snapshot.cardBrand,
-                            cardNetwork: snapshot.cardNetwork,
-                            riskLevel: snapshot.riskLevel,
-                            riskScore: snapshot.riskScore,
                             customerEmail: session.customer_email || "",
                             livemode: event.livemode,
                             payload: event,
@@ -628,11 +602,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "payment_intent.succeeded": {
                 const paymentIntent = event.data.object as Stripe.PaymentIntent;
                 console.log(`Payment intent succeeded: ${paymentIntent.id}`);
-                const charge = await fetchChargeForPaymentIntent(
-                    stripe,
-                    paymentIntent.id,
-                );
-                const snapshot = snapshotFromCharge(charge);
                 const methodsOffered = (
                     paymentIntent.payment_method_types ?? []
                 ).join(",");
@@ -645,15 +614,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         amountCents: paymentIntent.amount || 0,
                         currency: paymentIntent.currency || "usd",
                         paymentStatus: paymentIntent.status || "succeeded",
-                        paymentMethod: snapshot.paymentMethod,
-                        paymentMethodRaw: snapshot.paymentMethodRaw,
-                        paymentMethodWallet: snapshot.paymentMethodWallet,
+                        paymentMethod: "unknown",
                         paymentMethodsOffered: methodsOffered,
-                        cardCountry: snapshot.cardCountry,
-                        cardBrand: snapshot.cardBrand,
-                        cardNetwork: snapshot.cardNetwork,
-                        riskLevel: snapshot.riskLevel,
-                        riskScore: snapshot.riskScore,
                         customerEmail:
                             paymentIntent.receipt_email ||
                             (

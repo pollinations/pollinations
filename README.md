@@ -48,6 +48,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-19** – **🚀 Gemini 3.5 Flash** Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.
+- **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
 - **2026-05-18** – **✨ Uncapped Generations** We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).
 - **2026-05-17** – **🎬 Keyframe your videos** You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).
 - **2026-05-17** – **🗣️ Speaker diarization** The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.
@@ -56,8 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-05-15** – **🤖 GPT-5.4-Mini added** OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.
 - **2026-05-15** – **🚀 Mistral 4 arrives** Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier.
 - **2026-05-15** – **🔓 DeepSeek V4 Flash is free** We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it.
-- **2026-05-15** – **⚡ Faster Qwen Vision** Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there.
-- **2026-05-15** – **🎨 PromptArt Telegram Bot** A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot) <!-- app -->
 ---
 
 ## 🌱 Introduction

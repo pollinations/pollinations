@@ -1,0 +1,35 @@
+{
+  "pr_number": 11185,
+  "title": "fix: store Tinybird seconds usage as Float64",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11185",
+  "merged_at": "2026-05-20T00:56:39Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Fixes #10985.\n\n## What was actually broken\n\n`token_count_completion_video_seconds` was `UInt32` in Tinybird, but the producer sends floats (`121/24 = 5.041666...` for LTX-2's 8n+1 frame constraint). Tinybird's strict typing does **not** silently truncate — it quarantines the entire row. So every fractional-duration event was missing from `generation_event` entirely, not just losing precision.\n\nObserved on prod `generation_event_quarantine`:\n- ~2,500 LTX-2 events lost to quarantine in the last 14 days (~92% of all prod quarantine)\n- Bleed began May 8 (~3 days after PR #10663 made LTX-2 reliable enough to hit real volume)\n- Billing unaffected (totals come from a separate code path), but the per-event audit trail is gone\n\n## Migration approach: two-stage drop + add, no rebuild\n\nAvoided Forward Query / full table rebuild (437M rows) by:\n1. **Stage 1**: drop `UInt32 token_count_completion_video_seconds`, add audio Float64 columns. `ALTER TABLE`, seconds. Quarantine bleed stops immediately — the producer continues writing, the missing JSON field is silently ignored, rows still land with all other data.\n2. **Stage 2**: re-add `token_count_completion_video_seconds` as Float64. `ALTER TABLE`, seconds. Producer writes resume, full precision preserved.\n\nHistorical 1,400 rows that had values in the old UInt32 column reset to `0.0` — those values were already truncated integers, so the loss is acceptable.\n\nValidated end-to-end on staging (deploys #11–#16) with faithful seed data (50 integer success rows + 30 fractional quarantine rows mirroring the prod LTX-2 pattern).\n\n## Already deployed\n- Tinybird prod: deploy #118 (Stage 1), #119 (Stage 2), #120 (pipe). Confirmed real LTX-2 traffic now lands with `5.041666666666667` preserved; zero new quarantine on this column.\n\n## Changes in this PR\n- `shared/schemas/generation-event.ts` — `tokenCountPromptAudioSeconds` + `tokenCountCompletionAudioSeconds` on `TinybirdEvent` / `GenerationEventUsageParams`; map from `usage.promptAudioSecond",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fractions of a second",
+    "blurb": "Fixed a bug where fractional video generation times were getting lost in the void. Our analytics now properly track every fraction of a second.",
+    "summary": "Updated Tinybird schemas to store video and audio generation seconds as Float64, preventing fractional duration events from LTX-2 from being quarantined.",
+    "impact": "Internal analytics now accurately capture exact generation times without dropping fractional data.",
+    "keywords": [
+      "tinybird",
+      "analytics",
+      "bugfix",
+      "schema",
+      "observability"
+    ],
+    "visual_concept": "The Nomnom creature eating fractional numbers or a clock, with Polly the bee fixing a database or a pipe (Tinybird).",
+    "image_prompt": "Cozy pixel art scene of the round Nomnom creature happily eating floating point numbers and fractions while the bee mascot, wearing a tiny hard hat, fixes a glowing lime green (#ecf874) pipe. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-20/PR-11185.jpg",
+    "prompt": "Cozy pixel art scene of the round Nomnom creature happily eating floating point numbers and fractions while the bee mascot, wearing a tiny hard hat, fixes a glowing lime green (#ecf874) pipe. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-20T00:57:34.157217+00:00"
+}

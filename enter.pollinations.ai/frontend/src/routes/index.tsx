@@ -29,6 +29,7 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { QuestOverview } from "../components/quests";
 import {
     BuyPollenPanel,
     PollenBalance,
@@ -363,6 +364,7 @@ function RouteComponent() {
             {activePage === "models" && (
                 <Models tierBalance={tierBalance} packBalance={packBalance} />
             )}
+            {activePage === "quests" && <QuestOverview />}
         </DashboardShell>
     );
 }

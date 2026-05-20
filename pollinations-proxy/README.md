@@ -13,6 +13,7 @@ real work (D1, KV, R2, Workers) runs in the Myceli account.
 | `staging.gen.pollinations.ai` | `staging.gen.myceli.ai` |
 | `enter.pollinations.ai` *(disabled until prod cutover)* | `enter.myceli.ai` |
 | `gen.pollinations.ai` *(disabled until prod cutover)* | `gen.myceli.ai` |
+| `media.pollinations.ai` *(disabled until media cutover)* | `media.myceli.ai` |
 
 ## Forwarded headers
 
@@ -62,5 +63,7 @@ npm run deploy:staging
 ## Rollback
 
 Re-deploy the existing staging enter/gen workers on the Pollinations account
-to retake their custom domains. Or delete the proxy worker — Cloudflare
-falls back to whichever Worker last claimed the custom domain.
+to retake their custom domains. For media, re-deploy `pollinations-media-prod`
+on the Pollinations account to retake `media.pollinations.ai`. Or delete the
+proxy worker — Cloudflare falls back to whichever Worker last claimed the
+custom domain.

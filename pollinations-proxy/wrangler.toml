@@ -8,12 +8,13 @@ account_id = "efdcb0933eaac64f27c0b295039b28f2"
 # routes = [
 #   { pattern = "enter.pollinations.ai", custom_domain = true },
 #   { pattern = "gen.pollinations.ai", custom_domain = true },
+#   { pattern = "media.pollinations.ai", custom_domain = true },
 # ]
 
 # Host-to-upstream map is in [vars]; staging deploys with [env.staging]
 # overrides. Keys are the public host, values are the Myceli upstream host.
 [vars]
-UPSTREAM_MAP = '{"enter.pollinations.ai":"enter.myceli.ai","gen.pollinations.ai":"gen.myceli.ai"}'
+UPSTREAM_MAP = '{"enter.pollinations.ai":"enter.myceli.ai","gen.pollinations.ai":"gen.myceli.ai","media.pollinations.ai":"media.myceli.ai"}'
 
 [env.staging]
 name = "pollinations-proxy-staging"

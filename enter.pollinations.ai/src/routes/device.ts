@@ -1,4 +1,5 @@
 import * as schema from "@shared/db/better-auth.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -85,7 +86,7 @@ export const deviceRoutes = new Hono<Env>()
             scope: body.scope || null,
         });
 
-        const baseUrl = new URL(c.req.url).origin;
+        const baseUrl = getPublicOrigin(c);
         return c.json({
             device_code: deviceCode,
             user_code: userCode,

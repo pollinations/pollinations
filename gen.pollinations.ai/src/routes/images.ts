@@ -4,6 +4,7 @@
  * POST /v1/images/edits — edit images with text prompts + source images
  */
 
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -217,7 +218,7 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
         c.var.track.overrideResponseTracking(response.clone());
 
         if (body.response_format === "url") {
-            const origin = new URL(c.req.url).origin;
+            const origin = getPublicOrigin(c);
             const imageUrl = new URL(
                 `${origin}/image/${encodeURIComponent(safePrompt)}`,
             );

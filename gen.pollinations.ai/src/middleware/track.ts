@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { getRealClientIp } from "@shared/client-ip.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
@@ -126,8 +127,9 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
-        const rawIp = c.req.header("cf-connecting-ip");
-        const clientIp = rawIp ? stripIPv4MappedPrefix(rawIp) : undefined;
+        const rawIp = getRealClientIp(c);
+        const clientIp =
+            rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as

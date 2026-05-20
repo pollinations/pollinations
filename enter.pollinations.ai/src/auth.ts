@@ -33,6 +33,11 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     });
 
     return betterAuth({
+        // Always anchor auth (callbacks, cookies, redirects) to the public
+        // Pollinations hostname, never the Myceli upstream. The proxy
+        // architecture treats *.myceli.ai as internal; direct auth flows
+        // against it are intentionally non-functional.
+        baseURL: env.BETTER_AUTH_URL,
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",

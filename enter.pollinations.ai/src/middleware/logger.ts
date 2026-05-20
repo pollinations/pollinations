@@ -1,4 +1,5 @@
 import { getLogger, type Logger, withContext } from "@logtape/logtape";
+import { getRealClientIp } from "@shared/client-ip.ts";
 import { createMiddleware } from "hono/factory";
 import { ensureConfigured } from "@/logger";
 
@@ -31,9 +32,7 @@ export const logger = createMiddleware<Env>(async (c, next) => {
             method: c.req.method,
             routePath: c.req.url,
             userAgent: c.req.header("user-agent"),
-            ipAddress:
-                c.req.header("cf-connecting-ip") ||
-                c.req.header("x-forwarded-for"),
+            ipAddress: getRealClientIp(c),
         },
         async () => {
             if (shouldEmitRequestLogs) {

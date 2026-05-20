@@ -1,3 +1,4 @@
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -1126,7 +1127,7 @@ function transformOpenAPISchema(
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c) => {
-            const url = new URL(c.req.url);
+            const url = new URL(getPublicOrigin(c));
             url.protocol = "https:";
             url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
             url.pathname = "/docs";

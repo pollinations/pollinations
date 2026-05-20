@@ -82,6 +82,8 @@ export type TinybirdEvent = {
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
+    tokenCountPromptAudioSeconds: number;
+    tokenCountCompletionAudioSeconds: number;
 
     // Totals
     totalCost: number;
@@ -147,6 +149,8 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
+    tokenCountPromptAudioSeconds: number;
+    tokenCountCompletionAudioSeconds: number;
 };
 
 export function priceToEventParams(
@@ -195,6 +199,8 @@ export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
         tokenCountCompletionVideoSeconds: usage?.completionVideoSeconds || 0,
         tokenCountCompletionVideoTokens: usage?.completionVideoTokens || 0,
+        tokenCountPromptAudioSeconds: usage?.promptAudioSeconds || 0,
+        tokenCountCompletionAudioSeconds: usage?.completionAudioSeconds || 0,
     };
 }
 

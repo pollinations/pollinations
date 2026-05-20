@@ -73,8 +73,10 @@ SCHEMA >
 `token_count_completion_reasoning` UInt32   `json:$.tokenCountCompletionReasoning` DEFAULT 0,
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
-`token_count_completion_video_seconds` UInt32 `json:$.tokenCountCompletionVideoSeconds` DEFAULT 0,
-`token_count_completion_video_tokens`  UInt32 `json:$.tokenCountCompletionVideoTokens` DEFAULT 0,
+`token_count_prompt_audio_seconds`     Float64 `json:$.tokenCountPromptAudioSeconds` DEFAULT 0,
+`token_count_completion_audio_seconds` Float64 `json:$.tokenCountCompletionAudioSeconds` DEFAULT 0,
+`token_count_completion_video_seconds` Float64 `json:$.tokenCountCompletionVideoSeconds` DEFAULT 0,
+`token_count_completion_video_tokens`  UInt32  `json:$.tokenCountCompletionVideoTokens` DEFAULT 0,
 
 -- Totals
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,

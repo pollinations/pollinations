@@ -20,7 +20,18 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
 };
 
 /**
- * Convert OpenAI usage format to Usage format
+ * Convert OpenAI usage format to Usage format.
+ *
+ * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the
+ * inclusive grand total, with `*_details` subcategories that sum into it.
+ * Some providers violate this: Grok-reasoning (Azure), Mistral/DeepSeek
+ * reasoning models (OpenRouter), and certain Gemini responses report
+ * subcategories as additive counters separate from the grand total.
+ *
+ * We detect the convention per-row by comparing the grand total against
+ * the sum of details. If the subcategories exceed the grand total, the
+ * provider is using the additive convention and we treat `*_tokens` as
+ * the visible-text count directly.
  */
 export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens: number;
@@ -51,18 +62,23 @@ export function openaiUsageToUsage(openaiUsage: {
         (openaiUsage.completion_tokens_details?.audio_tokens || 0) +
         (openaiUsage.completion_tokens_details?.reasoning_tokens || 0);
 
-    // biome-ignore format: custom formatting
+    const promptTextTokens =
+        openaiUsage.prompt_tokens >= promptDetailTokens
+            ? openaiUsage.prompt_tokens - promptDetailTokens
+            : openaiUsage.prompt_tokens;
+
+    const completionTextTokens =
+        openaiUsage.completion_tokens >= completionDetailTokens
+            ? openaiUsage.completion_tokens - completionDetailTokens
+            : openaiUsage.completion_tokens;
+
     return {
-        promptTextTokens: 
-            openaiUsage.prompt_tokens - promptDetailTokens,
+        promptTextTokens,
         promptCachedTokens:
             openaiUsage.prompt_tokens_details?.cached_tokens || 0,
-        promptAudioTokens: 
-            openaiUsage.prompt_tokens_details?.audio_tokens || 0,
-        promptImageTokens:
-            openaiUsage.prompt_tokens_details?.image_tokens || 0,
-        completionTextTokens:
-            openaiUsage.completion_tokens - completionDetailTokens,
+        promptAudioTokens: openaiUsage.prompt_tokens_details?.audio_tokens || 0,
+        promptImageTokens: openaiUsage.prompt_tokens_details?.image_tokens || 0,
+        completionTextTokens,
         completionAudioTokens:
             openaiUsage.completion_tokens_details?.audio_tokens || 0,
         completionReasoningTokens:

@@ -461,11 +461,14 @@ type UsageRecord = {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number | null;
 };
@@ -513,7 +516,7 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
 }
 
 function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
@@ -662,6 +665,9 @@ const usageRecordSchema = z.object({
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
+    input_audio_seconds: z
+        .number()
+        .describe("Duration of input audio in seconds (for transcription/STT)"),
     input_image_tokens: z.number().describe("Number of input image tokens"),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
@@ -670,9 +676,17 @@ const usageRecordSchema = z.object({
             "Number of reasoning tokens (for models with chain-of-thought)",
         ),
     output_audio_tokens: z.number().describe("Number of output audio tokens"),
+    output_audio_seconds: z
+        .number()
+        .describe(
+            "Duration of output audio in seconds (for TTS/music generation)",
+        ),
     output_image_tokens: z
         .number()
         .describe("Number of output image tokens (1 per image)"),
+    output_video_seconds: z
+        .number()
+        .describe("Duration of output video in seconds"),
     cost_usd: z.number().describe("Cost in USD for this request"),
     response_time_ms: z
         .number()
@@ -862,7 +876,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
@@ -1594,7 +1608,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",

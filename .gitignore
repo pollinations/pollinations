@@ -315,6 +315,7 @@ image.pollinations.ai/temp_logs/
 
 # Tinybird CLI configuration (contains sensitive tokens)
 .tinyb
+.tinyb.*
 
 # Google Cloud credentials and service account keys
 **/credentials/

@@ -55,7 +55,7 @@ Each of these has a structural unknown the perplexity run can't answer:
 - **`rotate-infra-enter-token.sh`** — EC2→worker rejection window. Between `deploy-gen-cloudflare.yml` finishing and `wrangler secret put`, any in-flight backend request from the old EC2 build will be rejected by the worker. Window should be seconds; needs measurement.
 - **`rotate-infra-gpu-token.sh`** — SSH fan-out across 3 GPU hosts during a live rotation. Worker restart sequencing is documented but never exercised. Highest blast radius — image generation breaks if any host misses the new token.
 - **`rotate-genai-azure.sh`** — key1/key2 alternation depends on Azure correctly accepting both slots during the deploy window. Documented as zero-downtime by design; not verified.
-- **`rotate-ops-tinybird.sh`** — `wrangler secret put` happens before the PR merges. If the PR is rejected, SOPS and Wrangler diverge. Recovery path needs documenting.
+- **`rotate-ops-tinybird.sh`** — `wrangler secret put` happens before the PR merges. If the PR is rejected, SOPS and Wrangler diverge. Recovery path needs documenting. Also: currently only rotates the prod workspace (`pollinations_enter`) tokens; the `pollinations_enter_staging` workspace tokens used by staging/dev workers must be rotated manually until this script gains a workspace flag (tracked in #11127).
 
 ### 3. Environmental blockers (operator-side, not script bugs)
 

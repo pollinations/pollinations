@@ -762,8 +762,8 @@
     {
       "id": 101,
       "type": "barchart",
-      "title": "Top Countries by Revenue",
-      "description": "Total Stripe revenue per buyer country (ISO-3166 alpha-2). Live payments only.",
+      "title": "Top Countries by Revenue (Billing Address — self-reported)",
+      "description": "Revenue grouped by the billing-address country the buyer typed at checkout. Self-reported and not verified — see 'Failures: Country × Reason' for the carding pattern where buyers claim one country but the card was issued in another. To get the card-issuing country for SUCCESSFUL charges too (currently only available for failures via last_payment_error), enable the `charge.succeeded` webhook in enter.pollinations.ai/src/routes/stripe-webhooks.ts.",
       "gridPos": {
         "h": 10,
         "w": 12,
@@ -2805,6 +2805,754 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 201,
+      "type": "table",
+      "title": "Top Buyers — Smurf Watch",
+      "description": "Successful-payment counterpart to 'Risky Users'. Surfaces emails with 5+ paid checkouts in the time range. distinct_stripe_customers shows how many separate Stripe Customer objects the email generated — a high smurf_ratio (close to 1.0) means almost every charge created a fresh Customer, the classic throwaway-session / reseller pattern. top_card_country + card_brands show what the buyer's cards actually are (joined from charge.succeeded by payment-intent ID); a mismatch between top_card_country and the listed billing_countries is the carding signature. Joined to d1_user via user_id for tier/ban.",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 120
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_username"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View on GitHub",
+                    "url": "https://github.com/${__value.text}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "banned"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "BANNED": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "BANNED"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "active": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "active"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "charges"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "orange",
+                      "value": 30
+                    },
+                    {
+                      "color": "red",
+                      "value": 100
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_stripe_customers"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "smurf_ratio"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.75
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.9
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "orange",
+                      "value": 3
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "first_seen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_seen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "billing_vs_card"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "mismatch": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "mismatch"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "match": {
+                        "color": "green",
+                        "index": 1,
+                        "text": "match"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_brands"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distinct_billing_countries"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "orange",
+                      "value": 3
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "charges"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  paid AS (\n    SELECT\n      customer_email,\n      user_id,\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      timestamp,\n      amount_cents,\n      JSONExtractString(payload, 'data', 'object', 'customer') AS stripe_customer,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS billing_country\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND customer_email != ''\n  ),\n  charges AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      anyHeavy(card_country) AS card_country,\n      anyHeavy(card_brand) AS card_brand\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'charge.succeeded'\n      AND livemode = 1\n    GROUP BY pi_id\n  ),\n  joined AS (\n    SELECT p.*, c.card_country, c.card_brand\n    FROM paid p LEFT JOIN charges c ON p.pi_id = c.pi_id\n  ),\n  per_email AS (\n    SELECT\n      customer_email,\n      any(user_id) AS user_id,\n      count() AS charges,\n      uniq(stripe_customer) AS distinct_stripe_customers,\n      round(sum(amount_cents) / 100.0, 2) AS total_usd,\n      arraySort(arrayDistinct(groupArray(billing_country))) AS billing_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_country, card_country != ''))) AS card_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_brand, card_brand != ''))) AS card_brands,\n      min(timestamp) AS first_seen,\n      max(timestamp) AS last_seen\n    FROM joined\n    GROUP BY customer_email\n    HAVING charges >= 5\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  p.customer_email                                                                  AS email,\n  coalesce(nullIf(u.github_username, ''), '(no github)')                            AS github_username,\n  u.tier                                                                            AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                              AS banned,\n  p.charges                                                                         AS charges,\n  p.distinct_stripe_customers                                                       AS distinct_stripe_customers,\n  round(p.distinct_stripe_customers / nullIf(p.charges, 0), 2)                      AS smurf_ratio,\n  p.total_usd                                                                       AS total_usd,\n  length(p.billing_countries)                                                       AS distinct_billing_countries,\n  arrayStringConcat(arraySlice(p.billing_countries, 1, 5), ', ')                    AS billing_countries_sample,\n  arrayStringConcat(p.card_countries, ', ')                                         AS card_countries,\n  arrayStringConcat(p.card_brands, ', ')                                            AS card_brands,\n  if(length(p.card_countries) = 0\n     OR (length(p.billing_countries) = 1\n         AND length(p.card_countries) = 1\n         AND p.billing_countries[1] = p.card_countries[1]),\n     'match', 'mismatch')                                                           AS billing_vs_card,\n  p.first_seen                                                                      AS first_seen,\n  p.last_seen                                                                       AS last_seen\nFROM per_email p\nLEFT JOIN latest_users u ON p.user_id = u.id\nORDER BY p.charges DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 202,
+      "type": "row",
+      "title": "Card Issuer Geography (verified)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 134
+      },
+      "panels": []
+    },
+    {
+      "id": 203,
+      "type": "barchart",
+      "title": "Top Countries by Card Issuer (Verified)",
+      "description": "Revenue grouped by the country that issued the actual card used. Compare against 'Top Countries by Revenue (Billing Address)' above — buyers can write any billing address but cannot fake the issuer. Sourced from charge.succeeded events (only populated for events after the charge.succeeded webhook landed via PR #11158).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 135
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "country",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "SELECT\n  card_country AS country,\n  card_brand,\n  round(sum(amount_cents) / 100.0, 2) AS revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'charge.succeeded'\n  AND livemode = 1\n  AND card_country != ''\nGROUP BY country, card_brand\nORDER BY revenue DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 204,
+      "type": "table",
+      "title": "Billing × Card Country Mismatch",
+      "description": "Successful charges where the buyer's stated billing-address country doesn't match the card's actual issuing country. Legitimate travel/expats produce a small tail; concentrated patterns (MO billing + US-issued amex, ZA billing + US-issued amex) are the reseller / carding signature. Sourced from charge.succeeded — rows accumulate from the date the webhook landed (PR #11158).",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 135
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "charges"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "billing_country"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "card_country"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "charges"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "SELECT\n  JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') AS billing_country,\n  card_country,\n  card_brand,\n  count() AS charges,\n  round(sum(amount_cents) / 100.0, 2) AS usd\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND event_type = 'charge.succeeded'\n  AND livemode = 1\n  AND card_country != ''\n  AND JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') != ''\n  AND JSONExtractString(payload, 'data', 'object', 'billing_details', 'address', 'country') != card_country\nGROUP BY billing_country, card_country, card_brand\nORDER BY charges DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "schemaVersion": 40,
@@ -2868,5 +3616,5 @@
   "timezone": "utc",
   "title": "User Intelligence",
   "uid": "user-intelligence",
-  "version": 0
+  "version": 2
 }

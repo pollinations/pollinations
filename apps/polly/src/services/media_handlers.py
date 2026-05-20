@@ -58,19 +58,26 @@ LATEX_TO_EMOJI = {
     r"\Rightarrow": "⇒", r"\leftrightarrow": "↔", r"\Leftrightarrow": "⇔",
 }
 
-LATEX_PATTERN = re.compile(
+BLOCK_LATEX_PATTERN = re.compile(
     r"```(?:latex|tex)[^\`]*?```|"
     r"\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}|"
     r"\$\$[\s\S]*?\$\$|"
-    r"\\\[[\s\S]*?\\\]|"
-    r"\$[^$][\s\S]*?\$|"
-    r"\\(?:begin|end)\{(?:equation|align|gather|multline)\*?\}|"
-    r"\\frac\{.*?\}\{.*?\}|"
-    r"\\sqrt\{.*?\}|"
-    r"\\text\{.*?\}|"
-    r"\\[a-zA-Z]+",
+    r"\\\[[\s\S]*?\\\]",
     flags=re.DOTALL,
 )
+
+LATEX_PATTERN = re.compile(r"\$([^$\n]+?)\$")
+
+
+def detect_latex(text: str) -> list[str]:
+    matches = LATEX_PATTERN.findall(text)
+    valid_latex = []
+    for expr in matches:
+        clean = expr.strip()
+        if re.match(r"^\d+(?:[.,]\d+)?$", clean):
+            continue
+        valid_latex.append(f"${expr}$")
+    return valid_latex
 
 
 def _latex_to_svg(formula: str) -> bytes:
@@ -148,11 +155,6 @@ async def convert_latex_to_png(latex: str) -> tuple[io.BytesIO | str, bool]:
         return f"```\n${latex}$\n```", True
 
 
-def detect_latex(text: str) -> list[str]:
-    """Detect LaTeX expressions in text."""
-    return LATEX_PATTERN.findall(text)
-
-
 # =============================================================================
 # TABLE HANDLER
 # =============================================================================
@@ -186,14 +188,11 @@ def _extract_links_and_sanitize(text: str, current_links: list[str]) -> tuple[st
 
 
 def _get_font(size: int, bold: bool = False, italic: bool = False):
-    """Load Noto Sans font or fallback to default."""
     if not PIL_AVAILABLE:
         return None
     try:
-        # Construct absolute path from module location
-        module_dir = Path(__file__).parent.parent.parent  # /apps/polly/
+        module_dir = Path(__file__).parent.parent.parent
         fonts_dir = module_dir / "assets" / "fonts"
-
         if bold and italic:
             font_name = "NotoSans-BoldItalic.ttf"
         elif bold:
@@ -202,21 +201,53 @@ def _get_font(size: int, bold: bool = False, italic: bool = False):
             font_name = "NotoSans-Italic.ttf"
         else:
             font_name = "NotoSans-Regular.ttf"
-
         path = fonts_dir / font_name
+        if path.exists():
+            return ImageFont.truetype(str(path), size)
+    except Exception:
+        pass
 
-        if not path.exists():
-            logger.warning(f"Font not found: {path}, using default")
-            return ImageFont.load_default()
+    font_names = []
+    if bold and italic:
+        font_names = ["DejaVuSans-BoldOblique", "DejaVu Sans Bold Italic", "Arial Bold Italic", "LiberationSans-BoldItalic"]
+    elif bold:
+        font_names = ["DejaVuSans-Bold", "DejaVu Sans Bold", "Arial Bold", "LiberationSans-Bold"]
+    elif italic:
+        font_names = ["DejaVuSans-Oblique", "DejaVu Sans Italic", "Arial Italic", "LiberationSans-Italic"]
+    else:
+        font_names = ["DejaVuSans", "DejaVu Sans", "Arial", "LiberationSans", "sans-serif"]
 
-        return ImageFont.truetype(str(path), size)
-    except Exception as e:
-        logger.warning(f"Failed to load font: {e}, using default")
-        return ImageFont.load_default()
+    for name in font_names:
+        try:
+            return ImageFont.truetype(name, size)
+        except Exception:
+            try:
+                path_suffix = ""
+                if bold and italic:
+                    path_suffix = "BoldOblique"
+                elif bold:
+                    path_suffix = "Bold"
+                elif italic:
+                    path_suffix = "Oblique"
+                linux_path = f"/usr/share/fonts/truetype/dejavu/DejaVuSans{path_suffix}.ttf"
+                if Path(linux_path).exists():
+                    return ImageFont.truetype(linux_path, size)
+            except Exception:
+                pass
+
+    return ImageFont.load_default()
+
+
+def _strip_markdown(text: str) -> str:
+    text = re.sub(r"\*\*\*(.+?)\*\*\*", r"\1", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"__(.+?)__", r"\1", text)
+    text = text.replace("`", "")
+    return text
 
 
 def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: int) -> list[int]:
-    """Calculate column widths based on content and font."""
     if not PIL_AVAILABLE:
         return [COLUMN_MAX_WIDTH] * len(headers)
 
@@ -225,11 +256,11 @@ def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: i
 
     with Pilmoji(img) as pilmoji:
         for i, header in enumerate(headers):
-            max_w = pilmoji.draw.textlength(str(header), font=font) + padding * 2
+            max_w = pilmoji.draw.textlength(_strip_markdown(str(header)), font=font) + padding * 2
 
             for row in rows:
                 if i < len(row):
-                    cell_w = pilmoji.draw.textlength(str(row[i]), font=font) + padding * 2
+                    cell_w = pilmoji.draw.textlength(_strip_markdown(str(row[i])), font=font) + padding * 2
                     max_w = max(max_w, cell_w)
 
             widths.append(int(min(max_w, COLUMN_MAX_WIDTH)))
@@ -238,7 +269,7 @@ def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: i
 
 
 def _parse_text_formatting(text: str) -> list[tuple[dict, str]]:
-    """Parse text with **bold**, *italic*, __underline__ formatting."""
+    text = text.replace("`", "")
     pattern = r"(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*|__.*?__)"
     parts = re.split(pattern, text)
     segments = []
@@ -331,24 +362,38 @@ async def render_table_image(
 
         img = Image.new("RGB", (total_width, total_height), colors["bg"])
 
+        def _draw_formatted(pilmoji_ctx, pos, text, base_font_key, fonts_dict, fill, anchor):
+            segments = _parse_text_formatting(text)
+            cx, cy = pos
+            for style, content in segments:
+                if style["bold"] and style["italic"]:
+                    fkey = "bold_italic"
+                elif style["bold"]:
+                    fkey = base_font_key.replace("reg", "bold") if "reg" in base_font_key else "bold_reg"
+                elif style["italic"]:
+                    fkey = "reg_italic"
+                else:
+                    fkey = base_font_key
+                font = fonts_dict.get(fkey, fonts_dict[base_font_key])
+                pilmoji_ctx.text((cx, cy), content, font=font, fill=fill, anchor=anchor)
+                cx += pilmoji_ctx.draw.textlength(content, font=font)
+
         with Pilmoji(img) as pilmoji:
             draw = ImageDraw.Draw(img)
 
-            # Draw header
             x = 0
             for header, width in zip(sanitized_headers, col_widths):
                 draw.rectangle([x, 0, x + width, header_height], fill=colors["header_bg"], outline=colors["border"])
-                pilmoji.text((x + padding, header_height // 2), str(header), font=fonts["header_reg"], fill=colors["text"], anchor="lm")
+                _draw_formatted(pilmoji, (x + padding, header_height // 2), str(header), "header_reg", fonts, colors["text"], "lm")
                 x += width + 1
 
-            # Draw rows
             y = header_height + 1
             for row_idx, row in enumerate(sanitized_rows):
                 x = 0
                 row_bg = colors["row_bg_alt"] if row_idx % 2 else colors["row_bg"]
                 for cell, width in zip(row, col_widths):
                     draw.rectangle([x, y, x + width, y + min_cell_height], fill=row_bg, outline=colors["border"])
-                    pilmoji.text((x + padding, y + min_cell_height // 2), str(cell), font=fonts["cell"], fill=colors["text"], anchor="lm")
+                    _draw_formatted(pilmoji, (x + padding, y + min_cell_height // 2), str(cell), "reg_reg", fonts, colors["text"], "lm")
                     x += width + 1
                 y += min_cell_height + 1
 
@@ -364,12 +409,6 @@ async def render_table_image(
 
 
 def detect_and_parse_markdown_tables(text: str) -> tuple[str, list[tuple[list[str], list[list[str]], list[str]]]]:
-    """
-    Detect and parse markdown tables.
-
-    Returns:
-        (modified_text, list_of_tables) where table = (headers, rows, alignments)
-    """
     tables = []
     lines = text.split("\n")
     output_lines = []
@@ -378,52 +417,95 @@ def detect_and_parse_markdown_tables(text: str) -> tuple[str, list[tuple[list[st
     while i < len(lines):
         line = lines[i].strip()
 
-        # Check if line is start of table
-        if line.startswith("|") and line.endswith("|"):
-            # Try to parse as table header
-            headers = [p.strip() for p in line.strip()[1:-1].split("|")]
+        if "|" in line:
+            raw_header = line
+            if raw_header.startswith("|"):
+                raw_header = raw_header[1:]
+            if raw_header.endswith("|"):
+                raw_header = raw_header[:-1]
+            headers = [p.strip() for p in raw_header.split("|")]
             num_cols = len(headers)
 
-            # Look for separator on next line
             if i + 1 < len(lines):
                 sep_line = lines[i + 1].strip()
-                if sep_line.startswith("|") and sep_line.endswith("|"):
-                    sep_parts = [p.strip() for p in sep_line[1:-1].split("|")]
+                if "|" in sep_line and all(c in "|- : \t" for c in sep_line):
+                    raw_sep = sep_line
+                    if raw_sep.startswith("|"):
+                        raw_sep = raw_sep[1:]
+                    if raw_sep.endswith("|"):
+                        raw_sep = raw_sep[:-1]
+                    sep_parts = [p.strip() for p in raw_sep.split("|")]
 
-                    # Parse alignments from separator
-                    alignments = []
-                    for sep in sep_parts:
-                        if sep.startswith(":") and sep.endswith(":"):
-                            alignments.append("center")
-                        elif sep.endswith(":"):
-                            alignments.append("right")
-                        elif sep.startswith(":"):
-                            alignments.append("left")
-                        else:
-                            alignments.append("left")
+                    if len(sep_parts) == num_cols:
+                        alignments = []
+                        for sep in sep_parts:
+                            if sep.startswith(":") and sep.endswith(":"):
+                                alignments.append("center")
+                            elif sep.endswith(":"):
+                                alignments.append("right")
+                            elif sep.startswith(":"):
+                                alignments.append("left")
+                            else:
+                                alignments.append("left")
 
-                    # Collect rows
-                    rows = []
-                    j = i + 2
-                    while j < len(lines):
-                        row_line = lines[j].strip()
-                        if not row_line.startswith("|") or not row_line.endswith("|"):
-                            break
-                        row = [p.strip() for p in row_line[1:-1].split("|")]
-                        if len(row) == num_cols:
-                            rows.append(row)
-                        j += 1
+                        rows = []
+                        j = i + 2
+                        while j < len(lines):
+                            row_line = lines[j].strip()
+                            if "|" not in row_line:
+                                break
+                            raw_row = row_line
+                            if raw_row.startswith("|"):
+                                raw_row = raw_row[1:]
+                            if raw_row.endswith("|"):
+                                raw_row = raw_row[:-1]
+                            row = [p.strip() for p in raw_row.split("|")]
+                            if len(row) == num_cols:
+                                rows.append(row)
+                            else:
+                                break
+                            j += 1
 
-                    if rows:
-                        tables.append((headers, rows, alignments))
-                        output_lines.append("__TABLE_IMG__")
-                        i = j
-                        continue
+                        if rows:
+                            placeholder = f"__TABLE_IMG_{len(tables)}__"
+                            tables.append((headers, rows, alignments))
+                            output_lines.append(placeholder)
+                            i = j
+                            continue
 
         output_lines.append(lines[i])
         i += 1
 
     return "\n".join(output_lines), tables
+
+
+def format_table_as_markdown(headers: list[str], rows: list[list[str]]) -> str:
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for idx, cell in enumerate(row):
+            if idx < len(widths):
+                widths[idx] = max(widths[idx], len(str(cell)))
+
+    header_str = "| " + " | ".join(h.ljust(w) for h, w in zip(headers, widths)) + " |"
+    sep_str = "| " + " | ".join("-" * w for w in widths) + " |"
+    row_strs = []
+    for row in rows:
+        row_strs.append("| " + " | ".join(str(cell).ljust(w) for cell, w in zip(row, widths)) + " |")
+
+    return "\n".join([header_str, sep_str] + row_strs)
+
+
+def replace_latex_with_unicode(text: str) -> str:
+    def replacer(match):
+        expr = match.group(1)
+        for latex_cmd, unicode_symbol in LATEX_TO_EMOJI.items():
+            expr = expr.replace(latex_cmd, unicode_symbol)
+        expr = expr.replace(r"\text", "")
+        expr = expr.replace("{", "").replace("}", "")
+        return expr
+
+    inline_pattern = re.compile(r"\$([^$\n]+?)\$")
+    return inline_pattern.sub(replacer, text)
 
 
 # =============================================================================

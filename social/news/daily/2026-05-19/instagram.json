@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-19",
+  "period_start": "2026-05-19",
+  "period_end": "2026-05-19",
+  "generated_at": "2026-05-20T07:08:55.095654+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-19/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-19/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-19/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Three updates hit the repo today. First, video generation is running much smoother—we migrated seedream5 and seedance-pro over to Replicate (and finally retired the old seedance). Second, Gemini 3.5 Flash is now live on the text endpoint via Vertex for when you need things fast and snappy. Finally, Duwit just joined the business greenhouse.\n\nLess waiting on models, more time actually building things. All live now.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #generativeai #webdev #buildinpublic #techupdates",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

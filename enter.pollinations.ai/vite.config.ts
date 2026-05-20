@@ -10,6 +10,7 @@ export default defineConfig({
         port: 3000,
         allowedHosts: [".trycloudflare.com"],
     },
+    publicDir: "frontend/public",
     assetsInclude: ["**/*.md"],
     resolve: {
         dedupe: ["zod"],

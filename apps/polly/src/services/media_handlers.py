@@ -238,8 +238,16 @@ def _get_font(size: int, bold: bool = False, italic: bool = False):
     return ImageFont.load_default()
 
 
+def _strip_markdown(text: str) -> str:
+    text = re.sub(r"\*\*\*(.+?)\*\*\*", r"\1", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"__(.+?)__", r"\1", text)
+    text = text.replace("`", "")
+    return text
+
+
 def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: int) -> list[int]:
-    """Calculate column widths based on content and font."""
     if not PIL_AVAILABLE:
         return [COLUMN_MAX_WIDTH] * len(headers)
 
@@ -248,11 +256,11 @@ def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: i
 
     with Pilmoji(img) as pilmoji:
         for i, header in enumerate(headers):
-            max_w = pilmoji.draw.textlength(str(header), font=font) + padding * 2
+            max_w = pilmoji.draw.textlength(_strip_markdown(str(header)), font=font) + padding * 2
 
             for row in rows:
                 if i < len(row):
-                    cell_w = pilmoji.draw.textlength(str(row[i]), font=font) + padding * 2
+                    cell_w = pilmoji.draw.textlength(_strip_markdown(str(row[i])), font=font) + padding * 2
                     max_w = max(max_w, cell_w)
 
             widths.append(int(min(max_w, COLUMN_MAX_WIDTH)))
@@ -261,7 +269,7 @@ def _calc_col_widths(headers: list[str], rows: list[list[str]], font, padding: i
 
 
 def _parse_text_formatting(text: str) -> list[tuple[dict, str]]:
-    """Parse text with **bold**, *italic*, __underline__ formatting."""
+    text = text.replace("`", "")
     pattern = r"(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*|__.*?__)"
     parts = re.split(pattern, text)
     segments = []
@@ -354,24 +362,38 @@ async def render_table_image(
 
         img = Image.new("RGB", (total_width, total_height), colors["bg"])
 
+        def _draw_formatted(pilmoji_ctx, pos, text, base_font_key, fonts_dict, fill, anchor):
+            segments = _parse_text_formatting(text)
+            cx, cy = pos
+            for style, content in segments:
+                if style["bold"] and style["italic"]:
+                    fkey = "bold_italic"
+                elif style["bold"]:
+                    fkey = base_font_key.replace("reg", "bold") if "reg" in base_font_key else "bold_reg"
+                elif style["italic"]:
+                    fkey = "reg_italic"
+                else:
+                    fkey = base_font_key
+                font = fonts_dict.get(fkey, fonts_dict[base_font_key])
+                pilmoji_ctx.text((cx, cy), content, font=font, fill=fill, anchor=anchor)
+                cx += pilmoji_ctx.draw.textlength(content, font=font)
+
         with Pilmoji(img) as pilmoji:
             draw = ImageDraw.Draw(img)
 
-            # Draw header
             x = 0
             for header, width in zip(sanitized_headers, col_widths):
                 draw.rectangle([x, 0, x + width, header_height], fill=colors["header_bg"], outline=colors["border"])
-                pilmoji.text((x + padding, header_height // 2), str(header), font=fonts["header_reg"], fill=colors["text"], anchor="lm")
+                _draw_formatted(pilmoji, (x + padding, header_height // 2), str(header), "header_reg", fonts, colors["text"], "lm")
                 x += width + 1
 
-            # Draw rows
             y = header_height + 1
             for row_idx, row in enumerate(sanitized_rows):
                 x = 0
                 row_bg = colors["row_bg_alt"] if row_idx % 2 else colors["row_bg"]
                 for cell, width in zip(row, col_widths):
                     draw.rectangle([x, y, x + width, y + min_cell_height], fill=row_bg, outline=colors["border"])
-                    pilmoji.text((x + padding, y + min_cell_height // 2), str(cell), font=fonts["cell"], fill=colors["text"], anchor="lm")
+                    _draw_formatted(pilmoji, (x + padding, y + min_cell_height // 2), str(cell), "reg_reg", fonts, colors["text"], "lm")
                     x += width + 1
                 y += min_cell_height + 1
 

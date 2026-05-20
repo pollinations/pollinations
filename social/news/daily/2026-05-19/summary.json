@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-19",
+  "period_start": "2026-05-19",
+  "period_end": "2026-05-19",
+  "title": "Gemini 3.5 Flash joins the text endpoint",
+  "summary": "A solid day of model upgrades: Gemini 3.5 Flash hits the text endpoint, video generation gets more reliable, and a new app joins the greenhouse.\n\nWe've wired up Google's gemini-3.5-flash via Vertex AI. It brings fast, reasoning-capable completions to the text endpoint, complete with support for tool sanitization, code execution, and v3-flash thinking.\n\nSeedream 5 and Seedance Pro have been migrated to Replicate. This means better stability and a standardized 720p output for your video generation calls. We also retired the legacy Seedance Lite model to keep the infrastructure clean.\n\nAnother community-built app, Duwit, has been added to the business showcase. Always good to see what people are building with the API.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11073,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11175,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11181,
+      "date": "2026-05-19"
+    }
+  ],
+  "generated_at": "2026-05-20T07:08:55.095654+00:00"
+}

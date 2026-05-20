@@ -284,10 +284,6 @@ function createUpstreamErrorResponse(
         name: error.name,
         upstreamStatus: error.upstreamStatus,
         upstreamHost: error.requestUrl?.hostname,
-        upstreamBody: truncateString(
-            error.responseBody,
-            MAX_UPSTREAM_BODY_LENGTH,
-        ),
     });
 }
 

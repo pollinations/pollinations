@@ -513,9 +513,9 @@ async function pollWanTask(
 
         if (pollResult.status === "failed") {
             throw new HttpError(
-                pollResult.error,
+                "Video generation failed \u2014 the upstream provider (Alibaba Wan) reported an error. Please try again later.",
                 getDashScopeErrorStatus(pollResult.error),
-                undefined,
+                { body: pollResult.error },
                 pollUrl,
             );
         }

@@ -175,33 +175,48 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionTextTokens).toBe(1);
     });
 
-    // Some providers (Grok via Azure, Mistral & DeepSeek via OpenRouter,
-    // some Gemini reasoning models) violate the OpenAI spec by reporting
-    // `completion_tokens` as the visible-text portion only, with
-    // `reasoning_tokens` as an additive counter rather than an inclusive
-    // subcategory. Detect this by comparing the response's internal
-    // arithmetic and switch derivation strategy per-row.
-    it("handles additive reasoning convention (completion_tokens excludes reasoning)", () => {
-        // Real shape from Grok-reasoning quarantine row:
-        // completion_tokens=1133, reasoning_tokens=3180.
-        // Spec-compliant math (1133 - 3180) would give -2047 (quarantined).
+    // Grok via Azure reports reasoning as an additive counter:
+    // total_tokens = prompt_tokens + completion_tokens + reasoning_tokens.
+    it("handles additive reasoning convention when total_tokens proves it", () => {
+        // Production shape from grok-large:
+        // prompt=35, completion=64, reasoning=345, total=444.
         const openaiUsage = {
-            prompt_tokens: 6140,
-            completion_tokens: 1133,
-            total_tokens: 7273,
+            prompt_tokens: 35,
+            completion_tokens: 64,
+            total_tokens: 444,
             completion_tokens_details: {
-                reasoning_tokens: 3180,
+                reasoning_tokens: 345,
             },
         };
 
         const usage = openaiUsageToUsage(openaiUsage);
 
-        expect(usage.completionTextTokens).toBe(1133);
-        expect(usage.completionReasoningTokens).toBe(3180);
+        expect(usage.completionTextTokens).toBe(64);
+        expect(usage.completionReasoningTokens).toBe(345);
     });
 
-    it("handles additive convention with small visible text (mistral-small)", () => {
-        // Real shape: completion=195, reasoning=204 -> inclusive math = -9.
+    it("keeps inclusive reasoning inside completion_tokens when total_tokens is prompt plus completion", () => {
+        // Production shape from mistral-4 with reasoning enabled:
+        // prompt=54, completion=256, reasoning=203, total=310.
+        const openaiUsage = {
+            prompt_tokens: 54,
+            completion_tokens: 256,
+            total_tokens: 310,
+            completion_tokens_details: {
+                reasoning_tokens: 203,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.completionTextTokens).toBe(53);
+        expect(usage.completionReasoningTokens).toBe(203);
+    });
+
+    it("caps inclusive completion details when provider detail exceeds completion_tokens", () => {
+        // Quarantined shape: completion=195, reasoning=204.
+        // total=prompt+completion proves inclusive accounting, so do not bill
+        // 195 visible tokens plus 204 reasoning tokens.
         const openaiUsage = {
             prompt_tokens: 711,
             completion_tokens: 195,
@@ -213,17 +228,34 @@ describe("openaiUsageToUsage", () => {
 
         const usage = openaiUsageToUsage(openaiUsage);
 
-        expect(usage.completionTextTokens).toBe(195);
-        expect(usage.completionReasoningTokens).toBe(204);
+        expect(usage.completionTextTokens).toBe(0);
+        expect(usage.completionReasoningTokens).toBe(195);
     });
 
-    it("handles additive prompt convention (prompt_tokens excludes cached)", () => {
-        // Real shape from gemini quarantine: prompt_text would be -1201
-        // under inclusive math. cached_tokens reported as additive.
+    it("caps inclusive prompt details when cached_tokens exceeds prompt_tokens", () => {
+        // Quarantined shape: prompt=500, cached=1701.
+        // total=prompt+completion proves inclusive accounting, so cap cached
+        // to the prompt token budget instead of inventing negative text tokens.
         const openaiUsage = {
             prompt_tokens: 500,
             completion_tokens: 100,
             total_tokens: 600,
+            prompt_tokens_details: {
+                cached_tokens: 1701,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(0);
+        expect(usage.promptCachedTokens).toBe(500);
+    });
+
+    it("handles additive prompt convention when total_tokens proves it", () => {
+        const openaiUsage = {
+            prompt_tokens: 500,
+            completion_tokens: 100,
+            total_tokens: 2301,
             prompt_tokens_details: {
                 cached_tokens: 1701,
             },
@@ -255,6 +287,8 @@ describe("openaiUsageToUsage", () => {
 
         expect(usage.promptTextTokens).toBeGreaterThanOrEqual(0);
         expect(usage.completionTextTokens).toBeGreaterThanOrEqual(0);
+        expect(usage.promptCachedTokens).toBe(50);
+        expect(usage.completionReasoningTokens).toBe(100);
     });
 });
 

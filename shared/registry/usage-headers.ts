@@ -28,10 +28,10 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
  * reasoning models (OpenRouter), and certain Gemini responses report
  * subcategories as additive counters separate from the grand total.
  *
- * We detect the convention per-row by comparing the grand total against
- * the sum of details. If the subcategories exceed the grand total, the
- * provider is using the additive convention and we treat `*_tokens` as
- * the visible-text count directly.
+ * We detect the convention per-row from `total_tokens`. If total_tokens is
+ * prompt + completion, details are inclusive subcategories. If total_tokens
+ * includes the detail counters beyond prompt + completion, those details are
+ * additive and `*_tokens` are already the visible-text count.
  */
 export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens: number;
@@ -49,40 +49,112 @@ export function openaiUsageToUsage(openaiUsage: {
         rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
-    const promptDetailTokens =
-        (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.audio_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.image_tokens || 0);
+    const promptDetails = [
+        openaiUsage.prompt_tokens_details?.cached_tokens || 0,
+        openaiUsage.prompt_tokens_details?.audio_tokens || 0,
+        openaiUsage.prompt_tokens_details?.image_tokens || 0,
+    ];
 
-    const completionDetailTokens =
-        (openaiUsage.completion_tokens_details?.accepted_prediction_tokens ||
-            0) +
-        (openaiUsage.completion_tokens_details?.rejected_prediction_tokens ||
-            0) +
-        (openaiUsage.completion_tokens_details?.audio_tokens || 0) +
-        (openaiUsage.completion_tokens_details?.reasoning_tokens || 0);
+    const completionDetails = [
+        openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
+        openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,
+        openaiUsage.completion_tokens_details?.audio_tokens || 0,
+        openaiUsage.completion_tokens_details?.reasoning_tokens || 0,
+    ];
 
-    const promptTextTokens =
-        openaiUsage.prompt_tokens >= promptDetailTokens
-            ? openaiUsage.prompt_tokens - promptDetailTokens
-            : openaiUsage.prompt_tokens;
+    const promptDetailTokens = sumTokens(promptDetails);
+    const completionDetailTokens = sumTokens(completionDetails);
+    const { promptDetailsAreAdditive, completionDetailsAreAdditive } =
+        detectUsageConvention(
+            openaiUsage,
+            promptDetailTokens,
+            completionDetailTokens,
+        );
 
-    const completionTextTokens =
-        openaiUsage.completion_tokens >= completionDetailTokens
-            ? openaiUsage.completion_tokens - completionDetailTokens
-            : openaiUsage.completion_tokens;
+    const cappedPromptDetails = promptDetailsAreAdditive
+        ? promptDetails
+        : capDetailsToTotal(openaiUsage.prompt_tokens, promptDetails);
+    const cappedCompletionDetails = completionDetailsAreAdditive
+        ? completionDetails
+        : capDetailsToTotal(openaiUsage.completion_tokens, completionDetails);
+
+    const promptTextTokens = promptDetailsAreAdditive
+        ? openaiUsage.prompt_tokens
+        : openaiUsage.prompt_tokens - sumTokens(cappedPromptDetails);
+
+    const completionTextTokens = completionDetailsAreAdditive
+        ? openaiUsage.completion_tokens
+        : openaiUsage.completion_tokens - sumTokens(cappedCompletionDetails);
+
+    const [promptCachedTokens, promptAudioTokens, promptImageTokens] =
+        cappedPromptDetails;
+    const [, , completionAudioTokens, completionReasoningTokens] =
+        cappedCompletionDetails;
 
     return {
         promptTextTokens,
-        promptCachedTokens:
-            openaiUsage.prompt_tokens_details?.cached_tokens || 0,
-        promptAudioTokens: openaiUsage.prompt_tokens_details?.audio_tokens || 0,
-        promptImageTokens: openaiUsage.prompt_tokens_details?.image_tokens || 0,
+        promptCachedTokens,
+        promptAudioTokens,
+        promptImageTokens,
         completionTextTokens,
-        completionAudioTokens:
-            openaiUsage.completion_tokens_details?.audio_tokens || 0,
-        completionReasoningTokens:
-            openaiUsage.completion_tokens_details?.reasoning_tokens || 0,
+        completionAudioTokens,
+        completionReasoningTokens,
+    };
+}
+
+function sumTokens(tokens: readonly number[]): number {
+    return tokens.reduce((sum, token) => sum + token, 0);
+}
+
+function capDetailsToTotal(totalTokens: number, details: number[]): number[] {
+    let remaining = totalTokens;
+    return details.map((token) => {
+        const capped = Math.min(token, remaining);
+        remaining -= capped;
+        return capped;
+    });
+}
+
+function detectUsageConvention(
+    openaiUsage: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+    },
+    promptDetailTokens: number,
+    completionDetailTokens: number,
+): {
+    promptDetailsAreAdditive: boolean;
+    completionDetailsAreAdditive: boolean;
+} {
+    const topLevelTotal =
+        openaiUsage.prompt_tokens + openaiUsage.completion_tokens;
+    const additiveDetails = openaiUsage.total_tokens - topLevelTotal;
+
+    if (additiveDetails <= 0) {
+        return {
+            promptDetailsAreAdditive: false,
+            completionDetailsAreAdditive: false,
+        };
+    }
+
+    if (additiveDetails === promptDetailTokens + completionDetailTokens) {
+        return {
+            promptDetailsAreAdditive: promptDetailTokens > 0,
+            completionDetailsAreAdditive: completionDetailTokens > 0,
+        };
+    }
+
+    const promptOnly =
+        additiveDetails === promptDetailTokens &&
+        promptDetailTokens !== completionDetailTokens;
+    const completionOnly =
+        additiveDetails === completionDetailTokens &&
+        promptDetailTokens !== completionDetailTokens;
+
+    return {
+        promptDetailsAreAdditive: promptOnly,
+        completionDetailsAreAdditive: completionOnly,
     };
 }
 

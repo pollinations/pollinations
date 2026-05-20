@@ -1,15 +1,19 @@
+import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const here = fileURLToPath(new URL(".", import.meta.url));
+
 export default defineConfig({
+    root: here,
     server: {
         port: 3000,
         allowedHosts: [".trycloudflare.com"],
     },
-    publicDir: "frontend/public",
+    publicDir: "public",
     assetsInclude: ["**/*.md"],
     resolve: {
         dedupe: ["zod"],
@@ -18,14 +22,13 @@ export default defineConfig({
         tanstackRouter({
             target: "react",
             autoCodeSplitting: true,
-            routesDirectory: "./frontend/src/routes",
-            generatedRouteTree: "./frontend/src/routeTree.gen.ts",
+            routesDirectory: "./src/routes",
+            generatedRouteTree: "./src/routeTree.gen.ts",
         }),
         react(),
         tailwindcss(),
         tsconfigPaths(),
     ],
-    envPrefix: ["PUBLIC_"],
     optimizeDeps: {
         esbuildOptions: {
             loader: {
@@ -34,7 +37,7 @@ export default defineConfig({
         },
     },
     build: {
-        outDir: "dist/client",
+        outDir: "../dist/client",
         emptyOutDir: true,
     },
 });

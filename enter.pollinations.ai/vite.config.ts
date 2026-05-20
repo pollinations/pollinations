@@ -6,11 +6,12 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+    root: "frontend",
     server: {
         port: 3000,
         allowedHosts: [".trycloudflare.com"],
     },
-    publicDir: "frontend/public",
+    publicDir: "public",
     assetsInclude: ["**/*.md"],
     resolve: {
         dedupe: ["zod"],
@@ -19,20 +20,23 @@ export default defineConfig({
         tanstackRouter({
             target: "react",
             autoCodeSplitting: true,
-            routesDirectory: "./frontend/src/routes",
-            generatedRouteTree: "./frontend/src/routeTree.gen.ts",
+            routesDirectory: "./src/routes",
+            generatedRouteTree: "./src/routeTree.gen.ts",
         }),
         react(),
         tailwindcss(),
         tsconfigPaths(),
-        cloudflare(),
+        cloudflare({ configPath: "../wrangler.toml" }),
     ],
-    envPrefix: ["PUBLIC_"],
     optimizeDeps: {
         esbuildOptions: {
             loader: {
                 ".js": "jsx",
             },
         },
+    },
+    build: {
+        outDir: "../dist",
+        emptyOutDir: true,
     },
 });

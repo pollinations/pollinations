@@ -19,6 +19,7 @@ export default defineWorkersConfig(async ({ mode }) => {
 
     return {
         ...viteConfig,
+        root: __dirname,
         resolve: {
             ...viteConfig.resolve,
             alias: [

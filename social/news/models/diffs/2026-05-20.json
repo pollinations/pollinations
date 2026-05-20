@@ -1,0 +1,193 @@
+{
+  "added": {
+    "text": [
+      {
+        "name": "gemini-3.5-flash",
+        "aliases": [
+          "gemini-3.5-flash"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000225",
+          "promptCachedTokens": "0.000000225",
+          "promptAudioTokens": "0.00000225",
+          "completionTextTokens": "0.0000135"
+        },
+        "description": "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
+        "input_modalities": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true
+      }
+    ],
+    "image": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "removed": {
+    "text": [],
+    "image": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "changed": {
+    "text": [
+      {
+        "before": {
+          "name": "gemini-fast",
+          "aliases": [
+            "gemini-2.5-flash-lite"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptAudioTokens": "0.0000009",
+            "completionTextTokens": "0.0000012"
+          },
+          "description": "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "gemini-fast",
+          "aliases": [
+            "gemini-2.5-flash-lite"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "promptAudioTokens": "0.00000045",
+            "completionTextTokens": "0.0000006"
+          },
+          "description": "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "gemini-search",
+          "aliases": [
+            "gemini-2.5-flash-search",
+            "gemini-2.5-flash-lite-search"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptAudioTokens": "0.0000003",
+            "completionTextTokens": "0.0000012"
+          },
+          "description": "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "gemini-search",
+          "aliases": [
+            "gemini-2.5-flash-search",
+            "gemini-2.5-flash-lite-search"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptAudioTokens": "0.0000003",
+            "completionTextTokens": "0.0000012"
+          },
+          "description": "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true
+        }
+      }
+    ],
+    "image": [],
+    "audio": [
+      {
+        "before": {
+          "name": "scribe",
+          "aliases": [
+            "scribe_v2",
+            "scribe-v2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000061111111"
+          },
+          "description": "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+          "input_modalities": [
+            "audio"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "after": {
+          "name": "scribe",
+          "aliases": [
+            "scribe_v2",
+            "scribe-v2"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000091666667"
+          },
+          "description": "Scribe v2 - Speech to text (90+ languages, diarization)",
+          "input_modalities": [
+            "audio"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "paid_only": true
+        }
+      }
+    ],
+    "embeddings": []
+  }
+}

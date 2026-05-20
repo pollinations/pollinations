@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-05-20",
+  "previous_date": "2026-05-19",
+  "generated_at": "2026-05-20T15:10:40.802352+00:00",
+  "text": "<@&1424461167883194418> New models live on Pollinations this week. ✨\n\n**Text**\n- `gemini-3.5-flash` (Gemini) — paid-only, supports text, image, audio, and video inputs\n- `gemini-fast` (Gemini) — now paid-only\n- `gemini-search` (Google) — now paid-only\n\n**Audio**\n- `scribe` — now paid-only\n\nTry them via /v1/models or read the docs at https://gen.pollinations.ai/docs"
+}

@@ -1,5 +1,15 @@
 # Pollinations Model Changelog
 
+## 2026-05-20
+
+### Text
+- `gemini-3.5-flash` (Gemini) — paid-only, supports text, image, audio, and video inputs
+- `gemini-fast` (Gemini) — now paid-only
+- `gemini-search` (Google) — now paid-only
+
+### Audio
+- `scribe` — now paid-only
+
 ## 2026-05-19
 
 ### Text

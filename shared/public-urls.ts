@@ -33,7 +33,8 @@ export type PublicUrlProfile = keyof typeof PUBLIC_URL_PROFILES;
 // Myceli is the upstream — never reached directly by end users — so absolute
 // URLs baked into Stripe checkout, OAuth redirects, and email links must use
 // the Pollinations profile.
-export const ACTIVE_PUBLIC_URL_PROFILE = "pollinations" satisfies PublicUrlProfile;
+export const ACTIVE_PUBLIC_URL_PROFILE =
+    "pollinations" satisfies PublicUrlProfile;
 export const PUBLIC_URLS = PUBLIC_URL_PROFILES[ACTIVE_PUBLIC_URL_PROFILE];
 
 export const AUTH_TRUSTED_ORIGINS = Object.values(PUBLIC_URL_PROFILES).flatMap(

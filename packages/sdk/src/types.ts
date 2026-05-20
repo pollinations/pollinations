@@ -622,11 +622,14 @@ export interface UsageRecord {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number;
 }

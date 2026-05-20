@@ -1,0 +1,35 @@
+{
+  "pr_number": 11194,
+  "title": "fix(polly): improve table/latex rendering and refine voice",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/11194",
+  "merged_at": "2026-05-20T08:59:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "fixes polly's visual rendering glitches and tunes the conversational register\r\n\r\nchanges\r\n\\- install `fonts-dejavu-core` in dockerfile for clean scalable fonts inside the container\r\n\\- add robust font fallback chain (local noto → dejavu → arial → explicit linux path → default)\r\n\\- filter plain currency values (e.g. `$0.4`) from latex detection so they stop triggering equation image renders\r\n\\- add unicode math replacement for remaining inline latex (greek letters, operators → readable unicode)\r\n\\- add graceful table fallback to aligned markdown codeblocks when PIL rendering fails\r\n\\- support pipe-flexible tables (tables without outer boundary pipes)\r\n\\- use indexed placeholders (`__TABLE_IMG_0__`, `__LATEX_IMG_0__`) for reliable multi-table and multi-equation rendering\r\n\\- import `PIL_AVAILABLE` properly into bot.py (was previously undefined at runtime)\r\n\\- remove duplicate `detect_latex` definition that was silently overriding the currency-safe version\r\n\\- refine voice guidelines: natural warmth without chatbot fluff or cringe casualisms\r\n\\- update `repo_info.txt` with current monorepo architecture and deprecated endpoints",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly reads the fine print",
+    "blurb": "Polly just got a major upgrade to how she renders tables and math equations. Plus, we've tuned her voice to be naturally warm without the typical AI chatbot fluff.",
+    "summary": "Fixed Polly's visual rendering glitches by adding robust font fallbacks (Noto, DejaVu), filtering currency like '$0.4' from LaTeX detection, and implementing indexed placeholders for reliable multi-table rendering.",
+    "impact": "Users will see clean tables and math equations instead of broken renders, and Polly's conversational tone is now tuned for natural warmth without chatbot fluff.",
+    "keywords": [
+      "polly",
+      "rendering",
+      "latex",
+      "tables",
+      "bot"
+    ],
+    "visual_concept": "Polly the bee wearing reading glasses, examining a perfectly rendered data table and math equations alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, looking at a clean, perfectly aligned data table on a retro computer monitor. A cute chunky monitor robot holds up a piece of paper with a math equation. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-20/PR-11194.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, looking at a clean, perfectly aligned data table on a retro computer monitor. A cute chunky monitor robot holds up a piece of paper with a math equation. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-20T09:00:42.844251+00:00"
+}

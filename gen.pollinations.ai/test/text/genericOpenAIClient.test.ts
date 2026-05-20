@@ -8,13 +8,12 @@ afterEach(() => {
 describe("genericOpenAIClient", () => {
     it("does not send internal gateway options in the upstream JSON body", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
-        let upstreamSignal: AbortSignal | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
+                expect(init?.signal).toBeUndefined();
                 upstreamBody = JSON.parse(String(init?.body));
-                upstreamSignal = init?.signal as AbortSignal;
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
@@ -73,7 +72,6 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
         expect(upstreamBody).not.toHaveProperty("userInfo");
-        expect(upstreamSignal).toBeInstanceOf(AbortSignal);
     });
 
     it("drops invalid optional message names before sending upstream", async () => {
@@ -206,7 +204,7 @@ describe("genericOpenAIClient", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("preserves upstream 429 status for callers to back off", async () => {
+    it("maps upstream 429 to 502 while preserving upstream status", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
                 { error: { message: "rate limited" } },
@@ -220,7 +218,7 @@ describe("genericOpenAIClient", () => {
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
             ),
-        ).rejects.toMatchObject({ status: 429 });
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
     it("passes through successful empty completions", async () => {

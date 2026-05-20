@@ -205,6 +205,15 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
+      - name: Remove TIER-APP-REVIEW label
+        if: contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW')
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh api -X DELETE "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/TIER-APP-REVIEW" || true
+
       - uses: actions/checkout@v4
         with:
           ref: main

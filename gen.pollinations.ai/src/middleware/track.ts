@@ -13,8 +13,8 @@ import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     type ModelName,
     type PriceDefinition,
     type UsageCost,
@@ -366,9 +366,7 @@ async function trackRequest(
     const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getActivePriceDefinition(
-        resolvedModelRequested,
-    );
+    const modelPriceDefinition = getPriceDefinition(resolvedModelRequested);
     if (!modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,

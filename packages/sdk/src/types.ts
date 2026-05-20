@@ -107,9 +107,9 @@ export interface VideoGenerateOptions extends RequestOptions {
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation (default: false). wan always has audio */
+    /** Enable audio generation where supported by the selected video model */
     audio?: boolean;
-    /** Reference image URL(s) for image-to-video */
+    /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
     /** Keep generation private (default: false) */
     private?: boolean;
@@ -622,11 +622,14 @@ export interface UsageRecord {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number;
 }
@@ -760,6 +763,13 @@ export interface CreatedKey {
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 
+/** Per-model video frame-control capabilities (video models only) */
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
+
 /** Model information */
 export interface ModelInfo {
     name: string;
@@ -769,6 +779,7 @@ export interface ModelInfo {
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
+    video_capabilities?: VideoCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;

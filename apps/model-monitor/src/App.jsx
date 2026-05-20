@@ -321,6 +321,7 @@ function App() {
     const WINDOW_OPTIONS = [
         { key: "7d", label: "7d" },
         { key: "24h", label: "24h" },
+        { key: "4h", label: "4h" },
         { key: "60m", label: "1h" },
         { key: "5m", label: "5m" },
     ];

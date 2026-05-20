@@ -104,11 +104,14 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
-        // Last-frame image URL for video models that support first+last frame interpolation (Seedance 2.0)
-        last_frame_image: z.coerce.string().optional().catch(undefined),
     })
     .transform((data) => {
-        // adjust width and height to fit the selected model
+        // Capture whether the caller actually specified dimensions BEFORE we
+        // fill in model defaults. Models like seedream-4 can route to a
+        // pixel-precise "custom" upstream path when this is true, instead of
+        // approximating to a preset aspect ratio.
+        const dimensionsExplicit =
+            data.width !== undefined || data.height !== undefined;
         const { width, height } = adjustImageSizeForModel(
             data.model,
             data.width,
@@ -117,7 +120,7 @@ export const ImageParamsSchema = z
         const nofeed = data.nofeed || data.private || false;
         delete data.private;
 
-        return { ...data, nofeed, width, height };
+        return { ...data, nofeed, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

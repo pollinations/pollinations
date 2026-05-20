@@ -136,13 +136,23 @@ const chatCompletionHandlers = factory.createHandlers(
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {
-            const responseJson = await response.clone().json();
-            const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                responseJson,
-                { reportInput: true },
-            );
-            contentFilterHeaders =
-                contentFilterResultsToHeaders(parsedResponse);
+            const responseText = await response.clone().text();
+            try {
+                const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                    JSON.parse(responseText),
+                    { reportInput: true },
+                );
+                contentFilterHeaders =
+                    contentFilterResultsToHeaders(parsedResponse);
+            } catch (parseError) {
+                throw new UpstreamError(502, {
+                    message: `Upstream returned response that failed schema validation: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+                    requestUrl: new URL(c.req.url),
+                    upstreamStatus: response.status,
+                    responseBody: responseText,
+                    cause: parseError,
+                });
+            }
         }
 
         return withSafetyHeaders(
@@ -716,11 +726,11 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${videoModelNames}.`,
                 "",
-                "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.",
+                "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.",
                 "",
-                "You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.",
+                "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
-                "Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).",
+                "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {
                 200: {

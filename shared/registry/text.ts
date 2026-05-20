@@ -1,4 +1,4 @@
-import { COST_START_DATE, perMillion } from "./price-helpers";
+import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 // Voices available for openai-audio model - exported for schema validation
@@ -32,14 +32,12 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.02),
-                completionTextTokens: perMillion(1.25),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(1.25),
+        },
         description: "GPT-5.4 Nano - Fast & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -54,14 +52,12 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.05),
-                promptCachedTokens: perMillion(0.005),
-                completionTextTokens: perMillion(0.4),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            completionTextTokens: perMillion(0.4),
+        },
         description: "GPT-5 Nano - Ultra Fast & Affordable",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -82,14 +78,12 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.5),
-                promptCachedTokens: perMillion(0.25),
-                completionTextTokens: perMillion(15.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2.5),
+            promptCachedTokens: perMillion(0.25),
+            completionTextTokens: perMillion(15.0),
+        },
         description: "GPT-5.4 - Most Powerful & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -105,14 +99,12 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.75),
-                promptCachedTokens: perMillion(0.075),
-                completionTextTokens: perMillion(4.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(4.5),
+        },
         description: "GPT-5.4 Mini - Balanced Speed & Cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -127,14 +119,12 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(5.0),
-                promptCachedTokens: perMillion(0.5),
-                completionTextTokens: perMillion(30.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(5.0),
+            promptCachedTokens: perMillion(0.5),
+            completionTextTokens: perMillion(30.0),
+        },
         description: "GPT-5.5 - Frontier Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -151,13 +141,11 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: new Date("2026-01-05").getTime(),
-                promptTextTokens: perMillion(0.06),
-                completionTextTokens: perMillion(0.22),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.06),
+            completionTextTokens: perMillion(0.22),
+        },
         description: "Qwen3 Coder 30B - Specialized for Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -178,13 +166,12 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.075),
-                completionTextTokens: perMillion(0.2),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.075),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.2),
+        },
         description:
             "Mistral Small 3.2 - Improved Instruction Following & Function Calling",
         inputModalities: ["text", "image"],
@@ -200,13 +187,12 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                completionTextTokens: perMillion(0.6),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
+        },
         description: "Mistral Small 4 - Unified Reasoning & Multimodal",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -226,18 +212,16 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.6),
-                completionTextTokens: perMillion(2.4),
-                promptAudioTokens: perMillion(10.0),
-                completionAudioTokens: perMillion(20.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.6),
+            completionTextTokens: perMillion(2.4),
+            promptAudioTokens: perMillion(10.0),
+            completionAudioTokens: perMillion(20.0),
+        },
         description: "GPT Audio Mini - Voice Input & Output",
         voices: [...AUDIO_VOICES],
-        inputModalities: ["text", "image", "audio"],
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
         contextLength: 128000,
@@ -250,18 +234,16 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.5),
-                completionTextTokens: perMillion(10.0),
-                promptAudioTokens: perMillion(40.0),
-                completionAudioTokens: perMillion(80.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10.0),
+            promptAudioTokens: perMillion(40.0),
+            completionAudioTokens: perMillion(80.0),
+        },
         description: "GPT Audio 1.5 - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
-        inputModalities: ["text", "image", "audio"],
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
         contextLength: 128000,
@@ -274,26 +256,41 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
-                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
-                completionTextTokens: perMillion(3.0),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.75),
-                promptCachedTokens: perMillion(0.075),
-                promptAudioTokens: perMillion(0.75),
-                completionTextTokens: perMillion(4.5),
-            },
-        ],
+        cost: {
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.05),
+            promptAudioTokens: perMillion(1.0),
+            completionTextTokens: perMillion(3.0),
+        },
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-3.5-flash": {
+        aliases: ["gemini-3.5-flash"],
+        modelId: "gemini-3.5-flash",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-19").getTime(),
+        priceMultiplier: 1.5,
+        paidOnly: true,
+        // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
+        // Non-global regions add ~10%; we route through global.
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
+            completionTextTokens: perMillion(9.0),
+        },
+        description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
@@ -313,25 +310,14 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.025),
-                promptAudioTokens: perMillion(0.5),
-                completionTextTokens: perMillion(1.5),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.375),
-                promptCachedTokens: perMillion(0.0375),
-                promptAudioTokens: perMillion(0.75),
-                completionTextTokens: perMillion(2.25),
-            },
-        ],
+        cost: {
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            promptAudioTokens: perMillion(0.5),
+            completionTextTokens: perMillion(1.5),
+        },
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
@@ -348,24 +334,14 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1), // per 1M tokens
-                promptCachedTokens: perMillion(0.01), // per 1M tokens
-                promptAudioTokens: perMillion(0.3), // per 1M tokens
-                completionTextTokens: perMillion(0.4), // per 1M tokens
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // per 1M tokens
-                promptCachedTokens: perMillion(0.03), // per 1M tokens
-                promptAudioTokens: perMillion(0.3), // per 1M tokens
-                completionTextTokens: perMillion(1.2), // per 1M tokens
-            },
-        ],
+        priceMultiplier: 1.5,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.1), // per 1M tokens
+            promptCachedTokens: perMillion(0.01), // per 1M tokens
+            promptAudioTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(0.4), // per 1M tokens
+        },
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -388,14 +364,12 @@ export const TEXT_SERVICES = {
         brand: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
-        cost: [
-            {
-                date: new Date("2026-05-15").getTime(),
-                promptTextTokens: perMillion(0.126),
-                promptCachedTokens: perMillion(0.0252),
-                completionTextTokens: perMillion(0.252),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.126),
+            promptCachedTokens: perMillion(0.0252),
+            completionTextTokens: perMillion(0.252),
+        },
         description: "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -416,13 +390,11 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
-        cost: [
-            {
-                date: new Date("2026-05-06").getTime(),
-                promptTextTokens: perMillion(0.07),
-                completionTextTokens: perMillion(0.34),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.07),
+            completionTextTokens: perMillion(0.34),
+        },
         description:
             "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
         inputModalities: ["text", "image"],
@@ -440,14 +412,12 @@ export const TEXT_SERVICES = {
         brand: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-04-24").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-24").getTime(),
-                promptTextTokens: perMillion(1.74),
-                promptCachedTokens: perMillion(0.14),
-                completionTextTokens: perMillion(3.48),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.74),
+            promptCachedTokens: perMillion(0.14),
+            completionTextTokens: perMillion(3.48),
+        },
         description: "DeepSeek V4 Pro - Advanced Reasoning & Coding",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -473,15 +443,13 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-27").getTime(),
-                promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2),
-                promptImageTokens: perMillion(2.0),
-                completionTextTokens: perMillion(6.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            promptImageTokens: perMillion(2.0),
+            completionTextTokens: perMillion(6.0),
+        },
         description: "Grok 4.20 Non-Reasoning - Fast multimodal tool-calling",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -501,15 +469,13 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-27").getTime(),
-                promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2),
-                promptImageTokens: perMillion(2.0),
-                completionTextTokens: perMillion(6.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            promptImageTokens: perMillion(2.0),
+            completionTextTokens: perMillion(6.0),
+        },
         description:
             "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
         inputModalities: ["text", "image"],
@@ -527,24 +493,14 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2), // per 1M tokens
-                promptCachedTokens: perMillion(0.02), // per 1M tokens
-                promptAudioTokens: perMillion(0.2), // per 1M tokens (audio billed at same rate as text)
-                completionTextTokens: perMillion(0.8), // per 1M tokens
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
-                promptCachedTokens: perMillion(0.03), // per 1M tokens, matches gemini-fast
-                promptAudioTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
-                completionTextTokens: perMillion(1.2), // per 1M tokens, matches gemini-fast
-            },
-        ],
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(0.2), // per 1M tokens
+            promptCachedTokens: perMillion(0.02), // per 1M tokens
+            promptAudioTokens: perMillion(0.2), // per 1M tokens (audio billed at same rate as text)
+            completionTextTokens: perMillion(0.8), // per 1M tokens
+        },
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
         inputModalities: ["text", "image"],
@@ -562,14 +518,12 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.1),
-                promptCachedTokens: perMillion(0.11),
-                completionTextTokens: perMillion(5.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.1),
+            promptCachedTokens: perMillion(0.11),
+            completionTextTokens: perMillion(5.5),
+        },
         description: "MIDIjourney - AI Music Composition Assistant",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -584,14 +538,12 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(5.5),
-                promptCachedTokens: perMillion(0.55),
-                completionTextTokens: perMillion(27.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(0.55),
+            completionTextTokens: perMillion(27.5),
+        },
         description: "MIDIjourney Large - Premium AI Music Composition",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -605,14 +557,12 @@ export const TEXT_SERVICES = {
         brand: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.1),
-                promptCachedTokens: perMillion(0.11),
-                completionTextTokens: perMillion(5.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.1),
+            promptCachedTokens: perMillion(0.11),
+            completionTextTokens: perMillion(5.5),
+        },
         description: "Claude Haiku 4.5 - Fast & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -628,14 +578,12 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(3.3),
-                promptCachedTokens: perMillion(0.33),
-                completionTextTokens: perMillion(16.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(3.3),
+            promptCachedTokens: perMillion(0.33),
+            completionTextTokens: perMillion(16.5),
+        },
         description: "Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -651,14 +599,12 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(5.5),
-                promptCachedTokens: perMillion(0.55),
-                completionTextTokens: perMillion(27.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(0.55),
+            completionTextTokens: perMillion(27.5),
+        },
         description: "Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -674,14 +620,12 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(5.5),
-                promptCachedTokens: perMillion(0.55),
-                completionTextTokens: perMillion(27.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(0.55),
+            completionTextTokens: perMillion(27.5),
+        },
         description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -696,15 +640,13 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.0),
-                completionTextTokens: perMillion(1.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(1.0),
+        },
         description: "Perplexity Sonar - Fast & Affordable with Web Search",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
         search: true,
@@ -718,16 +660,14 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.0),
-                completionTextTokens: perMillion(8.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2.0),
+            completionTextTokens: perMillion(8.0),
+        },
         description:
             "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
         reasoning: true,
@@ -749,14 +689,12 @@ export const TEXT_SERVICES = {
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-01-10").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-12").getTime(),
-                promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.1),
-                completionTextTokens: perMillion(3.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.6),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(3.0),
+        },
         description:
             "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
@@ -773,14 +711,12 @@ export const TEXT_SERVICES = {
         brand: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-21").getTime(),
-                promptTextTokens: perMillion(0.95),
-                promptCachedTokens: perMillion(0.16),
-                completionTextTokens: perMillion(4.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.95),
+            promptCachedTokens: perMillion(0.16),
+            completionTextTokens: perMillion(4.0),
+        },
         description:
             "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
@@ -797,23 +733,13 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(2.0),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(12.0),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(3.0),
-                promptCachedTokens: perMillion(0.3),
-                completionTextTokens: perMillion(18.0),
-            },
-        ],
+        cost: {
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            completionTextTokens: perMillion(12.0),
+        },
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
@@ -832,13 +758,11 @@ export const TEXT_SERVICES = {
         brand: "Amazon",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.035),
-                completionTextTokens: perMillion(0.14),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.035),
+            completionTextTokens: perMillion(0.14),
+        },
         description: "Nova Micro - Ultra Fast & Ultra Cheap",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -853,15 +777,13 @@ export const TEXT_SERVICES = {
         brand: "Amazon",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.33),
-                completionTextTokens: perMillion(2.75),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.33),
+            completionTextTokens: perMillion(2.75),
+        },
         description: "Nova 2 Lite - 1M Context with Reasoning",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -875,14 +797,12 @@ export const TEXT_SERVICES = {
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-12").getTime(),
-                promptTextTokens: perMillion(1.0),
-                promptCachedTokens: perMillion(0.2),
-                completionTextTokens: perMillion(3.2),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.0),
+            promptCachedTokens: perMillion(0.2),
+            completionTextTokens: perMillion(3.2),
+        },
         description:
             "Z.ai GLM-5.1 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
@@ -899,13 +819,11 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
-        cost: [
-            {
-                date: new Date("2026-01-01").getTime(),
-                promptTextTokens: perMillion(0.71),
-                completionTextTokens: perMillion(0.71),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.71),
+            completionTextTokens: perMillion(0.71),
+        },
         description:
             "Meta Llama 3.3 70B - Open-source dense model for general chat",
         inputModalities: ["text"],
@@ -926,13 +844,11 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        cost: [
-            {
-                date: new Date("2025-06-01").getTime(),
-                promptTextTokens: perMillion(0.25),
-                completionTextTokens: perMillion(1.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.25),
+            completionTextTokens: perMillion(1.0),
+        },
         description:
             "Meta Llama 4 Maverick - Open-source multimodal MoE with vision",
         inputModalities: ["text", "image"],
@@ -953,13 +869,11 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        cost: [
-            {
-                date: new Date("2025-04-01").getTime(),
-                promptTextTokens: perMillion(0.08),
-                completionTextTokens: perMillion(0.3),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.08),
+            completionTextTokens: perMillion(0.3),
+        },
         description:
             "Meta Llama 4 Scout - Open-source MoE for long context & retrieval",
         inputModalities: ["text", "image"],
@@ -980,14 +894,12 @@ export const TEXT_SERVICES = {
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.06),
-                completionTextTokens: perMillion(1.2),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.06),
+            completionTextTokens: perMillion(1.2),
+        },
         description: "MiniMax M2.7 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -1003,14 +915,12 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-08").getTime(),
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(1.5),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(1.5),
+        },
         description: "Mistral Large 3 - Premium Multilingual & Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1026,11 +936,11 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2026-02-24").getTime(),
-        cost: [
-            {
-                date: new Date("2026-02-23").getTime(),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
         description:
             "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
         inputModalities: ["text", "image"],
@@ -1049,20 +959,11 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
-        cost: [
-            {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.3), // per 1M tokens
-                completionTextTokens: perMillion(1.5), // per 1M tokens
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.45), // per 1M tokens
-                completionTextTokens: perMillion(2.25), // per 1M tokens
-            },
-        ],
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // per 1M tokens
+        },
         description:
             "Qwen3 Coder Next - Advanced Code Generation via DashScope",
         inputModalities: ["text"],
@@ -1078,14 +979,12 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-12").getTime(),
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.1),
-                completionTextTokens: perMillion(3.0),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.1),
+            completionTextTokens: perMillion(3.0),
+        },
         description:
             "Qwen3.6 Plus - 396B MoE Flagship with Reasoning (Fireworks)",
         inputModalities: ["text", "image"],
@@ -1108,13 +1007,11 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
-        cost: [
-            {
-                date: new Date("2026-05-15").getTime(),
-                promptTextTokens: perMillion(0.13),
-                completionTextTokens: perMillion(0.52),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.13),
+            completionTextTokens: perMillion(0.52),
+        },
         description: "Qwen3 VL 30B A3B Instruct - Fast vision-language model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1134,14 +1031,12 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        priceMultiplier: 1,
         category: "text",
-        cost: [
-            {
-                date: new Date("2026-05-15").getTime(),
-                promptTextTokens: perMillion(0.26),
-                completionTextTokens: perMillion(2.6),
-            },
-        ],
+        cost: {
+            promptTextTokens: perMillion(0.26),
+            completionTextTokens: perMillion(2.6),
+        },
         description: "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1157,13 +1052,11 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
-        cost: [
-            {
-                date: new Date("2026-02-15").getTime(),
-                promptTextTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.01),
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.01),
+        },
         description: "Qwen3Guard 8B - Content Safety & Moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],

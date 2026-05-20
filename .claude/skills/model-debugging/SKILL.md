@@ -422,6 +422,8 @@ curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_errors.json?token=
 The Tinybird token is a read-only public token found in:
 - `apps/model-monitor/src/hooks/useModelMonitor.js`
 
+> **Workspace**: The hardcoded `TINYBIRD_TOKEN` below and the public token in `useModelMonitor.js` both target the **prod workspace** (`pollinations_enter`). For debugging staging-only issues, swap in a read token from the staging workspace (`pollinations_enter_staging`) — same URL, same pipe name, different data.
+
 ---
 
 # Debugging Workflow

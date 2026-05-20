@@ -230,13 +230,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
 }) => {
-    const [copyDocsCopied, setCopyDocsCopied] = useState(false);
-    const handleCopyDocs = useCallback(async () => {
-        const res = await fetch(`${genDocsUrl()}/llm.txt`);
+    const [copiedSection, setCopiedSection] = useState<string | null>(null);
+    const handleCopySection = useCallback(async (section: string) => {
+        const url = section
+            ? `${genDocsUrl()}/llm.txt?section=${section}`
+            : `${genDocsUrl()}/llm.txt`;
+        const res = await fetch(url);
         const text = await res.text();
         await navigator.clipboard.writeText(text);
-        setCopyDocsCopied(true);
-        setTimeout(() => setCopyDocsCopied(false), 1200);
+        setCopiedSection(section);
+        setTimeout(() => setCopiedSection(null), 1200);
     }, []);
     return (
         <aside
@@ -257,28 +260,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     />
                 ))}
                 <div className="mt-2 border-t border-green-950/10 pt-3">
-                    <button
-                        type="button"
-                        onClick={handleCopyDocs}
-                        className="flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                    >
-                        <span>
-                            {copyDocsCopied ? "Copied!" : "Copy for LLMs"}
-                        </span>
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 shrink-0 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                        >
-                            <rect x="9" y="9" width="13" height="13" rx="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                    </button>
                     <a
                         href={genDocsUrl()}
                         target="_blank"
@@ -287,73 +268,59 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     >
                         <span className="flex items-center gap-2">
                             <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
-                            API Reference
+                            Docs
                         </span>
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 shrink-0 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M7 17 17 7M9 7h8v8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        <ExternalLinkArrow className="h-4 w-4 shrink-0 text-gray-500" />
                     </a>
-                    <a
-                        href={genDocsUrl("#tag/bring-your-own-pollen")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                    >
-                        <span className="flex items-center gap-2">
-                            <WalletIcon className="h-4 w-4 shrink-0 text-gray-500" />
-                            BYOP
+                    <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
+                        <CopySectionRow
+                            label="Gen API"
+                            icon={
+                                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                            }
+                            section="gen-api"
+                            copied={copiedSection === "gen-api"}
+                            onCopy={handleCopySection}
+                        />
+                        <CopySectionRow
+                            label="User Wallet"
+                            icon={
+                                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                            }
+                            section="byop"
+                            copied={copiedSection === "byop"}
+                            onCopy={handleCopySection}
+                        />
+                        <CopySectionRow
+                            label="CLI"
+                            icon={
+                                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                            }
+                            section="cli"
+                            copied={copiedSection === "cli"}
+                            onCopy={handleCopySection}
+                        />
+                        <CopySectionRow
+                            label="Storage"
+                            icon={
+                                <StorageIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                            }
+                            section="media-storage"
+                            copied={copiedSection === "media-storage"}
+                            onCopy={handleCopySection}
+                        />
+                        <span
+                            aria-disabled="true"
+                            className="flex cursor-not-allowed items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-400"
+                            title="MCP docs coming soon"
+                        >
+                            <span className="flex items-center gap-2">
+                                <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                                MCP
+                            </span>
+                            <SoonPill />
                         </span>
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 shrink-0 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M7 17 17 7M9 7h8v8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                    </a>
-                    <a
-                        href={genDocsUrl("#tag/%EF%B8%8F-cli")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                    >
-                        <span className="flex items-center gap-2">
-                            <TerminalIcon className="h-4 w-4 shrink-0 text-gray-500" />
-                            CLI
-                        </span>
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 shrink-0 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M7 17 17 7M9 7h8v8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                    </a>
+                    </div>
                 </div>
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
@@ -624,5 +591,142 @@ const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
     >
         <polyline points="4 8 8 12 4 16" />
         <line x1="12" y1="20" x2="20" y2="20" />
+    </svg>
+);
+
+const McpIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="2" y="7" width="8" height="10" rx="1.5" />
+        <rect x="14" y="7" width="8" height="10" rx="1.5" />
+        <path d="M10 12h4" />
+    </svg>
+);
+
+const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+);
+
+const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="m8 3 4 1.5L16 3v18l-4-1.5L8 21z" />
+        <path d="M8 3v18M16 3v18" />
+    </svg>
+);
+
+const StorageIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <ellipse cx="12" cy="5" rx="8" ry="2.5" />
+        <path d="M4 5v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" />
+        <path d="M4 11v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5v-6" />
+    </svg>
+);
+
+const SoonPill: FC = () => (
+    <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
+        Soon
+    </span>
+);
+
+type CopySectionRowProps = {
+    label: string;
+    icon: ReactNode;
+    section: string;
+    copied: boolean;
+    onCopy: (section: string) => void;
+};
+
+const CopySectionRow: FC<CopySectionRowProps> = ({
+    label,
+    icon,
+    section,
+    copied,
+    onCopy,
+}) => (
+    <button
+        type="button"
+        onClick={() => onCopy(section)}
+        title={`Copy ${label} docs for LLMs`}
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-white/60 hover:text-gray-950"
+    >
+        <span className="flex items-center gap-2">
+            {icon}
+            {label}
+        </span>
+        {copied ? (
+            <CheckIcon className="h-3.5 w-3.5 shrink-0 text-green-700" />
+        ) : (
+            <ClipboardIcon className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+        )}
+    </button>
+);
+
+const CheckIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="20 6 9 17 4 12" />
+    </svg>
+);
+
+const ExternalLinkArrow: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+    >
+        <path
+            d="M7 17 17 7M9 7h8v8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
     </svg>
 );

@@ -244,6 +244,20 @@ function generateLLMDoc(): string {
 
 const LLM_DOC_TEXT = generateLLMDoc();
 
+const MEDIA_STORAGE_DOC = [
+    "## Media Storage",
+    "",
+    "Base URL: https://media.pollinations.ai",
+    "Content-addressed file storage. Upload requires API key; retrieval is public.",
+].join("\n");
+
+const LLM_DOC_SECTIONS: Record<string, string> = {
+    "gen-api": LLM_DOC_TEXT,
+    byop: `## Bring Your Own Pollen\n\n${BYOP_DOCS}`,
+    cli: `## CLI\n\n${CLI_DOCS}`,
+    "media-storage": MEDIA_STORAGE_DOC,
+};
+
 const LLM_BUTTON_HTML = `
 <script>
 (function () {
@@ -757,7 +771,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");
-            return c.text(LLM_DOC_TEXT);
+            const section = c.req.query("section");
+            if (!section) return c.text(LLM_DOC_TEXT);
+            const content = LLM_DOC_SECTIONS[section];
+            if (!content) return c.text("Section not found", 404);
+            return c.text(content);
         })
         .get("/open-api/generate-schema", async (c) => {
             const [generationSchema, enterSchema, mediaSchema] =

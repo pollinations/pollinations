@@ -1406,20 +1406,26 @@ async def send_long_message(
                 i += 1
             
             code_block_text = "\n".join(code_block_lines)
-            
-            if output_lines:
-                text_to_send = "\n".join(output_lines)
-                first_message_sent = await _send_chunk(
-                    channel, text_to_send, max_length, first_message_sent, reply_to, attachments, mention_author
-                )
-                output_lines = []
-            
-            try:
-                await send_code_block(channel, code_block_text, max_length)
-                first_message_sent = True
-            except Exception as e:
-                logger.error(f"Code block send error: {e}")
+            current_len = len("\n".join(output_lines)) if output_lines else 0
+            fits = (current_len + len(code_block_text) + (1 if output_lines else 0)) <= max_length
+
+            if fits:
                 output_lines.extend(code_block_lines)
+            else:
+                if output_lines:
+                    first_message_sent = await _send_chunk(
+                        channel, "\n".join(output_lines), max_length, first_message_sent, reply_to, attachments, mention_author
+                    )
+                    output_lines = []
+                if len(code_block_text) > max_length:
+                    try:
+                        await send_code_block(channel, code_block_text, max_length)
+                        first_message_sent = True
+                    except Exception as e:
+                        logger.error(f"Code block send error: {e}")
+                        output_lines.extend(code_block_lines)
+                else:
+                    output_lines.extend(code_block_lines)
             continue
         
         output_lines.append(line)

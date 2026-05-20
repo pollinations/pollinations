@@ -196,6 +196,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
+    "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

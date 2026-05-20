@@ -347,4 +347,79 @@ describe("error observability", () => {
             },
         });
     });
+
+    it("keeps user image URL fetch 429 client-facing", async () => {
+        const fetchRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                fetchRequests.push(request);
+                return Response.json(
+                    { error: { message: "image host rate limited" } },
+                    { status: 429, statusText: "Too Many Requests" },
+                );
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", async (c) =>
+            handleChatCompletionLocal(c, await c.req.json()),
+        );
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "nova",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "describe this" },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://example.com/image.png",
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            }),
+            {
+                AWS_ACCESS_KEY_ID: "test_aws_key_id",
+                AWS_REGION: "us-east-1",
+                AWS_SECRET_ACCESS_KEY: "test_aws_secret",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(fetchRequests).toHaveLength(1);
+        expect(fetchRequests[0].url).toBe("https://example.com/image.png");
+        expect(response.status).toBe(429);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "RATE_LIMITED",
+                message: expect.stringContaining(
+                    "The image server is rate limiting requests",
+                ),
+                details: { upstreamStatus: 429 },
+            },
+        });
+    });
 });

@@ -1,4 +1,5 @@
 import debug from "debug";
+import { remapUpstreamStatus } from "@/error.ts";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
     normalizeOptions,
@@ -78,7 +79,8 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = response.status;
+    error.status = remapUpstreamStatus(response.status);
+    error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
     return error;

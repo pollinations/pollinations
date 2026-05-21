@@ -131,4 +131,9 @@ describe("billing deduction", () => {
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(-0.01, 10);
     });
+    it("treats paid provider models as paid-only by default", () => {
+        const model = getModelDefinition("openai");
+        expect(model.provider).toBe("azure");
+        expect(model.paidOnly).toBe(true);
+    });
 });

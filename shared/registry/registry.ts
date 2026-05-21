@@ -141,6 +141,24 @@ function derivePrice(svc: ModelDefinition): PriceDefinition {
     ) as PriceDefinition;
 }
 
+
+// Providers whose upstream usage costs must be paid from purchased pack balance,
+// not free/tier credits.
+export const PAID_ONLY_PROVIDERS = new Set([
+    "azure",
+    "bedrock",
+    "fireworks",
+    "google",
+    "openai",
+    "openrouter",
+    "perplexity",
+    "replicate",
+]);
+
+export function isPaidOnlyProvider(provider: string): boolean {
+    return PAID_ONLY_PROVIDERS.has(provider);
+}
+
 const MODEL_REGISTRY = {
     ...TEXT_SERVICES,
     ...IMAGE_SERVICES,
@@ -230,7 +248,11 @@ export function getModelDefinition(model: ModelName): ModelDefinition {
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
     }
-    return definition;
+    return {
+        ...definition,
+        paidOnly:
+            definition.paidOnly ?? isPaidOnlyProvider(definition.provider),
+    };
 }
 
 /**

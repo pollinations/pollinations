@@ -1,0 +1,34 @@
+{
+  "pr_number": 11226,
+  "title": "fix(registry): reset gemini-search to base Vertex rates",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11226",
+  "merged_at": "2026-05-21T14:53:03Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Drop the artificial 2× token markup on `gemini-search`; charge users at the underlying `gemini-2.5-flash-lite` base rates. This also fixes the audio rate, which was below the text rate (inconsistent with everywhere else in the cost block).\n\nGrounding fee (~$243/30d on the project) is now absorbed by Pollinations instead of being amortized through inflated token rates. Proper per-call grounding cost modeling will land in a follow-up PR.\n\nUser-facing effect for `gemini-search`:\n\n| | Before (cost / price ×1.5) | After (cost / price ×1.5) |\n|---|---:|---:|\n| Text in | $0.20 / **$0.30**/M | $0.10 / **$0.15**/M |\n| Cached | $0.02 / $0.03/M | $0.01 / $0.015/M |\n| Audio in | $0.20 / $0.30/M | $0.30 / $0.45/M |\n| Completion | $0.80 / $1.20/M | $0.40 / $0.60/M |\n\nMost users see a ~50% price drop. Audio is +50% but volume is negligible (~300 tokens / 30d).\n\nAlso gitignores `/_local/` for local-only planning docs.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Half-price Gemini Search",
+    "blurb": "We've dropped the token markup on gemini-search, bringing text and completion costs down by 50%. The hive is absorbing the grounding fees so you can search the web for less.",
+    "summary": "The token markup on `gemini-search` has been removed, dropping text input from $0.30/M to $0.15/M and completions from $1.20/M to $0.60/M to match base `gemini-2.5-flash-lite` rates.",
+    "impact": "Users will see a ~50% price drop for most `gemini-search` requests, as Pollinations is now absorbing the underlying grounding fees.",
+    "keywords": [
+      "gemini",
+      "pricing",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature interacting with a price tag or receipt. Nomnom eating the 'fees' or the cut half of the price tag to represent the absorbed costs.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny pair of scissors, having just cut a digital price tag in half. The round tan Nomnom creature happily eats the discarded half of the tag. A retro computer monitor in the background displays a glowing search bar. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-21/PR-11226.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny pair of scissors, having just cut a digital price tag in half. The round tan Nomnom creature happily eats the discarded half of the tag. A retro computer monitor in the background displays a glowing search bar. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-21T14:54:15.511360+00:00"
+}

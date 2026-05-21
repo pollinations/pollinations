@@ -98,10 +98,17 @@ describe("billing deduction", () => {
         });
     });
 
-    it("deducts an Azure paid-only model only from pack balance", async () => {
-        const modelResolved = "gpt-5.5";
+    it("marks Gemini preview models that bill to pack as paid-only", () => {
+        const model = getModelDefinition("gemini-flash-lite-3.1");
+        expect(model.modelId).toBe("gemini-3.1-flash-lite-preview");
+        expect(model.provider).toBe("google");
+        expect(model.paidOnly).toBe(true);
+    });
+
+    it("deducts paid-only models only from pack balance", async () => {
+        const modelResolved = "gemini-flash-lite-3.1";
         const model = getModelDefinition(modelResolved);
-        expect(model.provider).toBe("azure");
+        expect(model.provider).toBe("google");
         expect(model.paidOnly).toBe(true);
 
         const userId = await createUser({

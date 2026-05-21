@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-20",
+  "period_start": "2026-05-20",
+  "period_end": "2026-05-20",
+  "generated_at": "2026-05-21T07:13:01.310566+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Update: Better markdown table rendering and upstream rate limit 502s",
+  "text": "We merged a few quality-of-life fixes into the pollinations.ai infrastructure today (3 PRs total).\n\nFirst, Polly's markdown rendering for tables and LaTeX was getting pretty messy, especially when generating images of tables. PRs #11194 and #11195 clean this up. It now correctly renders markdown formatting inside table images without breaking the layout. We also tweaked the system prompt so the model stops appending those annoying conversational follow-up questions (postambles) at the end of responses. You ask for a table, you just get the table.\n\nSecond, PR #11182 addresses how we handle upstream text provider rate limits. Because we route to multiple models behind a single endpoint, upstream rate limits were occasionally failing ungracefully or returning generic 500 errors. We have now explicitly mapped upstream rate limits to proper 502 Bad Gateway errors. This should make it much easier for you to write predictable retry logic on your end when a specific model provider is temporarily getting hammered.\n\nAs always, the API is free to use and everything is open source. You can check out the code, read the docs, or run the stack yourself at https://github.com/pollinations/pollinations."
+}

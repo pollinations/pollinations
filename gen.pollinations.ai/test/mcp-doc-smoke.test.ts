@@ -1,4 +1,7 @@
-import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
+import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 
@@ -30,7 +33,9 @@ describe("docs include MCP", () => {
         const body = await res.text();
         expect(res.status).toBe(200);
         expect(body).toMatch(/## MCP Server/);
-        expect(body).toMatch(/pollinations\.ai MCP Server|@pollinations_ai\/mcp/);
+        expect(body).toMatch(
+            /pollinations\.ai MCP Server|@pollinations_ai\/mcp/,
+        );
         expect(body).toMatch(/Available Tools/);
     });
 });

@@ -54,7 +54,7 @@ export function openaiUsageToUsage(openaiUsage: {
     // biome-ignore format: custom formatting
     return {
         promptTextTokens: 
-            openaiUsage.prompt_tokens - promptDetailTokens,
+            Math.max(0, openaiUsage.prompt_tokens - promptDetailTokens),
         promptCachedTokens:
             openaiUsage.prompt_tokens_details?.cached_tokens || 0,
         promptAudioTokens: 
@@ -62,7 +62,7 @@ export function openaiUsageToUsage(openaiUsage: {
         promptImageTokens:
             openaiUsage.prompt_tokens_details?.image_tokens || 0,
         completionTextTokens:
-            openaiUsage.completion_tokens - completionDetailTokens,
+            Math.max(0, openaiUsage.completion_tokens - completionDetailTokens),
         completionAudioTokens:
             openaiUsage.completion_tokens_details?.audio_tokens || 0,
         completionReasoningTokens:

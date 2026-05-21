@@ -174,6 +174,35 @@ describe("openaiUsageToUsage", () => {
         expect(usage.promptImageTokens).toBe(1);
         expect(usage.completionTextTokens).toBe(1);
     });
+
+    it("should floor text tokens at zero when detail tokens exceed headline totals", () => {
+        const openaiUsage = {
+            prompt_tokens: 100,
+            completion_tokens: 200,
+            total_tokens: 300,
+            prompt_tokens_details: {
+                cached_tokens: 80,
+                audio_tokens: 40,
+                image_tokens: 10,
+            },
+            completion_tokens_details: {
+                accepted_prediction_tokens: 20,
+                rejected_prediction_tokens: 30,
+                audio_tokens: 25,
+                reasoning_tokens: 300,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(0);
+        expect(usage.promptCachedTokens).toBe(80);
+        expect(usage.promptAudioTokens).toBe(40);
+        expect(usage.promptImageTokens).toBe(10);
+        expect(usage.completionAudioTokens).toBe(25);
+        expect(usage.completionReasoningTokens).toBe(300);
+    });
 });
 
 describe("parseUsageHeaders", () => {

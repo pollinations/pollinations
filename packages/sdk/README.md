@@ -162,6 +162,32 @@ export function App() {
 }
 ```
 
+#### SSR / Next.js App Router / RSC
+
+`PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
+
+- **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. Profile / balance fetches start only once `apiKey` is set.
+- **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
+
+  ```tsx
+  // app/providers.tsx
+  "use client";
+  import { PolliProvider } from "@pollinations_ai/sdk/react";
+  export function Providers({ children }: { children: React.ReactNode }) {
+    return <PolliProvider appKey="pk_…">{children}</PolliProvider>;
+  }
+
+  // app/layout.tsx (server component)
+  import { Providers } from "./providers";
+  export default function RootLayout({ children }) {
+    return <html><body><Providers>{children}</Providers></body></html>;
+  }
+  ```
+
+- **React Server Components**: `useAuthState` / `useAuthProfile` / `useAuthActions` cannot be called from server components. Any component that reads auth state must be a client component.
+- **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:

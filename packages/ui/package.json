@@ -29,6 +29,8 @@
     "prebuild": "npm run build:sdk",
     "prepublishOnly": "npm run build",
     "pretypecheck": "npm run build:sdk",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
@@ -48,8 +50,11 @@
     "@tailwindcss/cli": "^4.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tailwindcss": "^4.0.0",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
   }
 }

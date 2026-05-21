@@ -14,6 +14,7 @@ type PollenBalanceProps = {
     tier?: string;
     paidWeek?: number;
     tierWeek?: number;
+    questReward?: number;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
@@ -107,6 +108,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
+    questReward = 0,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
@@ -259,6 +261,7 @@ type SidebarWalletProps = {
     tier?: string;
     paidWeek?: number;
     tierWeek?: number;
+    questReward?: number;
     onClick?: () => void;
 };
 
@@ -268,7 +271,9 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
+    questReward = 0,
 }) => {
+    const displayQuestReward = normalizeDisplayBalance(questReward);
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
@@ -294,6 +299,20 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     )}
                 </span>
             </div>
+            {displayQuestReward > 0 && (
+                <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                        <span
+                            className="h-2 w-2 rounded-full bg-green-600"
+                            aria-hidden="true"
+                        />
+                        Quest reward
+                    </span>
+                    <span className="text-micro font-bold tabular-nums text-amber-950 leading-none">
+                        {formatPollen(displayQuestReward)}
+                    </span>
+                </div>
+            )}
             {!hideTierSegment && (
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">

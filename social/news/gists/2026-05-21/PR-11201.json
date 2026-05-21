@@ -1,0 +1,35 @@
+{
+  "pr_number": 11201,
+  "title": "mcp: working npm run test, README trim, and wire into gen /docs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11201",
+  "merged_at": "2026-05-21T11:47:19Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Three small things on the MCP package.\n\n### 1. `npm run test` works now\n`packages/mcp/package.json` referenced `test-mcp-client.js` and a `tests/integration/` vitest suite — neither existed.\n\n- Adds `packages/mcp/test-mcp-client.js`: spawns the server over stdio, lists tools, sets a key, and runs a small live slice (`generateText`, `generateImageUrl`, `getBalance`). Skips authenticated calls when `POLLINATIONS_API_KEY` is unset.\n- Drops the `test:integration` script + the unused `vitest` devDep.\n\nVerified empirically end-to-end against `gen.pollinations.ai` with an `sk_` key — 8/8 pass (real model output, real balance, real URL, real perplexity answer).\n\n### 2. README trim\n- Drops the v1/v2 \"What's New\" + \"Migration from v1.x\" sections (changelog noise on a public docs page).\n- Swaps hardcoded model/voice enums for \"call `listX` for the live list\" — the README itself already says everything is validated against the registry, so listing names just rots.\n- ~50 lines lighter, evergreen.\n\n### 3. Wired into `gen.pollinations.ai/docs`\nSame pattern as CLI and BYOP — `import MCP_README from \"../../../packages/mcp/README.md?raw\"`, strip the H1, expose as:\n- `## MCP Server` block in `/docs/llm.txt`\n- `🔌 MCP Server` Scalar tag on the rendered `/docs` page\n\nAdded a smoke test that asserts the MCP section lands in the rendered LLM doc.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "MCP docs join the hive",
+    "blurb": "Our Model Context Protocol (MCP) server documentation is now officially wired into the main API docs. We also cleaned up the README and added a proper end-to-end test script for contributors.",
+    "summary": "Wired the MCP server documentation into the main gen.pollinations.ai/docs endpoint and Scalar UI, removed hardcoded model lists from the README, and added a working stdio test script.",
+    "impact": "Developers will now see the MCP server instructions right alongside the rest of the API documentation, and contributors can reliably test the package locally with `npm run test`.",
+    "keywords": [
+      "mcp",
+      "docs",
+      "testing",
+      "api",
+      "scalar"
+    ],
+    "visual_concept": "Polly the bee organizing documents and plugging a wire into a main server, while the Monitor Robot happily reads a freshly printed manual.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, plugging a glowing wire into a retro server rack. Nearby, a chunky monitor-headed robot happily reads a pixelated instruction manual. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-21/PR-11201.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, plugging a glowing wire into a retro server rack. Nearby, a chunky monitor-headed robot happily reads a pixelated instruction manual. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-21T11:48:20.300510+00:00"
+}

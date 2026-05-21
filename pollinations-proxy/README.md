@@ -11,9 +11,9 @@ real work (D1, KV, R2, Workers) runs in the Myceli account.
 | --- | --- |
 | `staging.enter.pollinations.ai` | `staging.enter.myceli.ai` |
 | `staging.gen.pollinations.ai` | `staging.gen.myceli.ai` |
-| `enter.pollinations.ai` *(disabled until prod cutover)* | `enter.myceli.ai` |
-| `gen.pollinations.ai` *(disabled until prod cutover)* | `gen.myceli.ai` |
-| `media.pollinations.ai` *(disabled until media cutover)* | `media.myceli.ai` |
+| `enter.pollinations.ai` | `enter.myceli.ai` |
+| `gen.pollinations.ai` | `gen.myceli.ai` |
+| `media.pollinations.ai` | `media.myceli.ai` |
 
 ## Forwarded headers
 
@@ -44,10 +44,9 @@ Direct auth flows against `*.enter.myceli.ai` are intentionally
 non-functional — Myceli is treated as a private upstream. Use non-auth
 endpoints when smoke-testing the Myceli host directly.
 
-Verified 2026-05-20: the staging GitHub App (client_id `Iv23li2dFvT2lzVnK4Bg`)
-already accepts `staging.enter.pollinations.ai/...` as a callback URI. For
-prod (OAuth App, client_id starting `Ov23li…`), end-to-end OAuth login
-should be re-validated before cutover.
+Verified 2026-05-21: production traffic is routed through this proxy to the
+Myceli upstreams, and generation/auth smoke tests pass on the public
+Pollinations hostnames.
 
 ## Deploy
 
@@ -56,14 +55,21 @@ should be re-validated before cutover.
 cp ~/Library/Preferences/.wrangler/config/pollinations.toml \
    ~/Library/Preferences/.wrangler/config/default.toml
 
-# Staging only — production routes are commented out in wrangler.toml.
 npm run deploy:staging
+
+# Production — this owns enter/gen/media.pollinations.ai.
+npm run deploy:production
 ```
 
 ## Rollback
 
-Re-deploy the existing staging enter/gen workers on the Pollinations account
-to retake their custom domains. For media, re-deploy `pollinations-media-prod`
-on the Pollinations account to retake `media.pollinations.ai`. Or delete the
-proxy worker — Cloudflare falls back to whichever Worker last claimed the
-custom domain.
+Rollback is a route-owner change, not a DNS change. Re-deploy the previous
+Pollinations-account workers to retake their custom domains:
+
+- `pollinations-enter-production` for `enter.pollinations.ai`
+- `pollinations-gen-production` for `gen.pollinations.ai`
+- `pollinations-media-prod` for `media.pollinations.ai`
+
+If media writes occurred on Myceli before rollback, copy Myceli -> old before
+sending `media.pollinations.ai` back to the old worker, or keep media on
+Myceli.

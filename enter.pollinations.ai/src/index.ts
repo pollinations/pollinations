@@ -1,3 +1,4 @@
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -47,12 +48,21 @@ function isApiDocsPath(path: string): boolean {
 }
 
 function redirectLegacyDocs(c: Context<Env>): Response {
-    const url = new URL(c.req.url);
-    url.protocol = "https:";
+    const reqUrl = new URL(c.req.url);
+    const publicOrigin = new URL(getPublicOrigin(c));
+    const url = new URL(reqUrl.pathname + reqUrl.search, publicOrigin);
     url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+    url.protocol = "https:";
     url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
+}
+
+function getCurrentGenOrigin(c: Context<Env>): string {
+    const url = new URL(getPublicOrigin(c));
+    url.protocol = "https:";
+    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+    return url.origin;
 }
 
 const app = new Hono<Env>()
@@ -81,13 +91,16 @@ const app = new Hono<Env>()
     .all("/api/docs/", redirectLegacyDocs)
     .all("/api/docs/*", redirectLegacyDocs)
     .all("/api/generate/*", (c) => {
-        const url = new URL(c.req.url);
+        const reqUrl = new URL(c.req.url);
+        const publicOrigin = new URL(getPublicOrigin(c));
+        const url = new URL(reqUrl.pathname + reqUrl.search, publicOrigin);
         url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+        url.protocol = "https:";
         url.pathname = url.pathname.replace(/^\/api\/generate/, "");
         c.header("Deprecation", "true");
         c.header(
             "Link",
-            '<https://gen.pollinations.ai>; rel="successor-version"',
+            `<${getCurrentGenOrigin(c)}>; rel="successor-version"`,
         );
         return c.redirect(url.toString(), 308);
     })

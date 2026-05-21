@@ -4,6 +4,7 @@ import {
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
@@ -1194,7 +1195,7 @@ function createAutoTopUpIdempotencyKey(attemptId: string): string {
 }
 
 function getBillingReturnUrl(env: CloudflareBindings): string {
-    const baseUrl = env.STRIPE_SUCCESS_URL || "https://enter.pollinations.ai";
+    const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
     const url = new URL(baseUrl);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();

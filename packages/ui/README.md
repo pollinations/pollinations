@@ -74,35 +74,40 @@ These CSS variables are part of the public contract. You may reference
 them in your own CSS / inline styles. Renames between minor versions
 count as breaking.
 
+All public tokens sit under the `--polli-color-*` namespace so they can't
+collide with Tailwind v4's prefixed namespaces (`--polli-text-*`,
+`--polli-font-*`, `--polli-spacing-*`, etc. — all reserved by the
+internal Tailwind theme).
+
 **Theme-aware (resolve against the active `data-theme`):**
 
-| Token                   | Purpose                                            |
-| ----------------------- | -------------------------------------------------- |
-| `--polli-text-base`     | Default body text on themed surfaces.              |
-| `--polli-text-strong`   | Emphasized text / headings.                        |
-| `--polli-text-soft`     | Accent text (more saturated than base).            |
-| `--polli-text-muted`    | De-emphasized text (lighter than base).            |
-| `--polli-border`        | Default border on themed surfaces.                 |
-| `--polli-bg-subtle`     | Large panel surface (semi-transparent).            |
-| `--polli-bg-active`     | Selected / active state background.                |
-| `--polli-bg-hover`      | Hover state background.                            |
-| `--polli-bg-pale`       | Light wash (cards, chips, large blocks).           |
+| Token                         | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `--polli-color-text-base`     | Default body text on themed surfaces.         |
+| `--polli-color-text-strong`   | Emphasized text / headings.                   |
+| `--polli-color-text-soft`     | Accent text (more saturated than base).       |
+| `--polli-color-text-muted`    | De-emphasized text (lighter than base).       |
+| `--polli-color-border`        | Default border on themed surfaces.            |
+| `--polli-color-bg-subtle`     | Large panel surface (semi-transparent).       |
+| `--polli-color-bg-active`     | Selected / active state background.           |
+| `--polli-color-bg-hover`      | Hover state background.                       |
+| `--polli-color-bg-pale`       | Light wash (cards, chips, large blocks).      |
 
 **Intent (theme-independent):**
 
-| Token                       | Purpose                              |
-| --------------------------- | ------------------------------------ |
-| `--polli-danger-bg-light`   | Error surface background.            |
-| `--polli-danger-text`       | Error text foreground.               |
-| `--polli-danger-border`     | Error border.                        |
+| Token                             | Purpose                          |
+| --------------------------------- | -------------------------------- |
+| `--polli-color-danger-bg-light`   | Error surface background.        |
+| `--polli-color-danger-text`       | Error text foreground.           |
+| `--polli-color-danger-border`     | Error border.                    |
 
 **Example:**
 
 ```css
 .my-themed-card {
-  background: var(--polli-bg-pale);
-  color: var(--polli-text-base);
-  border: 1px solid var(--polli-border);
+  background: var(--polli-color-bg-pale);
+  color: var(--polli-color-text-base);
+  border: 1px solid var(--polli-color-border);
 }
 ```
 

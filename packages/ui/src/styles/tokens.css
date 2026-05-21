@@ -19,125 +19,130 @@
     --color-tier-deep: #7C3F1E;
 }
 
-/* ─── Layer 2: per-theme cascade (public `--polli-*` tokens) ────
+/* ─── Layer 2: per-theme cascade (public `--polli-color-*` tokens)
    These variables ARE part of the public contract. Consumers may
-   reference them in their own CSS, e.g. `color: var(--polli-text-base)`.
+   reference them in their own CSS, e.g.
+       color: var(--polli-color-text-base).
+   The `--polli-color-` prefix sits outside Tailwind's prefixed
+   namespace (`--polli-text-*` for sizes, `--polli-font-*` for
+   families) — important: a public token named `--polli-text-base`
+   would collide with Tailwind's font-size utility and break it.
    Renames between minor versions count as breaking. */
 [data-theme="amber"] {
-    --polli-text-base:    oklch(0.414 0.112 45.904);
-    --polli-text-strong:  oklch(0.279 0.077 45.635);
-    --polli-text-soft:    oklch(0.555 0.163 48.998);
-    --polli-text-muted:   oklch(0.62 0.045 45.904);
+    --polli-color-text-base:    oklch(0.414 0.112 45.904);
+    --polli-color-text-strong:  oklch(0.279 0.077 45.635);
+    --polli-color-text-soft:    oklch(0.555 0.163 48.998);
+    --polli-color-text-muted:   oklch(0.62 0.045 45.904);
 
-    --polli-border:       oklch(0.879 0.169 91.605);
+    --polli-color-border:       oklch(0.879 0.169 91.605);
 
-    --polli-bg-subtle:    oklch(0.987 0.022 95.277 / 0.7);
-    --polli-bg-active:    oklch(0.924 0.12 95.746);
-    --polli-bg-hover:     oklch(0.879 0.169 91.605);
-    --polli-bg-pale:      oklch(0.962 0.059 95.617);
+    --polli-color-bg-subtle:    oklch(0.987 0.022 95.277 / 0.7);
+    --polli-color-bg-active:    oklch(0.924 0.12 95.746);
+    --polli-color-bg-hover:     oklch(0.879 0.169 91.605);
+    --polli-color-bg-pale:      oklch(0.962 0.059 95.617);
 }
 
 [data-theme="blue"] {
-    --polli-text-base:    oklch(0.379 0.146 265.522);
-    --polli-text-strong:  oklch(0.282 0.091 267.935);
-    --polli-text-soft:    oklch(0.488 0.243 264.376);
-    --polli-text-muted:   oklch(0.62 0.058 265.522);
+    --polli-color-text-base:    oklch(0.379 0.146 265.522);
+    --polli-color-text-strong:  oklch(0.282 0.091 267.935);
+    --polli-color-text-soft:    oklch(0.488 0.243 264.376);
+    --polli-color-text-muted:   oklch(0.62 0.058 265.522);
 
-    --polli-border:       oklch(0.809 0.105 251.813);
+    --polli-color-border:       oklch(0.809 0.105 251.813);
 
-    --polli-bg-subtle:    oklch(0.97 0.014 254.604 / 0.7);
-    --polli-bg-active:    oklch(0.882 0.059 254.128);
-    --polli-bg-hover:     oklch(0.809 0.105 251.813);
-    --polli-bg-pale:      oklch(0.932 0.032 255.585);
+    --polli-color-bg-subtle:    oklch(0.97 0.014 254.604 / 0.7);
+    --polli-color-bg-active:    oklch(0.882 0.059 254.128);
+    --polli-color-bg-hover:     oklch(0.809 0.105 251.813);
+    --polli-color-bg-pale:      oklch(0.932 0.032 255.585);
 }
 
 [data-theme="pink"] {
-    --polli-text-base:    oklch(0.408 0.153 2.432);
-    --polli-text-strong:  oklch(0.284 0.109 3.907);
-    --polli-text-soft:    oklch(0.525 0.223 3.958);
-    --polli-text-muted:   oklch(0.62 0.061 2.432);
+    --polli-color-text-base:    oklch(0.408 0.153 2.432);
+    --polli-color-text-strong:  oklch(0.284 0.109 3.907);
+    --polli-color-text-soft:    oklch(0.525 0.223 3.958);
+    --polli-color-text-muted:   oklch(0.62 0.061 2.432);
 
-    --polli-border:       oklch(0.823 0.12 346.018);
+    --polli-color-border:       oklch(0.823 0.12 346.018);
 
-    --polli-bg-subtle:    oklch(0.971 0.014 343.198 / 0.7);
-    --polli-bg-active:    oklch(0.899 0.061 343.231);
-    --polli-bg-hover:     oklch(0.823 0.12 346.018);
-    --polli-bg-pale:      oklch(0.948 0.028 342.258);
+    --polli-color-bg-subtle:    oklch(0.971 0.014 343.198 / 0.7);
+    --polli-color-bg-active:    oklch(0.899 0.061 343.231);
+    --polli-color-bg-hover:     oklch(0.823 0.12 346.018);
+    --polli-color-bg-pale:      oklch(0.948 0.028 342.258);
 }
 
 [data-theme="teal"] {
-    --polli-text-base:    oklch(0.386 0.063 188.416);
-    --polli-text-strong:  oklch(0.277 0.046 192.524);
-    --polli-text-soft:    oklch(0.511 0.096 186.391);
-    --polli-text-muted:   oklch(0.62 0.025 188.416);
+    --polli-color-text-base:    oklch(0.386 0.063 188.416);
+    --polli-color-text-strong:  oklch(0.277 0.046 192.524);
+    --polli-color-text-soft:    oklch(0.511 0.096 186.391);
+    --polli-color-text-muted:   oklch(0.62 0.025 188.416);
 
-    --polli-border:       oklch(0.855 0.138 181.071);
+    --polli-color-border:       oklch(0.855 0.138 181.071);
 
-    --polli-bg-subtle:    oklch(0.984 0.014 180.72 / 0.7);
-    --polli-bg-active:    oklch(0.91 0.096 180.426);
-    --polli-bg-hover:     oklch(0.855 0.138 181.071);
-    --polli-bg-pale:      oklch(0.953 0.051 180.801);
+    --polli-color-bg-subtle:    oklch(0.984 0.014 180.72 / 0.7);
+    --polli-color-bg-active:    oklch(0.91 0.096 180.426);
+    --polli-color-bg-hover:     oklch(0.855 0.138 181.071);
+    --polli-color-bg-pale:      oklch(0.953 0.051 180.801);
 }
 
 [data-theme="violet"] {
-    --polli-text-base:    oklch(0.38 0.189 293.745);
-    --polli-text-strong:  oklch(0.283 0.141 291.089);
-    --polli-text-soft:    oklch(0.491 0.27 292.581);
-    --polli-text-muted:   oklch(0.62 0.076 293.745);
+    --polli-color-text-base:    oklch(0.38 0.189 293.745);
+    --polli-color-text-strong:  oklch(0.283 0.141 291.089);
+    --polli-color-text-soft:    oklch(0.491 0.27 292.581);
+    --polli-color-text-muted:   oklch(0.62 0.076 293.745);
 
-    --polli-border:       oklch(0.811 0.111 293.571);
+    --polli-color-border:       oklch(0.811 0.111 293.571);
 
-    --polli-bg-subtle:    oklch(0.969 0.016 293.756 / 0.7);
-    --polli-bg-active:    oklch(0.894 0.057 293.283);
-    --polli-bg-hover:     oklch(0.811 0.111 293.571);
-    --polli-bg-pale:      oklch(0.943 0.029 294.588);
+    --polli-color-bg-subtle:    oklch(0.969 0.016 293.756 / 0.7);
+    --polli-color-bg-active:    oklch(0.894 0.057 293.283);
+    --polli-color-bg-hover:     oklch(0.811 0.111 293.571);
+    --polli-color-bg-pale:      oklch(0.943 0.029 294.588);
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
-   (sign-in, authorize, device, terms, etc.) resolve --polli-* vars. */
+   (sign-in, authorize, device, terms, etc.) resolve --polli-color-* vars. */
 :root,
 [data-theme="green"] {
-    --polli-text-base:    oklch(0.393 0.095 152.535);
-    --polli-text-strong:  oklch(0.266 0.065 152.934);
-    --polli-text-soft:    oklch(0.527 0.154 150.069);
-    --polli-text-muted:   oklch(0.62 0.038 152.535);
+    --polli-color-text-base:    oklch(0.393 0.095 152.535);
+    --polli-color-text-strong:  oklch(0.266 0.065 152.934);
+    --polli-color-text-soft:    oklch(0.527 0.154 150.069);
+    --polli-color-text-muted:   oklch(0.62 0.038 152.535);
 
-    --polli-border:       oklch(0.871 0.15 154.449);
+    --polli-color-border:       oklch(0.871 0.15 154.449);
 
-    --polli-bg-subtle:    oklch(0.982 0.018 155.826 / 0.7);
-    --polli-bg-active:    oklch(0.925 0.084 155.995);
-    --polli-bg-hover:     oklch(0.871 0.15 154.449);
-    --polli-bg-pale:      oklch(0.962 0.044 156.743);
+    --polli-color-bg-subtle:    oklch(0.982 0.018 155.826 / 0.7);
+    --polli-color-bg-active:    oklch(0.925 0.084 155.995);
+    --polli-color-bg-hover:     oklch(0.871 0.15 154.449);
+    --polli-color-bg-pale:      oklch(0.962 0.044 156.743);
 }
 
 /* ─── Layer 2b: intent tokens (semantic, theme-independent) ─────
    Also part of the public contract. */
 :root {
-    --polli-danger-bg-light:  oklch(0.935 0.045 25);
-    --polli-danger-text:      oklch(0.48 0.18 25);
-    --polli-danger-border:    oklch(0.78 0.115 25);
+    --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
+    --polli-color-danger-text:      oklch(0.48 0.18 25);
+    --polli-color-danger-border:    oklch(0.78 0.115 25);
 }
 
 /* ─── Layer 3: Tailwind utility surface (`@theme inline`) ───────
    Maps Tailwind utility token names (library-internal) to the
-   public `--polli-*` source variables. Utility names stay stable
-   for primitives; rename safety lives in the source variables. */
+   public `--polli-color-*` source variables. Utility names stay
+   stable for primitives; rename safety lives in the source vars. */
 @theme inline {
-    --color-theme-text-base:         var(--polli-text-base);
-    --color-theme-text-strong:       var(--polli-text-strong);
-    --color-theme-text-soft:         var(--polli-text-soft);
-    --color-theme-text-muted:        var(--polli-text-muted);
+    --color-theme-text-base:         var(--polli-color-text-base);
+    --color-theme-text-strong:       var(--polli-color-text-strong);
+    --color-theme-text-soft:         var(--polli-color-text-soft);
+    --color-theme-text-muted:        var(--polli-color-text-muted);
 
-    --color-theme-border:            var(--polli-border);
+    --color-theme-border:            var(--polli-color-border);
 
-    --color-theme-bg-subtle:         var(--polli-bg-subtle);
-    --color-theme-bg-active:         var(--polli-bg-active);
-    --color-theme-bg-hover:          var(--polli-bg-hover);
-    --color-theme-bg-pale:           var(--polli-bg-pale);
+    --color-theme-bg-subtle:         var(--polli-color-bg-subtle);
+    --color-theme-bg-active:         var(--polli-color-bg-active);
+    --color-theme-bg-hover:          var(--polli-color-bg-hover);
+    --color-theme-bg-pale:           var(--polli-color-bg-pale);
 
-    --color-intent-danger-bg-light:  var(--polli-danger-bg-light);
-    --color-intent-danger-text:      var(--polli-danger-text);
-    --color-intent-danger-border:    var(--polli-danger-border);
+    --color-intent-danger-bg-light:  var(--polli-color-danger-bg-light);
+    --color-intent-danger-text:      var(--polli-color-danger-text);
+    --color-intent-danger-border:    var(--polli-color-danger-border);
 
     --color-surface-white:           oklch(1 0 0 / 0.8);
 }

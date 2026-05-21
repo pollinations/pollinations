@@ -38,7 +38,11 @@ export interface PolliProviderProps {
     children: ReactNode;
     /**
      * Where to persist the user's session token. Defaults to `"localStorage"`.
-     * Pass a custom `StorageAdapter` for IndexedDB / RN AsyncStorage / etc.
+     * Accepts `"sessionStorage"` or a custom synchronous `StorageAdapter`
+     * (e.g. cookie-backed or in-memory). Async backends like IndexedDB or
+     * React Native AsyncStorage are not currently supported — the interface
+     * is sync because hydration runs in a `useEffect` and React Native
+     * support isn't a stated target of this SDK.
      */
     storage?: StorageOption;
     /** OAuth scopes to request at login. Defaults to `["profile", "usage"]`. */

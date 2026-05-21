@@ -37,10 +37,11 @@ export default {
         // Override Host so the upstream Worker's routing/SNI is correct.
         headers.set("Host", upstreamHost);
 
+        const hasBody = req.method !== "GET" && req.method !== "HEAD";
         const upstream = await fetch(upstreamUrl.toString(), {
             method: req.method,
             headers,
-            body: req.body,
+            body: hasBody ? req.body : undefined,
             redirect: "manual",
         });
 

@@ -1,5 +1,8 @@
-import { user as userTable } from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import {
+    questPayoutCredits,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -35,18 +38,29 @@ export const customerRoutes = new Hono<Env>()
                 user.id,
             );
             const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    lastTierGrant: userTable.lastTierGrant,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            const [users, questRewards] = await Promise.all([
+                db
+                    .select({
+                        lastTierGrant: userTable.lastTierGrant,
+                    })
+                    .from(userTable)
+                    .where(eq(userTable.id, user.id))
+                    .limit(1),
+                db
+                    .select({
+                        questReward:
+                            sql<number>`coalesce(sum(${questPayoutCredits.pollenCredited}), 0)`,
+                    })
+                    .from(questPayoutCredits)
+                    .where(eq(questPayoutCredits.userId, user.id)),
+            ]);
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
+            const questReward = Number(questRewards[0]?.questReward) || 0;
 
             return c.json({
                 tierBalance,
                 packBalance,
+                questReward,
                 lastTierGrant,
             });
         },

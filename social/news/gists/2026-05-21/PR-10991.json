@@ -1,0 +1,35 @@
+{
+  "pr_number": 10991,
+  "title": "chore: parallel deployment of enter+gen on a separate CF account",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10991",
+  "merged_at": "2026-05-21T14:13:21Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Mirrors enter+gen workers onto a separate Cloudflare account for an isolated parallel deployment. Pollinations stack on main is untouched.\n\n## Changes\n- Wrangler configs (enter + gen) repoint account / D1 / KV / R2 / routes to the other CF account\n- Client `config.ts` and a few hardcoded URLs (Stripe checkout image, OAuth modal links) updated to the new hostnames\n- Canonical link and `response_format=url` image URL are now derived dynamically from the request origin instead of hardcoded\n- `scripts/cf-account.sh` switches the local wrangler default between the two account profiles\n- Encrypted sops bundle updated with new GitHub OAuth client credentials for the new app\n- Test expectation updated to match the new Stripe checkout image hostname\n\n## Test plan\n- [ ] Sign-in flow on the new host reaches GitHub OAuth consent\n- [ ] Image gen via `gptimage` returns a 1024×1024 image with an imported API key\n- [ ] Text gen via `/v1/chat/completions` (`openai-fast`) returns expected content\n- [ ] `npm run test` in `enter.pollinations.ai` (one pre-existing unrelated failure on date-bounds test)\n- [ ] No plaintext secrets in the diff (sops fields all `ENC[AES256_GCM,...]`)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spawning a parallel hive",
+    "blurb": "We're setting up a parallel deployment of our core infrastructure on a separate Cloudflare account. Just some behind-the-scenes gardening to keep the ecosystem resilient!",
+    "summary": "Configured a parallel deployment of the enter and gen workers on a separate Cloudflare account, including dynamic origin routing and updated Wrangler configurations.",
+    "impact": "This isolated environment allows us to test infrastructure migrations safely without affecting the main production stack.",
+    "keywords": [
+      "infrastructure",
+      "cloudflare",
+      "deployment",
+      "workers",
+      "migration"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot setting up a second, identical server rack or garden bed next to the main one, representing a parallel deployment.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, working alongside a chunky monitor-headed robot to plant a second identical row of glowing lime green (#ecf874) code-plants in a digital garden. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-21/PR-10991.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, working alongside a chunky monitor-headed robot to plant a second identical row of glowing lime green (#ecf874) code-plants in a digital garden. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-21T14:14:22.278292+00:00"
+}

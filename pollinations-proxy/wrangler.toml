@@ -3,13 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-11-01"
 account_id = "efdcb0933eaac64f27c0b295039b28f2"
 
-# Default (production) routes — disabled until staging passes.
-# Enable by uncommenting after staging cutover validates the proxy.
-# routes = [
-#   { pattern = "enter.pollinations.ai", custom_domain = true },
-#   { pattern = "gen.pollinations.ai", custom_domain = true },
-#   { pattern = "media.pollinations.ai", custom_domain = true },
-# ]
+routes = [
+  { pattern = "enter.pollinations.ai", custom_domain = true },
+  { pattern = "gen.pollinations.ai", custom_domain = true },
+  { pattern = "media.pollinations.ai", custom_domain = true },
+]
 
 # Host-to-upstream map is in [vars]; staging deploys with [env.staging]
 # overrides. Keys are the public host, values are the Myceli upstream host.

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11228,
+  "title": "fix(enter): restore prod GitHub OAuth app creds",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11228",
+  "merged_at": "2026-05-21T16:28:50Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Myceli cutover deployed temporary GitHub OAuth app creds to prod whose only allowed callback URL is `enter.myceli.ai`\n- Login broken since 14:00 UTC: users hitting `enter.pollinations.ai` get GitHub's \"The redirect_uri is not associated with this application\" screen\n- Revert `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` in `secrets/prod.vars.json` to the original pollinations app\n- Dev/staging keep the myceli app for direct `enter.myceli.ai` testing\n\n## Test plan\n- [ ] Merge → squash merge to main\n- [ ] Sync main → production to trigger `Deploy enter.pollinations.ai` CI\n- [ ] CI's `push-secrets:production` step rolls the new GitHub creds onto the live Myceli worker\n- [ ] Open `https://enter.pollinations.ai` in a private window and sign in with GitHub\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys to the hive",
+    "blurb": "We accidentally jammed the lock during some recent renovations, but GitHub login is officially back online! You can now sign into the hive normally again.",
+    "summary": "Restored the correct GitHub OAuth client credentials in production to fix a redirect URI mismatch that broke logins on enter.pollinations.ai.",
+    "impact": "Users can once again successfully authenticate and log in to Pollinations using their GitHub accounts.",
+    "keywords": [
+      "github",
+      "oauth",
+      "login",
+      "auth",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee holding a shiny golden key in front of a glowing retro terminal, symbolizing unlocking or restoring access.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a shiny golden key in front of a retro terminal glowing with a lime green (#ecf874) 'LOGIN' screen. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-21/PR-11228.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a shiny golden key in front of a retro terminal glowing with a lime green (#ecf874) 'LOGIN' screen. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-21T16:29:54.551179+00:00"
+}

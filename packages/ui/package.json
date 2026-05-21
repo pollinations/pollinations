@@ -29,7 +29,6 @@
     "prebuild": "npm run build:sdk",
     "prepublishOnly": "npm run build",
     "pretypecheck": "npm run build:sdk",
-    "prefix": "node scripts/prefix-tailwind.mjs",
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {

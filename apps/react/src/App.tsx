@@ -73,7 +73,7 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
 
             <div className="flex flex-wrap items-center gap-2">
                 {enabled.topUp && <TopUpLink theme="amber">Top up</TopUpLink>}
-                <LogoutButton theme="amber">Log out</LogoutButton>
+                <LogoutButton intent="danger">Log out</LogoutButton>
             </div>
         </Surface>
     );
@@ -101,7 +101,7 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
         ...(enabled.topUp
             ? ['      <TopUpLink theme="amber">Top up</TopUpLink>']
             : []),
-        '      <LogoutButton theme="amber">Log out</LogoutButton>',
+        '      <LogoutButton intent="danger">Log out</LogoutButton>',
     ].join("\n");
 
     const headerBlock = headerInner
@@ -147,11 +147,11 @@ export default function App() {
                 <PolliProvider appKey={APP_KEY}>
                     <Wallet enabled={enabled} />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <section className="flex flex-col gap-3">
-                            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                                Toggle pieces
-                            </h2>
+                    <section className="flex flex-col gap-3">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                            Toggle pieces
+                        </h2>
+                        <div className="flex flex-wrap gap-x-6 gap-y-2">
                             {TOGGLES.map((t) => (
                                 <label
                                     key={t.key}
@@ -170,17 +170,17 @@ export default function App() {
                                     {t.label}
                                 </label>
                             ))}
-                        </section>
+                        </div>
+                    </section>
 
-                        <section className="flex flex-col gap-3">
-                            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                                Code
-                            </h2>
-                            <pre className="overflow-auto rounded-lg bg-stone-950 p-4 font-mono text-xs leading-relaxed text-stone-100">
-                                <code>{buildCode(enabled)}</code>
-                            </pre>
-                        </section>
-                    </div>
+                    <section className="flex flex-col gap-3">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                            Code
+                        </h2>
+                        <pre className="overflow-auto rounded-lg bg-stone-950 p-4 font-mono text-xs leading-relaxed text-stone-100">
+                            <code>{buildCode(enabled)}</code>
+                        </pre>
+                    </section>
                 </PolliProvider>
             </main>
         </div>

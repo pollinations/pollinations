@@ -1,5 +1,5 @@
 {
-    "name": "pollinations-proxy",
+    "name": "pollinations-myceli-proxy",
     "type": "module",
     "version": "1.0.0",
     "description": "Thin proxy: forwards traffic from *.pollinations.ai to *.myceli.ai upstreams. Lives in the Pollinations Cloudflare account so the zone keeps owning the public domain.",

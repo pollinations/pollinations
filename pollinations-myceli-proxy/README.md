@@ -1,4 +1,4 @@
-# pollinations-proxy
+# pollinations-myceli-proxy
 
 Thin Cloudflare Worker that lives in the **old Pollinations account** and
 proxies `*.pollinations.ai` traffic to `*.myceli.ai` upstreams in the Myceli

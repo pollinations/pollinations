@@ -8,7 +8,7 @@ The first cutover is manual and tightly sequenced. Do not rely on CI for the fir
 
 | Account | Use |
 |---|---|
-| Old Pollinations Cloudflare | Owns `pollinations.ai`; deploys `pollinations-proxy` |
+| Old Pollinations Cloudflare | Owns `pollinations.ai`; deploys `pollinations-myceli-proxy` |
 | Myceli Cloudflare | Runs upstream workers on `*.myceli.ai` |
 
 ## Scope
@@ -122,7 +122,7 @@ PORTKEY_PRODUCTION_ZONE=myceli.ai \
 
 ### 3. Enable and Deploy Production Proxy
 
-Uncomment production routes in `pollinations-proxy/wrangler.toml`:
+Uncomment production routes in `pollinations-myceli-proxy/wrangler.toml`:
 
 ```toml
 routes = [
@@ -138,7 +138,7 @@ Deploy the proxy from the old Pollinations account. This is the public traffic f
 cp ~/Library/Preferences/.wrangler/config/pollinations.toml \
   ~/Library/Preferences/.wrangler/config/default.toml
 
-cd /Users/thomash/Documents/GitHub/pollinations-codex/pollinations-proxy
+cd /Users/thomash/Documents/GitHub/pollinations-codex/pollinations-myceli-proxy
 npm run deploy:production
 ```
 
@@ -175,8 +175,8 @@ Browser checks:
 
 If public traffic fails:
 
-1. Comment production routes in `pollinations-proxy/wrangler.toml`.
-2. Redeploy `pollinations-proxy` from the old Pollinations account.
+1. Comment production routes in `pollinations-myceli-proxy/wrangler.toml`.
+2. Redeploy `pollinations-myceli-proxy` from the old Pollinations account.
 
 If media writes occurred on Myceli before rollback, copy Myceli -> old before sending `media.pollinations.ai` back to the old worker, or keep media on Myceli.
 

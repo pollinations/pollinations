@@ -25,7 +25,7 @@ export function hasTrustedProxyHeaders(c: Context): boolean {
 /**
  * Resolve the *public-facing* origin of a request, honoring X-Forwarded-Host
  * and X-Forwarded-Proto when set by a trusted upstream proxy. Used when the
- * Worker is reached via the pollinations-proxy in the old Cloudflare account.
+ * Worker is reached via the pollinations-myceli-proxy in the old Cloudflare account.
  *
  * Falls back to the request URL's own origin (which on direct hits is the
  * Myceli upstream hostname).

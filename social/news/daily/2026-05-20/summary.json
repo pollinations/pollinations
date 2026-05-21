@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-20",
+  "period_start": "2026-05-20",
+  "period_end": "2026-05-20",
+  "title": "Polly renders tables cleanly and stops asking follow-up questions",
+  "summary": "Polly gets a rendering overhaul and a personality tweak, plus clearer API error codes for text generation.\n\nA pair of updates to Polly's rendering engine and personality. Tables and math equations now render reliably with proper font fallbacks and markdown support, rather than spitting out raw formatting markers. We also tuned the voice to be warmer and explicitly banned unsolicited follow-up questions and standard chatbot fluff.\n\nWhen an upstream text provider hits a rate limit, the API now returns a 502 Bad Gateway instead of passing through a 429. This stops client applications from confusing upstream limits with their own rate limits, making retry logic much simpler to write.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11182,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11194,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11195,
+      "date": "2026-05-20"
+    }
+  ],
+  "generated_at": "2026-05-21T07:13:01.310566+00:00"
+}

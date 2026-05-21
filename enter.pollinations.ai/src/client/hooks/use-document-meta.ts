@@ -27,7 +27,7 @@ export function useDocumentMeta(title: string, description?: string) {
         if (canonical) {
             canonical.setAttribute(
                 "href",
-                `https://enter.pollinations.ai${window.location.pathname}`,
+                `${window.location.origin}${window.location.pathname}`,
             );
         }
 

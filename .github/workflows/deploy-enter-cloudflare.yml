@@ -20,7 +20,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      CLOUDFLARE_ACCOUNT_ID: efdcb0933eaac64f27c0b295039b28f2
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,10 +35,10 @@ jobs:
 
       - name: Run database migrations
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run migrate:production --workspace pollinations-enter
 
       - name: Build and deploy to Cloudflare
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter

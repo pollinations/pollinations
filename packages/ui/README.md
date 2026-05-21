@@ -58,7 +58,8 @@ export function App() {
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
   `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`,
   `Tooltip`, `ChevronIcon`.
-- **Helpers** — `cn`, `formatPollen`, `ThemeName`.
+- **Helpers** — `cn`, `formatPollen`.
+- **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 ## Theming
 
@@ -66,3 +67,45 @@ Set `data-theme="amber" | "blue" | "pink" | "teal" | "violet" | "green"`
 on any ancestor (or per-component via the `theme` prop on Button-family
 components) to switch the cascade. Theme variables are defined in
 `styles.css` — import it once at your app entry.
+
+## Public design tokens
+
+These CSS variables are part of the public contract. You may reference
+them in your own CSS / inline styles. Renames between minor versions
+count as breaking.
+
+**Theme-aware (resolve against the active `data-theme`):**
+
+| Token                   | Purpose                                            |
+| ----------------------- | -------------------------------------------------- |
+| `--polli-text-base`     | Default body text on themed surfaces.              |
+| `--polli-text-strong`   | Emphasized text / headings.                        |
+| `--polli-text-soft`     | Accent text (more saturated than base).            |
+| `--polli-text-muted`    | De-emphasized text (lighter than base).            |
+| `--polli-border`        | Default border on themed surfaces.                 |
+| `--polli-bg-subtle`     | Large panel surface (semi-transparent).            |
+| `--polli-bg-active`     | Selected / active state background.                |
+| `--polli-bg-hover`      | Hover state background.                            |
+| `--polli-bg-pale`       | Light wash (cards, chips, large blocks).           |
+
+**Intent (theme-independent):**
+
+| Token                       | Purpose                              |
+| --------------------------- | ------------------------------------ |
+| `--polli-danger-bg-light`   | Error surface background.            |
+| `--polli-danger-text`       | Error text foreground.               |
+| `--polli-danger-border`     | Error border.                        |
+
+**Example:**
+
+```css
+.my-themed-card {
+  background: var(--polli-bg-pale);
+  color: var(--polli-text-base);
+  border: 1px solid var(--polli-border);
+}
+```
+
+Anything not listed above (including the `polli:*` Tailwind utility
+class names and the `--color-paid-*` / `--color-tier-*` hue ramps) is
+library-internal and may change without notice.

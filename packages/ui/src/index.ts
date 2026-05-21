@@ -4,7 +4,7 @@ export { formatPollen } from "./lib/format-pollen.ts";
 // Auth-aware primitives
 export * from "./primitives/index.ts";
 // Theme
-export type { ThemeName } from "./theme.ts";
+export { type ThemeName, themes } from "./theme.ts";
 
 // Design primitives
 export { Button, type ButtonProps } from "./ui/button.tsx";

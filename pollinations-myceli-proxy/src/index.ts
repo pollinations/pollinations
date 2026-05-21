@@ -38,26 +38,41 @@ export default {
         headers.set("Host", upstreamHost);
 
         const hasBody = req.method !== "GET" && req.method !== "HEAD";
-        const upstream = await fetch(upstreamUrl.toString(), {
-            method: req.method,
-            headers,
-            body: hasBody ? req.body : undefined,
-            redirect: "manual",
-        });
+        let upstream: Response;
+        try {
+            upstream = await fetch(upstreamUrl.toString(), {
+                method: req.method,
+                headers,
+                body: hasBody ? req.body : undefined,
+                redirect: "manual",
+            });
+        } catch {
+            return new Response("Bad Gateway", {
+                status: 502,
+                headers: {
+                    "Content-Type": "text/plain; charset=utf-8",
+                    "Cache-Control": "no-store",
+                },
+            });
+        }
 
-        // Strip hop-by-hop and length/encoding headers so streaming bodies
-        // (SSE, chunked responses) pass through without re-buffering.
+        // Strip hop-by-hop and length headers so streaming bodies (SSE,
+        // chunked responses) pass through without re-buffering.
         const respHeaders = new Headers(upstream.headers);
         respHeaders.delete("content-length");
-        respHeaders.delete("content-encoding");
         respHeaders.delete("transfer-encoding");
         respHeaders.delete("connection");
 
-        return new Response(upstream.body, {
+        const responseInit: ResponseInit & { encodeBody?: "manual" } = {
             status: upstream.status,
             statusText: upstream.statusText,
             headers: respHeaders,
-        });
+        };
+        if (respHeaders.has("content-encoding")) {
+            responseInit.encodeBody = "manual";
+        }
+
+        return new Response(upstream.body, responseInit);
     },
 };
 

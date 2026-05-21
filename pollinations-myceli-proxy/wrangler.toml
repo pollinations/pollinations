@@ -1,4 +1,4 @@
-name = "pollinations-myceli-proxy"
+name = "pollinations-proxy"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
 account_id = "efdcb0933eaac64f27c0b295039b28f2"
@@ -15,7 +15,7 @@ routes = [
 UPSTREAM_MAP = '{"enter.pollinations.ai":"enter.myceli.ai","gen.pollinations.ai":"gen.myceli.ai","media.pollinations.ai":"media.myceli.ai"}'
 
 [env.staging]
-name = "pollinations-myceli-proxy-staging"
+name = "pollinations-proxy-staging"
 routes = [
   { pattern = "staging.enter.pollinations.ai", custom_domain = true },
   { pattern = "staging.gen.pollinations.ai", custom_domain = true },
@@ -23,3 +23,12 @@ routes = [
 
 [env.staging.vars]
 UPSTREAM_MAP = '{"staging.enter.pollinations.ai":"staging.enter.myceli.ai","staging.gen.pollinations.ai":"staging.gen.myceli.ai"}'
+
+[env.dev]
+name = "pollinations-proxy-dev"
+routes = [
+  { pattern = "dev.enter.pollinations.ai", custom_domain = true },
+]
+
+[env.dev.vars]
+UPSTREAM_MAP = '{"dev.enter.pollinations.ai":"dev.enter.myceli.ai"}'

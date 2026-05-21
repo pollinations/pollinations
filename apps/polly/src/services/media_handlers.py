@@ -369,7 +369,7 @@ async def render_table_image(
                 if style["bold"] and style["italic"]:
                     fkey = "bold_italic"
                 elif style["bold"]:
-                    fkey = base_font_key.replace("reg", "bold") if "reg" in base_font_key else "bold_reg"
+                    fkey = base_font_key.replace("reg", "bold", 1) if "reg" in base_font_key else "bold_reg"
                 elif style["italic"]:
                     fkey = "reg_italic"
                 else:
@@ -498,6 +498,8 @@ def format_table_as_markdown(headers: list[str], rows: list[list[str]]) -> str:
 def replace_latex_with_unicode(text: str) -> str:
     def replacer(match):
         expr = match.group(1)
+        if not any(c in expr for c in "\\^_{}"):
+            return match.group(0)
         for latex_cmd, unicode_symbol in LATEX_TO_EMOJI.items():
             expr = expr.replace(latex_cmd, unicode_symbol)
         expr = expr.replace(r"\text", "")
@@ -506,6 +508,19 @@ def replace_latex_with_unicode(text: str) -> str:
 
     inline_pattern = re.compile(r"\$([^$\n]+?)\$")
     return inline_pattern.sub(replacer, text)
+
+
+def truncate_long_decimals(text: str) -> str:
+    def replacer(match):
+        try:
+            short = f"{float(match.group(0)):.4f}".rstrip("0")
+            if short.endswith("."):
+                short += "0"
+            return short + "..."
+        except ValueError:
+            return match.group(0)
+
+    return re.sub(r"\d+\.\d{8,}", replacer, text)
 
 
 # =============================================================================

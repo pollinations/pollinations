@@ -1,5 +1,27 @@
 import type { Context } from "hono";
 
+const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
+    "enter.myceli.ai": "enter.pollinations.ai",
+    "staging.enter.myceli.ai": "staging.enter.pollinations.ai",
+    "dev.enter.myceli.ai": "dev.enter.pollinations.ai",
+    "gen.myceli.ai": "gen.pollinations.ai",
+    "staging.gen.myceli.ai": "staging.gen.pollinations.ai",
+    "media.myceli.ai": "media.pollinations.ai",
+};
+
+function getTrustedForwardedHost(c: Context): string | undefined {
+    const requestHost = new URL(c.req.url).host;
+    const forwardedHost = c.req.header("x-forwarded-host");
+
+    return TRUSTED_FORWARDED_HOSTS[requestHost] === forwardedHost
+        ? forwardedHost
+        : undefined;
+}
+
+export function hasTrustedProxyHeaders(c: Context): boolean {
+    return Boolean(getTrustedForwardedHost(c));
+}
+
 /**
  * Resolve the *public-facing* origin of a request, honoring X-Forwarded-Host
  * and X-Forwarded-Proto when set by a trusted upstream proxy. Used when the
@@ -9,9 +31,10 @@ import type { Context } from "hono";
  * Myceli upstream hostname).
  */
 export function getPublicOrigin(c: Context): string {
-    const forwardedHost = c.req.header("x-forwarded-host");
+    const forwardedHost = getTrustedForwardedHost(c);
     if (forwardedHost) {
-        const proto = c.req.header("x-forwarded-proto") || "https";
+        const proto =
+            c.req.header("x-forwarded-proto") === "http" ? "http" : "https";
         return `${proto}://${forwardedHost}`;
     }
     return new URL(c.req.url).origin;

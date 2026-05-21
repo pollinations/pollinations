@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { hasTrustedProxyHeaders } from "./public-origin.ts";
 
 /**
  * Resolve the real visitor IP. When the worker is reached via the
@@ -11,9 +12,10 @@ import type { Context } from "hono";
  * already correct.
  */
 export function getRealClientIp(c: Context): string {
-    return (
-        c.req.header("x-original-client-ip") ||
-        c.req.header("cf-connecting-ip") ||
-        "unknown"
-    );
+    if (hasTrustedProxyHeaders(c)) {
+        const originalIp = c.req.header("x-original-client-ip");
+        if (originalIp) return originalIp;
+    }
+
+    return c.req.header("cf-connecting-ip") || "unknown";
 }

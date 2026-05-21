@@ -1,3 +1,4 @@
+- **2026-05-20** – **🤖 Polly Upgrades** We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.
 - **2026-05-19** – **🚀 Gemini 3.5 Flash** Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.
 - **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
 - **2026-05-18** – **✨ Uncapped Generations** We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).

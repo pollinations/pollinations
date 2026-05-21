@@ -105,43 +105,80 @@ export function PolliProvider({
 
         const hash = window.location.hash.substring(1);
         if (hash) {
-            const params = new URLSearchParams(hash);
+            // Hash-router apps use `#/route?param=…` — the route prefix
+            // sits before the `?`, params after. Treating the whole hash as
+            // params would mis-parse the route and the cleanup step below
+            // would strip it. If there's no `?`, fall back to the original
+            // behavior (whole hash is the param string).
+            const queryIdx = hash.indexOf("?");
+            const routePrefix = queryIdx === -1 ? "" : hash.slice(0, queryIdx);
+            const paramString =
+                queryIdx === -1 ? hash : hash.slice(queryIdx + 1);
+            const params = new URLSearchParams(paramString);
             const key = params.get("api_key");
             const error = params.get("error");
             const receivedState = params.get("state");
+            // Capture before the cleanup loop deletes it from `params`.
+            const errorDescription = params.get("error_description");
             if (key || error) {
+                // Strip the auth params; keep the route and any non-auth
+                // params the consumer was using.
+                for (const p of [
+                    "api_key",
+                    "state",
+                    "error",
+                    "error_description",
+                ]) {
+                    params.delete(p);
+                }
+                const remaining = params.toString();
+                const newHash = remaining
+                    ? routePrefix
+                        ? `${routePrefix}?${remaining}`
+                        : remaining
+                    : routePrefix;
                 window.history.replaceState(
                     {},
                     "",
-                    window.location.pathname + window.location.search,
+                    window.location.pathname +
+                        window.location.search +
+                        (newHash ? `#${newHash}` : ""),
                 );
             }
             if (key) {
                 // CSRF protection: only accept api_key responses that echo
                 // back the `state` we generated at login(). A missing or
                 // mismatched state means the redirect didn't originate from
-                // a login this client started — reject silently rather than
-                // store a key an attacker may have planted.
+                // a login this client started — reject the key and leave
+                // stored state intact so any pending legit callback can
+                // still complete (validate-then-clear, never clear-then-
+                // validate, to avoid DoS via planted `#api_key=…&state=…`).
                 const expectedState = storage.getItem(stateStorageKey);
-                storage.removeItem(stateStorageKey);
                 if (!expectedState || receivedState !== expectedState) {
                     console.warn(
                         "[PolliProvider] dropping auth response with missing or mismatched state",
                     );
                 } else {
+                    storage.removeItem(stateStorageKey);
                     storage.setItem(storageKey, key);
                     setApiKey(key);
                     return;
                 }
             }
             if (error) {
-                storage.removeItem(stateStorageKey);
+                // Only clear stored state when the error response actually
+                // matches our pending login — otherwise a spoofed
+                // `#error=…&state=bogus` could wipe state and DoS the real
+                // callback. Enter echoes `state` on the error branch too.
+                const expectedState = storage.getItem(stateStorageKey);
+                if (expectedState && receivedState === expectedState) {
+                    storage.removeItem(stateStorageKey);
+                }
                 // OAuth rejected/cancelled — surface for debugging but don't
                 // throw; consumers can still call login() again.
-                const description = params.get("error_description");
                 console.warn(
                     `[PolliProvider] auth error: ${error}${
-                        description ? ` — ${description}` : ""
+                        errorDescription ? ` — ${errorDescription}` : ""
                     }`,
                 );
             }

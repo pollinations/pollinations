@@ -41,7 +41,7 @@ import type {
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
-const AUTH_BASE_URL = "https://enter.pollinations.ai";
+export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
@@ -1689,7 +1689,7 @@ export class Pollinations {
      *
      * Omit `budget` for the default cap.
      */
-    authorizeUrl(options: AuthorizeOptions): string {
+    static authorizeUrl(options: AuthorizeOptions): string {
         const params = new URLSearchParams();
         params.set("redirect_url", options.redirectUrl);
 
@@ -1704,6 +1704,10 @@ export class Pollinations {
             params.set("permissions", options.permissions.join(","));
 
         return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+    }
+
+    authorizeUrl(options: AuthorizeOptions): string {
+        return Pollinations.authorizeUrl(options);
     }
 
     // ============================================================================

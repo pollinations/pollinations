@@ -1,0 +1,248 @@
+import {
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+import { AUTH_BASE_URL, Pollinations } from "../client.js";
+import { PollinationsError } from "../types.js";
+import {
+    AuthActionsContext,
+    type AuthActionsValue,
+    AuthProfileContext,
+    type AuthProfileValue,
+    AuthStateContext,
+    type AuthStateValue,
+    type UserBalance,
+    type UserProfile,
+} from "./contexts.js";
+import {
+    resolveStorage,
+    type StorageAdapter,
+    type StorageOption,
+} from "./storage.js";
+
+export type { StorageAdapter, StorageOption } from "./storage.js";
+
+export const DEFAULT_ENTER_URL = AUTH_BASE_URL;
+export const DEFAULT_API_BASE_URL = `${AUTH_BASE_URL}/api`;
+export const DEFAULT_PERMISSIONS: readonly string[] = ["profile", "usage"];
+
+export interface PolliProviderProps {
+    /**
+     * Publishable key (`pk_...`): the app identifier, not a user's API key.
+     */
+    appKey: string;
+    children: ReactNode;
+    /**
+     * Where to persist the user's session token. Defaults to `"localStorage"`.
+     * Pass a custom `StorageAdapter` for IndexedDB / RN AsyncStorage / etc.
+     */
+    storage?: StorageOption;
+    /** OAuth scopes to request at login. Defaults to `["profile", "usage"]`. */
+    permissions?: string[];
+    /** Auth host. Defaults to `https://enter.pollinations.ai`. */
+    enterUrl?: string;
+    /** Account API host. Defaults to `https://enter.pollinations.ai/api`. */
+    apiBaseUrl?: string;
+}
+
+function buildAuthUrl(
+    enterUrl: string,
+    appKey: string,
+    permissions: readonly string[],
+    redirectUrl: string,
+): string {
+    const params = new URLSearchParams({
+        redirect_url: redirectUrl,
+        app_key: appKey,
+        permissions: permissions.join(","),
+    });
+    return `${enterUrl}/authorize?${params.toString()}`;
+}
+
+/**
+ * Provides Pollinations auth state to descendants. Wrap your app once at the
+ * root. Holds the user's API key, fetches profile + balance, and exposes hooks
+ * for login / logout / consuming state.
+ */
+export function PolliProvider({
+    appKey,
+    children,
+    storage: storageOption,
+    permissions,
+    enterUrl = DEFAULT_ENTER_URL,
+    apiBaseUrl = DEFAULT_API_BASE_URL,
+}: PolliProviderProps) {
+    const storage = useMemo<StorageAdapter>(
+        () => resolveStorage(storageOption),
+        [storageOption],
+    );
+    const storageKey = `polli:${appKey}:token`;
+
+    const resolvedPermissions = useMemo<readonly string[]>(
+        () =>
+            permissions && permissions.length > 0
+                ? permissions
+                : DEFAULT_PERMISSIONS,
+        [permissions],
+    );
+
+    // SSR-safe: start null so server + client first paint agree.
+    const [apiKey, setApiKey] = useState<string | null>(null);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [balance, setBalance] = useState<UserBalance | null>(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+    // Hydrate API key from storage + capture URL fragment after redirect.
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            const params = new URLSearchParams(hash);
+            const key = params.get("api_key");
+            const error = params.get("error");
+            if (key || error) {
+                window.history.replaceState(
+                    {},
+                    "",
+                    window.location.pathname + window.location.search,
+                );
+            }
+            if (key) {
+                storage.setItem(storageKey, key);
+                setApiKey(key);
+                return;
+            }
+            if (error) {
+                // OAuth rejected/cancelled — surface for debugging but don't
+                // throw; consumers can still call login() again.
+                const description = params.get("error_description");
+                console.warn(
+                    `[PolliProvider] auth error: ${error}${
+                        description ? ` — ${description}` : ""
+                    }`,
+                );
+            }
+        }
+
+        const stored = storage.getItem(storageKey);
+        if (stored) setApiKey(stored);
+    }, [storageKey, storage]);
+
+    const reqIdRef = useRef(0);
+    useEffect(() => {
+        if (!apiKey) {
+            setProfile(null);
+            setBalance(null);
+            return;
+        }
+
+        const reqId = ++reqIdRef.current;
+        const client = new Pollinations({ apiKey, baseUrl: apiBaseUrl });
+
+        const handle401 = () => {
+            storage.removeItem(storageKey);
+            setApiKey(null);
+            setProfile(null);
+            setBalance(null);
+        };
+
+        (async () => {
+            setIsLoadingProfile(true);
+            try {
+                const data = await client.accountProfile();
+                if (reqId !== reqIdRef.current) return;
+                setProfile(data);
+            } catch (err) {
+                if (reqId !== reqIdRef.current) return;
+                if (err instanceof PollinationsError && err.status === 401) {
+                    handle401();
+                } else {
+                    setProfile(null);
+                }
+            } finally {
+                if (reqId === reqIdRef.current) setIsLoadingProfile(false);
+            }
+        })();
+
+        (async () => {
+            try {
+                const data = await client.accountBalance();
+                if (reqId !== reqIdRef.current) return;
+                setBalance(data);
+            } catch (err) {
+                if (reqId !== reqIdRef.current) return;
+                if (err instanceof PollinationsError && err.status === 401) {
+                    handle401();
+                } else {
+                    setBalance(null);
+                }
+            }
+        })();
+    }, [apiKey, apiBaseUrl, storageKey, storage]);
+
+    const login = useCallback(
+        (extraPermissions?: string[]) => {
+            if (typeof window === "undefined") return;
+            const currentUrl =
+                window.location.href.split("#")[0] ?? window.location.href;
+            const perms =
+                extraPermissions && extraPermissions.length > 0
+                    ? Array.from(
+                          new Set([
+                              ...resolvedPermissions,
+                              ...extraPermissions,
+                          ]),
+                      )
+                    : resolvedPermissions;
+            window.location.href = buildAuthUrl(
+                enterUrl,
+                appKey,
+                perms,
+                currentUrl,
+            );
+        },
+        [enterUrl, appKey, resolvedPermissions],
+    );
+
+    const logout = useCallback(() => {
+        storage.removeItem(storageKey);
+        setApiKey(null);
+        setProfile(null);
+        setBalance(null);
+    }, [storage, storageKey]);
+
+    const stateValue = useMemo<AuthStateValue>(
+        () => ({ apiKey, isLoggedIn: !!apiKey }),
+        [apiKey],
+    );
+
+    const profileValue = useMemo<AuthProfileValue>(
+        () => ({ profile, balance, isLoadingProfile }),
+        [profile, balance, isLoadingProfile],
+    );
+
+    const actionsValue = useMemo<AuthActionsValue>(
+        () => ({
+            login,
+            logout,
+            permissions: resolvedPermissions,
+            enterUrl,
+        }),
+        [login, logout, resolvedPermissions, enterUrl],
+    );
+
+    return (
+        <AuthActionsContext.Provider value={actionsValue}>
+            <AuthStateContext.Provider value={stateValue}>
+                <AuthProfileContext.Provider value={profileValue}>
+                    {children}
+                </AuthProfileContext.Provider>
+            </AuthStateContext.Provider>
+        </AuthActionsContext.Provider>
+    );
+}

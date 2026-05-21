@@ -157,5 +157,3 @@ export type {
 
 // Export the error class
 export { PollinationsError } from "./types.js";
-
-// React hooks coming soon - see https://github.com/pollinations/pollinations for updates

@@ -15,6 +15,11 @@
       "browser": "./dist/index.browser.min.js",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
     }
   },
   "files": [
@@ -47,7 +52,8 @@
     "img2img"
   ],
   "author": "pollinations.ai <hello@pollinations.ai>",
-  "contributors": [{
+  "contributors": [
+    {
       "name": "Itachi-1824",
       "email": "itachi@myceli.ai"
     },
@@ -76,12 +82,22 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "funding": {
-  "type": "github",
-  "url": "https://github.com/sponsors/pollinations"
+    "type": "github",
+    "url": "https://github.com/sponsors/pollinations"
   },
   "devDependencies": {
+    "@types/react": "^18.3.12",
     "@types/node": "^20.10.0",
+    "react": "^18.3.1",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0"
   }

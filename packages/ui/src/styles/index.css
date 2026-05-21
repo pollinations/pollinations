@@ -1,0 +1,6 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+@import "tailwindcss" prefix(polli);
+@import "./fonts.css";
+@import "./tokens.css";
+
+@source inline("polli:flex polli:flex-col polli:flex-wrap polli:items-center polli:gap-0.5 polli:gap-2 polli:gap-3 polli:gap-4 polli:min-w-0 polli:rounded-xl polli:border polli:border-theme-border polli:bg-theme-bg-subtle polli:p-4");

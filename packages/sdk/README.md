@@ -123,6 +123,27 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
 
+### React auth provider
+
+React apps can use the `@pollinations_ai/sdk/react` subpath for shared login state:
+
+```tsx
+import { PolliProvider, useAuthState } from '@pollinations_ai/sdk/react';
+
+function AccountStatus() {
+  const { isLoggedIn } = useAuthState();
+  return isLoggedIn ? 'Logged in' : 'Logged out';
+}
+
+export function App() {
+  return (
+    <PolliProvider appKey="pk_your_publishable_key">
+      <AccountStatus />
+    </PolliProvider>
+  );
+}
+```
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:

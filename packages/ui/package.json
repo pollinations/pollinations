@@ -1,0 +1,48 @@
+{
+  "name": "@pollinations_ai/ui",
+  "version": "0.0.1",
+  "description": "Design and wallet UI primitives for Pollinations apps.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./fonts/*": "./dist/fonts/*"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:css && npm run build:fonts",
+    "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "build:js": "tsup",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify",
+    "prebuild": "npm run build --prefix ../sdk",
+    "pretypecheck": "npm run build --prefix ../sdk",
+    "prefix": "node scripts/prefix-tailwind.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@pollinations_ai/sdk": "*",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "tailwindcss": "^4.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  }
+}

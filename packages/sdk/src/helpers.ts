@@ -546,7 +546,7 @@ export async function upload(
  * ```
  */
 export function authorizeUrl(options: AuthorizeOptions): string {
-    return getClient().authorizeUrl(options);
+    return Pollinations.authorizeUrl(options);
 }
 
 /**

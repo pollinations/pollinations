@@ -1,0 +1,25 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+@font-face {
+    font-family: "LCT Mogi";
+    src: url("../fonts/lct-mogi-a.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Fraunces";
+    src: url("../fonts/fraunces-soft-bold.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Uncut Sans";
+    src: url("../fonts/uncut-sans-variable.woff2") format("woff2-variations");
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+}

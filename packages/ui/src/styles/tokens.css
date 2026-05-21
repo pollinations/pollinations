@@ -1,0 +1,149 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+@theme {
+    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
+    --text-micro: 10px;
+    --text-base: 16px;
+
+    /* ─── Layer 1: hue ramp constants ────────────────────────── */
+    /* Paid + Tier — 3 values per concept. Used everywhere paid or tier
+       identity appears: wallet, chart bars, chips, page backgrounds.
+       pale = large + repeated surfaces (wallet cards, chips,
+              chart bars) — light wash that pairs with deep text;
+       soft = small identity markers (drawer dots, tier-explanation
+              segments) — mid-tone with enough chroma that paid vs
+              tier read as distinct hues even at 8px;
+       deep = text + bold headline numbers.
+
+       Paid uses amber so it unifies with the Pollen page chrome (top-up
+       buttons, page theme), reinforcing "this is where you buy paid".
+       Tier uses the warm orange family. */
+    --color-paid-pale: oklch(0.93 0.09 95.746);
+    --color-paid-soft: oklch(0.85 0.16 95.746);
+    --color-paid-deep: #78350f;
+    --color-tier-pale: oklch(0.93 0.06 55);
+    --color-tier-soft: oklch(0.83 0.13 55);
+    --color-tier-deep: #7C3F1E;
+}
+
+/* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
+[data-theme="amber"] {
+    --theme-text-base:    oklch(0.414 0.112 45.904);
+    --theme-text-strong:  oklch(0.279 0.077 45.635);
+    --theme-text-soft:    oklch(0.555 0.163 48.998);
+
+    --theme-border-idle:    oklch(0.879 0.169 91.605);
+
+    --theme-bg-subtle:      oklch(0.987 0.022 95.277 / 0.7);
+    --theme-bg-active:      oklch(0.924 0.12 95.746);
+    --theme-bg-hover:       oklch(0.879 0.169 91.605);
+
+    --theme-bg-pale:    oklch(0.962 0.059 95.617);
+}
+
+[data-theme="blue"] {
+    --theme-text-base:    oklch(0.379 0.146 265.522);
+    --theme-text-strong:  oklch(0.282 0.091 267.935);
+    --theme-text-soft:    oklch(0.488 0.243 264.376);
+
+    --theme-border-idle:    oklch(0.809 0.105 251.813);
+
+    --theme-bg-subtle:      oklch(0.97 0.014 254.604 / 0.7);
+    --theme-bg-active:      oklch(0.882 0.059 254.128);
+    --theme-bg-hover:       oklch(0.809 0.105 251.813);
+
+    --theme-bg-pale:    oklch(0.932 0.032 255.585);
+}
+
+[data-theme="pink"] {
+    --theme-text-base:    oklch(0.408 0.153 2.432);
+    --theme-text-strong:  oklch(0.284 0.109 3.907);
+    --theme-text-soft:    oklch(0.525 0.223 3.958);
+
+    --theme-border-idle:    oklch(0.823 0.12 346.018);
+
+    --theme-bg-subtle:      oklch(0.971 0.014 343.198 / 0.7);
+    --theme-bg-active:      oklch(0.899 0.061 343.231);
+    --theme-bg-hover:       oklch(0.823 0.12 346.018);
+
+    --theme-bg-pale:    oklch(0.948 0.028 342.258);
+}
+
+[data-theme="teal"] {
+    --theme-text-base:    oklch(0.386 0.063 188.416);
+    --theme-text-strong:  oklch(0.277 0.046 192.524);
+    --theme-text-soft:    oklch(0.511 0.096 186.391);
+
+    --theme-border-idle:    oklch(0.855 0.138 181.071);
+
+    --theme-bg-subtle:      oklch(0.984 0.014 180.72 / 0.7);
+    --theme-bg-active:      oklch(0.91 0.096 180.426);
+    --theme-bg-hover:       oklch(0.855 0.138 181.071);
+
+    --theme-bg-pale:    oklch(0.953 0.051 180.801);
+}
+
+[data-theme="violet"] {
+    --theme-text-base:    oklch(0.38 0.189 293.745);
+    --theme-text-strong:  oklch(0.283 0.141 291.089);
+    --theme-text-soft:    oklch(0.491 0.27 292.581);
+
+    --theme-border-idle:    oklch(0.811 0.111 293.571);
+
+    --theme-bg-subtle:      oklch(0.969 0.016 293.756 / 0.7);
+    --theme-bg-active:      oklch(0.894 0.057 293.283);
+    --theme-bg-hover:       oklch(0.811 0.111 293.571);
+
+    --theme-bg-pale:    oklch(0.943 0.029 294.588);
+}
+
+/* Green is also the chrome default — :root fallback so unwrapped routes
+   (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
+:root,
+[data-theme="green"] {
+    --theme-text-base:    oklch(0.393 0.095 152.535);
+    --theme-text-strong:  oklch(0.266 0.065 152.934);
+    --theme-text-soft:    oklch(0.527 0.154 150.069);
+
+    --theme-border-idle:    oklch(0.871 0.15 154.449);
+
+    --theme-bg-subtle:      oklch(0.982 0.018 155.826 / 0.7);
+    --theme-bg-active:      oklch(0.925 0.084 155.995);
+    --theme-bg-hover:       oklch(0.871 0.15 154.449);
+
+    --theme-bg-pale:    oklch(0.962 0.044 156.743);
+}
+
+/* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
+:root {
+    /* Danger — deeper than red-600 with reduced chroma so it reads as
+       alert, not neon. Light variant has warmth so error surfaces feel
+       intentional, not washed-out. */
+    --intent-danger-bg-light:    oklch(0.935 0.045 25);
+    --intent-danger-text:        oklch(0.48 0.18 25);
+    --intent-danger-border:      oklch(0.78 0.115 25);
+}
+
+/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
+@theme inline {
+    --color-theme-text-base:         var(--theme-text-base);
+    --color-theme-text-strong:       var(--theme-text-strong);
+    --color-theme-text-soft:         var(--theme-text-soft);
+
+    --color-theme-border:            var(--theme-border-idle);
+
+    --color-theme-bg-subtle:         var(--theme-bg-subtle);
+    --color-theme-bg-active:         var(--theme-bg-active);
+    --color-theme-bg-hover:          var(--theme-bg-hover);
+
+    --color-theme-bg-pale:           var(--theme-bg-pale);
+
+    --color-intent-danger-bg-light:  var(--intent-danger-bg-light);
+    --color-intent-danger-text:      var(--intent-danger-text);
+    --color-intent-danger-border:    var(--intent-danger-border);
+
+    --color-surface-white:           oklch(1 0 0 / 0.8);
+}

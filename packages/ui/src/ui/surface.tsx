@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef, FC, PropsWithChildren } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { cn } from "../lib/cn.ts";
+import type { ThemeName } from "../theme.ts";
 
 type SurfaceVariant = "panel" | "card" | "card-themed";
 

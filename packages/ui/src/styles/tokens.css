@@ -34,6 +34,7 @@
     --theme-text-base:    oklch(0.414 0.112 45.904);
     --theme-text-strong:  oklch(0.279 0.077 45.635);
     --theme-text-soft:    oklch(0.555 0.163 48.998);
+    --theme-text-muted:   oklch(0.62 0.045 45.904);
 
     --theme-border-idle:    oklch(0.879 0.169 91.605);
 
@@ -48,6 +49,7 @@
     --theme-text-base:    oklch(0.379 0.146 265.522);
     --theme-text-strong:  oklch(0.282 0.091 267.935);
     --theme-text-soft:    oklch(0.488 0.243 264.376);
+    --theme-text-muted:   oklch(0.62 0.058 265.522);
 
     --theme-border-idle:    oklch(0.809 0.105 251.813);
 
@@ -62,6 +64,7 @@
     --theme-text-base:    oklch(0.408 0.153 2.432);
     --theme-text-strong:  oklch(0.284 0.109 3.907);
     --theme-text-soft:    oklch(0.525 0.223 3.958);
+    --theme-text-muted:   oklch(0.62 0.061 2.432);
 
     --theme-border-idle:    oklch(0.823 0.12 346.018);
 
@@ -76,6 +79,7 @@
     --theme-text-base:    oklch(0.386 0.063 188.416);
     --theme-text-strong:  oklch(0.277 0.046 192.524);
     --theme-text-soft:    oklch(0.511 0.096 186.391);
+    --theme-text-muted:   oklch(0.62 0.025 188.416);
 
     --theme-border-idle:    oklch(0.855 0.138 181.071);
 
@@ -90,6 +94,7 @@
     --theme-text-base:    oklch(0.38 0.189 293.745);
     --theme-text-strong:  oklch(0.283 0.141 291.089);
     --theme-text-soft:    oklch(0.491 0.27 292.581);
+    --theme-text-muted:   oklch(0.62 0.076 293.745);
 
     --theme-border-idle:    oklch(0.811 0.111 293.571);
 
@@ -107,6 +112,7 @@
     --theme-text-base:    oklch(0.393 0.095 152.535);
     --theme-text-strong:  oklch(0.266 0.065 152.934);
     --theme-text-soft:    oklch(0.527 0.154 150.069);
+    --theme-text-muted:   oklch(0.62 0.038 152.535);
 
     --theme-border-idle:    oklch(0.871 0.15 154.449);
 
@@ -132,6 +138,7 @@
     --color-theme-text-base:         var(--theme-text-base);
     --color-theme-text-strong:       var(--theme-text-strong);
     --color-theme-text-soft:         var(--theme-text-soft);
+    --color-theme-text-muted:        var(--theme-text-muted);
 
     --color-theme-border:            var(--theme-border-idle);
 

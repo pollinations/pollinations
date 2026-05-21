@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { cn } from "../lib/cn.ts";
+import type { ThemeName } from "../theme.ts";
 
 /** Button only supports `danger`. Paid/alpha live on Chip; success is gone. */
 type ButtonIntent = "danger";

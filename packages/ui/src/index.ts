@@ -1,11 +1,12 @@
-// Design primitives
-
-// Theme + helpers
-export type { ThemeName } from "./layout/dashboard-theme.ts";
+// Helpers
 export { cn } from "./lib/cn.ts";
 export { formatPollen } from "./lib/format-pollen.ts";
 // Auth-aware primitives
 export * from "./primitives/index.ts";
+// Theme
+export type { ThemeName } from "./theme.ts";
+
+// Design primitives
 export { Button, type ButtonProps } from "./ui/button.tsx";
 export { ChevronIcon } from "./ui/chevron-icon.tsx";
 export { Chip } from "./ui/chip.tsx";

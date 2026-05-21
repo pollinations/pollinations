@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { cn } from "../lib/cn.ts";
+import type { ThemeName } from "../theme.ts";
 import { Button } from "./button.tsx";
 
 type LinkButtonProps = {

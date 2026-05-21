@@ -54,11 +54,13 @@ function buildAuthUrl(
     appKey: string,
     permissions: readonly string[],
     redirectUrl: string,
+    state: string,
 ): string {
     const params = new URLSearchParams({
         redirect_url: redirectUrl,
         app_key: appKey,
         permissions: permissions.join(","),
+        state,
     });
     return `${enterUrl}/authorize?${params.toString()}`;
 }
@@ -81,6 +83,7 @@ export function PolliProvider({
         [storageOption],
     );
     const storageKey = `polli:${appKey}:token`;
+    const stateStorageKey = `polli:${appKey}:oauth_state`;
 
     const resolvedPermissions = useMemo<readonly string[]>(
         () =>
@@ -105,6 +108,7 @@ export function PolliProvider({
             const params = new URLSearchParams(hash);
             const key = params.get("api_key");
             const error = params.get("error");
+            const receivedState = params.get("state");
             if (key || error) {
                 window.history.replaceState(
                     {},
@@ -113,11 +117,25 @@ export function PolliProvider({
                 );
             }
             if (key) {
-                storage.setItem(storageKey, key);
-                setApiKey(key);
-                return;
+                // CSRF protection: only accept api_key responses that echo
+                // back the `state` we generated at login(). A missing or
+                // mismatched state means the redirect didn't originate from
+                // a login this client started — reject silently rather than
+                // store a key an attacker may have planted.
+                const expectedState = storage.getItem(stateStorageKey);
+                storage.removeItem(stateStorageKey);
+                if (!expectedState || receivedState !== expectedState) {
+                    console.warn(
+                        "[PolliProvider] dropping auth response with missing or mismatched state",
+                    );
+                } else {
+                    storage.setItem(storageKey, key);
+                    setApiKey(key);
+                    return;
+                }
             }
             if (error) {
+                storage.removeItem(stateStorageKey);
                 // OAuth rejected/cancelled — surface for debugging but don't
                 // throw; consumers can still call login() again.
                 const description = params.get("error_description");
@@ -131,13 +149,24 @@ export function PolliProvider({
 
         const stored = storage.getItem(storageKey);
         if (stored) setApiKey(stored);
-    }, [storageKey, storage]);
+    }, [storageKey, stateStorageKey, storage]);
 
     const reqIdRef = useRef(0);
+
+    // Synchronously invalidates in-flight profile/balance fetches and clears
+    // session-derived state. Must be called BEFORE setApiKey(null) so any
+    // already-resolved microtask sees the bumped reqIdRef and bails before
+    // it can write back stale data.
+    const clearSessionState = useCallback(() => {
+        reqIdRef.current++;
+        setProfile(null);
+        setBalance(null);
+        setIsLoadingProfile(false);
+    }, []);
+
     useEffect(() => {
         if (!apiKey) {
-            setProfile(null);
-            setBalance(null);
+            clearSessionState();
             return;
         }
 
@@ -146,9 +175,8 @@ export function PolliProvider({
 
         const handle401 = () => {
             storage.removeItem(storageKey);
+            clearSessionState();
             setApiKey(null);
-            setProfile(null);
-            setBalance(null);
         };
 
         (async () => {
@@ -183,7 +211,7 @@ export function PolliProvider({
                 }
             }
         })();
-    }, [apiKey, apiBaseUrl, storageKey, storage]);
+    }, [apiKey, apiBaseUrl, storageKey, storage, clearSessionState]);
 
     const login = useCallback(
         (extraPermissions?: string[]) => {
@@ -199,22 +227,24 @@ export function PolliProvider({
                           ]),
                       )
                     : resolvedPermissions;
+            const state = crypto.randomUUID();
+            storage.setItem(stateStorageKey, state);
             window.location.href = buildAuthUrl(
                 enterUrl,
                 appKey,
                 perms,
                 currentUrl,
+                state,
             );
         },
-        [enterUrl, appKey, resolvedPermissions],
+        [enterUrl, appKey, resolvedPermissions, storage, stateStorageKey],
     );
 
     const logout = useCallback(() => {
         storage.removeItem(storageKey);
+        clearSessionState();
         setApiKey(null);
-        setProfile(null);
-        setBalance(null);
-    }, [storage, storageKey]);
+    }, [storage, storageKey, clearSessionState]);
 
     const stateValue = useMemo<AuthStateValue>(
         () => ({ apiKey, isLoggedIn: !!apiKey }),

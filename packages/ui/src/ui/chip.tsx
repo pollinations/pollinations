@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { cn } from "../lib/cn.ts";
+import type { ThemeName } from "../theme.ts";
 
 /**
  * Five semantic chip labels — each maps to a dashboard concept:

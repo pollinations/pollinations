@@ -2,6 +2,7 @@ name = "pollinations-gen"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
 compatibility_flags = ["nodejs_compat", "nodejs_als"]
+account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
@@ -14,12 +15,12 @@ binding = "IMAGES"
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -58,8 +59,8 @@ port = 8788
 binding = "IMAGES"
 
 [[env.production.routes]]
-pattern = "gen.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "gen.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.production.services]]
@@ -70,12 +71,12 @@ service = "pollinations-enter-production"
 remote = true
 binding = "DB"
 database_name = "production-pollinations-enter-db"
-database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
+database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.production.kv_namespaces]]
 binding = "KV"
-id = "eb4ea5149a5a413db53902bf2b8c1d95"
+id = "a621f17ad3e34000971cffa616675c5b"
 
 [[env.production.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -117,8 +118,8 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 binding = "IMAGES"
 
 [[env.staging.routes]]
-pattern = "staging.gen.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "staging.gen.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.staging.services]]
@@ -128,12 +129,12 @@ service = "pollinations-enter-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
+database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.staging.kv_namespaces]]
 binding = "KV"
-id = "eb4ea5149a5a413db53902bf2b8c1d95"
+id = "ba22195551794751b9792e4e67eb074a"
 
 [[env.staging.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -179,12 +180,12 @@ service = "pollinations-enter"
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [[env.test.kv_namespaces]]
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[env.test.r2_buckets]]
 binding = "IMAGE_BUCKET"

@@ -1,3 +1,4 @@
+import { getRealClientIp } from "@shared/client-ip.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
@@ -20,7 +21,7 @@ export const edgeRateLimit = createMiddleware<EdgeRateLimiterEnv>(
         if (!c.env.EDGE_RATE_LIMITER) {
             return next();
         }
-        const ip = c.req.header("cf-connecting-ip") || "unknown";
+        const ip = getRealClientIp(c);
 
         const { success } = await c.env.EDGE_RATE_LIMITER.limit({ key: ip });
 

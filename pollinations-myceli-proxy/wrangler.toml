@@ -1,0 +1,34 @@
+name = "pollinations-proxy"
+main = "src/index.ts"
+compatibility_date = "2025-11-01"
+account_id = "efdcb0933eaac64f27c0b295039b28f2"
+
+routes = [
+  { pattern = "enter.pollinations.ai", custom_domain = true },
+  { pattern = "gen.pollinations.ai", custom_domain = true },
+  { pattern = "media.pollinations.ai", custom_domain = true },
+]
+
+# Host-to-upstream map is in [vars]; staging deploys with [env.staging]
+# overrides. Keys are the public host, values are the Myceli upstream host.
+[vars]
+UPSTREAM_MAP = '{"enter.pollinations.ai":"enter.myceli.ai","gen.pollinations.ai":"gen.myceli.ai","media.pollinations.ai":"media.myceli.ai"}'
+
+[env.staging]
+name = "pollinations-proxy-staging"
+routes = [
+  { pattern = "staging.enter.pollinations.ai", custom_domain = true },
+  { pattern = "staging.gen.pollinations.ai", custom_domain = true },
+]
+
+[env.staging.vars]
+UPSTREAM_MAP = '{"staging.enter.pollinations.ai":"staging.enter.myceli.ai","staging.gen.pollinations.ai":"staging.gen.myceli.ai"}'
+
+[env.dev]
+name = "pollinations-proxy-dev"
+routes = [
+  { pattern = "dev.enter.pollinations.ai", custom_domain = true },
+]
+
+[env.dev.vars]
+UPSTREAM_MAP = '{"dev.enter.pollinations.ai":"dev.enter.myceli.ai"}'

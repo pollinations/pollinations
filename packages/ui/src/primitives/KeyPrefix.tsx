@@ -1,13 +1,14 @@
 import { useAuthState } from "@pollinations_ai/sdk/react";
-import { cn } from "../index.ts";
+import { cn } from "../lib/cn.ts";
 
 export type KeyPrefixProps = {
     className?: string;
 };
 
 /**
- * Shows the first 4 chars of the current API key followed by bullets. Never
- * exposes the full key. Renders `null` when logged out.
+ * Shows the first 7 chars of the current API key followed by bullets — enough
+ * to disambiguate between keys (`pk_abc1…`, `pk_xyz9…`) without exposing the
+ * full secret. Renders `null` when logged out.
  */
 export function KeyPrefix({ className }: KeyPrefixProps) {
     const { apiKey } = useAuthState();
@@ -20,7 +21,7 @@ export function KeyPrefix({ className }: KeyPrefixProps) {
                 className,
             )}
         >
-            {apiKey.slice(0, 4)}
+            {apiKey.slice(0, 7)}
             {"••••••••"}
         </span>
     );

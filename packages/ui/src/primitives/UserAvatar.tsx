@@ -1,5 +1,6 @@
 import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
-import { cn } from "../index.ts";
+import { useState } from "react";
+import { cn } from "../lib/cn.ts";
 
 export type UserAvatarProps = {
     size?: "sm" | "md" | "lg";
@@ -28,6 +29,10 @@ function initials(name: string | null | undefined): string {
 export function UserAvatar({ size = "md", className }: UserAvatarProps) {
     const { isLoggedIn } = useAuthState();
     const { profile } = useAuthProfile();
+    // Track which image URL failed so we fall back to initials. Storing the
+    // URL (rather than a boolean) means a later `profile.image` change
+    // automatically retries with the new URL.
+    const [failedUrl, setFailedUrl] = useState<string | null>(null);
     if (!isLoggedIn) return null;
 
     const base = cn(
@@ -37,14 +42,16 @@ export function UserAvatar({ size = "md", className }: UserAvatarProps) {
     );
 
     const label = profile?.githubUsername ?? profile?.name ?? null;
+    const imageSrc = profile?.image ?? null;
 
-    if (profile?.image) {
+    if (imageSrc && imageSrc !== failedUrl) {
         return (
             <img
-                src={profile.image}
+                src={imageSrc}
                 alt={label ?? "User avatar"}
                 data-polli="user-avatar"
                 className={base}
+                onError={() => setFailedUrl(imageSrc)}
             />
         );
     }

@@ -25,9 +25,10 @@
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
     "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify",
-    "prebuild": "npm run build --prefix ../sdk",
+    "build:sdk": "npm run build --prefix ../sdk",
+    "prebuild": "npm run build:sdk",
     "prepublishOnly": "npm run build",
-    "pretypecheck": "npm run build --prefix ../sdk",
+    "pretypecheck": "npm run build:sdk",
     "prefix": "node scripts/prefix-tailwind.mjs",
     "typecheck": "tsc --noEmit"
   },

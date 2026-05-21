@@ -11,6 +11,24 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 npm install @pollinations_ai/sdk
 ```
 
+### CDN / `<script>` tag
+
+The SDK also ships a browser IIFE bundle for direct `<script>` use:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@pollinations_ai/sdk"></script>
+<script>
+  const { generateImage, generateText } = Pollinations;
+  // ...
+</script>
+```
+
+The IIFE bundle exposes only the **API client** under the global
+`Pollinations`. The React subpath (`PolliProvider`, `useAuthState`, etc.)
+is shipped as ESM/CJS only — use a bundler (Vite, webpack, Next.js, etc.)
+to consume it. There's no IIFE entry for `./react` because every React
+app already has a build step.
+
 ## Quick Start
 
 First, get your API key at **https://enter.pollinations.ai** and set it:

@@ -1,5 +1,5 @@
 import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
-import { cn } from "../index.ts";
+import { cn } from "../lib/cn.ts";
 
 export type UserNameProps = {
     className?: string;

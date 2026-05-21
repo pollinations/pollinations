@@ -1,11 +1,11 @@
 import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
-import { cn } from "../index.ts";
+import { cn } from "../lib/cn.ts";
 
 export type UserEmailProps = {
     className?: string;
 };
 
-/** Renders `profile.email` (only present when the key has `account:profile`). `null` otherwise. */
+/** Renders `profile.email` (only present when the key has the `profile` permission). `null` otherwise. */
 export function UserEmail({ className }: UserEmailProps) {
     const { isLoggedIn } = useAuthState();
     const { profile } = useAuthProfile();

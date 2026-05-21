@@ -1,7 +1,7 @@
 import { useAuthActions } from "@pollinations_ai/sdk/react";
 import type { ReactNode } from "react";
-import type { ThemeName } from "../index.ts";
-import { LinkButton } from "../index.ts";
+import type { ThemeName } from "../theme.ts";
+import { LinkButton } from "../ui/link-button.tsx";
 
 export type TopUpLinkProps = {
     children?: ReactNode;

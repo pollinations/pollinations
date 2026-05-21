@@ -1,5 +1,5 @@
 import { useAuthActions } from "@pollinations_ai/sdk/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback, useMemo } from "react";
 
 export type RequestPermissionsRenderProps = {
     /** Requested perms that aren't in the provider's configured set. */
@@ -23,8 +23,10 @@ export function RequestPermissions({
     children,
 }: RequestPermissionsProps) {
     const { permissions: granted, login } = useAuthActions();
-    const grantedSet = new Set(granted);
-    const missing = permissions.filter((p) => !grantedSet.has(p));
-    const request = () => login(permissions);
+    const missing = useMemo(() => {
+        const grantedSet = new Set(granted);
+        return permissions.filter((p) => !grantedSet.has(p));
+    }, [granted, permissions]);
+    const request = useCallback(() => login(permissions), [login, permissions]);
     return <>{children({ missing, request })}</>;
 }

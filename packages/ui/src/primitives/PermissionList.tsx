@@ -1,5 +1,6 @@
 import { useAuthActions } from "@pollinations_ai/sdk/react";
-import { Chip, cn } from "../index.ts";
+import { cn } from "../lib/cn.ts";
+import { Chip } from "../ui/chip.tsx";
 
 export type PermissionListProps = {
     className?: string;

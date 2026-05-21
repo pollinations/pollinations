@@ -1,5 +1,7 @@
 import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
-import { Chip, cn, formatPollen } from "../index.ts";
+import { cn } from "../lib/cn.ts";
+import { formatPollen } from "../lib/format-pollen.ts";
+import { Chip } from "../ui/chip.tsx";
 
 export type BalanceProps = {
     className?: string;

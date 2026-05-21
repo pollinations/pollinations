@@ -1,3 +1,9 @@
+import {
+    createGeminiCostCalculator,
+    GEMINI_3_1_PRO_LONG_CONTEXT_COST,
+    GEMINI_3_GROUNDING_COST_PER_QUERY,
+    GEMINI_25_GROUNDING_COST_PER_PROMPT,
+} from "./gemini-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -264,6 +270,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.0),
             completionTextTokens: perMillion(3.0),
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perQuery",
+                costPerUnit: GEMINI_3_GROUNDING_COST_PER_QUERY,
+            },
+        }),
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -290,6 +302,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
             completionTextTokens: perMillion(9.0),
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perQuery",
+                costPerUnit: GEMINI_3_GROUNDING_COST_PER_QUERY,
+            },
+        }),
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -318,6 +336,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perQuery",
+                costPerUnit: GEMINI_3_GROUNDING_COST_PER_QUERY,
+            },
+        }),
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
@@ -342,6 +366,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perPrompt",
+                costPerUnit: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+            },
+        }),
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -495,14 +525,20 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1.5,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding fee ($0.035/grounded
-        // prompt after 1,500 RPD free) is not yet modeled; absorbed by Pollinations.
+        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
+        // calculateCost when the response includes web search metadata.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perPrompt",
+                costPerUnit: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+            },
+        }),
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
         inputModalities: ["text", "image"],
@@ -740,8 +776,21 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
+            promptAudioTokens: perMillion(2.0),
+            promptImageTokens: perMillion(2.0),
+            promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
+        calculateCost: createGeminiCostCalculator({
+            grounding: {
+                mode: "perQuery",
+                costPerUnit: GEMINI_3_GROUNDING_COST_PER_QUERY,
+            },
+            longContext: {
+                thresholdTokens: 200_000,
+                cost: GEMINI_3_1_PRO_LONG_CONTEXT_COST,
+            },
+        }),
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],

@@ -72,6 +72,27 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+type CostCalculatorModel<TModelId extends string = string> = {
+    aliases: string[];
+    modelId: TModelId;
+    provider: string;
+    brand: string;
+    category: Category;
+    cost: CostDefinition;
+    priceMultiplier: number;
+};
+
+export type CostCalculatorInput<TModelId extends string = string> = {
+    usage: Usage;
+    output?: unknown;
+    model: CostCalculatorModel<TModelId>;
+    linearCost: (costDefinition?: CostDefinition) => UsageCost;
+};
+
+export type CostCalculator<TModelId extends string = string> = (
+    input: CostCalculatorInput<TModelId>,
+) => UsageCost;
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
@@ -82,6 +103,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    calculateCost?: CostCalculator<TModelId>;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -139,6 +161,22 @@ function derivePrice(svc: ModelDefinition): PriceDefinition {
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
     ) as PriceDefinition;
+}
+
+function calculateLinearCost(
+    model: ModelName,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    const usageCost = convertUsage(usage, costDefinition, model);
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
+    );
+    return {
+        ...usageCost,
+        totalCost,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -260,35 +298,48 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 /**
  * Calculate cost for a model based on usage
  */
-export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getCostDefinition(model);
-    if (!costDefinition)
+export function calculateCost(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsageCost {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = convertUsage(usage, costDefinition, model);
-    const totalCost = Object.values(usageCost).reduce(
-        (total, cost) => total + cost,
-        0,
-    );
-    return {
-        ...usageCost,
-        totalCost,
-    };
+    const linearCost = (costDefinition = svc.cost) =>
+        calculateLinearCost(model, usage, costDefinition);
+
+    return svc.calculateCost
+        ? svc.calculateCost({ usage, output, model: svc, linearCost })
+        : linearCost();
 }
 
 /**
  * Calculate price for a model based on usage
  */
-export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getPriceDefinition(model);
-    if (!priceDefinition)
+export function calculatePrice(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsagePrice {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usagePrice = convertUsage(usage, priceDefinition, model);
+    const usageCost = calculateCost(model, usage, output);
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, cost]) => [
+                usageType,
+                (cost as number) * svc.priceMultiplier,
+            ]),
+    ) as Usage;
     const totalPrice = safeRound(
-        Object.values(usagePrice).reduce((total, price) => total + price, 0),
+        usageCost.totalCost * svc.priceMultiplier,
         POLLEN_BILLING_PRECISION,
     );
     return {

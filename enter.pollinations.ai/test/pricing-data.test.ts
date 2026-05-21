@@ -127,6 +127,60 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     );
 });
 
+test("Gemini grounding cost is added by family billing rules", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const groundedOutput = {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["weather in Berlin", "Berlin forecast"],
+                },
+            },
+        ],
+    };
+
+    const geminiSearchCost = calculateCost(
+        "gemini-search",
+        usage,
+        groundedOutput,
+    );
+    const geminiSearchPrice = calculatePrice(
+        "gemini-search",
+        usage,
+        groundedOutput,
+    );
+    const gemini3Cost = calculateCost("gemini", usage, groundedOutput);
+
+    // Gemini 2.5 Search bills once per grounded prompt, not once per query.
+    expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.8025, 8);
+
+    // Gemini 3.x bills per non-empty search query.
+    expect(gemini3Cost.totalCost).toBeCloseTo(3.528, 8);
+});
+
+test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {
+    const shortContextCost = calculateCost("gemini-large", {
+        promptTextTokens: 200_000,
+        completionTextTokens: 1_000,
+    });
+    const longContextCost = calculateCost("gemini-large", {
+        promptTextTokens: 200_001,
+        completionTextTokens: 1_000,
+    });
+    const longContextPrice = calculatePrice("gemini-large", {
+        promptTextTokens: 200_001,
+        completionTextTokens: 1_000,
+    });
+
+    expect(shortContextCost.totalCost).toBeCloseTo(0.412, 8);
+    expect(longContextCost.totalCost).toBeCloseTo(0.818004, 8);
+    expect(longContextPrice.totalPrice).toBeCloseTo(1.227006, 8);
+});
+
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {
     const registries = [
         ["text", TEXT_SERVICES],

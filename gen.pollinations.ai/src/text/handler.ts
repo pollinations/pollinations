@@ -316,7 +316,12 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(
+                sendOpenAIResponse(completion).clone(),
+            );
+            return sendTextContentResponse(completion);
+        }
         return sendOpenAIResponse(completion);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);

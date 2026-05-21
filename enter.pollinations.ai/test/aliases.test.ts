@@ -40,15 +40,25 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("cost lookup uses the public model name instead of collapsing shared provider ids", () => {
+test("gemini-search applies grounding cost on top of shared token rates", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
     const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage);
+    const geminiSearchCost = calculateCost("gemini-search", usage, {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["latest Gemini pricing"],
+                },
+            },
+        ],
+    });
 
-    expect(geminiFastCost.totalCost).not.toBe(geminiSearchCost.totalCost);
+    expect(geminiSearchCost.totalCost).toBeGreaterThan(
+        geminiFastCost.totalCost,
+    );
 });
 
 test("gemini-fast can expose a higher public price than provider cost", () => {

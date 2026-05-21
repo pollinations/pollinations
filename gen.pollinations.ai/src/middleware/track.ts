@@ -10,7 +10,6 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
@@ -18,6 +17,7 @@ import {
     getPriceDefinition,
     type ModelName,
     type PriceDefinition,
+    type Usage,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -74,6 +74,7 @@ type ModelVariables = {
 export type ModelUsage = {
     model: string;
     usage: Usage;
+    output?: unknown;
 };
 
 type RequestTrackingData = {
@@ -481,8 +482,16 @@ async function trackResponse(
             contentFilterResults,
         };
     }
-    const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
-    const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
+    const cost = calculateCost(
+        resolvedModelRequested,
+        modelUsage.usage,
+        modelUsage.output,
+    );
+    const price = calculatePrice(
+        resolvedModelRequested,
+        modelUsage.usage,
+        modelUsage.output,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -673,6 +682,18 @@ function extractUsageHeaders(response: Response): ModelUsage {
     };
 }
 
+async function extractResponseJsonOutput(
+    response: Response,
+): Promise<unknown | undefined> {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) return undefined;
+    try {
+        return await response.clone().json();
+    } catch {
+        return undefined;
+    }
+}
+
 function extractContentFilterHeaders(
     response: Response,
 ): GenerationEventContentFilterParams {
@@ -682,12 +703,16 @@ function extractContentFilterHeaders(
     return parseResult.data || {};
 }
 
-function extractUsageAndContentFilterResultsHeaders(response: Response): {
+async function extractUsageAndContentFilterResultsHeaders(
+    response: Response,
+): Promise<{
     modelUsage: ModelUsage;
     contentFilterResults: GenerationEventContentFilterParams;
-} {
+}> {
+    const modelUsage = extractUsageHeaders(response);
+    modelUsage.output = await extractResponseJsonOutput(response);
     return {
-        modelUsage: extractUsageHeaders(response),
+        modelUsage,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
@@ -720,9 +745,11 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    const streamEvents: unknown[] = [];
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+        streamEvents.push(event);
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -768,6 +795,7 @@ async function extractUsageAndContentFilterResultsStream(
         modelUsage: {
             model,
             usage: openaiUsageToUsage(usage),
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
         contentFilterResults,
     };
@@ -791,7 +819,7 @@ async function extractUsageAndContentFilterResults(
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
-    return extractUsageAndContentFilterResultsHeaders(response);
+    return await extractUsageAndContentFilterResultsHeaders(response);
 }
 
 type CacheData = {

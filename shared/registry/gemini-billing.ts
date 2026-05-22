@@ -11,29 +11,22 @@ type GeminiLongContextCost = {
     cost: CostDefinition;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return !!value && typeof value === "object" && !Array.isArray(value);
-}
-
-function getOutputEvents(output: unknown): unknown[] {
-    if (!isRecord(output)) return [];
-    return Array.isArray(output.streamEvents) ? output.streamEvents : [output];
-}
+// Worker hands over either parsed JSON (`{ choices: [...] }`) or a stitched
+// stream (`{ streamEvents: [event, ...] }`). Anything else is treated as empty.
+type GroundedOutput = {
+    choices?: { groundingMetadata?: { webSearchQueries?: string[] } }[];
+    streamEvents?: GroundedOutput[];
+};
 
 function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+    const o = output as GroundedOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    // Dedup across stream chunks — Vertex repeats groundingMetadata in deltas.
     const queries = new Set<string>();
-    for (const event of getOutputEvents(output)) {
-        if (!isRecord(event) || !Array.isArray(event.choices)) continue;
-        for (const choice of event.choices) {
-            if (!isRecord(choice) || !isRecord(choice.groundingMetadata)) {
-                continue;
-            }
-            const webSearchQueries = choice.groundingMetadata.webSearchQueries;
-            if (!Array.isArray(webSearchQueries)) continue;
-            for (const query of webSearchQueries) {
-                if (typeof query === "string" && query.trim()) {
-                    queries.add(query);
-                }
+    for (const event of events) {
+        for (const choice of event.choices ?? []) {
+            for (const q of choice.groundingMetadata?.webSearchQueries ?? []) {
+                if (q?.trim()) queries.add(q);
             }
         }
     }

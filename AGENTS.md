@@ -95,11 +95,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
 
-## Shared UI
-
-- Do not create one-off auth, wallet, BYOP, account, or model-permission UI inside `enter.pollinations.ai`, `pollinations.ai`, or demo apps. Reuse existing enter UI patterns or promote them into `packages/ui`.
-- `enter.pollinations.ai` authorize/dashboard surfaces and `pollinations.ai` websites should consume `@pollinations_ai/ui` primitives. If a pattern already exists in enter, generalize it instead of duplicating it.
-
 ## Common Mistakes to Avoid
 
 **IMPORTANT — Agents often make these mistakes (learned from session history):**

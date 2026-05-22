@@ -1,7 +1,7 @@
 import {
+    calculateGemini31ProCost,
     calculateGeminiGroundedPromptCost,
     calculateGeminiSearchQueryCost,
-    calculateGeminiSearchQueryLongContextCost,
 } from "./gemini-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -755,7 +755,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        calculateCost: calculateGeminiSearchQueryLongContextCost,
+        calculateCost: calculateGemini31ProCost,
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],

@@ -52,8 +52,7 @@ function getPromptTokenCount(usage: Usage): number {
 
 function calculateGeminiCost(
     { usage, model, linearCost }: CostCalculatorInput,
-    groundingUnits: number,
-    groundingCostPerUnit: number,
+    extraCost = 0,
     longContext?: GeminiLongContextCost,
 ) {
     const promptTokens = getPromptTokenCount(usage);
@@ -63,11 +62,11 @@ function calculateGeminiCost(
             : model.cost;
     const usageCost = linearCost(costDefinition);
 
-    if (groundingUnits === 0) return usageCost;
+    if (extraCost === 0) return usageCost;
 
     return {
         ...usageCost,
-        totalCost: usageCost.totalCost + groundingUnits * groundingCostPerUnit,
+        totalCost: usageCost.totalCost + extraCost,
     };
 }
 
@@ -77,33 +76,34 @@ const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 export const calculateGeminiGroundedPromptCost: CostCalculator = (input) =>
     calculateGeminiCost(
         input,
-        getGeminiGroundingWebSearchQueryCount(input.output) > 0 ? 1 : 0,
-        GEMINI_25_GROUNDING_COST_PER_PROMPT,
+        getGeminiGroundingWebSearchQueryCount(input.output) > 0
+            ? GEMINI_25_GROUNDING_COST_PER_PROMPT
+            : 0,
     );
 
 export const calculateGeminiSearchQueryCost: CostCalculator = (input) =>
     calculateGeminiCost(
         input,
-        getGeminiGroundingWebSearchQueryCount(input.output),
-        GEMINI_3_GROUNDING_COST_PER_QUERY,
+        getGeminiGroundingWebSearchQueryCount(input.output) *
+            GEMINI_3_GROUNDING_COST_PER_QUERY,
     );
 
-export const calculateGeminiSearchQueryLongContextCost: CostCalculator = (
-    input,
-) =>
+const GEMINI_3_1_PRO_LONG_CONTEXT: GeminiLongContextCost = {
+    thresholdTokens: 200_000,
+    cost: {
+        promptTextTokens: perMillion(4.0),
+        promptCachedTokens: perMillion(0.4),
+        promptAudioTokens: perMillion(4.0),
+        promptImageTokens: perMillion(4.0),
+        promptVideoTokens: perMillion(4.0),
+        completionTextTokens: perMillion(18.0),
+    },
+};
+
+export const calculateGemini31ProCost: CostCalculator = (input) =>
     calculateGeminiCost(
         input,
-        getGeminiGroundingWebSearchQueryCount(input.output),
-        GEMINI_3_GROUNDING_COST_PER_QUERY,
-        {
-            thresholdTokens: 200_000,
-            cost: {
-                promptTextTokens: perMillion(4.0),
-                promptCachedTokens: perMillion(0.4),
-                promptAudioTokens: perMillion(4.0),
-                promptImageTokens: perMillion(4.0),
-                promptVideoTokens: perMillion(4.0),
-                completionTextTokens: perMillion(18.0),
-            },
-        },
+        getGeminiGroundingWebSearchQueryCount(input.output) *
+            GEMINI_3_GROUNDING_COST_PER_QUERY,
+        GEMINI_3_1_PRO_LONG_CONTEXT,
     );

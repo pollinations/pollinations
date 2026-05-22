@@ -53,6 +53,26 @@ export interface PolliProviderProps {
     apiBaseUrl?: string;
 }
 
+function readStringArray(
+    storage: StorageAdapter,
+    key: string,
+): readonly string[] | null {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (
+            Array.isArray(parsed) &&
+            parsed.every((p) => typeof p === "string")
+        ) {
+            return parsed;
+        }
+    } catch {
+        // Fall through.
+    }
+    return null;
+}
+
 function buildAuthUrl(
     enterUrl: string,
     appKey: string,
@@ -88,6 +108,13 @@ export function PolliProvider({
     );
     const storageKey = `polli:${appKey}:token`;
     const stateStorageKey = `polli:${appKey}:oauth_state`;
+    // Written by login() before the redirect, read + cleared by a valid
+    // callback. Holds the union of permissions this client is about to ask
+    // for.
+    const pendingPermsStorageKey = `polli:${appKey}:oauth_pending_perms`;
+    // Persistent across page reloads — promoted from pendingPerms after a
+    // valid callback. Cleared on logout.
+    const grantedPermsStorageKey = `polli:${appKey}:granted_perms`;
 
     const initialPermissions = useMemo<readonly string[]>(
         () =>
@@ -97,15 +124,14 @@ export function PolliProvider({
         [permissions],
     );
 
-    // Extra scopes requested via `login(extras)` beyond `initialPermissions`.
-    // Tracked here so a subsequent re-render (after the OAuth redirect roundtrip)
-    // reflects them in `actionsValue.permissions` — without this, RequestPermissions
-    // would keep reporting freshly granted scopes as missing forever.
+    // Extra scopes asked for via login(extras), beyond initialPermissions.
+    // Survives the OAuth full-page navigation via `granted_perms` storage:
+    // mount restores from storage, valid callbacks promote pending → granted.
     //
-    // This is optimistic: it records what was *requested*, not what the server
-    // confirmed was granted. If a user denies a scope on the consent screen, the
-    // local view will still treat it as granted until full token introspection
-    // lands. Acceptable for v1.
+    // Optimistic — records what this client requested, not what the server
+    // confirmed was granted. If the user denies a scope on the consent
+    // screen, the local view will treat it as granted until full token
+    // introspection lands. Acceptable for v1.
     const [extrasRequested, setExtrasRequested] = useState<readonly string[]>(
         [],
     );
@@ -186,6 +212,31 @@ export function PolliProvider({
                     );
                 } else {
                     storage.removeItem(stateStorageKey);
+                    // Promote pending permissions → granted now that the
+                    // callback validated. Merge into any existing granted
+                    // set so a previously requested scope doesn't fall off.
+                    const pending = readStringArray(
+                        storage,
+                        pendingPermsStorageKey,
+                    );
+                    storage.removeItem(pendingPermsStorageKey);
+                    if (pending) {
+                        const existing =
+                            readStringArray(storage, grantedPermsStorageKey) ??
+                            [];
+                        const merged = Array.from(
+                            new Set([...existing, ...pending]),
+                        );
+                        storage.setItem(
+                            grantedPermsStorageKey,
+                            JSON.stringify(merged),
+                        );
+                        setExtrasRequested(
+                            merged.filter(
+                                (p) => !initialPermissions.includes(p),
+                            ),
+                        );
+                    }
                     storage.setItem(storageKey, key);
                     setApiKey(key);
                     return;
@@ -199,6 +250,10 @@ export function PolliProvider({
                 const expectedState = storage.getItem(stateStorageKey);
                 if (expectedState && receivedState === expectedState) {
                     storage.removeItem(stateStorageKey);
+                    // Pending perms belong to this failed attempt — drop
+                    // them without promoting. Don't touch granted_perms
+                    // (anything previously granted is still granted).
+                    storage.removeItem(pendingPermsStorageKey);
                 }
                 // OAuth rejected/cancelled — surface for debugging but don't
                 // throw; consumers can still call login() again.
@@ -212,7 +267,22 @@ export function PolliProvider({
 
         const stored = storage.getItem(storageKey);
         if (stored) setApiKey(stored);
-    }, [storageKey, stateStorageKey, storage]);
+        // Restore previously granted extras across page reloads.
+        const storedGranted = readStringArray(storage, grantedPermsStorageKey);
+        if (storedGranted) {
+            const extras = storedGranted.filter(
+                (p) => !initialPermissions.includes(p),
+            );
+            if (extras.length > 0) setExtrasRequested(extras);
+        }
+    }, [
+        storageKey,
+        stateStorageKey,
+        pendingPermsStorageKey,
+        grantedPermsStorageKey,
+        storage,
+        initialPermissions,
+    ]);
 
     const reqIdRef = useRef(0);
 
@@ -290,13 +360,13 @@ export function PolliProvider({
                           ]),
                       )
                     : resolvedPermissions;
-            if (extraPermissions && extraPermissions.length > 0) {
-                setExtrasRequested((prev) =>
-                    Array.from(new Set([...prev, ...extraPermissions])),
-                );
-            }
             const state = crypto.randomUUID();
             storage.setItem(stateStorageKey, state);
+            // Persist the union we're about to request so the post-redirect
+            // callback can promote it into granted_perms (state-validated).
+            // React state updates here are wasted — window navigation
+            // discards them.
+            storage.setItem(pendingPermsStorageKey, JSON.stringify(perms));
             window.location.href = buildAuthUrl(
                 enterUrl,
                 appKey,
@@ -305,16 +375,31 @@ export function PolliProvider({
                 state,
             );
         },
-        [enterUrl, appKey, resolvedPermissions, storage, stateStorageKey],
+        [
+            enterUrl,
+            appKey,
+            resolvedPermissions,
+            storage,
+            stateStorageKey,
+            pendingPermsStorageKey,
+        ],
     );
 
     const logout = useCallback(() => {
         storage.removeItem(storageKey);
+        storage.removeItem(grantedPermsStorageKey);
+        storage.removeItem(pendingPermsStorageKey);
         clearSessionState();
         setApiKey(null);
         // Reset optimistic extras — a fresh login may not request them.
         setExtrasRequested([]);
-    }, [storage, storageKey, clearSessionState]);
+    }, [
+        storage,
+        storageKey,
+        grantedPermsStorageKey,
+        pendingPermsStorageKey,
+        clearSessionState,
+    ]);
 
     const stateValue = useMemo<AuthStateValue>(
         () => ({ apiKey, isLoggedIn: !!apiKey }),

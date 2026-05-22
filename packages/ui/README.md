@@ -50,11 +50,14 @@ export function App() {
 
 ## What's exported
 
-- **Auth-aware primitives** — `Balance`, `KeyPrefix`, `LoginButton`,
-  `LogoutButton`, `PermissionList`, `RequestPermissions`, `TopUpLink`,
-  `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`, `WhenLoggedOut`.
-  Each reads from the surrounding `<PolliProvider>` and renders `null` when
-  the required state is unavailable.
+- **Auth-aware primitives** — all read from the surrounding `<PolliProvider>`:
+  - **null when not in the required state:** `Balance`, `KeyPrefix`,
+    `LogoutButton`, `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn` —
+    these render only when a user is signed in (and, for the profile-bound
+    ones, after profile data has loaded).
+  - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
+  - **always render (read context but don't gate on auth):** `TopUpLink`,
+    `PermissionList`, `RequestPermissions`.
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
   `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`,
   `Tooltip`, `ChevronIcon`.

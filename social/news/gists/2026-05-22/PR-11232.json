@@ -1,0 +1,35 @@
+{
+  "pr_number": 11232,
+  "title": "chore: update app metrics 2026-05-22",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11232",
+  "merged_at": "2026-05-22T05:32:30Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bot just finished its daily rounds, updating health metrics and stats for all the community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics in the repository.",
+    "impact": "Ensures the community app directory and greenhouse metrics remain accurate and up-to-date for visitors.",
+    "keywords": [
+      "metrics",
+      "automation",
+      "greenhouse",
+      "apps",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener/inspector, checking on plants (apps) in a greenhouse, with a robot companion helping record metrics.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, holding a clipboard and checking on glowing code-plants in a digital greenhouse. A chunky robot with a CRT monitor head stands nearby, displaying a green checkmark on its screen. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-22/PR-11232.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, holding a clipboard and checking on glowing code-plants in a digital greenhouse. A chunky robot with a CRT monitor head stands nearby, displaying a green checkmark on its screen. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "generated_at": "2026-05-22T05:33:34.084775+00:00"
+}

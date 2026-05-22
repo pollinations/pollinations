@@ -5,8 +5,8 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
-import type { Env } from "@/env.ts";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+import type { Env } from "../env.ts";
 
 const BYOP_DOCS = BYOP_MD.trim();
 

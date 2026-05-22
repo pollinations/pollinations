@@ -11,10 +11,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { capitalize } from "@/util.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { capitalize } from "../util.ts";
+import { errorResponseDescriptions } from "../utils/api-docs.ts";
 
 const TierStatusSchema = z.object({
     target: z.literal(tierNames),

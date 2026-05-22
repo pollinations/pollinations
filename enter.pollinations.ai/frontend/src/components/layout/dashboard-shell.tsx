@@ -11,10 +11,12 @@ import {
 } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     dashboardThemeByPage,
+    type ThemeName,
 } from "./dashboard-theme.ts";
 import { User } from "./user.tsx";
 
@@ -45,7 +47,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
-    const mainScrollRef = useRef<HTMLElement>(null);
+    const mainScrollRef = useRef<HTMLDivElement>(null);
 
     useDashboardBodyClass();
     useScrollLock(isDrawerOpen);
@@ -104,6 +106,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const rail = (
         <DashboardRail
             activePage={activePage}
+            activeTheme={dashboardThemeByPage[activePage]}
             navItems={navItems}
             githubUsername={githubUsername}
             githubAvatarUrl={githubAvatarUrl}
@@ -172,7 +175,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         </div>
                         <BrandSocialChips />
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                         {rail}
                     </div>
                 </div>
@@ -185,14 +188,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
-                <main
+                <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-6 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pb-8 pt-6 md:px-6 md:pt-10"
                 >
-                    <div className="mx-auto flex max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
-                    </div>
-                </main>
+                    </main>
+                </ScrollArea>
             </div>
         </div>
     );
@@ -211,6 +214,7 @@ function useDashboardBodyClass(): void {
 
 type DashboardRailProps = {
     activePage: DashboardPage;
+    activeTheme: ThemeName;
     navItems: typeof DASHBOARD_NAV_ITEMS;
     githubUsername?: string;
     githubAvatarUrl?: string;
@@ -222,6 +226,7 @@ type DashboardRailProps = {
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
+    activeTheme,
     navItems,
     githubUsername,
     githubAvatarUrl,
@@ -232,60 +237,49 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => {
     return (
         <aside
-            className="flex h-full min-h-0 flex-col gap-1 px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
+            className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
+            <div className="hidden shrink-0 flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
                 <Brand imageClassName="h-6" />
                 <BrandSocialChips />
             </div>
-            <nav className="flex flex-col gap-1 pt-3">
-                {navItems.map((item) => (
-                    <NavButton
-                        key={item.id}
-                        item={item}
-                        active={activePage === item.id}
-                        onClick={() => onPageChange(item.id)}
-                    />
-                ))}
-                <div className="mt-2 border-t border-green-950/10 pt-3">
-                    <a
-                        href={genDocsUrl()}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                    >
-                        <span>API Reference</span>
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 shrink-0 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M7 17 17 7M9 7h8v8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                    </a>
-                </div>
-            </nav>
-            <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
-                {walletArea && <div className="px-1">{walletArea}</div>}
-                {accountArea ??
-                    (githubUsername && onSignOut ? (
-                        <User
-                            githubUsername={githubUsername}
-                            githubAvatarUrl={githubAvatarUrl ?? ""}
-                            onSignOut={onSignOut}
-                            className="w-full justify-start"
-                            menuItems={<AccountMenuLinks />}
+            <ScrollArea theme={activeTheme} className="min-h-0 flex-1 pt-3">
+                <nav className="flex flex-col gap-1">
+                    {navItems.map((item) => (
+                        <NavButton
+                            key={item.id}
+                            item={item}
+                            active={activePage === item.id}
+                            onClick={() => onPageChange(item.id)}
                         />
-                    ) : null)}
-                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
+                    ))}
+                    <div className="mt-2 border-t border-green-950/10 pt-3">
+                        <a
+                            href={genDocsUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+                        >
+                            <span>API Reference</span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                className="h-4 w-4 shrink-0 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M7 17 17 7M9 7h8v8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        </a>
+                    </div>
+                </nav>
+                <div className="mt-4 flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
                     <a
                         href="https://pollinations.ai/terms"
                         target="_blank"
@@ -311,9 +305,22 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         Refunds
                     </a>
                 </div>
-                <div className="px-3 text-xs leading-none text-green-950/45">
+                <div className="mt-2 px-3 pb-2 text-xs leading-none text-green-950/45">
                     © 2026 Myceli.AI
                 </div>
+            </ScrollArea>
+            <div className="shrink-0 flex flex-col gap-2 border-t border-green-950/10 pt-4">
+                {walletArea && <div className="px-1">{walletArea}</div>}
+                {accountArea ??
+                    (githubUsername && onSignOut ? (
+                        <User
+                            githubUsername={githubUsername}
+                            githubAvatarUrl={githubAvatarUrl ?? ""}
+                            onSignOut={onSignOut}
+                            className="w-full justify-start"
+                            menuItems={<AccountMenuLinks />}
+                        />
+                    ) : null)}
             </div>
         </aside>
     );

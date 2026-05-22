@@ -22,14 +22,8 @@ export type DashboardPage =
     | "keys"
     | "models";
 
-export type DashboardTheme =
-    | "amber"
-    | "blue"
-    | "gray"
-    | "green"
-    | "pink"
-    | "teal"
-    | "violet";
+/** Alias kept for backwards-compat at call sites; identical to ThemeName. */
+export type DashboardTheme = ThemeName;
 
 export const DASHBOARD_NAV_ITEMS: {
     id: DashboardPage;

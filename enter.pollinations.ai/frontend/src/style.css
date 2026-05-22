@@ -77,7 +77,7 @@
 
     --theme-bg-pale:    var(--color-amber-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-amber-600) l c h / 0.6);
 }
 
 [data-theme="blue"] {
@@ -93,7 +93,7 @@
 
     --theme-bg-pale:    var(--color-blue-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-blue-600) l c h / 0.6);
 }
 
 [data-theme="pink"] {
@@ -109,7 +109,7 @@
 
     --theme-bg-pale:    var(--color-pink-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-pink-600) l c h / 0.55);
 }
 
 [data-theme="teal"] {
@@ -125,7 +125,7 @@
 
     --theme-bg-pale:    var(--color-teal-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-teal-600) l c h / 0.6);
 }
 
 [data-theme="violet"] {
@@ -141,7 +141,7 @@
 
     --theme-bg-pale:    var(--color-violet-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-violet-600) l c h / 0.6);
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
@@ -160,7 +160,7 @@
 
     --theme-bg-pale:    var(--color-green-100);
 
-
+    --theme-scrollbar-thumb: oklch(from var(--color-green-600) l c h / 0.6);
 }
 
 /* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
@@ -274,38 +274,13 @@
         display: none;  /* Chrome, Safari and Opera */
     }
 
+    /* Themed auto-hide scrollbar.
+       Thumb color comes from --theme-scrollbar-thumb on the nearest
+       [data-theme="…"] ancestor — same cascade as bg-theme-*. The
+       <ScrollArea> primitive flips data-scrollbar-active on interaction. */
     .scrollbar-subtle {
-        --scrollbar-thumb-color: rgba(120, 113, 108, 0.65);
         scrollbar-width: thin;
         scrollbar-color: transparent transparent;
-    }
-
-    .scrollbar-theme-green {
-        --scrollbar-thumb-color: rgba(22, 163, 74, 0.6);
-    }
-
-    .scrollbar-theme-amber {
-        --scrollbar-thumb-color: rgba(217, 119, 6, 0.6);
-    }
-
-    .scrollbar-theme-blue {
-        --scrollbar-thumb-color: rgba(37, 99, 235, 0.6);
-    }
-
-    .scrollbar-theme-pink {
-        --scrollbar-thumb-color: rgba(219, 39, 119, 0.55);
-    }
-
-    .scrollbar-theme-violet {
-        --scrollbar-thumb-color: rgba(124, 58, 237, 0.6);
-    }
-
-    .scrollbar-theme-teal {
-        --scrollbar-thumb-color: rgba(13, 148, 136, 0.6);
-    }
-
-    .scrollbar-theme-gray {
-        --scrollbar-thumb-color: rgba(75, 85, 99, 0.6);
     }
 
     .scrollbar-subtle::-webkit-scrollbar {
@@ -326,11 +301,11 @@
     }
 
     .scrollbar-subtle[data-scrollbar-active="true"] {
-        scrollbar-color: var(--scrollbar-thumb-color) transparent;
+        scrollbar-color: var(--theme-scrollbar-thumb) transparent;
     }
 
     .scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
-        background-color: var(--scrollbar-thumb-color);
+        background-color: var(--theme-scrollbar-thumb);
     }
 
     .input-number-clean::-webkit-inner-spin-button,

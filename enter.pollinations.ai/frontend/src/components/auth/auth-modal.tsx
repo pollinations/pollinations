@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 
 type AuthModalProps = {
     children: ReactNode;
@@ -32,9 +33,9 @@ export function AuthModal({
             ? "border-intent-danger-border"
             : "border-theme-border";
     return (
-        <div
-            data-theme="amber"
-            className="fixed inset-0 flex items-start justify-center overflow-y-auto bg-theme-bg-pale p-4"
+        <ScrollArea
+            theme="amber"
+            className="fixed inset-0 flex items-start justify-center bg-theme-bg-pale p-4"
         >
             <div
                 className={`bg-surface-white border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
@@ -42,7 +43,7 @@ export function AuthModal({
             >
                 {children}
             </div>
-        </div>
+        </ScrollArea>
     );
 }
 

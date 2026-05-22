@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const apiProxyTarget = process.env.VITE_API_BASE_URL || "http://localhost:3001";
+const apiProxyTarget = "http://localhost:3001";
 
 export default defineConfig({
     root: here,

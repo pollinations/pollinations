@@ -4,7 +4,7 @@ function stripTrailingSlash(url: string): string {
     return url.replace(/\/+$/, "");
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL
     ? stripTrailingSlash(import.meta.env.VITE_API_BASE_URL)
     : undefined;
 
@@ -15,21 +15,24 @@ const developmentBaseUrl =
 
 const environmentConfig = {
     development: {
-        baseUrl: apiBaseUrl ?? developmentBaseUrl,
+        baseUrl: developmentBaseUrl,
+        apiBaseUrl: configuredApiBaseUrl ?? "/api",
         genBaseUrl: "http://localhost:8788",
         authPath: "/api/auth",
         pollenTierMeterId: "1593243f-f646-4df2-9f55-30da37cbc3a0",
         pollenPackMeterId: "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
     },
     staging: {
-        baseUrl: apiBaseUrl ?? PUBLIC_URLS.enter.staging,
+        baseUrl: PUBLIC_URLS.enter.staging,
+        apiBaseUrl: configuredApiBaseUrl ?? "/api",
         genBaseUrl: PUBLIC_URLS.gen.staging,
         authPath: "/api/auth",
         pollenTierMeterId: "1593243f-f646-4df2-9f55-30da37cbc3a0",
         pollenPackMeterId: "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
     },
     production: {
-        baseUrl: apiBaseUrl ?? PUBLIC_URLS.enter.production,
+        baseUrl: PUBLIC_URLS.enter.production,
+        apiBaseUrl: configuredApiBaseUrl ?? "/api",
         genBaseUrl: PUBLIC_URLS.gen.production,
         authPath: "/api/auth",
         pollenTierMeterId: "b7f3e925-d6c8-4bc8-b40a-291f2793512e",

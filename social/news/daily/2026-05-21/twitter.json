@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-21",
+  "period_start": "2026-05-21",
+  "period_end": "2026-05-21",
+  "generated_at": "2026-05-22T07:08:59.727647+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-21/images/twitter.jpg"
+    }
+  ],
+  "text": "gemini search is now half the price (reset to base vertex rates). github oauth login is back online. also wired the mcp docs into the main api reference. just a solid day of untangling infrastructure."
+}

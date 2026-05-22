@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { ChevronIcon } from "./chevron-icon.tsx";
+import { ChevronIcon } from "./ChevronIcon.tsx";
 
 type DisclosureProps = {
     /** Header content (label, hint, etc). */

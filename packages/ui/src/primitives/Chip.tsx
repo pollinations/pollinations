@@ -31,7 +31,7 @@ const intentClasses: Record<ChipIntent, string> = {
 type ChipProps = ComponentPropsWithoutRef<"span"> & {
     /** Override the cascade theme for this chip's subtree. */
     theme?: ThemeName;
-    /** Semantic intent — paid or alpha. Wins over `theme` when set. */
+    /** Semantic intent. Wins over `theme` when set. */
     intent?: ChipIntent;
     size?: keyof typeof chipSizes;
 };

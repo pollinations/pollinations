@@ -1,21 +1,16 @@
-// Helpers
+export * from "./auth/index.ts";
 export { cn } from "./lib/cn.ts";
 export { formatPollen } from "./lib/format-pollen.ts";
-// Auth-aware primitives
-export * from "./primitives/index.ts";
-// Theme
+export { Button, type ButtonProps } from "./primitives/Button.tsx";
+export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
+export { Chip } from "./primitives/Chip.tsx";
+export { Disclosure } from "./primitives/Disclosure.tsx";
+export { IconButton } from "./primitives/IconButton.tsx";
+export { InfoTip } from "./primitives/InfoTip.tsx";
+export { Input } from "./primitives/Input.tsx";
+export { LinkButton } from "./primitives/LinkButton.tsx";
+export { Surface } from "./primitives/Surface.tsx";
+export { Switch, type SwitchStatus } from "./primitives/Switch.tsx";
+export { TabButton } from "./primitives/TabButton.tsx";
+export { Tooltip } from "./primitives/Tooltip.tsx";
 export { type ThemeName, themes } from "./theme.ts";
-
-// Design primitives
-export { Button, type ButtonProps } from "./ui/button.tsx";
-export { ChevronIcon } from "./ui/chevron-icon.tsx";
-export { Chip } from "./ui/chip.tsx";
-export { Disclosure } from "./ui/disclosure.tsx";
-export { IconButton } from "./ui/icon-button.tsx";
-export { InfoTip } from "./ui/info-tip.tsx";
-export { Input } from "./ui/input.tsx";
-export { LinkButton } from "./ui/link-button.tsx";
-export { Surface } from "./ui/surface.tsx";
-export { Switch, type SwitchStatus } from "./ui/switch.tsx";
-export { TabButton } from "./ui/tab-button.tsx";
-export { Tooltip } from "./ui/tooltip.tsx";

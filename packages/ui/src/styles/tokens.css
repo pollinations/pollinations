@@ -8,9 +8,7 @@
     --text-micro: 10px;
     --text-base: 16px;
 
-    /* ─── Layer 1: hue ramp constants (library-internal) ─────────
-       Paid + Tier identity colors used by Chip and tier badges.
-       NOT part of the public token contract. */
+    /* Paid + Tier identity colors used by Chip's `paid`/`tier` intents. */
     --color-paid-pale: oklch(0.93 0.09 95.746);
     --color-paid-soft: oklch(0.85 0.16 95.746);
     --color-paid-deep: #78350f;
@@ -19,14 +17,9 @@
     --color-tier-deep: #7C3F1E;
 }
 
-/* ─── Layer 2: per-theme cascade (public `--polli-color-*` tokens)
-   These variables ARE part of the public contract. Consumers may
-   reference them in their own CSS, e.g.
+/* ─── Per-theme cascade (public `--polli-color-*` tokens) ────────
+   Consumers may reference these in their own CSS:
        color: var(--polli-color-text-base).
-   The `--polli-color-` prefix sits outside Tailwind's prefixed
-   namespace (`--polli-text-*` for sizes, `--polli-font-*` for
-   families) — important: a public token named `--polli-text-base`
-   would collide with Tailwind's font-size utility and break it.
    Renames between minor versions count as breaking. */
 [data-theme="amber"] {
     --polli-color-text-base:    oklch(0.414 0.112 45.904);
@@ -99,7 +92,7 @@
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
-   (sign-in, authorize, device, terms, etc.) resolve --polli-color-* vars. */
+   resolve --polli-color-* vars. */
 :root,
 [data-theme="green"] {
     --polli-color-text-base:    oklch(0.393 0.095 152.535);
@@ -115,18 +108,14 @@
     --polli-color-bg-pale:      oklch(0.962 0.044 156.743);
 }
 
-/* ─── Layer 2b: intent tokens (semantic, theme-independent) ─────
-   Also part of the public contract. */
+/* Intent tokens (semantic, theme-independent). Public. */
 :root {
     --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
     --polli-color-danger-border:    oklch(0.78 0.115 25);
 }
 
-/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ───────
-   Maps Tailwind utility token names (library-internal) to the
-   public `--polli-color-*` source variables. Utility names stay
-   stable for primitives; rename safety lives in the source vars. */
+/* Tailwind utility surface — internal. */
 @theme inline {
     --color-theme-text-base:         var(--polli-color-text-base);
     --color-theme-text-strong:       var(--polli-color-text-strong);

@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from "react";
-import { Tooltip } from "./tooltip.tsx";
+import { Tooltip } from "./Tooltip.tsx";
 
 type InfoTipProps = {
     text?: ReactNode;
@@ -14,9 +14,6 @@ type InfoTipProps = {
  * `bg-theme-bg-active`; popup uses the universal recipe via `<Tooltip>`
  * (`bg-theme-bg-pale` + `border-theme-border` + `text-theme-text-strong`,
  * viewport-clamped). Cursor on the badge is `cursor-help`.
- *
- * Wrapping `<Tooltip>` keeps positioning + clamping logic in one place
- * — InfoTip only owns the badge styling.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,

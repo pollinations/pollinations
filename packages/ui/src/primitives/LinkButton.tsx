@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
-import { Button } from "./button.tsx";
+import { Button } from "./Button.tsx";
 
 type LinkButtonProps = {
     theme: ThemeName;

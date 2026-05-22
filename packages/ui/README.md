@@ -15,16 +15,24 @@ npm install @pollinations_ai/sdk @pollinations_ai/ui
 ```tsx
 import "@pollinations_ai/ui/styles.css";
 import { PolliProvider } from "@pollinations_ai/sdk/react";
+import { useKeyUsage } from "@pollinations_ai/sdk/react";
 import {
-    Balance,
+    KeyBudget,
+    KeyExpiry,
+    KeyModels,
+    KeyPrefix,
     LoginButton,
     LogoutButton,
-    TopUpLink,
     UserAvatar,
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
 } from "@pollinations_ai/ui";
+
+function RecentRequests() {
+    const { usage } = useKeyUsage({ days: 7, limit: 5 });
+    return <span>{usage?.usage.length ?? 0} recent requests</span>;
+}
 
 export function App() {
     return (
@@ -38,8 +46,11 @@ export function App() {
                 <WhenLoggedIn>
                     <UserAvatar size="md" />
                     <UserName />
-                    <Balance />
-                    <TopUpLink theme="amber">Top up</TopUpLink>
+                    <KeyPrefix />
+                    <KeyBudget />
+                    <KeyExpiry />
+                    <KeyModels />
+                    <RecentRequests />
                     <LogoutButton theme="amber">Log out</LogoutButton>
                 </WhenLoggedIn>
             </div>
@@ -51,18 +62,22 @@ export function App() {
 ## What's exported
 
 - **Auth-aware primitives** — all read from the surrounding `<PolliProvider>`:
-  - **null when not in the required state:** `Balance`, `KeyPrefix`,
-    `LogoutButton`, `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn` —
-    these render only when a user is signed in (and, for the profile-bound
-    ones, after profile data has loaded).
+  - **null when not logged in (or before data loads):** `Balance`,
+    `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`, `LogoutButton`,
+    `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
   - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
-  - **always render (read context but don't gate on auth):** `TopUpLink`,
-    `PermissionList`, `RequestPermissions`.
+
+  These are intentionally bare wrappers around `useAuth*` hooks. They render
+  the data and nothing else — no default copy, no default theme, no default
+  intent. The app composes layout, copy, and color.
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
   `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`,
   `Tooltip`, `ChevronIcon`.
 - **Helpers** — `cn`, `formatPollen`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
+
+For per-request usage data and other dynamic queries, call the hooks from
+`@pollinations_ai/sdk/react` (`useKeyUsage`, `useAuthKey`, etc.) directly.
 
 ## Theming
 

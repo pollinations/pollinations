@@ -12,6 +12,7 @@ import { Disclosure } from "../ui/disclosure.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
@@ -39,9 +40,9 @@ export const DesignShowcase: FC = () => {
     }, []);
 
     return (
-        <div
-            data-theme={themeOverride}
-            className="h-dvh overflow-y-auto bg-theme-bg-subtle text-theme-text-base"
+        <ScrollArea
+            theme={themeOverride}
+            className="h-dvh bg-theme-bg-subtle text-theme-text-base"
         >
             <Header
                 themeOverride={themeOverride}
@@ -53,6 +54,7 @@ export const DesignShowcase: FC = () => {
                 <ButtonsDemo />
                 <SwitchesDemo />
                 <SurfacesDemo />
+                <ScrollAreaDemo />
                 <TabsDemo />
                 <DisclosureDemo />
                 <InputsDemo />
@@ -61,7 +63,7 @@ export const DesignShowcase: FC = () => {
                 <MultiSelectDemo theme={themeOverride} />
                 <ChartDemo />
             </div>
-        </div>
+        </ScrollArea>
     );
 };
 
@@ -589,6 +591,56 @@ const SurfacesDemo: FC = () => (
                         drawer dot · chart bar
                     </span>
                 </div>
+            </div>
+        </div>
+    </Section>
+);
+
+// ─── ScrollArea ─────────────────────────────────────────────
+
+const ScrollAreaDemo: FC = () => (
+    <Section
+        title="ScrollArea"
+        caption="Themed auto-hide scrollbar. Thumb color is inherited from the nearest data-theme ancestor — same cascade as bg-theme-*. At rest the thumb is invisible; it fades in on scroll / pointer / keyboard interaction, then fades back out after ~2s of idle. Used for the dashboard rail nav, main content, dialogs, the auth modal, and dropdowns. Pass `theme` to override locally, or `axis` for horizontal."
+    >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
+                <p className="mb-2 text-xs font-mono uppercase tracking-wide text-theme-text-soft/70">
+                    axis=&quot;y&quot; · inherits ambient theme
+                </p>
+                <ScrollArea className="h-48 rounded-lg bg-surface-white p-3">
+                    {Array.from({ length: 30 }, (_, i) => (
+                        <p
+                            // biome-ignore lint/suspicious/noArrayIndexKey: static demo content
+                            key={i}
+                            className="py-1 text-sm text-theme-text-base"
+                        >
+                            Row {i + 1} — scroll to reveal the themed thumb.
+                        </p>
+                    ))}
+                </ScrollArea>
+            </div>
+            <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
+                <p className="mb-2 text-xs font-mono uppercase tracking-wide text-theme-text-soft/70">
+                    axis=&quot;x&quot; · theme=&quot;violet&quot; override
+                </p>
+                <ScrollArea
+                    axis="x"
+                    theme="violet"
+                    className="rounded-lg bg-surface-white p-3"
+                >
+                    <div className="flex gap-2 whitespace-nowrap">
+                        {Array.from({ length: 24 }, (_, i) => (
+                            <span
+                                // biome-ignore lint/suspicious/noArrayIndexKey: static demo content
+                                key={i}
+                                className="rounded-full bg-theme-bg-pale px-3 py-1 text-sm text-theme-text-strong"
+                            >
+                                chip {i + 1}
+                            </span>
+                        ))}
+                    </div>
+                </ScrollArea>
             </div>
         </div>
     </Section>

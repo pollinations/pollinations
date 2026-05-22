@@ -1,8 +1,8 @@
 import { cn } from "@frontend/lib/cn.ts";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];
@@ -31,7 +31,6 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
-    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(open);
     const isAllSelected = selected.length === 0;
 
     const calculatePosition = () => {
@@ -175,13 +174,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     )}
                     style={dropdownStyle}
                 >
-                    <div
-                        ref={scrollAreaRef}
-                        className={cn(
-                            "max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle",
-                            `scrollbar-theme-${theme}`,
-                        )}
-                    >
+                    <ScrollArea theme={theme} className="max-h-64">
                         <button
                             type="button"
                             onClick={selectAll}
@@ -232,7 +225,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 </button>
                             );
                         })}
-                    </div>
+                    </ScrollArea>
                 </div>
             )}
         </div>

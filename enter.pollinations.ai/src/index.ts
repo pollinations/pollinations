@@ -9,6 +9,7 @@ import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { runTierRefill } from "./services/tier-refill.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -92,7 +93,6 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        const { runTierRefill } = await import("./routes/admin.ts");
         await runTierRefill(env, ctx);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-21",
+  "period_start": "2026-05-21",
+  "period_end": "2026-05-21",
+  "title": "Gemini Search is now half the price",
+  "summary": "A solid day of tuning: Gemini Search gets a 50% price cut, GitHub logins are fixed, and MCP docs are now in the main API reference.\n\nWe removed the token markup on `gemini-search`, dropping text input to $0.15/M and completions to $0.60/M. We are absorbing the underlying grounding fees so you get base flash-lite rates.\n\nRestored the correct production credentials for GitHub OAuth. The redirect URI mismatch is gone, and logging into enter.pollinations.ai actually works again.\n\nWired the MCP server documentation directly into the main gen.pollinations.ai/docs endpoint and Scalar UI. Also cleaned up the README and fixed the local test script.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11201,
+      "date": "2026-05-21"
+    },
+    {
+      "number": 11226,
+      "date": "2026-05-21"
+    },
+    {
+      "number": 11228,
+      "date": "2026-05-21"
+    }
+  ],
+  "generated_at": "2026-05-22T07:08:59.727647+00:00"
+}

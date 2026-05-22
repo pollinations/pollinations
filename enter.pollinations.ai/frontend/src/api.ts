@@ -1,5 +1,8 @@
 import { hc } from "hono/client";
 import type { ApiRoutes } from "./backend-types.ts";
+import { config } from "./config.ts";
 
-export const apiClient = hc<ApiRoutes>("/api");
+export const apiClient = hc<ApiRoutes>(`${config.baseUrl}/api`, {
+    init: { credentials: "include" },
+});
 export type ApiClient = typeof apiClient;

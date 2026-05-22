@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { ALL_MODELS, type ModelModality } from "./constants";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
@@ -45,15 +46,20 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
-        const params = new URLSearchParams({
+        const query: {
+            granularity: string;
+            period: string;
+            api_key_ids?: string;
+        } = {
             granularity: filters.period.granularity,
             period: filters.period.period,
-        });
+        };
         if (filters.selectedKeyIds.length > 0) {
-            params.set("api_key_ids", filters.selectedKeyIds.join(","));
+            query.api_key_ids = filters.selectedKeyIds.join(",");
         }
 
-        fetch(`/api/account/usage/daily?${params.toString()}`)
+        apiClient.account.usage.daily
+            .$get({ query })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);

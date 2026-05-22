@@ -4,14 +4,12 @@
  * to avoid duplicate caching and Tinybird calls
  */
 
-import { Hono } from "hono";
 import { getLogger } from "@logtape/logtape";
+import { Hono } from "hono";
 import type { Env } from "../env.ts";
 import { getModelStats } from "../utils/model-stats.ts";
 
-export const modelStatsRoutes = new Hono<Env>();
-
-modelStatsRoutes.get("/", async (c) => {
+export const modelStatsRoutes = new Hono<Env>().get("/", async (c) => {
     const log = getLogger(["enter", "model-stats"]);
 
     // Returns raw Tinybird format: { data: [{ model, avg_cost_usd, request_count }] }

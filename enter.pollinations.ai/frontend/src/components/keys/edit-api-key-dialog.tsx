@@ -1,5 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
+import { apiClient } from "@frontend/api.ts";
 import { cn } from "@frontend/lib/cn.ts";
 import type { FC } from "react";
 import { useState } from "react";
@@ -122,15 +123,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     redirectUris: cleaned,
                     earningsEnabled,
                 };
-                const metaRes = await fetch(
-                    `/api/api-keys/${apiKey.id}/metadata`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify(metadataBody),
-                    },
-                );
+                const metaRes = await apiClient["api-keys"][
+                    ":id"
+                ].metadata.$post({
+                    param: { id: apiKey.id },
+                    json: metadataBody,
+                });
                 if (!metaRes.ok) {
                     const err = await metaRes.json().catch(() => null);
                     throw new Error(

@@ -1,3 +1,4 @@
+import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
@@ -70,21 +71,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             "http://127.0.0.1:3000",
         ],
         user: {
-            additionalFields: {
-                githubId: {
-                    type: "number",
-                    input: false,
-                },
-                githubUsername: {
-                    type: "string",
-                    input: false,
-                },
-                tier: {
-                    type: "string",
-                    defaultValue: "spore",
-                    input: false,
-                },
-            },
+            additionalFields: authAdditionalFields.user,
         },
         socialProviders: {
             github: {

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { apiClient } from "../../api.ts";
 
 export type ModelStats = Record<
     string,
@@ -14,7 +15,8 @@ type TinybirdResponse = {
     data?: Array<{
         model: string;
         avg_cost_usd: number;
-        request_count: number;
+        request_count?: number;
+        priced_success_count?: number;
     }>;
 };
 
@@ -32,7 +34,7 @@ export function useModelStats(): {
 
         async function fetchStats() {
             try {
-                const response = await fetch("/api/model-stats");
+                const response = await apiClient["model-stats"].$get();
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
@@ -45,7 +47,8 @@ export function useModelStats(): {
                 for (const row of data.data || []) {
                     statsMap[row.model] = {
                         avgCost: row.avg_cost_usd,
-                        requestCount: row.request_count,
+                        requestCount:
+                            row.request_count ?? row.priced_success_count ?? 0,
                     };
                 }
 

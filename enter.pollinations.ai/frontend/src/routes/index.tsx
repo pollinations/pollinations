@@ -255,11 +255,16 @@ function RouteComponent() {
             expiresAt?: Date | null;
         },
     ): Promise<void> {
-        const response = await fetch(`/api/api-keys/${id}/update`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(updates),
+        const json = {
+            ...updates,
+            expiresAt:
+                updates.expiresAt instanceof Date
+                    ? updates.expiresAt.toISOString()
+                    : updates.expiresAt,
+        };
+        const response = await apiClient["api-keys"][":id"].update.$post({
+            param: { id },
+            json,
         });
         if (!response.ok) {
             const error = await response.json();

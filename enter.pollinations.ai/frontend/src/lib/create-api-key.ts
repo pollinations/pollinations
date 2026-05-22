@@ -1,3 +1,5 @@
+import { apiClient } from "../api.ts";
+
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
 export function expiryDaysToExpiresIn(
@@ -39,9 +41,11 @@ export async function createKeyWithPermissions({
     permissions,
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
+    const keyType: "publishable" | "secret" =
+        prefix === "pk" ? "publishable" : "secret";
     const body = {
         name,
-        type: prefix === "pk" ? "publishable" : "secret",
+        type: keyType,
         expiresIn,
         metadata,
         allowedModels: permissions?.allowedModels,
@@ -49,11 +53,8 @@ export async function createKeyWithPermissions({
         accountPermissions: permissions?.accountPermissions,
     };
 
-    const response = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
+    const response = await apiClient["api-keys"].$post({
+        json: body,
     });
 
     if (!response.ok) {

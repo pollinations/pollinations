@@ -1,19 +1,16 @@
+import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import { redirect } from "@tanstack/react-router";
 import {
     apiKeyClient,
     inferAdditionalFields,
 } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
-import type { createAuth } from "./backend-types.ts";
 import { config } from "./config.ts";
 
 export const authClient = createAuthClient({
     baseURL: config.baseUrl,
     basePath: config.authPath,
-    plugins: [
-        apiKeyClient(),
-        inferAdditionalFields<ReturnType<typeof createAuth>>(),
-    ],
+    plugins: [apiKeyClient(), inferAdditionalFields(authAdditionalFields)],
 });
 export type AuthClient = typeof authClient;
 export type ClientSession = AuthClient["$Infer"]["Session"];

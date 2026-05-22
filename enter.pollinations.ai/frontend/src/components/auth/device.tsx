@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
-import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { Button } from "../ui/button.tsx";
 import {
@@ -33,10 +33,9 @@ export function Device({ prefilledCode }: DeviceProps) {
             setError(null);
             setChecking(true);
             try {
-                const res = await fetch(
-                    `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(code)}`,
-                    { credentials: "include" },
-                );
+                const res = await apiClient.device.info.$get({
+                    query: { user_code: code },
+                });
                 if (!res.ok) {
                     const data = (await res.json().catch(() => null)) as {
                         error_description?: string;

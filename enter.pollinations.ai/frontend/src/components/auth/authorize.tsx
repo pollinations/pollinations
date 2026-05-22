@@ -43,6 +43,10 @@ type Attribution = {
     earningsEnabled?: boolean;
 };
 
+async function readAttribution(response: Response): Promise<Attribution> {
+    return (await response.json()) as Attribution;
+}
+
 function safeParseUrl(url: string): URL | null {
     try {
         return new URL(url);
@@ -123,10 +127,8 @@ export function Authorize() {
             // Advanced toggles. Fallback for direct-link device URLs that
             // skipped /device: fetch scope from the server and apply it.
             if (!urlScope?.length) {
-                fetch(
-                    `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(user_code)}`,
-                    { credentials: "include" },
-                )
+                apiClient.device.info
+                    .$get({ query: { user_code } })
                     .then((r) => {
                         if (!r.ok) throw new Error("Invalid device code");
                         return r.json() as Promise<{
@@ -150,8 +152,9 @@ export function Authorize() {
             }
             // Fetch app attribution if device flow has an app_key
             if (app_key) {
-                fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
-                    .then((r) => r.json())
+                apiClient["app-lookup"]
+                    .$get({ query: { app_key } })
+                    .then(readAttribution)
                     .then((data) => {
                         const attr = data as Attribution;
                         setAttribution(attr);
@@ -184,12 +187,16 @@ export function Authorize() {
                 return;
             }
 
-            const lookupParams = new URLSearchParams({ client_id: app_key });
+            const lookupQuery: {
+                client_id: string;
+                redirect_uri?: string;
+            } = { client_id: app_key };
             if (!isDeviceMode && redirect_url) {
-                lookupParams.set("redirect_uri", redirect_url);
+                lookupQuery.redirect_uri = redirect_url;
             }
-            fetch(`/api/app-lookup?${lookupParams.toString()}`)
-                .then((r) => r.json())
+            apiClient["app-lookup"]
+                .$get({ query: lookupQuery })
+                .then(readAttribution)
                 .then((data) => {
                     const attr = data as Attribution;
                     setAttribution(attr);
@@ -276,20 +283,14 @@ export function Authorize() {
             });
 
             if (isDeviceMode) {
-                const res = await fetch(
-                    `${config.baseUrl}/api/device/approve`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            userCode: user_code,
-                            apiKey: key,
-                            apiKeyId: id,
-                            expiresIn,
-                        }),
+                const res = await apiClient.device.approve.$post({
+                    json: {
+                        userCode: user_code,
+                        apiKey: key,
+                        apiKeyId: id,
+                        expiresIn,
                     },
-                );
+                });
                 if (!res.ok) {
                     const data = await res.json().catch(() => null);
                     throw new Error(
@@ -317,13 +318,10 @@ export function Authorize() {
     async function handleDeny(): Promise<void> {
         if (isDeviceMode) {
             try {
-                await fetch(`${config.baseUrl}/api/device/deny`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
+                await apiClient.device.deny.$post({
+                    json: {
                         userCode: user_code.toUpperCase(),
-                    }),
+                    },
                 });
             } catch {
                 // Best-effort deny

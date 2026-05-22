@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
@@ -74,17 +75,20 @@ export function useEarningsData(
         setPerApp([]);
         setGlobalSummary(null);
 
-        const params = new URLSearchParams({
+        const query: {
+            granularity: string;
+            period: string;
+            api_key_ids?: string;
+        } = {
             granularity,
             period,
-        });
+        };
         if (selectedAppKeyIdsKey) {
-            params.set("api_key_ids", selectedAppKeyIdsKey);
+            query.api_key_ids = selectedAppKeyIdsKey;
         }
 
-        fetch(`/api/account/earnings?${params.toString()}`, {
-            signal: controller.signal,
-        })
+        apiClient.account.earnings
+            .$get({ query }, { init: { signal: controller.signal } })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(

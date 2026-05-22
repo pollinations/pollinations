@@ -1,0 +1,34 @@
+{
+  "pr_number": 11237,
+  "title": "fix(enter): repair four pre-existing test failures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11237",
+  "merged_at": "2026-05-22T15:23:32Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Preserve query string in `/api/docs` -> `/docs` redirect (was dropping `?format=json` after #11130)\n- Compute future period dynamically in `account-usage` bounds test (hardcoded `2026-05-01` is now in the past)\n- Regenerate `effective-prices` snapshot for the gemini-search rate reset in #11226\n- Remove obsolete `aliases` cost-collision test (data eliminated by #11226; `resolveModelName` tests still cover the invariant)\n\nAll 196 tests in the four affected files pass.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the test suite",
+    "blurb": "Cleaned up a few dusty corners in the test suite and fixed a minor redirect bug for the API docs. The CI pipeline is happy again.",
+    "summary": "Repaired four test failures in the enter gateway by fixing query string preservation in the /api/docs redirect, updating hardcoded dates, and regenerating snapshots.",
+    "impact": "The test suite is fully green again, and API users will correctly keep their query parameters when redirected to the docs.",
+    "keywords": [
+      "tests",
+      "ci",
+      "bugfix",
+      "enter"
+    ],
+    "visual_concept": "The bee mascot acting as a caretaker/janitor for the codebase, sweeping up broken code or red test failures. A retro monitor displaying green passing tests.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny paper hat, sweeping up broken red pixel fragments with a small broom. A retro computer monitor in the background glows with a bright green 'PASS' screen. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-22/PR-11237.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny paper hat, sweeping up broken red pixel fragments with a small broom. A retro computer monitor in the background glows with a bright green 'PASS' screen. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "generated_at": "2026-05-22T15:24:31.198663+00:00"
+}

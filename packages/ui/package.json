@@ -28,6 +28,8 @@
     "build:sdk": "npm run build --prefix ../sdk",
     "prebuild": "npm run build:sdk",
     "prepublishOnly": "npm run build",
+    "pretest": "npm run build:sdk",
+    "pretest:watch": "npm run build:sdk",
     "pretypecheck": "npm run build:sdk",
     "test": "vitest run",
     "test:watch": "vitest",

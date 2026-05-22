@@ -89,12 +89,34 @@ export function PolliProvider({
     const storageKey = `polli:${appKey}:token`;
     const stateStorageKey = `polli:${appKey}:oauth_state`;
 
-    const resolvedPermissions = useMemo<readonly string[]>(
+    const initialPermissions = useMemo<readonly string[]>(
         () =>
             permissions && permissions.length > 0
                 ? permissions
                 : DEFAULT_PERMISSIONS,
         [permissions],
+    );
+
+    // Extra scopes requested via `login(extras)` beyond `initialPermissions`.
+    // Tracked here so a subsequent re-render (after the OAuth redirect roundtrip)
+    // reflects them in `actionsValue.permissions` — without this, RequestPermissions
+    // would keep reporting freshly granted scopes as missing forever.
+    //
+    // This is optimistic: it records what was *requested*, not what the server
+    // confirmed was granted. If a user denies a scope on the consent screen, the
+    // local view will still treat it as granted until full token introspection
+    // lands. Acceptable for v1.
+    const [extrasRequested, setExtrasRequested] = useState<readonly string[]>(
+        [],
+    );
+    const resolvedPermissions = useMemo<readonly string[]>(
+        () =>
+            extrasRequested.length === 0
+                ? initialPermissions
+                : Array.from(
+                      new Set([...initialPermissions, ...extrasRequested]),
+                  ),
+        [initialPermissions, extrasRequested],
     );
 
     // SSR-safe: start null so server + client first paint agree.
@@ -268,6 +290,11 @@ export function PolliProvider({
                           ]),
                       )
                     : resolvedPermissions;
+            if (extraPermissions && extraPermissions.length > 0) {
+                setExtrasRequested((prev) =>
+                    Array.from(new Set([...prev, ...extraPermissions])),
+                );
+            }
             const state = crypto.randomUUID();
             storage.setItem(stateStorageKey, state);
             window.location.href = buildAuthUrl(
@@ -285,6 +312,8 @@ export function PolliProvider({
         storage.removeItem(storageKey);
         clearSessionState();
         setApiKey(null);
+        // Reset optimistic extras — a fresh login may not request them.
+        setExtrasRequested([]);
     }, [storage, storageKey, clearSessionState]);
 
     const stateValue = useMemo<AuthStateValue>(

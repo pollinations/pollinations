@@ -15,8 +15,13 @@ export type RequestPermissionsProps = {
 };
 
 /**
- * Render-prop primitive for asking for extra OAuth scopes. v1 compares against
- * the provider's `permissions` prop (no token introspection yet).
+ * Render-prop primitive for asking for extra OAuth scopes. `missing` is
+ * computed against the union of (a) the provider's initial `permissions`
+ * prop and (b) any extras that have been requested via `login(extras)` so far
+ * — i.e. the optimistic "what this client has asked for" set, not what the
+ * server confirmed was granted. After `request()` redirects back, the next
+ * render reflects the requested extras in `missing` immediately. If the user
+ * denies a scope, this will under-report until full token introspection lands.
  */
 export function RequestPermissions({
     permissions,

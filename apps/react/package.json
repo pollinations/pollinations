@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "npm run build --prefix ../../packages/ui",
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../packages/ui",
     "preview": "vite preview",

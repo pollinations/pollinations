@@ -495,11 +495,13 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1.5,
+        // Vertex base rates for gemini-2.5-flash-lite. Grounding fee ($0.035/grounded
+        // prompt after 1,500 RPD free) is not yet modeled; absorbed by Pollinations.
         cost: {
-            promptTextTokens: perMillion(0.2), // per 1M tokens
-            promptCachedTokens: perMillion(0.02), // per 1M tokens
-            promptAudioTokens: perMillion(0.2), // per 1M tokens (audio billed at same rate as text)
-            completionTextTokens: perMillion(0.8), // per 1M tokens
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptAudioTokens: perMillion(0.3),
+            completionTextTokens: perMillion(0.4),
         },
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",

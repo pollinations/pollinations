@@ -3,21 +3,22 @@ import {
     useCallback,
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from "react";
 import { AUTH_BASE_URL, Pollinations } from "../client.js";
-import { PollinationsError } from "../types.js";
 import {
     AuthActionsContext,
     type AuthActionsValue,
+    AuthClientContext,
+    AuthKeyContext,
+    type AuthKeyValue,
     AuthProfileContext,
     type AuthProfileValue,
     AuthStateContext,
     type AuthStateValue,
-    type UserBalance,
-    type UserProfile,
 } from "./contexts.js";
+import { useResource } from "./hooks.js";
+import { consumeOAuthCallback } from "./oauth.js";
 import {
     resolveStorage,
     type StorageAdapter,
@@ -27,50 +28,26 @@ import {
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = AUTH_BASE_URL;
-export const DEFAULT_API_BASE_URL = `${AUTH_BASE_URL}/api`;
 export const DEFAULT_PERMISSIONS: readonly string[] = ["profile", "usage"];
 
 export interface PolliProviderProps {
-    /**
-     * Publishable key (`pk_...`): the app identifier, not a user's API key.
-     */
+    /** Publishable key (`pk_...`): the app identifier, not a user's API key. */
     appKey: string;
     children: ReactNode;
     /**
      * Where to persist the user's session token. Defaults to `"localStorage"`.
      * Accepts `"sessionStorage"` or a custom synchronous `StorageAdapter`
      * (e.g. cookie-backed or in-memory). Async backends like IndexedDB or
-     * React Native AsyncStorage are not currently supported — the interface
-     * is sync because hydration runs in a `useEffect` and React Native
-     * support isn't a stated target of this SDK.
+     * React Native AsyncStorage are not supported — the interface is sync
+     * because hydration runs in a `useEffect`.
      */
     storage?: StorageOption;
     /** OAuth scopes to request at login. Defaults to `["profile", "usage"]`. */
     permissions?: string[];
     /** Auth host. Defaults to `https://enter.pollinations.ai`. */
     enterUrl?: string;
-    /** Account API host. Defaults to `https://enter.pollinations.ai/api`. */
+    /** Account API host. Derived from `enterUrl + "/api"` unless explicitly set. */
     apiBaseUrl?: string;
-}
-
-function readStringArray(
-    storage: StorageAdapter,
-    key: string,
-): readonly string[] | null {
-    const raw = storage.getItem(key);
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        if (
-            Array.isArray(parsed) &&
-            parsed.every((p) => typeof p === "string")
-        ) {
-            return parsed;
-        }
-    } catch {
-        // Fall through.
-    }
-    return null;
 }
 
 function buildAuthUrl(
@@ -81,9 +58,9 @@ function buildAuthUrl(
     state: string,
 ): string {
     const params = new URLSearchParams({
-        redirect_url: redirectUrl,
-        app_key: appKey,
-        permissions: permissions.join(","),
+        redirect_uri: redirectUrl,
+        client_id: appKey,
+        scope: permissions.join(" "),
         state,
     });
     return `${enterUrl}/authorize?${params.toString()}`;
@@ -91,8 +68,8 @@ function buildAuthUrl(
 
 /**
  * Provides Pollinations auth state to descendants. Wrap your app once at the
- * root. Holds the user's API key, fetches profile + balance, and exposes hooks
- * for login / logout / consuming state.
+ * root. Holds the user's API key, fetches profile + balance + key info, and
+ * exposes hooks for login / logout / consuming state.
  */
 export function PolliProvider({
     appKey,
@@ -100,21 +77,15 @@ export function PolliProvider({
     storage: storageOption,
     permissions,
     enterUrl = DEFAULT_ENTER_URL,
-    apiBaseUrl = DEFAULT_API_BASE_URL,
+    apiBaseUrl,
 }: PolliProviderProps) {
     const storage = useMemo<StorageAdapter>(
         () => resolveStorage(storageOption),
         [storageOption],
     );
+    const resolvedApiBaseUrl = apiBaseUrl ?? `${enterUrl}/api`;
     const storageKey = `polli:${appKey}:token`;
     const stateStorageKey = `polli:${appKey}:oauth_state`;
-    // Written by login() before the redirect, read + cleared by a valid
-    // callback. Holds the union of permissions this client is about to ask
-    // for.
-    const pendingPermsStorageKey = `polli:${appKey}:oauth_pending_perms`;
-    // Persistent across page reloads — promoted from pendingPerms after a
-    // valid callback. Cleared on logout.
-    const grantedPermsStorageKey = `polli:${appKey}:granted_perms`;
 
     const initialPermissions = useMemo<readonly string[]>(
         () =>
@@ -124,249 +95,115 @@ export function PolliProvider({
         [permissions],
     );
 
-    // Extra scopes asked for via login(extras), beyond initialPermissions.
-    // Survives the OAuth full-page navigation via `granted_perms` storage:
-    // mount restores from storage, valid callbacks promote pending → granted.
-    //
-    // Optimistic — records what this client requested, not what the server
-    // confirmed was granted. If the user denies a scope on the consent
-    // screen, the local view will treat it as granted until full token
-    // introspection lands. Acceptable for v1.
-    const [extrasRequested, setExtrasRequested] = useState<readonly string[]>(
-        [],
-    );
-    const resolvedPermissions = useMemo<readonly string[]>(
-        () =>
-            extrasRequested.length === 0
-                ? initialPermissions
-                : Array.from(
-                      new Set([...initialPermissions, ...extrasRequested]),
-                  ),
-        [initialPermissions, extrasRequested],
-    );
-
     // SSR-safe: start null so server + client first paint agree.
     const [apiKey, setApiKey] = useState<string | null>(null);
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [balance, setBalance] = useState<UserBalance | null>(null);
-    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+    const client = useMemo(
+        () =>
+            apiKey
+                ? new Pollinations({ apiKey, baseUrl: resolvedApiBaseUrl })
+                : null,
+        [apiKey, resolvedApiBaseUrl],
+    );
 
     // Hydrate API key from storage + capture URL fragment after redirect.
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        const hash = window.location.hash.substring(1);
-        if (hash) {
-            // Hash-router apps use `#/route?param=…` — the route prefix
-            // sits before the `?`, params after. Treating the whole hash as
-            // params would mis-parse the route and the cleanup step below
-            // would strip it. If there's no `?`, fall back to the original
-            // behavior (whole hash is the param string).
-            const queryIdx = hash.indexOf("?");
-            const routePrefix = queryIdx === -1 ? "" : hash.slice(0, queryIdx);
-            const paramString =
-                queryIdx === -1 ? hash : hash.slice(queryIdx + 1);
-            const params = new URLSearchParams(paramString);
-            const key = params.get("api_key");
-            const error = params.get("error");
-            const receivedState = params.get("state");
-            // Capture before the cleanup loop deletes it from `params`.
-            const errorDescription = params.get("error_description");
-            if (key || error) {
-                // Strip the auth params; keep the route and any non-auth
-                // params the consumer was using.
-                for (const p of [
-                    "api_key",
-                    "state",
-                    "error",
-                    "error_description",
-                ]) {
-                    params.delete(p);
-                }
-                const remaining = params.toString();
-                const newHash = remaining
-                    ? routePrefix
-                        ? `${routePrefix}?${remaining}`
-                        : remaining
-                    : routePrefix;
-                window.history.replaceState(
-                    {},
-                    "",
-                    window.location.pathname +
-                        window.location.search +
-                        (newHash ? `#${newHash}` : ""),
-                );
-            }
-            if (key) {
-                // CSRF protection: only accept api_key responses that echo
-                // back the `state` we generated at login(). A missing or
-                // mismatched state means the redirect didn't originate from
-                // a login this client started — reject the key and leave
-                // stored state intact so any pending legit callback can
-                // still complete (validate-then-clear, never clear-then-
-                // validate, to avoid DoS via planted `#api_key=…&state=…`).
-                const expectedState = storage.getItem(stateStorageKey);
-                if (!expectedState || receivedState !== expectedState) {
-                    console.warn(
-                        "[PolliProvider] dropping auth response with missing or mismatched state",
-                    );
-                } else {
-                    storage.removeItem(stateStorageKey);
-                    // Promote pending permissions → granted now that the
-                    // callback validated. Merge into any existing granted
-                    // set so a previously requested scope doesn't fall off.
-                    const pending = readStringArray(
-                        storage,
-                        pendingPermsStorageKey,
-                    );
-                    storage.removeItem(pendingPermsStorageKey);
-                    if (pending) {
-                        const existing =
-                            readStringArray(storage, grantedPermsStorageKey) ??
-                            [];
-                        const merged = Array.from(
-                            new Set([...existing, ...pending]),
-                        );
-                        storage.setItem(
-                            grantedPermsStorageKey,
-                            JSON.stringify(merged),
-                        );
-                        setExtrasRequested(
-                            merged.filter(
-                                (p) => !initialPermissions.includes(p),
-                            ),
-                        );
-                    }
-                    storage.setItem(storageKey, key);
-                    setApiKey(key);
-                    return;
-                }
-            }
-            if (error) {
-                // Only clear stored state when the error response actually
-                // matches our pending login — otherwise a spoofed
-                // `#error=…&state=bogus` could wipe state and DoS the real
-                // callback. Enter echoes `state` on the error branch too.
-                const expectedState = storage.getItem(stateStorageKey);
-                if (expectedState && receivedState === expectedState) {
-                    storage.removeItem(stateStorageKey);
-                    // Pending perms belong to this failed attempt — drop
-                    // them without promoting. Don't touch granted_perms
-                    // (anything previously granted is still granted).
-                    storage.removeItem(pendingPermsStorageKey);
-                }
-                // OAuth rejected/cancelled — surface for debugging but don't
-                // throw; consumers can still call login() again.
-                console.warn(
-                    `[PolliProvider] auth error: ${error}${
-                        errorDescription ? ` — ${errorDescription}` : ""
-                    }`,
-                );
-            }
+        const result = consumeOAuthCallback(
+            window.location,
+            storage,
+            stateStorageKey,
+        );
+        if (result.cleanedUrl) {
+            window.history.replaceState({}, "", result.cleanedUrl);
         }
-
-        const stored = storage.getItem(storageKey);
-        if (stored) setApiKey(stored);
-        // Restore previously granted extras across page reloads.
-        const storedGranted = readStringArray(storage, grantedPermsStorageKey);
-        if (storedGranted) {
-            const extras = storedGranted.filter(
-                (p) => !initialPermissions.includes(p),
+        if (result.invalidState) {
+            console.warn(
+                "[PolliProvider] dropping auth response with missing or mismatched state",
             );
-            if (extras.length > 0) setExtrasRequested(extras);
         }
-    }, [
-        storageKey,
-        stateStorageKey,
-        pendingPermsStorageKey,
-        grantedPermsStorageKey,
-        storage,
-        initialPermissions,
-    ]);
-
-    const reqIdRef = useRef(0);
-
-    // Synchronously invalidates in-flight profile/balance fetches and clears
-    // session-derived state. Must be called BEFORE setApiKey(null) so any
-    // already-resolved microtask sees the bumped reqIdRef and bails before
-    // it can write back stale data.
-    const clearSessionState = useCallback(() => {
-        reqIdRef.current++;
-        setProfile(null);
-        setBalance(null);
-        setIsLoadingProfile(false);
-    }, []);
-
-    useEffect(() => {
-        if (!apiKey) {
-            clearSessionState();
+        if (result.error) {
+            console.warn(
+                `[PolliProvider] auth error: ${result.error}${
+                    result.errorDescription
+                        ? ` — ${result.errorDescription}`
+                        : ""
+                }`,
+            );
+        }
+        if (result.apiKey) {
+            storage.setItem(storageKey, result.apiKey);
+            setApiKey(result.apiKey);
             return;
         }
+        const stored = storage.getItem(storageKey);
+        if (stored) setApiKey(stored);
+    }, [storageKey, stateStorageKey, storage]);
 
-        const reqId = ++reqIdRef.current;
-        const client = new Pollinations({ apiKey, baseUrl: apiBaseUrl });
+    const handleUnauthorized = useCallback(() => {
+        storage.removeItem(storageKey);
+        setApiKey(null);
+    }, [storage, storageKey]);
 
-        const handle401 = () => {
-            storage.removeItem(storageKey);
-            clearSessionState();
-            setApiKey(null);
-        };
+    const fetchProfile = useCallback(
+        (c: Pollinations) => c.accountProfile(),
+        [],
+    );
+    const fetchBalance = useCallback(
+        (c: Pollinations) => c.accountBalance(),
+        [],
+    );
+    const fetchKey = useCallback((c: Pollinations) => c.validateKey(), []);
 
-        (async () => {
-            setIsLoadingProfile(true);
-            try {
-                const data = await client.accountProfile();
-                if (reqId !== reqIdRef.current) return;
-                setProfile(data);
-            } catch (err) {
-                if (reqId !== reqIdRef.current) return;
-                if (err instanceof PollinationsError && err.status === 401) {
-                    handle401();
-                } else {
-                    setProfile(null);
-                }
-            } finally {
-                if (reqId === reqIdRef.current) setIsLoadingProfile(false);
-            }
-        })();
+    const profileResource = useResource(
+        client,
+        fetchProfile,
+        handleUnauthorized,
+    );
+    const balanceResource = useResource(
+        client,
+        fetchBalance,
+        handleUnauthorized,
+    );
+    const keyResource = useResource(client, fetchKey, handleUnauthorized);
 
-        (async () => {
-            try {
-                const data = await client.accountBalance();
-                if (reqId !== reqIdRef.current) return;
-                setBalance(data);
-            } catch (err) {
-                if (reqId !== reqIdRef.current) return;
-                if (err instanceof PollinationsError && err.status === 401) {
-                    handle401();
-                } else {
-                    setBalance(null);
-                }
-            }
-        })();
-    }, [apiKey, apiBaseUrl, storageKey, storage, clearSessionState]);
+    const refreshProfile = profileResource.refresh;
+    const refreshBalance = balanceResource.refresh;
+    const refreshKey = keyResource.refresh;
+
+    const refreshAuth = useCallback(async () => {
+        await Promise.all([refreshKey(), refreshProfile(), refreshBalance()]);
+    }, [refreshKey, refreshProfile, refreshBalance]);
+
+    // Whenever the client identity changes (login, logout, key rotation) the
+    // three resources' refresh callbacks change identity too — re-run them.
+    useEffect(() => {
+        void refreshAuth();
+    }, [refreshAuth]);
+
+    const grantedPermissions = useMemo<readonly string[]>(
+        () => keyResource.data?.permissions?.account ?? [],
+        [keyResource.data],
+    );
 
     const login = useCallback(
         (extraPermissions?: string[]) => {
             if (typeof window === "undefined") return;
             const currentUrl =
                 window.location.href.split("#")[0] ?? window.location.href;
+            const basePermissions =
+                grantedPermissions.length > 0
+                    ? grantedPermissions
+                    : initialPermissions;
             const perms =
                 extraPermissions && extraPermissions.length > 0
                     ? Array.from(
-                          new Set([
-                              ...resolvedPermissions,
-                              ...extraPermissions,
-                          ]),
+                          new Set([...basePermissions, ...extraPermissions]),
                       )
-                    : resolvedPermissions;
+                    : basePermissions;
             const state = crypto.randomUUID();
             storage.setItem(stateStorageKey, state);
-            // Persist the union we're about to request so the post-redirect
-            // callback can promote it into granted_perms (state-validated).
-            // React state updates here are wasted — window navigation
-            // discards them.
-            storage.setItem(pendingPermsStorageKey, JSON.stringify(perms));
             window.location.href = buildAuthUrl(
                 enterUrl,
                 appKey,
@@ -378,56 +215,81 @@ export function PolliProvider({
         [
             enterUrl,
             appKey,
-            resolvedPermissions,
+            grantedPermissions,
+            initialPermissions,
             storage,
             stateStorageKey,
-            pendingPermsStorageKey,
         ],
     );
 
     const logout = useCallback(() => {
         storage.removeItem(storageKey);
-        storage.removeItem(grantedPermsStorageKey);
-        storage.removeItem(pendingPermsStorageKey);
-        clearSessionState();
         setApiKey(null);
-        // Reset optimistic extras — a fresh login may not request them.
-        setExtrasRequested([]);
-    }, [
-        storage,
-        storageKey,
-        grantedPermsStorageKey,
-        pendingPermsStorageKey,
-        clearSessionState,
-    ]);
+    }, [storage, storageKey]);
 
     const stateValue = useMemo<AuthStateValue>(
         () => ({ apiKey, isLoggedIn: !!apiKey }),
         [apiKey],
     );
 
+    // Gate exposed data on apiKey so that on logout/401 consumers see null
+    // data within the same render cycle that flips `isLoggedIn` to false,
+    // not one render later when useResource catches up.
     const profileValue = useMemo<AuthProfileValue>(
-        () => ({ profile, balance, isLoadingProfile }),
-        [profile, balance, isLoadingProfile],
+        () => ({
+            profile: apiKey ? profileResource.data : null,
+            balance: apiKey ? balanceResource.data : null,
+            isLoadingProfile: apiKey ? profileResource.isLoading : false,
+        }),
+        [
+            apiKey,
+            profileResource.data,
+            profileResource.isLoading,
+            balanceResource.data,
+        ],
+    );
+
+    const keyValue = useMemo<AuthKeyValue>(
+        () => ({
+            key: apiKey ? keyResource.data : null,
+            permissions: apiKey ? grantedPermissions : [],
+            isLoadingKey: apiKey ? keyResource.isLoading : false,
+        }),
+        [apiKey, keyResource.data, keyResource.isLoading, grantedPermissions],
     );
 
     const actionsValue = useMemo<AuthActionsValue>(
         () => ({
             login,
             logout,
-            permissions: resolvedPermissions,
+            refreshProfile,
+            refreshBalance,
+            refreshKey,
+            refreshAuth,
             enterUrl,
         }),
-        [login, logout, resolvedPermissions, enterUrl],
+        [
+            login,
+            logout,
+            refreshProfile,
+            refreshBalance,
+            refreshKey,
+            refreshAuth,
+            enterUrl,
+        ],
     );
 
     return (
         <AuthActionsContext.Provider value={actionsValue}>
-            <AuthStateContext.Provider value={stateValue}>
-                <AuthProfileContext.Provider value={profileValue}>
-                    {children}
-                </AuthProfileContext.Provider>
-            </AuthStateContext.Provider>
+            <AuthClientContext.Provider value={client}>
+                <AuthStateContext.Provider value={stateValue}>
+                    <AuthKeyContext.Provider value={keyValue}>
+                        <AuthProfileContext.Provider value={profileValue}>
+                            {children}
+                        </AuthProfileContext.Provider>
+                    </AuthKeyContext.Provider>
+                </AuthStateContext.Provider>
+            </AuthClientContext.Provider>
         </AuthActionsContext.Provider>
     );
 }

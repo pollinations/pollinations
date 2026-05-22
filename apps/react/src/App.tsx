@@ -229,27 +229,28 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
     const showKeyCard = hasKeyMeta || enabled.keyBudget || hasAccess;
 
     const uiImports = [
+        "LoginButton",
+        "LogoutButton",
+        "LinkButton",
+        "Surface",
         enabled.permissions && "Chip",
         enabled.keyBudget && "KeyBudget",
         enabled.keyExpiry && "KeyExpiry",
         enabled.keyModels && "KeyModels",
         enabled.keyPrefix && "KeyPrefix",
-        showUserCard && "LinkButton",
-        showUserCard && "LogoutButton",
-        (showUserCard || showKeyCard) && "Surface",
         enabled.avatar && "UserAvatar",
         enabled.email && "UserEmail",
         enabled.name && "UserName",
-    ].filter(Boolean);
+    ].filter(Boolean) as string[];
 
-    const sdkHooks = ["PolliProvider"];
-    if (showUserCard) sdkHooks.push("useAuthActions");
+    const sdkHooks = ["PolliProvider", "useAuthActions", "useAuthState"];
     if (enabled.permissions) sdkHooks.push("useAuthKey");
 
     const hookLines = [
-        showUserCard && "    const { enterUrl } = useAuthActions();",
+        "    const { isLoggedIn } = useAuthState();",
+        "    const { enterUrl } = useAuthActions();",
         enabled.permissions && "    const { permissions } = useAuthKey();",
-    ].filter(Boolean);
+    ].filter(Boolean) as string[];
 
     const identity = [
         enabled.avatar && '                        <UserAvatar size="md" />',
@@ -267,62 +268,91 @@ ${[
         .join("\n");
 
     const userCardJsx = showUserCard
-        ? `            <Surface variant="panel" theme="amber">
-                <div className="flex justify-between">
-                    <div className="flex items-center gap-3">
+        ? `                <Surface variant="panel" theme="amber">
+                    <div className="flex justify-between">
+                        <div className="flex items-center gap-3">
 ${identity}
+                        </div>
+                        <div className="flex gap-2">
+                            <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
+                            <LogoutButton intent="danger">Log out</LogoutButton>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
-                        <LogoutButton intent="danger">Log out</LogoutButton>
-                    </div>
-                </div>
-            </Surface>`
+                </Surface>`
         : "";
 
-    const accessLine = hasAccess
-        ? `                <div className="flex flex-wrap items-center gap-2">
-${[
-    enabled.permissions &&
-        `                    {permissions.map((p) => (
-                        <Chip theme="blue" key={p}>{p}</Chip>
-                    ))}`,
-    enabled.keyModels && "                    <KeyModels />",
-]
-    .filter(Boolean)
-    .join("\n")}
-                </div>`
+    const row = (
+        label: string,
+        body: string,
+    ) => `                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-wide text-stone-500">${label}</span>
+${body}
+                    </div>`;
+
+    const accessRow = hasAccess
+        ? row(
+              "Access",
+              [
+                  enabled.permissions &&
+                      `                        {permissions.map((p) => (
+                            <Chip theme="blue" key={p}>{PERMISSION_LABELS[p] ?? p}</Chip>
+                        ))}`,
+                  enabled.keyModels && "                        <KeyModels />",
+              ]
+                  .filter(Boolean)
+                  .join("\n"),
+          )
         : "";
 
-    const keyCardInner = [
-        enabled.keyPrefix && "                <KeyPrefix />",
-        enabled.keyExpiry && "                <KeyExpiry />",
-        enabled.keyBudget && "                <KeyBudget />",
-        accessLine,
+    const keyRows = [
+        enabled.keyPrefix &&
+            row("Key", "                        <KeyPrefix />"),
+        enabled.keyExpiry &&
+            row("Expires", "                        <KeyExpiry />"),
+        enabled.keyBudget &&
+            row("Remaining", "                        <KeyBudget />"),
+        accessRow,
     ]
         .filter(Boolean)
         .join("\n");
 
-    const keyCardJsx = showKeyCard
-        ? `            <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
-${keyCardInner}
-            </Surface>`
+    const sessionStripJsx = !showUserCard
+        ? `                <Surface variant="panel" theme="amber" className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-stone-600">Signed in</span>
+                    <div className="flex gap-2">
+                        <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
+                        <LogoutButton intent="danger">Log out</LogoutButton>
+                    </div>
+                </Surface>`
         : "";
 
-    const walletBody = [userCardJsx, keyCardJsx].filter(Boolean).join("\n");
+    const keyCardJsx = showKeyCard
+        ? `                <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
+${keyRows}
+                </Surface>`
+        : "";
 
-    const uiImportBlock =
-        uiImports.length > 0
-            ? `import {
+    const walletBody = [userCardJsx, keyCardJsx, sessionStripJsx]
+        .filter(Boolean)
+        .join("\n");
+
+    const permissionLabelsBlock = enabled.permissions
+        ? `\nconst PERMISSION_LABELS: Record<string, string> = {
+    profile: "Profile",
+    usage: "Usage",
+    keys: "Keys",
+};\n`
+        : "";
+
+    const uiImportBlock = `import {
 ${uiImports.map((c) => `    ${c},`).join("\n")}
-} from "@pollinations_ai/ui";\n`
-            : "";
+} from "@pollinations_ai/ui";\n`;
 
     const sdkImportBlock = `import {
 ${sdkHooks.map((h) => `    ${h},`).join("\n")}
 } from "@pollinations_ai/sdk/react";`;
 
-    const hookBlock = hookLines.length > 0 ? `${hookLines.join("\n")}\n\n` : "";
+    const hookBlock = `${hookLines.join("\n")}\n\n`;
 
     return `// 1) npm install @pollinations_ai/sdk @pollinations_ai/ui
 // 2) Create a publishable key at https://enter.pollinations.ai and
@@ -332,9 +362,12 @@ import "@pollinations_ai/ui/styles.css";
 ${sdkImportBlock}
 ${uiImportBlock}
 const APP_KEY = "pk_your_key_here";
-
+${permissionLabelsBlock}
 function Wallet() {
-${hookBlock}    return (
+${hookBlock}    if (!isLoggedIn) {
+        return <LoginButton theme="amber">Log in with Pollinations</LoginButton>;
+    }
+    return (
         <div className="flex flex-col gap-4">
 ${walletBody}
         </div>
@@ -354,6 +387,7 @@ const POLLI_TOKENS = [
     "PolliProvider",
     "useAuthActions",
     "useAuthKey",
+    "useAuthState",
     "Surface",
     "Chip",
     "KeyBudget",
@@ -361,6 +395,7 @@ const POLLI_TOKENS = [
     "KeyModels",
     "KeyPrefix",
     "LinkButton",
+    "LoginButton",
     "LogoutButton",
     "UserAvatar",
     "UserEmail",

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { cn } from "@/util.ts";
 import { genDocsUrl } from "../../config.ts";
+import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import {
     DASHBOARD_NAV_ITEMS,
@@ -231,6 +232,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     walletArea,
 }) => {
     const [copiedSection, setCopiedSection] = useState<string | null>(null);
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
     const handleCopySection = useCallback(async (section: string) => {
         const url = section
             ? `${genDocsUrl()}/llm.txt?section=${section}`
@@ -246,84 +248,87 @@ const DashboardRail: FC<DashboardRailProps> = ({
             className="flex h-full min-h-0 flex-col gap-1 px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
+            <div className="hidden shrink-0 flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
                 <Brand imageClassName="h-6" />
                 <BrandSocialChips />
             </div>
-            <nav className="flex flex-col gap-1 pt-3">
-                {navItems.map((item) => (
-                    <NavButton
-                        key={item.id}
-                        item={item}
-                        active={activePage === item.id}
-                        onClick={() => onPageChange(item.id)}
-                    />
-                ))}
-                <div className="mt-2 border-t border-green-950/10 pt-3">
-                    <a
-                        href={genDocsUrl()}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                    >
-                        <span className="flex items-center gap-2">
-                            <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
-                            Docs
-                        </span>
-                        <ExternalLinkArrow className="h-4 w-4 shrink-0 text-gray-500" />
-                    </a>
-                    <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
-                        <CopySectionRow
-                            label="Gen API"
-                            icon={
-                                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                            }
-                            section="gen-api"
-                            copied={copiedSection === "gen-api"}
-                            onCopy={handleCopySection}
+            <div
+                ref={scrollAreaRef}
+                className="scrollbar-subtle scrollbar-theme-gray min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+            >
+                <nav className="flex flex-col gap-1 pt-3">
+                    {navItems.map((item) => (
+                        <NavButton
+                            key={item.id}
+                            item={item}
+                            active={activePage === item.id}
+                            onClick={() => onPageChange(item.id)}
                         />
-                        <CopySectionRow
-                            label="User Wallet"
-                            icon={
-                                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                            }
-                            section="byop"
-                            copied={copiedSection === "byop"}
-                            onCopy={handleCopySection}
-                        />
-                        <CopySectionRow
-                            label="CLI"
-                            icon={
-                                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                            }
-                            section="cli"
-                            copied={copiedSection === "cli"}
-                            onCopy={handleCopySection}
-                        />
-                        <CopySectionRow
-                            label="Storage"
-                            icon={
-                                <StorageIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                            }
-                            section="media-storage"
-                            copied={copiedSection === "media-storage"}
-                            onCopy={handleCopySection}
-                        />
-                        <span
-                            aria-disabled="true"
-                            className="flex cursor-not-allowed items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-400"
-                            title="MCP docs coming soon"
+                    ))}
+                    <div className="mt-2 border-t border-green-950/10 pt-3">
+                        <a
+                            href={genDocsUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
                         >
                             <span className="flex items-center gap-2">
-                                <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                                MCP
+                                <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
+                                Docs
                             </span>
-                            <SoonPill />
-                        </span>
+                            <ExternalLinkArrow className="h-4 w-4 shrink-0 text-gray-500" />
+                        </a>
+                        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
+                            <CopySectionRow
+                                label="Gen API"
+                                icon={
+                                    <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                                section="gen-api"
+                                copied={copiedSection === "gen-api"}
+                                onCopy={handleCopySection}
+                            />
+                            <CopySectionRow
+                                label="User Wallet"
+                                icon={
+                                    <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                                section="byop"
+                                copied={copiedSection === "byop"}
+                                onCopy={handleCopySection}
+                            />
+                            <CopySectionRow
+                                label="CLI"
+                                icon={
+                                    <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                                section="cli"
+                                copied={copiedSection === "cli"}
+                                onCopy={handleCopySection}
+                            />
+                            <CopySectionRow
+                                label="Storage"
+                                icon={
+                                    <StorageIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                                section="media-storage"
+                                copied={copiedSection === "media-storage"}
+                                onCopy={handleCopySection}
+                            />
+                            <CopySectionRow
+                                label="MCP"
+                                icon={
+                                    <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                                section="mcp"
+                                copied={copiedSection === "mcp"}
+                                onCopy={handleCopySection}
+                            />
+                        </div>
                     </div>
-                </div>
-            </nav>
-            <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
+                </nav>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2 border-t border-green-950/10 pt-4">
                 {walletArea && <div className="px-1">{walletArea}</div>}
                 {accountArea ??
                     (githubUsername && onSignOut ? (
@@ -658,12 +663,6 @@ const StorageIcon: FC<{ className?: string }> = ({ className }) => (
         <path d="M4 5v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" />
         <path d="M4 11v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5v-6" />
     </svg>
-);
-
-const SoonPill: FC = () => (
-    <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
-        Soon
-    </span>
 );
 
 type CopySectionRowProps = {

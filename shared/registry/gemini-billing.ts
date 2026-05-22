@@ -1,17 +1,14 @@
 import { perMillion } from "./price-helpers";
-import type { CostCalculator, CostDefinition, Usage } from "./registry";
+import type {
+    CostCalculator,
+    CostCalculatorInput,
+    CostDefinition,
+    Usage,
+} from "./registry";
 
-type GeminiGroundingMode = "perPrompt" | "perQuery";
-
-type GeminiCostCalculatorOptions = {
-    grounding: {
-        mode: GeminiGroundingMode;
-        costPerUnit: number;
-    };
-    longContext?: {
-        thresholdTokens: number;
-        cost: CostDefinition;
-    };
+type GeminiLongContextCost = {
+    thresholdTokens: number;
+    cost: CostDefinition;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,43 +50,60 @@ function getPromptTokenCount(usage: Usage): number {
     );
 }
 
-export function createGeminiCostCalculator({
-    grounding,
-    longContext,
-}: GeminiCostCalculatorOptions): CostCalculator {
-    return ({ usage, output, model, linearCost }) => {
-        const promptTokens = getPromptTokenCount(usage);
-        const costDefinition =
-            longContext && promptTokens > longContext.thresholdTokens
-                ? { ...model.cost, ...longContext.cost }
-                : model.cost;
-        const usageCost = linearCost(costDefinition);
-        const queryCount = getGeminiGroundingWebSearchQueryCount(output);
-        const groundingUnits =
-            grounding.mode === "perPrompt"
-                ? queryCount > 0
-                    ? 1
-                    : 0
-                : queryCount;
+function calculateGeminiCost(
+    { usage, model, linearCost }: CostCalculatorInput,
+    groundingUnits: number,
+    groundingCostPerUnit: number,
+    longContext?: GeminiLongContextCost,
+) {
+    const promptTokens = getPromptTokenCount(usage);
+    const costDefinition =
+        longContext && promptTokens > longContext.thresholdTokens
+            ? { ...model.cost, ...longContext.cost }
+            : model.cost;
+    const usageCost = linearCost(costDefinition);
 
-        if (groundingUnits === 0) return usageCost;
+    if (groundingUnits === 0) return usageCost;
 
-        return {
-            ...usageCost,
-            totalCost:
-                usageCost.totalCost + groundingUnits * grounding.costPerUnit,
-        };
+    return {
+        ...usageCost,
+        totalCost: usageCost.totalCost + groundingUnits * groundingCostPerUnit,
     };
 }
 
-export const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
-export const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
+const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
+const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 
-export const GEMINI_3_1_PRO_LONG_CONTEXT_COST: CostDefinition = {
-    promptTextTokens: perMillion(4.0),
-    promptCachedTokens: perMillion(0.4),
-    promptAudioTokens: perMillion(4.0),
-    promptImageTokens: perMillion(4.0),
-    promptVideoTokens: perMillion(4.0),
-    completionTextTokens: perMillion(18.0),
-};
+export const calculateGeminiGroundedPromptCost: CostCalculator = (input) =>
+    calculateGeminiCost(
+        input,
+        getGeminiGroundingWebSearchQueryCount(input.output) > 0 ? 1 : 0,
+        GEMINI_25_GROUNDING_COST_PER_PROMPT,
+    );
+
+export const calculateGeminiSearchQueryCost: CostCalculator = (input) =>
+    calculateGeminiCost(
+        input,
+        getGeminiGroundingWebSearchQueryCount(input.output),
+        GEMINI_3_GROUNDING_COST_PER_QUERY,
+    );
+
+export const calculateGeminiSearchQueryLongContextCost: CostCalculator = (
+    input,
+) =>
+    calculateGeminiCost(
+        input,
+        getGeminiGroundingWebSearchQueryCount(input.output),
+        GEMINI_3_GROUNDING_COST_PER_QUERY,
+        {
+            thresholdTokens: 200_000,
+            cost: {
+                promptTextTokens: perMillion(4.0),
+                promptCachedTokens: perMillion(0.4),
+                promptAudioTokens: perMillion(4.0),
+                promptImageTokens: perMillion(4.0),
+                promptVideoTokens: perMillion(4.0),
+                completionTextTokens: perMillion(18.0),
+            },
+        },
+    );

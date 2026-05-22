@@ -72,12 +72,16 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
-export type CostCalculator<TModelId extends string = string> = (input: {
+export type CostCalculatorInput<TModelId extends string = string> = {
     usage: Usage;
     output?: unknown;
     model: ModelDefinition<TModelId>;
     linearCost: (costDefinition?: CostDefinition) => UsageCost;
-}) => UsageCost;
+};
+
+export type CostCalculator<TModelId extends string = string> = (
+    input: CostCalculatorInput<TModelId>,
+) => UsageCost;
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];

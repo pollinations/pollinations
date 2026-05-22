@@ -1,9 +1,12 @@
+import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+
+const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
+const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
 
 export default defineConfig({
     root: "frontend",
@@ -14,6 +17,10 @@ export default defineConfig({
     publicDir: "public",
     assetsInclude: ["**/*.md"],
     resolve: {
+        alias: {
+            "@frontend": frontendSrc,
+            "@shared": sharedSrc,
+        },
         dedupe: ["zod"],
     },
     plugins: [
@@ -25,7 +32,6 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        tsconfigPaths(),
         cloudflare({ configPath: "../wrangler.toml" }),
     ],
     optimizeDeps: {

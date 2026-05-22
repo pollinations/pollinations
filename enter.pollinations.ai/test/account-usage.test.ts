@@ -132,8 +132,11 @@ test("GET /api/account/usage/daily rejects periods outside supported bounds", as
     );
     expect(beforeUsage.status).toBe(400);
 
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const futurePeriod = tomorrow.toISOString().slice(0, 10);
     const future = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-05-01",
+        `http://localhost:3000/api/account/usage/daily?granularity=day&period=${futurePeriod}`,
         { headers: authHeaders(sessionToken) },
     );
     expect(future.status).toBe(400);

@@ -2,14 +2,20 @@ import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
 
 export type UserNameProps = { className?: string };
 
-/** Renders `profile.name`. `null` when logged out or unavailable. */
+/**
+ * Renders the user's display name. Falls back to GitHub username when the
+ * `profile` scope was not granted (or `name` is empty). `null` when logged
+ * out, or when neither name nor GitHub username is available.
+ */
 export function UserName({ className }: UserNameProps) {
     const { isLoggedIn } = useAuthState();
     const { profile } = useAuthProfile();
-    if (!isLoggedIn || !profile?.name) return null;
+    if (!isLoggedIn || !profile) return null;
+    const display = profile.name || profile.githubUsername;
+    if (!display) return null;
     return (
         <span data-polli="user-name" className={className}>
-            {profile.name}
+            {display}
         </span>
     );
 }

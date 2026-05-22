@@ -24,8 +24,24 @@ export interface AuthKeyValue {
     isLoadingKey: boolean;
 }
 
+/**
+ * Per-call overrides for the OAuth authorize redirect. Each field maps to a
+ * BYOP (bring-your-own-policy) URL parameter on `enter.pollinations.ai/authorize`
+ * — see `<PolliProvider>` props for the same fields as provider-level defaults.
+ */
+export interface AuthorizeRequest {
+    /** Extra OAuth scopes appended to provider defaults. */
+    permissions?: string[];
+    /** Restrict the minted key to these model slugs. Omit / empty = all models. */
+    models?: string[];
+    /** Pollen budget to request for the minted key. */
+    budget?: number;
+    /** Days until the minted key expires. */
+    expiry?: number;
+}
+
 export interface AuthActionsValue {
-    login: (permissions?: string[]) => void;
+    login: (request?: AuthorizeRequest) => void;
     logout: () => void;
     refreshProfile: () => Promise<void>;
     refreshBalance: () => Promise<void>;

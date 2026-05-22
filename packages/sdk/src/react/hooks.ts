@@ -155,6 +155,7 @@ export function useKeyUsage(
     options: UseKeyUsageOptions = {},
 ): UseKeyUsageValue {
     const client = useAuthClient();
+    const { logout } = useAuthActions();
     const {
         enabled = true,
         days,
@@ -170,14 +171,13 @@ export function useKeyUsage(
         [days, limit, before, granularity, period],
     );
 
-    const noop = useCallback(() => {
-        /* 401 here is handled by the provider's own resources */
-    }, []);
-
+    // Treat a 401 on usage as session invalidation: the delegated key was
+    // revoked or expired, so clear the session — same effect as the provider's
+    // own resources' 401 handling.
     const { data, isLoading, error, refresh } = useResource(
         enabled ? client : null,
         fetcher,
-        noop,
+        logout,
     );
 
     useEffect(() => {

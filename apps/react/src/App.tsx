@@ -127,22 +127,35 @@ function UserCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
 }
 
 function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const { permissions, isLoadingKey } = useAuthKey();
+    const { key, permissions, isLoadingKey } = useAuthKey();
     const hasAccess = enabled.permissions || enabled.keyModels;
+    const showBudget = enabled.keyBudget && key?.pollenBudget != null;
+    const showExpiry = enabled.keyExpiry && !!key?.expiresAt;
+    const showPrefix = enabled.keyPrefix;
+
+    if (
+        !showPrefix &&
+        !showExpiry &&
+        !showBudget &&
+        !hasAccess &&
+        !isLoadingKey
+    ) {
+        return null;
+    }
 
     return (
         <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
-            {enabled.keyPrefix && (
+            {showPrefix && (
                 <Metric label="Key">
                     <KeyPrefix />
                 </Metric>
             )}
-            {enabled.keyExpiry && (
+            {showExpiry && (
                 <Metric label="Expires">
                     <KeyExpiry />
                 </Metric>
             )}
-            {enabled.keyBudget && (
+            {showBudget && (
                 <Metric label="Remaining">
                     <KeyBudget />
                 </Metric>
@@ -168,6 +181,22 @@ function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     );
 }
 
+function SessionActions() {
+    return (
+        <Surface
+            variant="panel"
+            theme="amber"
+            className="flex items-center justify-between gap-3"
+        >
+            <span className="text-sm text-stone-600">Signed in</span>
+            <div className="flex flex-wrap items-center gap-2">
+                <DashboardLink />
+                <LogoutButton intent="danger">Log out</LogoutButton>
+            </div>
+        </Surface>
+    );
+}
+
 function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     const { isLoggedIn } = useAuthState();
     if (!isLoggedIn) {
@@ -188,6 +217,7 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
         <div className="flex flex-col gap-4">
             {showUserCard && <UserCard enabled={enabled} />}
             {showKeyCard && <KeyCard enabled={enabled} />}
+            {!showUserCard && <SessionActions />}
         </div>
     );
 }

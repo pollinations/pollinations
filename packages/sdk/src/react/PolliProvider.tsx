@@ -12,6 +12,7 @@ import {
     AuthClientContext,
     AuthKeyContext,
     type AuthKeyValue,
+    type AuthorizeRequest,
     AuthProfileContext,
     type AuthProfileValue,
     AuthStateContext,
@@ -25,6 +26,7 @@ import {
     type StorageOption,
 } from "./storage.js";
 
+export type { AuthorizeRequest } from "./contexts.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = AUTH_BASE_URL;
@@ -44,26 +46,52 @@ export interface PolliProviderProps {
     storage?: StorageOption;
     /** OAuth scopes to request at login. Defaults to `["profile", "usage"]`. */
     permissions?: string[];
+    /**
+     * Default model slugs to request access to (BYOP). Empty / undefined means
+     * "all models". Per-call `login({ models })` overrides this.
+     */
+    models?: string[];
+    /**
+     * Default pollen budget to request for the minted key. Per-call
+     * `login({ budget })` overrides this.
+     */
+    budget?: number;
+    /**
+     * Default key lifetime in days. Per-call `login({ expiry })` overrides this.
+     */
+    expiry?: number;
     /** Auth host. Defaults to `https://enter.pollinations.ai`. */
     enterUrl?: string;
     /** Account API host. Derived from `enterUrl + "/api"` unless explicitly set. */
     apiBaseUrl?: string;
 }
 
-function buildAuthUrl(
-    enterUrl: string,
-    appKey: string,
-    permissions: readonly string[],
-    redirectUrl: string,
-    state: string,
-): string {
+function buildAuthUrl(args: {
+    enterUrl: string;
+    appKey: string;
+    permissions: readonly string[];
+    redirectUrl: string;
+    state: string;
+    models?: readonly string[];
+    budget?: number;
+    expiry?: number;
+}): string {
     const params = new URLSearchParams({
-        redirect_uri: redirectUrl,
-        client_id: appKey,
-        scope: permissions.join(" "),
-        state,
+        redirect_uri: args.redirectUrl,
+        client_id: args.appKey,
+        scope: args.permissions.join(" "),
+        state: args.state,
     });
-    return `${enterUrl}/authorize?${params.toString()}`;
+    if (args.models && args.models.length > 0) {
+        params.set("models", args.models.join(","));
+    }
+    if (typeof args.budget === "number") {
+        params.set("budget", String(args.budget));
+    }
+    if (typeof args.expiry === "number") {
+        params.set("expiry", String(args.expiry));
+    }
+    return `${args.enterUrl}/authorize?${params.toString()}`;
 }
 
 /**
@@ -76,6 +104,9 @@ export function PolliProvider({
     children,
     storage: storageOption,
     permissions,
+    models: defaultModels,
+    budget: defaultBudget,
+    expiry: defaultExpiry,
     enterUrl = DEFAULT_ENTER_URL,
     apiBaseUrl,
 }: PolliProviderProps) {
@@ -188,7 +219,7 @@ export function PolliProvider({
     );
 
     const login = useCallback(
-        (extraPermissions?: string[]) => {
+        (request?: AuthorizeRequest) => {
             if (typeof window === "undefined") return;
             const currentUrl =
                 window.location.href.split("#")[0] ?? window.location.href;
@@ -196,6 +227,7 @@ export function PolliProvider({
                 grantedPermissions.length > 0
                     ? grantedPermissions
                     : initialPermissions;
+            const extraPermissions = request?.permissions;
             const perms =
                 extraPermissions && extraPermissions.length > 0
                     ? Array.from(
@@ -204,13 +236,16 @@ export function PolliProvider({
                     : basePermissions;
             const state = crypto.randomUUID();
             storage.setItem(stateStorageKey, state);
-            window.location.href = buildAuthUrl(
+            window.location.href = buildAuthUrl({
                 enterUrl,
                 appKey,
-                perms,
-                currentUrl,
+                permissions: perms,
+                redirectUrl: currentUrl,
                 state,
-            );
+                models: request?.models ?? defaultModels,
+                budget: request?.budget ?? defaultBudget,
+                expiry: request?.expiry ?? defaultExpiry,
+            });
         },
         [
             enterUrl,
@@ -219,6 +254,9 @@ export function PolliProvider({
             initialPermissions,
             storage,
             stateStorageKey,
+            defaultModels,
+            defaultBudget,
+            defaultExpiry,
         ],
     );
 

@@ -10,8 +10,8 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { AuthVariables } from "./auth.ts";
+import type { LoggerVariables } from "./logger.ts";
 
 export { getAvailableBalance };
 export type { UserBalance };

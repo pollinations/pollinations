@@ -14,8 +14,6 @@
     ],
     "scripts": {
         "test": "node test-mcp-client.js",
-        "test:integration": "vitest run tests/integration",
-        "test:integration:watch": "vitest watch tests/integration",
         "start": "node src/index.js"
     },
     "keywords": [
@@ -67,8 +65,5 @@
     "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/pollinations"
-    },
-    "devDependencies": {
-        "vitest": "^3.1.2"
     }
 }

@@ -57,6 +57,7 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-07").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
@@ -77,6 +78,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-05-14").getTime(),
+        priceMultiplier: 1.5,
         cost: {
             // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
             completionAudioTokens: 0.083 / 1000,
@@ -95,6 +97,7 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
+        priceMultiplier: 1.5,
         paidOnly: true,
         cost: {
             // ElevenLabs Music: billed by output audio duration
@@ -114,6 +117,7 @@ export const AUDIO_SERVICES = {
         brand: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
+        priceMultiplier: 1,
         cost: {
             // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
             promptAudioSeconds: 0.0000445,
@@ -130,12 +134,13 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
         cost: {
             // ElevenLabs Scale plan: Scribe batch $0.22/hour
             promptAudioSeconds: 0.22 / 3600,
         },
-        description:
-            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        description: "Scribe v2 - Speech to text (90+ languages, diarization)",
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
@@ -146,6 +151,7 @@ export const AUDIO_SERVICES = {
         brand: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
+        priceMultiplier: 1,
         cost: {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
@@ -184,6 +190,7 @@ export const AUDIO_SERVICES = {
         brand: "ACE-Step",
         category: "audio",
         addedDate: new Date("2026-04-03").getTime(),
+        priceMultiplier: 1,
         cost: {
             completionAudioSeconds: 0.0005,
         },

@@ -1,11 +1,15 @@
-import { expect, test } from "vitest";
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     calculateCost,
     calculatePrice,
     getModelDefinition,
     getPriceDefinition,
-} from "../../shared/registry/registry.ts";
-import { getModelPrices } from "../src/client/components/models/data.ts";
+} from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { expect, test } from "vitest";
+import { getModelPrices } from "../frontend/src/components/models/data.ts";
 
 test("pricing data applies the per-model price multiplier uniformly", () => {
     const geminiFast = getModelPrices().find(
@@ -15,10 +19,10 @@ test("pricing data applies the per-model price multiplier uniformly", () => {
     expect(geminiFast).toMatchObject({
         name: "gemini-fast",
         type: "text",
-        promptTextPrice: "0.3",
-        promptCachedPrice: "0.03",
-        promptAudioPrice: "0.9",
-        completionTextPrice: "1.2",
+        promptTextPrice: "0.15",
+        promptCachedPrice: "0.015",
+        promptAudioPrice: "0.45",
+        completionTextPrice: "0.6",
     });
 });
 
@@ -121,4 +125,31 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
         16.2,
         8,
     );
+});
+
+test("registry cost blocks contain no sentinel/placeholder negative values", () => {
+    const registries = [
+        ["text", TEXT_SERVICES],
+        ["image", IMAGE_SERVICES],
+        ["audio", AUDIO_SERVICES],
+        ["embeddings", EMBEDDING_SERVICES],
+    ] as const;
+
+    const offenders: string[] = [];
+    for (const [kind, services] of registries) {
+        for (const [name, def] of Object.entries(services)) {
+            const cost = (def as { cost?: Record<string, number> }).cost;
+            if (!cost) continue;
+            for (const [field, value] of Object.entries(cost)) {
+                if (typeof value === "number" && value < 0) {
+                    offenders.push(`${kind}/${name}.cost.${field}=${value}`);
+                }
+            }
+        }
+    }
+
+    expect(
+        offenders,
+        `Models with placeholder/sentinel pricing — fill in real rates before merging:\n${offenders.join("\n")}`,
+    ).toEqual([]);
 });

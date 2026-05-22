@@ -193,6 +193,10 @@ Returns your request history with per-request details: model used, token counts,
 
     `number` — Cost in USD for this request
 
+  - **`input_audio_seconds` (required)**
+
+    `number` — Duration of input audio in seconds (for transcription/STT)
+
   - **`input_audio_tokens` (required)**
 
     `number` — Number of input audio tokens
@@ -217,6 +221,10 @@ Returns your request history with per-request details: model used, token counts,
 
     `object` — Model used for generation
 
+  - **`output_audio_seconds` (required)**
+
+    `number` — Duration of output audio in seconds (for TTS/music generation)
+
   - **`output_audio_tokens` (required)**
 
     `number` — Number of output audio tokens
@@ -232,6 +240,10 @@ Returns your request history with per-request details: model used, token counts,
   - **`output_text_tokens` (required)**
 
     `number` — Number of output text tokens
+
+  - **`output_video_seconds` (required)**
+
+    `number` — Duration of output video in seconds
 
   - **`response_time_ms` (required)**
 
@@ -254,11 +266,14 @@ Returns your request history with per-request details: model used, token counts,
       "input_text_tokens": 1,
       "input_cached_tokens": 1,
       "input_audio_tokens": 1,
+      "input_audio_seconds": 1,
       "input_image_tokens": 1,
       "output_text_tokens": 1,
       "output_reasoning_tokens": 1,
       "output_audio_tokens": 1,
+      "output_audio_seconds": 1,
       "output_image_tokens": 1,
+      "output_video_seconds": 1,
       "cost_usd": 1,
       "response_time_ms": 1
     }
@@ -646,6 +661,10 @@ Returns usage history for the API key used in the request. No scope required —
 
     `number` — Cost in USD for this request
 
+  - **`input_audio_seconds` (required)**
+
+    `number` — Duration of input audio in seconds (for transcription/STT)
+
   - **`input_audio_tokens` (required)**
 
     `number` — Number of input audio tokens
@@ -670,6 +689,10 @@ Returns usage history for the API key used in the request. No scope required —
 
     `object` — Model used for generation
 
+  - **`output_audio_seconds` (required)**
+
+    `number` — Duration of output audio in seconds (for TTS/music generation)
+
   - **`output_audio_tokens` (required)**
 
     `number` — Number of output audio tokens
@@ -685,6 +708,10 @@ Returns usage history for the API key used in the request. No scope required —
   - **`output_text_tokens` (required)**
 
     `number` — Number of output text tokens
+
+  - **`output_video_seconds` (required)**
+
+    `number` — Duration of output video in seconds
 
   - **`response_time_ms` (required)**
 
@@ -707,11 +734,14 @@ Returns usage history for the API key used in the request. No scope required —
       "input_text_tokens": 1,
       "input_cached_tokens": 1,
       "input_audio_tokens": 1,
+      "input_audio_seconds": 1,
       "input_image_tokens": 1,
       "output_text_tokens": 1,
       "output_reasoning_tokens": 1,
       "output_audio_tokens": 1,
+      "output_audio_seconds": 1,
       "output_image_tokens": 1,
+      "output_video_seconds": 1,
       "cost_usd": 1,
       "response_time_ms": 1
     }
@@ -2348,7 +2378,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 

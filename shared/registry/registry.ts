@@ -79,9 +79,9 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     brand: string;
     category: Category;
     cost: CostDefinition;
-    // Per-model override for the USD-cost to Pollen-price multiplier. Defaults
-    // to 1.5 for paidOnly models and 1.0 for free models.
-    priceMultiplier?: number;
+    // USD-cost to Pollen-price multiplier. Required on every model — there is
+    // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
+    priceMultiplier: number;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -133,12 +133,8 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function resolvePriceMultiplier(svc: ModelDefinition): number {
-    return svc.priceMultiplier ?? (svc.paidOnly ? 1.5 : 1.0);
-}
-
 function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = resolvePriceMultiplier(svc);
+    const m = svc.priceMultiplier;
     if (m === 1) return svc.cost;
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),

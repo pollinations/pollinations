@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { usageToEventParams } from "@shared/schemas/generation-event.ts";
 import { expect } from "vitest";
 import {
     flattenBalances,
@@ -49,6 +50,8 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
         tokenCountCompletionImage: 0,
         tokenCountCompletionVideoSeconds: 0,
         tokenCountCompletionVideoTokens: 0,
+        tokenCountPromptAudioSeconds: 0,
+        tokenCountCompletionAudioSeconds: 0,
         totalCost: 0.001,
         totalPrice: 0.002,
     };
@@ -104,6 +107,8 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
         tokenCountCompletionImage: 0,
         tokenCountCompletionVideoSeconds: 0,
         tokenCountCompletionVideoTokens: 0,
+        tokenCountPromptAudioSeconds: 0,
+        tokenCountCompletionAudioSeconds: 0,
         totalCost: 0.001,
         totalPrice: 0.002,
     };
@@ -118,6 +123,20 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
 
     // Event should not be in the mock state due to simulated error
     expect(mocks.tinybird.state.events).toHaveLength(0);
+});
+
+test("usageToEventParams preserves fractional seconds for video and audio durations", () => {
+    // LTX-2 produces durations of the form N + 1/24 (8n+1 frames at 24fps);
+    // ElevenLabs Music / Whisper-style STT produce non-integer second counts.
+    const params = usageToEventParams({
+        completionVideoSeconds: 5.041666666666667,
+        promptAudioSeconds: 12.5,
+        completionAudioSeconds: 7.25,
+    });
+
+    expect(params.tokenCountCompletionVideoSeconds).toBe(5.041666666666667);
+    expect(params.tokenCountPromptAudioSeconds).toBe(12.5);
+    expect(params.tokenCountCompletionAudioSeconds).toBe(7.25);
 });
 
 test("sendErrorEventToTinybird sends structured error events", async ({

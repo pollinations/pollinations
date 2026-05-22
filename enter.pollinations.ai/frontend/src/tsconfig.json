@@ -1,0 +1,16 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": "../..",
+        "types": ["vite/client"],
+        "paths": {
+            "@frontend/*": ["frontend/src/*"],
+            "@shared/*": ["../shared/*"]
+        }
+    },
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "../../worker-runtime.d.ts"
+    ]
+}

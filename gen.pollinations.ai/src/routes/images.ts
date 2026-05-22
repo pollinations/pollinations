@@ -4,6 +4,7 @@
  * POST /v1/images/edits — edit images with text prompts + source images
  */
 
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -62,13 +63,23 @@ function resolveParams(opts: {
     size?: string;
     quality?: string;
     seed?: number;
-}) {
-    const [width, height] = (opts.size || "1024x1024")
-        .split("x")
-        .map((s) => Number.parseInt(s, 10));
+}): {
+    width?: number;
+    height?: number;
+    quality: string;
+    seed: number;
+} {
+    // Width/height are only emitted when the caller actually passed `size`.
+    // Leaving them undefined lets the image-param schema fill model-specific
+    // defaults AND preserves the dimensionsExplicit signal seedream-4 needs.
+    const sizeDims = opts.size
+        ? opts.size.split("x").map((s) => Number.parseInt(s, 10))
+        : undefined;
+    const width = sizeDims?.[0];
+    const height = sizeDims?.[1];
     return {
-        width: width || 1024,
-        height: height || 1024,
+        ...(Number.isInteger(width) ? { width } : {}),
+        ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
         seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
     };
@@ -207,8 +218,9 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
         c.var.track.overrideResponseTracking(response.clone());
 
         if (body.response_format === "url") {
+            const origin = getPublicOrigin(c);
             const imageUrl = new URL(
-                `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}`,
+                `${origin}/image/${encodeURIComponent(safePrompt)}`,
             );
             for (const [key, value] of Object.entries({
                 model,

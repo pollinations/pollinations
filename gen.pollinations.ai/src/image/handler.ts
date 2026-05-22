@@ -46,7 +46,6 @@ const IMAGE_ENV_KEYS = [
     "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    "BYTEDANCE_API_KEY",
     "DASHSCOPE_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
@@ -177,14 +176,13 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
     }
 }
 
-function throwImageError(error: unknown, c: ImageContext): never {
+function throwImageError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
     if (error instanceof HttpError) {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
-            requestUrl:
-                safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
+            requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
             cause: error,
@@ -193,7 +191,6 @@ function throwImageError(error: unknown, c: ImageContext): never {
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "Image generation failed",
-        requestUrl: new URL(c.req.url),
         cause: error,
     });
 }
@@ -432,7 +429,7 @@ export async function generateImageOrVideoResponse(
             ),
         });
     } catch (error) {
-        throwImageError(error, c);
+        throwImageError(error);
     }
 }
 

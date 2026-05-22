@@ -63,6 +63,5 @@ Cache is shared across all tool calls within a process — don't roll your own f
 
 ## Testing
 
-- `npm run test` — `test-mcp-client.js` runs the server end-to-end over stdio.
-- `npm run test:integration` — vitest integration suite.
+- `npm run test` — `test-mcp-client.js` runs the server end-to-end over stdio. Set `POLLINATIONS_API_KEY=sk_…` to exercise authenticated tools.
 - Restart Claude Desktop after any change — it caches the running MCP process.

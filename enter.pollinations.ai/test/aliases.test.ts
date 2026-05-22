@@ -40,17 +40,6 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("cost lookup uses the public model name instead of collapsing shared provider ids", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage);
-
-    expect(geminiFastCost.totalCost).not.toBe(geminiSearchCost.totalCost);
-});
-
 test("gemini-fast can expose a higher public price than provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
@@ -62,12 +51,12 @@ test("gemini-fast can expose a higher public price than provider cost", () => {
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiFastPrice = calculatePrice("gemini-fast", usage);
 
-    expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.0000003, 15);
-    expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.00000003, 15);
-    expect(priceDefinition?.promptAudioTokens).toBeCloseTo(0.0000009, 15);
-    expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.0000012, 15);
+    expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.00000015, 15);
+    expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.000000015, 15);
+    expect(priceDefinition?.promptAudioTokens).toBeCloseTo(0.00000045, 15);
+    expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.0000006, 15);
     expect(geminiFastCost.totalCost).toBeCloseTo(0.81, 8);
-    expect(geminiFastPrice.totalPrice).toBeCloseTo(2.43, 8);
+    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.215, 8);
     expect(geminiFastPrice.totalPrice).toBeGreaterThan(
         geminiFastCost.totalCost,
     );

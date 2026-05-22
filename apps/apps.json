@@ -93,5 +93,12 @@
         "outputDir": "dist",
         "title": "SlidePainter",
         "description": "AI-powered slide image generator by Pollinations"
+    },
+    "pollicraft": {
+        "subdomain": "pollicraft",
+        "buildCommand": "corepack enable && pnpm install --frozen-lockfile && pnpm build",
+        "outputDir": "build",
+        "title": "Pollicraft",
+        "description": "An Infinite Craft-style alchemy game powered by Pollinations"
     }
 }

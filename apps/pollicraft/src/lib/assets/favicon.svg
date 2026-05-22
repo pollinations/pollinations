@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e2330"/>
+      <stop offset="100%" stop-color="#12151c"/>
+    </radialGradient>
+
+    <!-- Left Side Cube Gradient (Cool/Water) -->
+    <linearGradient id="cubeLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bce7ff"/>
+      <stop offset="100%" stop-color="#53b1e6"/>
+    </linearGradient>
+
+    <!-- Right Side Cube Gradient (Neutral/Bright) -->
+    <linearGradient id="cubeRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e3f6ff"/>
+      <stop offset="100%" stop-color="#8fd3f4"/>
+    </linearGradient>
+
+    <!-- Top Side Cube Gradient -->
+    <linearGradient id="cubeTop" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9ad8f5"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+
+    <!-- Crafting Streams Gradients -->
+    <linearGradient id="streamLeft" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+
+    <linearGradient id="streamRight" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff7b00"/>
+      <stop offset="100%" stop-color="#ffea00"/>
+    </linearGradient>
+
+    <!-- Glow Filter for the Reaction Node -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background (Squircle) -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+
+  <!-- Main Isometric Cube Group -->
+  <g transform="translate(0, 35)">
+    <!-- Thick Outer Stroke/Silhouette for Contrast -->
+    <path d="M 256 110 L 396 190 L 396 350 L 256 430 L 116 350 L 116 190 Z" 
+          fill="none" stroke="#10141d" stroke-width="32" stroke-linejoin="round"/>
+
+    <!-- Left Face -->
+    <path d="M 256 270 L 116 190 L 116 350 L 256 430 Z" fill="url(#cubeLeft)"/>
+    
+    <!-- Right Face -->
+    <path d="M 256 270 L 396 190 L 396 350 L 256 430 Z" fill="url(#cubeRight)"/>
+    
+    <!-- Top Face -->
+    <path d="M 256 110 L 396 190 L 256 270 L 116 190 Z" fill="url(#cubeTop)"/>
+
+    <!-- Inner Cube Linework/Shadow Accents -->
+    <path d="M 256 270 L 256 430 M 116 190 L 256 270 L 396 190" 
+          fill="none" stroke="#222b3c" stroke-width="12" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>
+  </g>
+
+  <!-- Crafting Elements & Fusion Node (Foreground) -->
+  <!-- Left/Water Element Drop -->
+  <path d="M 190 270 C 170 270 160 290 160 310 C 160 330 175 345 195 345 C 215 345 230 330 230 310 C 230 290 205 270 190 270 Z" 
+        fill="url(#streamLeft)" stroke="#1a2332" stroke-width="10"/>
+
+  <!-- Right/Fire Element Flame -->
+  <path d="M 322 345 C 345 345 355 325 355 305 C 355 275 330 270 322 250 C 314 270 290 280 290 305 C 290 325 300 345 322 345 Z" 
+        fill="url(#streamRight)" stroke="#1a2332" stroke-width="10"/>
+
+  <!-- Connecting Streams to Central Node -->
+  <path d="M 195 290 Q 210 210 256 185" fill="none" stroke="url(#streamLeft)" stroke-width="24" stroke-linecap="round"/>
+  <path d="M 322 285 Q 305 210 256 185" fill="none" stroke="url(#streamRight)" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- Central Glowing Fusion Node -->
+  <circle cx="256" cy="170" r="36" fill="#ffffff" filter="url(#glow)"/>
+  <circle cx="256" cy="170" r="36" fill="none" stroke="#ffffff" stroke-width="8"/>
+  
+  <!-- Subtle Reflection Highlight on Node -->
+  <circle cx="244" cy="158" r="10" fill="#ffffff" opacity="0.5"/>
+</svg>

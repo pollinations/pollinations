@@ -1,0 +1,8 @@
+onlyBuiltDependencies:
+  - esbuild
+overrides:
+  cookie@<0.7.0: '>=0.7.0'
+  svelte@<=5.55.6: '>=5.55.7'
+  svelte@>=5.46.0 <=5.55.6: '>=5.55.7'
+  svelte@>=5.51.5 <=5.55.6: '>=5.55.7'
+  devalue@>=5.6.3 <=5.8.0: '>=5.8.1'

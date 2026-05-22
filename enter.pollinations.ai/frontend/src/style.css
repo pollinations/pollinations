@@ -77,7 +77,7 @@
 
     --theme-bg-pale:    var(--color-amber-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-amber-600) l c h / 0.6);
+    --theme-scrollbar-thumb: oklch(from var(--color-amber-400) l c h / 0.7);
 }
 
 [data-theme="blue"] {
@@ -93,7 +93,7 @@
 
     --theme-bg-pale:    var(--color-blue-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-blue-600) l c h / 0.6);
+    --theme-scrollbar-thumb: oklch(from var(--color-blue-400) l c h / 0.7);
 }
 
 [data-theme="pink"] {
@@ -109,7 +109,7 @@
 
     --theme-bg-pale:    var(--color-pink-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-pink-600) l c h / 0.55);
+    --theme-scrollbar-thumb: oklch(from var(--color-pink-400) l c h / 0.7);
 }
 
 [data-theme="teal"] {
@@ -125,7 +125,7 @@
 
     --theme-bg-pale:    var(--color-teal-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-teal-600) l c h / 0.6);
+    --theme-scrollbar-thumb: oklch(from var(--color-teal-400) l c h / 0.7);
 }
 
 [data-theme="violet"] {
@@ -141,7 +141,7 @@
 
     --theme-bg-pale:    var(--color-violet-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-violet-600) l c h / 0.6);
+    --theme-scrollbar-thumb: oklch(from var(--color-violet-400) l c h / 0.7);
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
@@ -160,7 +160,7 @@
 
     --theme-bg-pale:    var(--color-green-100);
 
-    --theme-scrollbar-thumb: oklch(from var(--color-green-600) l c h / 0.6);
+    --theme-scrollbar-thumb: oklch(from var(--color-green-400) l c h / 0.7);
 }
 
 /* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */

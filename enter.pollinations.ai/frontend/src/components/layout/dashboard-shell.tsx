@@ -16,7 +16,6 @@ import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     dashboardThemeByPage,
-    type ThemeName,
 } from "./dashboard-theme.ts";
 import { User } from "./user.tsx";
 
@@ -106,7 +105,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const rail = (
         <DashboardRail
             activePage={activePage}
-            activeTheme={dashboardThemeByPage[activePage]}
             navItems={navItems}
             githubUsername={githubUsername}
             githubAvatarUrl={githubAvatarUrl}
@@ -214,7 +212,6 @@ function useDashboardBodyClass(): void {
 
 type DashboardRailProps = {
     activePage: DashboardPage;
-    activeTheme: ThemeName;
     navItems: typeof DASHBOARD_NAV_ITEMS;
     githubUsername?: string;
     githubAvatarUrl?: string;
@@ -226,7 +223,6 @@ type DashboardRailProps = {
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
-    activeTheme,
     navItems,
     githubUsername,
     githubAvatarUrl,
@@ -244,8 +240,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 <Brand imageClassName="h-6" />
                 <BrandSocialChips />
             </div>
-            <ScrollArea theme={activeTheme} className="min-h-0 flex-1 pt-3">
-                <nav className="flex flex-col gap-1">
+            <ScrollArea
+                className="-mr-2 min-h-0 flex-1 pt-3"
+                style={
+                    {
+                        "--theme-scrollbar-thumb":
+                            "oklch(from var(--color-gray-400) l c h / 0.65)",
+                    } as React.CSSProperties
+                }
+            >
+                <nav className="flex flex-col gap-1 pr-2">
                     {navItems.map((item) => (
                         <NavButton
                             key={item.id}
@@ -279,7 +283,20 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </a>
                     </div>
                 </nav>
-                <div className="mt-4 flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
+            </ScrollArea>
+            <div className="shrink-0 flex flex-col gap-2 border-t border-green-950/10 pt-4">
+                {walletArea && <div className="px-1">{walletArea}</div>}
+                {accountArea ??
+                    (githubUsername && onSignOut ? (
+                        <User
+                            githubUsername={githubUsername}
+                            githubAvatarUrl={githubAvatarUrl ?? ""}
+                            onSignOut={onSignOut}
+                            className="w-full justify-start"
+                            menuItems={<AccountMenuLinks />}
+                        />
+                    ) : null)}
+                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
                     <a
                         href="https://pollinations.ai/terms"
                         target="_blank"
@@ -305,22 +322,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         Refunds
                     </a>
                 </div>
-                <div className="mt-2 px-3 pb-2 text-xs leading-none text-green-950/45">
+                <div className="px-3 text-xs leading-none text-green-950/45">
                     © 2026 Myceli.AI
                 </div>
-            </ScrollArea>
-            <div className="shrink-0 flex flex-col gap-2 border-t border-green-950/10 pt-4">
-                {walletArea && <div className="px-1">{walletArea}</div>}
-                {accountArea ??
-                    (githubUsername && onSignOut ? (
-                        <User
-                            githubUsername={githubUsername}
-                            githubAvatarUrl={githubAvatarUrl ?? ""}
-                            onSignOut={onSignOut}
-                            className="w-full justify-start"
-                            menuItems={<AccountMenuLinks />}
-                        />
-                    ) : null)}
             </div>
         </aside>
     );

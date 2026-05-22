@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
 
 **Base URL:** `https://gen.pollinations.ai`
 
@@ -147,7 +147,7 @@ Returns the pollen balance visible to the caller. API keys with a budget always 
 
 - **`balance` (required)**
 
-  `number` — Remaining pollen balance (combines tier, pack, and crypto balances)
+  `number` — Remaining pollen balance (sum of tier balance + paid balance)
 
 **Example:**
 
@@ -193,6 +193,10 @@ Returns your request history with per-request details: model used, token counts,
 
     `number` — Cost in USD for this request
 
+  - **`input_audio_seconds` (required)**
+
+    `number` — Duration of input audio in seconds (for transcription/STT)
+
   - **`input_audio_tokens` (required)**
 
     `number` — Number of input audio tokens
@@ -211,11 +215,15 @@ Returns your request history with per-request details: model used, token counts,
 
   - **`meter_source` (required)**
 
-    `object` — Billing source ('tier', 'pack', 'crypto')
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
 
   - **`model` (required)**
 
     `object` — Model used for generation
+
+  - **`output_audio_seconds` (required)**
+
+    `number` — Duration of output audio in seconds (for TTS/music generation)
 
   - **`output_audio_tokens` (required)**
 
@@ -232,6 +240,10 @@ Returns your request history with per-request details: model used, token counts,
   - **`output_text_tokens` (required)**
 
     `number` — Number of output text tokens
+
+  - **`output_video_seconds` (required)**
+
+    `number` — Duration of output video in seconds
 
   - **`response_time_ms` (required)**
 
@@ -254,11 +266,14 @@ Returns your request history with per-request details: model used, token counts,
       "input_text_tokens": 1,
       "input_cached_tokens": 1,
       "input_audio_tokens": 1,
+      "input_audio_seconds": 1,
       "input_image_tokens": 1,
       "output_text_tokens": 1,
       "output_reasoning_tokens": 1,
       "output_audio_tokens": 1,
+      "output_audio_seconds": 1,
       "output_image_tokens": 1,
+      "output_video_seconds": 1,
       "cost_usd": 1,
       "response_time_ms": 1
     }
@@ -301,7 +316,7 @@ Returns daily aggregated usage for the requested time window, grouped by date an
 
   - **`meter_source` (required)**
 
-    `object` — Billing source ('tier', 'pack', 'crypto')
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
 
   - **`model` (required)**
 
@@ -325,6 +340,121 @@ Returns daily aggregated usage for the requested time window, grouped by date an
 }
 ```
 
+### Get Developer Earnings
+
+- **Method:** `GET`
+- **Path:** `/account/earnings`
+- **Tags:** 👤 Account
+
+Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total\_price − dev\_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
+
+#### Responses
+
+##### Status: 200 Combined earnings buckets and rollups
+
+###### Content-Type: application/json
+
+- **`daily` (required)**
+
+  `array` — Per-(date, app) buckets for the period
+
+  **Items:**
+
+  - **`app_key_id` (required)**
+
+    `string` — BYOP app key id; empty string on the global rollup row
+
+  - **`app_name` (required)**
+
+    `string` — App display name
+
+  - **`date` (required)**
+
+    `string` — Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows
+
+  - **`markup_rate` (required)**
+
+    `number` — Average markup rate applied
+
+  - **`pollen_earned` (required)**
+
+    `number` — Pollen earned (markup take)
+
+  - **`requests` (required)**
+
+    `number` — Number of billed requests
+
+  - **`unique_users` (required)**
+
+    `number` — Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').
+
+- **`global` (required)**
+
+  `object` — Global rollup across all apps for the period
+
+- **`perApp` (required)**
+
+  `array` — Per-app rollups for the period
+
+  **Items:**
+
+  - **`app_key_id` (required)**
+
+    `string` — BYOP app key id; empty string on the global rollup row
+
+  - **`app_name` (required)**
+
+    `string` — App display name
+
+  - **`date` (required)**
+
+    `string` — Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows
+
+  - **`markup_rate` (required)**
+
+    `number` — Average markup rate applied
+
+  - **`pollen_earned` (required)**
+
+    `number` — Pollen earned (markup take)
+
+  - **`requests` (required)**
+
+    `number` — Number of billed requests
+
+  - **`unique_users` (required)**
+
+    `number` — Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').
+
+**Example:**
+
+```json
+{
+  "daily": [
+    {
+      "requests": 1,
+      "pollen_earned": 1,
+      "markup_rate": 1,
+      "unique_users": 1
+    }
+  ],
+  "perApp": [
+    {
+      "requests": 1,
+      "pollen_earned": 1,
+      "markup_rate": 1,
+      "unique_users": 1
+    }
+  ],
+  "global": {
+    "requests": 1,
+    "pollen_earned": 1,
+    "markup_rate": 1,
+    "unique_users": 1
+  }
+}
+```
+
 ### List API Keys
 
 - **Method:** `GET`
@@ -343,7 +473,7 @@ List all API keys for the current user. Requires `account:keys` permission when 
 - **Path:** `/account/keys`
 - **Tags:** 👤 Account
 
-Create a new API key. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
+Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
 
 #### Request Body
 
@@ -361,6 +491,10 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
   `object` — Model IDs this key can access. null = all models
 
+- **`earningsEnabled`**
+
+  `boolean` — Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.
+
 - **`expiresIn`**
 
   `integer` — Expiry in seconds from now (max 365 days)
@@ -371,7 +505,7 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`redirectUris`**
 
-  `array` — Allowed OAuth redirect URIs for publishable app keys. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.
+  `array` — Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.
 
   **Items:**
 
@@ -379,7 +513,7 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`type`**
 
-  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable (pk\_)
+  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable app key (pk\_). Use publishable to create an app key.
 
 **Example:**
 
@@ -396,7 +530,8 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
   ],
   "redirectUris": [
     ""
-  ]
+  ],
+  "earningsEnabled": true
 }
 ```
 
@@ -526,6 +661,10 @@ Returns usage history for the API key used in the request. No scope required —
 
     `number` — Cost in USD for this request
 
+  - **`input_audio_seconds` (required)**
+
+    `number` — Duration of input audio in seconds (for transcription/STT)
+
   - **`input_audio_tokens` (required)**
 
     `number` — Number of input audio tokens
@@ -544,11 +683,15 @@ Returns usage history for the API key used in the request. No scope required —
 
   - **`meter_source` (required)**
 
-    `object` — Billing source ('tier', 'pack', 'crypto')
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
 
   - **`model` (required)**
 
     `object` — Model used for generation
+
+  - **`output_audio_seconds` (required)**
+
+    `number` — Duration of output audio in seconds (for TTS/music generation)
 
   - **`output_audio_tokens` (required)**
 
@@ -565,6 +708,10 @@ Returns usage history for the API key used in the request. No scope required —
   - **`output_text_tokens` (required)**
 
     `number` — Number of output text tokens
+
+  - **`output_video_seconds` (required)**
+
+    `number` — Duration of output video in seconds
 
   - **`response_time_ms` (required)**
 
@@ -587,11 +734,14 @@ Returns usage history for the API key used in the request. No scope required —
       "input_text_tokens": 1,
       "input_cached_tokens": 1,
       "input_audio_tokens": 1,
+      "input_audio_seconds": 1,
       "input_image_tokens": 1,
       "output_text_tokens": 1,
       "output_reasoning_tokens": 1,
       "output_audio_tokens": 1,
+      "output_audio_seconds": 1,
       "output_image_tokens": 1,
+      "output_video_seconds": 1,
       "cost_usd": 1,
       "response_time_ms": 1
     }
@@ -752,7 +902,11 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
 - **`response_format`**
 
-  `string`, possible values: `"json", "text", "srt", "verbose_json", "vtt"`, default: `"json"` — The format of the transcript output.
+  `string`, possible values: `"json", "text", "srt", "verbose_json", "vtt", "diarized_json"`, default: `"json"` — The format of the transcript output. Use \`diarized\_json\` for OpenAI-compatible speaker segments on diarization-capable models.
+
+- **`speakers_expected`**
+
+  `integer` — Optional provider hint for the number of speakers. Only honored with \`response\_format=diarized\_json\`.
 
 - **`temperature`**
 
@@ -764,7 +918,8 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 {
   "model": "whisper-large-v3",
   "response_format": "json",
-  "temperature": 1
+  "temperature": 1,
+  "speakers_expected": 1
 }
 ```
 
@@ -774,11 +929,53 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
 ###### Content-Type: application/json
 
+- **`segments`**
+
+  `array` — OpenAI-compatible diarized segments. Present when \`response\_format=diarized\_json\`.
+
+  **Items:**
+
+  - **`end`**
+
+    `number`
+
+  - **`id`**
+
+    `string`
+
+  - **`speaker`**
+
+    `string`
+
+  - **`start`**
+
+    `number`
+
+  - **`text`**
+
+    `string`
+
+  - **`type`**
+
+    `string`, possible values: `"transcript.text.segment"`
+
 - **`text`**
 
   `string`
 
 **Example:**
+
+```json
+{
+  "segments": [
+    {
+      "type": "transcript.text.segment",
+      "start": 1,
+      "end": 1
+    }
+  ]
+}
+```
 
 ### List Models (OpenAI-compatible)
 
@@ -786,7 +983,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 - **Path:** `/v1/models`
 - **Tags:** 🤖 Models
 
-Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -878,13 +1075,13 @@ Returns available models (text, image, audio) in the OpenAI-compatible format (`
 }
 ```
 
-### List Text Models
+### List Models
 
 - **Method:** `GET`
 - **Path:** `/models`
 - **Tags:** 🤖 Models
 
-Convenience alias for `/text/models`. Returns all available text generation models with pricing, capabilities, and metadata.
+Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -939,6 +1136,24 @@ Returns all available text generation models with pricing, capabilities, and met
 - **Tags:** 🤖 Models
 
 Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+**Array of:**
+
+**Example:**
+
+### List Embedding Models
+
+- **Method:** `GET`
+- **Path:** `/embeddings/models`
+- **Tags:** 🔢 Embeddings
+
+Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -1593,6 +1808,123 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 }
 ```
 
+### Create Embeddings
+
+- **Method:** `POST`
+- **Path:** `/v1/embeddings`
+- **Tags:** 🔢 Embeddings
+
+Generate vector embeddings with an OpenAI-compatible response format.
+
+**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.
+
+**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.
+
+**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.
+
+**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `object` — Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image\_url, input\_audio, video\_url). Multimodal content parts are supported by Gemini embedding models only.
+
+- **`dimensions`**
+
+  `integer` — Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.
+
+- **`encoding_format`**
+
+  `string`, possible values: `"float", "base64"`, default: `"float"` — Output encoding for the embedding vector. \`base64\` packs Float32 little-endian like OpenAI.
+
+- **`model`**
+
+  `string`, default: `"openai-3-small"` — Embedding model to use
+
+- **`task_type`**
+
+  `string`, possible values: `"SEMANTIC_SIMILARITY", "CLASSIFICATION", "CLUSTERING", "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "CODE_RETRIEVAL_QUERY", "QUESTION_ANSWERING", "FACT_VERIFICATION"` — Gemini-specific task type hint for optimized embeddings
+
+**Example:**
+
+```json
+{
+  "model": "gemini-2",
+  "input": "Hello world",
+  "dimensions": 768,
+  "task_type": "RETRIEVAL_QUERY",
+  "encoding_format": "float"
+}
+```
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+- **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`embedding` (required)**
+
+    `object` — Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when \`encoding\_format=base64\`.
+
+  - **`index` (required)**
+
+    `integer` — Index of the embedding in the list
+
+  - **`object` (required)**
+
+    `string`
+
+- **`model` (required)**
+
+  `string`
+
+- **`object` (required)**
+
+  `string`
+
+- **`usage` (required)**
+
+  `object`
+
+  - **`prompt_tokens` (required)**
+
+    `integer`
+
+  - **`total_tokens` (required)**
+
+    `integer`
+
+**Example:**
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        1
+      ],
+      "index": -9007199254740991
+    }
+  ],
+  "usage": {
+    "prompt_tokens": -9007199254740991,
+    "total_tokens": -9007199254740991
+  }
+}
+```
+
 ### Text Generation With Messages
 
 - **Method:** `POST`
@@ -2046,13 +2378,13 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance`, `seedance-pro`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
-Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.
+Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
-You can also pass reference images via the `image` parameter — for example, `veo` supports start and end frames for interpolation.
+You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.
 
-Browse all available models at [`/image/models`](https://gen.pollinations.ai/image/models).
+Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).
 
 #### Responses
 
@@ -2245,7 +2577,7 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
 - **Path:** `/upload`
 - **Tags:** 📦 Media Storage
 
-Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Re-uploading resets the 14-day TTL.
+Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.
 
 #### Responses
 
@@ -2682,6 +3014,105 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 - **Type:**
 
 **Example:**
+
+### CreateEmbeddingResponse
+
+- **Type:**`object`
+
+* **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`embedding` (required)**
+
+    `object` — Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when \`encoding\_format=base64\`.
+
+  - **`index` (required)**
+
+    `integer` — Index of the embedding in the list
+
+  - **`object` (required)**
+
+    `string`
+
+* **`model` (required)**
+
+  `string`
+
+* **`object` (required)**
+
+  `string`
+
+* **`usage` (required)**
+
+  `object`
+
+  - **`prompt_tokens` (required)**
+
+    `integer`
+
+  - **`total_tokens` (required)**
+
+    `integer`
+
+**Example:**
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        1
+      ],
+      "index": -9007199254740991
+    }
+  ],
+  "usage": {
+    "prompt_tokens": -9007199254740991,
+    "total_tokens": -9007199254740991
+  }
+}
+```
+
+### CreateEmbeddingRequest
+
+- **Type:**`object`
+
+* **`input` (required)**
+
+  `object` — Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image\_url, input\_audio, video\_url). Multimodal content parts are supported by Gemini embedding models only.
+
+* **`dimensions`**
+
+  `integer` — Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.
+
+* **`encoding_format`**
+
+  `string`, possible values: `"float", "base64"`, default: `"float"` — Output encoding for the embedding vector. \`base64\` packs Float32 little-endian like OpenAI.
+
+* **`model`**
+
+  `string`, default: `"openai-3-small"` — Embedding model to use
+
+* **`task_type`**
+
+  `string`, possible values: `"SEMANTIC_SIMILARITY", "CLASSIFICATION", "CLUSTERING", "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "CODE_RETRIEVAL_QUERY", "QUESTION_ANSWERING", "FACT_VERIFICATION"` — Gemini-specific task type hint for optimized embeddings
+
+**Example:**
+
+```json
+{
+  "model": "gemini-2",
+  "input": "Hello world",
+  "dimensions": 768,
+  "task_type": "RETRIEVAL_QUERY",
+  "encoding_format": "float"
+}
+```
 
 ### CreateImageResponse
 

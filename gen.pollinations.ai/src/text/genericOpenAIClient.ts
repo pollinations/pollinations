@@ -1,4 +1,5 @@
 import debug from "debug";
+import { remapUpstreamStatus } from "@/error.ts";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
     normalizeOptions,
@@ -17,8 +18,6 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
-const DEFAULT_UPSTREAM_TIMEOUT_MS = 90_000;
-const STREAM_UPSTREAM_TIMEOUT_MS = 300_000;
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
@@ -80,27 +79,9 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = response.status;
+    error.status = remapUpstreamStatus(response.status);
+    error.upstreamStatus = response.status;
     error.details = details;
-    error.model = modelName;
-    return error;
-}
-
-function isAbortLikeError(error: unknown): boolean {
-    return (
-        error instanceof DOMException &&
-        (error.name === "AbortError" || error.name === "TimeoutError")
-    );
-}
-
-function createTimeoutError(
-    modelName: string,
-    timeoutMs: number,
-): ServiceError {
-    const error = new Error(
-        `Upstream provider timed out after ${timeoutMs}ms`,
-    ) as ServiceError;
-    error.status = 504;
     error.model = modelName;
     return error;
 }
@@ -190,23 +171,11 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const timeoutMs = normalizedOptions.stream
-            ? STREAM_UPSTREAM_TIMEOUT_MS
-            : DEFAULT_UPSTREAM_TIMEOUT_MS;
-        let response: Response;
-        try {
-            response = await fetch(endpointUrl, {
-                method: "POST",
-                headers,
-                body: JSON.stringify(requestBody),
-                signal: AbortSignal.timeout(timeoutMs),
-            });
-        } catch (thrown: unknown) {
-            if (isAbortLikeError(thrown)) {
-                throw createTimeoutError(modelName, timeoutMs);
-            }
-            throw thrown;
-        }
+        const response = await fetch(endpointUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody),
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -279,26 +248,6 @@ export async function genericOpenAIClient(
         // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
         if (formattedChoice.message?.tool_calls?.length) {
             formattedChoice.finish_reason = "tool_calls";
-        }
-
-        // Reject empty completions from unstable upstream providers.
-        const hasContent = !!formattedChoice.message?.content;
-        const hasToolCalls = !!formattedChoice.message?.tool_calls?.length;
-        const hasTokens = (data.usage?.completion_tokens ?? 0) > 0;
-
-        if (!hasContent && !hasToolCalls && !hasTokens) {
-            errorLog(
-                `[${requestId}] Empty completion from upstream: model=%s`,
-                modelName,
-            );
-            throw createApiError(
-                { status: 502, statusText: "Bad Gateway" },
-                {
-                    message: "Upstream provider returned an empty completion",
-                    model: modelName,
-                },
-                modelName,
-            );
         }
 
         return {

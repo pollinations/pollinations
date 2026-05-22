@@ -68,19 +68,27 @@ polli docs --open            # open in browser
 
 ## Account
 
+Two kinds of keys:
+
+- **Secret (`sk_`)** — backend use, full access. Default.
+- **Publishable (`pk_`)** — safe to ship in frontend code.
+
 ```bash
 polli keys list
-polli keys create --name mybot --budget 100
-polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback
-polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback --earnings
+polli keys create --name mybot --budget 100                    # secret (default)
+polli keys create --name myapp --type publishable              # API publishable
+polli keys create --name myapp --type publishable \            # 3rd-party app key
+  --redirect-uri https://myapp.com/callback --earnings
 polli keys revoke <id>
+```
 
+Keys can't be edited — to change a name, budget, or model list, revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+
+```bash
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 ```
-
-Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ## Links
 

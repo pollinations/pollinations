@@ -14,6 +14,7 @@ import {
 import {
     loadConfig,
     loadDotenv,
+    loadPoolHistory,
     loadSharedModelSecrets,
     loadVendors,
     saveVendors,
@@ -21,7 +22,10 @@ import {
 import { buildLayout } from "../lib/layout.mjs";
 import { normalize } from "../lib/normalize.mjs";
 import { promptNewVendor } from "../lib/prompt.mjs";
-import { fetchMonths } from "../lib/providers/wise-transactions.mjs";
+import {
+    fetchLiveBankBalanceEur,
+    fetchMonths,
+} from "../lib/providers/wise-transactions.mjs";
 
 function colLetter(zeroIdx) {
     let n = zeroIdx;
@@ -195,7 +199,7 @@ async function main() {
 
     // Credit pools live in vendors.json under the "_pools" key.
     const pools = vendors._pools ?? {};
-    const poolHistory = {}; // TODO: load from secrets/pool-history.json
+    const poolHistory = await loadPoolHistory();
 
     // Inject live MTD cash from payg pool APIs into NEXT month (not current).
     // Payg providers (AWS, Alibaba) consume now but invoice next month —
@@ -318,11 +322,23 @@ async function main() {
         extended.data[event.month][event.vendor_canonical] = event.amount_eur;
     }
 
+    let liveBankBalanceEur = null;
+    try {
+        const wiseBalance = await fetchLiveBankBalanceEur(fxRate);
+        liveBankBalanceEur = wiseBalance.total_eur;
+        console.log(
+            `Live Wise balance: €${liveBankBalanceEur.toLocaleString()} (${wiseBalance.breakdown.map((b) => `${b.value} ${b.currency}`).join(", ")})`,
+        );
+    } catch (e) {
+        console.warn(`Could not fetch live Wise balance: ${e.message}`);
+    }
+
     const layout = buildLayout(extended, config, {
         currentMonth: nowMonth,
         pools,
         poolHistory,
         unmatched,
+        liveBankBalanceEur,
     });
 
     // Write to sheet

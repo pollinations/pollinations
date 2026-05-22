@@ -4,8 +4,8 @@ import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     resolveModelName,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
@@ -55,19 +55,19 @@ test("gemini-fast can expose a higher public price than provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
+        promptAudioTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const priceDefinition = getActivePriceDefinition("gemini-fast");
+    const priceDefinition = getPriceDefinition("gemini-fast");
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiFastPrice = calculatePrice("gemini-fast", usage);
 
-    expect(priceDefinition).toMatchObject({
-        promptTextTokens: 0.0000003,
-        promptCachedTokens: 0.00000003,
-        completionTextTokens: 0.0000012,
-    });
-    expect(geminiFastCost.totalCost).toBeCloseTo(0.51, 8);
-    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.53, 8);
+    expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.00000015, 15);
+    expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.000000015, 15);
+    expect(priceDefinition?.promptAudioTokens).toBeCloseTo(0.00000045, 15);
+    expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.0000006, 15);
+    expect(geminiFastCost.totalCost).toBeCloseTo(0.81, 8);
+    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.215, 8);
     expect(geminiFastPrice.totalPrice).toBeGreaterThan(
         geminiFastCost.totalCost,
     );
@@ -107,7 +107,7 @@ test("GPT-5.5 requires paid balance", () => {
     expect(definition.paidOnly).toBe(true);
 });
 
-test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
+test("DeepSeek V4 models are billed at provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
@@ -115,12 +115,16 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
     };
 
     const expectedCosts = {
-        deepseek: 0.448,
+        deepseek: 0.4032,
         "deepseek-pro": 5.36,
     } as const;
     const expectedProviders = {
-        deepseek: "deepinfra",
+        deepseek: "openrouter",
         "deepseek-pro": "fireworks",
+    } as const;
+    const expectedPaidOnly = {
+        deepseek: undefined,
+        "deepseek-pro": true,
     } as const;
 
     for (const model of ["deepseek", "deepseek-pro"] as const) {
@@ -129,7 +133,7 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
         const price = calculatePrice(model, usage);
 
         expect(definition.provider).toBe(expectedProviders[model]);
-        expect(definition.paidOnly).toBe(true);
+        expect(definition.paidOnly).toBe(expectedPaidOnly[model]);
         expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }

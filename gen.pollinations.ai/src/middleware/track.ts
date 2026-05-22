@@ -4,16 +4,18 @@ import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
+import { getRealClientIp } from "@shared/client-ip.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     type ModelName,
     type PriceDefinition,
     type UsageCost,
@@ -125,8 +127,9 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
-        const rawIp = c.req.header("cf-connecting-ip");
-        const clientIp = rawIp ? stripIPv4MappedPrefix(rawIp) : undefined;
+        const rawIp = getRealClientIp(c);
+        const clientIp =
+            rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
@@ -328,7 +331,7 @@ async function triggerAutoTopUp(
 ): Promise<void> {
     try {
         const response = await env.ENTER.fetch(
-            "https://enter.pollinations.ai/api/stripe/auto-top-up/trigger",
+            `${PUBLIC_URLS.enter.production}/api/stripe/auto-top-up/trigger`,
             {
                 method: "POST",
                 headers: {
@@ -365,9 +368,7 @@ async function trackRequest(
     const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getActivePriceDefinition(
-        resolvedModelRequested,
-    );
+    const modelPriceDefinition = getPriceDefinition(resolvedModelRequested);
     if (!modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,

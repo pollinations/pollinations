@@ -15,49 +15,49 @@ function parseJsonEnv(name) {
 
 async function resolveLinkedQuest({ github, context, core }) {
     const pr = context.payload.pull_request;
-    // GitHub closing keywords: close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved.
-    const closePattern =
-        /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)(?::\s*|\s+)#(\d+)/gi;
-    const issueNumbers = [
-        ...new Set(
-            [...(pr.body || "").matchAll(closePattern)].map((m) =>
-                Number(m[1]),
-            ),
-        ),
-    ];
+    // Use GitHub's native PR↔issue link: covers "Fixes #N" keywords AND the
+    // Development sidebar manual link. Means maintainers can rescue a quest
+    // PR pre-merge without contributor cooperation.
+    const data = await github.graphql(
+        `query($owner:String!,$repo:String!,$num:Int!) {
+            repository(owner:$owner,name:$repo) {
+                pullRequest(number:$num) {
+                    closingIssuesReferences(first:10) {
+                        nodes {
+                            number body
+                            labels(first:20) { nodes { name } }
+                            assignees(first:5) { nodes { login databaseId } }
+                        }
+                    }
+                }
+            }
+        }`,
+        { ...repo(context), num: pr.number },
+    );
 
-    for (const issueNumber of issueNumbers) {
-        let issue;
-        try {
-            issue = (
-                await github.rest.issues.get({
-                    ...repo(context),
-                    issue_number: issueNumber,
-                })
-            ).data;
-        } catch {
-            continue;
-        }
-
-        const labels = (issue.labels || []).map((label) =>
-            typeof label === "string" ? label : label.name,
+    const issue =
+        data.repository.pullRequest.closingIssuesReferences.nodes.find((n) =>
+            n.labels.nodes.some((l) => l.name === "POLLEN-QUEST"),
         );
-        if (!labels.includes("POLLEN-QUEST")) continue;
 
-        const quest = {
-            number: issueNumber,
-            assignee: issue.assignees?.[0]
-                ? { login: issue.assignees[0].login, id: issue.assignees[0].id }
-                : null,
-            body: issue.body || "",
-        };
-        core.setOutput("quest", JSON.stringify(quest));
-        core.info(`Linked POLLEN-QUEST issue: #${issueNumber}`);
+    if (!issue) {
+        core.setOutput("quest", "");
+        core.info("Linked POLLEN-QUEST issue: (none)");
         return;
     }
 
-    core.setOutput("quest", "");
-    core.info("Linked POLLEN-QUEST issue: (none)");
+    const assignee = issue.assignees.nodes[0];
+    core.setOutput(
+        "quest",
+        JSON.stringify({
+            number: issue.number,
+            assignee: assignee
+                ? { login: assignee.login, id: assignee.databaseId }
+                : null,
+            body: issue.body || "",
+        }),
+    );
+    core.info(`Linked POLLEN-QUEST issue: #${issue.number}`);
 }
 
 function parseReward(body) {

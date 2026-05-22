@@ -13,11 +13,11 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
-    callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
-} from "./models/seedreamModel.ts";
+} from "./models/seedreamReplicateModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
@@ -773,7 +773,6 @@ const generateImage = async (
         }
 
         case "seedream": {
-            // Hidden legacy model -- routes to real Seedream 4.0 endpoint
             try {
                 return await callSeedreamAPI(
                     prompt,
@@ -782,17 +781,13 @@ const generateImage = async (
                     requestId,
                 );
             } catch (error) {
-                logError(
-                    "Seedream 4.0 (legacy) generation failed:",
-                    error.message,
-                );
+                logError("Seedream 4.0 generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
         }
 
         case "seedream-pro": {
-            // Hidden legacy model -- routes to real Seedream 4.5 endpoint
             try {
                 return await callSeedreamProAPI(
                     prompt,
@@ -801,10 +796,7 @@ const generateImage = async (
                     requestId,
                 );
             } catch (error) {
-                logError(
-                    "Seedream 4.5 Pro (legacy) generation failed:",
-                    error.message,
-                );
+                logError("Seedream 4.5 Pro generation failed:", error.message);
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }

@@ -7,11 +7,8 @@ import debug from "debug";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
+import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
-import {
-    callSeedanceAPI,
-    callSeedanceProAPI,
-} from "./models/seedanceVideoModel.ts";
 import {
     callVeoAPI,
     type VideoGenerationResult,
@@ -20,6 +17,7 @@ import { callWanAPI, callWanFastAPI } from "./models/wanVideoModel.ts";
 import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
+
 export type { VideoGenerationResult };
 
 import type { ImageModelName } from "@shared/registry/image.ts";
@@ -45,14 +43,6 @@ export async function createAndReturnVideo(
     switch (safeParams.model) {
         case "veo":
             result = await callVeoAPI(prompt, safeParams, progress, requestId);
-            break;
-        case "seedance":
-            result = await callSeedanceAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
             break;
         case "seedance-pro":
             result = await callSeedanceProAPI(

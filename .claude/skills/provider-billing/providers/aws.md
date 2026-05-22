@@ -20,17 +20,57 @@ Captures the exact CLI calls needed to answer AWS questions like:
 - Default region is `us-east-1` (set in `~/.aws/config`) — **Cost Explorer API only exists in us-east-1** so don't override
 - `python3` for JSON wrangling
 
-## Known identifiers (our account)
+## Known identifiers (our accounts)
+
+We have THREE AWS contexts to keep straight:
+
+### Context A — Pollinations-via-Automat-IT (the original `301235909293` member)
 
 ```
 Account ID:        301235909293
 Account type:      Linked member account (NOT payer)
-Identity:          root user
+Identity:          root user (IAM access keys in ~/.aws/credentials [default])
 Organization:      o-m67rvmyvhq
 Master account:    813596885972  ← Automat-IT (automat-it.com)
 Master email:      aws.ait.org.nsbu@automat-it.com
 Default region:    us-east-1
 ```
+
+### Context B — Myceli-direct (`301235909293` direct billing for NVIDIA Inception credits)
+
+Same account ID as Context A historically — see "Pattern B" in the credits section. Manual seed of credit balance via `apps/operation/finance/secrets/aws-credits.json`.
+
+### Context C — NEW Myceli AWS Organization (multi-account Control Tower, May 2026)
+
+Set up sometime around April 2026, populated by Automat-IT. Resold AGAIN through Automat-IT (same payer model as Context A — confirmed via master account email).
+
+```
+Org ID:            o-kh571dk57p
+Master account:    202731947268  awsacct+myceli-ai+org@automat-it.com  (= AWS-AIT-ORG-Myceli AI; the org payer = Automat-IT once again)
+Default region:    us-east-1
+Auth:              AWS SSO via https://ssoins-68049670fff44d25.portal.eu-west-1.app.aws (Identity Center, eu-west-1)
+                   Login: `aws sso login --sso-session myceli`  (use `--no-browser` + incognito if Google OAuth gets "It's not you, it's us")
+Legal entity:      Amazon Web Services EMEA SARL (no Marketplace charges yet)
+```
+
+8 linked accounts (standard AWS Control Tower landing-zone layout):
+
+| Account ID | Profile name | Role | Owner email |
+|---|---|---|---|
+| 202731947268 | `myceli-management` | Org payer / Control Tower management | awsacct+myceli-ai+org@automat-it.com |
+| 283434716067 | `myceli-dev` | Dev | awsacct+dev@myceli.ai |
+| 514585225061 | `myceli-prod` | Prod | awsacct+prod@myceli.ai |
+| 820905680838 | `myceli-staging` | Staging | awsacct+staging@myceli.ai |
+| 934822760778 | `myceli-network` | Shared networking / Transit Gateway | awsacct+network@myceli.ai |
+| 562077794032 | `myceli-devops` | DevOps shared services | awsacct+devops@myceli.ai |
+| 705942571777 | `myceli-audit` | Security audit (Security Hub, GuardDuty) | awsacct+audit@myceli.ai |
+| 529589820257 | `myceli-log-archive` | Central CloudTrail/Config log archive | awsacct+log-archive@myceli.ai |
+
+All 8 profiles use SSO role `AWSAdministratorAccess`. Switch with `--profile myceli-<name>` or `export AWS_PROFILE=myceli-<name>`.
+
+**SSO login gotcha (validated 2026-05-17)**: The Google OAuth handoff at `ssoins-68049670fff44d25.portal.eu-west-1.app.aws` returns "It's not you, it's us" in normal browser sessions due to stale AWS cookies from other tenants. **Workaround**: run `aws sso login --sso-session myceli --no-browser`, copy the device-code URL into an **incognito window**, complete OAuth there. The CLI then completes within ~5 seconds.
+
+**Token cache**: lives at `~/.aws/sso/cache/*.json`. Each profile gets its own cached role token under `~/.aws/cli/cache/`. Tokens last 8h by default; re-run `aws sso login` to refresh.
 
 **🚨 Critical billing relationship**: This account is a **linked member** of an AWS Organization owned by Automat-IT (a Tel Aviv AWS managed-service partner). This has several consequences:
 
@@ -638,6 +678,111 @@ In Cost Explorer `USAGE_TYPE` strings, the region is prefixed as a short code:
 | List all inference profiles | `aws bedrock list-inference-profiles --region us-east-1` |
 | Is a model available on our account? | `aws bedrock get-foundation-model-availability --model-id <id> --region us-east-1` |
 | Who is our AWS payer? | `aws organizations describe-organization` → `MasterAccountId` |
+
+---
+
+---
+
+## Myceli org (Context C) — May 2026 baseline snapshot
+
+Validated 2026-05-17 from `myceli-management` profile.
+
+### Spend posture
+
+```
+April 2026:        $0.02       (org just provisioned)
+May 2026 MTD:      $178.89     (May 1–17, estimated)
+May 2026 forecast: $404.03     (full month projection from Cost Explorer)
+```
+
+By linked account (May MTD):
+
+```
+283434716067 (dev)         $50.61
+934822760778 (network)     $35.08    ← NAT Gateway / Transit Gateway
+514585225061 (prod)        $34.64
+562077794032 (devops)      $33.48
+202731947268 (management)  $12.66
+529589820257 (log-archive)  $7.77    ← CloudTrail S3 storage
+705942571777 (audit)        $3.18
+820905680838 (staging)      $1.46
+```
+
+By service (May MTD):
+
+```
+$54.45  Amazon Virtual Private Cloud   ← NAT gateway hours + data
+$47.66  EC2 - Other                    ← EBS + cross-AZ data transfer
+$27.29  Tax                            ← Luxembourg VAT
+$12.84  Amazon RDS                     ← a small RDS instance somewhere
+$11.67  AWS Config                     ← Control Tower drift detection (org-wide)
+$10.99  AWS CloudTrail                 ← Control Tower trail
+$ 6.92  AWS Cost Explorer              ← $0.01 per API call, racks up fast
+$ 5.46  AWS KMS                        ← per-key fees for SSE-KMS encryption
+```
+
+Reading: this is **landing-zone baseline cost** — Control Tower's Config/CloudTrail trails plus a NAT Gateway in the network account. There are no production workloads burning meaningful cost yet. The forecast of $404/mo is the cost just to keep the lights on with zero workload — typical Control Tower overhead.
+
+### Credits / discounts on Context C — same blackout as Context A
+
+```
+RECORD_TYPE values present:    Usage, Tax, Solution Provider Program Discount
+RECORD_TYPE values ABSENT:     Credit, Refund, SavingsPlanCoveredUsage, SavingsPlanNegation
+UnblendedCost vs NetUnblendedCost (May MTD): $179.82 vs $178.89  → $0.93 SPP discount
+```
+
+**Critical for the runway app**: the org pays through Automat-IT, just like the original Pollinations member account. Same structural blackout applies:
+
+- `aws ce` shows **list price**, not what we actually pay
+- AWS credits granted to the org (Activate, promotional, anything) live on Automat-IT's payer-side ledger and never surface via the member CLI
+- The `Solution Provider Program Discount` row is the **only** credit-like visibility we have — it shows what the reseller is passing through. May MTD pass-through = 0.5% (negligible).
+- Wise payments to Automat-IT (e.g. the $4,000 wire on the books) do NOT appear anywhere in `aws ce` — those are Automat-IT's accounts-receivable entries, not AWS-side records. Need to ask Automat-IT for invoice confirmation, or unblock the Umbrella Cost API (see [umbrella-cost.md](umbrella-cost.md)) to see invoice line items.
+
+### Investigating credits on the new myceli org
+
+If Automat-IT has loaded credits onto this org (e.g. a fresh AWS Activate package starting 2026-05-01), here's how to detect application:
+
+```bash
+# Run monthly — if NetUnblendedCost ever drops below UnblendedCost, credits started flowing
+aws ce get-cost-and-usage \
+  --time-period Start=2026-05-01,End=2026-06-01 \
+  --granularity MONTHLY \
+  --metrics UnblendedCost NetUnblendedCost \
+  --profile myceli-management
+
+# Or list RECORD_TYPE values — `Credit` will appear the first month it lands
+aws ce get-dimension-values \
+  --time-period Start=2026-05-01,End=2026-06-01 \
+  --dimension RECORD_TYPE \
+  --profile myceli-management
+```
+
+If neither signal moves and you know credits *should* be applied, the credits are on the master ledger and not flowing down to our org. Email Automat-IT (the master account holder, `awsacct+myceli-ai+org@automat-it.com`) to confirm grant and ask whether they pass it through.
+
+### No budgets, no anomaly monitors, no SPs
+
+```
+aws budgets describe-budgets   → empty on all 8 accounts
+aws savingsplans describe-savings-plans → []
+aws ce get-anomalies           → no anomaly monitors configured
+```
+
+Worth setting up at least one anomaly monitor on the management account to catch landing-zone cost drift before it gets expensive.
+
+---
+
+## Question → query cheat sheet (Myceli org, Context C)
+
+| Question | Command |
+|---|---|
+| Who am I authenticated as right now? | `aws sts get-caller-identity --profile myceli-management` |
+| Refresh expired SSO token | `aws sso login --sso-session myceli` (`--no-browser` + incognito if portal errors) |
+| Total MTD spend across org | `aws ce get-cost-and-usage --time-period Start=YYYY-MM-01,End=<today+1> --granularity MONTHLY --metrics UnblendedCost --profile myceli-management` |
+| Spend by linked account | Add `--group-by Type=DIMENSION,Key=LINKED_ACCOUNT` |
+| Spend by service | Add `--group-by Type=DIMENSION,Key=SERVICE` |
+| Are credits flowing yet? | Compare `UnblendedCost` vs `NetUnblendedCost` AND check `--dimension RECORD_TYPE` for "Credit" |
+| Forecast end-of-month | `aws ce get-cost-forecast --time-period Start=<today>,End=<1st of next> --metric UNBLENDED_COST --granularity MONTHLY --profile myceli-management` |
+| List all 8 accounts | `aws organizations list-accounts --profile myceli-management` |
 
 ---
 

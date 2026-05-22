@@ -1,10 +1,10 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getPollenPack } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { getPollenPack } from "@/pollen-packs.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -2595,4 +2595,86 @@ test("POST /api/webhooks/stripe does not credit sessions without pack metadata",
         WHERE session_id = 'cs_test_legacy_checkout'`,
     ).first<{ count: number }>();
     expect(processedEvent?.count).toBe(0);
+});
+
+test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const chargeEvent = {
+        id: "evt_test_charge_succeeded",
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_test_charge_succeeded",
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "succeeded",
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: { brand: "visa", country: "CZ", network: "visa" },
+                },
+                outcome: { risk_level: "normal", risk_score: 21 },
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(chargeEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_type: "charge.succeeded",
+        event_id: "evt_test_charge_succeeded",
+        session_id: "ch_test_charge_succeeded",
+        amount_cents: 1000,
+        currency: "usd",
+        card_country: "CZ",
+        card_brand: "visa",
+        card_network: "visa",
+        risk_level: "normal",
+        risk_score: 21,
+        payment_method_raw: "card",
+        livemode: 0,
+    });
+});
+
+test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-only analytics)", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const before = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
+    ).first<{ count: number }>();
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_charge_no_d1",
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_test_charge_no_d1",
+                object: "charge",
+                amount: 500,
+                currency: "usd",
+                status: "succeeded",
+                payment_method_details: {
+                    type: "card",
+                    card: { brand: "visa", country: "US", network: "visa" },
+                },
+                outcome: { risk_level: "normal", risk_score: 5 },
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    const after = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
+    ).first<{ count: number }>();
+    expect(after?.count).toBe(before?.count);
 });

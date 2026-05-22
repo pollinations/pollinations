@@ -1,8 +1,6 @@
-import { clsx } from "clsx/lite";
 import type { Context } from "hono";
 import { routePath } from "hono/route";
 import { customAlphabet } from "nanoid";
-import { twMerge } from "tailwind-merge";
 
 const generateUniqueId = customAlphabet(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -16,11 +14,6 @@ export function getRoutePath(c: Context): string {
     } catch {
         return c.req.path;
     }
-}
-
-// Helper function to merge Tailwind classes safely
-export function cn(...inputs: (string | undefined | null | false)[]) {
-    return twMerge(clsx(...inputs));
 }
 
 export function* batches<T>(

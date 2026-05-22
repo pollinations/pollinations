@@ -71,7 +71,42 @@ async function fakeUpstreamFetch(input: RequestInfo | URL) {
     throw new Error(`Unexpected upstream request: ${request.url}`);
 }
 
-async function fakeImageBackendResponse() {
+async function fakeImageBackendResponse(request: Request) {
+    const body = (await request.json()) as {
+        height?: number;
+        prompts?: string[];
+    };
+    const prompt = body.prompts?.[0] || "";
+    if (prompt.includes("detail string")) {
+        return Response.json({ detail: "prompt is too long" }, { status: 422 });
+    }
+    if (prompt.includes("plain upstream 400")) {
+        return Response.json(
+            { message: "missing provider key" },
+            { status: 400 },
+        );
+    }
+    if (prompt.includes("empty body 400")) {
+        return new Response("", { status: 400 });
+    }
+
+    if (body.height && body.height < 256) {
+        return Response.json(
+            {
+                detail: [
+                    {
+                        type: "greater_than_equal",
+                        loc: ["body", "height"],
+                        msg: "Input should be greater than or equal to 256",
+                        input: body.height,
+                        ctx: { ge: 256 },
+                    },
+                ],
+            },
+            { status: 422 },
+        );
+    }
+
     return Response.json([
         {
             image: png1x1Base64,
@@ -144,6 +179,13 @@ async function fakePortkeyResponse(request: Request) {
             completionTokens: 5,
         },
         {
+            matches: prompt.includes("vcr empty text"),
+            content: "",
+            promptTokens: 5,
+            completionTokens: 0,
+            finishReason: "content_filter",
+        },
+        {
             matches: prompt.includes("vcr slash/inside"),
             content: "snapshot slash response",
             promptTokens: 9,
@@ -203,9 +245,9 @@ async function fakePortkeyResponse(request: Request) {
                     index: 0,
                     message: {
                         role: "assistant",
-                        content: selectedCase?.content || "snapshot response",
+                        content: selectedCase?.content ?? "snapshot response",
                     },
-                    finish_reason: "stop",
+                    finish_reason: selectedCase?.finishReason || "stop",
                 },
             ],
             usage: {
@@ -394,6 +436,38 @@ test("POST /text returns assistant content directly", async ({
     });
 });
 
+test("POST /text passes through empty assistant content", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/text", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr empty text" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/plain");
+    await expect(response.text()).resolves.toBe("");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        requestPath: "/text",
+        tokenCountPromptText: 5,
+        isBilledUsage: true,
+    });
+});
+
 test("POST /text streams direct content responses", async ({
     paidApiKey,
     mocks,
@@ -540,5 +614,203 @@ test("image generation uses a registered image backend from gen", async ({
         modelRequested: "flux",
         tokenCountCompletionImage: 1,
         isBilledUsage: true,
+    });
+});
+
+test("image backend validation errors return client-facing 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    const existing = await env.KV.list({ prefix: "image:server:test:zimage:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
+
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "zimage",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
+    await mocks.enable("tinybird", "imageBackend");
+
+    const { response, wait } = await fetchWorker(
+        "/image/too%20small?model=zimage&width=280&height=220&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message: "Invalid image request: height must be at least 256",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "zimage",
+        responseStatus: 400,
+    });
+
+    const { response: detailResponse, wait: waitDetail } = await fetchWorker(
+        "/image/detail%20string?model=zimage&width=280&height=280&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(detailResponse.status).toBe(400);
+    await expect(detailResponse.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message: "Invalid image request: prompt is too long",
+        },
+    });
+    await waitDetail();
+
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "zimage",
+        responseStatus: 400,
+    });
+
+    const { response: provider400Response, wait: waitProvider400 } =
+        await fetchWorker(
+            "/image/plain%20upstream%20400?model=zimage&width=280&height=280&seed=42",
+            {
+                headers: { authorization: `Bearer ${paidApiKey}` },
+            },
+        );
+
+    expect(provider400Response.status).toBe(400);
+    await expect(provider400Response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message: "Image provider error: missing provider key",
+        },
+    });
+    await waitProvider400();
+
+    expect(mocks.tinybird.state.events).toHaveLength(3);
+    expect(mocks.tinybird.state.events[2]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "zimage",
+        responseStatus: 400,
+    });
+
+    // Upstream 400 with empty body must still surface a useful message via
+    // HttpError.message, not collapse to a generic "Image provider error".
+    const { response: emptyBody400Response, wait: waitEmptyBody400 } =
+        await fetchWorker(
+            "/image/empty%20body%20400?model=zimage&width=280&height=280&seed=42",
+            {
+                headers: { authorization: `Bearer ${paidApiKey}` },
+            },
+        );
+
+    expect(emptyBody400Response.status).toBe(400);
+    await expect(emptyBody400Response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                "Image provider error: Image backend rejected request with status 400",
+        },
+    });
+    await waitEmptyBody400();
+});
+
+test("malformed image edit multipart bodies return tracked 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const malformedMultipart = [
+        "--bad",
+        "Content-Disposition: form-data",
+        "",
+        "value",
+        "--bad--",
+        "",
+    ].join("\r\n");
+
+    const { response, wait } = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            "content-type": "multipart/form-data; boundary=bad",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: malformedMultipart,
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message: "Invalid multipart form data",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.image",
+        responseStatus: 400,
+    });
+});
+
+test("malformed audio transcription multipart bodies return tracked 400", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const malformedMultipart = [
+        "--bad",
+        "Content-Disposition: form-data",
+        "",
+        "value",
+        "--bad--",
+        "",
+    ].join("\r\n");
+
+    const { response, wait } = await fetchWorker("/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+            "content-type": "multipart/form-data; boundary=bad",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: malformedMultipart,
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message: "Invalid multipart form data",
+        },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.audio",
+        responseStatus: 400,
     });
 });

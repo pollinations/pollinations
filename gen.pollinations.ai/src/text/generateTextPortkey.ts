@@ -5,6 +5,7 @@ import { generateHeaders } from "./transforms/headerGenerator.js";
 import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import { validateInputModalities } from "./transforms/validateInputModalities.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -27,8 +28,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
     const base =
         typeof gatewayUrl === "string" && gatewayUrl
             ? gatewayUrl
-            : process.env.PORTKEY_GATEWAY_URL ||
-              "https://portkey.pollinations.ai";
+            : process.env.PORTKEY_GATEWAY_URL || "https://portkey.myceli.ai";
     return `${base.replace(/\/+$/, "")}/v1/chat/completions`;
 }
 
@@ -51,6 +51,7 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        state = validateInputModalities(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
         state = await createImageUrlToBase64Transform()(
             state.messages,

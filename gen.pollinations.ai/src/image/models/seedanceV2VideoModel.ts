@@ -13,6 +13,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -60,7 +61,6 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
-    reference_images?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -83,18 +83,13 @@ export async function callSeedanceV2API(
         Math.min(15, Math.floor(safeParams.duration ?? 5)),
     );
 
+    // Positional image[] contract:
+    //   length=1 → first-frame only (I2V)
+    //   length=2 → image[0] first frame, image[1] last frame
     const images = safeParams.image ?? [];
-    const lastFrameImage = safeParams.last_frame_image;
-
-    if (lastFrameImage && images.length === 0) {
+    if (images.length > 2) {
         throw new HttpError(
-            "last_frame_image requires image (first frame) to also be provided",
-            400,
-        );
-    }
-    if (lastFrameImage && images.length > 1) {
-        throw new HttpError(
-            "last_frame_image cannot combine with multiple images. Pass exactly one image alongside last_frame_image, or omit last_frame_image to use multiple reference images.",
+            "Seedance 2.0 supports at most two images: image[0] as first frame and image[1] as last frame.",
             400,
         );
     }
@@ -109,21 +104,21 @@ export async function callSeedanceV2API(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    if (images.length === 1) {
-        input.image = images[0];
-        if (lastFrameImage) input.last_frame_image = lastFrameImage;
-    } else if (images.length > 1) {
-        input.reference_images = images.slice(0, 9);
-    }
+    // Replicate fetches input URLs server-side and saves them under a temp
+    // path derived from the URL — query strings and missing extensions break
+    // it. Match the other video models: download here and pass data URIs.
+    const toDataUri = async (url: string): Promise<string> => {
+        const { buffer, mimeType } = await downloadUserImage(url);
+        return `data:${mimeType};base64,${buffer.toString("base64")}`;
+    };
+    if (images.length >= 1) input.image = await toDataUri(images[0]);
+    if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
     logOps("Seedance 2.0 input:", {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
-        reference_images: input.reference_images
-            ? `[${input.reference_images.length} url(s)]`
-            : undefined,
     });
 
     progress.updateBar(

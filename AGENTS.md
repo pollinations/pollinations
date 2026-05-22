@@ -76,12 +76,14 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
-- Validate first: `tb --cloud deploy --check --wait`
+- Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
+- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
+- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
 - Never `--allow-destructive-operations` without explicit permission
 - Never `tb push` (deprecated); use `tb --cloud deploy --wait`
 - Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
 - Run from `enter.pollinations.ai/observability`
-- Pipes are shared — verify all consumers before modifying any pipe
+- Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 

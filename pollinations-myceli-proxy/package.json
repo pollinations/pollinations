@@ -1,0 +1,20 @@
+{
+    "name": "pollinations-myceli-proxy",
+    "type": "module",
+    "version": "1.0.0",
+    "description": "Thin proxy: forwards traffic from *.pollinations.ai to *.myceli.ai upstreams. Lives in the Pollinations Cloudflare account so the zone keeps owning the public domain.",
+    "private": true,
+    "main": "src/index.ts",
+    "scripts": {
+        "deploy:staging": "wrangler deploy --env staging",
+        "deploy:production": "wrangler deploy",
+        "tail:staging": "wrangler tail --env staging",
+        "tail:production": "wrangler tail",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20251101.0",
+        "typescript": "^5.9.3",
+        "wrangler": "^4.55.0"
+    }
+}

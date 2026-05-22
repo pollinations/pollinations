@@ -128,16 +128,18 @@ function UserCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
 
 function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     const { key, permissions, isLoadingKey } = useAuthKey();
-    const hasAccess = enabled.permissions || enabled.keyModels;
     const showBudget = enabled.keyBudget && key?.pollenBudget != null;
     const showExpiry = enabled.keyExpiry && !!key?.expiresAt;
     const showPrefix = enabled.keyPrefix;
+    const showPermissions = enabled.permissions;
+    const showModels = enabled.keyModels;
 
     if (
         !showPrefix &&
         !showExpiry &&
         !showBudget &&
-        !hasAccess &&
+        !showPermissions &&
+        !showModels &&
         !isLoadingKey
     ) {
         return null;
@@ -160,21 +162,24 @@ function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
                     <KeyBudget />
                 </Metric>
             )}
-            {hasAccess && (
-                <Metric label="Access">
-                    {enabled.permissions &&
-                        (isLoadingKey ? (
-                            <span className="text-sm text-stone-500">
-                                Checking access…
-                            </span>
-                        ) : (
-                            permissions.map((p) => (
-                                <Chip theme="blue" key={p}>
-                                    {permissionLabels[p] ?? p}
-                                </Chip>
-                            ))
-                        ))}
-                    {enabled.keyModels && <KeyModels />}
+            {showPermissions && (
+                <Metric label="Permission">
+                    {isLoadingKey ? (
+                        <span className="text-sm text-stone-500">
+                            Checking permissions…
+                        </span>
+                    ) : (
+                        permissions.map((p) => (
+                            <Chip theme="blue" key={p}>
+                                {permissionLabels[p] ?? p}
+                            </Chip>
+                        ))
+                    )}
+                </Metric>
+            )}
+            {showModels && (
+                <Metric label="Models">
+                    <KeyModels />
                 </Metric>
             )}
         </Surface>
@@ -225,8 +230,11 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
 function buildCode(enabled: Record<ToggleKey, boolean>) {
     const showUserCard = enabled.avatar || enabled.name || enabled.email;
     const hasKeyMeta = enabled.keyPrefix || enabled.keyExpiry;
-    const hasAccess = enabled.permissions || enabled.keyModels;
-    const showKeyCard = hasKeyMeta || enabled.keyBudget || hasAccess;
+    const showKeyCard =
+        hasKeyMeta ||
+        enabled.keyBudget ||
+        enabled.permissions ||
+        enabled.keyModels;
 
     const uiImports = [
         "LoginButton",
@@ -289,19 +297,17 @@ ${identity}
 ${body}
                     </div>`;
 
-    const accessRow = hasAccess
+    const permissionRow = enabled.permissions
         ? row(
-              "Access",
-              [
-                  enabled.permissions &&
-                      `                        {permissions.map((p) => (
+              "Permission",
+              `                        {permissions.map((p) => (
                             <Chip theme="blue" key={p}>{PERMISSION_LABELS[p] ?? p}</Chip>
                         ))}`,
-                  enabled.keyModels && "                        <KeyModels />",
-              ]
-                  .filter(Boolean)
-                  .join("\n"),
           )
+        : "";
+
+    const modelsRow = enabled.keyModels
+        ? row("Models", "                        <KeyModels />")
         : "";
 
     const keyRows = [
@@ -311,7 +317,8 @@ ${body}
             row("Expires", "                        <KeyExpiry />"),
         enabled.keyBudget &&
             row("Remaining", "                        <KeyBudget />"),
-        accessRow,
+        permissionRow,
+        modelsRow,
     ]
         .filter(Boolean)
         .join("\n");

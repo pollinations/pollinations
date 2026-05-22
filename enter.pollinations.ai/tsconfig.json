@@ -31,13 +31,16 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["src/*"],
+            "@frontend/*": ["frontend/src/*"],
             "@shared/*": ["../shared/*"]
         }
     },
     "include": [
         "worker-runtime.d.ts",
         "worker-bindings.d.ts",
-        "src/**/*.ts", 
-        "src/**/*.tsx"
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "frontend/src/**/*.ts",
+        "frontend/src/**/*.tsx"
     ]
 }

@@ -28,8 +28,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
     const base =
         typeof gatewayUrl === "string" && gatewayUrl
             ? gatewayUrl
-            : process.env.PORTKEY_GATEWAY_URL ||
-              "https://portkey.pollinations.ai";
+            : process.env.PORTKEY_GATEWAY_URL || "https://portkey.myceli.ai";
     return `${base.replace(/\/+$/, "")}/v1/chat/completions`;
 }
 

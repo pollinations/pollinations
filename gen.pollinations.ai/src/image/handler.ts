@@ -176,14 +176,13 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
     }
 }
 
-function throwImageError(error: unknown, c: ImageContext): never {
+function throwImageError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
     if (error instanceof HttpError) {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
-            requestUrl:
-                safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
+            requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
             cause: error,
@@ -192,7 +191,6 @@ function throwImageError(error: unknown, c: ImageContext): never {
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "Image generation failed",
-        requestUrl: new URL(c.req.url),
         cause: error,
     });
 }
@@ -431,7 +429,7 @@ export async function generateImageOrVideoResponse(
             ),
         });
     } catch (error) {
-        throwImageError(error, c);
+        throwImageError(error);
     }
 }
 

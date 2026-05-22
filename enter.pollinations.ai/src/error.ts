@@ -11,14 +11,14 @@ import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { ErrorVariables } from "./env.ts";
 import {
     getTinybirdDatasourceIngestUrl,
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
-} from "@/events.ts";
-import { getRoutePath } from "@/util.ts";
-import type { ErrorVariables } from "./env.ts";
+} from "./events.ts";
 import type { LoggerVariables } from "./middleware/logger.ts";
+import { getRoutePath } from "./util.ts";
 
 type ErrorHandlerEnv = {
     Bindings: CloudflareBindings;

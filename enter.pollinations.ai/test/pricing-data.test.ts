@@ -1,15 +1,15 @@
-import { expect, test } from "vitest";
-import { AUDIO_SERVICES } from "../../shared/registry/audio.ts";
-import { EMBEDDING_SERVICES } from "../../shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "../../shared/registry/image.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     calculateCost,
     calculatePrice,
     getModelDefinition,
     getPriceDefinition,
-} from "../../shared/registry/registry.ts";
-import { TEXT_SERVICES } from "../../shared/registry/text.ts";
-import { getModelPrices } from "../src/client/components/models/data.ts";
+} from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { expect, test } from "vitest";
+import { getModelPrices } from "../frontend/src/components/models/data.ts";
 
 test("pricing data applies the per-model price multiplier uniformly", () => {
     const geminiFast = getModelPrices().find(

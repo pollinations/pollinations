@@ -72,26 +72,12 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
-type CostCalculatorModel<TModelId extends string = string> = {
-    aliases: string[];
-    modelId: TModelId;
-    provider: string;
-    brand: string;
-    category: Category;
-    cost: CostDefinition;
-    priceMultiplier: number;
-};
-
-export type CostCalculatorInput<TModelId extends string = string> = {
+export type CostCalculator<TModelId extends string = string> = (input: {
     usage: Usage;
     output?: unknown;
-    model: CostCalculatorModel<TModelId>;
+    model: ModelDefinition<TModelId>;
     linearCost: (costDefinition?: CostDefinition) => UsageCost;
-};
-
-export type CostCalculator<TModelId extends string = string> = (
-    input: CostCalculatorInput<TModelId>,
-) => UsageCost;
+}) => UsageCost;
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];

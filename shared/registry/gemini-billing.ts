@@ -18,61 +18,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function readNumber(value: unknown): number | undefined {
-    return typeof value === "number" && Number.isFinite(value)
-        ? value
-        : undefined;
+function getOutputEvents(output: unknown): unknown[] {
+    if (!isRecord(output)) return [];
+    return Array.isArray(output.streamEvents) ? output.streamEvents : [output];
 }
 
-function readQueryStrings(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-        (query): query is string =>
-            typeof query === "string" && query.trim().length > 0,
-    );
-}
-
-function collectGroundingQueries(output: unknown, queries: Set<string>): void {
-    if (Array.isArray(output)) {
-        for (const item of output) collectGroundingQueries(item, queries);
-        return;
-    }
-
-    if (!isRecord(output)) return;
-
-    const groundingMetadata = output.groundingMetadata;
-    if (isRecord(groundingMetadata)) {
-        for (const query of readQueryStrings(
-            groundingMetadata.webSearchQueries,
-        )) {
-            queries.add(query);
+function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+    const queries = new Set<string>();
+    for (const event of getOutputEvents(output)) {
+        if (!isRecord(event) || !Array.isArray(event.choices)) continue;
+        for (const choice of event.choices) {
+            if (!isRecord(choice) || !isRecord(choice.groundingMetadata)) {
+                continue;
+            }
+            const webSearchQueries = choice.groundingMetadata.webSearchQueries;
+            if (!Array.isArray(webSearchQueries)) continue;
+            for (const query of webSearchQueries) {
+                if (typeof query === "string" && query.trim()) {
+                    queries.add(query);
+                }
+            }
         }
     }
-
-    for (const nestedKey of ["message", "delta", "streamEvents"] as const) {
-        const nested = output[nestedKey];
-        collectGroundingQueries(nested, queries);
-    }
-
-    const choices = output.choices;
-    if (Array.isArray(choices)) {
-        for (const choice of choices) collectGroundingQueries(choice, queries);
-    }
-}
-
-export function getGeminiGroundingWebSearchQueries(output: unknown): string[] {
-    const queries = new Set<string>();
-    collectGroundingQueries(output, queries);
-    return Array.from(queries);
-}
-
-export function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
-    if (isRecord(output) && isRecord(output.grounding)) {
-        const explicitCount = readNumber(output.grounding.webSearchQueryCount);
-        if (explicitCount !== undefined) return explicitCount;
-    }
-
-    return getGeminiGroundingWebSearchQueries(output).length;
+    return queries.size;
 }
 
 function getPromptTokenCount(usage: Usage): number {

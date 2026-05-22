@@ -3,7 +3,6 @@ import {
     useAuthActions,
     useAuthKey,
     useAuthState,
-    useKeyUsage,
 } from "@pollinations_ai/sdk/react";
 import {
     Button,
@@ -16,11 +15,12 @@ import {
     LoginButton,
     LogoutButton,
     Surface,
+    Switch,
     UserAvatar,
     UserEmail,
     UserName,
 } from "@pollinations_ai/ui";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 // Publishable key for this showcase (pk_… is safe to commit).
 // Created via `polli keys create --type publishable` with redirect URIs
@@ -35,35 +35,18 @@ type ToggleKey =
     | "keyExpiry"
     | "keyModels"
     | "permissions"
-    | "keyPrefix"
-    | "keyUsage";
+    | "keyPrefix";
 
-const TOGGLES: { key: ToggleKey; label: string; jsx: string }[] = [
-    { key: "avatar", label: "Avatar", jsx: '<UserAvatar size="md" />' },
-    { key: "name", label: "Name", jsx: "<UserName />" },
-    { key: "email", label: "Email", jsx: "<UserEmail />" },
-    { key: "keyPrefix", label: "Key prefix", jsx: "<KeyPrefix />" },
-    { key: "keyBudget", label: "Key budget", jsx: "<KeyBudget />" },
-    { key: "keyExpiry", label: "Key expiry", jsx: "<KeyExpiry />" },
-    { key: "keyModels", label: "Allowed models", jsx: "<KeyModels />" },
-    {
-        key: "permissions",
-        label: "Permissions",
-        jsx: '{permissions.map((permission) => <Chip theme="blue" size="sm" key={permission}>{permission}</Chip>)}',
-    },
-    {
-        key: "keyUsage",
-        label: "Key usage",
-        jsx: "const { usage } = useKeyUsage({ days: 7, limit: 5 });",
-    },
+const TOGGLES: { key: ToggleKey; label: string }[] = [
+    { key: "avatar", label: "Avatar" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "keyPrefix", label: "Key prefix" },
+    { key: "keyExpiry", label: "Key expiry" },
+    { key: "keyBudget", label: "Key budget" },
+    { key: "keyModels", label: "Allowed models" },
+    { key: "permissions", label: "Permissions" },
 ];
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-});
 
 const permissionLabels: Record<string, string> = {
     profile: "Profile",
@@ -71,15 +54,27 @@ const permissionLabels: Record<string, string> = {
     keys: "Keys",
 };
 
-function formatTimestamp(value: string) {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return dateFormatter.format(date);
+function SectionLabel({ children }: { children: ReactNode }) {
+    return (
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            {children}
+        </h2>
+    );
 }
 
-function formatCost(value: number) {
-    if (!Number.isFinite(value)) return "-";
-    return `$${value.toFixed(4)}`;
+function SubSection({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <section className="flex flex-col gap-3 border-t border-amber-950/10 pt-4">
+            <h3 className="text-sm font-semibold text-stone-900">{label}</h3>
+            {children}
+        </section>
+    );
 }
 
 function Metric({ label, children }: { label: string; children: ReactNode }) {
@@ -93,22 +88,28 @@ function Metric({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
-function SectionHeading({
-    title,
-    children,
-}: {
-    title: string;
-    children?: ReactNode;
-}) {
+function CopyButton({ text }: { text: string }) {
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (!copied) return;
+        const timer = setTimeout(() => setCopied(false), 1500);
+        return () => clearTimeout(timer);
+    }, [copied]);
+
     return (
-        <div>
-            <h3 className="font-['Fraunces'] text-lg leading-tight font-medium text-stone-900">
-                {title}
-            </h3>
-            {children && (
-                <p className="mt-1 text-sm text-stone-600">{children}</p>
-            )}
-        </div>
+        <Button
+            type="button"
+            theme="amber"
+            size="small"
+            onClick={() => {
+                void navigator.clipboard.writeText(text).then(() => {
+                    setCopied(true);
+                });
+            }}
+        >
+            {copied ? "Copied" : "Copy"}
+        </Button>
     );
 }
 
@@ -121,301 +122,272 @@ function DashboardLink() {
     );
 }
 
-function UserSection({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const showIdentity = enabled.name || enabled.email;
-
+function UserCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     return (
-        <section className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-                {enabled.avatar && <UserAvatar size="md" />}
-                <div className="flex min-w-0 flex-col gap-1">
-                    {showIdentity && (
-                        <div className="flex min-w-0 flex-col gap-0.5">
-                            {enabled.name && <UserName />}
-                            {enabled.email && <UserEmail />}
-                        </div>
-                    )}
+        <Surface variant="panel" theme="amber">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                    {enabled.avatar && <UserAvatar size="md" />}
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                        {enabled.name && <UserName />}
+                        {enabled.email && <UserEmail />}
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <DashboardLink />
+                    <LogoutButton intent="danger">Log out</LogoutButton>
                 </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-                <DashboardLink />
-                <LogoutButton intent="danger">Log out</LogoutButton>
-            </div>
-        </section>
+        </Surface>
     );
 }
 
-function KeyMetaSection({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const showMeta = enabled.keyPrefix || enabled.keyExpiry;
-    if (!showMeta) return null;
-
+function GrantedAccess({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
+    const { permissions, isLoadingKey } = useAuthKey();
     return (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            {enabled.keyPrefix && <KeyPrefix />}
-            {enabled.keyExpiry && (
-                <Metric label="Expires">
-                    <KeyExpiry />
-                </Metric>
+        <div className="flex flex-col items-start gap-2">
+            {enabled.permissions &&
+                (isLoadingKey ? (
+                    <p className="text-sm text-stone-500">Checking access…</p>
+                ) : (
+                    permissions.map((permission) => (
+                        <Chip theme="blue" key={permission}>
+                            {permissionLabels[permission] ?? permission}
+                        </Chip>
+                    ))
+                ))}
+            {enabled.keyModels && (
+                <div className="flex items-center gap-2">
+                    <KeyModels />
+                    <span className="text-xs text-stone-500">models</span>
+                </div>
             )}
         </div>
     );
 }
 
-function BudgetSection({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const showBudget = enabled.keyBudget;
-    if (!showBudget) return null;
+function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
+    const hasMeta = enabled.keyPrefix || enabled.keyExpiry;
+    const hasAccess = enabled.permissions || enabled.keyModels;
 
     return (
-        <section className="flex flex-col gap-3 border-t border-amber-950/10 pt-4">
-            <SectionHeading title="Budget">
-                Remaining pollen available to this delegated key.
-            </SectionHeading>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Metric label="Remaining">
-                    <KeyBudget />
-                </Metric>
-            </div>
-        </section>
-    );
-}
-
-function GrantedAccessSection({
-    enabled,
-}: {
-    enabled: Record<ToggleKey, boolean>;
-}) {
-    const { permissions, isLoadingKey } = useAuthKey();
-    const showAccess = enabled.permissions || enabled.keyModels;
-    if (!showAccess) return null;
-
-    return (
-        <section className="flex flex-col gap-3 border-t border-amber-950/10 pt-4">
-            <SectionHeading title="Granted access" />
-            <div className="flex flex-wrap items-center gap-2">
-                {enabled.permissions &&
-                    (isLoadingKey ? (
-                        <p className="text-sm text-stone-500">
-                            Checking access…
-                        </p>
-                    ) : permissions.length > 0 ? (
-                        permissions.map((permission) => (
-                            <Chip theme="blue" size="sm" key={permission}>
-                                {permissionLabels[permission] ?? permission}
-                            </Chip>
-                        ))
-                    ) : null)}
-                {enabled.keyModels && <KeyModels />}
-            </div>
-        </section>
-    );
-}
-
-function UsageSnapshot() {
-    const { usage, isLoading, error, refresh } = useKeyUsage({
-        days: 7,
-        limit: 5,
-    });
-    const records = usage?.usage ?? [];
-    const count = usage?.count ?? 0;
-
-    return (
-        <section className="flex flex-col gap-3 border-t border-amber-950/10 pt-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <SectionHeading title="Usage">
-                    Recent requests charged through this user key.
-                </SectionHeading>
-                <Button
-                    type="button"
-                    theme="amber"
-                    disabled={isLoading}
-                    onClick={() => void refresh()}
-                >
-                    {isLoading ? "Loading" : "Refresh usage"}
-                </Button>
-            </div>
-
-            {error && <p className="text-sm text-red-700">{error.message}</p>}
-
-            {!error && isLoading && records.length === 0 && (
-                <p className="text-sm text-stone-500">Loading usage…</p>
-            )}
-
-            {!error && !isLoading && records.length === 0 && (
-                <p className="text-sm text-stone-500">
-                    No usage recorded for this key yet.
-                </p>
-            )}
-
-            {records.length > 0 && (
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[34rem] border-collapse text-left text-xs">
-                        <thead className="text-stone-500">
-                            <tr className="border-b border-stone-200">
-                                <th className="py-2 pr-4 font-medium">Time</th>
-                                <th className="py-2 pr-4 font-medium">Model</th>
-                                <th className="py-2 pr-4 font-medium">Type</th>
-                                <th className="py-2 pr-4 font-medium">
-                                    Source
-                                </th>
-                                <th className="py-2 pr-0 text-right font-medium">
-                                    Cost
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {records.map((record, index) => (
-                                <tr
-                                    key={`${record.timestamp}-${index}`}
-                                    className="border-b border-stone-200/70 last:border-0"
-                                >
-                                    <td className="py-2 pr-4 whitespace-nowrap">
-                                        {formatTimestamp(record.timestamp)}
-                                    </td>
-                                    <td className="max-w-40 py-2 pr-4 truncate font-mono">
-                                        {record.model || "unknown"}
-                                    </td>
-                                    <td className="py-2 pr-4">
-                                        {record.type || "-"}
-                                    </td>
-                                    <td className="py-2 pr-4">
-                                        {record.meter_source || "-"}
-                                    </td>
-                                    <td className="py-2 pr-0 text-right font-mono tabular-nums">
-                                        {formatCost(record.cost_usd)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+        <Surface variant="panel" theme="amber" className="flex flex-col gap-4">
+            {hasMeta && (
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                    {enabled.keyPrefix && <KeyPrefix />}
+                    {enabled.keyExpiry && (
+                        <Metric label="Expires">
+                            <KeyExpiry />
+                        </Metric>
+                    )}
                 </div>
             )}
-
-            {count > records.length && (
-                <p className="text-xs text-stone-500">
-                    Showing {records.length} of {count} matching records.
-                </p>
+            {enabled.keyBudget && (
+                <SubSection label="Budget">
+                    <Metric label="Remaining">
+                        <KeyBudget />
+                    </Metric>
+                </SubSection>
             )}
-        </section>
+            {hasAccess && (
+                <SubSection label="Granted access">
+                    <GrantedAccess enabled={enabled} />
+                </SubSection>
+            )}
+        </Surface>
     );
 }
 
 function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     const { isLoggedIn } = useAuthState();
-    const showKeySection =
-        enabled.keyPrefix ||
-        enabled.keyBudget ||
-        enabled.keyExpiry ||
-        enabled.keyModels ||
-        enabled.permissions ||
-        enabled.keyUsage;
-
     if (!isLoggedIn) {
         return (
             <LoginButton theme="amber">Log in with Pollinations</LoginButton>
         );
     }
 
-    return (
-        <Surface variant="panel" theme="amber" className="flex flex-col gap-4">
-            <UserSection enabled={enabled} />
+    const showUserCard = enabled.avatar || enabled.name || enabled.email;
+    const showKeyCard =
+        enabled.keyPrefix ||
+        enabled.keyExpiry ||
+        enabled.keyBudget ||
+        enabled.keyModels ||
+        enabled.permissions;
 
-            {showKeySection && (
-                <section className="flex flex-col gap-4 border-t border-amber-950/10 pt-4">
-                    <SectionHeading title="Key" />
-                    <KeyMetaSection enabled={enabled} />
-                    <BudgetSection enabled={enabled} />
-                    <GrantedAccessSection enabled={enabled} />
-                    {enabled.keyUsage && <UsageSnapshot />}
+    return (
+        <div className="flex flex-col gap-6">
+            {showUserCard && (
+                <section className="flex flex-col gap-3">
+                    <SectionLabel>User</SectionLabel>
+                    <UserCard enabled={enabled} />
                 </section>
             )}
-        </Surface>
+            {showKeyCard && (
+                <section className="flex flex-col gap-3">
+                    <SectionLabel>Key</SectionLabel>
+                    <KeyCard enabled={enabled} />
+                </section>
+            )}
+        </div>
     );
 }
 
 function buildCode(enabled: Record<ToggleKey, boolean>) {
-    const avatar = enabled.avatar ? '      <UserAvatar size="md" />' : "";
-    const identity = TOGGLES.filter((t) => ["name", "email"].includes(t.key))
-        .filter((t) => enabled[t.key])
-        .map((t) => `        ${t.jsx}`)
-        .join("\n");
-    const headerInner = [
-        avatar,
-        identity
-            ? `      <div className="flex flex-col gap-0.5 min-w-0">\n${identity}\n      </div>`
-            : "",
+    const showUserCard = enabled.avatar || enabled.name || enabled.email;
+    const hasKeyMeta = enabled.keyPrefix || enabled.keyExpiry;
+    const hasAccess = enabled.permissions || enabled.keyModels;
+    const showKeyCard = hasKeyMeta || enabled.keyBudget || hasAccess;
+
+    const uiImports = [
+        enabled.permissions && "Chip",
+        enabled.keyBudget && "KeyBudget",
+        enabled.keyExpiry && "KeyExpiry",
+        enabled.keyModels && "KeyModels",
+        enabled.keyPrefix && "KeyPrefix",
+        showUserCard && "LinkButton",
+        showUserCard && "LogoutButton",
+        (showUserCard || showKeyCard) && "Surface",
+        enabled.avatar && "UserAvatar",
+        enabled.email && "UserEmail",
+        enabled.name && "UserName",
+    ].filter(Boolean);
+
+    const sdkHooks = ["PolliProvider"];
+    if (showUserCard) sdkHooks.push("useAuthActions");
+    if (enabled.permissions) sdkHooks.push("useAuthKey");
+
+    const hookLines = [
+        showUserCard && "    const { enterUrl } = useAuthActions();",
+        enabled.permissions && "    const { permissions } = useAuthKey();",
+    ].filter(Boolean);
+
+    const identity = [
+        enabled.avatar && '                        <UserAvatar size="md" />',
+        (enabled.name || enabled.email) &&
+            `                        <div className="flex flex-col">
+${[
+    enabled.name && "                            <UserName />",
+    enabled.email && "                            <UserEmail />",
+]
+    .filter(Boolean)
+    .join("\n")}
+                        </div>`,
     ]
         .filter(Boolean)
         .join("\n");
-    const userInner = headerInner;
+
+    const userCardJsx = showUserCard
+        ? `            <section className="flex flex-col gap-3">
+                <h2>User</h2>
+                <Surface variant="panel" theme="amber">
+                    <div className="flex justify-between">
+                        <div className="flex items-center gap-3">
+${identity}
+                        </div>
+                        <div className="flex gap-2">
+                            <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
+                            <LogoutButton intent="danger">Log out</LogoutButton>
+                        </div>
+                    </div>
+                </Surface>
+            </section>`
+        : "";
+
     const keyMeta = [
-        enabled.keyPrefix ? "    <KeyPrefix />" : "",
-        enabled.keyExpiry ? "    <KeyExpiry />" : "",
+        enabled.keyPrefix && "                    <KeyPrefix />",
+        enabled.keyExpiry && "                    <KeyExpiry />",
     ]
         .filter(Boolean)
         .join("\n");
-    const budget = [enabled.keyBudget ? "        <KeyBudget />" : ""]
-        .filter(Boolean)
-        .join("\n");
-    const access = [
-        enabled.permissions
-            ? `        {permissions.map((permission) => (
-          <Chip theme="blue" size="sm" key={permission}>
-            {permission}
-          </Chip>
-        ))}`
-            : "",
-        enabled.keyModels ? "        <KeyModels />" : "",
+
+    const budgetBlock = enabled.keyBudget
+        ? `                    <section>
+                        <h3>Budget</h3>
+                        <KeyBudget />
+                    </section>`
+        : "";
+
+    const accessInner = [
+        enabled.permissions &&
+            `                        {permissions.map((p) => (
+                            <Chip theme="blue" key={p}>{p}</Chip>
+                        ))}`,
+        enabled.keyModels && "                        <KeyModels />",
     ]
         .filter(Boolean)
         .join("\n");
-    const usage = enabled.keyUsage
-        ? `      const { usage } = useKeyUsage({ days: 7, limit: 5 });`
+
+    const accessBlock = hasAccess
+        ? `                    <section>
+                        <h3>Granted access</h3>
+${accessInner}
+                    </section>`
         : "";
-    const keyMetaBlock = keyMeta ? `${keyMeta}\n` : "";
-    const budgetBlock = budget
-        ? `    <section>
-      <h3>Budget</h3>
-${budget}
-    </section>\n`
+
+    const keyCardInner = [keyMeta, budgetBlock, accessBlock]
+        .filter(Boolean)
+        .join("\n");
+
+    const keyCardJsx = showKeyCard
+        ? `            <section className="flex flex-col gap-3">
+                <h2>Key</h2>
+                <Surface variant="panel" theme="amber">
+${keyCardInner}
+                </Surface>
+            </section>`
         : "";
-    const accessBlock = access
-        ? `    <section>
-      <h3>Granted access</h3>
-${access}
-    </section>\n`
-        : "";
-    const usageBlock = usage ? `    <section>\n${usage}\n    </section>\n` : "";
-    const keyBlock =
-        keyMetaBlock || budgetBlock || accessBlock || usageBlock
-            ? `  <section>
-    <h2>Key</h2>
-${keyMetaBlock}${budgetBlock}${accessBlock}${usageBlock}  </section>
-`
+
+    const walletBody = [userCardJsx, keyCardJsx].filter(Boolean).join("\n");
+
+    const uiImportBlock =
+        uiImports.length > 0
+            ? `import {
+${uiImports.map((c) => `    ${c},`).join("\n")}
+} from "@pollinations_ai/ui";\n`
             : "";
 
-    return `<PolliProvider appKey="${APP_KEY}">
-  <Surface variant="panel" theme="amber" className="flex flex-col gap-4">
-  <section>
-${userInner}
-    <LinkButton theme="amber" href="https://enter.pollinations.ai">Dashboard</LinkButton>
-    <LogoutButton intent="danger">Log out</LogoutButton>
-  </section>
-${keyBlock}
-  </Surface>
-</PolliProvider>`;
+    const sdkImportBlock = `import {
+${sdkHooks.map((h) => `    ${h},`).join("\n")}
+} from "@pollinations_ai/sdk/react";`;
+
+    const hookBlock = hookLines.length > 0 ? `${hookLines.join("\n")}\n\n` : "";
+
+    return `// 1) npm install @pollinations_ai/sdk @pollinations_ai/ui
+// 2) Create a publishable key at https://enter.pollinations.ai and
+//    whitelist your app's redirect URI. Replace APP_KEY below.
+
+import "@pollinations_ai/ui/styles.css";
+${sdkImportBlock}
+${uiImportBlock}
+const APP_KEY = "pk_your_key_here";
+
+function Wallet() {
+${hookBlock}    return (
+        <div className="flex flex-col gap-6">
+${walletBody}
+        </div>
+    );
+}
+
+export default function App() {
+    return (
+        <PolliProvider appKey={APP_KEY}>
+            <Wallet />
+        </PolliProvider>
+    );
+}`;
 }
 
 export default function App() {
     const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
         avatar: true,
         name: true,
-        email: false,
+        email: true,
         keyPrefix: true,
         keyBudget: true,
         keyExpiry: true,
         keyModels: true,
         permissions: true,
-        keyUsage: true,
     });
 
     return (
@@ -439,32 +411,35 @@ export default function App() {
                         <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                             Toggle pieces
                         </h2>
-                        <div className="flex flex-wrap gap-x-6 gap-y-2">
+                        <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                             {TOGGLES.map((t) => (
-                                <label
+                                <div
                                     key={t.key}
-                                    className="flex cursor-pointer items-center gap-2 text-sm text-stone-700 select-none"
+                                    className="flex items-center gap-3 text-sm text-stone-700"
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Switch
                                         checked={enabled[t.key]}
-                                        onChange={(e) =>
+                                        onChange={(checked) =>
                                             setEnabled((prev) => ({
                                                 ...prev,
-                                                [t.key]: e.target.checked,
+                                                [t.key]: checked,
                                             }))
                                         }
+                                        ariaLabel={t.label}
                                     />
-                                    {t.label}
-                                </label>
+                                    <span>{t.label}</span>
+                                </div>
                             ))}
                         </div>
                     </section>
 
                     <section className="flex flex-col gap-3">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                            Code
-                        </h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                                Code
+                            </h2>
+                            <CopyButton text={buildCode(enabled)} />
+                        </div>
                         <pre className="overflow-auto rounded-lg bg-stone-950 p-4 font-mono text-xs leading-relaxed text-stone-100">
                             <code>{buildCode(enabled)}</code>
                         </pre>

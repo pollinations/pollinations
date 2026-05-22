@@ -608,6 +608,15 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
 }
 
 /**
+ * Get usage history for the currently configured API key only.
+ */
+export async function getKeyUsage(
+    options?: UsageOptions,
+): Promise<UsageResponse> {
+    return getClient().accountKeyUsage(options);
+}
+
+/**
  * Get daily usage summary
  */
 export async function getDailyUsage(

@@ -1691,9 +1691,9 @@ export class Pollinations {
      */
     static authorizeUrl(options: AuthorizeOptions): string {
         const params = new URLSearchParams();
-        params.set("redirect_url", options.redirectUrl);
+        params.set("redirect_uri", options.redirectUrl);
 
-        if (options.appKey) params.set("app_key", options.appKey);
+        if (options.appKey) params.set("client_id", options.appKey);
         if (options.models?.length)
             params.set("models", options.models.join(","));
         if (options.budget !== undefined)
@@ -1701,7 +1701,7 @@ export class Pollinations {
         if (options.expiry !== undefined)
             params.set("expiry", String(options.expiry));
         if (options.permissions?.length)
-            params.set("permissions", options.permissions.join(","));
+            params.set("scope", options.permissions.join(" "));
 
         return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
     }
@@ -1900,6 +1900,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
@@ -1929,6 +1931,8 @@ export class Pollinations {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
         if (options.api_key_ids && options.api_key_ids.length > 0)
             params.set("api_key_ids", options.api_key_ids.join(","));
 
@@ -1963,6 +1967,37 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<KeyInfo>;
+    }
+
+    /**
+     * Get usage history for the API key used by this client.
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountKeyUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountKeyUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
     }
 
     // ============================================================================

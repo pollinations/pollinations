@@ -570,7 +570,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage";
+export type AccountPermission = "profile" | "usage" | "keys";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -650,6 +650,10 @@ export interface UsageOptions {
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
 }
 
 /** Options for fetching daily usage */
@@ -658,6 +662,10 @@ export interface DailyUsageOptions {
     format?: "json" | "csv";
     /** Number of days to include, max 90 (default: 90) */
     days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
     /** Filter to one or more API keys by id */
     api_key_ids?: string[];
 }
@@ -681,14 +689,14 @@ export interface DailyUsageResponse {
 export interface KeyInfo {
     valid: boolean;
     type: string;
-    name?: string;
-    expiresAt?: string;
-    expiresIn?: number;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
     permissions?: {
-        models?: string[];
-        account?: string[];
+        models?: string[] | null;
+        account?: string[] | null;
     };
-    pollenBudget?: number;
+    pollenBudget?: number | null;
     rateLimitEnabled?: boolean;
 }
 

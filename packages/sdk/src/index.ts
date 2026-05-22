@@ -59,6 +59,7 @@ export {
     getBalance,
     getDailyUsage,
     getImageModels,
+    getKeyUsage,
     getModels,
     getProfile,
     getTextModels,

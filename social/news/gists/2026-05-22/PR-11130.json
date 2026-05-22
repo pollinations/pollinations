@@ -1,0 +1,35 @@
+{
+  "pr_number": 11130,
+  "title": "refactor: split enter frontend build",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11130",
+  "merged_at": "2026-05-22T14:03:08Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Moves the enter dashboard into `frontend/` with a standalone frontend dev/build path while keeping the current Worker asset deployment.\n- Narrows the dashboard-facing API surface through `frontend-api.ts` / `backend-types.ts` and typed Hono client calls.\n- Moves reusable background job logic into `src/services/` so routes, scheduled handlers, and frontend API types stay less entangled.\n- Keeps generated frontend Worker bindings as a temporary bridge until a generated API-client declaration package replaces live backend type imports.\n- Fixes split dev: frontend Vite proxies same-origin `/api` to the Worker, while `config.apiBaseUrl` can use `VITE_API_BASE_URL` for future static/AWS hosting.\n- Makes deploys deterministic by deploying the generated `dist/pollinations_enter/wrangler.json` config directly.\n\nAddresses #11107\n\nChecks:\n- `npx tsc -p enter.pollinations.ai/frontend/src/tsconfig.json --noEmit`\n- `npx tsc -p enter.pollinations.ai/tsconfig.json --noEmit`\n- `npm run build:frontend`\n- `npm run build:production`\n- `npm run deploy:staging -- --dry-run`\n- `npm run deploy:production -- --dry-run`\n- `git diff --check`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Splitting the hive",
+    "blurb": "We've reorganized the enter dashboard's internal plumbing to give the frontend its own dedicated build path. Cleaner code means faster updates for the hive!",
+    "summary": "Moved the enter dashboard into a standalone frontend directory with its own Vite build path and narrowed the API surface to decouple it from the Worker backend.",
+    "impact": "Contributors will experience smoother local development via a dedicated Vite proxy and more deterministic deployments for the dashboard.",
+    "keywords": [
+      "refactor",
+      "frontend",
+      "vite",
+      "build",
+      "dashboard"
+    ],
+    "visual_concept": "Polly the bee organizing digital boxes or building a separate little room/shed for the frontend, representing the architectural split between frontend and backend.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, organizing glowing digital boxes into two separate neat piles. One pile has a retro computer monitor showing a colorful dashboard, the other shows glowing green backend server racks. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-22/PR-11130.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, organizing glowing digital boxes into two separate neat piles. One pile has a retro computer monitor showing a colorful dashboard, the other shows glowing green backend server racks. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-22T14:04:23.256639+00:00"
+}

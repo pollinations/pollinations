@@ -1,0 +1,35 @@
+{
+  "pr_number": 11236,
+  "title": "feat(enter): scroll-area primitive, fix mobile drawer footer",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11236",
+  "merged_at": "2026-05-22T14:48:26Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Introduces a `<ScrollArea>` primitive that bundles the auto-hide scrollbar behavior with a themed thumb color, and uses it to fix a layout bug in the mobile drawer where the sign-in / account section could slide below the fold on short viewports.\n\n- New `<ScrollArea theme? axis?>` in `frontend/src/components/ui/`. Thumb color comes from `--theme-scrollbar-thumb`, defined per `[data-theme=\"…\"]` block in `style.css` — same cascade as `bg-theme-*`. Replaces the seven standalone `.scrollbar-theme-*` classes.\n- Migrated all scrollers to the primitive: dashboard rail nav, main content, multi-select dropdown, both key dialogs, auth modal, design showcase. Deleted the now-redundant `use-auto-hide-scrollbar` hook.\n- Mobile drawer fix: logo (top) and account area (bottom) are pinned; nav, API Reference, and legal links scroll between. Previously the entire rail scrolled as one block, so on a short viewport the Sign in button could be pushed below the visible area.\n- Dropped the unused `gray` variant from `DashboardTheme` and the `asThemeName` shim it forced in `dashboard-section.tsx`.\n- Added a `<ScrollAreaDemo>` section to `/internal/design`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The scrollbar glow-up",
+    "blurb": "We rebuilt our scrollbars to be theme-aware and auto-hiding. More importantly, the mobile menu now pins the sign-in button to the bottom so it never gets lost off-screen.",
+    "summary": "Introduces a new `<ScrollArea>` primitive that replaces seven standalone CSS classes and fixes the mobile drawer by pinning the logo and account areas while the navigation scrolls.",
+    "impact": "Mobile users will always see the sign-in button regardless of screen height, and scrollbars across the dashboard now automatically hide and match the active theme.",
+    "keywords": [
+      "ui",
+      "mobile",
+      "navigation",
+      "frontend",
+      "ux"
+    ],
+    "visual_concept": "Polly the bee acting as a mechanic, adjusting a large scrollbar on a retro mobile phone screen. The screen shows a pinned top and bottom section with a scrolling middle. Cozy, warm lighting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) scrollbar on a giant retro mobile phone screen. The phone displays a chunky UI with pinned top and bottom sections. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-22/PR-11236.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) scrollbar on a giant retro mobile phone screen. The phone displays a chunky UI with pinned top and bottom sections. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-22T14:49:41.034497+00:00"
+}

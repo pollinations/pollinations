@@ -2,7 +2,7 @@ import { getLogger, type Logger, withContext } from "@logtape/logtape";
 import { getRealClientIp } from "@shared/client-ip.ts";
 import { getPublicUrl } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
-import { ensureConfigured } from "@/logger";
+import { ensureConfigured } from "../logger.ts";
 
 export type LoggerVariables = {
     log: Logger;

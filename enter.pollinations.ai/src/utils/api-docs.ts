@@ -1,11 +1,11 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { resolver } from "hono-openapi";
 import {
     createErrorResponseSchema,
     type ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
-} from "@/error.ts";
-import { resolver } from "hono-openapi";
-import { ContentfulStatusCode } from "hono/utils/http-status";
+} from "../error.ts";
 
 function createErrorResponseDescription(status: ContentfulStatusCode) {
     return {

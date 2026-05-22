@@ -1,10 +1,10 @@
-import { POLLEN_PACKS } from "@enter-shared/pollen-packs.ts";
 import { apiClient } from "@frontend/api.ts";
 import { cn } from "@frontend/lib/cn.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
+import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import {
     type FC,
     type ReactNode,

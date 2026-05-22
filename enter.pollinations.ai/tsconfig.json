@@ -32,7 +32,6 @@
         "paths": {
             "@/*": ["src/*"],
             "@frontend/*": ["frontend/src/*"],
-            "@enter-shared/*": ["shared/*"],
             "@shared/*": ["../shared/*"]
         }
     },
@@ -42,7 +41,6 @@
         "src/**/*.ts",
         "src/**/*.tsx",
         "frontend/src/**/*.ts",
-        "frontend/src/**/*.tsx",
-        "shared/**/*.ts"
+        "frontend/src/**/*.tsx"
     ]
 }

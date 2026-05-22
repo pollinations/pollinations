@@ -1,4 +1,4 @@
-import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { PUBLIC_URLS } from "./public-urls.ts";
 
 export type PollenPackAmount = "2" | "5" | "10" | "20" | "50" | "100";
 

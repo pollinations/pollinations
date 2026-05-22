@@ -3,7 +3,7 @@ import {
     getPollenPack,
     isPollenPackAmount,
     POLLEN_PACKS,
-} from "@enter-shared/pollen-packs.ts";
+} from "@shared/pollen-packs.ts";
 import { expect, test } from "vitest";
 
 test("pollen pack catalog includes the stepped beta bonus ladder", () => {

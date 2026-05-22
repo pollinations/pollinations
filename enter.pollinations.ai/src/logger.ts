@@ -8,7 +8,7 @@ import {
     getJsonLinesFormatter,
     type LogLevel,
 } from "@logtape/logtape";
-import { applyColor } from "@/util";
+import { applyColor } from "./util.ts";
 
 export type LogFormat = "json" | "text";
 

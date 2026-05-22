@@ -27,7 +27,7 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        tsconfigPaths(),
+        tsconfigPaths({ projects: ["src/tsconfig.json"] }),
     ],
     optimizeDeps: {
         esbuildOptions: {

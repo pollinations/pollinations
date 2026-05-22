@@ -1,10 +1,10 @@
-import { getPollenPack, type PollenPack } from "@enter-shared/pollen-packs.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getPollenPack, type PollenPack } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";

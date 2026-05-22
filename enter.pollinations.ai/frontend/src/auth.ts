@@ -4,7 +4,7 @@ import {
     inferAdditionalFields,
 } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
-import type { createAuth } from "@/auth.ts";
+import type { createAuth } from "./backend-types.ts";
 import { config } from "./config.ts";
 
 export const authClient = createAuthClient({

@@ -3,7 +3,7 @@ import {
     getPollenPack,
     isPollenPackAmount,
     POLLEN_PACKS,
-} from "@enter-shared/pollen-packs.ts";
+} from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";

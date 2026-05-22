@@ -10,7 +10,6 @@ import { configDefaults } from "vitest/config";
 
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const frontendSrc = fileURLToPath(new URL("./frontend/src/", import.meta.url));
-const enterSharedSrc = fileURLToPath(new URL("./shared/", import.meta.url));
 const enterSrc = fileURLToPath(new URL("./src/", import.meta.url));
 
 export default defineWorkersConfig(async ({ mode }) => {
@@ -26,10 +25,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                 { find: /^@\/(.*)$/, replacement: `${enterSrc}$1` },
                 { find: /^@shared\/(.*)$/, replacement: `${sharedSrc}$1` },
                 { find: /^@frontend\/(.*)$/, replacement: `${frontendSrc}$1` },
-                {
-                    find: /^@enter-shared\/(.*)$/,
-                    replacement: `${enterSharedSrc}$1`,
-                },
             ],
         },
         test: {

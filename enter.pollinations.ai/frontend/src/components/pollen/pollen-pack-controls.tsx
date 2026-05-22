@@ -1,10 +1,10 @@
+import { cn } from "@frontend/lib/cn.ts";
 import {
     formatPollenPackValue,
     getPackBonusPercent,
     POLLEN_PACKS,
     type PollenPack,
-} from "@enter-shared/pollen-packs.ts";
-import { cn } from "@frontend/lib/cn.ts";
+} from "@shared/pollen-packs.ts";
 import type { FC } from "react";
 import { Chip } from "../ui/chip.tsx";
 

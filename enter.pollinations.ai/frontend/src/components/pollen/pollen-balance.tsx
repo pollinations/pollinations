@@ -1,5 +1,5 @@
-import { POLLEN_PACKS } from "@enter-shared/pollen-packs.ts";
 import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
 import { Button } from "../ui/button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";

@@ -10,6 +10,7 @@ import {
 } from "unique-names-generator";
 import { genDocsUrl } from "../../config.ts";
 import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -230,7 +231,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         onSubmit={handleSubmit}
                         className="flex min-h-0 flex-1 flex-col"
                     >
-                        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                        <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
                             {error && (
                                 <div className="pb-2">
                                     <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
@@ -323,7 +324,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     inline
                                 />
                             )}
-                        </div>
+                        </ScrollArea>
 
                         <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                             {!createdKey && (

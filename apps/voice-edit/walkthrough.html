@@ -213,7 +213,7 @@
       </select>
       <button id="makeBtn" class="btn accent">make</button>
       <button id="playAllBtn" class="btn" disabled title="play all clips in sequence">play all</button>
-      <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .webm of all clips">download</button>
+      <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .mp4 of all clips">download</button>
     </section>
 
     <label class="prompt">
@@ -230,7 +230,13 @@
     <div id="meta" class="meta"></div>
   </main>
 
-<script>
+<script type="module">
+import {
+  Input, Output, BlobSource, BufferTarget, Mp4OutputFormat,
+  EncodedPacketSink, EncodedVideoPacketSource, EncodedAudioPacketSource,
+  ALL_FORMATS,
+} from "https://esm.sh/mediabunny@1.45.3";
+
 const KEY_STORAGE = "voice-edit:user-key";
 const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
 const CLIENT_ID = "";
@@ -713,14 +719,84 @@ els.playAll.addEventListener("click", () => {
   }
   render();
 });
+async function remuxMp4Clips(blobs) {
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  let videoSrc = null;
+  let audioSrc = null;
+  let vOffset = 0;
+  let aOffset = 0;
+  let vMaxOut = 0;
+  let aMaxOut = 0;
+  let vCfgSent = false;
+  let aCfgSent = false;
+
+  for (let i = 0; i < blobs.length; i++) {
+    const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blobs[i]) });
+    const vTrack = await input.getPrimaryVideoTrack();
+    if (!vTrack) throw new Error(`clip ${i + 1} has no video track`);
+    const aTrack = await input.getPrimaryAudioTrack();
+
+    if (i === 0) {
+      videoSrc = new EncodedVideoPacketSource(vTrack.codec);
+      output.addVideoTrack(videoSrc);
+      if (aTrack) {
+        audioSrc = new EncodedAudioPacketSource(aTrack.codec);
+        output.addAudioTrack(audioSrc);
+      }
+      await output.start();
+    }
+
+    const vMeta = { decoderConfig: await vTrack.getDecoderConfig() };
+    const vSink = new EncodedPacketSink(vTrack);
+    let vClipMax = 0;
+    for (let p = await vSink.getFirstPacket(); p; p = await vSink.getNextPacket(p)) {
+      let ts = Math.max(0, p.timestamp + vOffset);
+      if (i > 0 && ts <= vMaxOut) ts = vMaxOut + 1e-6;
+      await videoSrc.add(p.clone({ timestamp: ts }), vCfgSent ? undefined : vMeta);
+      vCfgSent = true;
+      vMaxOut = Math.max(vMaxOut, ts);
+      vClipMax = Math.max(vClipMax, p.timestamp + p.duration);
+    }
+    vOffset += vClipMax;
+
+    if (aTrack && audioSrc) {
+      const aMeta = { decoderConfig: await aTrack.getDecoderConfig() };
+      const aSink = new EncodedPacketSink(aTrack);
+      let aClipMax = 0;
+      for (let p = await aSink.getFirstPacket(); p; p = await aSink.getNextPacket(p)) {
+        let ts = Math.max(0, p.timestamp + aOffset);
+        if (i > 0 && ts <= aMaxOut) ts = aMaxOut + 1e-6;
+        await audioSrc.add(p.clone({ timestamp: ts }), aCfgSent ? undefined : aMeta);
+        aCfgSent = true;
+        aMaxOut = Math.max(aMaxOut, ts);
+        aClipMax = Math.max(aClipMax, p.timestamp + p.duration);
+      }
+      aOffset += aClipMax;
+    }
+  }
+
+  await output.finalize();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
 els.downloadAll.addEventListener("click", async () => {
   if (!app.clips.length) return;
+  const originalLabel = els.downloadAll.textContent;
+  els.downloadAll.disabled = true;
+  els.downloadAll.textContent = "stitching…";
   try {
     const blobs = app.clips.map((c) => c.blob).filter(Boolean);
     if (!blobs.length) throw new Error("No video data to download");
-    const type = blobs[0].type || "video/mp4";
-    const merged = new Blob(blobs, { type });
-    const ext = type.includes("webm") ? "webm" : "mp4";
+    let merged;
+    let ext = "mp4";
+    try {
+      merged = await remuxMp4Clips(blobs);
+    } catch (remuxErr) {
+      console.warn("mediabunny remux failed, falling back to naive concat", remuxErr);
+      const type = blobs[0].type || "video/mp4";
+      merged = new Blob(blobs, { type });
+      ext = type.includes("webm") ? "webm" : "mp4";
+    }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(merged);
     a.download = `walkthrough-${Date.now()}.${ext}`;
@@ -730,6 +806,9 @@ els.downloadAll.addEventListener("click", async () => {
     setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
   } catch (err) {
     showError(err.message);
+  } finally {
+    els.downloadAll.textContent = originalLabel;
+    els.downloadAll.disabled = !app.clips.length || app.busy;
   }
 });
 window.addEventListener("hashchange", () => {

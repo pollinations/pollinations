@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-22",
+  "period_start": "2026-05-22",
+  "period_end": "2026-05-22",
+  "generated_at": "2026-05-23T06:52:21.245638+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-22/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-22/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-22/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Mobile navigation finally got an anchor. \n\nWe merged a PR this week adding a proper scroll-area primitive and fixing the mobile drawer footer. If you've ever built a mobile web UI, you know the exact kind of scrolling weirdness this fixes. It's a small update, but your thumbs will thank us when you're generating from your phone.\n\nEverything is live, open source, and ready to use. Code is in the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #frontend #buildinpublic #uiux",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

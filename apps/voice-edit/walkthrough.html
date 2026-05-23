@@ -97,6 +97,9 @@
     user-select: none;
   }
   .narrate input { margin: 0; }
+  .narrate-count { opacity: 0.7; font-variant-numeric: tabular-nums; }
+  .narrate input:disabled + .narrate-count,
+  .narrate input:disabled { opacity: 0.4; }
   .prompt {
     display: grid;
     gap: 4px;
@@ -224,6 +227,7 @@
       <button id="makeBtn" class="btn accent">make</button>
       <label class="narrate" title="insert a 2s card showing the marked-up image and prompt between video clips">
         <input id="narrateToggle" type="checkbox"> narrate
+        <span id="narrateCount" class="narrate-count" aria-hidden="true"></span>
       </label>
       <button id="playAllBtn" class="btn" disabled title="play all clips in sequence">play all</button>
       <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .mp4 of all clips">download</button>
@@ -275,6 +279,7 @@ const els = Object.fromEntries(Object.entries({
   prompt: "promptInput",
   promptReset: "promptReset",
   narrate: "narrateToggle",
+  narrateCount: "narrateCount",
   viewer: "viewer",
   frameStrip: "frameStrip",
   clipStrip: "clipStrip",
@@ -511,11 +516,14 @@ function render() {
   els.playAll.disabled = !hasClips;
   els.downloadAll.disabled = !hasClips;
   els.playAll.textContent = app.playAll ? "stop" : "play all";
+  const narratable = app.history.filter((f) => f?.narration).length;
+  els.narrate.disabled = narratable === 0 || app.busy;
+  els.narrateCount.textContent = narratable ? `(${narratable})` : "(none)";
   renderViewer();
   renderFrames();
   renderClips();
   els.meta.textContent = app.history.length > 1
-    ? `${app.history.length} frames -> ${app.history.length - 1} transitions`
+    ? `${app.history.length} frames -> ${app.history.length - 1} transitions${narratable ? ` · ${narratable} narration card${narratable === 1 ? "" : "s"}` : ""}`
     : "load a remix image with history to make a walkthrough";
 }
 
@@ -685,6 +693,7 @@ async function makeWalkthrough() {
           render();
         } catch (err) {
           console.warn("narration card failed, skipping", err);
+          showError(`narration card ${i + 1} skipped: ${err.message}`);
         }
       }
     }
@@ -814,17 +823,17 @@ function drawNarrationCard(canvas, image, promptText) {
   const dw = image.width * s;
   const dh = image.height * s;
   ctx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
-  // prompt text overlay at the bottom
+  // prompt text overlay at the bottom — small, subtitle-style
   if (promptText) {
-    const fontPx = Math.max(18, Math.round(H * 0.045));
-    ctx.font = `500 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
+    const fontPx = Math.min(20, Math.max(11, Math.round(H * 0.022)));
+    ctx.font = `400 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    const lines = wrapText(ctx, promptText, W * 0.88);
-    const padY = Math.round(fontPx * 0.6);
-    const lineH = Math.round(fontPx * 1.25);
+    const lines = wrapText(ctx, promptText, W * 0.92);
+    const padY = Math.round(fontPx * 0.5);
+    const lineH = Math.round(fontPx * 1.3);
     const bandH = lines.length * lineH + padY * 2;
-    ctx.fillStyle = "rgba(17, 5, 24, 0.78)";
+    ctx.fillStyle = "rgba(17, 5, 24, 0.72)";
     ctx.fillRect(0, H - bandH, W, bandH);
     ctx.fillStyle = "#fff";
     for (let i = 0; i < lines.length; i++) {

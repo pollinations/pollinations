@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-22",
+  "period_start": "2026-05-22",
+  "period_end": "2026-05-22",
+  "generated_at": "2026-05-23T06:52:21.245638+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-22/images/reddit.jpg"
+    }
+  ],
+  "title": "PR #11236: Scroll-area primitive and mobile drawer footer fix",
+  "text": "Just one PR merged today, but it resolves a particularly annoying mobile UI quirk. If you have been using the interface on a phone recently, you likely noticed the drawer footer behaving unpredictably or getting cut off during scrolling.\n\nWe merged PR #11236, which introduces a dedicated scroll-area primitive and finally anchors the mobile drawer footer where it belongs. Mobile navigation is notoriously finicky when dealing with dynamic content heights, virtual keyboards, and mobile browser viewport shifts. Relying on default browser scroll behavior inside absolute positioned drawers usually leads to a bad time.\n\nThe new scroll-area primitive gives us a much cleaner, standardized foundation for handling overflow content across the app without breaking the drawer layout. The footer is now properly anchored at the bottom of the viewport, meaning no more chasing action buttons off the edge of your screen when the content expands.\n\nIt is a small infrastructure update, but it makes the mobile experience significantly less frustrating for anyone building or testing on the go. You can check out the implementation details and the primitive setup in the repo if you are wrestling with similar mobile viewport issues in your own projects.\n\nCode and roadmap are open here: https://github.com/pollinations/pollinations"
+}

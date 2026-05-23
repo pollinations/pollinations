@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-22",
+  "period_start": "2026-05-22",
+  "period_end": "2026-05-22",
+  "title": "Mobile navigation gets a much-needed anchor",
+  "summary": "A quiet day focused on front-end cleanup, bringing better scrollbars and a fixed mobile navigation drawer.\n\nReplaced a tangle of standalone CSS classes with a unified ScrollArea primitive. The practical result is that scrollbars now auto-hide and respect the active theme, and mobile users won't lose the sign-in button at the bottom of the drawer anymore.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11236,
+      "date": "2026-05-22"
+    }
+  ],
+  "generated_at": "2026-05-23T06:52:21.245638+00:00"
+}

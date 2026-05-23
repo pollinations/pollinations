@@ -251,7 +251,7 @@
 import {
   Input, Output, BlobSource, BufferTarget, Mp4OutputFormat,
   EncodedPacketSink, EncodedVideoPacketSource, EncodedAudioPacketSource,
-  CanvasSource, canEncodeVideo, ALL_FORMATS,
+  CanvasSource, Conversion, canEncodeVideo, ALL_FORMATS,
 } from "https://esm.sh/mediabunny@1.45.3";
 
 const KEY_STORAGE = "voice-edit:user-key";
@@ -602,7 +602,8 @@ function renderClips() {
     video.playsInline = true;
     const label = document.createElement("span");
     if (clip.kind === "narration") {
-      label.textContent = `card ${videoCount}`;
+      // narration card intros the next video, so label it with that video's number
+      label.textContent = `intro ${videoCount + 1}`;
     } else {
       videoCount += 1;
       label.textContent = `${videoCount}->${videoCount + 1}`;
@@ -678,11 +679,8 @@ async function makeWalkthrough() {
       const res = await fetch(request, { headers: authHeaders() });
       if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
       const blob = await res.blob();
-      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" });
-      app.currentClip = app.clips.length - 1;
-      render();
-      await loadBalance();
 
+      // If narrating, prepend a card that introduces this transition before the clip plays.
       const target = app.history[i + 1];
       if (els.narrate.checked && target?.narration) {
         setStatus(`narrating ${i + 1}/${app.history.length - 1}...`);
@@ -696,6 +694,11 @@ async function makeWalkthrough() {
           showError(`narration card ${i + 1} skipped: ${err.message}`);
         }
       }
+
+      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" });
+      app.currentClip = app.clips.length - 1;
+      render();
+      await loadBalance();
     }
     setStatus("done");
   } finally {
@@ -823,17 +826,17 @@ function drawNarrationCard(canvas, image, promptText) {
   const dw = image.width * s;
   const dh = image.height * s;
   ctx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
-  // prompt text overlay at the bottom — small, subtitle-style
+  // prompt text overlay at the bottom — subtitle-style
   if (promptText) {
-    const fontPx = Math.min(20, Math.max(11, Math.round(H * 0.022)));
-    ctx.font = `400 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
+    const fontPx = Math.min(26, Math.max(14, Math.round(H * 0.03)));
+    ctx.font = `500 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    const lines = wrapText(ctx, promptText, W * 0.92);
-    const padY = Math.round(fontPx * 0.5);
+    const lines = wrapText(ctx, promptText, W * 0.9);
+    const padY = Math.round(fontPx * 0.55);
     const lineH = Math.round(fontPx * 1.3);
     const bandH = lines.length * lineH + padY * 2;
-    ctx.fillStyle = "rgba(17, 5, 24, 0.72)";
+    ctx.fillStyle = "rgba(17, 5, 24, 0.75)";
     ctx.fillRect(0, H - bandH, W, bandH);
     ctx.fillStyle = "#fff";
     for (let i = 0; i < lines.length; i++) {
@@ -954,14 +957,43 @@ async function remuxMp4Clips(blobs) {
   return new Blob([output.target.buffer], { type: "video/mp4" });
 }
 
+async function normalizeMp4(blob, targetBitrate) {
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blob) });
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  const conv = await Conversion.init({
+    input, output,
+    video: { codec: "avc", bitrate: targetBitrate },
+  });
+  await conv.execute();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
 els.downloadAll.addEventListener("click", async () => {
   if (!app.clips.length) return;
   const originalLabel = els.downloadAll.textContent;
   els.downloadAll.disabled = true;
   els.downloadAll.textContent = "stitching…";
   try {
-    const blobs = app.clips.map((c) => c.blob).filter(Boolean);
-    if (!blobs.length) throw new Error("No video data to download");
+    const clips = app.clips.filter((c) => c.blob);
+    if (!clips.length) throw new Error("No video data to download");
+
+    // If we have any narration cards mixed in, the source clips and the cards
+    // will have different H.264 SPS/PPS — the player only honours the first
+    // avcC box, so naive remux silently drops the cards. Re-encode every clip
+    // to one uniform target so the final stream has a single decoder config.
+    let blobs = clips.map((c) => c.blob);
+    const mixed = clips.some((c) => c.kind === "narration");
+    if (mixed) {
+      const targetBitrate = 4_000_000;
+      const normalized = [];
+      for (let i = 0; i < clips.length; i++) {
+        els.downloadAll.textContent = `re-encoding ${i + 1}/${clips.length}…`;
+        normalized.push(await normalizeMp4(clips[i].blob, targetBitrate));
+      }
+      blobs = normalized;
+      els.downloadAll.textContent = "stitching…";
+    }
+
     let merged;
     let ext = "mp4";
     try {

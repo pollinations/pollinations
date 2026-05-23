@@ -4,14 +4,15 @@ Empirical results from fanning out the same voice transcript across 12 image-edi
 
 ## TL;DR
 
-1. **The app's current `buildPrompt` wrapper is already solid** — it names the marker, asks the model to remove it, and binds the user's pronouns. The only missing universal rule is the **preserve clause**.
-2. **Applied** to `buildPrompt(text, marked, color)` — no marker → no red reference, always appends a preserve clause:
+1. **The app's `buildPrompt` wrapper is minimal by design** — it names the marker, asks the model to remove it, and binds the user's pronouns. Nothing else.
+2. **Current shape** of `buildPrompt(text, marked, color)`:
    ```js
    function buildPrompt(text, marked, color) {
-     if (!marked) return `${text} Keep everything unrelated unchanged.`;
-     return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings. Keep everything unrelated unchanged.`;
+     if (!marked) return text;
+     return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
    }
    ```
+   An earlier iteration appended `Keep everything unrelated unchanged.` (universal rule #3 below) but the suffix was removed — it fought intentional global edits (e.g. "make everything red") more than it helped marker-targeted ones, since most modern edit models already default to preserving unrelated regions.
 3. **Best model for region edits with the app's prompt**: `kontext`, `klein`, `nanobanana-2`, `seedream`, and `p-image-edit` all handled "add exotic fruits to the marked tree" cleanly. `seedream-pro` and `nanobanana-pro` deliver higher fidelity at 2–4× the cost and latency.
 4. **Best universal phrasing for geometric transforms (rotate, flip, etc.)**: the **photographer framing** — *"Same photograph, but the photographer turned their camera 90° clockwise before taking the shot. Everything that was on the top is now on the right side of the frame."*
 5. **Do not use diffusion models for deterministic transforms.** No model rotated a clean image reliably. The winner (`p-image-edit` with photographer framing) was the only one that even preserved original pixels. Solve rotation client-side with a canvas; reserve the model for content edits.
@@ -20,7 +21,7 @@ Empirical results from fanning out the same voice transcript across 12 image-edi
 
 1. **Name the marker.** `"the area inside the red circle"` — not `"this"` or `"here"`. Bare pronouns are failure mode #1.
 2. **Ask to remove the annotation.** Otherwise the red ring leaks into the output. The app already does this with `Output without {color} markings`.
-3. **State what to preserve.** `"Keep face, pose, lighting, background unchanged."` Drift compounds across turns. **This is the rule the current app prompt is missing.**
+3. **State what to preserve.** `"Keep face, pose, lighting, background unchanged."` Helps when the user's prompt is targeted (a region edit) but hurts when the user actually wants a global change. The app omits this clause and relies on the marker itself to scope the edit.
 4. **No model has a native zoom or rotate op.** Both are global transforms; diffusion-edit models regenerate the latent.
 
 ## What the app currently sends
@@ -38,7 +39,7 @@ Concrete example, edit #1 from the May-22 walkthrough metadata:
 
 > The red markings indicate the area the prompt is referring to. Prompt: Let's zoom in to this part of the image, please. Output without red markings.
 
-This template hits 3 of 4 universal rules — adding `Keep everything else unchanged.` finishes it.
+This template hits 3 of 4 universal rules — the missing one (a preserve clause) was tested, added, then removed because it interfered with intentional global edits.
 
 ## Per-model behaviour (observed, not theoretical)
 
@@ -111,18 +112,14 @@ Deterministic, free, instant.
 
 ## Recommendations for the voice-edit app
 
-### 1. Append a preserve clause to `buildPrompt`
+### 1. Preserve clause: not appended
 
-In `apps/voice-edit/remix.html:785` (and the mirror copy in `index.html`, `image.html`):
+A `Keep everything else unchanged.` suffix was tested across all 12 models and shipped briefly. It was removed because:
 
-```js
-function buildPrompt(text, marked, color) {
-  if (!marked) return text;
-  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings. Keep everything else unchanged.`;
-}
-```
+- Modern edit models (FLUX Kontext/Klein, Gemini Nano Banana 2/Pro, GPT-Image-2, Seedream 4) already default to local edits when a marker is present.
+- The clause actively interfered with intentional global edits — e.g. a user saying "make the whole image moody" got back the original image with a faint vignette because "keep everything unchanged" outweighed the verb.
 
-One-line change. Hits all 4 universal rules. No model worsened with the addition.
+If we ever want it back, the right shape is a conditional toggle (apply only when a marker exists AND the prompt doesn't contain global verbs like "all", "everything", "whole"), not an unconditional append.
 
 ### 2. Detect zoom/close-up intent and rewrite
 
@@ -130,7 +127,7 @@ When the transcript contains `zoom`, `close up`, `closer`, `enhance`, `detail`, 
 
 > Close-up photograph of the area inside the red circle, same lighting and style, same composition.
 
-Then pass to `buildPrompt` as usual (which adds the marker reference and preserve clause).
+Then pass to `buildPrompt` as usual (which adds the marker reference).
 
 ### 3. Detect rotate/flip/mirror intent and short-circuit to canvas
 
@@ -150,7 +147,7 @@ For `nanobanana-pro`, prefix with a planning step:
 
 ```
 First, identify the area inside the red circle. Then: {user's transcript}.
-Output without red markings. Keep everything else unchanged.
+Output without red markings.
 ```
 
 For `nova-canvas` (when/if added): convert the click `xPct`/`yPct` to a generated B/W disk mask, **don't burn the red circle into the input**. Nova has a native mask channel and treats the red pixels as scene content rather than a hint.

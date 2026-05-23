@@ -87,6 +87,40 @@
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn.accent { background: var(--accent); }
   .select { padding: 0 10px; }
+  .prompt {
+    display: grid;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .prompt textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: var(--border);
+    box-shadow: var(--raise);
+    border-radius: 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: inherit;
+    resize: vertical;
+  }
+  .prompt textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .prompt .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .prompt .row button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 
   .error {
     display: none;
@@ -174,12 +208,21 @@
       <button id="connectBtn" class="btn accent">connect</button>
       <button id="loadBtn" class="btn" title="upload an image from disk">load</button>
       <input id="fileInput" type="file" accept="image/*" hidden>
-      <select id="modelSel" class="select" aria-label="video model">
-        <option value="veo">veo start+end</option>
-        <option value="seedance-2.0">seedance 2 start+end</option>
+      <select id="modelSel" class="select" aria-label="video model" disabled>
+        <option value="">loading models...</option>
       </select>
       <button id="makeBtn" class="btn accent">make</button>
+      <button id="playAllBtn" class="btn" disabled title="play all clips in sequence">play all</button>
+      <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .webm of all clips">download</button>
     </section>
+
+    <label class="prompt">
+      <div class="row">
+        <span>video prompt</span>
+        <button type="button" id="promptReset" title="restore default prompt">reset</button>
+      </div>
+      <textarea id="promptInput" rows="2" spellcheck="false"></textarea>
+    </label>
 
     <section id="viewer" class="panel"></section>
     <div id="frameStrip" class="strip" aria-label="history frames"></div>
@@ -189,11 +232,12 @@
 
 <script>
 const KEY_STORAGE = "voice-edit:user-key";
+const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const HISTORY_KEYWORD = "pollinations:voice-edit:history";
-const PROMPT = "Smooth visual transition from the first image to the second image. Preserve the subject, composition, and style. No text, labels, captions, or subtitles.";
+const DEFAULT_PROMPT = "Smooth visual transition from the first image to the second image. Preserve the subject, composition, and style. No text, labels, captions, or subtitles.";
 
 const $ = (id) => document.getElementById(id);
 const els = Object.fromEntries(Object.entries({
@@ -205,6 +249,10 @@ const els = Object.fromEntries(Object.entries({
   file: "fileInput",
   model: "modelSel",
   make: "makeBtn",
+  playAll: "playAllBtn",
+  downloadAll: "downloadAllBtn",
+  prompt: "promptInput",
+  promptReset: "promptReset",
   viewer: "viewer",
   frameStrip: "frameStrip",
   clipStrip: "clipStrip",
@@ -218,6 +266,9 @@ const app = {
   clips: [],
   currentClip: -1,
   busy: false,
+  modelsReady: false,
+  playAll: false,
+  playAllIndex: 0,
   accountUser: "",
   accountBalance: null,
 };
@@ -360,22 +411,26 @@ async function loadSource(url) {
   if (!res.ok) throw new Error(`Image load failed: ${res.status} ${res.statusText}`);
   const blob = await res.blob();
   const state = await readRemixState(blob);
-  const frames = state ? cleanHistoryFrames(state.history) : [{ url: source }];
-  if (!frames.length) throw new Error("No history frames found");
-  const sourceIndex = state ? Math.max(0, Math.min(state.historyIndex ?? frames.length - 1, frames.length - 1)) : 0;
-  const requestedIndex = startIndexFromLocation();
-  let currentIndex = sourceIndex;
-  if (state) {
-    if (frames[sourceIndex]?.kind === "prep") {
-      frames.splice(sourceIndex + 1, 0, { url: source });
-      currentIndex = sourceIndex + 1;
-    } else {
-      frames[sourceIndex].url = source;
-    }
+  const rawFrames = state ? cleanHistoryFrames(state.history) : [{ url: source }];
+  if (!rawFrames.length) throw new Error("No history frames found");
+  const sourceIndex = state ? Math.max(0, Math.min(state.historyIndex ?? rawFrames.length - 1, rawFrames.length - 1)) : 0;
+  if (state && rawFrames[sourceIndex]?.kind !== "prep") {
+    rawFrames[sourceIndex].url = source;
   }
-  const index = requestedIndex == null || (currentIndex !== sourceIndex && requestedIndex === sourceIndex)
-    ? currentIndex
-    : requestedIndex;
+  const frames = rawFrames.filter((frame) => frame.kind !== "prep");
+  if (!frames.length) throw new Error("No clean frames found (all entries are annotated previews)");
+  const targetURL = rawFrames[sourceIndex]?.kind === "prep" ? source : rawFrames[sourceIndex]?.url;
+  const sourceIndexClean = Math.max(
+    0,
+    frames.findIndex((frame) => frame.url === targetURL),
+  );
+  const requestedIndex = startIndexFromLocation();
+  const requestedIndexClean = requestedIndex == null
+    ? null
+    : Math.max(0, Math.min(requestedIndex, frames.length - 1));
+  const index = requestedIndexClean == null || requestedIndexClean === sourceIndex
+    ? sourceIndexClean
+    : requestedIndexClean;
   app.sourceURL = source;
   app.history = frames;
   app.currentFrame = Math.max(0, Math.min(index, frames.length - 1));
@@ -383,7 +438,7 @@ async function loadSource(url) {
   app.currentClip = -1;
   setHash(source, app.currentFrame);
   render();
-  setStatus(state ? `loaded ${frames.length} frames` : "loaded image");
+  setStatus(state ? `loaded ${frames.length} clean frames` : "loaded image");
 }
 
 async function uploadBlob(blob, filename) {
@@ -402,10 +457,14 @@ async function uploadBlob(blob, filename) {
 
 function render() {
   const connected = !!localStorage.getItem(KEY_STORAGE);
-  const locked = app.busy || app.history.length < 2 || !connected;
+  const locked = app.busy || app.history.length < 2 || !connected || !app.modelsReady;
   els.make.disabled = locked;
   els.load.disabled = app.busy || !connected;
-  els.model.disabled = app.busy;
+  els.model.disabled = app.busy || !app.modelsReady;
+  const hasClips = app.clips.length > 0 && !app.busy;
+  els.playAll.disabled = !hasClips;
+  els.downloadAll.disabled = !hasClips;
+  els.playAll.textContent = app.playAll ? "stop" : "play all";
   renderViewer();
   renderFrames();
   renderClips();
@@ -415,6 +474,21 @@ function render() {
 }
 
 function renderViewer() {
+  if (app.playAll && app.clips.length) {
+    const video = document.createElement("video");
+    video.src = app.clips[app.playAllIndex].src;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.addEventListener("ended", () => {
+      if (!app.playAll) return;
+      app.playAllIndex = (app.playAllIndex + 1) % app.clips.length;
+      app.currentClip = app.playAllIndex;
+      render();
+    });
+    els.viewer.replaceChildren(video);
+    return;
+  }
   const clip = app.clips[app.currentClip];
   if (clip) {
     const video = document.createElement("video");
@@ -478,17 +552,55 @@ function renderClips() {
   }));
 }
 
+async function loadVideoModels() {
+  try {
+    const res = await fetch(`${BASE}/models`);
+    if (!res.ok) throw new Error(`models fetch failed: ${res.status}`);
+    const all = await res.json();
+    const supported = all.filter((m) =>
+      Array.isArray(m.video_capabilities) && m.video_capabilities.includes("end_frame"),
+    );
+    if (!supported.length) throw new Error("no models advertise end_frame");
+    const preferred = ["veo", "seedance-2.0", "wan-fast"];
+    supported.sort((a, b) => {
+      const ai = preferred.indexOf(a.name);
+      const bi = preferred.indexOf(b.name);
+      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    els.model.replaceChildren(...supported.map((m) => {
+      const opt = document.createElement("option");
+      opt.value = m.name;
+      opt.textContent = `${m.name} start+end`;
+      opt.title = m.description || "";
+      return opt;
+    }));
+  } catch (err) {
+    els.model.replaceChildren(
+      Object.assign(document.createElement("option"), { value: "veo", textContent: "veo start+end" }),
+      Object.assign(document.createElement("option"), { value: "seedance-2.0", textContent: "seedance-2.0 start+end" }),
+      Object.assign(document.createElement("option"), { value: "wan-fast", textContent: "wan-fast start+end" }),
+    );
+    console.warn("video model discovery failed, using fallback list:", err);
+  } finally {
+    app.modelsReady = true;
+    render();
+  }
+}
+
+function currentPrompt() {
+  const text = (els.prompt.value || "").trim();
+  return text || DEFAULT_PROMPT;
+}
+
 function videoRequestURL(start, end, model) {
-  const url = new URL(`${BASE}/video/${encodeURIComponent(PROMPT)}`);
+  const url = new URL(`${BASE}/video/${encodeURIComponent(currentPrompt())}`);
   url.searchParams.set("model", model);
   url.searchParams.set("duration", "4");
   url.searchParams.set("audio", "false");
-  if (model === "veo") {
-    url.searchParams.set("image", `${start}|${end}`);
-  } else {
-    url.searchParams.set("image", start);
-    url.searchParams.set("last_frame_image", end);
-  }
+  url.searchParams.set("image", `${start}|${end}`);
   return url;
 }
 
@@ -506,7 +618,7 @@ async function makeWalkthrough() {
       const res = await fetch(request, { headers: authHeaders() });
       if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
       const blob = await res.blob();
-      app.clips.push({ url: request.href, src: URL.createObjectURL(blob) });
+      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob });
       app.currentClip = app.clips.length - 1;
       render();
       await loadBalance();
@@ -592,13 +704,52 @@ els.make.addEventListener("click", () => {
     render();
   });
 });
+els.playAll.addEventListener("click", () => {
+  if (!app.clips.length) return;
+  app.playAll = !app.playAll;
+  if (app.playAll) {
+    app.playAllIndex = 0;
+    app.currentClip = 0;
+  }
+  render();
+});
+els.downloadAll.addEventListener("click", async () => {
+  if (!app.clips.length) return;
+  try {
+    const blobs = app.clips.map((c) => c.blob).filter(Boolean);
+    if (!blobs.length) throw new Error("No video data to download");
+    const type = blobs[0].type || "video/mp4";
+    const merged = new Blob(blobs, { type });
+    const ext = type.includes("webm") ? "webm" : "mp4";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(merged);
+    a.download = `walkthrough-${Date.now()}.${ext}`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
+  } catch (err) {
+    showError(err.message);
+  }
+});
 window.addEventListener("hashchange", () => {
   const start = startURLFromLocation();
   if (start && scrubURL(start) !== app.sourceURL && !app.busy) loadSource(start).catch((err) => showError(err.message));
 });
 
+els.prompt.value = localStorage.getItem(PROMPT_STORAGE) ?? DEFAULT_PROMPT;
+els.prompt.placeholder = DEFAULT_PROMPT;
+els.prompt.addEventListener("input", () => {
+  localStorage.setItem(PROMPT_STORAGE, els.prompt.value);
+});
+els.promptReset.addEventListener("click", () => {
+  els.prompt.value = DEFAULT_PROMPT;
+  localStorage.setItem(PROMPT_STORAGE, DEFAULT_PROMPT);
+});
+
 captureKeyFromFragment();
 refreshConnectionUI();
+loadVideoModels();
 const start = startURLFromLocation();
 if (start) loadSource(start).catch((err) => showError(err.message));
 else render();

@@ -87,6 +87,16 @@
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn.accent { background: var(--accent); }
   .select { padding: 0 10px; }
+  .narrate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .narrate input { margin: 0; }
   .prompt {
     display: grid;
     gap: 4px;
@@ -212,6 +222,9 @@
         <option value="">loading models...</option>
       </select>
       <button id="makeBtn" class="btn accent">make</button>
+      <label class="narrate" title="insert a 2s card showing the marked-up image and prompt between video clips">
+        <input id="narrateToggle" type="checkbox"> narrate
+      </label>
       <button id="playAllBtn" class="btn" disabled title="play all clips in sequence">play all</button>
       <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .mp4 of all clips">download</button>
     </section>
@@ -234,11 +247,13 @@
 import {
   Input, Output, BlobSource, BufferTarget, Mp4OutputFormat,
   EncodedPacketSink, EncodedVideoPacketSource, EncodedAudioPacketSource,
-  ALL_FORMATS,
+  CanvasSource, canEncodeVideo, ALL_FORMATS,
 } from "https://esm.sh/mediabunny@1.45.3";
 
 const KEY_STORAGE = "voice-edit:user-key";
 const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
+const NARRATE_STORAGE = "voice-edit:walkthrough-narrate";
+const NARRATE_DURATION_SEC = 2;
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
@@ -259,6 +274,7 @@ const els = Object.fromEntries(Object.entries({
   downloadAll: "downloadAllBtn",
   prompt: "promptInput",
   promptReset: "promptReset",
+  narrate: "narrateToggle",
   viewer: "viewer",
   frameStrip: "frameStrip",
   clipStrip: "clipStrip",
@@ -398,7 +414,14 @@ function cleanHistoryFrames(frames) {
   return frames.map((frame) => {
     const url = frameURL(frame);
     if (!url) return null;
-    return { url, kind: typeof frame === "string" ? undefined : frame?.kind };
+    if (typeof frame === "string") return { url };
+    return {
+      url,
+      kind: frame?.kind,
+      promptText: frame?.promptText,
+      marked: frame?.marked,
+      color: frame?.color,
+    };
   }).filter(Boolean);
 }
 
@@ -423,7 +446,24 @@ async function loadSource(url) {
   if (state && rawFrames[sourceIndex]?.kind !== "prep") {
     rawFrames[sourceIndex].url = source;
   }
-  const frames = rawFrames.filter((frame) => frame.kind !== "prep");
+  // Attach each prep frame's narration data (annotated URL + prompt text) to the
+  // clean frame it produced — that's the very next non-prep entry in the raw list.
+  let pendingPrep = null;
+  const frames = [];
+  for (const frame of rawFrames) {
+    if (frame.kind === "prep") {
+      pendingPrep = frame;
+      continue;
+    }
+    if (pendingPrep) {
+      frame.narration = {
+        annotatedURL: pendingPrep.url,
+        promptText: pendingPrep.promptText || "",
+      };
+      pendingPrep = null;
+    }
+    frames.push(frame);
+  }
   if (!frames.length) throw new Error("No clean frames found (all entries are annotated previews)");
   const targetURL = rawFrames[sourceIndex]?.kind === "prep" ? source : rawFrames[sourceIndex]?.url;
   const sourceIndexClean = Math.max(
@@ -539,6 +579,7 @@ function renderFrames() {
 }
 
 function renderClips() {
+  let videoCount = 0;
   els.clipStrip.replaceChildren(...app.clips.map((clip, index) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -552,7 +593,12 @@ function renderClips() {
     video.muted = true;
     video.playsInline = true;
     const label = document.createElement("span");
-    label.textContent = `${index + 1}->${index + 2}`;
+    if (clip.kind === "narration") {
+      label.textContent = `card ${videoCount}`;
+    } else {
+      videoCount += 1;
+      label.textContent = `${videoCount}->${videoCount + 1}`;
+    }
     button.append(video, label);
     return button;
   }));
@@ -624,10 +670,23 @@ async function makeWalkthrough() {
       const res = await fetch(request, { headers: authHeaders() });
       if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
       const blob = await res.blob();
-      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob });
+      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" });
       app.currentClip = app.clips.length - 1;
       render();
       await loadBalance();
+
+      const target = app.history[i + 1];
+      if (els.narrate.checked && target?.narration) {
+        setStatus(`narrating ${i + 1}/${app.history.length - 1}...`);
+        try {
+          const cardBlob = await renderNarrationClip(target.narration, blob);
+          app.clips.push({ src: URL.createObjectURL(cardBlob), blob: cardBlob, kind: "narration" });
+          app.currentClip = app.clips.length - 1;
+          render();
+        } catch (err) {
+          console.warn("narration card failed, skipping", err);
+        }
+      }
     }
     setStatus("done");
   } finally {
@@ -719,6 +778,108 @@ els.playAll.addEventListener("click", () => {
   }
   render();
 });
+function loadImageBlob(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("could not load narration image"));
+    img.src = url;
+  });
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const lines = [];
+  for (const para of text.split(/\n/)) {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (!words.length) { lines.push(""); continue; }
+    let line = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = line + " " + words[i];
+      if (ctx.measureText(test).width > maxWidth) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function drawNarrationCard(canvas, image, promptText) {
+  const ctx = canvas.getContext("2d");
+  const { width: W, height: H } = canvas;
+  ctx.fillStyle = "#110518";
+  ctx.fillRect(0, 0, W, H);
+  // contain-fit the annotated image
+  const s = Math.min(W / image.width, H / image.height);
+  const dw = image.width * s;
+  const dh = image.height * s;
+  ctx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  // prompt text overlay at the bottom
+  if (promptText) {
+    const fontPx = Math.max(18, Math.round(H * 0.045));
+    ctx.font = `500 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    const lines = wrapText(ctx, promptText, W * 0.88);
+    const padY = Math.round(fontPx * 0.6);
+    const lineH = Math.round(fontPx * 1.25);
+    const bandH = lines.length * lineH + padY * 2;
+    ctx.fillStyle = "rgba(17, 5, 24, 0.78)";
+    ctx.fillRect(0, H - bandH, W, bandH);
+    ctx.fillStyle = "#fff";
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], W / 2, H - padY - (lines.length - 1 - i) * lineH);
+    }
+  }
+}
+
+async function probeVideoSpec(blob) {
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blob) });
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) throw new Error("reference clip has no video track");
+  const cfg = await track.getDecoderConfig();
+  return {
+    codec: track.codec,                    // e.g. "avc"
+    fullCodecString: cfg?.codec,           // e.g. "avc1.640028"
+    width: track.codedWidth,
+    height: track.codedHeight,
+  };
+}
+
+async function renderNarrationClip(narration, refBlob) {
+  const spec = await probeVideoSpec(refBlob);
+  // Force even dimensions (H.264 requires it).
+  const width = spec.width - (spec.width % 2);
+  const height = spec.height - (spec.height % 2);
+  const fps = 24;
+  const bitrate = 2_000_000;
+  if (typeof canEncodeVideo === "function") {
+    const ok = await canEncodeVideo(spec.codec, { width, height, bitrate });
+    if (!ok) throw new Error(`browser cannot encode ${spec.codec} ${width}x${height}`);
+  }
+
+  const image = await loadImageBlob(narration.annotatedURL);
+  const canvas = typeof OffscreenCanvas !== "undefined"
+    ? new OffscreenCanvas(width, height)
+    : Object.assign(document.createElement("canvas"), { width, height });
+  drawNarrationCard(canvas, image, narration.promptText);
+
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  const sourceCfg = { codec: spec.codec, bitrate, keyFrameInterval: 1 };
+  if (spec.fullCodecString) sourceCfg.fullCodecString = spec.fullCodecString;
+  const source = new CanvasSource(canvas, sourceCfg);
+  output.addVideoTrack(source, { frameRate: fps });
+  await output.start();
+  const total = Math.max(1, Math.round(NARRATE_DURATION_SEC * fps));
+  const frameDur = 1 / fps;
+  for (let i = 0; i < total; i++) {
+    await source.add(i * frameDur, frameDur);
+  }
+  source.close();
+  await output.finalize();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
 async function remuxMp4Clips(blobs) {
   const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
   let videoSrc = null;
@@ -772,6 +933,11 @@ async function remuxMp4Clips(blobs) {
         aClipMax = Math.max(aClipMax, p.timestamp + p.duration);
       }
       aOffset += aClipMax;
+    } else if (audioSrc) {
+      // No audio in this clip but we have an audio track — keep the audio
+      // offset in lock-step with video so later audio packets land in the
+      // right spot. The merged audio track will just contain a silent gap.
+      aOffset += vClipMax;
     }
   }
 
@@ -824,6 +990,11 @@ els.prompt.addEventListener("input", () => {
 els.promptReset.addEventListener("click", () => {
   els.prompt.value = DEFAULT_PROMPT;
   localStorage.setItem(PROMPT_STORAGE, DEFAULT_PROMPT);
+});
+
+els.narrate.checked = localStorage.getItem(NARRATE_STORAGE) === "1";
+els.narrate.addEventListener("change", () => {
+  localStorage.setItem(NARRATE_STORAGE, els.narrate.checked ? "1" : "0");
 });
 
 captureKeyFromFragment();

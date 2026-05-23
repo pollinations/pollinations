@@ -995,8 +995,8 @@ async function composeSnapshot(marker = "") {
 }
 
 function buildPrompt(text, marked, color) {
-  if (!marked) return text;
-  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
+  if (!marked) return `${text} Keep everything unrelated unchanged.`;
+  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings. Keep everything unrelated unchanged.`;
 }
 
 function pinPct(point) {

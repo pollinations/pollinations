@@ -174,6 +174,27 @@
     overflow: hidden;
   }
   .thumb.active, .clip.active { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .clip.pending { opacity: 0.55; cursor: wait; }
+  .clip.failed { opacity: 0.7; }
+  .clip-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted);
+    font-size: 1.4rem;
+    animation: clip-pulse 1.6s ease-in-out infinite;
+  }
+  .clip.failed .clip-placeholder {
+    animation: none;
+    color: #ff8888;
+    background: rgba(255, 80, 80, 0.18);
+  }
+  @keyframes clip-pulse {
+    0%, 100% { background: rgba(255, 255, 255, 0.05); }
+    50% { background: rgba(255, 255, 255, 0.15); }
+  }
   .thumb img, .clip video {
     width: 100%;
     height: 100%;
@@ -257,7 +278,7 @@ import {
 const KEY_STORAGE = "voice-edit:user-key";
 const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
 const NARRATE_STORAGE = "voice-edit:walkthrough-narrate";
-const NARRATE_DURATION_SEC = 2;
+const NARRATE_DURATION_SEC = 3.5;
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
@@ -544,7 +565,7 @@ function renderViewer() {
     return;
   }
   const clip = app.clips[app.currentClip];
-  if (clip) {
+  if (clip && clip.src) {
     const video = document.createElement("video");
     video.src = clip.src;
     video.controls = true;
@@ -591,15 +612,31 @@ function renderClips() {
   els.clipStrip.replaceChildren(...app.clips.map((clip, index) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `clip${index === app.currentClip ? " active" : ""}`;
-    button.addEventListener("click", () => {
-      app.currentClip = index;
-      render();
-    });
-    const video = document.createElement("video");
-    video.src = clip.src;
-    video.muted = true;
-    video.playsInline = true;
+    const isReady = !!clip.src;
+    const cls = [
+      "clip",
+      index === app.currentClip ? "active" : "",
+      clip.pending ? "pending" : "",
+      clip.failed ? "failed" : "",
+    ].filter(Boolean).join(" ");
+    button.className = cls;
+    if (isReady) {
+      button.addEventListener("click", () => {
+        app.currentClip = index;
+        render();
+      });
+    } else {
+      button.disabled = true;
+    }
+    const media = document.createElement(isReady ? "video" : "div");
+    if (isReady) {
+      media.src = clip.src;
+      media.muted = true;
+      media.playsInline = true;
+    } else {
+      media.className = "clip-placeholder";
+      media.textContent = clip.failed ? "×" : "…";
+    }
     const label = document.createElement("span");
     if (clip.kind === "narration") {
       // narration card intros the next video, so label it with that video's number
@@ -608,7 +645,7 @@ function renderClips() {
       videoCount += 1;
       label.textContent = `${videoCount}->${videoCount + 1}`;
     }
-    button.append(video, label);
+    button.append(media, label);
     return button;
   }));
 }
@@ -668,43 +705,79 @@ function videoRequestURL(start, end, model) {
 async function makeWalkthrough() {
   if (app.history.length < 2 || app.busy) return;
   app.busy = true;
-  for (const clip of app.clips) URL.revokeObjectURL(clip.src);
+  for (const clip of app.clips) if (clip.src) URL.revokeObjectURL(clip.src);
   app.clips = [];
   app.currentClip = -1;
+
+  const narrate = els.narrate.checked;
+  const transitions = app.history.length - 1;
+  // Pre-populate placeholders in display order: (intro?, video) per transition.
+  const slots = []; // parallel array mapping transitionIndex -> { videoSlot, narrationSlot? }
+  for (let i = 0; i < transitions; i++) {
+    const target = app.history[i + 1];
+    const slot = {};
+    if (narrate && target?.narration) {
+      app.clips.push({ kind: "narration", pending: true });
+      slot.narrationSlot = app.clips.length - 1;
+    }
+    app.clips.push({ kind: "video", pending: true });
+    slot.videoSlot = app.clips.length - 1;
+    slots.push(slot);
+  }
   render();
-  try {
-    for (let i = 0; i < app.history.length - 1; i++) {
-      setStatus(`video ${i + 1}/${app.history.length - 1}...`);
-      const request = videoRequestURL(app.history[i].url, app.history[i + 1].url, els.model.value);
+
+  let videosDone = 0;
+  let firstError = null;
+  const setProgress = () => setStatus(`videos ${videosDone}/${transitions} ready...`);
+  setProgress();
+
+  await Promise.all(slots.map(async (slot, i) => {
+    const request = videoRequestURL(app.history[i].url, app.history[i + 1].url, els.model.value);
+    try {
       const res = await fetch(request, { headers: authHeaders() });
-      if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
+      if (!res.ok) throw new Error(await friendlyError(res, `Video ${i + 1} failed`));
       const blob = await res.blob();
 
-      // If narrating, prepend a card that introduces this transition before the clip plays.
-      const target = app.history[i + 1];
-      if (els.narrate.checked && target?.narration) {
-        setStatus(`narrating ${i + 1}/${app.history.length - 1}...`);
+      // Fill the video slot
+      const videoEntry = { url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" };
+      app.clips[slot.videoSlot] = videoEntry;
+      if (app.currentClip < 0) app.currentClip = slot.videoSlot;
+
+      // Render the narration card for this transition (needs the just-finished clip as codec ref)
+      if (slot.narrationSlot != null) {
         try {
-          const cardBlob = await renderNarrationClip(target.narration, blob);
-          app.clips.push({ src: URL.createObjectURL(cardBlob), blob: cardBlob, kind: "narration" });
-          app.currentClip = app.clips.length - 1;
-          render();
+          const cardBlob = await renderNarrationClip(app.history[i + 1].narration, blob);
+          app.clips[slot.narrationSlot] = { src: URL.createObjectURL(cardBlob), blob: cardBlob, kind: "narration" };
         } catch (err) {
-          console.warn("narration card failed, skipping", err);
+          console.warn(`narration card ${i + 1} failed`, err);
           showError(`narration card ${i + 1} skipped: ${err.message}`);
+          // Remove the failed placeholder by marking it dropped; we'll compact at the end.
+          app.clips[slot.narrationSlot] = { kind: "narration", dropped: true };
         }
       }
 
-      app.clips.push({ url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" });
-      app.currentClip = app.clips.length - 1;
+      videosDone++;
+      setProgress();
       render();
-      await loadBalance();
+    } catch (err) {
+      firstError = firstError || err;
+      app.clips[slot.videoSlot] = { kind: "video", failed: true, error: err.message };
+      if (slot.narrationSlot != null) app.clips[slot.narrationSlot] = { kind: "narration", dropped: true };
+      videosDone++;
+      setProgress();
+      render();
     }
-    setStatus("done");
-  } finally {
-    app.busy = false;
-    render();
-  }
+  }));
+
+  // Compact: drop slots that were never filled (failed videos / dropped cards)
+  app.clips = app.clips.filter((c) => !c.dropped && !c.failed);
+  if (app.currentClip >= app.clips.length) app.currentClip = app.clips.length - 1;
+
+  loadBalance().catch(() => {});
+  if (firstError) showError(firstError.message);
+  setStatus(firstError ? `done with errors` : "done");
+  app.busy = false;
+  render();
 }
 
 async function friendlyError(response, label) {

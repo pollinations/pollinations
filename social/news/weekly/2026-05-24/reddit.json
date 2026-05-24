@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "generated_at": "2026-05-24T07:03:48.326047+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/reddit.jpg"
+    }
+  ],
+  "title": "55 PRs merged: Video start/end frames, audio diarization, and Gemini 3.5 Flash",
+  "text": "Merged 55 PRs this week. A lot of community showcase additions, but the core infra updates are mostly around video, audio, and model reliability.\n\nVideo & Audio\nYou can now pass start and end frames for video generation via positional image arrays across providers. We are standardizing the output to 720p. For audio, we added support for OpenAI diarized transcriptions. If you have been hitting timeouts on long audio files, we bumped the AssemblyAI transcription poll timeout from 120s to 240s, which should stop the artificial failures.\n\nModels & API\nGemini 3.5 Flash is now wired up via Vertex. On the reliability side, we finally mapped text provider rate limits to standard 502s. Your clients can actually catch and handle the limit now instead of waiting on a hanging connection.\n\nPolly & MCP\nCleaned up Polly's table and LaTeX rendering. It now handles markdown formatting inside table images properly and drops the weird postambles. Also got the Model Context Protocol (MCP) wired into /docs with working tests.\n\nCommunity\nAround 40 of this week's PRs were community app submissions to the showcase. Everything from AI comic generators to pixel asset tools.\n\nCode and docs: https://github.com/pollinations/pollinations"
+}

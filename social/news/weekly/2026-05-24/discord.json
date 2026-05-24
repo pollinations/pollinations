@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "generated_at": "2026-05-24T07:03:48.326047+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/discord.jpg"
+    }
+  ],
+  "text": "<@&1424461167883194418>\n\n## Weekly Update - 2026-05-24\n\n55 PRs merged this week. We added a massive wave of community apps to the showcase, wired up some new models, and killed a few annoying timeouts.\n\n🌱 **The Community Harvest**\n- Added 36 new community projects to the showcase. Everything from AI comic generators and desktop assistants to pixel asset forges and economic analysis engines. The ecosystem is growing.\n\n🎥 **Video & Audio**\n- Video generation now supports start and end frames via positional `image[]` arrays across providers. You can actually control transitions now.\n- Added support for OpenAI diarized transcriptions (speaker detection).\n- Bumped the AssemblyAI polling timeout from 120s to 240s so longer audio stops timing out.\n\n🧠 **Models & API Reliability**\n- Added `gemini-3.5-flash` (via Vertex).\n- API rate limits from text providers now properly map to `502` errors instead of failing silently.\n- Ripped out artificial fetch timeouts across the generation pipeline.\n\n🐝 **Polly & Polish**\n- Improved Polly's rendering for tables and LaTeX. Markdown formatting now actually works in table images, and we stripped out the weird postambles.\n- MCP documentation is now wired directly into `/docs`.\n- Fixed the mobile drawer footer in the UI."
+}

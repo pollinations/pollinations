@@ -86,6 +86,7 @@ describe("docs routes", () => {
             { url: "https://gen.pollinations.ai" },
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/realtime"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();

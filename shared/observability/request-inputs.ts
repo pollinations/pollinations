@@ -7,6 +7,8 @@ export type RequestInputs = {
 };
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CREDENTIAL_QUERY_PARAMS = new Set(["api_key", "key", "token"]);
+const REDACTED = "[redacted]";
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     const inputs: RequestInputs = {
@@ -77,9 +79,16 @@ function queryParams(c: Context): Record<string, string | string[]> {
     return Object.fromEntries(
         Object.entries(c.req.queries()).map(([key, values]) => [
             key,
-            values.length === 1 ? values[0] : values,
+            redactQueryParam(key, values.length === 1 ? values[0] : values),
         ]),
     );
+}
+
+function redactQueryParam(
+    key: string,
+    value: string | string[],
+): string | string[] {
+    return CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase()) ? REDACTED : value;
 }
 
 function formDataToObject(formData: FormData): Record<string, unknown> {

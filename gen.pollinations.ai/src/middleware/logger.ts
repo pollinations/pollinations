@@ -14,6 +14,16 @@ type Env = {
     Variables: LoggerVariables;
 };
 
+function redactCredentialQueryParams(url: URL): string {
+    const redacted = new URL(url);
+    for (const param of ["key", "token", "api_key"]) {
+        if (redacted.searchParams.has(param)) {
+            redacted.searchParams.set(param, "[redacted]");
+        }
+    }
+    return redacted.toString();
+}
+
 export const logger = createMiddleware<Env>(async (c, next) => {
     await ensureConfigured({
         level: c.env.LOG_LEVEL || "debug",
@@ -27,7 +37,7 @@ export const logger = createMiddleware<Env>(async (c, next) => {
     const shouldEmitRequestLogs =
         c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
 
-    const publicUrl = getPublicUrl(c).toString();
+    const publicUrl = redactCredentialQueryParams(getPublicUrl(c));
 
     await withContext(
         {

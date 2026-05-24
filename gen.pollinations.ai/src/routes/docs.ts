@@ -2,6 +2,7 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
@@ -108,6 +109,9 @@ const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
+const realtimeModelDisplayNames = getRealtimeModelsInfo()
+    .map((model) => model.name)
+    .join(", ");
 
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
@@ -127,7 +131,7 @@ function generateLLMDoc(): string {
     return [
         "# Pollinations API",
         "",
-        "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+        "> Generate text, images, video, realtime voice, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
         "",
         "Base URL: https://gen.pollinations.ai",
         "API Keys: https://enter.pollinations.ai",
@@ -202,6 +206,7 @@ function generateLLMDoc(): string {
         "- GET /video/{prompt}: video generation.",
         "- GET /audio/{text}: speech or music generation.",
         "- POST /v1/embeddings: OpenAI-compatible embeddings.",
+        "- GET /v1/realtime: OpenAI-compatible Realtime WebSocket.",
         "- POST /v1/audio/speech: OpenAI-compatible speech generation.",
         "- POST /v1/audio/transcriptions: audio transcription.",
         "- POST /v1/images/generations: OpenAI-compatible image generation.",
@@ -287,7 +292,7 @@ function generationDocumentation(): OpenApiSchema {
             description: [
                 "## Introduction",
                 "",
-                "Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+                "Generate text, images, video, realtime voice, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
                 "",
                 "**Base URL:** `https://gen.pollinations.ai`",
                 "",
@@ -301,6 +306,7 @@ function generationDocumentation(): OpenApiSchema {
                 "| ✍️ **Simple Text** | `GET /text/{prompt}` | Plain text |",
                 "| 🖼️ **Image Generation** | `GET /image/{prompt}` | JPEG / PNG |",
                 "| 🎬 **Video Generation** | `GET /video/{prompt}` | MP4 |",
+                "| 🎙️ **Realtime Voice** | `GET /v1/realtime` | OpenAI-compatible WebSocket |",
                 "| 🔊 **Text-to-Speech** | `GET /audio/{text}` | MP3 |",
                 "| 🔊 **Music Generation** | `GET /audio/{text}` | MP3 |",
                 "| 🔊 **Transcription** | `POST /v1/audio/transcriptions` | JSON |",
@@ -426,6 +432,20 @@ function generationDocumentation(): OpenApiSchema {
                     "```",
                     "",
                     `**Available models:** ${videoModelDisplayNames}`,
+                ].join("\n"),
+            },
+            {
+                name: "🎙️ Realtime",
+                description: [
+                    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+                    "",
+                    "| Endpoint | Description |",
+                    "|----------|-------------|",
+                    "| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2`) |",
+                    "",
+                    "Requires an API key and paid pack balance. The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes.",
+                    "",
+                    `**Realtime models:** ${realtimeModelDisplayNames}`,
                 ].join("\n"),
             },
             {

@@ -4,6 +4,10 @@ import {
     EMBEDDING_SERVICES,
 } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_SERVICES,
+} from "@shared/registry/realtime.ts";
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/registry/types.ts";
@@ -15,6 +19,7 @@ const SERVICES_BY_EVENT_TYPE = {
     "generate.image": IMAGE_SERVICES,
     "generate.audio": AUDIO_SERVICES,
     "generate.embedding": EMBEDDING_SERVICES,
+    "generate.realtime": REALTIME_SERVICES,
 } as const satisfies Record<EventType, Record<string, unknown>>;
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -22,6 +27,7 @@ const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.image": "image",
     "generate.audio": "audio",
     "generate.embedding": "embeddings",
+    "generate.realtime": "realtime",
 };
 
 export type ModelVariables = {
@@ -102,7 +108,9 @@ export function resolveModel(
                   ? DEFAULT_AUDIO_MODEL
                   : eventType === "generate.embedding"
                     ? DEFAULT_EMBEDDING_MODEL
-                    : DEFAULT_IMAGE_MODEL);
+                    : eventType === "generate.realtime"
+                      ? DEFAULT_REALTIME_MODEL
+                      : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical model name
@@ -130,6 +138,7 @@ export function resolveModel(
                     "generate.image",
                     "generate.audio",
                     "generate.embedding",
+                    "generate.realtime",
                 ] as const
             ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
             const actualLabel = actualCategory

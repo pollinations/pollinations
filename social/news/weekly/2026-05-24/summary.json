@@ -1,0 +1,231 @@
+{
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "title": "The Community Harvest",
+  "summary": "A massive wave of community apps shipped alongside major upgrades to video transitions and audio transcription.\n\nWe merged nearly 40 community apps this week. The ecosystem is buzzing with everything from Discord bots and AI-powered economic analysis to roleplay environment generators and automated restaurant ordering via WhatsApp. If you built it, we probably merged it.\n\nYou can now generate video transitions between two specific images by passing an array of URLs (image[0] for start, image[1] for end). We also migrated Seedream 5 and Seedance Pro to Replicate, standardizing outputs at a crisp 720p and retiring the legacy lite model.\n\nThe audio transcription endpoint now supports OpenAI-compatible diarization. Pass `response_format=diarized_json` and get back structured JSON with speaker labels and timestamps. We also doubled the polling timeout to 240s so your massive podcast files stop failing at the 2-minute mark.\n\nGoogle's `gemini-3.5-flash` is now live via Vertex, and we slashed the price of `gemini-search` by absorbing the grounding fees. On the infrastructure side, we ripped out artificial fetch timeouts that were killing long-running generations, mapped upstream rate limits to 502s for better retry logic, and added early validation so you don't waste time sending images to text-only models.",
+  "pr_count": 55,
+  "prs": [
+    {
+      "number": 11009,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11029,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11030,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11032,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11033,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11034,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11035,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11047,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11048,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11049,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11050,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11051,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11052,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11053,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11054,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11056,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11057,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11058,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11059,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11060,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11061,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11062,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11063,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11064,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11065,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11066,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11067,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11068,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11069,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11070,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11071,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11072,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11075,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11077,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11078,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11080,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11081,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11082,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11083,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11084,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11086,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11087,
+      "date": "2026-05-17"
+    },
+    {
+      "number": 11113,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11132,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11139,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11073,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11175,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11181,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11182,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11194,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11195,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11201,
+      "date": "2026-05-21"
+    },
+    {
+      "number": 11226,
+      "date": "2026-05-21"
+    },
+    {
+      "number": 11228,
+      "date": "2026-05-21"
+    },
+    {
+      "number": 11236,
+      "date": "2026-05-22"
+    }
+  ],
+  "generated_at": "2026-05-24T07:03:48.326047+00:00"
+}

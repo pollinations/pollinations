@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🧠 | Helix AI | https://helixai-4-0.github.io/ | # Helix AI | en | chat | web | @HelixAI-4-0 | 281358275 | https://github.com/HelixAI-4-0/helixai-4-0.github.io | | marco_313_ | | 2026-05-12 | https://github.com/pollinations/pollinations/issues/10888 | 2026-05-25 |  |  |
 | 🧾 | Duwit | https://duwit-45a37.web.app/ | Duwit — Brief Description | en | business | web | @Ashraf-Swaidan | 159012421 | https://github.com/Ashraf-Swaidan/Duwit | |  | | 2026-04-21 | https://github.com/pollinations/pollinations/issues/10389 | 2026-05-19 |  |  |
 | 🤖 | J.aRVIS |  | JARVIS: Cifik Intelegents 🤖🦾 | en | bots | web | @cifik1-lgtm | 282762495 | https://github.com/cifik1-lgtm/J.aRVIS | ⭐1 |  | | 2026-05-17 | https://github.com/pollinations/pollinations/issues/11037 | 2026-05-17 |  | 489 |
 | 🧭 | ContentPilot | https://cp-frontend-alpha.vercel.app/ | ContentPilot Repupose. | en | writing | web | @meenaharsh5432-tech | 268175083 |  | |  | | 2026-04-09 | https://github.com/pollinations/pollinations/issues/10062 | 2026-05-17 |  |  |

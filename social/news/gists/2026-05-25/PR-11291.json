@@ -1,0 +1,35 @@
+{
+  "pr_number": 11291,
+  "title": "Add Helix AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11291",
+  "merged_at": "2026-05-25T16:50:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Helix AI](https://helixai-4-0.github.io/) to chat\n- # Helix AI\n\nFixes #10888",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Helix AI enters the chat",
+    "blurb": "A new seedling has sprouted in the greenhouse. Helix AI is now officially listed in our community apps directory.",
+    "summary": "Added Helix AI to the Pollinations community apps showcase and greenhouse directory.",
+    "impact": "Users can now discover and explore Helix AI directly from the community app listings.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "helix-ai",
+      "greenhouse"
+    ],
+    "visual_concept": "A literal greenhouse setting where Polly the bee is tending to a new, unique plant shaped like a double helix, representing the addition of Helix AI to the community greenhouse.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering a glowing double-helix shaped plant inside a glass greenhouse. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-25/PR-11291.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering a glowing double-helix shaped plant inside a glass greenhouse. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-25T16:51:17.519979+00:00",
+  "app_name": "Helix AI",
+  "app_url": "https://helixai-4-0.github.io/"
+}

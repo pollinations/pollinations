@@ -137,7 +137,7 @@ Returns your account profile. GitHub username, profile image, current tier, and 
 - **Path:** `/account/balance`
 - **Tags:** 👤 Account
 
-Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.
+Returns the pollen visible to the caller. API keys with a budget see remaining key budget in `balance` (no scope needed). Session auth or API keys with the `account:usage` scope also receive `accountBalance`. Paid-only models require paid pollen.
 
 #### Responses
 
@@ -147,13 +147,34 @@ Returns the pollen balance visible to the caller. API keys with a budget always 
 
 - **`balance` (required)**
 
-  `number` — Remaining pollen balance (sum of tier balance + paid balance)
+  `number` — Pollen visible to this caller. For budgeted API keys, this is the remaining key budget. Otherwise this is the account balance.
+
+- **`accountBalance`**
+
+  `object` — Account balance breakdown. Returned for session auth or API keys with `account:usage`.
+
+  - **`total` (required)**
+
+    `number` — Total account pollen balance, tier plus paid
+
+  - **`tier` (required)**
+
+    `number` — Tier-granted pollen balance
+
+  - **`paid` (required)**
+
+    `number` — Paid pollen balance from purchases
 
 **Example:**
 
 ```json
 {
-  "balance": 1
+  "balance": 1,
+  "accountBalance": {
+    "total": 42.5,
+    "tier": 40,
+    "paid": 2.5
+  }
 }
 ```
 

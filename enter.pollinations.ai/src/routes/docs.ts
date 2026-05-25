@@ -352,7 +352,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/balance");
     lines.push(
-        "Returns { balance } — remaining pollen (sum of tier balance + paid balance). If API key has a budget, returns key budget instead.",
+        "Returns { balance } — the pollen visible to the caller. Budgeted API keys see remaining key budget in `balance`. Session auth and API keys with `account:usage` also receive `accountBalance: { total, tier, paid }`. Paid-only models require paid pollen.",
     );
     lines.push(
         "Requires `account:usage` permission when using an API key without a budget of its own.",
@@ -434,6 +434,12 @@ function generateLLMDoc(): string {
         "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
     );
     lines.push("Requires API key authentication (any key type).");
+    lines.push("");
+
+    lines.push("### GET /account/key/usage");
+    lines.push(
+        "Usage history for the API key used in the request. No account scope is required. Use `/account/usage` with `account:usage` for account-wide usage.",
+    );
     lines.push("");
 
     // Media Storage
@@ -1354,10 +1360,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
                                 "| `GET /account/profile` | GitHub username and profile image |",
-                                "| `GET /account/balance` | Current pollen balance |",
+                                "| `GET /account/balance` | Balance visible to the caller |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
                                 "| `GET /account/key` | API key validity, type, and permissions |",
+                                "| `GET /account/key/usage` | Usage for the current API key |",
                                 "",
                                 "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
                             ].join("\n"),

@@ -606,9 +606,22 @@ export interface AccountProfile {
     email?: string | null;
 }
 
-/** Account balance */
+/** Account balance breakdown */
+export interface AccountBalanceBreakdown {
+    /** Total account pollen balance, tier plus paid */
+    total: number;
+    /** Tier-granted pollen balance */
+    tier: number;
+    /** Paid pollen balance from purchases */
+    paid: number;
+}
+
+/** Balance visible to the current caller */
 export interface AccountBalance {
+    /** Key budget for budgeted keys; otherwise account balance */
     balance: number;
+    /** Present when the caller can view account usage/balance */
+    accountBalance?: AccountBalanceBreakdown;
 }
 
 /** Usage record */

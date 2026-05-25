@@ -2,6 +2,7 @@ name = "pollinations-media"
 main = "src/index.ts"
 compatibility_date = "2025-11-12"
 compatibility_flags = ["nodejs_compat"]
+account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # ⚠️ BEFORE DEPLOYING: replace the `database_id` placeholders below with real
 # UUIDs from `wrangler d1 create media-dev` and `wrangler d1 create media-prod
@@ -33,8 +34,8 @@ name = "pollinations-media-prod"
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
 
 [[env.production.routes]]
-pattern = "media.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "media.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.production.r2_buckets]]

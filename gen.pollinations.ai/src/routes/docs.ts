@@ -9,6 +9,7 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import type { Env } from "@/env.ts";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
@@ -18,6 +19,8 @@ const BYOP_DOCS = BYOP_MD.trim();
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
     .replace(/^https:\/\/github\.com\/user-attachments\/assets\/[^\n]+\n+/m, "")
     .trim();
+
+const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 const ERRORS_DOCS = [
     "All errors return JSON with a consistent shape:",
     "",
@@ -230,6 +233,10 @@ function generateLLMDoc(): string {
         "## CLI",
         "",
         CLI_DOCS,
+        "",
+        "## MCP Server",
+        "",
+        MCP_DOCS,
     ].join("\n");
 }
 
@@ -498,6 +505,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🖥️ CLI",
                 description: CLI_DOCS,
+            },
+            {
+                name: "🔌 MCP Server",
+                description: MCP_DOCS,
             },
         ],
     };

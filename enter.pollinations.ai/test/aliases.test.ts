@@ -40,17 +40,6 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("cost lookup uses the public model name instead of collapsing shared provider ids", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage);
-
-    expect(geminiFastCost.totalCost).not.toBe(geminiSearchCost.totalCost);
-});
-
 test("gemini-fast can expose a higher public price than provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,

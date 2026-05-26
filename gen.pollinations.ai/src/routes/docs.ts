@@ -272,14 +272,16 @@ const POLLINATIONS_HEADER_CSS = `
 `;
 
 const POLLINATIONS_HEADER_SCALAR_CSS = `
-:root { --scalar-custom-header-height: 48px; }
+/* Push Scalar's mount point down so its content (h1, version badges,
+   sidebar, mobile hamburger row) doesn't render under our fixed bar.
+   Body padding works because .ph-bar is position: fixed — it ignores
+   parent padding, so the bar stays at top while everything else shifts. */
+body { padding-top: 48px; }
 @media (max-width: 640px) {
-    :root { --scalar-custom-header-height: 96px; }
+    body { padding-top: 80px; }
 }
-/* Soften Scalar's mobile header so it blends with our Pollinations bar
-   instead of reading as a separate row. We don't reposition the element —
-   Scalar's grid layout depends on it staying where it is — but we strip
-   its background, border, and shadow. */
+/* Match Scalar's mobile hamburger row background to our bar so the seam
+   between the two reads as one continuous header instead of a stripe. */
 @media (max-width: 1000px) {
     .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
         background: #0a0a0a !important;
@@ -894,6 +896,9 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 pageTitle: "Pollinations API Reference",
                 title: "Pollinations API Reference",
                 theme: "saturn",
+                darkMode: true,
+                forceDarkModeState: "dark",
+                hideDarkModeToggle: true,
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,

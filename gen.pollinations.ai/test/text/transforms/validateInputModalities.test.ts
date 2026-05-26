@@ -32,6 +32,22 @@ describe("validateInputModalities", () => {
         );
     });
 
+    it("rejects image input for Azure Grok models", () => {
+        expect(() =>
+            validateInputModalities(imageMessage, {
+                model: "grok-4.3",
+                requestedModel: "grok-4.3",
+            }),
+        ).toThrow(
+            expect.objectContaining({
+                name: "InputModalityError",
+                status: 400,
+                message:
+                    "Model 'grok-4.3' does not support image input. Choose a model with image input support.",
+            }),
+        );
+    });
+
     it("allows image input for vision-capable models", () => {
         expect(
             validateInputModalities(imageMessage, {

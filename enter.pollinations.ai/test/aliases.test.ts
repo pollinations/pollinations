@@ -104,6 +104,7 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedCosts = {
+        // biome-ignore lint/suspicious/noApproximativeNumericConstant: expected DeepSeek price for the fixed usage vector.
         deepseek: 0.434,
         "deepseek-pro": 5.36,
     } as const;

@@ -26,6 +26,7 @@ interface WanModelConfig {
     defaultResolution: "480P" | "720P" | "1080P";
     trackingName: string;
     displayName: string;
+    audioBundledWithVideo?: boolean;
 }
 
 const WAN_26_CONFIG: WanModelConfig = {
@@ -62,6 +63,7 @@ const WAN_27_CONFIG: WanModelConfig = {
     defaultResolution: "720P",
     trackingName: "wan-pro",
     displayName: "Wan 2.7",
+    audioBundledWithVideo: true,
 };
 
 // kf2v uses a different DashScope endpoint than i2v/t2v
@@ -240,18 +242,20 @@ function createVideoResult(
     actualDuration?: number,
 ): VideoGenerationResult {
     const duration = actualDuration || videoParams.durationSeconds;
+    const usage: VideoGenerationResult["trackingData"]["usage"] = {
+        completionVideoSeconds: duration,
+    };
+    if (videoParams.generateAudio && !config.audioBundledWithVideo) {
+        usage.completionAudioSeconds = duration;
+    }
+
     return {
         buffer,
         mimeType: "video/mp4",
         durationSeconds: videoParams.durationSeconds,
         trackingData: {
             actualModel: config.trackingName,
-            usage: {
-                completionVideoSeconds: duration,
-                completionAudioSeconds: videoParams.generateAudio
-                    ? duration
-                    : 0,
-            },
+            usage,
         },
     };
 }

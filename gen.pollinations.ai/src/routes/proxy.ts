@@ -524,7 +524,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
                 "",
-                "**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.",
+                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {

@@ -9,6 +9,7 @@ import { generateSpecs } from "hono-openapi";
 import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import LOGO_FLOWER_SVG from "../../../assets/logo.svg?raw";
 import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
@@ -866,7 +867,6 @@ img { max-width: 100%; height: auto; }
 `;
 
 function guidesPage(
-    title: string,
     activeId: HeaderActiveId | undefined,
     body: string,
 ): string {
@@ -875,7 +875,8 @@ function guidesPage(
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${title} — Pollinations</title>
+<title>pollinations.ai - Docs</title>
+<link rel="icon" type="image/svg+xml" href="/docs/favicon.svg" />
 <style>${GUIDES_CSS}</style>
 </head>
 <body>
@@ -891,7 +892,7 @@ function guidesIndexHtml(): string {
             `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
     ).join("");
     const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage("Guides", undefined, body);
+    return guidesPage(undefined, body);
 }
 
 function guideHtml(guide: Guide): string {
@@ -903,15 +904,16 @@ function guideHtml(guide: Guide): string {
         `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
         { async: false },
     ) as string;
-    return guidesPage(guide.title, guide.id, rendered);
+    return guidesPage(guide.id, rendered);
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
-                pageTitle: "Pollinations API Reference",
-                title: "Pollinations API Reference",
+                pageTitle: "pollinations.ai - Docs",
+                title: "pollinations.ai - Docs",
+                favicon: "/docs/favicon.svg",
                 theme: "saturn",
                 darkMode: true,
                 forceDarkModeState: "dark",
@@ -949,6 +951,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             c.header("Content-Type", "image/svg+xml");
             c.header("Cache-Control", "public, max-age=86400");
             return c.body(LOGO_WHITE_SVG);
+        })
+        .get("/favicon.svg", (c) => {
+            c.header("Content-Type", "image/svg+xml");
+            c.header("Cache-Control", "public, max-age=86400");
+            return c.body(LOGO_FLOWER_SVG);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");

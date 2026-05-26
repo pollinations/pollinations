@@ -1,0 +1,35 @@
+{
+  "pr_number": 10960,
+  "title": "docs: scalar markdown sources, /docs/guides surface, dashboard rail copy buttons",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10960",
+  "merged_at": "2026-05-26T17:38:25Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Rework of the gen.pollinations.ai developer docs surface, plus matching changes to the enter dashboard rail.\n\n## gen.pollinations.ai\n\n- Extracted Scalar prose into per-concept markdown files under `gen.pollinations.ai/src/docs/*.md`. Single source of truth feeds Scalar tag descriptions, `/docs/llm.txt`, and the guides pages.\n- New `/docs/guides` + `/docs/guides/{byop,cli,mcp}` pages for integration content that doesn't fit the API reference.\n- Dark Pollinations header (brand + nav pills) above Scalar, plus a floating cluster: **Copy for LLMs** (context-aware per page) and **OpenAPI Doc** dropdown (JSON / YAML).\n- Scalar sidebar reorganized via `x-tagGroups`: Get Started / Reference / Generation / Resources. Modality tags renamed: `Text Generation` → `Text`, etc.\n- `GET /docs/llm.txt?section=api|byop|cli|mcp` slices the LLM doc.\n- `GET /docs/open-api/generate-schema?format=yaml` serves the schema as YAML.\n\n## enter.pollinations.ai\n\n- Dashboard rail docs section: copy-to-clipboard buttons for **API / BYOP / CLI / MCP Server**, each backed by the matching `?section=` slice.\n- Media Storage row removed — folded into the API copy.\n\n## pollinations.ai\n\n- Updated `socialLinks.ts` anchor fragments to match the renamed Scalar tags.\n\n## Tests\n\nAdded coverage for the YAML schema endpoint, guides index + `:id` + 404, and `/docs/llm.txt?section=`.\n\n## Follow-up\n\n#11296 — consolidate the remaining duplicate docs surface on enter (most of `enter.pollinations.ai/src/routes/docs.ts` is now dead or shadowed by gen).",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Docs for humans and bots",
+    "blurb": "We've completely overhauled our developer docs to make building with Pollinations even easier. Plus, new one-click 'Copy for LLMs' buttons mean your AI assistant can read the docs as fast as you do.",
+    "summary": "Rebuilt the gen.pollinations.ai docs surface with modular markdown sources, added new /docs/guides pages, and introduced context-aware 'Copy for LLMs' buttons to the dashboard rail.",
+    "impact": "Developers can now grab context-aware API, BYOP, CLI, or MCP documentation with a single click to paste directly into their AI coding assistants.",
+    "keywords": [
+      "docs",
+      "api",
+      "llm",
+      "dashboard",
+      "scalar"
+    ],
+    "visual_concept": "Polly the bee acting as a librarian, handing neatly organized files to the Monitor Robot (representing the LLM). A cozy library or study desk setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, handing a glowing stack of organized markdown files to a chunky Monitor Robot sitting at a wooden library desk. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, cozy library vibes. Text in pixel font: 'DOCS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-26/PR-10960.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, handing a glowing stack of organized markdown files to a chunky Monitor Robot sitting at a wooden library desk. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, cozy library vibes. Text in pixel font: 'DOCS'."
+  },
+  "generated_at": "2026-05-26T17:39:30.218761+00:00"
+}

@@ -420,19 +420,19 @@ function pollinationsHeaderHtml(
       }
     });
   }
-  // Hide Scalar's "Ask AI" entry (next to the search bar). The button's
-  // text is the only stable handle — class names get hashed by the CDN
-  // bundle. We scan after Scalar mounts and re-scan as the DOM mutates
-  // (e.g. when the user opens the sidebar drawer).
-  function hideAskAi() {
+  // Text-based DOM scan for Scalar buttons whose class names get hashed
+  // by the CDN bundle — we tag them by their stable label so our CSS can
+  // hide ("Ask AI") or style ("Show more") them in amber.
+  function scanScalarButtons() {
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
+      else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
     }
   }
-  hideAskAi();
-  new MutationObserver(hideAskAi).observe(document.body, { childList: true, subtree: true });
+  scanScalarButtons();
+  new MutationObserver(scanScalarButtons).observe(document.body, { childList: true, subtree: true });
 })();
 </script>`;
 }
@@ -491,6 +491,18 @@ const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app [aria-label*="Ask AI" i],
 .scalar-app [title*="Ask AI" i],
 .scalar-app button[data-feature="ask-ai" i] { display: none !important; }
+
+/* "Show more" buttons (tagged by our header script — see scanScalarButtons).
+   Promote to the amber action color so they don't disappear into the page. */
+.scalar-app .ph-show-more {
+    background: #f59e0b !important;
+    color: #451a03 !important;
+    border-color: #f59e0b !important;
+}
+.scalar-app .ph-show-more:hover {
+    background: #fbbf24 !important;
+    border-color: #fbbf24 !important;
+}
 `;
 
 function generationDocumentation(): OpenApiSchema {

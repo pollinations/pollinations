@@ -310,116 +310,18 @@ type GuideId = "byop" | "cli" | "mcp";
 type HeaderActiveId = "api" | GuideId;
 
 function pollinationsHeaderHtml(
-    activeId?: HeaderActiveId,
+    _activeId?: HeaderActiveId,
     scalarHosted = false,
 ): string {
-    const links: {
-        id: HeaderActiveId;
-        href: string;
-        label: string;
-        short?: string;
-    }[] = [
-        { id: "api", href: "/docs", label: "API Reference", short: "API" },
-        { id: "byop", href: "/docs/guides/byop", label: "🌸 BYOP" },
-        { id: "cli", href: "/docs/guides/cli", label: "🖥️ CLI" },
-        {
-            id: "mcp",
-            href: "/docs/guides/mcp",
-            label: "🔌 MCP Server",
-            short: "🔌 MCP",
-        },
-    ];
-    const linksHtml = links
-        .map((l) => {
-            const active = l.id === activeId ? " data-active" : "";
-            const content = l.short
-                ? `<span class="ph-long">${l.label}</span><span class="ph-short">${l.short}</span>`
-                : l.label;
-            return `<a href="${l.href}"${active}>${content}</a>`;
-        })
-        .join("");
     const contextCss = scalarHosted
         ? POLLINATIONS_HEADER_SCALAR_CSS
         : POLLINATIONS_HEADER_STANDALONE_CSS;
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
-  <nav>${linksHtml}</nav>
 </header>
-<div class="ph-fab-cluster">
-  ${
-      scalarHosted
-          ? `<div class="ph-fab-wrap">
-    <button class="ph-fab ph-fab-doc" type="button" aria-haspopup="true" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
-      <span>OpenAPI Doc</span>
-      <svg class="ph-fab-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-    </button>
-    <div class="ph-fab-menu" role="menu">
-      <a href="/docs/open-api/generate-schema" download="pollinations-openapi.json" role="menuitem">
-        <span>JSON</span><span class="ph-fab-ext">.json</span>
-      </a>
-      <a href="/docs/open-api/generate-schema?format=yaml" download="pollinations-openapi.yaml" role="menuitem">
-        <span>YAML</span><span class="ph-fab-ext">.yaml</span>
-      </a>
-    </div>
-  </div>`
-          : ""
-  }
-  <button class="ph-fab ph-fab-copy" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    <span>Copy for LLMs</span>
-  </button>
-</div>
 <script>
 (function () {
-  var copy = document.querySelector('.ph-fab-copy');
-  if (copy) {
-    var label = copy.querySelector('span');
-    // Per-page: on a specific guide, copy just that section; on the API
-    // reference (or anywhere else), copy the entire LLM doc.
-    var activeId = ${activeId ? JSON.stringify(activeId) : "null"};
-    var sectionable = { byop: 1, cli: 1, mcp: 1 };
-    var url = (activeId && sectionable[activeId])
-      ? '/docs/llm.txt?section=' + activeId
-      : '/docs/llm.txt';
-    copy.addEventListener('click', async function () {
-      var res = await fetch(url);
-      var text = await res.text();
-      await navigator.clipboard.writeText(text);
-      var prev = label.textContent;
-      label.textContent = 'Copied';
-      setTimeout(function () { label.textContent = prev; }, 1200);
-    });
-  }
-  var docTrigger = document.querySelector('.ph-fab-doc');
-  var docWrap = document.querySelector('.ph-fab-wrap');
-  if (docTrigger && docWrap) {
-    docTrigger.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var open = docWrap.dataset.open === 'true';
-      docWrap.dataset.open = open ? 'false' : 'true';
-      docTrigger.setAttribute('aria-expanded', open ? 'false' : 'true');
-    });
-    docWrap.addEventListener('click', function (e) {
-      if (e.target.closest('.ph-fab-menu a')) {
-        docWrap.dataset.open = 'false';
-        docTrigger.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.addEventListener('click', function (e) {
-      if (!docWrap.contains(e.target)) {
-        docWrap.dataset.open = 'false';
-        docTrigger.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        docWrap.dataset.open = 'false';
-        docTrigger.setAttribute('aria-expanded', 'false');
-      }
-    });
-  }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.
@@ -492,6 +394,22 @@ const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app [title*="Ask AI" i],
 .scalar-app button[data-feature="ask-ai" i] { display: none !important; }
 
+/* Full-width prose for sections with no right-column code samples (Quick Start,
+   Auth, BYOP, CLI, MCP, Errors, Safety, plain Models/Account). Scalar lays
+   each tag out as two flex columns; the right column stays empty for prose-
+   only tags, wasting ~50% of the page. We collapse the empty column and let
+   the prose stretch. The same rule fixes the section header row above. */
+.scalar-app .section-columns:has(> .section-column:nth-child(2):empty) > .section-column:first-child {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+}
+.scalar-app .section-columns > .section-column:nth-child(2):empty {
+    display: none !important;
+}
+.scalar-app .section-header-wrapper:not(:has(> :nth-child(2))) {
+    grid-template-columns: 1fr !important;
+}
+
 /* "Show more" buttons (tagged by our header script — see scanScalarButtons).
    Promote to the amber action color so they don't disappear into the page. */
 .scalar-app .ph-show-more {
@@ -517,7 +435,7 @@ function generationDocumentation(): OpenApiSchema {
     return {
         servers: [{ url: "https://gen.pollinations.ai" }],
         info: {
-            title: "API Reference",
+            title: "Pollinations API",
             version: "0.3.0",
             description: INTRODUCTION_DOCS,
         },
@@ -539,8 +457,8 @@ function generationDocumentation(): OpenApiSchema {
                 tags: ["🚀 Quick Start", "🔐 Authentication"],
             },
             {
-                name: "Reference",
-                tags: ["❌ Errors", "🛡️ Safety"],
+                name: "Integrations",
+                tags: ["🌸 BYOP", "🖥 CLI", "🔌 MCP Server"],
             },
             {
                 name: "Generation",
@@ -554,7 +472,13 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "Resources",
-                tags: ["🤖 Models", "📦 Media Storage", "👤 Account"],
+                tags: [
+                    "🤖 Models",
+                    "📦 Media Storage",
+                    "👤 Account",
+                    "❌ Errors",
+                    "🛡️ Safety",
+                ],
             },
         ],
         tags: [
@@ -565,6 +489,18 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🔐 Authentication",
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
+            },
+            {
+                name: "🌸 BYOP",
+                description: BYOP_DOCS,
+            },
+            {
+                name: "🖥 CLI",
+                description: CLI_DOCS,
+            },
+            {
+                name: "🔌 MCP Server",
+                description: MCP_DOCS,
             },
             {
                 name: "❌ Errors",

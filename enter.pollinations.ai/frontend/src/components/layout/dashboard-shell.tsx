@@ -231,17 +231,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
 }) => {
-    const [copiedSection, setCopiedSection] = useState<string | null>(null);
-    const handleCopySection = useCallback(async (section: string) => {
-        const url = section
-            ? `${genDocsUrl()}/llm.txt?section=${section}`
-            : `${genDocsUrl()}/llm.txt`;
-        const res = await fetch(url);
-        const text = await res.text();
-        await navigator.clipboard.writeText(text);
-        setCopiedSection(section);
-        setTimeout(() => setCopiedSection(null), 1200);
-    }, []);
     return (
         <aside
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
@@ -283,41 +272,33 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             <ExternalLinkArrow className="h-4 w-4 shrink-0 text-gray-500" />
                         </a>
                         <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
-                            <CopySectionRow
+                            <DocLinkRow
                                 label="API"
+                                href={`${genDocsUrl()}`}
                                 icon={
                                     <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
-                                section="api"
-                                copied={copiedSection === "api"}
-                                onCopy={handleCopySection}
                             />
-                            <CopySectionRow
+                            <DocLinkRow
                                 label="BYOP"
+                                href={`${genDocsUrl()}#tag/byop`}
                                 icon={
                                     <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
-                                section="byop"
-                                copied={copiedSection === "byop"}
-                                onCopy={handleCopySection}
                             />
-                            <CopySectionRow
+                            <DocLinkRow
                                 label="CLI"
+                                href={`${genDocsUrl()}#tag/cli`}
                                 icon={
                                     <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
-                                section="cli"
-                                copied={copiedSection === "cli"}
-                                onCopy={handleCopySection}
                             />
-                            <CopySectionRow
+                            <DocLinkRow
                                 label="MCP Server"
+                                href={`${genDocsUrl()}#tag/mcp-server`}
                                 icon={
                                     <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
-                                section="mcp"
-                                copied={copiedSection === "mcp"}
-                                onCopy={handleCopySection}
                             />
                         </div>
                     </div>
@@ -611,22 +592,6 @@ const McpIcon: FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-);
-
 const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
     <svg
         viewBox="0 0 24 24"
@@ -643,52 +608,25 @@ const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-type CopySectionRowProps = {
+type DocLinkRowProps = {
     label: string;
+    href: string;
     icon: ReactNode;
-    section: string;
-    copied: boolean;
-    onCopy: (section: string) => void;
 };
 
-const CopySectionRow: FC<CopySectionRowProps> = ({
-    label,
-    icon,
-    section,
-    copied,
-    onCopy,
-}) => (
-    <button
-        type="button"
-        onClick={() => onCopy(section)}
-        title={`Copy ${label} docs for LLMs`}
+const DocLinkRow: FC<DocLinkRowProps> = ({ label, href, icon }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
         className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-white/60 hover:text-gray-950"
     >
         <span className="flex items-center gap-2">
             {icon}
             {label}
         </span>
-        {copied ? (
-            <CheckIcon className="h-3.5 w-3.5 shrink-0 text-green-700" />
-        ) : (
-            <ClipboardIcon className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
-        )}
-    </button>
-);
-
-const CheckIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="20 6 9 17 4 12" />
-    </svg>
+        <ExternalLinkArrow className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+    </a>
 );
 
 const ExternalLinkArrow: FC<{ className?: string }> = ({ className }) => (

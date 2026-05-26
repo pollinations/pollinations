@@ -96,12 +96,10 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        // BYOP, CLI, MCP are guides, not API tags — see /docs/guides
-        expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
-        expect(schema.tags.map((tag) => tag.name)).not.toContain("🖥️ CLI");
-        expect(schema.tags.map((tag) => tag.name)).not.toContain(
-            "🔌 MCP Server",
-        );
+        // BYOP, CLI, MCP are surfaced as tags in the Integrations group.
+        expect(schema.tags.map((tag) => tag.name)).toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("🖥 CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain("🔌 MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );

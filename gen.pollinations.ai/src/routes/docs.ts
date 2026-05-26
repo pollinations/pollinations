@@ -265,7 +265,7 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster { top: 92px; right: 12px; gap: 6px; }
+    .ph-fab-cluster { top: 86px; right: 12px; gap: 6px; }
     .ph-fab { padding: 7px 11px; font-size: 12px; }
     .ph-fab svg { width: 14px; height: 14px; }
 }

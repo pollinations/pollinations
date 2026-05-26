@@ -3,7 +3,6 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
@@ -11,103 +10,709 @@ const OPENAPI_URL =
     process.env.OPENAPI_URL ||
     "https://gen.pollinations.ai/docs/open-api/generate-schema";
 
-type JsonObject = Record<string, unknown>;
+type Json = Record<string, unknown>;
+type Schema = Json;
+type Operation = Json;
+type Spec = {
+    info: { title: string; description: string; version: string };
+    openapi: string;
+    servers: { url: string }[];
+    paths: Record<string, Record<string, Operation>>;
+    components: { schemas: Record<string, Schema> };
+};
 
-/**
- * Strip all 4xx/5xx error response sections from the markdown and append
- * a single consolidated "Error Responses" reference at the end.
- */
-function deduplicateErrorResponses(md: string): string {
-    const lines = md.split("\n");
-    const output: string[] = [];
-    let skipping = false;
+const BASE_URL = "https://gen.pollinations.ai";
+const SECTION_EMOJI = {
+    start: "🚀",
+    contents: "📑",
+    endpoints: "🛠️",
+    schemas: "🧩",
+    errors: "⚠️",
+};
+const CALLOUT = {
+    params: "⚙️ **Parameters**",
+    body: "📥 **Request body**",
+    response: "📤 **Response**",
+    example: "💻 **Example**",
+    fields: "🔎 **Fields**",
+};
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+// ────────────────────────────────────────────────────────────────────────────
+// Spec helpers
+// ────────────────────────────────────────────────────────────────────────────
 
-        // Detect error response headers: ##### Status: 4xx or 5xx
-        if (/^#{5}\s+Status:\s+[45]\d{2}\b/.test(line)) {
-            skipping = true;
-            continue;
-        }
-
-        // Stop skipping at the next status header or section header
-        if (skipping) {
-            if (
-                /^#{3,5}\s+(?:Status:|[A-Z])/.test(line) &&
-                !/^#{5}\s+Status:\s+[45]/.test(line)
-            ) {
-                skipping = false;
-            } else {
-                continue;
-            }
-        }
-
-        output.push(line);
-    }
-
-    // Append consolidated error reference
-    output.push("");
-    output.push("## Error Responses");
-    output.push("");
-    output.push("All endpoints return errors in this format:");
-    output.push("");
-    output.push("```json");
-    output.push(
-        JSON.stringify(
-            {
-                status: 400,
-                success: false,
-                error: {
-                    code: "BAD_REQUEST",
-                    message: "Description of what went wrong",
-                    timestamp: "2025-01-01T00:00:00.000Z",
-                    details: { name: "ValidationError" },
-                    requestId: "req_abc123",
-                },
-            },
-            null,
-            2,
-        ),
-    );
-    output.push("```");
-    output.push("");
-    output.push("| Status | Code | Description |");
-    output.push("|--------|------|-------------|");
-    output.push(
-        "| 400 | BAD_REQUEST | Invalid input data. `details` includes `formErrors` and `fieldErrors` for validation failures. |",
-    );
-    output.push(
-        "| 401 | UNAUTHORIZED | Missing or invalid API key. Provide via `Authorization: Bearer <key>` header or `?key=<key>` query param. |",
-    );
-    output.push(
-        "| 402 | PAYMENT_REQUIRED | Insufficient pollen balance or API key budget exhausted. |",
-    );
-    output.push(
-        "| 403 | FORBIDDEN | Access denied — insufficient permissions or tier for this model. |",
-    );
-    output.push("| 404 | NOT_FOUND | Resource not found. |");
-    output.push("| 429 | RATE_LIMITED | Too many requests. Slow down. |");
-    output.push("| 500 | INTERNAL_ERROR | Server error. We're on it. |");
-    output.push("");
-
-    return output.join("\n");
+function asObj(v: unknown): Json {
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Json) : {};
+}
+function asArr(v: unknown): unknown[] {
+    return Array.isArray(v) ? v : [];
+}
+function asStr(v: unknown, fallback = ""): string {
+    return typeof v === "string" ? v : fallback;
 }
 
-/**
- * Replace long enum arrays in the spec with a description pointing to /models.
- */
-function simplifyModelEnums(spec: JsonObject): void {
-    for (const methods of Object.values(asObject(spec.paths))) {
-        for (const op of Object.values(asObject(methods))) {
-            const operation = asObject(op);
-            for (const param of asArray(operation.parameters)) {
-                const parameter = asObject(param);
-                const schema = asObject(parameter.schema);
-                const enumValues = asArray(schema.enum);
+function deref(spec: Spec, schema: Schema): Schema {
+    const ref = asStr(schema?.$ref);
+    if (!ref) return schema;
+    const parts = ref.replace(/^#\//, "").split("/");
+    let cur: unknown = spec;
+    for (const p of parts) cur = asObj(cur)[p];
+    return asObj(cur);
+}
+
+function refName(schema: Schema): string | null {
+    const ref = asStr(schema?.$ref);
+    return ref ? ref.split("/").pop()! : null;
+}
+
+function slug(s: string): string {
+    return s
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
+function escapePipe(s: string): string {
+    return s.replace(/\|/g, "\\|").replace(/\n+/g, " ").trim();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Type formatting
+// ────────────────────────────────────────────────────────────────────────────
+
+function formatType(schema: Schema | undefined): string {
+    if (!schema) return "`any`";
+
+    const ref = refName(schema);
+    if (ref) return `[\`${ref}\`](#${slug(ref)})`;
+
+    const anyOf = asArr(schema.anyOf);
+    const oneOf = asArr(schema.oneOf);
+    const union = anyOf.length ? anyOf : oneOf;
+    if (union.length) {
+        const nonNull = union.filter(
+            (s) => asObj(s).type !== "null",
+        ) as Schema[];
+        const hasNull = nonNull.length !== union.length;
+        const seen = new Set<string>();
+        const parts: string[] = [];
+        let alreadyNullable = false;
+        for (const variant of nonNull) {
+            const s = formatType(variant);
+            if (s === "`null`" || s.endsWith("`null`")) alreadyNullable = true;
+            if (!seen.has(s)) {
+                seen.add(s);
+                parts.push(s);
+            }
+        }
+        if (hasNull && !alreadyNullable && !seen.has("`null`"))
+            parts.push("`null`");
+        return parts.length ? parts.join(" \\| ") : "`null`";
+    }
+
+    if (schema.const !== undefined) {
+        return `\`"${schema.const}"\``;
+    }
+
+    const enumVals = asArr(schema.enum);
+    if (enumVals.length > 0) {
+        if (enumVals.length <= 5) {
+            return enumVals.map((v) => `\`"${v}"\``).join(" \\| ");
+        }
+        const preview = enumVals
+            .slice(0, 3)
+            .map((v) => `\`"${v}"\``)
+            .join(", ");
+        return `enum (${enumVals.length}) — ${preview}, …`;
+    }
+
+    const type = asStr(schema.type);
+    if (type === "array") {
+        return `${formatType(asObj(schema.items))}[]`;
+    }
+    if (type === "string") {
+        const fmt = asStr(schema.format);
+        return fmt ? `\`string · ${fmt}\`` : "`string`";
+    }
+    if (type === "integer" || type === "number") return `\`${type}\``;
+    if (type === "boolean") return "`boolean`";
+    if (type === "null") return "`null`";
+    if (type === "object" || schema.properties) return "`object`";
+    return "`any`";
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Field table — flattens 1 level of nested objects with dotted paths
+// ────────────────────────────────────────────────────────────────────────────
+
+type Row = {
+    name: string;
+    type: string;
+    required: boolean;
+    description: string;
+    extras: string[];
+};
+
+const JS_MAX_INT = 9007199254740991;
+const JS_MIN_INT = -9007199254740991;
+
+function collectExtras(prop: Schema): string[] {
+    const extras: string[] = [];
+    if (prop.default !== undefined)
+        extras.push(`default: \`${JSON.stringify(prop.default)}\``);
+    const min = prop.minimum as number | undefined;
+    const max = prop.maximum as number | undefined;
+    const minMeaningful = min !== undefined && min !== JS_MIN_INT && min !== 0;
+    const maxMeaningful = max !== undefined && max !== JS_MAX_INT;
+    if (minMeaningful && maxMeaningful) extras.push(`range: \`${min}…${max}\``);
+    else if (minMeaningful) extras.push(`min: \`${min}\``);
+    else if (maxMeaningful) extras.push(`max: \`${max}\``);
+    const mn = prop.minLength as number | undefined;
+    const mx = prop.maxLength as number | undefined;
+    if (mn !== undefined && mx !== undefined)
+        extras.push(`length: \`${mn}…${mx}\``);
+    else if (mx !== undefined) extras.push(`max length: \`${mx}\``);
+    return extras;
+}
+
+function collectRows(
+    spec: Spec,
+    schema: Schema | undefined,
+    parent = "",
+    depth = 0,
+): Row[] {
+    if (!schema) return [];
+    const resolved = refName(schema) ? deref(spec, schema) : schema;
+    const props = asObj(resolved.properties);
+    const required = new Set(asArr(resolved.required) as string[]);
+    const rows: Row[] = [];
+
+    for (const [name, raw] of Object.entries(props)) {
+        const prop = asObj(raw);
+        const path = parent ? `${parent}.${name}` : name;
+        const extras = collectExtras(prop);
+
+        rows.push({
+            name: path,
+            type: formatType(prop),
+            required: required.has(name),
+            description: asStr(prop.description),
+            extras,
+        });
+
+        // One level of inline expansion for nested objects (not refs)
+        if (depth < 1 && !refName(prop)) {
+            if (prop.type === "object" && prop.properties) {
+                rows.push(...collectRows(spec, prop, path, depth + 1));
+            } else if (
+                prop.type === "array" &&
+                asObj(prop.items).type === "object" &&
+                asObj(prop.items).properties
+            ) {
+                rows.push(
+                    ...collectRows(
+                        spec,
+                        asObj(prop.items),
+                        `${path}[]`,
+                        depth + 1,
+                    ),
+                );
+            }
+        }
+    }
+    return rows;
+}
+
+function renderRowsTable(rows: Row[]): string {
+    if (rows.length === 0) return "";
+    const out: string[] = [];
+    out.push("| Field | Type | Description |");
+    out.push("|---|---|---|");
+    for (const r of rows) {
+        const name = `\`${r.name}\`${r.required ? " *" : ""}`;
+        const pieces = [r.description, ...r.extras].filter(Boolean);
+        const desc = pieces.join(" · ");
+        out.push(`| ${name} | ${r.type} | ${escapePipe(desc) || "—"} |`);
+    }
+    out.push("");
+    out.push("<sub>`*` = required field</sub>");
+    return out.join("\n");
+}
+
+function renderParamsTable(spec: Spec, params: Schema[]): string {
+    if (params.length === 0) return "";
+    const out: string[] = [];
+    out.push("| Param | In | Type | Description |");
+    out.push("|---|---|---|---|");
+    for (const raw of params) {
+        const p = asObj(raw);
+        const name = asStr(p.name);
+        const inLoc = asStr(p.in);
+        const required = p.required === true;
+        const schema = asObj(p.schema);
+        const desc = asStr(p.description) || asStr(schema.description);
+        const extras = collectExtras(schema);
+        const cell = [desc, ...extras].filter(Boolean).join(" · ");
+        out.push(
+            `| \`${name}\`${required ? " *" : ""} | \`${inLoc}\` | ${formatType(schema)} | ${escapePipe(cell) || "—"} |`,
+        );
+    }
+    out.push("");
+    out.push("<sub>`*` = required parameter</sub>");
+    return out.join("\n");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Example synthesis
+// ────────────────────────────────────────────────────────────────────────────
+
+function pickExample(
+    spec: Spec,
+    schema: Schema | undefined,
+    opts: { compact?: boolean } = {},
+): unknown {
+    if (!schema) return undefined;
+    const resolved = refName(schema) ? deref(spec, schema) : schema;
+    if (resolved.example !== undefined) return resolved.example;
+
+    const union = asArr(resolved.anyOf).length
+        ? asArr(resolved.anyOf)
+        : asArr(resolved.oneOf);
+    if (union.length) {
+        for (const u of union) {
+            if (asObj(u).type === "null") continue;
+            const ex = pickExample(spec, asObj(u), opts);
+            if (ex !== undefined) return ex;
+        }
+    }
+
+    const enumVals = asArr(resolved.enum);
+    if (enumVals.length) return enumVals[0];
+
+    if (resolved.default !== undefined) return resolved.default;
+
+    const type = asStr(resolved.type);
+    if (type === "object" || resolved.properties) {
+        const props = asObj(resolved.properties);
+        const required = new Set(asArr(resolved.required) as string[]);
+        const out: Json = {};
+        for (const [k, v] of Object.entries(props)) {
+            const propSchema = asObj(v);
+            const isRequired = required.has(k);
+            const hasExample = propSchema.example !== undefined;
+            if (opts.compact && !isRequired) continue;
+            if (!isRequired && !hasExample) continue;
+            const ex = pickExample(spec, propSchema, opts);
+            if (ex !== undefined) out[k] = ex;
+        }
+        return Object.keys(out).length ? out : undefined;
+    }
+    if (type === "array") {
+        const itemEx = pickExample(spec, asObj(resolved.items), opts);
+        return itemEx !== undefined ? [itemEx] : undefined;
+    }
+    if (type === "string") {
+        if (asStr(resolved.format) === "date-time")
+            return "2026-01-01T00:00:00Z";
+        return undefined;
+    }
+    return undefined;
+}
+
+function isMeaningfulExample(ex: unknown): boolean {
+    if (ex === undefined || ex === null) return false;
+    if (typeof ex !== "object") return true;
+    if (Array.isArray(ex)) return ex.length > 0 && ex.some(isMeaningfulExample);
+    return Object.keys(ex as object).length > 0;
+}
+
+/** Stricter than isMeaningfulExample — skip single-key objects that are just defaults. */
+function isResponseExampleWorthwhile(ex: unknown): boolean {
+    if (!isMeaningfulExample(ex)) return false;
+    if (typeof ex === "object" && !Array.isArray(ex)) {
+        return Object.keys(ex as object).length >= 2;
+    }
+    return true;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Curl example
+// ────────────────────────────────────────────────────────────────────────────
+
+function buildCurl(
+    spec: Spec,
+    method: string,
+    path: string,
+    op: Operation,
+): string {
+    const upperMethod = method.toUpperCase();
+    const params = asArr(op.parameters) as Schema[];
+    const queryParams = params.filter((p) => asObj(p).in === "query");
+    let url = `${BASE_URL}${path}`;
+    // Replace {id} → :id-style placeholder
+    url = url.replace(/{(\w+)}/g, ":$1");
+    if (queryParams.length) {
+        const queryStr = queryParams
+            .slice(0, 2)
+            .map((p) => {
+                const obj = asObj(p);
+                const name = asStr(obj.name);
+                const ex = pickExample(spec, asObj(obj.schema));
+                return `${name}=${ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`}`;
+            })
+            .join("&");
+        url = `${url}?${queryStr}`;
+    }
+
+    const lines = [
+        `curl${upperMethod !== "GET" ? ` -X ${upperMethod}` : ""} "${url}" \\`,
+        `  -H "Authorization: Bearer $POLLINATIONS_KEY"`,
+    ];
+
+    const body = asObj(
+        asObj(asObj(op.requestBody).content)["application/json"],
+    );
+    if (body.schema) {
+        const operationId = asStr(op.operationId);
+        const ex =
+            CURATED_BODIES[operationId] ??
+            pickExample(spec, asObj(body.schema), { compact: true });
+        if (isMeaningfulExample(ex)) {
+            lines[lines.length - 1] += " \\";
+            lines.push(`  -H "Content-Type: application/json" \\`);
+            lines.push(`  -d '${JSON.stringify(ex)}'`);
+        }
+    }
+    return lines.join("\n");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Endpoint rendering
+// ────────────────────────────────────────────────────────────────────────────
+
+function renderEndpoint(
+    spec: Spec,
+    method: string,
+    path: string,
+    op: Operation,
+): string {
+    const out: string[] = [];
+    const summary = asStr(op.summary) || asStr(op.operationId);
+    const id = `${method.toUpperCase()} ${path}`;
+    out.push(`#### \`${method.toUpperCase()}\` \`${path}\` — ${summary}`);
+    out.push("");
+
+    const desc = asStr(op.description);
+    if (desc) {
+        out.push(desc);
+        out.push("");
+    }
+
+    // Parameters
+    const params = asArr(op.parameters) as Schema[];
+    if (params.length) {
+        out.push(CALLOUT.params);
+        out.push("");
+        out.push(renderParamsTable(spec, params));
+        out.push("");
+    }
+
+    // Request body
+    const reqBody = asObj(op.requestBody);
+    const reqContent = asObj(reqBody.content);
+    const jsonBody = asObj(reqContent["application/json"]);
+    const multipartBody = asObj(reqContent["multipart/form-data"]);
+    const bodyContent = jsonBody.schema
+        ? jsonBody
+        : multipartBody.schema
+          ? multipartBody
+          : null;
+    const bodyMime = jsonBody.schema
+        ? "application/json"
+        : multipartBody.schema
+          ? "multipart/form-data"
+          : null;
+    if (bodyContent && bodyMime) {
+        out.push(`${CALLOUT.body} · \`${bodyMime}\``);
+        out.push("");
+        const rows = collectRows(spec, asObj(bodyContent.schema));
+        if (rows.length) {
+            out.push(renderRowsTable(rows));
+            out.push("");
+        }
+    }
+
+    // Responses — render 2xx only (errors are in dedicated section)
+    const responses = asObj(op.responses);
+    const successCodes = Object.keys(responses).filter((c) =>
+        /^2\d{2}$/.test(c),
+    );
+    for (const code of successCodes) {
+        const r = asObj(responses[code]);
+        const content = asObj(r.content);
+        const mimes = Object.keys(content);
+        const respDesc = asStr(r.description);
+        if (mimes.length === 0) {
+            out.push(`${CALLOUT.response} · \`${code}\` — ${respDesc || "OK"}`);
+            out.push("");
+            continue;
+        }
+        // Find a JSON-ish mime to render a schema for; list all mimes inline.
+        const primary =
+            mimes.find((m) => m.includes("json")) ||
+            mimes.find((m) => m.includes("multipart")) ||
+            mimes[0];
+        const mimeList = mimes.map((m) => `\`${m}\``).join(", ");
+        out.push(
+            `${CALLOUT.response} · \`${code}\` · ${mimeList}${respDesc ? ` — ${respDesc}` : ""}`,
+        );
+        out.push("");
+        const entry = asObj(content[primary]);
+        const schema = asObj(entry.schema);
+        const ref = refName(schema);
+        if (ref) {
+            out.push(`Returns [\`${ref}\`](#${slug(ref)}).`);
+            out.push("");
+        } else if (Object.keys(schema).length) {
+            const rows = collectRows(spec, schema);
+            if (rows.length) {
+                out.push(renderRowsTable(rows));
+                out.push("");
+            }
+        }
+    }
+
+    // Example
+    out.push(CALLOUT.example);
+    out.push("");
+    out.push("```bash");
+    out.push(buildCurl(spec, method, path, op));
+    out.push("```");
+    out.push("");
+
+    // Response example (if we can synthesize one)
+    const firstOk = successCodes[0];
+    if (firstOk) {
+        const r = asObj(responses[firstOk]);
+        const jsonResp = asObj(asObj(r.content)["application/json"]);
+        if (jsonResp.schema) {
+            const ex = pickExample(spec, asObj(jsonResp.schema));
+            if (isResponseExampleWorthwhile(ex)) {
+                out.push("```json");
+                out.push(JSON.stringify(ex, null, 2));
+                out.push("```");
+                out.push("");
+            }
+        }
+    }
+
+    return out.join("\n");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Schema component rendering
+// ────────────────────────────────────────────────────────────────────────────
+
+function renderSchema(spec: Spec, name: string, schema: Schema): string {
+    const out: string[] = [];
+    out.push(`### \`${name}\``);
+    out.push("");
+    const desc = asStr(schema.description);
+    if (desc) {
+        out.push(desc);
+        out.push("");
+    }
+    const type = asStr(schema.type);
+    const enumVals = asArr(schema.enum);
+    const union = asArr(schema.oneOf).length
+        ? asArr(schema.oneOf)
+        : asArr(schema.anyOf);
+
+    if (enumVals.length) {
+        out.push(`**Type:** ${formatType(schema)}`);
+        out.push("");
+    } else if (schema.properties) {
+        const rows = collectRows(spec, schema);
+        if (rows.length) {
+            out.push(renderRowsTable(rows));
+            out.push("");
+        }
+    } else if (union.length) {
+        out.push("**Union type.** One of:");
+        out.push("");
+        for (const variant of union as Schema[]) {
+            const v = asObj(variant);
+            const vRef = refName(v);
+            if (vRef) {
+                out.push(`- [\`${vRef}\`](#${slug(vRef)})`);
+            } else if (v.properties) {
+                const tag = asObj(asObj(v.properties).type);
+                const tagConst = tag.const;
+                const tagEnum = asArr(tag.enum);
+                let label: string;
+                if (tagConst !== undefined) label = `\`type: "${tagConst}"\``;
+                else if (tagEnum.length) label = `\`type: "${tagEnum[0]}"\``;
+                else label = formatType(v);
+                const props = Object.keys(asObj(v.properties))
+                    .filter((k) => k !== "type")
+                    .map((k) => `\`${k}\``)
+                    .join(", ");
+                out.push(`- ${label}${props ? ` — fields: ${props}` : ""}`);
+            } else {
+                out.push(`- ${formatType(v)}`);
+            }
+        }
+        out.push("");
+    } else if (type) {
+        out.push(`**Type:** ${formatType(schema)}`);
+        out.push("");
+    }
+    return out.join("\n");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Top-level document
+// ────────────────────────────────────────────────────────────────────────────
+
+function renderHeader(spec: Spec): string {
+    const out: string[] = [];
+    out.push("# 🌸 Pollinations API");
+    out.push("");
+    out.push(
+        "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+    );
+    out.push("");
+    out.push(
+        `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
+    );
+    return out.join("\n");
+}
+
+function renderGettingStarted(): string {
+    return `## ${SECTION_EMOJI.start} Getting Started
+
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+
+- \`sk_*\` — secret key for backend use (full account access)
+- \`pk_*\` — publishable key, safe to ship in browsers and mobile apps
+
+**2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
+
+\`\`\`bash
+curl ${BASE_URL}/v1/models \\
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+\`\`\`
+
+**3. Pick an endpoint** from the [Contents](#-contents) below.
+
+**Integration guides:** [BYOP, CLI, MCP Server](/docs/guides)`;
+}
+
+function renderTableOfContents(
+    spec: Spec,
+    byTag: Map<string, { method: string; path: string; op: Operation }[]>,
+): string {
+    const out: string[] = [];
+    out.push(`## ${SECTION_EMOJI.contents} Contents`);
+    out.push("");
+    out.push(`- [${SECTION_EMOJI.start} Getting Started](#-getting-started)`);
+    out.push(`- [${SECTION_EMOJI.endpoints} Endpoints](#${slug("endpoints")})`);
+    for (const tag of byTag.keys()) {
+        out.push(`  - [${tag}](#${slug(tag)})`);
+    }
+    if (Object.keys(asObj(spec.components?.schemas)).length) {
+        out.push(`- [${SECTION_EMOJI.schemas} Schemas](#-schemas)`);
+    }
+    out.push(`- [${SECTION_EMOJI.errors} Error Responses](#-error-responses)`);
+    return out.join("\n");
+}
+
+function renderEndpoints(
+    spec: Spec,
+    byTag: Map<string, { method: string; path: string; op: Operation }[]>,
+): string {
+    const out: string[] = [];
+    out.push(`## ${SECTION_EMOJI.endpoints} Endpoints`);
+    out.push("");
+    for (const [tag, ops] of byTag) {
+        out.push(`### ${tag}`);
+        out.push("");
+        for (const { method, path, op } of ops) {
+            out.push(renderEndpoint(spec, method, path, op));
+            out.push("---");
+            out.push("");
+        }
+        // Trim trailing rule
+        while (out[out.length - 1] === "" || out[out.length - 1] === "---")
+            out.pop();
+        out.push("");
+    }
+    return out.join("\n");
+}
+
+function renderSchemas(spec: Spec): string {
+    const schemas = asObj(spec.components?.schemas);
+    const names = Object.keys(schemas);
+    if (names.length === 0) return "";
+    const out: string[] = [];
+    out.push(`## ${SECTION_EMOJI.schemas} Schemas`);
+    out.push("");
+    out.push(
+        "Reusable request/response objects referenced from the endpoints above.",
+    );
+    out.push("");
+    for (const name of names.sort()) {
+        out.push(renderSchema(spec, name, asObj(schemas[name])));
+    }
+    return out.join("\n");
+}
+
+function renderErrorResponses(): string {
+    return `## ${SECTION_EMOJI.errors} Error Responses
+
+All endpoints return errors in this envelope:
+
+\`\`\`json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Description of what went wrong",
+    "timestamp": "2026-01-01T00:00:00.000Z",
+    "details": { "name": "ValidationError" },
+    "requestId": "req_abc123"
+  }
+}
+\`\`\`
+
+| Status | Code | Description |
+|---|---|---|
+| \`400\` | \`BAD_REQUEST\` | Invalid input. \`details\` includes \`formErrors\` and \`fieldErrors\` for validation failures. |
+| \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
+| \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
+| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or tier for this model. |
+| \`404\` | \`NOT_FOUND\` | Resource not found. |
+| \`429\` | \`RATE_LIMITED\` | Too many requests. Slow down. |
+| \`500\` | \`INTERNAL_ERROR\` | Server error. We're on it. |`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Spec preprocessing
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Replace long enum arrays with a description pointing to /models. */
+function simplifyModelEnums(spec: Spec): void {
+    for (const methods of Object.values(asObj(spec.paths))) {
+        for (const op of Object.values(asObj(methods))) {
+            const operation = asObj(op);
+            for (const param of asArr(operation.parameters)) {
+                const parameter = asObj(param);
+                const schema = asObj(parameter.schema);
+                const enumValues = asArr(schema.enum);
                 if (enumValues.length > 15) {
                     const examples = enumValues.slice(0, 5).join(", ");
-                    schema.description = `${String(parameter.description || parameter.name || "Model")}. Examples: ${examples}. See /image/models, /text/models, or /audio/models for full list.`;
+                    schema.description = `${asStr(parameter.description) || asStr(parameter.name) || "Model"}. Examples: ${examples}. See /image/models, /text/models, or /audio/models for full list.`;
                     delete schema.enum;
                 }
             }
@@ -116,118 +721,87 @@ function simplifyModelEnums(spec: JsonObject): void {
 }
 
 /**
- * Remove empty-string and null placeholder values from JSON examples in the markdown.
- * Converts verbose examples with empty values into compact, meaningful ones.
+ * Curated request-body examples for operations whose schemas are too complex
+ * to synthesize a meaningful sample from (deeply nested unions, oneOf variants).
+ * Keyed by operationId.
  */
-function cleanPlaceholderExamples(md: string): string {
-    return md.replace(/```json\n([\s\S]*?)```/g, (match, jsonBlock) => {
-        try {
-            const parsed = JSON.parse(jsonBlock);
-            const cleaned = removeEmptyValues(parsed);
-            if (
-                cleaned === undefined ||
-                (typeof cleaned === "object" &&
-                    Object.keys(cleaned).length === 0)
-            ) {
-                return ""; // Remove entirely empty examples
-            }
-            return `\`\`\`json\n${JSON.stringify(cleaned, null, 2)}\n\`\`\``;
-        } catch {
-            return match; // Not valid JSON, leave as-is
+const CURATED_BODIES: Record<string, Json> = {
+    postV1ChatCompletions: {
+        model: "openai",
+        messages: [{ role: "user", content: "Hello!" }],
+    },
+    postV1ImagesGenerations: {
+        prompt: "a serene mountain landscape at sunset",
+        model: "flux",
+        size: "1024x1024",
+    },
+    postText: {
+        messages: [{ role: "user", content: "Hello!" }],
+        model: "openai",
+    },
+};
+
+const HTTP_METHODS = new Set([
+    "get",
+    "post",
+    "put",
+    "delete",
+    "patch",
+    "options",
+    "head",
+    "trace",
+]);
+
+/** Group operations by tag while preserving spec order. */
+function groupByTag(
+    spec: Spec,
+): Map<string, { method: string; path: string; op: Operation }[]> {
+    const groups = new Map<
+        string,
+        { method: string; path: string; op: Operation }[]
+    >();
+    for (const [path, methods] of Object.entries(asObj(spec.paths))) {
+        for (const [method, rawOp] of Object.entries(asObj(methods))) {
+            if (!HTTP_METHODS.has(method.toLowerCase())) continue;
+            const op = asObj(rawOp);
+            const tags = asArr(op.tags) as string[];
+            const tag = tags[0] || "Other";
+            if (!groups.has(tag)) groups.set(tag, []);
+            groups.get(tag)!.push({ method, path, op });
         }
-    });
-}
-
-function removeEmptyValues(obj: unknown): unknown {
-    if (Array.isArray(obj)) {
-        const filtered = obj
-            .map(removeEmptyValues)
-            .filter((v) => v !== undefined);
-        return filtered.length > 0 ? filtered : undefined;
     }
-    if (obj && typeof obj === "object") {
-        const result: JsonObject = {};
-        for (const [k, v] of Object.entries(obj)) {
-            if (v === "" || v === null) continue;
-            const cleaned = removeEmptyValues(v);
-            if (cleaned !== undefined) result[k] = cleaned;
-        }
-        return Object.keys(result).length > 0 ? result : undefined;
-    }
-    return obj;
+    return groups;
 }
 
-function asObject(value: unknown): JsonObject {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-    return value as JsonObject;
-}
-
-function asArray(value: unknown): unknown[] {
-    return Array.isArray(value) ? value : [];
-}
+// ────────────────────────────────────────────────────────────────────────────
+// Main
+// ────────────────────────────────────────────────────────────────────────────
 
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
-    const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as JsonObject;
-    const originalSpecSize = JSON.stringify(spec).length;
-
-    // Pre-process: simplify long model enum lists
+    const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
     simplifyModelEnums(spec);
-    console.log(
-        `Spec: ${originalSpecSize} → ${JSON.stringify(spec).length} bytes after enum simplification`,
-    );
 
-    console.log("Generating markdown...");
-    let markdown = await createMarkdownFromOpenApi(spec);
-    const rawSize = markdown.length;
+    const byTag = groupByTag(spec);
 
-    // Post-process: deduplicate error responses
-    markdown = deduplicateErrorResponses(markdown);
-
-    // Post-process: clean placeholder JSON examples
-    markdown = cleanPlaceholderExamples(markdown);
-
-    // Fix: @scalar/openapi-to-markdown fails to render complex anyOf schemas
-    if (
-        markdown.includes("### MessageContentPart") &&
-        markdown.trim().endsWith("**Example:**")
-    ) {
-        console.log(
-            "⚠️  Detected incomplete MessageContentPart - appending manual documentation...",
-        );
-        const messageContentPartDocs = `
-
-Union type for message content parts. Can be one of:
-
-- **Text content**: \`{ type: "text", text: string, cache_control?: CacheControl }\`
-- **Image content**: \`{ type: "image_url", image_url: { url: string, detail?: "auto" | "low" | "high", mime_type?: string } }\`
-- **Video content**: \`{ type: "video_url", video_url: { url: string, mime_type?: string } }\`
-- **Audio content**: \`{ type: "input_audio", input_audio: { data: string, format: "wav" | "mp3" | "flac" | "opus" | "pcm16" }, cache_control?: CacheControl }\`
-- **File content**: \`{ type: "file", file: { file_data?: string, file_id?: string, file_name?: string, file_url?: string, mime_type?: string }, cache_control?: CacheControl }\`
-- **Custom types**: Any object with a \`type\` field for provider-specific extensions
-
-**Example (text):**
-
-\`\`\`json
-{ "type": "text", "text": "Hello, world!" }
-\`\`\`
-
-**Example (image):**
-
-\`\`\`json
-{ "type": "image_url", "image_url": { "url": "https://example.com/image.jpg", "detail": "high" } }
-\`\`\`
-`;
-        markdown = markdown.trim() + messageContentPartDocs;
-    }
-
-    // Remove consecutive blank lines (3+ → 2)
+    console.log("Rendering markdown...");
+    const sections = [
+        renderHeader(spec),
+        renderGettingStarted(),
+        renderTableOfContents(spec, byTag),
+        renderEndpoints(spec, byTag),
+        renderSchemas(spec),
+        renderErrorResponses(),
+    ];
+    let markdown = sections.filter(Boolean).join("\n\n");
+    // Collapse 3+ blank lines to 2
     markdown = markdown.replace(/\n{3,}/g, "\n\n");
+    markdown = markdown.trimEnd() + "\n";
 
     writeFileSync(OUTPUT_PATH, markdown);
     console.log(`✅ Saved to ${OUTPUT_PATH}`);
     console.log(
-        `   Raw: ${rawSize} bytes → Final: ${markdown.length} bytes (${Math.round((1 - markdown.length / rawSize) * 100)}% reduction)`,
+        `   ${markdown.length} bytes, ${markdown.split("\n").length} lines`,
     );
 }
 

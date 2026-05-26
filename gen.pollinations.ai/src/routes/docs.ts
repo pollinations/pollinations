@@ -201,9 +201,23 @@ const POLLINATIONS_HEADER_CSS = `
 .ph-bar nav a:hover, .ph-bar nav button:hover { border-color: #f59e0b; color: #f59e0b; }
 .ph-bar nav a[data-active] { border-color: #f59e0b; color: #f59e0b; }
 .ph-bar .ph-sep { width: 1px; height: 18px; background: #2a2a2a; margin: 0 4px; }
+.ph-bar .ph-short { display: none; }
 @media (max-width: 640px) {
-    .ph-bar { padding: 6px 10px; gap: 6px; }
-    .ph-bar nav a, .ph-bar nav button { padding: 5px 8px; font-size: 12px; }
+    .ph-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    .ph-bar .ph-brand { align-self: flex-start; }
+    .ph-bar nav {
+        margin-left: 0;
+        justify-content: center;
+        gap: 6px;
+    }
+    .ph-bar nav a, .ph-bar nav button { padding: 5px 9px; font-size: 12px; }
+    .ph-bar .ph-long { display: none; }
+    .ph-bar .ph-short { display: inline; }
 }
 
 .ph-fab-cluster {
@@ -251,13 +265,16 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster { top: 60px; right: 12px; gap: 6px; }
+    .ph-fab-cluster { top: 108px; right: 12px; gap: 6px; }
     .ph-fab { padding: 8px 12px; font-size: 13px; }
 }
 `;
 
 const POLLINATIONS_HEADER_SCALAR_CSS = `
 :root { --scalar-custom-header-height: 48px; }
+@media (max-width: 640px) {
+    :root { --scalar-custom-header-height: 96px; }
+}
 /* Soften Scalar's mobile header so it blends with our Pollinations bar
    instead of reading as a separate row. We don't reposition the element —
    Scalar's grid layout depends on it staying where it is — but we strip
@@ -274,6 +291,9 @@ const POLLINATIONS_HEADER_SCALAR_CSS = `
 
 const POLLINATIONS_HEADER_STANDALONE_CSS = `
 body { padding-top: 48px; }
+@media (max-width: 640px) {
+    body { padding-top: 96px; }
+}
 `;
 
 type GuideId = "byop" | "cli" | "mcp";
@@ -283,16 +303,29 @@ function pollinationsHeaderHtml(
     activeId?: HeaderActiveId,
     scalarHosted = false,
 ): string {
-    const links: { id: HeaderActiveId; href: string; label: string }[] = [
-        { id: "api", href: "/docs", label: "API Reference" },
+    const links: {
+        id: HeaderActiveId;
+        href: string;
+        label: string;
+        short?: string;
+    }[] = [
+        { id: "api", href: "/docs", label: "API Reference", short: "API" },
         { id: "byop", href: "/docs/guides/byop", label: "🌸 BYOP" },
         { id: "cli", href: "/docs/guides/cli", label: "🖥️ CLI" },
-        { id: "mcp", href: "/docs/guides/mcp", label: "🔌 MCP Server" },
+        {
+            id: "mcp",
+            href: "/docs/guides/mcp",
+            label: "🔌 MCP Server",
+            short: "🔌 MCP",
+        },
     ];
     const linksHtml = links
         .map((l) => {
             const active = l.id === activeId ? " data-active" : "";
-            return `<a href="${l.href}"${active}>${l.label}</a>`;
+            const content = l.short
+                ? `<span class="ph-long">${l.label}</span><span class="ph-short">${l.short}</span>`
+                : l.label;
+            return `<a href="${l.href}"${active}>${content}</a>`;
         })
         .join("");
     const contextCss = scalarHosted

@@ -231,6 +231,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
 }) => {
+    const [docsCopied, setDocsCopied] = useState(false);
+    const handleCopyDocs = useCallback(async () => {
+        const res = await fetch(`${genDocsUrl()}/llm.txt`);
+        const text = await res.text();
+        await navigator.clipboard.writeText(text);
+        setDocsCopied(true);
+        setTimeout(() => setDocsCopied(false), 1200);
+    }, []);
     return (
         <aside
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
@@ -259,18 +267,22 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         />
                     ))}
                     <div className="mt-2 border-t border-green-950/10 pt-3">
-                        <a
-                            href={genDocsUrl()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+                        <button
+                            type="button"
+                            onClick={handleCopyDocs}
+                            title="Copy full docs for LLMs"
+                            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
                         >
                             <span className="flex items-center gap-2">
                                 <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
                                 Docs
                             </span>
-                            <ExternalLinkArrow className="h-4 w-4 shrink-0 text-gray-500" />
-                        </a>
+                            {docsCopied ? (
+                                <CheckIcon className="h-4 w-4 shrink-0 text-green-700" />
+                            ) : (
+                                <ClipboardIcon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+                            )}
+                        </button>
                         <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
                             <DocLinkRow
                                 label="API"
@@ -589,6 +601,37 @@ const McpIcon: FC<{ className?: string }> = ({ className }) => (
         <rect x="2" y="7" width="8" height="10" rx="1.5" />
         <rect x="14" y="7" width="8" height="10" rx="1.5" />
         <path d="M10 12h4" />
+    </svg>
+);
+
+const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+);
+
+const CheckIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="20 6 9 17 4 12" />
     </svg>
 );
 

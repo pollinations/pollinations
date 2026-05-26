@@ -73,7 +73,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek/deepseek-v4-flash"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
     },
     {
         name: "gemma",
@@ -184,12 +184,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["claude-haiku-4-5"],
+        config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "midijourney-large",
-        config: portkeyConfig["claude-opus-4-6"],
+        config: portkeyConfig["gpt-5.5"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {

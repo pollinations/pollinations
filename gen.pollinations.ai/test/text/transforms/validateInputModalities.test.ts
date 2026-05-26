@@ -19,7 +19,7 @@ describe("validateInputModalities", () => {
     it("rejects image input for text-only models", () => {
         expect(() =>
             validateInputModalities(imageMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }),
         ).toThrow(
@@ -46,7 +46,7 @@ describe("validateInputModalities", () => {
 
         expect(
             validateInputModalities(textMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }).messages,
         ).toBe(textMessage);

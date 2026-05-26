@@ -172,7 +172,6 @@ export const AUDIO_SERVICES = {
         brand: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // AssemblyAI Universal-3 Pro: $0.21/hour

@@ -45,7 +45,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
@@ -62,7 +62,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
         },

@@ -537,7 +537,6 @@ export const IMAGE_SERVICES = {
         brand: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.04, // per image

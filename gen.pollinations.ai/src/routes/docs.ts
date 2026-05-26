@@ -183,11 +183,6 @@ const POLLINATIONS_HEADER_CSS = `
     font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     color: #d4d4d8;
 }
-.ph-bar .ph-menu {
-    display: none; background: transparent; border: 0; color: #e4e4e7;
-    padding: 6px 8px; cursor: pointer; font-size: 18px; line-height: 1;
-}
-.ph-bar .ph-menu:hover { color: #f59e0b; }
 .ph-bar .ph-brand {
     color: #fafafa; text-decoration: none;
     display: inline-flex; align-items: center; flex-shrink: 0;
@@ -268,7 +263,6 @@ const POLLINATIONS_HEADER_SCALAR_CSS = `
    Scalar's grid layout depends on it staying where it is — but we strip
    its background, border, and shadow. */
 @media (max-width: 1000px) {
-    .ph-bar .ph-menu { display: none !important; }
     .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
         background: #0a0a0a !important;
         border: 0 !important;
@@ -302,31 +296,8 @@ function pollinationsHeaderHtml(
         mode === "scalar"
             ? POLLINATIONS_HEADER_SCALAR_CSS
             : POLLINATIONS_HEADER_STANDALONE_CSS;
-    const menuButton =
-        mode === "scalar"
-            ? '<button class="ph-menu" type="button" aria-label="Toggle navigation">☰</button>'
-            : "";
-    const menuScript =
-        mode === "scalar"
-            ? `var menu = document.querySelector('.ph-menu');
-  function findScalarToggle() {
-    var candidates = document.querySelectorAll('button, [role="button"]');
-    for (var i = 0; i < candidates.length; i++) {
-      var t = (candidates[i].textContent || '').trim();
-      if (t === 'Open Menu' || t === 'Close Menu') return candidates[i];
-    }
-    return null;
-  }
-  if (menu) menu.addEventListener('click', function () {
-    var btn = findScalarToggle();
-    if (btn) { btn.click(); return; }
-    var sidebar = document.querySelector('[class*="references-sidebar"]');
-    if (sidebar) sidebar.classList.toggle('references-sidebar-mobile-open');
-  });`
-            : "";
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
-  ${menuButton}
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
   <nav>${linksHtml}</nav>
 </header>
@@ -357,7 +328,6 @@ function pollinationsHeaderHtml(
 </div>
 <script>
 (function () {
-  ${menuScript}
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
     var label = copy.querySelector('span');

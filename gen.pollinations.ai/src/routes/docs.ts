@@ -265,7 +265,7 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster { top: 112px; right: 12px; gap: 6px; }
+    .ph-fab-cluster { top: 92px; right: 12px; gap: 6px; }
     .ph-fab { padding: 7px 11px; font-size: 12px; }
     .ph-fab svg { width: 14px; height: 14px; }
 }
@@ -447,13 +447,27 @@ const API_REFERENCE_CUSTOM_CSS = `
 
 /* Hide "Powered by Scalar" sidebar footer link. */
 .scalar-app a[href="https://www.scalar.com"] { display: none !important; }
+
+/* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
+   These render in the sidebar regardless of showDeveloperTools. We target
+   by URL scheme so the rule survives class-name renames across Scalar
+   versions, plus the section wrapper via :has() in case the buttons render
+   inside a labeled group. */
+.scalar-app a[href^="vscode:"],
+.scalar-app a[href^="vscode-insiders:"],
+.scalar-app a[href^="cursor:"],
+.scalar-app a[href*="mcp.scalar.com"],
+.scalar-app a[href*="generate-mcp"],
+.scalar-app a[href*="modelcontextprotocol"] { display: none !important; }
+.scalar-app section:has(> a[href^="vscode:"]),
+.scalar-app section:has(> a[href^="cursor:"]) { display: none !important; }
 `;
 
 function generationDocumentation(): OpenApiSchema {
     return {
         servers: [{ url: "https://gen.pollinations.ai" }],
         info: {
-            title: "Pollinations API",
+            title: "API Reference",
             version: "0.3.0",
             description: INTRODUCTION_DOCS,
         },

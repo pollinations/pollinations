@@ -276,11 +276,14 @@ const POLLINATIONS_HEADER_STANDALONE_CSS = `
 body { padding-top: 48px; }
 `;
 
+type GuideId = "byop" | "cli" | "mcp";
+type HeaderActiveId = "api" | GuideId;
+
 function pollinationsHeaderHtml(
-    activeId?: string,
-    mode: "scalar" | "standalone" = "standalone",
+    activeId?: HeaderActiveId,
+    scalarHosted = false,
 ): string {
-    const links = [
+    const links: { id: HeaderActiveId; href: string; label: string }[] = [
         { id: "api", href: "/docs", label: "API Reference" },
         { id: "byop", href: "/docs/guides/byop", label: "🌸 BYOP" },
         { id: "cli", href: "/docs/guides/cli", label: "🖥️ CLI" },
@@ -292,10 +295,9 @@ function pollinationsHeaderHtml(
             return `<a href="${l.href}"${active}>${l.label}</a>`;
         })
         .join("");
-    const contextCss =
-        mode === "scalar"
-            ? POLLINATIONS_HEADER_SCALAR_CSS
-            : POLLINATIONS_HEADER_STANDALONE_CSS;
+    const contextCss = scalarHosted
+        ? POLLINATIONS_HEADER_SCALAR_CSS
+        : POLLINATIONS_HEADER_STANDALONE_CSS;
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
@@ -303,7 +305,7 @@ function pollinationsHeaderHtml(
 </header>
 <div class="ph-fab-cluster">
   ${
-      mode === "scalar"
+      scalarHosted
           ? `<div class="ph-fab-wrap">
     <button class="ph-fab ph-fab-doc" type="button" aria-haspopup="true" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
@@ -718,7 +720,7 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
 }
 
 type Guide = {
-    id: string;
+    id: GuideId;
     title: string;
     emoji: string;
     summary: string;
@@ -801,7 +803,7 @@ img { max-width: 100%; height: auto; }
 
 function guidesPage(
     title: string,
-    activeId: string | undefined,
+    activeId: HeaderActiveId | undefined,
     body: string,
 ): string {
     return `<!doctype html>
@@ -871,7 +873,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 html.slice(0, insertAt) +
-                    pollinationsHeaderHtml("api", "scalar") +
+                    pollinationsHeaderHtml("api", true) +
                     html.slice(insertAt),
             );
         })
@@ -890,7 +892,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
         })
         .get("/guides", (c) => c.html(guidesIndexHtml()))
         .get("/guides/:id", (c) => {
-            const guide = GUIDES_BY_ID.get(c.req.param("id"));
+            const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
             if (!guide) return c.text("Guide not found", 404);
             return c.html(guideHtml(guide));
         })

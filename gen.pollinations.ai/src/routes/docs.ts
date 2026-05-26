@@ -444,6 +444,9 @@ const API_REFERENCE_CUSTOM_CSS = `
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
+
+/* Hide "Powered by Scalar" sidebar footer link. */
+.scalar-app a[href="https://www.scalar.com"] { display: none !important; }
 `;
 
 function generationDocumentation(): OpenApiSchema {

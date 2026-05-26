@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-25",
+  "period_start": "2026-05-25",
+  "period_end": "2026-05-25",
+  "generated_at": "2026-05-26T07:07:36.083775+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-25/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-25/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-25/images/instagram-3.jpg"
+    }
+  ],
+  "text": "We added Helix AI to the chat endpoint today. Think of it as a new seedling joining the open-source greenhouse.\n\nIt's fast, capable, and ready to use right now through the usual simple HTTP calls. No waitlists, no API key juggling if you're just tinkering around on the free tier. Just change the model parameter and see what it outputs.\n\nGo build something weird with it. 🧬🌱\n\nDocs and endpoint details are in the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #aiartcommunity #webdev #codinglife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -206,8 +206,8 @@ const POLLINATIONS_HEADER_CSS = `
     .ph-bar {
         flex-direction: column;
         align-items: center;
-        gap: 10px;
-        padding: 10px 12px 12px;
+        gap: 8px;
+        padding: 8px 12px 10px;
     }
     .ph-bar .ph-brand img { height: 22px; }
     .ph-bar nav {
@@ -265,20 +265,16 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster {
-        position: static;
-        justify-content: center;
-        max-width: none;
-        gap: 8px;
-    }
-    .ph-fab { padding: 8px 14px; font-size: 13px; }
+    .ph-fab-cluster { top: 104px; right: 12px; gap: 6px; }
+    .ph-fab { padding: 7px 11px; font-size: 12px; }
+    .ph-fab svg { width: 14px; height: 14px; }
 }
 `;
 
 const POLLINATIONS_HEADER_SCALAR_CSS = `
 :root { --scalar-custom-header-height: 48px; }
 @media (max-width: 640px) {
-    :root { --scalar-custom-header-height: 140px; }
+    :root { --scalar-custom-header-height: 96px; }
 }
 /* Soften Scalar's mobile header so it blends with our Pollinations bar
    instead of reading as a separate row. We don't reposition the element —
@@ -297,7 +293,7 @@ const POLLINATIONS_HEADER_SCALAR_CSS = `
 const POLLINATIONS_HEADER_STANDALONE_CSS = `
 body { padding-top: 48px; }
 @media (max-width: 640px) {
-    body { padding-top: 140px; }
+    body { padding-top: 96px; }
 }
 `;
 
@@ -340,7 +336,8 @@ function pollinationsHeaderHtml(
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
   <nav>${linksHtml}</nav>
-  <div class="ph-fab-cluster">
+</header>
+<div class="ph-fab-cluster">
   ${
       scalarHosted
           ? `<div class="ph-fab-wrap">
@@ -364,8 +361,7 @@ function pollinationsHeaderHtml(
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
     <span>Copy for LLMs</span>
   </button>
-  </div>
-</header>
+</div>
 <script>
 (function () {
   var copy = document.querySelector('.ph-fab-copy');
@@ -797,6 +793,7 @@ const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
 const GUIDES_CSS = `
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
+html, body { overflow-x: hidden; }
 body {
     font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     color: #d4d4d8;
@@ -808,20 +805,30 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.3; margin: 2rem 0 .75rem; colo
 h1 { font-size: 1.875rem; margin-top: 1rem; }
 h2 { font-size: 1.375rem; padding-bottom: .375rem; border-bottom: 1px solid #27272a; }
 h3 { font-size: 1.125rem; }
+p, li, blockquote { overflow-wrap: anywhere; word-break: break-word; }
 p { margin: .75rem 0; }
 code {
     background: #18181b; padding: 2px 5px; border-radius: 4px; color: #f4f4f5;
     font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    overflow-wrap: anywhere; word-break: break-word;
 }
 pre {
     background: #000; color: #f1f5f9; padding: 1rem; border-radius: 8px;
     border: 1px solid #1f1f23; overflow-x: auto; font-size: 13px; line-height: 1.5;
+    max-width: 100%;
 }
-pre code { background: transparent; color: inherit; padding: 0; }
-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9rem; }
+pre code {
+    background: transparent; color: inherit; padding: 0;
+    overflow-wrap: normal; word-break: normal; white-space: pre;
+}
+table {
+    display: block; max-width: 100%; width: max-content;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border-collapse: collapse; margin: 1rem 0; font-size: .9rem;
+}
 th, td { padding: .5rem .75rem; border: 1px solid #27272a; text-align: left; vertical-align: top; }
 th { background: #18181b; font-weight: 600; color: #fafafa; }
-a { color: #f59e0b; text-decoration: none; }
+a { color: #f59e0b; text-decoration: none; overflow-wrap: anywhere; word-break: break-word; }
 a:hover { text-decoration: underline; }
 blockquote { border-left: 3px solid #3f3f46; padding: .25rem 1rem; color: #a1a1aa; margin: 1rem 0; background: #131316; }
 ul, ol { padding-left: 1.5rem; }

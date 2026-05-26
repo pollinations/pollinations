@@ -420,6 +420,19 @@ function pollinationsHeaderHtml(
       }
     });
   }
+  // Hide Scalar's "Ask AI" entry (next to the search bar). The button's
+  // text is the only stable handle — class names get hashed by the CDN
+  // bundle. We scan after Scalar mounts and re-scan as the DOM mutates
+  // (e.g. when the user opens the sidebar drawer).
+  function hideAskAi() {
+    var nodes = document.querySelectorAll('button, a, [role="button"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var text = (nodes[i].textContent || '').trim();
+      if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
+    }
+  }
+  hideAskAi();
+  new MutationObserver(hideAskAi).observe(document.body, { childList: true, subtree: true });
 })();
 </script>`;
 }

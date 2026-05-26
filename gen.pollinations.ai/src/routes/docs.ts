@@ -196,40 +196,14 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-bar .ph-brand img { height: 18px; width: auto; display: block; }
 @media (min-width: 640px) { .ph-bar .ph-brand img { height: 20px; } }
-.ph-bar nav {
-    display: flex; gap: 6px; align-items: center; margin-left: auto;
-    flex-wrap: wrap; justify-content: flex-end;
-}
-.ph-bar nav a, .ph-bar nav button {
-    padding: 6px 10px; border-radius: 999px; border: 1px solid #2a2a2a;
-    background: #0a0a0a; color: #e4e4e7; text-decoration: none; font: inherit;
-    cursor: pointer; transition: border-color .15s, color .15s; line-height: 1;
-}
-.ph-bar nav a:hover, .ph-bar nav button:hover { border-color: #f59e0b; color: #f59e0b; }
-.ph-bar nav a[data-active] { border-color: #f59e0b; color: #f59e0b; }
-.ph-bar .ph-sep { width: 1px; height: 18px; background: #2a2a2a; margin: 0 4px; }
-.ph-bar .ph-short { display: none; }
 @media (max-width: 640px) {
-    .ph-bar {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px 10px;
-    }
+    .ph-bar { justify-content: center; padding: 8px 12px; }
     .ph-bar .ph-brand img { height: 22px; }
-    .ph-bar nav {
-        margin-left: 0;
-        justify-content: center;
-        gap: 7px;
-    }
-    .ph-bar nav a, .ph-bar nav button { padding: 7px 12px; font-size: 13px; }
-    .ph-bar .ph-long { display: none; }
-    .ph-bar .ph-short { display: inline; }
 }
 
 .ph-fab-cluster {
     position: fixed; top: 64px; right: 18px; z-index: 9999;
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
 .ph-fab {
@@ -247,32 +221,8 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab:active { transform: translateY(1px); }
 .ph-fab svg { width: 16px; height: 16px; }
-.ph-fab .ph-fab-caret { width: 12px; height: 12px; transition: transform .15s; }
-.ph-fab[aria-expanded="true"] .ph-fab-caret { transform: rotate(180deg); }
-.ph-fab-wrap { position: relative; }
-.ph-fab-menu {
-    position: absolute; top: calc(100% + 6px); right: 0;
-    background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 12px;
-    padding: 4px; min-width: 140px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.5);
-    display: none; flex-direction: column; gap: 2px;
-}
-.ph-fab-wrap[data-open="true"] .ph-fab-menu { display: flex; }
-.ph-fab-menu a {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; border-radius: 8px;
-    color: #e4e4e7; text-decoration: none;
-    font: 600 13px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    transition: background .12s, color .12s;
-}
-.ph-fab-menu a:hover { background: #1a1a1d; color: #f59e0b; }
-.ph-fab-menu .ph-fab-ext {
-    font-size: 11px; color: #71717a; letter-spacing: .03em;
-    text-transform: uppercase;
-}
-.ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster { top: 86px; right: 12px; gap: 6px; }
+    .ph-fab-cluster { top: 60px; right: 12px; }
     .ph-fab { padding: 7px 11px; font-size: 12px; }
     .ph-fab svg { width: 14px; height: 14px; }
 }
@@ -284,9 +234,6 @@ const POLLINATIONS_HEADER_SCALAR_CSS = `
    Body padding works because .ph-bar is position: fixed — it ignores
    parent padding, so the bar stays at top while everything else shifts. */
 body { padding-top: 48px; }
-@media (max-width: 640px) {
-    body { padding-top: 80px; }
-}
 /* Match Scalar's mobile hamburger row background to our bar so the seam
    between the two reads as one continuous header instead of a stripe. */
 @media (max-width: 1000px) {
@@ -301,18 +248,11 @@ body { padding-top: 48px; }
 
 const POLLINATIONS_HEADER_STANDALONE_CSS = `
 body { padding-top: 48px; }
-@media (max-width: 640px) {
-    body { padding-top: 96px; }
-}
 `;
 
 type GuideId = "byop" | "cli" | "mcp";
-type HeaderActiveId = "api" | GuideId;
 
-function pollinationsHeaderHtml(
-    _activeId?: HeaderActiveId,
-    scalarHosted = false,
-): string {
+function pollinationsHeaderHtml(scalarHosted = false): string {
     const contextCss = scalarHosted
         ? POLLINATIONS_HEADER_SCALAR_CSS
         : POLLINATIONS_HEADER_STANDALONE_CSS;
@@ -870,10 +810,7 @@ img { max-width: 100%; height: auto; }
 .guide-card p { margin: 0; color: #a1a1aa; font-size: .9rem; }
 `;
 
-function guidesPage(
-    activeId: HeaderActiveId | undefined,
-    body: string,
-): string {
+function guidesPage(body: string): string {
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -884,7 +821,7 @@ function guidesPage(
 <style>${GUIDES_CSS}</style>
 </head>
 <body>
-${pollinationsHeaderHtml(activeId)}
+${pollinationsHeaderHtml()}
 <main class="wrap">${body}</main>
 </body>
 </html>`;
@@ -896,7 +833,7 @@ function guidesIndexHtml(): string {
             `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
     ).join("");
     const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage(undefined, body);
+    return guidesPage(body);
 }
 
 function guideHtml(guide: Guide): string {
@@ -908,7 +845,7 @@ function guideHtml(guide: Guide): string {
         `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
         { async: false },
     ) as string;
-    return guidesPage(guide.id, rendered);
+    return guidesPage(rendered);
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
@@ -947,7 +884,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 html.slice(0, insertAt) +
-                    pollinationsHeaderHtml("api", true) +
+                    pollinationsHeaderHtml(true) +
                     html.slice(insertAt),
             );
         })

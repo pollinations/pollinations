@@ -389,7 +389,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.07),
             completionTextTokens: perMillion(0.34),
@@ -402,7 +402,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-        paidOnly: true,
     },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],

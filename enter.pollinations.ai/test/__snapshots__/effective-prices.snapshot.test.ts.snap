@@ -252,8 +252,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 7e-8,
     },
     "price": {
-      "completionTextTokens": 5.1e-7,
-      "promptTextTokens": 1.05e-7,
+      "completionTextTokens": 3.4e-7,
+      "promptTextTokens": 7e-8,
     },
   },
   "glm": {

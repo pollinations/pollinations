@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-25",
+  "period_start": "2026-05-25",
+  "period_end": "2026-05-25",
+  "generated_at": "2026-05-26T07:07:36.083775+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-25/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Helix AI to the chat endpoint routing (PR #11291)",
+  "text": "Just merged PR #11291. We've added Helix AI to the chat endpoint routing.\n\nIf you're already using the text API for your projects, you can now pass Helix as your requested model. It joins the existing roster (GPT, Claude, Gemini, Llama, Mistral) behind the single HTTP endpoint. The goal remains the same: give you a unified interface so you don't have to rewrite your integration code every time you want to test a different model.\n\nNothing changes about the implementation on your end. It's still a standard GET or POST request. No API keys needed for standard usage, and no subscriptions. If you're running a heavy workload and hitting rate limits, you can pass your Pollen credits token as usual.\n\nYou can test the routing or check the full current model list here: https://text.pollinations.ai/models\n\nThe repo is fully open if you want to see how the routing layer is implemented, or if you want to submit an addition yourself: https://github.com/pollinations/pollinations\n\nLet us know if the routing behaves weirdly with any specific system prompts or if context windows start clipping."
+}

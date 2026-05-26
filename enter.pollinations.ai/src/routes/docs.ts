@@ -1128,10 +1128,12 @@ function transformOpenAPISchema(
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c) => {
+            const reqUrl = new URL(c.req.url);
             const url = new URL(getPublicOrigin(c));
             url.protocol = "https:";
             url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
             url.pathname = "/docs";
+            url.search = reqUrl.search;
             return c.redirect(url.toString(), 301);
         })
         .get("/llm.txt", (c) => {

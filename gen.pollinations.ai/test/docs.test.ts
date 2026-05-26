@@ -95,14 +95,12 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "🌸 Bring Your Own Pollen",
+        // BYOP, CLI, MCP are guides, not API tags — see /docs/guides
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("🖥️ CLI");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain(
+            "🔌 MCP Server",
         );
-        const byopTag = schema.tags.find(
-            (tag) => tag.name === "🌸 Bring Your Own Pollen",
-        );
-        expect(byopTag?.description).toContain("Bring Your Own Pollen");
-        expect(byopTag?.description).not.toMatch(/^#\s/);
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );
@@ -123,8 +121,8 @@ describe("docs routes", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
         const body = await response.text();
-        expect(body).toContain("/v1/embeddings");
-        expect(body).toContain("openai-3-small");
+        expect(body).toContain("Base URL:");
+        expect(body).toContain("POST /v1/embeddings");
     });
 
     it("serves markdown table overflow styles in the API reference", async () => {
@@ -138,7 +136,7 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
-        expect(html).toContain(".scalar-app .markdown:has(table)");
+        expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
     });
 });

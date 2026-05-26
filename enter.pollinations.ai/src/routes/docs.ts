@@ -481,7 +481,8 @@ function generateLLMDoc(): string {
     lines.push("- 500: Server error");
     lines.push("");
 
-    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push("## BYOP");
+    lines.push("");
     lines.push(BYOP_DOCS);
 
     return lines.join("\n");
@@ -1375,7 +1376,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             ].join("\n"),
                         },
                         {
-                            name: "🌸 Bring Your Own Pollen",
+                            name: "🌸 BYOP",
                             description: BYOP_DOCS,
                         },
                     ],

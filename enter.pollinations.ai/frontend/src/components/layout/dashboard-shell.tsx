@@ -284,16 +284,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </a>
                         <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
                             <CopySectionRow
-                                label="Gen API"
+                                label="API"
                                 icon={
                                     <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
-                                section="gen-api"
-                                copied={copiedSection === "gen-api"}
+                                section="api"
+                                copied={copiedSection === "api"}
                                 onCopy={handleCopySection}
                             />
                             <CopySectionRow
-                                label="User Wallet"
+                                label="BYOP"
                                 icon={
                                     <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
@@ -311,16 +311,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 onCopy={handleCopySection}
                             />
                             <CopySectionRow
-                                label="Storage"
-                                icon={
-                                    <StorageIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                                }
-                                section="media-storage"
-                                copied={copiedSection === "media-storage"}
-                                onCopy={handleCopySection}
-                            />
-                            <CopySectionRow
-                                label="MCP"
+                                label="MCP Server"
                                 icon={
                                     <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                 }
@@ -649,23 +640,6 @@ const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
     >
         <path d="m8 3 4 1.5L16 3v18l-4-1.5L8 21z" />
         <path d="M8 3v18M16 3v18" />
-    </svg>
-);
-
-const StorageIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <ellipse cx="12" cy="5" rx="8" ry="2.5" />
-        <path d="M4 5v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" />
-        <path d="M4 11v6c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5v-6" />
     </svg>
 );
 

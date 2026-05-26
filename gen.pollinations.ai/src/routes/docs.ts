@@ -503,6 +503,14 @@ const API_REFERENCE_CUSTOM_CSS = `
     background: #fbbf24 !important;
     border-color: #fbbf24 !important;
 }
+/* Force the chevron/triangle SVG inside the button to match text color
+   (otherwise it inherits Scalar's dim color and disappears on amber). */
+.scalar-app .ph-show-more svg,
+.scalar-app .ph-show-more svg * {
+    color: #451a03 !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
 `;
 
 function generationDocumentation(): OpenApiSchema {

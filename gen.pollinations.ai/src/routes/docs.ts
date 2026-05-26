@@ -899,6 +899,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 darkMode: true,
                 forceDarkModeState: "dark",
                 hideDarkModeToggle: true,
+                showDeveloperTools: "never",
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,

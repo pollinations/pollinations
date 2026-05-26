@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { parse as yamlParse } from "yaml";
 import worker from "../src/index.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
@@ -95,14 +96,10 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "🌸 Bring Your Own Pollen",
-        );
-        const byopTag = schema.tags.find(
-            (tag) => tag.name === "🌸 Bring Your Own Pollen",
-        );
-        expect(byopTag?.description).toContain("Bring Your Own Pollen");
-        expect(byopTag?.description).not.toMatch(/^#\s/);
+        // BYOP, CLI, MCP are surfaced as tags in the Integrations group.
+        expect(schema.tags.map((tag) => tag.name)).toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("🖥 CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain("🔌 MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );
@@ -123,8 +120,8 @@ describe("docs routes", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
         const body = await response.text();
-        expect(body).toContain("/v1/embeddings");
-        expect(body).toContain("openai-3-small");
+        expect(body).toContain("Base URL:");
+        expect(body).toContain("POST /v1/embeddings");
     });
 
     it("serves markdown table overflow styles in the API reference", async () => {
@@ -138,7 +135,91 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
-        expect(html).toContain(".scalar-app .markdown:has(table)");
+        expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
+    });
+
+    it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema?format=yaml",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain(
+            "application/yaml",
+        );
+        const body = await response.text();
+        const parsed = yamlParse(body) as { paths: Record<string, unknown> };
+        expect(parsed.paths["/v1/chat/completions"]).toBeDefined();
+    });
+
+    it("serves the guides index and individual guide pages", async () => {
+        const ctx = createExecutionContext();
+
+        const indexRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(indexRes.status).toBe(200);
+        const indexHtml = await indexRes.text();
+        expect(indexHtml).toContain("guide-card");
+        expect(indexHtml).toContain("/docs/guides/byop");
+        expect(indexHtml).toContain("/docs/guides/cli");
+        expect(indexHtml).toContain("/docs/guides/mcp");
+
+        const byopRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/byop"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(byopRes.status).toBe(200);
+        expect(await byopRes.text()).toContain("BYOP");
+
+        const missingRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/notexist"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(missingRes.status).toBe(404);
+    });
+
+    it("filters /docs/llm.txt by section", async () => {
+        const ctx = createExecutionContext();
+
+        const apiRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=api"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(apiRes.status).toBe(200);
+        const apiBody = await apiRes.text();
+        expect(apiBody).toContain("Base URL:");
+        expect(apiBody).not.toContain("## BYOP");
+
+        const byopRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=byop",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(byopRes.status).toBe(200);
+        expect(await byopRes.text()).toContain("## BYOP");
+
+        const badRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(badRes.status).toBe(404);
     });
 });

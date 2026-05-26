@@ -48,9 +48,11 @@
         "hono": "4.10.6",
         "hono-openapi": "1.2.0",
         "jose": "^6.2.3",
+        "marked": "^18.0.4",
         "nanoid": "5.1.6",
         "piexif-ts": "^2.1.0",
         "tailwind-merge": "3.4.0",
+        "yaml": "^2.9.0",
         "zod": "4.3.5"
     }
 }

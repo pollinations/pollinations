@@ -320,8 +320,27 @@ function pollinationsHeaderHtml(
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
 </header>
+<div class="ph-fab-cluster">
+  <button class="ph-fab ph-fab-copy" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    <span>Copy for LLMs</span>
+  </button>
+</div>
 <script>
 (function () {
+  // Copy for LLMs — always copies the full doc (api + integrations).
+  var copy = document.querySelector('.ph-fab-copy');
+  if (copy) {
+    var label = copy.querySelector('span');
+    copy.addEventListener('click', async function () {
+      var res = await fetch('/docs/llm.txt');
+      var text = await res.text();
+      await navigator.clipboard.writeText(text);
+      var prev = label.textContent;
+      label.textContent = 'Copied';
+      setTimeout(function () { label.textContent = prev; }, 1200);
+    });
+  }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.

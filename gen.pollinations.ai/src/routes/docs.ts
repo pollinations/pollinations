@@ -205,17 +205,17 @@ const POLLINATIONS_HEADER_CSS = `
 @media (max-width: 640px) {
     .ph-bar {
         flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-        padding: 8px 12px;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px 12px;
     }
-    .ph-bar .ph-brand { align-self: flex-start; }
+    .ph-bar .ph-brand img { height: 22px; }
     .ph-bar nav {
         margin-left: 0;
         justify-content: center;
-        gap: 6px;
+        gap: 7px;
     }
-    .ph-bar nav a, .ph-bar nav button { padding: 5px 9px; font-size: 12px; }
+    .ph-bar nav a, .ph-bar nav button { padding: 7px 12px; font-size: 13px; }
     .ph-bar .ph-long { display: none; }
     .ph-bar .ph-short { display: inline; }
 }
@@ -265,15 +265,20 @@ const POLLINATIONS_HEADER_CSS = `
 }
 .ph-fab-menu a:hover .ph-fab-ext { color: #f59e0b; }
 @media (max-width: 640px) {
-    .ph-fab-cluster { top: 108px; right: 12px; gap: 6px; }
-    .ph-fab { padding: 8px 12px; font-size: 13px; }
+    .ph-fab-cluster {
+        position: static;
+        justify-content: center;
+        max-width: none;
+        gap: 8px;
+    }
+    .ph-fab { padding: 8px 14px; font-size: 13px; }
 }
 `;
 
 const POLLINATIONS_HEADER_SCALAR_CSS = `
 :root { --scalar-custom-header-height: 48px; }
 @media (max-width: 640px) {
-    :root { --scalar-custom-header-height: 96px; }
+    :root { --scalar-custom-header-height: 140px; }
 }
 /* Soften Scalar's mobile header so it blends with our Pollinations bar
    instead of reading as a separate row. We don't reposition the element —
@@ -292,7 +297,7 @@ const POLLINATIONS_HEADER_SCALAR_CSS = `
 const POLLINATIONS_HEADER_STANDALONE_CSS = `
 body { padding-top: 48px; }
 @media (max-width: 640px) {
-    body { padding-top: 96px; }
+    body { padding-top: 140px; }
 }
 `;
 
@@ -335,8 +340,7 @@ function pollinationsHeaderHtml(
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
   <nav>${linksHtml}</nav>
-</header>
-<div class="ph-fab-cluster">
+  <div class="ph-fab-cluster">
   ${
       scalarHosted
           ? `<div class="ph-fab-wrap">
@@ -360,7 +364,8 @@ function pollinationsHeaderHtml(
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
     <span>Copy for LLMs</span>
   </button>
-</div>
+  </div>
+</header>
 <script>
 (function () {
   var copy = document.querySelector('.ph-fab-copy');

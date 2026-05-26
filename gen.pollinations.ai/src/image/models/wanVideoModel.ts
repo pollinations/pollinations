@@ -52,6 +52,18 @@ const WAN_22_CONFIG: WanModelConfig = {
     displayName: "Wan 2.2",
 };
 
+const WAN_27_CONFIG: WanModelConfig = {
+    t2vModel: "wan2.7-t2v",
+    i2vModel: "wan2.7-i2v",
+    // Wan 2.7 has no documented kf2v variant — image[1] silently dropped.
+    minDuration: 2,
+    maxDuration: 15,
+    defaultDuration: 5,
+    defaultResolution: "720P",
+    trackingName: "wan-pro",
+    displayName: "Wan 2.7",
+};
+
 // kf2v uses a different DashScope endpoint than i2v/t2v
 const DASHSCOPE_KF2V_PATH = "/services/aigc/image2video/video-synthesis";
 const DASHSCOPE_VIDEO_PATH = "/services/aigc/video-generation/video-synthesis";
@@ -152,6 +164,24 @@ export async function callWanFastAPI(
         progress,
         requestId,
         WAN_22_CONFIG,
+    );
+}
+
+/**
+ * Generates a video using Alibaba DashScope API (wan-2.7, newer with 720p/1080p)
+ */
+export async function callWanProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    return await callWanAlibabaAPI(
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+        WAN_27_CONFIG,
     );
 }
 

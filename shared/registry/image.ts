@@ -318,6 +318,28 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
     },
+    "wan-pro": {
+        aliases: ["wan2.7", "wan-2.7"],
+        modelId: "wan-pro",
+        provider: "alibaba",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1.5,
+        paidOnly: true,
+        // DashScope `wan2.7-i2v` / `wan2.7-t2v` bill bundled video+audio at
+        // $0.10/s (720P) or $0.15/s (1080P). Handler currently locked to 720P
+        // (see prepareVideoParameters); revisit if registry supports tiered
+        // pricing. Audio bundled into the video duration per upstream invoice.
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (720P, includes audio)
+        },
+        description:
+            "Wan 2.7 - Alibaba text/image-to-video with bundled audio (720P / 1080P) via DashScope",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+    },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
         modelId: "wan-image",

@@ -486,6 +486,30 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         paidOnly: true,
     },
+    "grok-4.3": {
+        aliases: ["grok-4-3"],
+        modelId: "grok-4.3",
+        provider: "azure",
+        brand: "xAI",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1,
+        // Azure global standard rates; long-context (Global Large) surcharge
+        // absorbed by Pollinations — see _local/model-changes-2026-06-02.md.
+        cost: {
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.2),
+            promptImageTokens: perMillion(1.25),
+            completionTextTokens: perMillion(2.5),
+        },
+        description: "Grok 4.3 - Newer & cheaper multimodal reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
@@ -506,6 +530,61 @@ export const TEXT_SERVICES = {
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
         inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-search-fast": {
+        aliases: ["gemini-3.1-flash-lite-search"],
+        modelId: "gemini-3.1-flash-lite-preview",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
+        // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
+        // free queries/month shared across all Gemini 3 models; absorbed by
+        // Pollinations.
+        cost: {
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            promptAudioTokens: perMillion(0.5),
+            completionTextTokens: perMillion(1.5),
+        },
+        description:
+            "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-search-large": {
+        aliases: ["gemini-3.5-flash-search"],
+        modelId: "gemini-3.5-flash",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
+        // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            promptAudioTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9.0),
+        },
+        description: "Gemini 3.5 Flash Search - Premium grounded web research",
+        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: false,
         search: true,

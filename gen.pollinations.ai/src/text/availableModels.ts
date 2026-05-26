@@ -92,6 +92,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
+        name: "grok-4.3",
+        config: portkeyConfig["grok-4.3"],
+    },
+    {
         name: "openai-audio",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
     },
@@ -158,6 +162,24 @@ const models: ModelDefinition[] = [
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
+        name: "gemini-search-fast",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-search-large",
+        config: portkeyConfig["gemini-3.5-flash"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {

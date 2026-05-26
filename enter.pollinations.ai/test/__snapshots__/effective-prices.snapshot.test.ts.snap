@@ -58,6 +58,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000055,
     },
   },
+  "cohere-embed-v4": {
+    "cost": {
+      "promptTextTokens": 1.2e-7,
+    },
+    "price": {
+      "promptTextTokens": 1.8e-7,
+    },
+  },
   "deepseek": {
     "cost": {
       "completionTextTokens": 2.52e-7,
@@ -838,6 +846,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.0000026,
       "promptTextTokens": 2.6e-7,
+    },
+  },
+  "qwen3-embedding-8b": {
+    "cost": {
+      "promptTextTokens": 1e-7,
+    },
+    "price": {
+      "promptTextTokens": 1.5e-7,
     },
   },
   "scribe": {

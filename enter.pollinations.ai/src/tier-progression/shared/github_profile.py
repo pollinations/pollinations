@@ -34,7 +34,7 @@ MAX_BATCHES = None  # Set to a number to limit batches for testing
 
 # Quality filtering: repos and stars are counted from quality repos only (diskUsage > 0).
 # Scoring config: each metric has a multiplier and max points
-# NOTE: If you update these values, also update enter.pollinations.ai/src/client/components/balance/tier-explanation.tsx
+# NOTE: If you update these values, also update enter.pollinations.ai/frontend/src/components/pollen/tier-explanation.tsx
 SCORING = [
     {
         "field": "age_days",

@@ -5,8 +5,8 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
-import type { Env } from "@/env.ts";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+import type { Env } from "../env.ts";
 
 const BYOP_DOCS = BYOP_MD.trim();
 
@@ -481,7 +481,8 @@ function generateLLMDoc(): string {
     lines.push("- 500: Server error");
     lines.push("");
 
-    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push("## BYOP");
+    lines.push("");
     lines.push(BYOP_DOCS);
 
     return lines.join("\n");
@@ -1127,10 +1128,12 @@ function transformOpenAPISchema(
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c) => {
+            const reqUrl = new URL(c.req.url);
             const url = new URL(getPublicOrigin(c));
             url.protocol = "https:";
             url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
             url.pathname = "/docs";
+            url.search = reqUrl.search;
             return c.redirect(url.toString(), 301);
         })
         .get("/llm.txt", (c) => {
@@ -1375,7 +1378,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             ].join("\n"),
                         },
                         {
-                            name: "🌸 Bring Your Own Pollen",
+                            name: "🌸 BYOP",
                             description: BYOP_DOCS,
                         },
                     ],

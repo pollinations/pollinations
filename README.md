@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |
 | [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
 | [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
@@ -29,7 +30,6 @@
 | [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |
 | [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |
 | [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |
-| [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
+- **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
+- **2026-05-21** – **🔌 MCP Server** The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.
 - **2026-05-20** – **🤖 Polly Upgrades** We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.
 - **2026-05-19** – **🚀 Gemini 3.5 Flash** Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.
 - **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-05-17** – **🎬 Keyframe your videos** You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).
 - **2026-05-17** – **🗣️ Speaker diarization** The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.
 - **2026-05-17** – **🎲 Dynamic roleplay backgrounds** A clever new community integration detects location changes in your SillyTavern chats and automatically generates the environment visuals in the background. [View repo](https://github.com/ZapoVerde/SillyTavern-Localyze) <!-- app -->
-- **2026-05-17** – **✨ Prompt Evolution Engine** Stop guessing what the image model wants. This community tool runs your basic ideas through a 5-step interactive refinement process to spit out highly detailed, cinematic prompts. [Try it](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) <!-- app -->
-- **2026-05-15** – **🤖 GPT-5.4-Mini added** OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.
-- **2026-05-15** – **🚀 Mistral 4 arrives** Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier.
 ---
 
 ## 🌱 Introduction

@@ -9,8 +9,14 @@ import { generateSpecs } from "hono-openapi";
 import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
-import LOGO_FLOWER_SVG from "../../../assets/logo.svg?raw";
 import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
+
+// Same favicon as enter.pollinations.ai (32×32 PNG, ~1.3kB → inlined as a
+// data URI so we don't need a separate binary asset route or a build-time
+// step. Update this if enter's favicon ever changes.
+const FAVICON_DATA_URI =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAE9ElEQVR4nMVXaWhdVRB+7gsWNxQVQVxQEYsbIqhFsEjd/WGVWtHiTltccS1Yan9ocK1VqRoVqkUkFRUFUawWUxWVNG/m5ZlgXNLcmZtaWmuKJnkzTz0y55z78raQpYsDFx73nDvznTnffDMvl9sOWz/Uf9T64YFjcv+HrXVuTxT+FpV++MYl++1yACD0JAj9hsopKr2+ywJ3uI69UGgpCEte+Foo8+UorCC8rM/17bvTAYAmd6JQGYRuyN5hia8E4RFUWrRTg3dqcjYI/QPKrQ3AhFtQ2WGZZ25XEBB6EZRfqX5QaAWUk1kovBaUsc25Peq/c87tDkJfGzEL5fQiEHqh0Q+/3Ot69xkPwL+o9CsIfZY9xnR/OmVnjsf6FoUfr+xT/qnWB/fa+x63edq4AEB5cd3pdkOhx0ZBcEtDcKVFVevL6k+KSvfYWtFtOmDSAMxAqB2FB1DoqXDXdMkoMdPz/Tvh5f7kypirs8kCeLTJ+3ZUZnMAym2g1N/h0v29ICn9CMIfd7hfDgSlHlAujAVgzCvocZunQYlP9BwQXt7hNhzZBEBqvwsj/ceZDhQkuT5fpsusMjpLA6eEbFB3PYCi6zsChZ+I13NG3vUdNOp4ZOOxqOmDPr3xDkM6qQzKq0HpLvvA1A6Fh03/AyD+EpQ+AKU3jKT2zu8THkTld2Om5oPS2yBcqvO9DYWWdI30H5/zUiq0zdhd0IGzUGkDKL8Kkt6CQp/GDzZlJLQTRwBzPMOV21CSW0Oa0xmRC3Zajr+/8ECEnwXh3y1GkHHeamBzKHQbCg11Oz7UOxFah0IfZRkylCj8SVUZrvEAysnF1gtAKcESzQ4A+L2qfe12LVZBcW0lKhftt3EFhTaj8gPh7sO9tdrmILU8CG7j4TUcKCezQOhPnwXhmwxAJaUlmg0lutoTOPaILHBNQKElMXvPWaYLrv/g4LzEVxiRLJVFlxwCQltM/RoqoUwXGg8MSF7pjgxAQel2C2DBsZRe1VSghIeNjAXhayIZb64rE15oZLE7Rkmvi2q2uDkIGgrNp0Kqv/zJIz9q/dLd0dd86xP+u5iJBgPlVbYBlO/zrA93+VJDSSrfX8PqAGJp9R7jVCCel/bXPAChISN20+CZodK9fqNyFyp1RiYPWqMBpYcLSg9VOl8tgGdsLaxTuzE+nJy6rRLizNAybi8wQ0nPROHPG4JM9RFa16V8bm6yhpJMR+UFqPwWKHXYY85idzMilexkWZBQ83Gf0jt2/6Z8uR1pEEYwU7suUzzrAX44DUSck9vRlre5T/nnqFx/REZDpxs4DJXfRKUPowR/N8oX3mrNKlPIKRtKMheF/kbh763f+3rXdEbW6zMA2bBq92x7jIgo9FWoAF4wteBDdHQsydXNRrAIYGUGoN6CqvIqy4pvOpMGIEGMiiPJCc3WbQ4ApfeNeGON4/Ga3KSzUCilJ0ctcDZsVDS7ykDpkaoye7p+3f4tZbwwmc8Lnz5hAKhctMEUhed5dteN4V1Cp8XJqRWFnw/9ILmgxoeNbqFv3BiaHSWTAEB91pJt+LAKsJquXs9rel44eTLXl2XVnFAFYAUok3HJdMT3/gkDEJ7n/4AYCYW2gNI51etFV9zbyGdTU5BYWmPzYfUekOTUMMj4LFg1LJwwAA+izDNDm02mN1s3ENZSrdbrg1d8lPgkX5ZlunSsQP8BPbyNNiarxF0AAAAASUVORK5CYII=";
+
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
@@ -462,6 +468,16 @@ const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app a[href*="modelcontextprotocol"] { display: none !important; }
 .scalar-app section:has(> a[href^="vscode:"]),
 .scalar-app section:has(> a[href^="cursor:"]) { display: none !important; }
+
+/* Hide Scalar's "Ask AI" feature (sidebar button + any floating widget).
+   Targeted by attribute and class fragments, case-insensitive, since the
+   CDN bundle may rename the underlying classes between releases. */
+.scalar-app [class*="ask-ai" i],
+.scalar-app [class*="askai" i],
+.scalar-app [class*="ai-assistant" i],
+.scalar-app [aria-label*="Ask AI" i],
+.scalar-app [title*="Ask AI" i],
+.scalar-app button[data-feature="ask-ai" i] { display: none !important; }
 `;
 
 function generationDocumentation(): OpenApiSchema {
@@ -876,7 +892,7 @@ function guidesPage(
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>pollinations.ai - Docs</title>
-<link rel="icon" type="image/svg+xml" href="/docs/favicon.svg" />
+<link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
 <style>${GUIDES_CSS}</style>
 </head>
 <body>
@@ -913,7 +929,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const response = await Scalar<Env>({
                 pageTitle: "pollinations.ai - Docs",
                 title: "pollinations.ai - Docs",
-                favicon: "/docs/favicon.svg",
+                favicon: FAVICON_DATA_URI,
                 theme: "saturn",
                 darkMode: true,
                 forceDarkModeState: "dark",
@@ -951,11 +967,6 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             c.header("Content-Type", "image/svg+xml");
             c.header("Cache-Control", "public, max-age=86400");
             return c.body(LOGO_WHITE_SVG);
-        })
-        .get("/favicon.svg", (c) => {
-            c.header("Content-Type", "image/svg+xml");
-            c.header("Cache-Control", "public, max-age=86400");
-            return c.body(LOGO_FLOWER_SVG);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");

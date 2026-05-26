@@ -3,81 +3,13 @@
 - **OpenAPI Version:** `3.1.0`
 - **API Version:** `0.3.0`
 
-## Introduction
-
-Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
 
 **Base URL:** `https://gen.pollinations.ai`
 
 **Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)
 
-## Overview
-
-| Capability               | Endpoint                        | Format            |
-| ------------------------ | ------------------------------- | ----------------- |
-| ✍️ **Text Generation**   | `POST /v1/chat/completions`     | OpenAI-compatible |
-| ✍️ **Simple Text**       | `GET /text/{prompt}`            | Plain text        |
-| 🖼️ **Image Generation** | `GET /image/{prompt}`           | JPEG / PNG        |
-| 🎬 **Video Generation**  | `GET /video/{prompt}`           | MP4               |
-| 🔊 **Text-to-Speech**    | `GET /audio/{text}`             | MP3               |
-| 🔊 **Music Generation**  | `GET /audio/{text}`             | MP3               |
-| 🔊 **Transcription**     | `POST /v1/audio/transcriptions` | JSON              |
-| 🤖 **Model Discovery**   | `GET /v1/models`                | JSON              |
-
-## Quick Start
-
-### Generate an Image
-
-Paste this URL in your browser — no code needed:
-
-```perl
-https://gen.pollinations.ai/image/a%20cat%20in%20space
-```
-
-Or use it directly in HTML:
-
-```html
-<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space" />
-```
-
-### Generate Text (OpenAI-compatible)
-
-```bash
-curl https://gen.pollinations.ai/v1/chat/completions \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello!"}]}'
-```
-
-### Generate Speech
-
-```bash
-curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
-  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
-```
-
-## 🔐 Authentication
-
-All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
-
-**Two key types:**
-
-| Type        | Prefix | Use case                | Rate limits      |
-| ----------- | ------ | ----------------------- | ---------------- |
-| Secret      | `sk_`  | Server-side apps        | None             |
-| Publishable | `pk_`  | Client-side apps (beta) | 1 pollen/IP/hour |
-
-**How to authenticate:**
-
-```bash
-# Option 1: Authorization header (recommended)
-curl -H "Authorization: Bearer YOUR_API_KEY" ...
-
-# Option 2: Query parameter
-curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"
-```
-
-> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.
+**Integration guides:** [BYOP, CLI, MCP Server](/docs/guides)
 
 ## Servers
 
@@ -754,7 +686,7 @@ Returns usage history for the API key used in the request. No scope required —
 
 - **Method:** `POST`
 - **Path:** `/v1/audio/speech`
-- **Tags:** 🔊 Audio Generation
+- **Tags:** 🔊 Audio
 
 Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.
 
@@ -866,7 +798,7 @@ Set `model` to `elevenmusic` to generate music instead of speech.
 
 - **Method:** `POST`
 - **Path:** `/v1/audio/transcriptions`
-- **Tags:** 🔊 Audio Generation
+- **Tags:** 🔊 Audio
 
 Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
@@ -1169,7 +1101,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 
 - **Method:** `POST`
 - **Path:** `/v1/chat/completions`
-- **Tags:** ✍️ Text Generation
+- **Tags:** ✍️ Text
 
 Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
@@ -1929,7 +1861,7 @@ Generate vector embeddings with an OpenAI-compatible response format.
 
 - **Method:** `POST`
 - **Path:** `/text`
-- **Tags:** ✍️ Text Generation
+- **Tags:** ✍️ Text
 
 Generate text from an OpenAI-style messages array and return the assistant content directly.
 
@@ -2322,7 +2254,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 
 - **Method:** `GET`
 - **Path:** `/text/{prompt}`
-- **Tags:** ✍️ Text Generation
+- **Tags:** ✍️ Text
 
 Generate text from a prompt via a simple GET request. Returns plain text.
 
@@ -2346,7 +2278,7 @@ true
 
 - **Method:** `GET`
 - **Path:** `/image/{prompt}`
-- **Tags:** 🖼️ Image Generation
+- **Tags:** 🖼️ Image
 
 Generate an image from a text prompt. Returns JPEG or PNG.
 
@@ -2374,7 +2306,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 - **Method:** `GET`
 - **Path:** `/video/{prompt}`
-- **Tags:** 🎬 Video Generation
+- **Tags:** 🎬 Video
 
 Generate a video from a text prompt. Returns MP4.
 
@@ -2400,7 +2332,7 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 
 - **Method:** `GET`
 - **Path:** `/audio/{text}`
-- **Tags:** 🔊 Audio Generation
+- **Tags:** 🔊 Audio
 
 Generate speech or music from text via a simple GET request.
 
@@ -2426,7 +2358,7 @@ Generate speech or music from text via a simple GET request.
 
 - **Method:** `POST`
 - **Path:** `/v1/images/generations`
-- **Tags:** 🖼️ Image Generation
+- **Tags:** 🖼️ Image
 
 OpenAI-compatible image generation endpoint.
 
@@ -2527,7 +2459,7 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 
 - **Method:** `POST`
 - **Path:** `/v1/images/edits`
-- **Tags:** 🖼️ Image Generation
+- **Tags:** 🖼️ Image
 
 OpenAI-compatible image editing endpoint.
 

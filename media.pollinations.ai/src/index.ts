@@ -16,6 +16,15 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+const CATALOG_PREFIX = "catalog/v1";
+const LINEAGE_PREFIX = "lineage/v1";
+const TAG_PREFIX = "tags/v1";
+const DEFAULT_LIST_LIMIT = 50;
+const MAX_LIST_LIMIT = 100;
+const MAX_TAGS = 20;
+const MAX_PARENTS = 8;
+const MAX_PROMPT_LENGTH = 500;
+const MAX_MODEL_LENGTH = 100;
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -24,9 +33,65 @@ interface Env {
 
 interface AuthResult {
     valid: boolean;
+    keyId?: string;
+    apiKeyId?: string;
     type: string;
     name: string | null;
+    userId?: string | null;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
+    byopClientUserId?: string | null;
 }
+
+const VISIBILITIES = ["private", "unlisted", "public"] as const;
+type Visibility = (typeof VISIBILITIES)[number];
+type CatalogSource = "upload" | "generation" | "remix" | "edit" | "saved_generation";
+
+type UploadCatalogInput = {
+    visibility: Visibility;
+    source: CatalogSource;
+    parents: string[];
+    relationship: string;
+    tags: string[];
+    prompt: string | null;
+    model: string | null;
+};
+
+type UploadFields = {
+    visibility?: unknown;
+    source?: unknown;
+    kind?: unknown;
+    parent?: unknown;
+    parents?: unknown;
+    remixOf?: unknown;
+    relationship?: unknown;
+    tag?: unknown;
+    tags?: unknown;
+    prompt?: unknown;
+    model?: unknown;
+};
+
+type CatalogRecord = {
+    entryId: string;
+    hash: string;
+    url: string;
+    contentType: string;
+    size: number;
+    createdAt: string;
+    visibility: Visibility;
+    source: CatalogSource;
+    relationship: string;
+    parents: string[];
+    tags: string[];
+    prompt?: string;
+    model?: string;
+    ownerId?: string;
+    ownerName?: string;
+    apiKeyId?: string;
+    appId?: string;
+    appName?: string;
+    appOwnerUserId?: string;
+};
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
@@ -63,10 +128,46 @@ const UploadResponseSchema = z.object({
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    cataloged: z
+        .boolean()
+        .describe("true when the media catalog sidecar indexes were written"),
+    visibility: z.enum(VISIBILITIES),
+    source: z.string(),
+    parents: z.array(z.string()),
+    tags: z.array(z.string()),
 });
 
 const ErrorSchema = z.object({
     error: z.string(),
+});
+
+const CatalogItemSchema = z.object({
+    entryId: z.string(),
+    hash: z.string(),
+    url: z.string(),
+    contentType: z.string(),
+    size: z.number().int(),
+    createdAt: z.string(),
+    visibility: z.enum(VISIBILITIES),
+    source: z.string(),
+    relationship: z.string(),
+    parents: z.array(z.string()),
+    tags: z.array(z.string()),
+    prompt: z.string().optional(),
+    model: z.string().optional(),
+    ownerId: z.string().optional(),
+    apiKeyId: z.string().optional(),
+    verifiedApp: z
+        .object({
+            keyId: z.string(),
+            name: z.string().nullable(),
+        })
+        .nullable(),
+});
+
+const CatalogListResponseSchema = z.object({
+    items: z.array(CatalogItemSchema),
+    nextCursor: z.string().nullable(),
 });
 
 const MetadataResponseSchema = z.object({
@@ -78,6 +179,391 @@ const MetadataResponseSchema = z.object({
         .optional()
         .describe("ISO-8601 upload timestamp, when recorded"),
 });
+
+function reverseTimestamp(now = Date.now()): string {
+    return String(Number.MAX_SAFE_INTEGER - now).padStart(16, "0");
+}
+
+function listLimit(raw: string | null): number {
+    const parsed = Number.parseInt(raw || "", 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIST_LIMIT;
+    return Math.min(parsed, MAX_LIST_LIMIT);
+}
+
+function boundedString(value: unknown, maxLength: number): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return trimmed.length > maxLength ? trimmed.slice(0, maxLength) : trimmed;
+}
+
+function parseVisibility(value: unknown): Visibility {
+    if (typeof value !== "string" || !value.trim()) return "private";
+    const normalized = value.trim().toLowerCase();
+    if ((VISIBILITIES as readonly string[]).includes(normalized)) {
+        return normalized as Visibility;
+    }
+    throw new Error("Invalid visibility");
+}
+
+function parseSource(value: unknown, parents: string[]): CatalogSource {
+    const source = typeof value === "string" ? value.trim().toLowerCase() : "";
+    if (
+        source === "upload" ||
+        source === "generation" ||
+        source === "remix" ||
+        source === "edit" ||
+        source === "saved_generation"
+    ) {
+        return source;
+    }
+    return parents.length ? "remix" : "upload";
+}
+
+function parseRelationship(value: unknown): string {
+    const relationship =
+        typeof value === "string" && value.trim()
+            ? value.trim().toLowerCase()
+            : "derived_from";
+    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(relationship)) {
+        throw new Error("Invalid relationship");
+    }
+    return relationship;
+}
+
+function parseTags(value: unknown): string[] {
+    const tags = flattenStringList(value).map((tag) =>
+        tag.trim().toLowerCase(),
+    );
+    const normalized = [...new Set(tags.filter(Boolean))];
+    if (normalized.length > MAX_TAGS) {
+        throw new Error("Too many tags");
+    }
+    for (const tag of normalized) {
+        if (!/^[a-z0-9][a-z0-9._:-]{0,63}$/.test(tag)) {
+            throw new Error("Invalid tag");
+        }
+    }
+    return normalized;
+}
+
+function firstTag(value: unknown): string | null {
+    try {
+        return parseTags(value)[0] ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function parseParents(value: unknown): string[] {
+    return [...new Set(flattenStringList(value).map(parseHashReference))].slice(
+        0,
+        MAX_PARENTS,
+    );
+}
+
+function parseHashReference(value: string): string {
+    const trimmed = value.trim();
+    let candidate = trimmed;
+    if (trimmed.includes("://")) {
+        try {
+            candidate =
+                new URL(trimmed).pathname.split("/").filter(Boolean).pop() ||
+                "";
+        } catch {
+            throw new Error("Invalid parent hash");
+        }
+    }
+    const hash = candidate.toLowerCase();
+    if (!HASH_PATTERN.test(hash)) {
+        throw new Error("Invalid parent hash");
+    }
+    return hash;
+}
+
+function flattenStringList(value: unknown): string[] {
+    if (value == null) return [];
+    const values = Array.isArray(value) ? value : [value];
+    return values.flatMap((item) => {
+        if (Array.isArray(item)) return flattenStringList(item);
+        if (typeof item !== "string") return [];
+        const trimmed = item.trim();
+        if (trimmed.startsWith("[")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) return flattenStringList(parsed);
+            } catch {
+                return [];
+            }
+        }
+        return trimmed
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+    });
+}
+
+function parseCatalogInput(fields: UploadFields): UploadCatalogInput {
+    const parents = parseParents([
+        fields.parent,
+        fields.parents,
+        fields.remixOf,
+    ]);
+    const source = parseSource(fields.source ?? fields.kind, parents);
+    return {
+        visibility: parseVisibility(fields.visibility),
+        source,
+        parents,
+        relationship: parseRelationship(fields.relationship),
+        tags: parseTags([fields.tag, fields.tags]),
+        prompt: boundedString(fields.prompt, MAX_PROMPT_LENGTH),
+        model: boundedString(fields.model, MAX_MODEL_LENGTH),
+    };
+}
+
+function queryFields(params: URLSearchParams): UploadFields {
+    return {
+        visibility: params.get("visibility"),
+        source: params.get("source"),
+        kind: params.get("kind"),
+        parent: params.getAll("parent"),
+        parents: params.getAll("parents"),
+        remixOf: params.getAll("remixOf"),
+        relationship: params.get("relationship"),
+        tag: params.getAll("tag"),
+        tags: params.getAll("tags"),
+        prompt: params.get("prompt"),
+        model: params.get("model"),
+    };
+}
+
+function formFields(formData: FormData): UploadFields {
+    const strings = (key: string) =>
+        formData.getAll(key).filter((value): value is string => {
+            return typeof value === "string";
+        });
+    const string = (key: string) => {
+        const value = formData.get(key);
+        return typeof value === "string" ? value : null;
+    };
+    return {
+        visibility: string("visibility"),
+        source: string("source"),
+        kind: string("kind"),
+        parent: strings("parent"),
+        parents: strings("parents"),
+        remixOf: strings("remixOf"),
+        relationship: string("relationship"),
+        tag: strings("tag"),
+        tags: strings("tags"),
+        prompt: string("prompt"),
+        model: string("model"),
+    };
+}
+
+function mergeFields(base: UploadFields, next: UploadFields): UploadFields {
+    const merged = { ...base };
+    for (const [key, value] of Object.entries(next)) {
+        if (Array.isArray(value) && value.length === 0) continue;
+        if (value == null || value === "") continue;
+        merged[key as keyof UploadFields] = value;
+    }
+    return merged;
+}
+
+function isClientCatalogError(error: Error): boolean {
+    return (
+        error.message.startsWith("Invalid ") ||
+        error.message.startsWith("Too many ")
+    );
+}
+
+function keySegment(value: string): string {
+    return encodeURIComponent(value);
+}
+
+async function putJson(bucket: R2Bucket, key: string, value: unknown) {
+    await bucket.put(key, JSON.stringify(value), {
+        httpMetadata: {
+            contentType: "application/json",
+            cacheControl: "no-store",
+        },
+    });
+}
+
+function catalogKey(prefix: string, hash: string, entryId: string): string {
+    return `${prefix}/${reverseTimestamp()}-${hash}-${entryId}.json`;
+}
+
+async function writeCatalogEntries(
+    bucket: R2Bucket,
+    record: CatalogRecord,
+): Promise<void> {
+    const writes = [
+        putJson(bucket, `${CATALOG_PREFIX}/items/${record.hash}.json`, record),
+    ];
+
+    if (record.ownerId) {
+        writes.push(
+            putJson(
+                bucket,
+                catalogKey(
+                    `${CATALOG_PREFIX}/by-owner/${keySegment(record.ownerId)}`,
+                    record.hash,
+                    record.entryId,
+                ),
+                record,
+            ),
+        );
+        if (record.appId) {
+            writes.push(
+                putJson(
+                    bucket,
+                    catalogKey(
+                        `${CATALOG_PREFIX}/by-owner-app/${keySegment(record.ownerId)}/${keySegment(record.appId)}`,
+                        record.hash,
+                        record.entryId,
+                    ),
+                    record,
+                ),
+            );
+        }
+    }
+
+    if (record.visibility === "public" && record.appId) {
+        writes.push(
+            putJson(
+                bucket,
+                catalogKey(
+                    `${CATALOG_PREFIX}/public-app/${keySegment(record.appId)}`,
+                    record.hash,
+                    record.entryId,
+                ),
+                record,
+            ),
+        );
+    }
+
+    if (record.visibility !== "private") {
+        for (const parent of record.parents) {
+            writes.push(
+                putJson(
+                    bucket,
+                    catalogKey(
+                        `${LINEAGE_PREFIX}/by-parent/${parent}`,
+                        record.hash,
+                        record.entryId,
+                    ),
+                    record,
+                ),
+                putJson(
+                    bucket,
+                    `${LINEAGE_PREFIX}/by-child/${record.hash}/${parent}.json`,
+                    record,
+                ),
+            );
+        }
+    }
+
+    if (record.visibility === "public") {
+        for (const tag of record.tags) {
+            writes.push(
+                putJson(
+                    bucket,
+                    catalogKey(
+                        `${TAG_PREFIX}/${keySegment(tag)}`,
+                        record.hash,
+                        record.entryId,
+                    ),
+                    record,
+                ),
+            );
+        }
+    }
+
+    await Promise.all(writes);
+}
+
+function catalogItem(
+    record: CatalogRecord,
+    includePrivateFields = false,
+): Record<string, unknown> {
+    return {
+        entryId: record.entryId,
+        hash: record.hash,
+        url: record.url,
+        contentType: record.contentType,
+        size: record.size,
+        createdAt: record.createdAt,
+        visibility: record.visibility,
+        source: record.source,
+        relationship: record.relationship,
+        parents: record.parents,
+        tags: record.tags,
+        ...(record.prompt && { prompt: record.prompt }),
+        ...(record.model && { model: record.model }),
+        verifiedApp: record.appId
+            ? {
+                  keyId: record.appId,
+                  name: record.appName ?? null,
+              }
+            : null,
+        ...(includePrivateFields && record.ownerId
+            ? { ownerId: record.ownerId }
+            : {}),
+        ...(includePrivateFields && record.apiKeyId
+            ? { apiKeyId: record.apiKeyId }
+            : {}),
+    };
+}
+
+async function readCatalogItem(
+    bucket: R2Bucket,
+    key: string,
+): Promise<CatalogRecord | null> {
+    const object = await bucket.get(key);
+    if (!object) return null;
+    try {
+        return (await object.json()) as CatalogRecord;
+    } catch {
+        return null;
+    }
+}
+
+async function listCatalogItems(
+    bucket: R2Bucket,
+    prefix: string,
+    limit: number,
+    cursor: string | null,
+    includePrivateFields = false,
+): Promise<{ items: Record<string, unknown>[]; nextCursor: string | null }> {
+    const list = await bucket.list({
+        prefix,
+        limit,
+        cursor: cursor || undefined,
+    });
+    const records = await Promise.all(
+        list.objects.map((object) => readCatalogItem(bucket, object.key)),
+    );
+    return {
+        items: records
+            .filter((record): record is CatalogRecord => Boolean(record))
+            .map((record) => catalogItem(record, includePrivateFields)),
+        nextCursor: list.truncated && list.cursor ? list.cursor : null,
+    };
+}
+
+async function resolveAppIdFromQuery(
+    app: string | null,
+    appKey: string | null,
+): Promise<string | null> {
+    const direct = app?.trim();
+    if (direct) return direct;
+    const key = appKey?.trim();
+    if (!key) return null;
+    const auth = await verifyApiKey(key);
+    return auth?.keyId ?? null;
+}
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -140,6 +626,8 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let catalogFields = queryFields(new URL(c.req.url).searchParams);
+        let catalogInput = parseCatalogInput(catalogFields);
 
         const requestContentType = c.req.header("content-type") || "";
 
@@ -161,6 +649,8 @@ api.post(
                     return c.json(fileTooLargeError(maxSize), 413);
                 }
 
+                catalogFields = mergeFields(catalogFields, formFields(formData));
+                catalogInput = parseCatalogInput(catalogFields);
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
@@ -169,6 +659,17 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
+                    visibility?: string;
+                    source?: string;
+                    kind?: string;
+                    parent?: string | string[];
+                    parents?: string | string[];
+                    remixOf?: string | string[];
+                    relationship?: string;
+                    tag?: string | string[];
+                    tags?: string | string[];
+                    prompt?: string;
+                    model?: string;
                 }>();
 
                 if (!body.data) {
@@ -195,6 +696,8 @@ api.post(
                     return c.json({ error: "Empty file" }, 400);
                 }
 
+                catalogFields = mergeFields(catalogFields, body);
+                catalogInput = parseCatalogInput(catalogFields);
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
             } else {
@@ -213,6 +716,10 @@ api.post(
             const hash = await generateHash(fileBuffer, fileName);
 
             const existing = await c.env.MEDIA_BUCKET.head(hash);
+            const createdAt = new Date().toISOString();
+            const ownerId = authResult.userId ?? undefined;
+            const apiKeyId = authResult.keyId ?? authResult.apiKeyId;
+            const appId = authResult.byopClientKeyId ?? undefined;
 
             // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
@@ -221,12 +728,50 @@ api.post(
                     cacheControl: CACHE_CONTROL,
                 },
                 customMetadata: {
-                    uploadedAt: new Date().toISOString(),
+                    uploadedAt: createdAt,
                     originalName: fileName || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
+                    ownerId: ownerId || "",
+                    apiKeyId: apiKeyId || "",
+                    appId: appId || "",
+                    parent: catalogInput.parents[0] || "",
                 },
             });
+
+            const record: CatalogRecord = {
+                entryId: crypto.randomUUID(),
+                hash,
+                url: mediaUrl(hash),
+                contentType,
+                size: fileBuffer.byteLength,
+                createdAt,
+                visibility: catalogInput.visibility,
+                source: catalogInput.source,
+                relationship: catalogInput.relationship,
+                parents: catalogInput.parents.filter((parent) => parent !== hash),
+                tags: catalogInput.tags,
+                ...(catalogInput.prompt && { prompt: catalogInput.prompt }),
+                ...(catalogInput.model && { model: catalogInput.model }),
+                ...(ownerId && { ownerId }),
+                ...(authResult.name && { ownerName: authResult.name }),
+                ...(apiKeyId && { apiKeyId }),
+                ...(appId && { appId }),
+                ...(authResult.byopClientName && {
+                    appName: authResult.byopClientName,
+                }),
+                ...(authResult.byopClientUserId && {
+                    appOwnerUserId: authResult.byopClientUserId,
+                }),
+            };
+
+            let cataloged = false;
+            try {
+                await writeCatalogEntries(c.env.MEDIA_BUCKET, record);
+                cataloged = true;
+            } catch (catalogError) {
+                console.error("Catalog write error:", catalogError);
+            }
 
             console.log(
                 JSON.stringify({
@@ -237,6 +782,13 @@ api.post(
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
                     duplicate: !!existing,
+                    ownerId: ownerId || null,
+                    appId: appId || null,
+                    visibility: record.visibility,
+                    source: record.source,
+                    parents: record.parents,
+                    tags: record.tags,
+                    cataloged,
                 }),
             );
 
@@ -246,11 +798,265 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                cataloged,
+                visibility: record.visibility,
+                source: record.source,
+                parents: record.parents,
+                tags: record.tags,
             });
         } catch (error) {
+            if (error instanceof Error && isClientCatalogError(error)) {
+                return c.json({ error: error.message }, 400);
+            }
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List authenticated user's media",
+        responses: {
+            200: {
+                description: "Cataloged media for the authenticated user",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) return c.json({ error: "API key required" }, 401);
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (!authResult.userId) {
+            return c.json({ items: [], nextCursor: null });
+        }
+
+        const url = new URL(c.req.url);
+        const appId = await resolveAppIdFromQuery(
+            url.searchParams.get("app") || url.searchParams.get("app_key_id"),
+            url.searchParams.get("app_key"),
+        );
+        const tag = firstTag(url.searchParams.get("tag"));
+        const prefix = appId
+            ? `${CATALOG_PREFIX}/by-owner-app/${keySegment(authResult.userId)}/${keySegment(appId)}/`
+            : `${CATALOG_PREFIX}/by-owner/${keySegment(authResult.userId)}/`;
+        const result = await listCatalogItems(
+            c.env.MEDIA_BUCKET,
+            prefix,
+            listLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+            true,
+        );
+        if (tag) {
+            result.items = result.items.filter((item) =>
+                Array.isArray(item.tags) ? item.tags.includes(tag) : false,
+            );
+        }
+        return c.json(result);
+    },
+);
+
+api.get(
+    "/gallery",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public app or tag media",
+        responses: {
+            200: {
+                description: "Public media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Missing or invalid app/tag",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const url = new URL(c.req.url);
+        const appId = await resolveAppIdFromQuery(
+            url.searchParams.get("app") || url.searchParams.get("app_key_id"),
+            url.searchParams.get("app_key"),
+        );
+        const tag = firstTag(url.searchParams.get("tag"));
+        if (!appId && !tag) {
+            return c.json({ error: "app, app_key, or tag required" }, 400);
+        }
+        const prefix = appId
+            ? `${CATALOG_PREFIX}/public-app/${keySegment(appId)}/`
+            : `${TAG_PREFIX}/${keySegment(tag ?? "")}/`;
+        const result = await listCatalogItems(
+            c.env.MEDIA_BUCKET,
+            prefix,
+            listLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+        );
+        if (tag && appId) {
+            result.items = result.items.filter((item) =>
+                Array.isArray(item.tags) ? item.tags.includes(tag) : false,
+            );
+        }
+        return c.json(result);
+    },
+);
+
+api.get(
+    "/apps/:appKeyId/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media attributed to a verified app",
+        description:
+            "Returns public uploads stamped with the app key id from the verified /account/key response. App attribution is never trusted from upload params.",
+        responses: {
+            200: {
+                description: "Public app media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const appKeyId = c.req.param("appKeyId").trim();
+        const url = new URL(c.req.url);
+        const result = await listCatalogItems(
+            c.env.MEDIA_BUCKET,
+            `${CATALOG_PREFIX}/public-app/${keySegment(appKeyId)}/`,
+            listLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+        );
+        const tag = firstTag(url.searchParams.get("tag"));
+        if (tag) {
+            result.items = result.items.filter((item) =>
+                Array.isArray(item.tags) ? item.tags.includes(tag) : false,
+            );
+        }
+        return c.json(result);
+    },
+);
+
+api.get(
+    "/tags/:tag",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media tagged with a tag",
+        responses: {
+            200: {
+                description: "Public tagged media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const tag = firstTag(c.req.param("tag"));
+        if (!tag) return c.json({ items: [], nextCursor: null });
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${TAG_PREFIX}/${keySegment(tag)}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/tags/:tag/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media tagged with a tag",
+        responses: {
+            200: {
+                description: "Public tagged media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const tag = firstTag(c.req.param("tag"));
+        if (!tag) return c.json({ items: [], nextCursor: null });
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${TAG_PREFIX}/${keySegment(tag)}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/:hash/children",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public or unlisted children of a media object",
+        responses: {
+            200: {
+                description: "Child media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash").toLowerCase();
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${LINEAGE_PREFIX}/by-parent/${hash}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
     },
 );
 
@@ -449,6 +1255,11 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key)",
+            myMedia: "GET /me/media (requires API key)",
+            appMedia: "GET /apps/:appKeyId/media",
+            gallery: "GET /gallery?app_key=pk_... or /gallery?tag=...",
+            tagMedia: "GET /tags/:tag/media",
+            children: "GET /:hash/children",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },

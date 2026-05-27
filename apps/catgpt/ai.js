@@ -2,7 +2,8 @@
 
 const API = "https://gen.pollinations.ai/image";
 const ENTER = "https://enter.pollinations.ai";
-const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA = "https://media.pollinations.ai";
+const MEDIA_UPLOAD = `${MEDIA}/upload`;
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
@@ -53,6 +54,16 @@ async function fetchAccount(apiKey, path) {
 
 export const fetchProfile = (apiKey) => fetchAccount(apiKey, "profile");
 export const fetchBalance = (apiKey) => fetchAccount(apiKey, "balance");
+export const fetchKeyInfo = (apiKey) => fetchAccount(apiKey, "key");
+
+export async function resolveAppKeyId() {
+    const res = await fetch(
+        `${ENTER}/api/app-lookup?${new URLSearchParams({ app_key: APP_KEY })}`,
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.found ? data.clientId : null;
+}
 
 // ── Cat Reply ───────────────────────────────────────────────────────────────
 
@@ -146,6 +157,72 @@ export async function pickModel(apiKey) {
 
 // ── Media Upload ─────────────────────────────────────────────────────────────
 
+function appendCatalogFields(form, options = {}) {
+    if (options.visibility) form.append("visibility", options.visibility);
+    if (options.relationship) form.append("relationship", options.relationship);
+    for (const tag of options.tags || []) form.append("tags", tag);
+    for (const parent of options.parents || []) form.append("parents", parent);
+    if (options.prompt) form.append("prompt", options.prompt);
+    if (options.model) form.append("model", options.model);
+}
+
+function authHeader() {
+    return { Authorization: `Bearer ${getStoredApiKey()}` };
+}
+
+function isMediaUrl(url) {
+    if (!url) return false;
+    try {
+        return new URL(url).hostname === "media.pollinations.ai";
+    } catch {
+        return false;
+    }
+}
+
+async function uploadMediaBlob(blob, filename, options = {}) {
+    const form = new FormData();
+    form.append("file", blob, filename);
+    appendCatalogFields(form, options);
+    const res = await fetch(MEDIA_UPLOAD, {
+        method: "POST",
+        headers: authHeader(),
+        body: form,
+    });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json();
+}
+
+export async function uploadGeneratedMeme(blob, parentUrl = null, metadata = {}) {
+    const parents = isMediaUrl(parentUrl) ? [parentUrl] : [];
+    const media = await uploadMediaBlob(blob, `catgpt-${Date.now()}.png`, {
+        visibility: "public",
+        relationship: "catgpt_reply",
+        tags: ["catgpt", "meme"],
+        parents,
+        prompt: metadata.prompt,
+        model: metadata.model,
+    });
+    return media.url || `${MEDIA}/${media.id}`;
+}
+
+export async function fetchMyMedia() {
+    const res = await fetch(`${MEDIA}/me/media?limit=50`, {
+        headers: authHeader(),
+    });
+    if (!res.ok) throw new Error("Could not load media");
+    return res.json();
+}
+
+export async function fetchAppMedia() {
+    const appKeyId = await resolveAppKeyId();
+    if (!appKeyId) return { items: [] };
+    const res = await fetch(
+        `${MEDIA}/apps/${encodeURIComponent(appKeyId)}/media?limit=50`,
+    );
+    if (!res.ok) throw new Error("Could not load app media");
+    return res.json();
+}
+
 export async function handleImageUpload(file, notify) {
     if (!file) return null;
     if (file.size > 5 * 1024 * 1024) {
@@ -155,15 +232,11 @@ export async function handleImageUpload(file, notify) {
 
     try {
         notify("Uploading image...", "info");
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch(MEDIA_UPLOAD, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${getStoredApiKey()}` },
-            body: form,
+        const media = await uploadMediaBlob(file, file.name || "catgpt.png", {
+            visibility: "unlisted",
+            tags: ["catgpt", "source"],
         });
-        if (!res.ok) throw new Error("Upload failed");
-        return (await res.json()).url;
+        return media.url || `${MEDIA}/${media.id}`;
     } catch (err) {
         console.error("Media upload failed:", err);
         notify("Upload failed. Trying local fallback...", "warning");

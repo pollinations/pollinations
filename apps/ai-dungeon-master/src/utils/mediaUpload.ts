@@ -1,5 +1,14 @@
-const MEDIA_URL = "https://gen.pollinations.ai";
 const MEDIA_HOST = "media.pollinations.ai";
+const MEDIA_UPLOAD_URL = `https://${MEDIA_HOST}/upload`;
+
+type MediaUploadOptions = {
+    visibility?: "private" | "unlisted" | "public";
+    relationship?: string;
+    tags?: string[];
+    parents?: string[];
+    prompt?: string;
+    model?: string;
+};
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
 function isMediaUrl(url: string): boolean {
@@ -10,6 +19,28 @@ function isMediaUrl(url: string): boolean {
     }
 }
 
+function mediaParent(url: string | undefined): string | null {
+    if (!url || !isMediaUrl(url)) return null;
+    return url;
+}
+
+function appendCatalogFields(
+    formData: FormData,
+    options: MediaUploadOptions,
+): void {
+    formData.append("visibility", options.visibility ?? "private");
+    formData.append("relationship", options.relationship ?? "rpg_media");
+    for (const tag of ["ai-dungeon-master", ...(options.tags ?? [])]) {
+        formData.append("tags", tag);
+    }
+    for (const parent of options.parents ?? []) {
+        const cleanParent = mediaParent(parent);
+        if (cleanParent) formData.append("parents", cleanParent);
+    }
+    if (options.prompt) formData.append("prompt", options.prompt);
+    if (options.model) formData.append("model", options.model);
+}
+
 /**
  * Upload a gen.pollinations.ai image to media.pollinations.ai for permanent storage.
  * Returns the permanent media URL on success, or the original URL on any error.
@@ -18,6 +49,7 @@ function isMediaUrl(url: string): boolean {
 export async function uploadToMedia(
     genUrl: string,
     apiKey: string,
+    options: MediaUploadOptions = {},
 ): Promise<string> {
     if (!genUrl || isMediaUrl(genUrl)) return genUrl;
 
@@ -27,9 +59,10 @@ export async function uploadToMedia(
 
         const blob = await response.blob();
         const formData = new FormData();
-        formData.append("file", blob);
+        formData.append("file", blob, "ai-dungeon-master.png");
+        appendCatalogFields(formData, options);
 
-        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+        const uploadRes = await fetch(MEDIA_UPLOAD_URL, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: formData,

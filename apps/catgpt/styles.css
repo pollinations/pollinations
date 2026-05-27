@@ -581,6 +581,7 @@ header {
 /* === Cards === */
 
 .examples-grid,
+.catgpt-gallery-grid,
 .your-memes-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -740,6 +741,7 @@ footer a {
     }
 
     .examples-grid,
+    .catgpt-gallery-grid,
     .your-memes-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
@@ -801,6 +803,7 @@ footer a {
     }
 
     .examples-grid,
+    .catgpt-gallery-grid,
     .your-memes-grid {
         grid-template-columns: 1fr;
     }

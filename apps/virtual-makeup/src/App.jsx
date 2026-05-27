@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
@@ -117,9 +117,26 @@ function App() {
         }
     };
 
-    const uploadToPollinations = async (file) => {
+    const uploadToPollinations = async (file, options = {}) => {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("visibility", options.visibility || "private");
+        formData.append(
+            "relationship",
+            options.relationship || "virtual_makeup_source",
+        );
+        for (const tag of ["virtual-makeup", ...(options.tags || [])]) {
+            formData.append("tags", tag);
+        }
+        for (const parent of options.parents || []) {
+            try {
+                if (new URL(parent).hostname === "media.pollinations.ai") {
+                    formData.append("parents", parent);
+                }
+            } catch {}
+        }
+        if (options.prompt) formData.append("prompt", options.prompt);
+        if (options.model) formData.append("model", options.model);
 
         const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
@@ -139,6 +156,17 @@ function App() {
         return data.url || data.secure_url || data.media_url;
     };
 
+    const uploadGeneratedMakeup = async (blob, parentUrl, styleId) => {
+        return uploadToPollinations(blob, {
+            visibility: "private",
+            relationship: "virtual_makeup_result",
+            tags: ["result", styleId || "custom"],
+            parents: [parentUrl],
+            prompt: useCustom ? customPrompt : MAKEUP_STYLES.find((style) => style.id === styleId)?.prompt,
+            model: "nanobanana",
+        });
+    };
+
     const applyMakeup = async () => {
         if (!uploadedImage || !uploadedFile || !apiKey) return;
 
@@ -153,7 +181,9 @@ function App() {
 
             const encodedPrompt = encodeURIComponent(prompt);
 
-            const pollinationsUrl = await uploadToPollinations(uploadedFile);
+            const pollinationsUrl = await uploadToPollinations(uploadedFile, {
+                tags: ["source"],
+            });
 
             const encodedImageURL = encodeURIComponent(pollinationsUrl);
 
@@ -172,8 +202,17 @@ function App() {
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            let resultUrl = URL.createObjectURL(blob);
+            try {
+                resultUrl = await uploadGeneratedMakeup(
+                    blob,
+                    pollinationsUrl,
+                    useCustom ? "custom" : selectedStyle,
+                );
+            } catch (uploadError) {
+                console.warn("Could not catalog makeup result:", uploadError);
+            }
+            setMakeupImage(resultUrl);
             setImageLoaded(true);
             setIsLoading(false);
         } catch (error) {

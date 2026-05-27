@@ -12,7 +12,8 @@ import {
     Sun,
     Upload,
 } from "lucide-react";
-import { type React, useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 type StyleOption = {
     id: string;
@@ -79,7 +80,7 @@ const packagingTypes: PackagingType[] = [
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://gen.pollinations.ai/image";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -120,6 +121,13 @@ const validateFile = (
 };
 const APP_KEY = "pk_pollinations_packaging_designer"; // Your publishable key
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
+
+type MediaUploadOptions = {
+    visibility?: "private" | "unlisted" | "public";
+    relationship?: string;
+    tags?: string[];
+    parents?: string[];
+};
 
 function App() {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -236,10 +244,16 @@ function App() {
             setFile(null);
         }
     };
-    const uploadToPollinationsMedia = async (file: File): Promise<string> => {
-        const validation = validateFile(file, MAX_FILE_SIZE);
-        if (!validation.isValid) {
-            throw new Error(validation.error || "File validation failed");
+    const uploadToPollinationsMedia = async (
+        media: Blob,
+        filename: string,
+        options: MediaUploadOptions = {},
+    ): Promise<string> => {
+        if (media instanceof File) {
+            const validation = validateFile(media, MAX_FILE_SIZE);
+            if (!validation.isValid) {
+                throw new Error(validation.error || "File validation failed");
+            }
         }
 
         if (!apiKey) {
@@ -247,7 +261,22 @@ function App() {
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", media, filename);
+        formData.append("visibility", options.visibility || "unlisted");
+        formData.append(
+            "relationship",
+            options.relationship || "packaging_media",
+        );
+        for (const tag of ["packaging", ...(options.tags || [])]) {
+            formData.append("tags", tag);
+        }
+        for (const parent of options.parents || []) {
+            try {
+                if (new URL(parent).hostname === "media.pollinations.ai") {
+                    formData.append("parents", parent);
+                }
+            } catch {}
+        }
 
         try {
             const response = await fetch(POLLINATIONS_MEDIA_API, {
@@ -335,7 +364,11 @@ function App() {
             let uploadedUrl: string = "";
 
             if (file) {
-                uploadedUrl = await uploadToPollinationsMedia(file);
+                uploadedUrl = await uploadToPollinationsMedia(file, file.name, {
+                    visibility: "private",
+                    relationship: "packaging_source",
+                    tags: ["source", packagingType],
+                });
             } else {
                 uploadedUrl = uploadedImage || "";
             }
@@ -385,8 +418,25 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setGeneratedImage(blobUrl);
+            let resultUrl = URL.createObjectURL(blob);
+            try {
+                resultUrl = await uploadToPollinationsMedia(
+                    blob,
+                    `packaging-${Date.now()}.png`,
+                    {
+                        visibility: "unlisted",
+                        relationship: "packaging_design",
+                        tags: ["result", packagingType, selectedStyle],
+                        parents: [uploadedUrl],
+                    },
+                );
+            } catch (uploadError) {
+                console.warn(
+                    "Could not catalog packaging result:",
+                    uploadError,
+                );
+            }
+            setGeneratedImage(resultUrl);
             setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);

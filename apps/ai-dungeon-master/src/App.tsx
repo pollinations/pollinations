@@ -178,21 +178,48 @@ export default function App() {
                 const sceneUpload = uploadToMedia(
                     gameState.currentScene.image,
                     apiKey,
+                    {
+                        visibility: "private",
+                        relationship: "rpg_current_scene",
+                        tags: ["scene", "current"],
+                        parents: [
+                            gameState.storyHistory.at(-1)?.image ?? "",
+                            gameState.character.avatar,
+                        ],
+                    },
                 );
                 await Promise.all([
-                    uploadToMedia(character.avatar, apiKey).then((url) => {
+                    uploadToMedia(character.avatar, apiKey, {
+                        visibility: "private",
+                        relationship: "rpg_character",
+                        tags: ["character"],
+                    }).then((url) => {
                         character.avatar = url;
                     }),
                     sceneUpload.then((url) => {
                         uploadedSceneImage = url;
                     }),
                     ...storyHistory.map((entry, idx) =>
-                        uploadToMedia(entry.image, apiKey).then((url) => {
+                        uploadToMedia(entry.image, apiKey, {
+                            visibility: "private",
+                            relationship: "rpg_scene",
+                            tags: ["scene"],
+                            parents: [
+                                idx > 0
+                                    ? gameState.storyHistory[idx - 1]?.image
+                                    : character.avatar,
+                            ].filter(Boolean) as string[],
+                        }).then((url) => {
                             storyHistory[idx].image = url;
                         }),
                     ),
                     ...inventory.map((item, idx) =>
-                        uploadToMedia(item.image, apiKey).then((url) => {
+                        uploadToMedia(item.image, apiKey, {
+                            visibility: "private",
+                            relationship: "rpg_inventory_item",
+                            tags: ["inventory"],
+                            parents: [character.avatar],
+                        }).then((url) => {
                             inventory[idx].image = url;
                         }),
                     ),

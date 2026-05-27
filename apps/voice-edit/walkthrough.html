@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Edit Walkthrough | Pollinations</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark: #110518;
+    --paper: #f3ebde;
+    --surface: #fff;
+    --muted: #5b5265;
+    --accent: #e8f372;
+    --danger-bg: #ffe1e1;
+    --danger-line: #a02020;
+    --border: 2px solid var(--dark);
+    --raise: 2px 2px 0 var(--dark);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--dark);
+    font-family: "IBM Plex Mono", monospace;
+  }
+  button, input, select { font: inherit; color: inherit; }
+
+  .app {
+    width: min(100% - 24px, 1180px);
+    margin: 0 auto;
+    padding: 18px 0 24px;
+    display: grid;
+    gap: 12px;
+  }
+  .topbar, .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    margin: 0;
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(1rem, 3.4vw, 1.45rem);
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+  .tagline, .account, .status {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .account { margin-left: auto; text-align: right; }
+  .account button {
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .status { min-width: 8ch; text-align: right; }
+
+  .btn, .input, .select, .panel, .thumb, .clip {
+    background: var(--surface);
+    border: var(--border);
+    box-shadow: var(--raise);
+  }
+  .btn, .select {
+    min-height: 38px;
+    border-radius: 0;
+  }
+  .btn {
+    padding: 0 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: lowercase;
+  }
+  .btn:hover:not(:disabled) { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--dark); }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); }
+  .select { padding: 0 10px; }
+  .narrate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .narrate input { margin: 0; }
+  .narrate-count { opacity: 0.7; font-variant-numeric: tabular-nums; }
+  .narrate input:disabled + .narrate-count,
+  .narrate input:disabled { opacity: 0.4; }
+  .prompt {
+    display: grid;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .prompt textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: var(--border);
+    box-shadow: var(--raise);
+    border-radius: 0;
+    font: inherit;
+    font-size: 0.85rem;
+    color: inherit;
+    resize: vertical;
+  }
+  .prompt textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .prompt .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .prompt .row button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .error {
+    display: none;
+    padding: 10px 12px;
+    background: var(--danger-bg);
+    border: 2px solid var(--danger-line);
+    box-shadow: 2px 2px 0 var(--danger-line);
+    font-size: 0.85rem;
+  }
+  .error.visible { display: block; }
+
+  .panel {
+    min-height: 320px;
+    padding: 12px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .panel img, .panel video {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 290px);
+    background: #000;
+  }
+  .strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+  }
+  .thumb, .clip {
+    flex: 0 0 auto;
+    width: 86px;
+    height: 64px;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .thumb.active, .clip.active { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .clip.pending { opacity: 0.55; cursor: wait; }
+  .clip.failed { opacity: 0.7; }
+  .clip-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted);
+    font-size: 1.4rem;
+    animation: clip-pulse 1.6s ease-in-out infinite;
+  }
+  .clip.failed .clip-placeholder {
+    animation: none;
+    color: #ff8888;
+    background: rgba(255, 80, 80, 0.18);
+  }
+  @keyframes clip-pulse {
+    0%, 100% { background: rgba(255, 255, 255, 0.05); }
+    50% { background: rgba(255, 255, 255, 0.15); }
+  }
+  .thumb img, .clip video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .thumb span, .clip span {
+    position: absolute;
+    left: 3px;
+    bottom: 2px;
+    background: var(--accent);
+    padding: 0 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 720px) {
+    .app { width: min(100% - 14px, 1180px); padding-top: 10px; gap: 9px; }
+    .account { order: 3; width: 100%; margin-left: 0; text-align: left; }
+    .status { margin-left: auto; }
+    .toolbar { gap: 7px; }
+    .btn, .select { min-height: 36px; }
+    .btn { padding: 0 9px; }
+    .panel { min-height: 240px; }
+    .panel img, .panel video { max-height: calc(100vh - 340px); }
+  }
+</style>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1 class="brand">voice.edit / walkthrough</h1>
+      <span class="tagline">history to video.</span>
+      <span id="account" class="account"></span>
+      <span id="status" class="status">ready</span>
+    </header>
+
+    <div id="error" class="error"></div>
+
+    <section class="toolbar" aria-label="walkthrough controls">
+      <button id="connectBtn" class="btn accent">connect</button>
+      <button id="loadBtn" class="btn" title="upload an image from disk">load</button>
+      <input id="fileInput" type="file" accept="image/*" hidden>
+      <select id="modelSel" class="select" aria-label="video model" disabled>
+        <option value="">loading models...</option>
+      </select>
+      <button id="makeBtn" class="btn accent">make</button>
+      <label class="narrate" title="insert a 2s card showing the marked-up image and prompt between video clips">
+        <input id="narrateToggle" type="checkbox"> narrate
+        <span id="narrateCount" class="narrate-count" aria-hidden="true"></span>
+      </label>
+      <button id="playAllBtn" class="btn" disabled title="play all clips in sequence">play all</button>
+      <button id="downloadAllBtn" class="btn" disabled title="download a single stitched .mp4 of all clips">download</button>
+    </section>
+
+    <label class="prompt">
+      <div class="row">
+        <span>video prompt</span>
+        <button type="button" id="promptReset" title="restore default prompt">reset</button>
+      </div>
+      <textarea id="promptInput" rows="2" spellcheck="false"></textarea>
+    </label>
+
+    <section id="viewer" class="panel"></section>
+    <div id="frameStrip" class="strip" aria-label="history frames"></div>
+    <div id="clipStrip" class="strip" aria-label="generated video clips"></div>
+    <div id="meta" class="meta"></div>
+  </main>
+
+<script type="module">
+import {
+  Input, Output, BlobSource, BufferTarget, Mp4OutputFormat,
+  EncodedPacketSink, EncodedVideoPacketSource, EncodedAudioPacketSource,
+  CanvasSource, Conversion, canEncodeVideo, ALL_FORMATS,
+} from "https://esm.sh/mediabunny@1.45.3";
+
+const KEY_STORAGE = "voice-edit:user-key";
+const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
+const NARRATE_STORAGE = "voice-edit:walkthrough-narrate";
+const NARRATE_DURATION_SEC = 3.5;
+const CLIENT_ID = "";
+const ENTER = "https://enter.pollinations.ai";
+const BASE = "https://gen.pollinations.ai";
+const HISTORY_KEYWORD = "pollinations:voice-edit:history";
+const DEFAULT_PROMPT = "Smooth visual transition from the first image to the second image. Preserve the subject, composition, and style. No text, labels, captions, or subtitles.";
+
+const $ = (id) => document.getElementById(id);
+const els = Object.fromEntries(Object.entries({
+  account: "account",
+  status: "status",
+  error: "error",
+  connect: "connectBtn",
+  load: "loadBtn",
+  file: "fileInput",
+  model: "modelSel",
+  make: "makeBtn",
+  playAll: "playAllBtn",
+  downloadAll: "downloadAllBtn",
+  prompt: "promptInput",
+  promptReset: "promptReset",
+  narrate: "narrateToggle",
+  narrateCount: "narrateCount",
+  viewer: "viewer",
+  frameStrip: "frameStrip",
+  clipStrip: "clipStrip",
+  meta: "meta",
+}).map(([key, id]) => [key, $(id)]));
+
+const app = {
+  sourceURL: "",
+  history: [],
+  currentFrame: 0,
+  clips: [],
+  currentClip: -1,
+  busy: false,
+  modelsReady: false,
+  playAll: false,
+  playAllIndex: 0,
+  accountUser: "",
+  accountBalance: null,
+};
+
+function setStatus(text) {
+  els.status.textContent = text;
+}
+
+function showError(message) {
+  els.error.textContent = message;
+  els.error.classList.add("visible");
+  setStatus("error");
+}
+
+function clearError() {
+  els.error.classList.remove("visible");
+}
+
+function key() {
+  const token = localStorage.getItem(KEY_STORAGE);
+  if (!token) throw new Error("not connected - click Connect");
+  return token;
+}
+
+const authHeaders = () => ({ Authorization: `Bearer ${key()}` });
+
+function captureKeyFromFragment() {
+  if (!location.hash) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const apiKey = params.get("api_key");
+  if (!apiKey) return;
+  localStorage.setItem(KEY_STORAGE, apiKey);
+  params.delete("api_key");
+  history.replaceState(null, "", params.toString() ? `${location.pathname}#${params}` : location.pathname);
+}
+
+function startConnect() {
+  const params = new URLSearchParams({
+    redirect_uri: location.origin + location.pathname + location.hash,
+    scope: "generate",
+  });
+  if (CLIENT_ID) params.set("client_id", CLIENT_ID);
+  location.href = `${ENTER}/authorize?${params}`;
+}
+
+function disconnect() {
+  localStorage.removeItem(KEY_STORAGE);
+  refreshConnectionUI();
+}
+
+function renderAccount() {
+  if (!localStorage.getItem(KEY_STORAGE)) {
+    els.account.textContent = "not connected";
+    return;
+  }
+  const user = app.accountUser ? `connected as ${app.accountUser}` : "connected";
+  const balance = app.accountBalance == null ? "" : ` · ${app.accountBalance.toFixed(2)} pollen`;
+  els.account.textContent = `${user}${balance} · `;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "disconnect";
+  button.addEventListener("click", disconnect);
+  els.account.append(button);
+}
+
+function refreshConnectionUI() {
+  const connected = !!localStorage.getItem(KEY_STORAGE);
+  els.connect.hidden = connected;
+  renderAccount();
+  if (connected) {
+    loadUser();
+    loadBalance();
+  }
+  render();
+}
+
+async function loadUser() {
+  const res = await fetch(`${ENTER}/api/device/userinfo`, { headers: authHeaders() });
+  if (!res.ok) return;
+  const user = await res.json();
+  app.accountUser = user?.preferred_username || "";
+  renderAccount();
+}
+
+async function loadBalance() {
+  const res = await fetch(`${BASE}/account/balance`, { headers: authHeaders() });
+  if (!res.ok) return;
+  const { balance } = await res.json();
+  app.accountBalance = Number(balance);
+  renderAccount();
+}
+
+function startURLFromLocation() {
+  return new URLSearchParams(location.hash.slice(1)).get("start")
+    || new URLSearchParams(location.search).get("start");
+}
+
+function startIndexFromLocation() {
+  const value = new URLSearchParams(location.hash.slice(1)).get("index");
+  if (value == null) return null;
+  const index = Number(value);
+  return Number.isInteger(index) && index >= 0 ? index : null;
+}
+
+function scrubURL(url) {
+  if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return "";
+  try {
+    const clean = new URL(url, location.href);
+    for (const param of ["token", "key", "api_key", "apikey"]) clean.searchParams.delete(param);
+    return clean.href;
+  } catch {
+    return "";
+  }
+}
+
+function frameURL(frame) {
+  return scrubURL(typeof frame === "string" ? frame : frame?.url);
+}
+
+function cleanHistoryFrames(frames) {
+  return frames.map((frame) => {
+    const url = frameURL(frame);
+    if (!url) return null;
+    if (typeof frame === "string") return { url };
+    return {
+      url,
+      kind: frame?.kind,
+      promptText: frame?.promptText,
+      marked: frame?.marked,
+      color: frame?.color,
+    };
+  }).filter(Boolean);
+}
+
+function setHash(start, index = 0) {
+  const params = new URLSearchParams({ start });
+  if (index > 0) params.set("index", String(index));
+  history.replaceState(null, "", `${location.pathname}#${params}`);
+}
+
+async function loadSource(url) {
+  clearError();
+  const source = scrubURL(url);
+  if (!source) throw new Error("Enter a public image URL");
+  setStatus("loading...");
+  const res = await fetch(source, { mode: "cors" });
+  if (!res.ok) throw new Error(`Image load failed: ${res.status} ${res.statusText}`);
+  const blob = await res.blob();
+  const state = await readRemixState(blob);
+  const rawFrames = state ? cleanHistoryFrames(state.history) : [{ url: source }];
+  if (!rawFrames.length) throw new Error("No history frames found");
+  const sourceIndex = state ? Math.max(0, Math.min(state.historyIndex ?? rawFrames.length - 1, rawFrames.length - 1)) : 0;
+  if (state && rawFrames[sourceIndex]?.kind !== "prep") {
+    rawFrames[sourceIndex].url = source;
+  }
+  // Attach each prep frame's narration data (annotated URL + prompt text) to the
+  // clean frame it produced — that's the very next non-prep entry in the raw list.
+  let pendingPrep = null;
+  const frames = [];
+  for (const frame of rawFrames) {
+    if (frame.kind === "prep") {
+      pendingPrep = frame;
+      continue;
+    }
+    if (pendingPrep) {
+      frame.narration = {
+        annotatedURL: pendingPrep.url,
+        promptText: pendingPrep.promptText || "",
+      };
+      pendingPrep = null;
+    }
+    frames.push(frame);
+  }
+  if (!frames.length) throw new Error("No clean frames found (all entries are annotated previews)");
+  const targetURL = rawFrames[sourceIndex]?.kind === "prep" ? source : rawFrames[sourceIndex]?.url;
+  const sourceIndexClean = Math.max(
+    0,
+    frames.findIndex((frame) => frame.url === targetURL),
+  );
+  const requestedIndex = startIndexFromLocation();
+  const requestedIndexClean = requestedIndex == null
+    ? null
+    : Math.max(0, Math.min(requestedIndex, frames.length - 1));
+  const index = requestedIndexClean == null || requestedIndexClean === sourceIndex
+    ? sourceIndexClean
+    : requestedIndexClean;
+  app.sourceURL = source;
+  app.history = frames;
+  app.currentFrame = Math.max(0, Math.min(index, frames.length - 1));
+  app.clips = [];
+  app.currentClip = -1;
+  setHash(source, app.currentFrame);
+  render();
+  setStatus(state ? `loaded ${frames.length} clean frames` : "loaded image");
+}
+
+async function uploadBlob(blob, filename) {
+  setStatus("uploading...");
+  const form = new FormData();
+  form.append("file", blob, filename);
+  const res = await fetch("https://media.pollinations.ai/upload", {
+    method: "POST",
+    headers: authHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
+  const json = await res.json();
+  return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+function render() {
+  const connected = !!localStorage.getItem(KEY_STORAGE);
+  const locked = app.busy || app.history.length < 2 || !connected || !app.modelsReady;
+  els.make.disabled = locked;
+  els.load.disabled = app.busy || !connected;
+  els.model.disabled = app.busy || !app.modelsReady;
+  const hasClips = app.clips.length > 0 && !app.busy;
+  els.playAll.disabled = !hasClips;
+  els.downloadAll.disabled = !hasClips;
+  els.playAll.textContent = app.playAll ? "stop" : "play all";
+  const narratable = app.history.filter((f) => f?.narration).length;
+  els.narrate.disabled = narratable === 0 || app.busy;
+  els.narrateCount.textContent = narratable ? `(${narratable})` : "(none)";
+  renderViewer();
+  renderFrames();
+  renderClips();
+  els.meta.textContent = app.history.length > 1
+    ? `${app.history.length} frames -> ${app.history.length - 1} transitions${narratable ? ` · ${narratable} narration card${narratable === 1 ? "" : "s"}` : ""}`
+    : "load a remix image with history to make a walkthrough";
+}
+
+function renderViewer() {
+  if (app.playAll && app.clips.length) {
+    const video = document.createElement("video");
+    video.src = app.clips[app.playAllIndex].src;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.addEventListener("ended", () => {
+      if (!app.playAll) return;
+      app.playAllIndex = (app.playAllIndex + 1) % app.clips.length;
+      app.currentClip = app.playAllIndex;
+      render();
+    });
+    els.viewer.replaceChildren(video);
+    return;
+  }
+  const clip = app.clips[app.currentClip];
+  if (clip && clip.src) {
+    const video = document.createElement("video");
+    video.src = clip.src;
+    video.controls = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    els.viewer.replaceChildren(video);
+    return;
+  }
+  const frame = app.history[app.currentFrame];
+  if (!frame) {
+    els.viewer.textContent = "load an image";
+    return;
+  }
+  const img = document.createElement("img");
+  img.src = frame.url;
+  img.alt = "";
+  els.viewer.replaceChildren(img);
+}
+
+function renderFrames() {
+  els.frameStrip.replaceChildren(...app.history.map((frame, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `thumb${index === app.currentFrame && app.currentClip < 0 ? " active" : ""}`;
+    button.addEventListener("click", () => {
+      app.currentFrame = index;
+      app.currentClip = -1;
+      setHash(app.sourceURL, index);
+      render();
+    });
+    const img = document.createElement("img");
+    img.src = frame.url;
+    img.alt = "";
+    const label = document.createElement("span");
+    label.textContent = String(index + 1);
+    button.append(img, label);
+    return button;
+  }));
+}
+
+function renderClips() {
+  let videoCount = 0;
+  els.clipStrip.replaceChildren(...app.clips.map((clip, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    const isReady = !!clip.src;
+    const cls = [
+      "clip",
+      index === app.currentClip ? "active" : "",
+      clip.pending ? "pending" : "",
+      clip.failed ? "failed" : "",
+    ].filter(Boolean).join(" ");
+    button.className = cls;
+    if (isReady) {
+      button.addEventListener("click", () => {
+        app.currentClip = index;
+        render();
+      });
+    } else {
+      button.disabled = true;
+    }
+    const media = document.createElement(isReady ? "video" : "div");
+    if (isReady) {
+      media.src = clip.src;
+      media.muted = true;
+      media.playsInline = true;
+    } else {
+      media.className = "clip-placeholder";
+      media.textContent = clip.failed ? "×" : "…";
+    }
+    const label = document.createElement("span");
+    if (clip.kind === "narration") {
+      // narration card intros the next video, so label it with that video's number
+      label.textContent = `intro ${videoCount + 1}`;
+    } else {
+      videoCount += 1;
+      label.textContent = `${videoCount}->${videoCount + 1}`;
+    }
+    button.append(media, label);
+    return button;
+  }));
+}
+
+async function loadVideoModels() {
+  try {
+    const res = await fetch(`${BASE}/models`);
+    if (!res.ok) throw new Error(`models fetch failed: ${res.status}`);
+    const all = await res.json();
+    const supported = all.filter((m) =>
+      Array.isArray(m.video_capabilities) && m.video_capabilities.includes("end_frame"),
+    );
+    if (!supported.length) throw new Error("no models advertise end_frame");
+    const preferred = ["veo", "seedance-2.0", "wan-fast"];
+    supported.sort((a, b) => {
+      const ai = preferred.indexOf(a.name);
+      const bi = preferred.indexOf(b.name);
+      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    els.model.replaceChildren(...supported.map((m) => {
+      const opt = document.createElement("option");
+      opt.value = m.name;
+      opt.textContent = `${m.name} start+end`;
+      opt.title = m.description || "";
+      return opt;
+    }));
+  } catch (err) {
+    els.model.replaceChildren(
+      Object.assign(document.createElement("option"), { value: "veo", textContent: "veo start+end" }),
+      Object.assign(document.createElement("option"), { value: "seedance-2.0", textContent: "seedance-2.0 start+end" }),
+      Object.assign(document.createElement("option"), { value: "wan-fast", textContent: "wan-fast start+end" }),
+    );
+    console.warn("video model discovery failed, using fallback list:", err);
+  } finally {
+    app.modelsReady = true;
+    render();
+  }
+}
+
+function currentPrompt() {
+  const text = (els.prompt.value || "").trim();
+  return text || DEFAULT_PROMPT;
+}
+
+function videoRequestURL(start, end, model) {
+  const url = new URL(`${BASE}/video/${encodeURIComponent(currentPrompt())}`);
+  url.searchParams.set("model", model);
+  url.searchParams.set("duration", "4");
+  url.searchParams.set("audio", "false");
+  url.searchParams.set("image", `${start}|${end}`);
+  return url;
+}
+
+async function makeWalkthrough() {
+  if (app.history.length < 2 || app.busy) return;
+  app.busy = true;
+  for (const clip of app.clips) if (clip.src) URL.revokeObjectURL(clip.src);
+  app.clips = [];
+  app.currentClip = -1;
+
+  const narrate = els.narrate.checked;
+  const transitions = app.history.length - 1;
+  // Pre-populate placeholders in display order: (intro?, video) per transition.
+  const slots = []; // parallel array mapping transitionIndex -> { videoSlot, narrationSlot? }
+  for (let i = 0; i < transitions; i++) {
+    const target = app.history[i + 1];
+    const slot = {};
+    if (narrate && target?.narration) {
+      app.clips.push({ kind: "narration", pending: true });
+      slot.narrationSlot = app.clips.length - 1;
+    }
+    app.clips.push({ kind: "video", pending: true });
+    slot.videoSlot = app.clips.length - 1;
+    slots.push(slot);
+  }
+  render();
+
+  let videosDone = 0;
+  let firstError = null;
+  const setProgress = () => setStatus(`videos ${videosDone}/${transitions} ready...`);
+  setProgress();
+
+  await Promise.all(slots.map(async (slot, i) => {
+    const request = videoRequestURL(app.history[i].url, app.history[i + 1].url, els.model.value);
+    try {
+      const res = await fetch(request, { headers: authHeaders() });
+      if (!res.ok) throw new Error(await friendlyError(res, `Video ${i + 1} failed`));
+      const blob = await res.blob();
+
+      // Fill the video slot
+      const videoEntry = { url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" };
+      app.clips[slot.videoSlot] = videoEntry;
+      if (app.currentClip < 0) app.currentClip = slot.videoSlot;
+
+      // Render the narration card for this transition (needs the just-finished clip as codec ref)
+      if (slot.narrationSlot != null) {
+        try {
+          const cardBlob = await renderNarrationClip(app.history[i + 1].narration, blob);
+          app.clips[slot.narrationSlot] = { src: URL.createObjectURL(cardBlob), blob: cardBlob, kind: "narration" };
+        } catch (err) {
+          console.warn(`narration card ${i + 1} failed`, err);
+          showError(`narration card ${i + 1} skipped: ${err.message}`);
+          // Remove the failed placeholder by marking it dropped; we'll compact at the end.
+          app.clips[slot.narrationSlot] = { kind: "narration", dropped: true };
+        }
+      }
+
+      videosDone++;
+      setProgress();
+      render();
+    } catch (err) {
+      firstError = firstError || err;
+      app.clips[slot.videoSlot] = { kind: "video", failed: true, error: err.message };
+      if (slot.narrationSlot != null) app.clips[slot.narrationSlot] = { kind: "narration", dropped: true };
+      videosDone++;
+      setProgress();
+      render();
+    }
+  }));
+
+  // Compact: drop slots that were never filled (failed videos / dropped cards)
+  app.clips = app.clips.filter((c) => !c.dropped && !c.failed);
+  if (app.currentClip >= app.clips.length) app.currentClip = app.clips.length - 1;
+
+  loadBalance().catch(() => {});
+  if (firstError) showError(firstError.message);
+  setStatus(firstError ? `done with errors` : "done");
+  app.busy = false;
+  render();
+}
+
+async function friendlyError(response, label) {
+  let details = response.statusText || "request failed";
+  try {
+    const text = await response.text();
+    const json = JSON.parse(text);
+    details = json.error?.message || json.message || text;
+  } catch {}
+  if (response.status === 401 || response.status === 403) return `${label}: authorization expired. Connect again.`;
+  if (response.status === 402) return `${label}: add Pollen credits, then try again.`;
+  if (response.status === 429) return `${label}: rate limited. Wait a moment.`;
+  return `${label}: ${response.status} ${details}`;
+}
+
+const PNG_SIG = [137, 80, 78, 71, 13, 10, 26, 10];
+function readUint32(view, offset) {
+  return view.getUint32(offset, false);
+}
+function isValidPng(bytes) {
+  if (bytes.length < 8) return false;
+  for (let i = 0; i < 8; i++) if (bytes[i] !== PNG_SIG[i]) return false;
+  return true;
+}
+function readTextChunk(bytes, keyword) {
+  if (!isValidPng(bytes)) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const dec = new TextDecoder("latin1");
+  let pos = 8;
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = dec.decode(bytes.subarray(pos + 4, pos + 8));
+    const dataStart = pos + 8;
+    const dataEnd = dataStart + length;
+    if (type === "IEND") return null;
+    if (type === "tEXt" && dataEnd <= bytes.length) {
+      const data = bytes.subarray(dataStart, dataEnd);
+      const sep = data.indexOf(0);
+      if (sep > 0 && dec.decode(data.subarray(0, sep)) === keyword) {
+        return dec.decode(data.subarray(sep + 1));
+      }
+    }
+    pos = dataEnd + 4;
+  }
+  return null;
+}
+async function readRemixState(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const text = readTextChunk(bytes, HISTORY_KEYWORD);
+  if (!text) return null;
+  const state = JSON.parse(text);
+  return Array.isArray(state?.history) ? state : null;
+}
+
+els.connect.addEventListener("click", startConnect);
+els.load.addEventListener("click", () => els.file.click());
+els.file.addEventListener("change", async () => {
+  const file = els.file.files?.[0];
+  if (!file) return;
+  try {
+    const mediaURL = await uploadBlob(file, file.name || "image");
+    setHash(mediaURL);
+    await loadSource(mediaURL);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    els.file.value = "";
+  }
+});
+els.make.addEventListener("click", () => {
+  makeWalkthrough().catch((err) => {
+    app.busy = false;
+    showError(err.message);
+    render();
+  });
+});
+els.playAll.addEventListener("click", () => {
+  if (!app.clips.length) return;
+  app.playAll = !app.playAll;
+  if (app.playAll) {
+    app.playAllIndex = 0;
+    app.currentClip = 0;
+  }
+  render();
+});
+function loadImageBlob(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("could not load narration image"));
+    img.src = url;
+  });
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const lines = [];
+  for (const para of text.split(/\n/)) {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (!words.length) { lines.push(""); continue; }
+    let line = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = line + " " + words[i];
+      if (ctx.measureText(test).width > maxWidth) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function drawNarrationCard(canvas, image, promptText) {
+  const ctx = canvas.getContext("2d");
+  const { width: W, height: H } = canvas;
+  ctx.fillStyle = "#110518";
+  ctx.fillRect(0, 0, W, H);
+  // contain-fit the annotated image
+  const s = Math.min(W / image.width, H / image.height);
+  const dw = image.width * s;
+  const dh = image.height * s;
+  ctx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  // prompt text overlay at the bottom — subtitle-style
+  if (promptText) {
+    const fontPx = Math.min(26, Math.max(14, Math.round(H * 0.03)));
+    ctx.font = `500 ${fontPx}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    const lines = wrapText(ctx, promptText, W * 0.9);
+    const padY = Math.round(fontPx * 0.55);
+    const lineH = Math.round(fontPx * 1.3);
+    const bandH = lines.length * lineH + padY * 2;
+    ctx.fillStyle = "rgba(17, 5, 24, 0.75)";
+    ctx.fillRect(0, H - bandH, W, bandH);
+    ctx.fillStyle = "#fff";
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], W / 2, H - padY - (lines.length - 1 - i) * lineH);
+    }
+  }
+}
+
+async function probeVideoSpec(blob) {
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blob) });
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) throw new Error("reference clip has no video track");
+  const cfg = await track.getDecoderConfig();
+  return {
+    codec: track.codec,                    // e.g. "avc"
+    fullCodecString: cfg?.codec,           // e.g. "avc1.640028"
+    width: track.codedWidth,
+    height: track.codedHeight,
+  };
+}
+
+async function renderNarrationClip(narration, refBlob) {
+  const spec = await probeVideoSpec(refBlob);
+  // Force even dimensions (H.264 requires it).
+  const width = spec.width - (spec.width % 2);
+  const height = spec.height - (spec.height % 2);
+  const fps = 24;
+  const bitrate = 2_000_000;
+  if (typeof canEncodeVideo === "function") {
+    const ok = await canEncodeVideo(spec.codec, { width, height, bitrate });
+    if (!ok) throw new Error(`browser cannot encode ${spec.codec} ${width}x${height}`);
+  }
+
+  const image = await loadImageBlob(narration.annotatedURL);
+  const canvas = typeof OffscreenCanvas !== "undefined"
+    ? new OffscreenCanvas(width, height)
+    : Object.assign(document.createElement("canvas"), { width, height });
+  drawNarrationCard(canvas, image, narration.promptText);
+
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  const sourceCfg = { codec: spec.codec, bitrate, keyFrameInterval: 1 };
+  if (spec.fullCodecString) sourceCfg.fullCodecString = spec.fullCodecString;
+  const source = new CanvasSource(canvas, sourceCfg);
+  output.addVideoTrack(source, { frameRate: fps });
+  await output.start();
+  const total = Math.max(1, Math.round(NARRATE_DURATION_SEC * fps));
+  const frameDur = 1 / fps;
+  for (let i = 0; i < total; i++) {
+    await source.add(i * frameDur, frameDur);
+  }
+  source.close();
+  await output.finalize();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
+async function remuxMp4Clips(blobs) {
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  let videoSrc = null;
+  let audioSrc = null;
+  let vOffset = 0;
+  let aOffset = 0;
+  let vMaxOut = 0;
+  let aMaxOut = 0;
+  let vCfgSent = false;
+  let aCfgSent = false;
+
+  for (let i = 0; i < blobs.length; i++) {
+    const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blobs[i]) });
+    const vTrack = await input.getPrimaryVideoTrack();
+    if (!vTrack) throw new Error(`clip ${i + 1} has no video track`);
+    const aTrack = await input.getPrimaryAudioTrack();
+
+    if (i === 0) {
+      videoSrc = new EncodedVideoPacketSource(vTrack.codec);
+      output.addVideoTrack(videoSrc);
+      if (aTrack) {
+        audioSrc = new EncodedAudioPacketSource(aTrack.codec);
+        output.addAudioTrack(audioSrc);
+      }
+      await output.start();
+    }
+
+    const vMeta = { decoderConfig: await vTrack.getDecoderConfig() };
+    const vSink = new EncodedPacketSink(vTrack);
+    let vClipMax = 0;
+    for (let p = await vSink.getFirstPacket(); p; p = await vSink.getNextPacket(p)) {
+      let ts = Math.max(0, p.timestamp + vOffset);
+      if (i > 0 && ts <= vMaxOut) ts = vMaxOut + 1e-6;
+      await videoSrc.add(p.clone({ timestamp: ts }), vCfgSent ? undefined : vMeta);
+      vCfgSent = true;
+      vMaxOut = Math.max(vMaxOut, ts);
+      vClipMax = Math.max(vClipMax, p.timestamp + p.duration);
+    }
+    vOffset += vClipMax;
+
+    if (aTrack && audioSrc) {
+      const aMeta = { decoderConfig: await aTrack.getDecoderConfig() };
+      const aSink = new EncodedPacketSink(aTrack);
+      let aClipMax = 0;
+      for (let p = await aSink.getFirstPacket(); p; p = await aSink.getNextPacket(p)) {
+        let ts = Math.max(0, p.timestamp + aOffset);
+        if (i > 0 && ts <= aMaxOut) ts = aMaxOut + 1e-6;
+        await audioSrc.add(p.clone({ timestamp: ts }), aCfgSent ? undefined : aMeta);
+        aCfgSent = true;
+        aMaxOut = Math.max(aMaxOut, ts);
+        aClipMax = Math.max(aClipMax, p.timestamp + p.duration);
+      }
+      aOffset += aClipMax;
+    } else if (audioSrc) {
+      // No audio in this clip but we have an audio track — keep the audio
+      // offset in lock-step with video so later audio packets land in the
+      // right spot. The merged audio track will just contain a silent gap.
+      aOffset += vClipMax;
+    }
+  }
+
+  await output.finalize();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
+async function normalizeMp4(blob, targetBitrate) {
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(blob) });
+  const output = new Output({ format: new Mp4OutputFormat(), target: new BufferTarget() });
+  const conv = await Conversion.init({
+    input, output,
+    video: { codec: "avc", bitrate: targetBitrate },
+  });
+  await conv.execute();
+  return new Blob([output.target.buffer], { type: "video/mp4" });
+}
+
+els.downloadAll.addEventListener("click", async () => {
+  if (!app.clips.length) return;
+  const originalLabel = els.downloadAll.textContent;
+  els.downloadAll.disabled = true;
+  els.downloadAll.textContent = "stitching…";
+  try {
+    const clips = app.clips.filter((c) => c.blob);
+    if (!clips.length) throw new Error("No video data to download");
+
+    // If we have any narration cards mixed in, the source clips and the cards
+    // will have different H.264 SPS/PPS — the player only honours the first
+    // avcC box, so naive remux silently drops the cards. Re-encode every clip
+    // to one uniform target so the final stream has a single decoder config.
+    let blobs = clips.map((c) => c.blob);
+    const mixed = clips.some((c) => c.kind === "narration");
+    if (mixed) {
+      const targetBitrate = 4_000_000;
+      const normalized = [];
+      for (let i = 0; i < clips.length; i++) {
+        els.downloadAll.textContent = `re-encoding ${i + 1}/${clips.length}…`;
+        normalized.push(await normalizeMp4(clips[i].blob, targetBitrate));
+      }
+      blobs = normalized;
+      els.downloadAll.textContent = "stitching…";
+    }
+
+    let merged;
+    let ext = "mp4";
+    try {
+      merged = await remuxMp4Clips(blobs);
+    } catch (remuxErr) {
+      console.warn("mediabunny remux failed, falling back to naive concat", remuxErr);
+      const type = blobs[0].type || "video/mp4";
+      merged = new Blob(blobs, { type });
+      ext = type.includes("webm") ? "webm" : "mp4";
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(merged);
+    a.download = `walkthrough-${Date.now()}.${ext}`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    els.downloadAll.textContent = originalLabel;
+    els.downloadAll.disabled = !app.clips.length || app.busy;
+  }
+});
+window.addEventListener("hashchange", () => {
+  const start = startURLFromLocation();
+  if (start && scrubURL(start) !== app.sourceURL && !app.busy) loadSource(start).catch((err) => showError(err.message));
+});
+
+els.prompt.value = localStorage.getItem(PROMPT_STORAGE) ?? DEFAULT_PROMPT;
+els.prompt.placeholder = DEFAULT_PROMPT;
+els.prompt.addEventListener("input", () => {
+  localStorage.setItem(PROMPT_STORAGE, els.prompt.value);
+});
+els.promptReset.addEventListener("click", () => {
+  els.prompt.value = DEFAULT_PROMPT;
+  localStorage.setItem(PROMPT_STORAGE, DEFAULT_PROMPT);
+});
+
+els.narrate.checked = localStorage.getItem(NARRATE_STORAGE) === "1";
+els.narrate.addEventListener("change", () => {
+  localStorage.setItem(NARRATE_STORAGE, els.narrate.checked ? "1" : "0");
+});
+
+captureKeyFromFragment();
+refreshConnectionUI();
+loadVideoModels();
+const start = startURLFromLocation();
+if (start) loadSource(start).catch((err) => showError(err.message));
+else render();
+</script>
+</body>
+</html>

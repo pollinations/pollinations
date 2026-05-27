@@ -16,6 +16,10 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+const CATALOG_PREFIX = "catalog/v1";
+const LINEAGE_PREFIX = "lineage/v1";
+const MAX_LIST_LIMIT = 100;
+const DEFAULT_LIST_LIMIT = 50;
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -24,9 +28,41 @@ interface Env {
 
 interface AuthResult {
     valid: boolean;
+    keyId?: string;
     type: string;
     name: string | null;
+    userId?: string | null;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
 }
+
+type Visibility = "private" | "public";
+type CatalogSource = "upload" | "generation" | "remix";
+
+type UploadCatalogInput = {
+    visibility: Visibility;
+    source: CatalogSource;
+    remixOf: string | null;
+    prompt: string | null;
+    model: string | null;
+};
+
+type CatalogItem = {
+    hash: string;
+    url: string;
+    contentType: string;
+    size: number;
+    createdAt: string;
+    visibility: Visibility;
+    source: CatalogSource;
+    ownerId?: string;
+    ownerName?: string;
+    appId?: string;
+    appName?: string;
+    remixOf?: string;
+    prompt?: string;
+    model?: string;
+};
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
@@ -69,6 +105,28 @@ const ErrorSchema = z.object({
     error: z.string(),
 });
 
+const CatalogItemSchema = z.object({
+    hash: z.string(),
+    url: z.string(),
+    contentType: z.string(),
+    size: z.number().int(),
+    createdAt: z.string(),
+    visibility: z.enum(["private", "public"]),
+    source: z.enum(["upload", "generation", "remix"]),
+    ownerId: z.string().optional(),
+    ownerName: z.string().optional(),
+    appId: z.string().optional(),
+    appName: z.string().optional(),
+    remixOf: z.string().optional(),
+    prompt: z.string().optional(),
+    model: z.string().optional(),
+});
+
+const CatalogListResponseSchema = z.object({
+    items: z.array(CatalogItemSchema),
+    cursor: z.string().optional(),
+});
+
 const MetadataResponseSchema = z.object({
     hash: z.string().describe("16-char hex content hash"),
     contentType: z.string(),
@@ -80,6 +138,181 @@ const MetadataResponseSchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+function stringField(
+    fields: FormData | Record<string, unknown> | URLSearchParams,
+    key: string,
+): string | null {
+    let value: unknown;
+    if (fields instanceof FormData) {
+        value = fields.get(key);
+    } else if (fields instanceof URLSearchParams) {
+        value = fields.get(key);
+    } else {
+        value = fields[key];
+    }
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function boundedText(value: string | null, maxLength: number): string | null {
+    if (!value) return null;
+    return value.length > maxLength ? value.slice(0, maxLength) : value;
+}
+
+function parseVisibility(value: string | null): Visibility {
+    return value === "public" ? "public" : "private";
+}
+
+function parseSource(value: string | null): CatalogSource {
+    if (value === "generation" || value === "remix") return value;
+    return "upload";
+}
+
+function rawRemixOf(
+    fields: FormData | Record<string, unknown> | URLSearchParams,
+): string | null {
+    return stringField(fields, "remixOf") || stringField(fields, "parent");
+}
+
+function hasInvalidRemixOf(
+    fields: FormData | Record<string, unknown> | URLSearchParams,
+): boolean {
+    const remixOf = rawRemixOf(fields);
+    return Boolean(remixOf && !HASH_PATTERN.test(remixOf));
+}
+
+function parseUploadCatalogInput(
+    fields: FormData | Record<string, unknown> | URLSearchParams,
+): UploadCatalogInput {
+    const remixOf = rawRemixOf(fields);
+    return {
+        visibility: parseVisibility(stringField(fields, "visibility")),
+        source: parseSource(stringField(fields, "source")),
+        remixOf: remixOf && HASH_PATTERN.test(remixOf) ? remixOf.toLowerCase() : null,
+        prompt: boundedText(stringField(fields, "prompt"), 500),
+        model: boundedText(stringField(fields, "model"), 80),
+    };
+}
+
+function reverseTimestamp(now = Date.now()): string {
+    return String(Number.MAX_SAFE_INTEGER - now).padStart(16, "0");
+}
+
+function catalogIndexKey(prefix: string, hash: string, now = Date.now()): string {
+    return `${prefix}/${reverseTimestamp(now)}-${hash}.json`;
+}
+
+function itemKey(hash: string): string {
+    return `${CATALOG_PREFIX}/items/${hash}.json`;
+}
+
+async function putJson(bucket: R2Bucket, key: string, value: unknown) {
+    await bucket.put(key, JSON.stringify(value), {
+        httpMetadata: {
+            contentType: "application/json",
+            cacheControl: "no-store",
+        },
+    });
+}
+
+async function readCatalogItem(
+    bucket: R2Bucket,
+    key: string,
+): Promise<CatalogItem | null> {
+    const object = await bucket.get(key);
+    if (!object) return null;
+    try {
+        return (await object.json()) as CatalogItem;
+    } catch {
+        return null;
+    }
+}
+
+async function listCatalogItems(
+    bucket: R2Bucket,
+    prefix: string,
+    limit: number,
+    cursor?: string | null,
+): Promise<{ items: CatalogItem[]; cursor?: string }> {
+    const list = await bucket.list({
+        prefix,
+        limit,
+        cursor: cursor || undefined,
+    });
+    const items = (
+        await Promise.all(
+            list.objects.map((object) => readCatalogItem(bucket, object.key)),
+        )
+    ).filter((item): item is CatalogItem => Boolean(item));
+
+    return {
+        items,
+        ...(list.truncated && list.cursor ? { cursor: list.cursor } : {}),
+    };
+}
+
+function listLimit(raw: string | null): number {
+    const parsed = Number.parseInt(raw || "", 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIST_LIMIT;
+    return Math.min(parsed, MAX_LIST_LIMIT);
+}
+
+async function resolveAppIdFromQuery(
+    app: string | null,
+    appKey: string | null,
+): Promise<string | null> {
+    if (app?.trim()) return app.trim();
+    if (!appKey?.trim()) return null;
+    const auth = await verifyApiKey(appKey.trim());
+    return auth?.keyId || null;
+}
+
+async function writeCatalogEntries(
+    bucket: R2Bucket,
+    auth: AuthResult,
+    item: CatalogItem,
+) {
+    const keys = [itemKey(item.hash)];
+    const now = Date.now();
+
+    if (auth.userId) {
+        keys.push(
+            catalogIndexKey(
+                `${CATALOG_PREFIX}/by-owner/${auth.userId}`,
+                item.hash,
+                now,
+            ),
+        );
+        if (auth.byopClientKeyId) {
+            keys.push(
+                catalogIndexKey(
+                    `${CATALOG_PREFIX}/by-owner-app/${auth.userId}/${auth.byopClientKeyId}`,
+                    item.hash,
+                    now,
+                ),
+            );
+        }
+    }
+
+    if (item.visibility === "public" && auth.byopClientKeyId) {
+        keys.push(
+            catalogIndexKey(
+                `${CATALOG_PREFIX}/public-app/${auth.byopClientKeyId}`,
+                item.hash,
+                now,
+            ),
+        );
+    }
+
+    if (item.remixOf && item.visibility === "public") {
+        keys.push(
+            `${LINEAGE_PREFIX}/by-parent/${item.remixOf}/${item.hash}.json`,
+            `${LINEAGE_PREFIX}/by-child/${item.hash}/${item.remixOf}.json`,
+        );
+    }
+
+    await Promise.all(keys.map((key) => putJson(bucket, key, item)));
+}
 
 api.post(
     "/upload",
@@ -140,6 +373,9 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        const searchParams = new URL(c.req.url).searchParams;
+        let invalidRemixOf = hasInvalidRemixOf(searchParams);
+        let catalogInput = parseUploadCatalogInput(searchParams);
 
         const requestContentType = c.req.header("content-type") || "";
 
@@ -161,6 +397,8 @@ api.post(
                     return c.json(fileTooLargeError(maxSize), 413);
                 }
 
+                invalidRemixOf = hasInvalidRemixOf(formData);
+                catalogInput = parseUploadCatalogInput(formData);
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
@@ -169,6 +407,12 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
+                    visibility?: string;
+                    source?: string;
+                    remixOf?: string;
+                    parent?: string;
+                    prompt?: string;
+                    model?: string;
                 }>();
 
                 if (!body.data) {
@@ -195,6 +439,8 @@ api.post(
                     return c.json({ error: "Empty file" }, 400);
                 }
 
+                invalidRemixOf = hasInvalidRemixOf(body);
+                catalogInput = parseUploadCatalogInput(body);
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
             } else {
@@ -208,6 +454,10 @@ api.post(
                 }
 
                 contentType = requestContentType || "application/octet-stream";
+            }
+
+            if (invalidRemixOf) {
+                return c.json({ error: "Invalid remixOf hash" }, 400);
             }
 
             const hash = await generateHash(fileBuffer, fileName);
@@ -240,6 +490,28 @@ api.post(
                 }),
             );
 
+            const createdAt = new Date().toISOString();
+            await writeCatalogEntries(c.env.MEDIA_BUCKET, authResult, {
+                hash,
+                url: mediaUrl(hash),
+                contentType,
+                size: fileBuffer.byteLength,
+                createdAt,
+                visibility: catalogInput.visibility,
+                source: catalogInput.remixOf ? "remix" : catalogInput.source,
+                ...(authResult.userId && { ownerId: authResult.userId }),
+                ...(authResult.name && { ownerName: authResult.name }),
+                ...(authResult.byopClientKeyId && {
+                    appId: authResult.byopClientKeyId,
+                }),
+                ...(authResult.byopClientName && {
+                    appName: authResult.byopClientName,
+                }),
+                ...(catalogInput.remixOf && { remixOf: catalogInput.remixOf }),
+                ...(catalogInput.prompt && { prompt: catalogInput.prompt }),
+                ...(catalogInput.model && { model: catalogInput.model }),
+            });
+
             return c.json({
                 id: hash,
                 url: mediaUrl(hash),
@@ -251,6 +523,95 @@ api.post(
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List authenticated user's media",
+        responses: {
+            200: {
+                description: "Media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) return c.json({ error: "API key required" }, 401);
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult?.userId) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        const url = new URL(c.req.url);
+        const appId = await resolveAppIdFromQuery(
+            url.searchParams.get("app"),
+            url.searchParams.get("app_key"),
+        );
+        const prefix = appId
+            ? `${CATALOG_PREFIX}/by-owner-app/${authResult.userId}/${appId}/`
+            : `${CATALOG_PREFIX}/by-owner/${authResult.userId}/`;
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                prefix,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/gallery",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public app media",
+        responses: {
+            200: {
+                description: "Public media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Missing or invalid app",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const url = new URL(c.req.url);
+        const appId = await resolveAppIdFromQuery(
+            url.searchParams.get("app"),
+            url.searchParams.get("app_key"),
+        );
+        if (!appId) return c.json({ error: "app or app_key required" }, 400);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${CATALOG_PREFIX}/public-app/${appId}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
     },
 );
 
@@ -315,6 +676,45 @@ api.get(
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/:hash/children",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public remixes of a media object",
+        responses: {
+            200: {
+                description: "Child media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash");
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${LINEAGE_PREFIX}/by-parent/${hash}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
     },
 );
 
@@ -449,6 +849,9 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key)",
+            myMedia: "GET /me/media (requires API key)",
+            gallery: "GET /gallery?app_key=pk_...",
+            children: "GET /:hash/children",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },

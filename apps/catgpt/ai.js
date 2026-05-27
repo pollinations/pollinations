@@ -9,6 +9,8 @@ const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
+export const CATGPT_APP_KEY = APP_KEY;
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export const getStoredApiKey = () => {
@@ -182,4 +184,21 @@ export async function handleImageUpload(file, notify) {
             return null;
         }
     }
+}
+
+export async function uploadGeneratedMeme(blob, { prompt, model }) {
+    const form = new FormData();
+    form.append("file", blob, `catgpt-${Date.now()}.png`);
+    form.append("visibility", "public");
+    form.append("source", "generation");
+    form.append("prompt", prompt);
+    form.append("model", model);
+
+    const res = await fetch(MEDIA_UPLOAD, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getStoredApiKey()}` },
+        body: form,
+    });
+    if (!res.ok) throw new Error("Media save failed");
+    return (await res.json()).url;
 }

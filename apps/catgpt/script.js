@@ -1,6 +1,7 @@
 // CatGPT Meme Generator — UI, state, and DOM logic
 
 import {
+    CATGPT_APP_KEY,
     clearApiKey,
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
@@ -14,6 +15,7 @@ import {
     handleImageUpload,
     pickModel,
     storeApiKey,
+    uploadGeneratedMeme,
 } from "./ai.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ const dom = {
     shareBtn: $("shareBtn"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
+    publicGalleryGrid: $("publicGalleryGrid"),
     imageUpload: $("imageUpload"),
     imageUploadContainer: $("imageUploadContainer"),
     imageThumbnailContainer: $("imageThumbnailContainer"),
@@ -174,6 +177,28 @@ function saveGeneratedMeme(prompt, url) {
         ...saved.filter((m) => m.prompt !== prompt),
     ].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+async function fetchAccountMemes() {
+    const apiKey = getStoredApiKey();
+    if (!apiKey) return getSavedMemes();
+    const res = await fetch(
+        `https://media.pollinations.ai/me/media?${new URLSearchParams({
+            app_key: CATGPT_APP_KEY,
+            limit: "8",
+        })}`,
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    if (!res.ok) throw new Error("media list failed");
+    const data = await res.json();
+    const items = (data.items || [])
+        .filter((item) => item.url)
+        .map((item) => ({
+            prompt: item.prompt || "CatGPT meme",
+            url: item.url,
+            model: item.model || activeModel,
+        }));
+    return items.length ? items : getSavedMemes();
 }
 
 // ── Animations ───────────────────────────────────────────────────────────────
@@ -333,9 +358,9 @@ function createMemeCard(prompt, index, imageUrl) {
     return card;
 }
 
-function loadUserMemes() {
+async function loadUserMemes() {
     dom.yourMemesGrid.innerHTML = "";
-    const saved = getSavedMemes();
+    const saved = await fetchAccountMemes().catch(() => getSavedMemes());
 
     if (!saved.length) {
         const p = document.createElement("p");
@@ -350,6 +375,33 @@ function loadUserMemes() {
         const card = createMemeCard(meme.prompt, i, meme.url);
         if (card) dom.yourMemesGrid.appendChild(card);
     });
+}
+
+async function loadPublicGallery() {
+    if (!dom.publicGalleryGrid) return;
+    dom.publicGalleryGrid.innerHTML = "";
+    try {
+        const res = await fetch(
+            `https://media.pollinations.ai/gallery?${new URLSearchParams({
+                app_key: CATGPT_APP_KEY,
+                limit: "6",
+            })}`,
+        );
+        if (!res.ok) throw new Error("gallery failed");
+        const data = await res.json();
+        const items = (data.items || []).filter((item) => item.url);
+        if (!items.length) return;
+        items.forEach((item, i) => {
+            const card = createMemeCard(
+                item.prompt || "CatGPT meme",
+                i,
+                item.url,
+            );
+            if (card) dom.publicGalleryGrid.appendChild(card);
+        });
+    } catch {
+        dom.publicGalleryGrid.innerHTML = "";
+    }
 }
 
 function loadExamples() {
@@ -411,17 +463,22 @@ async function generateMeme() {
             throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        // Use the pollinations URL directly (shareable, cacheable)
-        await response.blob(); // ensure the image is fully loaded
+        const blob = await response.blob();
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+        const mediaUrl = await uploadGeneratedMeme(blob, {
+            prompt: question,
+            model: activeModel,
+        });
+        if (cancelled) return;
+        dom.generatedMeme.src = mediaUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
-        loadUserMemes();
+        saveGeneratedMeme(question, mediaUrl);
+        await loadUserMemes();
+        await loadPublicGallery();
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +675,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadPublicGallery();
     loadExamples();
     addFloatingEmojis();
     if (image) {

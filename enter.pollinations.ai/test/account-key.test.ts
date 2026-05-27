@@ -39,8 +39,12 @@ test(
 
         const data = await response.json();
         expect(data.valid).toBe(true);
+        expect(data.keyId).toBeTruthy();
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();
+        expect(data.userId).toBeTruthy();
+        expect(data).toHaveProperty("byopClientKeyId");
+        expect(data).toHaveProperty("byopClientName");
         expect(data).toHaveProperty("expiresAt");
         expect(data).toHaveProperty("expiresIn");
         expect(data).toHaveProperty("permissions");

@@ -19,6 +19,14 @@ interface UploadResponse {
     duplicate: boolean;
 }
 
+interface CatalogItem {
+    hash: string;
+    url: string;
+    prompt?: string;
+    appId?: string;
+    ownerId?: string;
+}
+
 const VALID_KEY = "pk_test_key_123";
 
 function mockAuth() {
@@ -31,8 +39,12 @@ function mockAuth() {
             200,
             JSON.stringify({
                 valid: true,
+                keyId: "key-test",
                 type: "publishable",
                 name: "test-user",
+                userId: "user-test",
+                byopClientKeyId: "app-test",
+                byopClientName: "CatGPT Test",
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -152,6 +164,128 @@ describe("media.pollinations.ai", () => {
         const upload1 = (await res1.json()) as UploadResponse;
         const upload2 = (await res2.json()) as UploadResponse;
         expect(upload1.id).not.toBe(upload2.id);
+    });
+
+    it("indexes uploaded media for owner and public app gallery", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "catgpt-public.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        form.append("source", "generation");
+        form.append("prompt", "Why is the box mine?");
+        form.append("model", "nanobanana");
+
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media?app=app-test",
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        expect(mineRes.status).toBe(200);
+        const mine = (await mineRes.json()) as { items: CatalogItem[] };
+        expect(mine.items.some((item) => item.hash === upload.id)).toBe(true);
+
+        const galleryRes = await SELF.fetch(
+            "https://media.pollinations.ai/gallery?app=app-test",
+        );
+        expect(galleryRes.status).toBe(200);
+        const gallery = (await galleryRes.json()) as { items: CatalogItem[] };
+        const item = gallery.items.find((entry) => entry.hash === upload.id);
+        expect(item?.prompt).toBe("Why is the box mine?");
+        expect(item?.appId).toBe("app-test");
+    });
+
+    it("indexes remix children by parent hash", async () => {
+        const parentForm = new FormData();
+        parentForm.append(
+            "file",
+            new File([TINY_PNG], "parent.png", { type: "image/png" }),
+        );
+        const parentRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: parentForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const parent = (await parentRes.json()) as UploadResponse;
+
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([TINY_PNG], "child.png", { type: "image/png" }),
+        );
+        childForm.append("visibility", "public");
+        childForm.append("source", "remix");
+        childForm.append("remixOf", parent.id);
+        childForm.append("prompt", "make it glow");
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(childRes.status).toBe(200);
+        const child = (await childRes.json()) as UploadResponse;
+
+        const privateChildForm = new FormData();
+        privateChildForm.append(
+            "file",
+            new File([TINY_PNG], "private-child.png", { type: "image/png" }),
+        );
+        privateChildForm.append("source", "remix");
+        privateChildForm.append("remixOf", parent.id);
+        const privateChildRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: privateChildForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(privateChildRes.status).toBe(200);
+        const privateChild = (await privateChildRes.json()) as UploadResponse;
+
+        const childrenRes = await SELF.fetch(
+            `https://media.pollinations.ai/${parent.id}/children`,
+        );
+        expect(childrenRes.status).toBe(200);
+        const children = (await childrenRes.json()) as { items: CatalogItem[] };
+        const item = children.items.find((entry) => entry.hash === child.id);
+        expect(item?.prompt).toBe("make it glow");
+        expect(
+            children.items.some((entry) => entry.hash === privateChild.id),
+        ).toBe(false);
+    });
+
+    it("rejects invalid remix parents", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "bad-remix.png", { type: "image/png" }),
+        );
+        form.append("remixOf", "not-a-hash");
+
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(400);
     });
 
     it("GET /:invalid-hash returns 400", async () => {

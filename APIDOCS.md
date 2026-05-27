@@ -500,7 +500,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -697,7 +697,7 @@ Generate vector embeddings with an OpenAI-compatible response format.
 
 **Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.
 
-**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.
+**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.
 
 📥 **Request body** · `application/json`
 
@@ -705,7 +705,7 @@ Generate vector embeddings with an OpenAI-compatible response format.
 |---|---|---|
 | `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
 | `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only. |
-| `dimensions` | `integer` | Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…3072` |
+| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…4096` |
 | `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini-specific task type hint for optimized embeddings |
 | `encoding_format` | `"float"` \| `"base64"` | Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI. · default: `"float"` |
 
@@ -1361,7 +1361,7 @@ Reusable request/response objects referenced from the endpoints above.
 |---|---|---|
 | `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
 | `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only. |
-| `dimensions` | `integer` | Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…3072` |
+| `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536. · range: `128…4096` |
 | `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini-specific task type hint for optimized embeddings |
 | `encoding_format` | `"float"` \| `"base64"` | Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI. · default: `"float"` |
 

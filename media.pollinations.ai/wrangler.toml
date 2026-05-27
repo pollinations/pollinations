@@ -4,6 +4,10 @@ compatibility_date = "2025-11-12"
 compatibility_flags = ["nodejs_compat"]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
+# ⚠️ BEFORE DEPLOYING: replace the `database_id` placeholders below with real
+# UUIDs from `wrangler d1 create media-dev` and `wrangler d1 create media-prod
+# --remote`. Migrations in `drizzle/` are applied automatically by Wrangler.
+
 # Local development server
 [env.development]
 name = "pollinations-media-dev"
@@ -14,6 +18,13 @@ MAX_FILE_SIZE = "52428800"  # 50MB in bytes
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "media-dev"
+# TODO: Replace with actual D1 UUID from `wrangler d1 create media-dev`
+database_id = "TODO-REPLACE-WITH-UUID-FROM-wrangler-d1-create"
+migrations_dir = "drizzle"
 
 # Production environment
 [env.production]
@@ -30,6 +41,13 @@ custom_domain = true
 [[env.production.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "media-prod"
+# TODO: Replace with actual D1 UUID from `wrangler d1 create media-prod --remote`
+database_id = "TODO-REPLACE-WITH-UUID-FROM-wrangler-d1-create"
+migrations_dir = "drizzle"
 
 [vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes

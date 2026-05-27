@@ -1,0 +1,36 @@
+{
+  "pr_number": 11299,
+  "title": "phase 1: 6 new models, open 5 to free, midijourney to azure, deepseek to fireworks, cheaper embeddings",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11299",
+  "merged_at": "2026-05-27T08:09:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "**Phase 1 of the May 2026 model refresh** — non-disruptive only. Phase 2 (paid-only flips, markup increases on top-tier models) ships separately on Tuesday, June 2.\n\n## ➕ Six new models\n\n| Model | Provider | Verified upstream | Price (1.5× markup) |\n|---|---|---|---|\n| `grok-4.3` | azure (eastus, capacity 5000) | HTTP 200 | $1.25 / $2.50 per 1M (Global; long-context surcharge absorbed) |\n| `gemini-search-fast` | google (3.1 Flash Lite + grounding) | reuses portkey config | $0.375 / $2.25 per 1M |\n| `gemini-search-large` | google (3.5 Flash + grounding) | reuses portkey config | $2.25 / $13.50 per 1M |\n| `wan-pro` | alibaba (wan2.7-i2v / wan2.7-t2v) | DashScope task accepted | $0.15/s (720p), $0.225/s (1080p) — audio bundled |\n| `cohere-embed-v4` | azure (eastus, capacity 100) | HTTP 200, 1536-dim vector | $0.18 / 1M |\n| `qwen3-embedding-8b` | fireworks serverless | HTTP 200, 4096-dim vector | $0.15 / 1M |\n\nThe two Gemini search variants ride the new Gemini 3 grounding tier: **$14 / 1K queries (vs $35 on 2.x)** + 5K free queries/month shared across the Gemini 3 family.\n\n## 🔓 Opening to free Pollen\n\nFree-tier users gain access (paid users unaffected, no price change for individuals):\n- `gpt-5.5` (premium flagship reasoning)\n- `deepseek-pro` (DeepSeek V4 Pro)\n- `grok-large` (Grok 4.20 Reasoning)\n- `nova-canvas` (image gen + editing + inpainting)\n- `universal-3-pro` (AssemblyAI high-accuracy STT)\n\n## 🔄 Upgrades & consolidations\n\n- **MIDIjourney** (`midijourney`): bedrock Claude Haiku 4.5 ($1.10/$5.50) → Azure GPT-5.4 Mini ($0.75/$4.50). Cheaper base; persona prompt unchanged.\n- **MIDIjourney Large** (`midijourney-large`): bedrock Claude Opus 4.6 ($5.50/$27.50, paid) → Azure GPT-5.5 ($5.00/$30.00, **free**). Also opens to free Pollen.\n- **DeepSeek V4 Flash** (`deepseek`): openrouter ($0.126/$0.252) → fireworks ($0.14/$0.28). Consolidates with V4 Pro already on Fireworks. Orphan openrouter config removed.\n\n## ⬇️ Cheaper embeddings\n\nMarkup 1.5× → 1×:\n- `openai-3-small`: $0",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Six new brains for the hive",
+    "blurb": "We just dropped six new models into the API, including Grok 4.3 and Wan Pro video generation. Even better, we've unlocked five heavyweight models like GPT-5.5 and DeepSeek V4 Pro for the free tier.",
+    "summary": "Added six new models including grok-4.3, wan-pro, and gemini-search variants, while opening five premium models like gpt-5.5, deepseek-pro, and grok-large to the free tier.",
+    "impact": "Free tier users can now access flagship reasoning models like GPT-5.5 and Grok Large, while all users get access to new Gemini 3 search and Wan Pro video generation.",
+    "keywords": [
+      "models",
+      "api",
+      "free-tier",
+      "grok",
+      "gemini",
+      "video-generation"
+    ],
+    "visual_concept": "Polly the bee acting as a generous host, handing out glowing orbs (representing the new models) to the Monitor Robot and Nomnom creature in a lush digital garden, symbolizing expanded access and new capabilities.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crown, handing glowing lime green (#ecf874) data orbs to a chunky monitor-head robot and a round tan nomnom creature in a lush digital garden. Soft pastel gradient background of lavender and peach. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11299.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crown, handing glowing lime green (#ecf874) data orbs to a chunky monitor-head robot and a round tan nomnom creature in a lush digital garden. Soft pastel gradient background of lavender and peach. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-27T08:10:19.334948+00:00"
+}

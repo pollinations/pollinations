@@ -231,6 +231,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
     accountArea,
     walletArea,
 }) => {
+    const [docsCopied, setDocsCopied] = useState(false);
+    const handleCopyDocs = useCallback(async () => {
+        const res = await fetch(`${genDocsUrl()}/llm.txt`);
+        const text = await res.text();
+        await navigator.clipboard.writeText(text);
+        setDocsCopied(true);
+        setTimeout(() => setDocsCopied(false), 1200);
+    }, []);
     return (
         <aside
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
@@ -259,28 +267,52 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         />
                     ))}
                     <div className="mt-2 border-t border-green-950/10 pt-3">
-                        <a
-                            href={genDocsUrl()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+                        <button
+                            type="button"
+                            onClick={handleCopyDocs}
+                            title="Copy full docs for LLMs"
+                            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
                         >
-                            <span>API Reference</span>
-                            <svg
-                                viewBox="0 0 24 24"
-                                className="h-4 w-4 shrink-0 text-gray-500"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    d="M7 17 17 7M9 7h8v8"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </a>
+                            <span className="flex items-center gap-2">
+                                <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
+                                Docs
+                            </span>
+                            {docsCopied ? (
+                                <CheckIcon className="h-4 w-4 shrink-0 text-green-700" />
+                            ) : (
+                                <ClipboardIcon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+                            )}
+                        </button>
+                        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
+                            <DocLinkRow
+                                label="API"
+                                href={`${genDocsUrl()}`}
+                                icon={
+                                    <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                            />
+                            <DocLinkRow
+                                label="BYOP"
+                                href={`${genDocsUrl()}#tag/byop`}
+                                icon={
+                                    <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                            />
+                            <DocLinkRow
+                                label="CLI"
+                                href={`${genDocsUrl()}#tag/cli`}
+                                icon={
+                                    <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                            />
+                            <DocLinkRow
+                                label="MCP Server"
+                                href={`${genDocsUrl()}#tag/mcp-server`}
+                                icon={
+                                    <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                }
+                            />
+                        </div>
                     </div>
                 </nav>
             </ScrollArea>
@@ -502,6 +534,157 @@ const GitHubIcon: FC = () => (
         <path
             fill="currentColor"
             d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.16c-3.21.7-3.89-1.38-3.89-1.38-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.76 2.71 1.25 3.37.96.11-.75.4-1.25.74-1.54-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.06 0 0 .97-.31 3.16 1.18a10.88 10.88 0 0 1 5.76 0c2.19-1.49 3.15-1.18 3.15-1.18.63 1.6.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.19c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"
+        />
+    </svg>
+);
+
+const BookIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
+        <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
+    </svg>
+);
+
+const WalletIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
+        <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
+        <circle cx="17" cy="14" r="1.25" fill="currentColor" />
+    </svg>
+);
+
+const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="4 8 8 12 4 16" />
+        <line x1="12" y1="20" x2="20" y2="20" />
+    </svg>
+);
+
+const McpIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="2" y="7" width="8" height="10" rx="1.5" />
+        <rect x="14" y="7" width="8" height="10" rx="1.5" />
+        <path d="M10 12h4" />
+    </svg>
+);
+
+const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+);
+
+const CheckIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="20 6 9 17 4 12" />
+    </svg>
+);
+
+const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="m8 3 4 1.5L16 3v18l-4-1.5L8 21z" />
+        <path d="M8 3v18M16 3v18" />
+    </svg>
+);
+
+type DocLinkRowProps = {
+    label: string;
+    href: string;
+    icon: ReactNode;
+};
+
+const DocLinkRow: FC<DocLinkRowProps> = ({ label, href, icon }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-white/60 hover:text-gray-950"
+    >
+        <span className="flex items-center gap-2">
+            {icon}
+            {label}
+        </span>
+        <ExternalLinkArrow className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+    </a>
+);
+
+const ExternalLinkArrow: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+    >
+        <path
+            d="M7 17 17 7M9 7h8v8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         />
     </svg>
 );

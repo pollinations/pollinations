@@ -1,0 +1,501 @@
+{
+  "added": {
+    "text": [
+      {
+        "name": "grok-4.3",
+        "aliases": [
+          "grok-4-3"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000125",
+          "promptCachedTokens": "0.0000002",
+          "promptImageTokens": "0.00000125",
+          "completionTextTokens": "0.0000025"
+        },
+        "description": "Grok 4.3 - Newer & cheaper multimodal reasoning",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 262144,
+        "is_specialized": false
+      },
+      {
+        "name": "gemini-search-fast",
+        "aliases": [
+          "gemini-3.1-flash-lite-search"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000000375",
+          "promptCachedTokens": "0.0000000375",
+          "promptAudioTokens": "0.00000075",
+          "completionTextTokens": "0.00000225"
+        },
+        "description": "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
+        "input_modalities": [
+          "text",
+          "image",
+          "audio"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": false,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true
+      },
+      {
+        "name": "gemini-search-large",
+        "aliases": [
+          "gemini-3.5-flash-search"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000225",
+          "promptCachedTokens": "0.000000225",
+          "promptAudioTokens": "0.00000225",
+          "completionTextTokens": "0.0000135"
+        },
+        "description": "Gemini 3.5 Flash Search - Premium grounded web research",
+        "input_modalities": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": false,
+        "context_length": 1048576,
+        "is_specialized": false,
+        "paid_only": true
+      }
+    ],
+    "image": [
+      {
+        "name": "wan-pro",
+        "aliases": [
+          "wan2.7",
+          "wan-2.7"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "completionVideoSeconds": "0.15"
+        },
+        "description": "Wan 2.7 - Alibaba text/image-to-video with bundled audio (720P / 1080P)",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "video",
+          "audio"
+        ],
+        "video_capabilities": [
+          "start_frame",
+          "audio_output"
+        ],
+        "paid_only": true
+      }
+    ],
+    "audio": [],
+    "embeddings": [
+      {
+        "name": "cohere-embed-v4",
+        "aliases": [
+          "embed-v-4-0",
+          "cohere-embed-v-4-0"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000018"
+        },
+        "description": "Cohere Embed v4 - Multilingual text embeddings. 1536 dimensions, 128K context.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "embedding"
+        ],
+        "context_length": 128000
+      },
+      {
+        "name": "qwen3-embedding-8b",
+        "aliases": [
+          "qwen3-embedding"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000015"
+        },
+        "description": "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions.",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "embedding"
+        ],
+        "context_length": 32768
+      }
+    ]
+  },
+  "removed": {
+    "text": [],
+    "image": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "changed": {
+    "text": [
+      {
+        "before": {
+          "name": "gpt-5.5",
+          "aliases": [
+            "gpt-5.5-reasoning"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.0000005",
+            "completionTextTokens": "0.00003"
+          },
+          "description": "GPT-5.5 - Frontier Reasoning",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1000000,
+          "is_specialized": false,
+          "paid_only": true
+        },
+        "after": {
+          "name": "gpt-5.5",
+          "aliases": [
+            "gpt-5.5-reasoning"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.0000005",
+            "completionTextTokens": "0.00003"
+          },
+          "description": "GPT-5.5 - Frontier Reasoning",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1000000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "gemma",
+          "aliases": [
+            "gemma-4",
+            "gemma-4-26b",
+            "gemma-4-26b-a4b",
+            "gemma-4-26b-a4b-it"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000007",
+            "completionTextTokens": "0.00000034"
+          },
+          "description": "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false,
+          "paid_only": true
+        },
+        "after": {
+          "name": "gemma",
+          "aliases": [
+            "gemma-4",
+            "gemma-4-26b",
+            "gemma-4-26b-a4b",
+            "gemma-4-26b-a4b-it"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000007",
+            "completionTextTokens": "0.00000034"
+          },
+          "description": "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "deepseek-pro",
+          "aliases": [
+            "deepseek-v4-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000174",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.00000348"
+          },
+          "description": "DeepSeek V4 Pro - Advanced Reasoning & Coding",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false,
+          "paid_only": true
+        },
+        "after": {
+          "name": "deepseek-pro",
+          "aliases": [
+            "deepseek-v4-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000174",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.00000348"
+          },
+          "description": "DeepSeek V4 Pro - Advanced Reasoning & Coding",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 1048576,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "grok-large",
+          "aliases": [
+            "grok-4-20",
+            "grok-4-20-reasoning",
+            "grok-reasoning",
+            "grok-4-1-fast-reasoning"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          },
+          "description": "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false,
+          "paid_only": true
+        },
+        "after": {
+          "name": "grok-large",
+          "aliases": [
+            "grok-4-20",
+            "grok-4-20-reasoning",
+            "grok-reasoning",
+            "grok-4-1-fast-reasoning"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          },
+          "description": "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "midijourney-large",
+          "aliases": [],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000055",
+            "promptCachedTokens": "0.00000055",
+            "completionTextTokens": "0.0000275"
+          },
+          "description": "MIDIjourney Large - Premium AI Music Composition",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "is_specialized": true,
+          "paid_only": true
+        },
+        "after": {
+          "name": "midijourney-large",
+          "aliases": [],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.0000005",
+            "completionTextTokens": "0.00003"
+          },
+          "description": "MIDIjourney Large - Premium AI Music Composition",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "is_specialized": true
+        }
+      }
+    ],
+    "image": [
+      {
+        "before": {
+          "name": "nova-canvas",
+          "aliases": [
+            "amazon-nova-canvas"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          },
+          "description": "Nova Canvas - Image generation, editing & inpainting",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "nova-canvas",
+          "aliases": [
+            "amazon-nova-canvas"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          },
+          "description": "Nova Canvas - Image generation, editing & inpainting",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ]
+        }
+      }
+    ],
+    "audio": [
+      {
+        "before": {
+          "name": "universal-3-pro",
+          "aliases": [
+            "assemblyai-universal-3-pro",
+            "assemblyai-u3-pro",
+            "assemblyai-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000058333333"
+          },
+          "description": "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+          "input_modalities": [
+            "audio"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "paid_only": true
+        },
+        "after": {
+          "name": "universal-3-pro",
+          "aliases": [
+            "assemblyai-universal-3-pro",
+            "assemblyai-u3-pro",
+            "assemblyai-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000058333333"
+          },
+          "description": "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+          "input_modalities": [
+            "audio"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        }
+      }
+    ],
+    "embeddings": []
+  }
+}

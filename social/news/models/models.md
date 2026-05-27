@@ -1,5 +1,28 @@
 # Pollinations Model Changelog
 
+## 2026-05-27
+
+### Text
+- `grok-4.3` (Grok) — added with multimodal and reasoning support.
+- `gemini-search-fast` (Gemini) — added as paid-only.
+- `gemini-search-large` (Gemini) — added as paid-only.
+- `gpt-5.5` — no longer paid-only.
+- `gemma` — no longer paid-only.
+- `deepseek-pro` — no longer paid-only.
+- `grok-large` (Grok) — no longer paid-only.
+- `midijourney-large` — no longer paid-only.
+
+### Image
+- `wan-pro` (Alibaba) — added as paid-only with video and audio output.
+- `nova-canvas` (Amazon) — no longer paid-only.
+
+### Audio
+- `universal-3-pro` (AssemblyAI) — no longer paid-only.
+
+### Embeddings
+- `cohere-embed-v4` (Cohere) — added with 128K context.
+- `qwen3-embedding-8b` (Qwen3) — added with 32K context.
+
 ## 2026-05-20
 
 ### Text

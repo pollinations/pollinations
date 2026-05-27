@@ -19,20 +19,62 @@ interface UploadResponse {
     duplicate: boolean;
 }
 
+interface CatalogItem {
+    hash: string;
+    url: string;
+    prompt?: string;
+    appId?: string;
+    ownerId?: string;
+    tags?: string[];
+    userTags?: string[];
+}
+
 const VALID_KEY = "pk_test_key_123";
+const APP_KEY = "pk_app_test";
 
 function mockAuth() {
     fetchMock.activate();
     fetchMock.disableNetConnect();
     fetchMock
         .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
+        .intercept({
+            path: "/account/key",
+            headers: { authorization: `Bearer ${VALID_KEY}` },
+        })
         .reply(
             200,
             JSON.stringify({
                 valid: true,
+                keyId: "user-key-test",
                 type: "publishable",
                 name: "test-user",
+                userId: "user-test",
+                byopClientKeyId: "app-test",
+                byopClientName: "CatGPT Test",
+                appId: "app-test",
+                appName: "CatGPT Test",
+            }),
+            { headers: { "content-type": "application/json" } },
+        )
+        .persist();
+    fetchMock
+        .get("https://gen.pollinations.ai")
+        .intercept({
+            path: "/account/key",
+            headers: { authorization: `Bearer ${APP_KEY}` },
+        })
+        .reply(
+            200,
+            JSON.stringify({
+                valid: true,
+                keyId: "app-test",
+                type: "publishable",
+                name: "CatGPT Test",
+                userId: "app-owner-test",
+                byopClientKeyId: null,
+                byopClientName: null,
+                appId: null,
+                appName: null,
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -154,6 +196,149 @@ describe("media.pollinations.ai", () => {
         expect(upload1.id).not.toBe(upload2.id);
     });
 
+    it("indexes uploaded media for owner and public app gallery", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "catgpt-public.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        form.append("source", "generation");
+        form.append("prompt", "Why is the box mine?");
+        form.append("model", "nanobanana");
+        form.append("tag", "catgpt");
+        form.append("tags", "meme,invalid tag");
+
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media?app=app-test",
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        expect(mineRes.status).toBe(200);
+        const mine = (await mineRes.json()) as { items: CatalogItem[] };
+        expect(mine.items.some((item) => item.hash === upload.id)).toBe(true);
+
+        const galleryRes = await SELF.fetch(
+            `https://media.pollinations.ai/gallery?app_key=${APP_KEY}`,
+        );
+        expect(galleryRes.status).toBe(200);
+        const gallery = (await galleryRes.json()) as { items: CatalogItem[] };
+        const item = gallery.items.find((entry) => entry.hash === upload.id);
+        expect(item?.prompt).toBe("Why is the box mine?");
+        expect(item?.appId).toBe("app-test");
+        expect(item?.tags).toEqual(["catgpt", "meme"]);
+
+        const appRes = await SELF.fetch(
+            "https://media.pollinations.ai/apps/app-test/media",
+        );
+        expect(appRes.status).toBe(200);
+        const appGallery = (await appRes.json()) as { items: CatalogItem[] };
+        expect(appGallery.items.some((entry) => entry.hash === upload.id)).toBe(
+            true,
+        );
+
+        const tagRes = await SELF.fetch(
+            `https://media.pollinations.ai/tags/catgpt?app_key=${APP_KEY}`,
+        );
+        expect(tagRes.status).toBe(200);
+        const tagged = (await tagRes.json()) as { items: CatalogItem[] };
+        expect(tagged.items.some((entry) => entry.hash === upload.id)).toBe(
+            true,
+        );
+    });
+
+    it("indexes remix children by parent hash", async () => {
+        const parentForm = new FormData();
+        parentForm.append(
+            "file",
+            new File([TINY_PNG], "parent.png", { type: "image/png" }),
+        );
+        const parentRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: parentForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const parent = (await parentRes.json()) as UploadResponse;
+
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([TINY_PNG], "child.png", { type: "image/png" }),
+        );
+        childForm.append("visibility", "public");
+        childForm.append("source", "remix");
+        childForm.append("remixOf", parent.id);
+        childForm.append("prompt", "make it glow");
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(childRes.status).toBe(200);
+        const child = (await childRes.json()) as UploadResponse;
+
+        const privateChildForm = new FormData();
+        privateChildForm.append(
+            "file",
+            new File([TINY_PNG], "private-child.png", { type: "image/png" }),
+        );
+        privateChildForm.append("source", "remix");
+        privateChildForm.append("remixOf", parent.id);
+        const privateChildRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: privateChildForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(privateChildRes.status).toBe(200);
+        const privateChild = (await privateChildRes.json()) as UploadResponse;
+
+        const childrenRes = await SELF.fetch(
+            `https://media.pollinations.ai/${parent.id}/children`,
+        );
+        expect(childrenRes.status).toBe(200);
+        const children = (await childrenRes.json()) as { items: CatalogItem[] };
+        const item = children.items.find((entry) => entry.hash === child.id);
+        expect(item?.prompt).toBe("make it glow");
+        expect(
+            children.items.some((entry) => entry.hash === privateChild.id),
+        ).toBe(false);
+    });
+
+    it("rejects invalid remix parents", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "bad-remix.png", { type: "image/png" }),
+        );
+        form.append("remixOf", "not-a-hash");
+
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(400);
+    });
+
     it("GET /:invalid-hash returns 400", async () => {
         const res = await SELF.fetch(
             "https://media.pollinations.ai/not-a-valid-hash",
@@ -166,5 +351,142 @@ describe("media.pollinations.ai", () => {
             "https://media.pollinations.ai/0000000000000000",
         );
         expect(res.status).toBe(404);
+    });
+
+    // Adversarial: request body declares a fake owner/app, server must ignore
+    // them. The catalog must be stamped only with values from the verified key.
+    it("request-supplied owner/app fields cannot override verified identity", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "spoofed.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        // These should be ignored by the server.
+        form.append("ownerId", "attacker-user");
+        form.append("appId", "victim-app");
+        form.append("appName", "Stolen App");
+
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(200);
+        const upload = (await res.json()) as UploadResponse;
+
+        const gallery = (await (
+            await SELF.fetch(
+                "https://media.pollinations.ai/apps/victim-app/media",
+            )
+        ).json()) as { items: CatalogItem[] };
+        expect(gallery.items.some((it) => it.hash === upload.id)).toBe(false);
+
+        const realApp = (await (
+            await SELF.fetch(
+                "https://media.pollinations.ai/apps/app-test/media",
+            )
+        ).json()) as { items: CatalogItem[] };
+        const found = realApp.items.find((it) => it.hash === upload.id);
+        expect(found?.ownerId).toBe("user-test");
+        expect(found?.appId).toBe("app-test");
+    });
+
+    // Multi-parent: recipe and mash-up apps combine multiple inputs.
+    it("indexes a child under each declared parent", async () => {
+        const parents: string[] = [];
+        for (const name of ["ingredient-a.png", "ingredient-b.png"]) {
+            const form = new FormData();
+            form.append(
+                "file",
+                new File([TINY_PNG], name, { type: "image/png" }),
+            );
+            form.append("visibility", "public");
+            const r = await SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            });
+            parents.push(((await r.json()) as UploadResponse).id);
+        }
+
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([TINY_PNG], "combo.png", { type: "image/png" }),
+        );
+        childForm.append("visibility", "public");
+        childForm.append("relationship", "combine");
+        // Multiple `parent` entries — order shouldn't matter for indexing.
+        for (const p of parents) childForm.append("parent", p);
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(childRes.status).toBe(200);
+        const child = (await childRes.json()) as UploadResponse;
+
+        for (const parent of parents) {
+            const listRes = await SELF.fetch(
+                `https://media.pollinations.ai/${parent}/children`,
+            );
+            const list = (await listRes.json()) as { items: CatalogItem[] };
+            const entry = list.items.find((it) => it.hash === child.id) as
+                | (CatalogItem & {
+                      parents?: string[];
+                      relationship?: string;
+                  })
+                | undefined;
+            expect(entry).toBeTruthy();
+            expect(entry?.parents).toEqual(parents);
+            expect(entry?.relationship).toBe("combine");
+        }
+    });
+
+    // Recipe-style apps can use tag=recipe:water+fire to dedupe combinations
+    // across users without scanning the global tag namespace.
+    it("indexes per-app tags for recipe-style lookups", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "steam.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        form.append("tag", "recipe:water+fire");
+        form.append("tag", "element:steam");
+        const r = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const upload = (await r.json()) as UploadResponse;
+
+        const tagRes = await SELF.fetch(
+            "https://media.pollinations.ai/tags/recipe:water%2Bfire?app=app-test",
+        );
+        expect(tagRes.status).toBe(200);
+        const tagged = (await tagRes.json()) as { items: CatalogItem[] };
+        expect(tagged.items.some((it) => it.hash === upload.id)).toBe(true);
+    });
+
+    // Multi-value invalid parent must reject the whole upload.
+    it("rejects upload if any parent is malformed", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "bad.png", { type: "image/png" }),
+        );
+        form.append("parent", "0000000000000000");
+        form.append("parent", "not-a-hash");
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(400);
     });
 });

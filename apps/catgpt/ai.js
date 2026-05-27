@@ -9,6 +9,8 @@ const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
+export const CATGPT_APP_KEY = APP_KEY;
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export const getStoredApiKey = () => {
@@ -181,5 +183,43 @@ export async function handleImageUpload(file, notify) {
             );
             return null;
         }
+    }
+}
+
+export function extractMediaHash(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.hostname === "media.pollinations.ai"
+            ? parsed.pathname.slice(1).split("/")[0]
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+export async function uploadGeneratedMeme(blob, { prompt, model, parentHash }) {
+    const form = new FormData();
+    form.append("file", blob, `catgpt-${Date.now()}.png`);
+    form.append("visibility", "public");
+    form.append("source", "generation");
+    form.append("prompt", prompt);
+    form.append("model", model);
+    form.append("tag", "catgpt");
+    if (parentHash) {
+        form.append("parent", parentHash);
+        form.append("relationship", "reply");
+    }
+
+    try {
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getStoredApiKey()}` },
+            body: form,
+        });
+        if (!res.ok) return null;
+        return (await res.json()).url || null;
+    } catch (err) {
+        console.warn("Media catalog save failed:", err);
+        return null;
     }
 }

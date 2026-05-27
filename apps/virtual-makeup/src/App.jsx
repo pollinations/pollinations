@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
@@ -117,9 +117,12 @@ function App() {
         }
     };
 
-    const uploadToPollinations = async (file) => {
+    const uploadToPollinations = async (file, fields = {}) => {
         const formData = new FormData();
         formData.append("file", file);
+        for (const [key, value] of Object.entries(fields)) {
+            if (value) formData.append(key, String(value));
+        }
 
         const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
@@ -153,7 +156,11 @@ function App() {
 
             const encodedPrompt = encodeURIComponent(prompt);
 
-            const pollinationsUrl = await uploadToPollinations(uploadedFile);
+            const pollinationsUrl = await uploadToPollinations(uploadedFile, {
+                visibility: "private",
+                source: "upload",
+                prompt: "Virtual Makeup source image",
+            });
 
             const encodedImageURL = encodeURIComponent(pollinationsUrl);
 
@@ -172,8 +179,13 @@ function App() {
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            const mediaUrl = await uploadToPollinations(blob, {
+                visibility: "private",
+                source: "generation",
+                prompt,
+                model: "nanobanana",
+            });
+            setMakeupImage(mediaUrl);
             setImageLoaded(true);
             setIsLoading(false);
         } catch (error) {

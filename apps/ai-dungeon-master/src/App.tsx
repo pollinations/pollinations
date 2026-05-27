@@ -178,21 +178,42 @@ export default function App() {
                 const sceneUpload = uploadToMedia(
                     gameState.currentScene.image,
                     apiKey,
+                    {
+                        visibility: "private",
+                        source: "generation",
+                        prompt: gameState.currentScene.description,
+                        model: "flux",
+                    },
                 );
                 await Promise.all([
-                    uploadToMedia(character.avatar, apiKey).then((url) => {
+                    uploadToMedia(character.avatar, apiKey, {
+                        visibility: "private",
+                        source: "generation",
+                        prompt: `${character.name} ${character.class} avatar`,
+                        model: "flux",
+                    }).then((url) => {
                         character.avatar = url;
                     }),
                     sceneUpload.then((url) => {
                         uploadedSceneImage = url;
                     }),
                     ...storyHistory.map((entry, idx) =>
-                        uploadToMedia(entry.image, apiKey).then((url) => {
+                        uploadToMedia(entry.image, apiKey, {
+                            visibility: "private",
+                            source: "generation",
+                            prompt: entry.description,
+                            model: "flux",
+                        }).then((url) => {
                             storyHistory[idx].image = url;
                         }),
                     ),
                     ...inventory.map((item, idx) =>
-                        uploadToMedia(item.image, apiKey).then((url) => {
+                        uploadToMedia(item.image, apiKey, {
+                            visibility: "private",
+                            source: "generation",
+                            prompt: `${item.name}: ${item.description}`,
+                            model: "flux",
+                        }).then((url) => {
                             inventory[idx].image = url;
                         }),
                     ),

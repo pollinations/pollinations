@@ -41,6 +41,11 @@ test(
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();
+        expect(data.userId).toBeTruthy();
+        expect(data.apiKeyId).toBeTruthy();
+        expect(data.byopClientKeyId).toBeNull();
+        expect(data.byopClientName).toBeNull();
+        expect(data.byopClientUserId).toBeNull();
         expect(data).toHaveProperty("expiresAt");
         expect(data).toHaveProperty("expiresIn");
         expect(data).toHaveProperty("permissions");
@@ -66,6 +71,69 @@ test(
         expect(data.valid).toBe(true);
         expect(data.type).toBe("publishable");
         expect(data.rateLimitEnabled).toBe(true);
+    },
+);
+
+test(
+    "GET /api/account/key - exposes verified BYOP app attribution",
+    { timeout: 30000 },
+    async ({ sessionToken, mocks }) => {
+        await mocks.enable("tinybird");
+
+        const appResponse = await SELF.fetch(
+            "http://localhost:3000/api/api-keys",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name: "catalog-test-app",
+                    type: "publishable",
+                    metadata: {
+                        redirectUris: ["https://catalog.example/callback"],
+                    },
+                }),
+            },
+        );
+        expect(appResponse.status).toBe(200);
+        const appKey = await appResponse.json();
+
+        const keyResponse = await SELF.fetch(
+            "http://localhost:3000/api/api-keys",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name: "catalog-test-user-key",
+                    type: "secret",
+                    metadata: {
+                        requestedClientId: appKey.key,
+                        redirectUri: "https://catalog.example/callback",
+                    },
+                }),
+            },
+        );
+        expect(keyResponse.status).toBe(200);
+        const createdKey = await keyResponse.json();
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${createdKey.key}`,
+            },
+        });
+        expect(response.status).toBe(200);
+
+        const data = await response.json();
+        expect(data.apiKeyId).toBe(createdKey.id);
+        expect(data.userId).toBeTruthy();
+        expect(data.byopClientKeyId).toBe(appKey.id);
+        expect(data.byopClientName).toBe("catalog-test-app");
+        expect(data.byopClientUserId).toBe(data.userId);
     },
 );
 

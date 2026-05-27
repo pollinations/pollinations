@@ -2,6 +2,18 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
+import {
+    type CatalogAuth,
+    type CatalogOptions,
+    catalogUrl,
+    listAppMedia,
+    listChildren,
+    listUserMedia,
+    parseLimit,
+    saveCatalogEntry,
+    VISIBILITIES,
+    type Visibility,
+} from "./catalog";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -19,6 +31,7 @@ const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
+    MEDIA_DB: D1Database;
     MAX_FILE_SIZE: string;
 }
 
@@ -26,6 +39,11 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    userId: string | null;
+    apiKeyId: string | null;
+    byopClientKeyId: string | null;
+    byopClientName: string | null;
+    byopClientUserId: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -54,7 +72,7 @@ function fileTooLargeError(maxSize: number): { error: string } {
 }
 
 function mediaUrl(hash: string): string {
-    return `https://${DOMAIN}/${hash}`;
+    return catalogUrl(hash);
 }
 
 const UploadResponseSchema = z.object({
@@ -63,6 +81,10 @@ const UploadResponseSchema = z.object({
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    cataloged: z
+        .boolean()
+        .describe("true when the media catalog row was saved"),
+    entryId: z.string().describe("Catalog entry id for this owner/hash"),
 });
 
 const ErrorSchema = z.object({
@@ -79,7 +101,78 @@ const MetadataResponseSchema = z.object({
         .describe("ISO-8601 upload timestamp, when recorded"),
 });
 
+const CatalogItemSchema = z.object({
+    id: z.string(),
+    hash: z.string(),
+    url: z.string(),
+    contentType: z.string(),
+    size: z.number().int(),
+    visibility: z.enum(VISIBILITIES),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    verifiedApp: z
+        .object({
+            keyId: z.string(),
+            name: z.string().nullable(),
+            ownerUserId: z.string().nullable(),
+        })
+        .nullable(),
+    tags: z.array(z.string()),
+});
+
+const CatalogListSchema = z.object({
+    items: z.array(CatalogItemSchema),
+    nextCursor: z.string().nullable(),
+});
+
+const ChildrenListSchema = z.object({
+    items: z.array(
+        CatalogItemSchema.extend({
+            parentHash: z.string(),
+            relationship: z.string(),
+            relationCreatedAt: z.string(),
+        }),
+    ),
+    nextCursor: z.string().nullable(),
+});
+
 const api = new Hono<{ Bindings: Env }>();
+
+async function requireAuth(c: {
+    req: { raw: Request };
+    json: (body: unknown, status?: number) => Response;
+}): Promise<AuthResult | Response> {
+    const apiKey = extractApiKey(c.req.raw);
+    if (!apiKey) {
+        return c.json(
+            {
+                error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+            },
+            401,
+        );
+    }
+    const authResult = await verifyApiKey(apiKey);
+    if (!authResult) {
+        return c.json({ error: "Invalid or expired API key" }, 401);
+    }
+    if (!authResult.userId || !authResult.apiKeyId) {
+        return c.json(
+            { error: "Key verification did not return catalog identity" },
+            500,
+        );
+    }
+    return authResult;
+}
+
+function asCatalogAuth(auth: AuthResult): CatalogAuth {
+    return {
+        userId: auth.userId,
+        apiKeyId: auth.apiKeyId,
+        byopClientKeyId: auth.byopClientKeyId,
+        byopClientName: auth.byopClientName,
+        byopClientUserId: auth.byopClientUserId,
+    };
+}
 
 api.post(
     "/upload",
@@ -112,18 +205,9 @@ api.post(
         },
     }),
     async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
+        const authResult = await requireAuth(c);
+        if (authResult instanceof Response) {
+            return authResult;
         }
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -140,6 +224,7 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let catalogOptions: CatalogOptions = parseCatalogOptions({});
 
         const requestContentType = c.req.header("content-type") || "";
 
@@ -164,11 +249,25 @@ api.post(
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
+                catalogOptions = parseCatalogOptions({
+                    parents: collectFormValues(formData, ["parent", "parents"]),
+                    tags: collectFormValues(formData, ["tag", "tags"]),
+                    visibility: formString(formData, "visibility"),
+                    relationship: formString(formData, "relationship"),
+                    expiresAt: formString(formData, "expiresAt"),
+                });
             } else if (requestContentType.includes("application/json")) {
                 const body = await c.req.json<{
                     data: string;
                     contentType?: string;
                     name?: string;
+                    parents?: unknown;
+                    parent?: unknown;
+                    tags?: unknown;
+                    tag?: unknown;
+                    visibility?: unknown;
+                    relationship?: unknown;
+                    expiresAt?: unknown;
                 }>();
 
                 if (!body.data) {
@@ -197,6 +296,7 @@ api.post(
 
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
+                catalogOptions = parseCatalogOptions(body);
             } else {
                 fileBuffer = await c.req.arrayBuffer();
 
@@ -208,9 +308,20 @@ api.post(
                 }
 
                 contentType = requestContentType || "application/octet-stream";
+                const url = new URL(c.req.url);
+                catalogOptions = parseCatalogOptions({
+                    parents: url.searchParams.getAll("parents"),
+                    parent: url.searchParams.getAll("parent"),
+                    tags: url.searchParams.getAll("tags"),
+                    tag: url.searchParams.getAll("tag"),
+                    visibility: url.searchParams.get("visibility"),
+                    relationship: url.searchParams.get("relationship"),
+                    expiresAt: url.searchParams.get("expiresAt"),
+                });
             }
 
             const hash = await generateHash(fileBuffer, fileName);
+            const fullSha256 = await generateContentSha256(fileBuffer);
 
             const existing = await c.env.MEDIA_BUCKET.head(hash);
 
@@ -225,7 +336,19 @@ api.post(
                     originalName: fileName || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
+                    userId: authResult.userId || "",
+                    apiKeyId: authResult.apiKeyId || "",
+                    verifiedAppKeyId: authResult.byopClientKeyId || "",
                 },
+            });
+
+            const catalog = await saveCatalogEntry(c.env.MEDIA_DB, {
+                hash,
+                fullSha256,
+                contentType,
+                size: fileBuffer.byteLength,
+                auth: asCatalogAuth(authResult),
+                options: catalogOptions,
             });
 
             console.log(
@@ -236,6 +359,8 @@ api.post(
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
+                    userId: authResult.userId,
+                    verifiedAppKeyId: authResult.byopClientKeyId,
                     duplicate: !!existing,
                 }),
             );
@@ -246,11 +371,125 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                cataloged: catalog.cataloged,
+                entryId: catalog.entryId,
             });
         } catch (error) {
+            if (error instanceof Error && isClientCatalogError(error)) {
+                return c.json({ error: error.message }, 400);
+            }
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List caller media",
+        description: "Return the authenticated caller's cataloged media.",
+        responses: {
+            200: {
+                description: "Cataloged media",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const authResult = await requireAuth(c);
+        if (authResult instanceof Response) {
+            return authResult;
+        }
+        const url = new URL(c.req.url);
+        const result = await listUserMedia(
+            c.env.MEDIA_DB,
+            authResult.userId as string,
+            parseLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+        );
+        return c.json(result);
+    },
+);
+
+api.get(
+    "/apps/:appKeyId/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List verified app media",
+        description:
+            "Return public media created with a server-verified BYOP app key id.",
+        responses: {
+            200: {
+                description: "Public app media",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListSchema),
+                    },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const url = new URL(c.req.url);
+        const result = await listAppMedia(
+            c.env.MEDIA_DB,
+            c.req.param("appKeyId"),
+            parseLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+        );
+        return c.json(result);
+    },
+);
+
+api.get(
+    "/:hash/children",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List child media",
+        description:
+            "Return public or unlisted media entries recorded as children of this media hash.",
+        responses: {
+            200: {
+                description: "Child media",
+                content: {
+                    "application/json": {
+                        schema: resolver(ChildrenListSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash").toLowerCase();
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+        const url = new URL(c.req.url);
+        const result = await listChildren(
+            c.env.MEDIA_DB,
+            hash,
+            parseLimit(url.searchParams.get("limit")),
+            url.searchParams.get("cursor"),
+        );
+        return c.json(result);
     },
 );
 
@@ -449,6 +688,9 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key)",
+            myMedia: "GET /me/media (requires API key)",
+            appMedia: "GET /apps/:appKeyId/media",
+            children: "GET /:hash/children",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },
@@ -515,6 +757,114 @@ async function generateHash(
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")
         .substring(0, 16);
+}
+
+async function generateContentSha256(buffer: ArrayBuffer): Promise<string> {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function parseCatalogOptions(input: Record<string, unknown>): CatalogOptions {
+    const visibility = parseVisibility(input.visibility);
+    return {
+        visibility,
+        parents: parseHashList([input.parents, input.parent]),
+        relationship: parseRelationship(input.relationship),
+        tags: parseTagList([input.tags, input.tag]),
+        expiresAt: parseExpiresAt(input.expiresAt),
+    };
+}
+
+function parseVisibility(value: unknown): Visibility {
+    if (typeof value !== "string" || !value) return "unlisted";
+    if ((VISIBILITIES as readonly string[]).includes(value)) {
+        return value as Visibility;
+    }
+    throw new Error("Invalid visibility");
+}
+
+function parseRelationship(value: unknown): string {
+    if (typeof value !== "string" || !value.trim()) return "derived_from";
+    const relationship = value.trim().toLowerCase();
+    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(relationship)) {
+        throw new Error("Invalid relationship");
+    }
+    return relationship;
+}
+
+function parseExpiresAt(value: unknown): string | null {
+    if (typeof value !== "string" || !value.trim()) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        throw new Error("Invalid expiresAt");
+    }
+    return date.toISOString();
+}
+
+function parseHashList(value: unknown): string[] {
+    return [...new Set(flattenStringList(value).map(parseHashReference))];
+}
+
+function parseTagList(value: unknown): string[] {
+    const tags = flattenStringList(value).map((tag) =>
+        tag.trim().toLowerCase(),
+    );
+    const normalized = tags.filter(Boolean);
+    if (normalized.length > 20) {
+        throw new Error("Too many tags");
+    }
+    for (const tag of normalized) {
+        if (!/^[a-z0-9][a-z0-9_-]{0,39}$/.test(tag)) {
+            throw new Error("Invalid tag");
+        }
+    }
+    return [...new Set(normalized)];
+}
+
+function parseHashReference(value: string): string {
+    const trimmed = value.trim();
+    const candidate = trimmed.includes("://")
+        ? new URL(trimmed).pathname.split("/").filter(Boolean).pop() || ""
+        : trimmed;
+    const hash = candidate.toLowerCase();
+    if (!HASH_PATTERN.test(hash)) {
+        throw new Error("Invalid parent hash");
+    }
+    return hash;
+}
+
+function flattenStringList(value: unknown): string[] {
+    if (value == null) return [];
+    const values = Array.isArray(value) ? value : [value];
+    return values.flatMap((item) => {
+        if (Array.isArray(item)) return flattenStringList(item);
+        if (typeof item !== "string") return [];
+        return item
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+    });
+}
+
+function formString(formData: FormData, key: string): string | null {
+    const value = formData.get(key);
+    return typeof value === "string" ? value : null;
+}
+
+function collectFormValues(formData: FormData, keys: string[]): string[] {
+    return keys.flatMap((key) =>
+        formData.getAll(key).filter((value): value is string => {
+            return typeof value === "string";
+        }),
+    );
+}
+
+function isClientCatalogError(error: Error): boolean {
+    return (
+        error.message.startsWith("Invalid ") ||
+        error.message.startsWith("Too many ")
+    );
 }
 
 const MIME_TYPES: Record<string, string> = {

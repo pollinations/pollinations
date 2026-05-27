@@ -1,4 +1,4 @@
-import { fetchMock, SELF } from "cloudflare:test";
+import { env, fetchMock, SELF } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // 1x1 red PNG (67 bytes)
@@ -17,9 +17,68 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    cataloged: boolean;
+    entryId: string;
 }
 
 const VALID_KEY = "pk_test_key_123";
+const USER_ID = "user_test_123";
+const API_KEY_ID = "key_test_123";
+const APP_KEY_ID = "app_key_test_123";
+
+const CATALOG_STATEMENTS = [
+    `CREATE TABLE IF NOT EXISTS media_objects (
+        hash TEXT PRIMARY KEY,
+        full_sha256 TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        expires_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS media_entries (
+        id TEXT PRIMARY KEY,
+        hash TEXT NOT NULL REFERENCES media_objects(hash) ON DELETE CASCADE,
+        owner_user_id TEXT NOT NULL,
+        api_key_id TEXT NOT NULL,
+        verified_app_key_id TEXT,
+        verified_app_name TEXT,
+        verified_app_owner_user_id TEXT,
+        visibility TEXT NOT NULL CHECK (visibility IN ('private', 'unlisted', 'public')),
+        source TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_media_entries_owner_hash
+        ON media_entries(owner_user_id, hash)`,
+    `CREATE INDEX IF NOT EXISTS idx_media_entries_owner_created
+        ON media_entries(owner_user_id, created_at DESC, id DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_media_entries_app_created
+        ON media_entries(verified_app_key_id, visibility, created_at DESC, id DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_media_entries_hash_visibility
+        ON media_entries(hash, visibility)`,
+    `CREATE TABLE IF NOT EXISTS media_edges (
+        parent_hash TEXT NOT NULL,
+        child_hash TEXT NOT NULL REFERENCES media_objects(hash) ON DELETE CASCADE,
+        relationship TEXT NOT NULL,
+        actor_user_id TEXT NOT NULL,
+        verified_app_key_id TEXT,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (parent_hash, child_hash, relationship, actor_user_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_media_edges_parent_created
+        ON media_edges(parent_hash, created_at DESC)`,
+    `CREATE TABLE IF NOT EXISTS media_tags (
+        hash TEXT NOT NULL REFERENCES media_objects(hash) ON DELETE CASCADE,
+        tag TEXT NOT NULL,
+        verified_app_key_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (hash, tag, verified_app_key_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_media_tags_tag
+        ON media_tags(tag, created_at DESC)`,
+];
 
 function mockAuth() {
     fetchMock.activate();
@@ -33,14 +92,35 @@ function mockAuth() {
                 valid: true,
                 type: "publishable",
                 name: "test-user",
+                userId: USER_ID,
+                apiKeyId: API_KEY_ID,
+                byopClientKeyId: APP_KEY_ID,
+                byopClientName: "CatGPT",
+                byopClientUserId: "app_owner_123",
             }),
             { headers: { "content-type": "application/json" } },
         )
         .persist();
 }
 
+async function resetCatalog() {
+    const db = (env as { MEDIA_DB: D1Database }).MEDIA_DB;
+    for (const statement of CATALOG_STATEMENTS) {
+        await db.prepare(statement).run();
+    }
+    for (const table of [
+        "media_tags",
+        "media_edges",
+        "media_entries",
+        "media_objects",
+    ]) {
+        await db.prepare(`DELETE FROM ${table}`).run();
+    }
+}
+
 describe("media.pollinations.ai", () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+        await resetCatalog();
         mockAuth();
     });
 
@@ -85,6 +165,8 @@ describe("media.pollinations.ai", () => {
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
+        expect(upload.cataloged).toBe(true);
+        expect(upload.entryId).toBeTruthy();
 
         // Retrieve — check Content-Disposition
         const getRes = await SELF.fetch(
@@ -124,6 +206,88 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("catalogs uploads for owner, verified app, and children", async () => {
+        const parentForm = new FormData();
+        parentForm.append(
+            "file",
+            new File([TINY_PNG], "parent.png", { type: "image/png" }),
+        );
+
+        const parentRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: parentForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const parent = (await parentRes.json()) as UploadResponse;
+
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([TINY_PNG], "child.png", { type: "image/png" }),
+        );
+        childForm.append("parents", parent.id);
+        childForm.append("relationship", "edit");
+        childForm.append("visibility", "public");
+        childForm.append("tags", "catgpt,remix");
+
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const child = (await childRes.json()) as UploadResponse;
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media",
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        expect(mineRes.status).toBe(200);
+        const mine = (await mineRes.json()) as {
+            items: Array<{
+                hash: string;
+                verifiedApp: { keyId: string } | null;
+            }>;
+        };
+        expect(mine.items.map((item) => item.hash)).toContain(parent.id);
+        expect(mine.items.map((item) => item.hash)).toContain(child.id);
+        expect(mine.items[0].verifiedApp?.keyId).toBe(APP_KEY_ID);
+
+        const appRes = await SELF.fetch(
+            `https://media.pollinations.ai/apps/${APP_KEY_ID}/media`,
+        );
+        expect(appRes.status).toBe(200);
+        const appMedia = (await appRes.json()) as {
+            items: Array<{ hash: string; tags: string[] }>;
+        };
+        expect(appMedia.items).toHaveLength(1);
+        expect(appMedia.items[0].hash).toBe(child.id);
+        expect(appMedia.items[0].tags).toContain("catgpt");
+
+        const childrenRes = await SELF.fetch(
+            `https://media.pollinations.ai/${parent.id}/children`,
+        );
+        expect(childrenRes.status).toBe(200);
+        const children = (await childrenRes.json()) as {
+            items: Array<{
+                hash: string;
+                parentHash: string;
+                relationship: string;
+            }>;
+        };
+        expect(children.items).toHaveLength(1);
+        expect(children.items[0]).toMatchObject({
+            hash: child.id,
+            parentHash: parent.id,
+            relationship: "edit",
+        });
     });
 
     it("same content with different filename produces different hash", async () => {

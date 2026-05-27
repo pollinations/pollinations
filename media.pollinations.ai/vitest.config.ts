@@ -5,6 +5,9 @@ export default defineWorkersConfig({
         poolOptions: {
             workers: {
                 singleWorker: true,
+                miniflare: {
+                    d1Databases: ["MEDIA_DB"],
+                },
                 wrangler: {
                     configPath: "./wrangler.toml",
                 },

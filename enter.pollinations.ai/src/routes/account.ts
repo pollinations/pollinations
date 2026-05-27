@@ -1440,6 +1440,33 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Display name of the API key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable owner user id for the API key",
+                                        ),
+                                    apiKeyId: z
+                                        .string()
+                                        .describe("Stable API key id"),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key id that minted this key through authorize, when present",
+                                        ),
+                                    byopClientName: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the verified BYOP app, when present",
+                                        ),
+                                    byopClientUserId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Owner user id of the verified BYOP app, when present",
+                                        ),
                                     expiresAt: z
                                         .string()
                                         .nullable()
@@ -1550,6 +1577,11 @@ export const accountRoutes = new Hono<Env>()
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,
+                userId: c.var.auth.user?.id ?? null,
+                apiKeyId: apiKey.id,
+                byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopClientName: apiKey.byopClientName ?? null,
+                byopClientUserId: apiKey.byopClientUserId ?? null,
                 expiresAt,
                 expiresIn,
                 permissions,

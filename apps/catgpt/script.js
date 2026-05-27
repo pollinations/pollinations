@@ -5,7 +5,10 @@ import {
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
+    fetchAppMedia,
     fetchBalance,
+    fetchKeyInfo,
+    fetchMyMedia,
     fetchProfile,
     generateCatReply,
     generateImageURL,
@@ -14,6 +17,7 @@ import {
     handleImageUpload,
     pickModel,
     storeApiKey,
+    uploadGeneratedMeme,
 } from "./ai.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -73,6 +77,7 @@ const dom = {
     generatedMeme: $("generatedMeme"),
     downloadBtn: $("downloadBtn"),
     shareBtn: $("shareBtn"),
+    catgptGalleryGrid: $("catgptGalleryGrid"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
     imageUpload: $("imageUpload"),
@@ -174,6 +179,23 @@ function saveGeneratedMeme(prompt, url) {
         ...saved.filter((m) => m.prompt !== prompt),
     ].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+function uniqueByUrl(items) {
+    const seen = new Set();
+    return items.filter((item) => {
+        if (!item.url || seen.has(item.url)) return false;
+        seen.add(item.url);
+        return true;
+    });
+}
+
+function catalogItemToMeme(item, prompt = "CatGPT meme") {
+    return {
+        prompt,
+        url: item.url,
+        model: "media",
+    };
 }
 
 // ── Animations ───────────────────────────────────────────────────────────────
@@ -333,11 +355,34 @@ function createMemeCard(prompt, index, imageUrl) {
     return card;
 }
 
-function loadUserMemes() {
+async function loadUserMemes() {
     dom.yourMemesGrid.innerHTML = "";
     const saved = getSavedMemes();
+    let catalogMemes = [];
+    const apiKey = getStoredApiKey();
 
-    if (!saved.length) {
+    if (apiKey) {
+        try {
+            const [keyInfo, media] = await Promise.all([
+                fetchKeyInfo(apiKey),
+                fetchMyMedia(),
+            ]);
+            catalogMemes = (media.items || [])
+                .filter((item) => item.verifiedApp?.keyId)
+                .filter(
+                    (item) =>
+                        item.verifiedApp.keyId === keyInfo.byopClientKeyId,
+                )
+                .filter((item) => item.tags.includes("meme"))
+                .map((item) => catalogItemToMeme(item));
+        } catch (error) {
+            console.warn("Could not load cataloged CatGPT memes", error);
+        }
+    }
+
+    const memes = uniqueByUrl([...catalogMemes, ...saved]).slice(0, 12);
+
+    if (!memes.length) {
         const p = document.createElement("p");
         p.textContent = "No memes yet! Generate one to see it here. 🎨";
         p.style.cssText =
@@ -346,10 +391,38 @@ function loadUserMemes() {
         return;
     }
 
-    saved.forEach((meme, i) => {
+    memes.forEach((meme, i) => {
         const card = createMemeCard(meme.prompt, i, meme.url);
         if (card) dom.yourMemesGrid.appendChild(card);
     });
+}
+
+async function loadCatgptGallery() {
+    if (!dom.catgptGalleryGrid) return;
+    dom.catgptGalleryGrid.innerHTML = "";
+
+    try {
+        const media = await fetchAppMedia();
+        const memes = (media.items || [])
+            .filter((item) => item.tags.includes("meme"))
+            .map((item) => catalogItemToMeme(item));
+
+        if (!memes.length) {
+            const p = document.createElement("p");
+            p.textContent = "No public memes yet.";
+            p.style.cssText =
+                "grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 2rem; font-style: italic;";
+            dom.catgptGalleryGrid.appendChild(p);
+            return;
+        }
+
+        memes.slice(0, 12).forEach((meme, i) => {
+            const card = createMemeCard(meme.prompt, i, meme.url);
+            if (card) dom.catgptGalleryGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.warn("Could not load public CatGPT gallery", error);
+    }
 }
 
 function loadExamples() {
@@ -412,16 +485,29 @@ async function generateMeme() {
         }
 
         // Use the pollinations URL directly (shareable, cacheable)
-        await response.blob(); // ensure the image is fully loaded
+        const imageBlob = await response.blob(); // ensure the image is fully loaded
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+
+        let memeUrl = imageUrl;
+        try {
+            memeUrl = await uploadGeneratedMeme(imageBlob, uploadedImageUrl);
+        } catch (error) {
+            console.warn("Could not catalog generated meme", error);
+            notify(
+                "Meme generated, but media catalog upload failed.",
+                "warning",
+            );
+        }
+
+        dom.generatedMeme.src = memeUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
+        saveGeneratedMeme(question, memeUrl);
         loadUserMemes();
+        loadCatgptGallery();
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadCatgptGallery();
     loadExamples();
     addFloatingEmojis();
     if (image) {

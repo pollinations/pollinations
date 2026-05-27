@@ -10,7 +10,7 @@ import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
-const buyPollenPmcId = "pmc_1TYjwI6O03AauPe8spSyH3ph";
+const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = [
     "/checkout/p2",
     "/checkout/p5",
@@ -228,7 +228,7 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     );
     expect(checkoutRequest?.body.customer).toBe("cus_mock_1");
     expect(checkoutRequest?.body.payment_method_configuration).toBe(
-        buyPollenPmcId,
+        stripePmcId,
     );
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
@@ -330,7 +330,7 @@ test("cohort BR: cf-ipcountry=BR → managed Price + AP on + buy-pollen PMC", as
 
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("BR");
     // Pollen grant stays USD-anchored ($5 + 1 bonus = 6 pollen).
     expect(body?.["metadata[packAmountUsd]"]).toBe("5");
@@ -362,7 +362,7 @@ test("cohort EU_CORE: cf-ipcountry=NL → managed Price + AP on + buy-pollen PMC
     // non-EUR European buyers.
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
 });
 
@@ -389,7 +389,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → managed Price + AP on + buy-pollen
 
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p20");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
 });
 
@@ -418,7 +418,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
 
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("USD");
 });
 
@@ -448,7 +448,7 @@ test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC"
     expect(body?.currency).toBeUndefined();
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("INDIA");
     // Pollen grant stays USD-anchored ($10 + 3 bonus = 13 pollen).
     expect(body?.["metadata[packAmountUsd]"]).toBe("10");
@@ -481,7 +481,7 @@ test("cohort UK: cf-ipcountry=GB → managed Price + AP off + buy-pollen PMC", a
     expect(body?.currency).toBeUndefined();
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("UK");
     expect(body?.["metadata[packAmountUsd]"]).toBe("5");
     expect(body?.["metadata[packPollenGrant]"]).toBe("6");

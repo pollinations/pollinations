@@ -74,10 +74,10 @@ export const stripeRoutes = new Hono<Env>()
         // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
         // default PMC) would hide a misconfigured deploy.
-        const pmcId = c.env.STRIPE_BUY_POLLEN_PMC_ID;
+        const pmcId = c.env.STRIPE_PMC;
         if (!pmcId) {
             console.error(
-                `Missing required env var STRIPE_BUY_POLLEN_PMC_ID for checkout on ${c.env.ENVIRONMENT}`,
+                `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
             );
             return c.json({ error: "Checkout configuration error" }, 500);
         }

@@ -1,8 +1,8 @@
+import { refreshR2ObjectTtl } from "@shared/r2-cache.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
-import { refreshR2ObjectTtl } from "../../shared/r2-cache";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path

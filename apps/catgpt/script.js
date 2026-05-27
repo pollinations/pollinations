@@ -5,7 +5,9 @@ import {
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
+    extractMediaHash,
     fetchBalance,
+    fetchCatgptGallery,
     fetchProfile,
     generateCatReply,
     generateImageURL,
@@ -14,6 +16,7 @@ import {
     handleImageUpload,
     pickModel,
     storeApiKey,
+    uploadGeneratedMeme,
 } from "./ai.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -75,6 +78,7 @@ const dom = {
     shareBtn: $("shareBtn"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
+    galleryGrid: $("galleryGrid"),
     imageUpload: $("imageUpload"),
     imageUploadContainer: $("imageUploadContainer"),
     imageThumbnailContainer: $("imageThumbnailContainer"),
@@ -367,6 +371,17 @@ function loadExamples() {
     });
 }
 
+async function loadCatgptGallery() {
+    if (!dom.galleryGrid) return;
+    const items = await fetchCatgptGallery(12);
+    dom.galleryGrid.innerHTML = "";
+    if (!items.length) return;
+    items.forEach((item, i) => {
+        const card = createMemeCard(item.prompt || "community", i, item.url);
+        if (card) dom.galleryGrid.appendChild(card);
+    });
+}
+
 // ── Generator ────────────────────────────────────────────────────────────────
 
 async function generateMeme() {
@@ -411,17 +426,33 @@ async function generateMeme() {
             throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        // Use the pollinations URL directly (shareable, cacheable)
-        await response.blob(); // ensure the image is fully loaded
+        const blob = await response.blob();
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+
+        // Re-upload to media.pollinations.ai so the gallery URL is keyless
+        // (the gen URL embeds the user's API key in ?key=). Tagging with
+        // `catgpt` opts the meme in to the public /tags/catgpt gallery; if
+        // the meme was generated from a user-uploaded portrait, we also
+        // tag `parent:<hash>` so the portrait's "remixes" are discoverable
+        // via /tags/parent:<hash> — no first-class lineage needed.
+        const parentHash = extractMediaHash(uploadedImageUrl);
+        const catalogUrl = await uploadGeneratedMeme(blob, {
+            prompt: question,
+            parentHash,
+        });
+        const displayUrl = catalogUrl || URL.createObjectURL(blob);
+        dom.generatedMeme.src = displayUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
-        loadUserMemes();
+        // Only persist URLs that don't embed the user's key.
+        if (catalogUrl) {
+            saveGeneratedMeme(question, catalogUrl);
+            loadUserMemes();
+            loadCatgptGallery();
+        }
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadCatgptGallery();
     loadExamples();
     addFloatingEmojis();
     if (image) {

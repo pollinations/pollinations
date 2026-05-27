@@ -24,7 +24,7 @@ The header is preferred for everything except plain-`GET` browser flows that can
 | Endpoint | Auth |
 |---|---|
 | `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
-| `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models` | None — model catalogue is public |
+| `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
 | Everything else | Bearer key required |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).

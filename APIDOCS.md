@@ -40,8 +40,8 @@ curl https://gen.pollinations.ai/v1/models \
   - [🤖 Models](#-models)
   - [📦 Media Storage](#-media-storage)
   - [👤 Account](#-account)
-- [🧩 Schemas](#-schemas)
 - [⚠️ Error Responses](#-error-responses)
+- [🧩 Schemas](#-schemas)
 
 ## 🔐 Authentication
 
@@ -69,7 +69,7 @@ The header is preferred for everything except plain-`GET` browser flows that can
 | Endpoint | Auth |
 |---|---|
 | `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
-| `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models` | None — model catalogue is public |
+| `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
 | Everything else | Bearer key required |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
@@ -384,7 +384,7 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/:prompt?model=openai&seed=0" \
+curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=openai&seed=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -413,9 +413,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `"medium"` |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `false` |
-| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
-| `aspectRatio` | `query` | `string` | Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio. · default: `false` |
 
 <sub>`*` = required parameter</sub>
 
@@ -424,7 +421,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/:prompt?model=zimage&width=1024" \
+curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountains?model=zimage&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -516,11 +513,8 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p). · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `enhance` | `query` | `boolean` | Let AI improve your prompt for better results. Applied during prompt processing. · default: `false` |
-| `negative_prompt` | `query` | `string` | What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this. · default: `"worst quality, blurry"` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `"medium"` |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `false` |
 | `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
 | `aspectRatio` | `query` | `string` | Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height. |
 | `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio. · default: `false` |
@@ -532,7 +526,7 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/:prompt?model=veo&width=1024" \
+curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?model=veo&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -627,7 +621,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./audio.mp3" \
-  -F "model=openai-audio"
+  -F "model=whisper-large-v3"
 ```
 
 ---
@@ -667,7 +661,7 @@ Generate speech or music from text via a simple GET request.
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/:text?voice=nova&response_format=mp3" \
+curl "https://gen.pollinations.ai/audio/Hello%2C%20welcome%20to%20Pollinations!?voice=nova&response_format=mp3" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -861,7 +855,7 @@ Get a file by its content hash. No authentication required. Responses are cached
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/:hash"
+curl "https://gen.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -883,7 +877,7 @@ Check existence and metadata without downloading the file.
 💻 **Example**
 
 ```bash
-curl -X HEAD "https://gen.pollinations.ai/:hash"
+curl -X HEAD "https://gen.pollinations.ai/a1b2c3d4e5f60718"
 ```
 
 ---
@@ -914,7 +908,7 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/:hash/metadata"
+curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
 ```
 
 ### 👤 Account
@@ -1157,7 +1151,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 curl -X POST "https://gen.pollinations.ai/account/keys" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name":"my-app-backend","permissions":["generate:image","generate:text"]}'
+  -d '{"name":"my-app-backend","type":"secret","allowedModels":["openai","flux"],"pollenBudget":100}'
 ```
 
 ---
@@ -1179,7 +1173,7 @@ Delete/revoke an API key. Requires `account:keys` permission and a secret key (s
 💻 **Example**
 
 ```bash
-curl -X DELETE "https://gen.pollinations.ai/account/keys/:id" \
+curl -X DELETE "https://gen.pollinations.ai/account/keys/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1266,6 +1260,39 @@ Returns usage history for the API key used in the request. No scope required —
 curl "https://gen.pollinations.ai/account/key/usage?format=json&limit=100" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
+
+## ⚠️ Error Responses
+
+All endpoints return errors in this envelope:
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Description of what went wrong",
+    "timestamp": "2026-01-01T00:00:00.000Z",
+    "details": { "name": "ValidationError" },
+    "requestId": "req_abc123"
+  }
+}
+```
+
+| Status | Code | Description |
+|---|---|---|
+| `400` | `BAD_REQUEST` | Invalid input. `details` includes `formErrors` and `fieldErrors` for validation failures. |
+| `401` | `UNAUTHORIZED` | Missing or invalid API key. Provide via `Authorization: Bearer <key>` header or `?key=<key>` query param. |
+| `402` | `PAYMENT_REQUIRED` | Insufficient pollen balance or API key budget exhausted. |
+| `403` | `FORBIDDEN` | Access denied — insufficient permissions or tier for this model. |
+| `404` | `NOT_FOUND` | Resource not found. |
+| `405` | `METHOD_NOT_ALLOWED` | HTTP method not supported on this route. |
+| `409` | `CONFLICT` | Request conflicts with current resource state (e.g. duplicate key name). |
+| `422` | `UNPROCESSABLE_ENTITY` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
+| `429` | `RATE_LIMITED` | Too many requests. Slow down. |
+| `500` | `INTERNAL_ERROR` | Server error. We're on it. |
+| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| `503` | `SERVICE_UNAVAILABLE` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |
 
 ## 🧩 Schemas
 
@@ -1428,36 +1455,3 @@ Reusable request/response objects referenced from the endpoints above.
 | `fieldErrors` * | `object` | — |
 
 <sub>`*` = required field</sub>
-
-## ⚠️ Error Responses
-
-All endpoints return errors in this envelope:
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Description of what went wrong",
-    "timestamp": "2026-01-01T00:00:00.000Z",
-    "details": { "name": "ValidationError" },
-    "requestId": "req_abc123"
-  }
-}
-```
-
-| Status | Code | Description |
-|---|---|---|
-| `400` | `BAD_REQUEST` | Invalid input. `details` includes `formErrors` and `fieldErrors` for validation failures. |
-| `401` | `UNAUTHORIZED` | Missing or invalid API key. Provide via `Authorization: Bearer <key>` header or `?key=<key>` query param. |
-| `402` | `PAYMENT_REQUIRED` | Insufficient pollen balance or API key budget exhausted. |
-| `403` | `FORBIDDEN` | Access denied — insufficient permissions or tier for this model. |
-| `404` | `NOT_FOUND` | Resource not found. |
-| `405` | `METHOD_NOT_ALLOWED` | HTTP method not supported on this route. |
-| `409` | `CONFLICT` | Request conflicts with current resource state (e.g. duplicate key name). |
-| `422` | `UNPROCESSABLE_ENTITY` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
-| `429` | `RATE_LIMITED` | Too many requests. Slow down. |
-| `500` | `INTERNAL_ERROR` | Server error. We're on it. |
-| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing, content policy). |
-| `503` | `SERVICE_UNAVAILABLE` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |

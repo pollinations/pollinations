@@ -89,7 +89,15 @@ function slug(s: string): string {
 }
 
 function escapePipe(s: string): string {
-    return s.replace(/\|/g, "\\|").replace(/\n+/g, " ").trim();
+    // Escape backslashes first so they don't compound when we escape pipes —
+    // otherwise a literal `\` in a spec description becomes `\\|` which renders
+    // as an escaped pipe, not as a backslash followed by a pipe. (CodeQL
+    // js/incomplete-sanitization #164.)
+    return s
+        .replace(/\\/g, "\\\\")
+        .replace(/\|/g, "\\|")
+        .replace(/\n+/g, " ")
+        .trim();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -362,11 +370,23 @@ function buildCurl(
     op: Operation,
 ): string {
     const upperMethod = method.toUpperCase();
-    const params = asArr(op.parameters) as Schema[];
+    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     const queryParams = params.filter((p) => asObj(p).in === "query");
+    const pathParams = params.filter((p) => asObj(p).in === "path");
     let url = `${BASE_URL}${path}`;
-    // Replace {id} → :id-style placeholder
-    url = url.replace(/{(\w+)}/g, ":$1");
+    // Substitute path placeholders with real, URL-encoded sample values so
+    // curl examples are copy-pasteable. Falls back to `:name` only when the
+    // spec provides no example for the parameter.
+    url = url.replace(/{(\w+)}/g, (_match, name: string) => {
+        const override = PATH_PARAM_OVERRIDES[name];
+        if (override !== undefined) return encodeURIComponent(override);
+        const param = pathParams.find((p) => asStr(asObj(p).name) === name);
+        if (param) {
+            const ex = pickExample(spec, asObj(asObj(param).schema));
+            if (ex !== undefined) return encodeURIComponent(String(ex));
+        }
+        return `:${name}`;
+    });
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
@@ -504,7 +524,7 @@ function renderEndpoint(
     }
 
     // Parameters
-    const params = asArr(op.parameters) as Schema[];
+    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     if (params.length) {
         out.push(CALLOUT.params);
         out.push("");
@@ -723,14 +743,14 @@ function renderTableOfContents(
     for (const tag of byTag.keys()) {
         out.push(`  - [${tag}](#${slug(tag)})`);
     }
+    out.push(
+        `- [${sectionHeading(SECTIONS.errors)}](#${sectionAnchor(SECTIONS.errors)})`,
+    );
     if (Object.keys(asObj(spec.components?.schemas)).length) {
         out.push(
             `- [${sectionHeading(SECTIONS.schemas)}](#${sectionAnchor(SECTIONS.schemas)})`,
         );
     }
-    out.push(
-        `- [${sectionHeading(SECTIONS.errors)}](#${sectionAnchor(SECTIONS.errors)})`,
-    );
     return out.join("\n");
 }
 
@@ -876,9 +896,39 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postAccountKeys: {
         name: "my-app-backend",
-        permissions: ["generate:image", "generate:text"],
+        type: "secret",
+        allowedModels: ["openai", "flux"],
+        pollenBudget: 100,
     },
 };
+
+/**
+ * Curated path-parameter values for parameters whose schemas don't carry a
+ * useful `example`. Used to make every curl example copy-pasteable rather
+ * than falling back to `:name`-style placeholders. Keyed by parameter name.
+ */
+const PATH_PARAM_OVERRIDES: Record<string, string> = {
+    hash: "a1b2c3d4e5f60718",
+    id: "key_abc123",
+};
+
+/**
+ * Per-path query parameter visibility filter. The /image and /video routes
+ * share a query schema, but each endpoint only actually honours a subset of
+ * fields — the others would mislead readers if shown in the parameter table
+ * or in the curl example. Listed by exact path; values are the parameter
+ * names to suppress.
+ */
+const PATH_PARAM_BLOCKLIST: Record<string, Set<string>> = {
+    "/image/{prompt}": new Set(["duration", "aspectRatio", "audio"]),
+    "/video/{prompt}": new Set(["negative_prompt", "quality", "transparent"]),
+};
+
+function visibleParams(path: string, params: Schema[]): Schema[] {
+    const blocked = PATH_PARAM_BLOCKLIST[path];
+    if (!blocked) return params;
+    return params.filter((p) => !blocked.has(asStr(asObj(p).name)));
+}
 
 /**
  * Curated multipart fields for operations whose request shapes don't lend
@@ -888,7 +938,7 @@ const CURATED_BODIES: Record<string, Json> = {
 const CURATED_MULTIPART: Record<string, Array<[string, string]>> = {
     postV1AudioTranscriptions: [
         ["file", "@./audio.mp3"],
-        ["model", "openai-audio"],
+        ["model", "whisper-large-v3"],
     ],
     postV1ImagesEdits: [
         ["image", "@./input.png"],
@@ -988,8 +1038,8 @@ async function main() {
         renderTableOfContents(spec, byTag, recipes.headings),
         recipes.content,
         renderEndpoints(spec, byTag),
-        renderSchemas(spec),
         renderErrorResponses(),
+        renderSchemas(spec),
     ];
     let markdown = sections.filter(Boolean).join("\n\n");
     // Collapse 3+ blank lines to 2

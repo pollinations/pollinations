@@ -86,7 +86,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             promptTextTokens: perMillion(0.12),
         },
         description:
-            "Cohere Embed v4 - Multilingual text embeddings via Azure. 1536 dimensions, 128K context.",
+            "Cohere Embed v4 - Multilingual text embeddings. 1536 dimensions, 128K context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 128000,
@@ -103,7 +103,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             promptTextTokens: perMillion(0.1),
         },
         description:
-            "Qwen3 Embedding 8B - Multilingual text embeddings via Fireworks. 4096 dimensions.",
+            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 32768,

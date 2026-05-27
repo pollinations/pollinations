@@ -15,12 +15,23 @@ const TOKEN = process.env.BOT_TOKEN_CATGPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_API = "https://media.pollinations.ai";
+const MEDIA_UPLOAD = `${MEDIA_API}/upload`;
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const MODEL = "nanobanana";
+
+type CatalogUploadOptions = {
+    visibility?: "private" | "unlisted" | "public";
+    relationship?: string;
+    tags?: string[];
+    parents?: string[];
+    prompt?: string;
+    model?: string;
+};
 
 function log(...args: any[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
@@ -103,6 +114,60 @@ async function fetchImage(url: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+function mediaParent(urlString: string): string | null {
+    try {
+        const url = new URL(urlString);
+        return url.hostname === "media.pollinations.ai" ? urlString : null;
+    } catch {
+        return null;
+    }
+}
+
+function appendCatalogFields(form: FormData, options: CatalogUploadOptions) {
+    form.append("visibility", options.visibility || "public");
+    form.append("relationship", options.relationship || "catgpt_bot_reply");
+    form.append("kind", "generation");
+    for (const tag of options.tags || []) form.append("tags", tag);
+    for (const parent of options.parents || []) {
+        const cleanParent = mediaParent(parent);
+        if (cleanParent) form.append("parents", cleanParent);
+    }
+    if (options.prompt) form.append("prompt", options.prompt);
+    if (options.model) form.append("model", options.model);
+}
+
+async function uploadImageBuffer(
+    buffer: Buffer,
+    filename: string,
+    options: CatalogUploadOptions,
+): Promise<string | null> {
+    if (!API_KEY) return null;
+
+    try {
+        const fileBytes = new ArrayBuffer(buffer.byteLength);
+        new Uint8Array(fileBytes).set(buffer);
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([fileBytes], { type: "image/png" }),
+            filename,
+        );
+        appendCatalogFields(form, options);
+
+        const res = await axios.post(MEDIA_UPLOAD, form, {
+            headers: AUTH,
+            timeout: 60_000,
+        });
+        const mediaUrl =
+            res.data?.url || (res.data?.id ? `${MEDIA_API}/${res.data.id}` : null);
+        if (mediaUrl) log(`Cataloged media: ${mediaUrl}`);
+        return mediaUrl;
+    } catch (err: any) {
+        logError(`Media catalog upload failed: ${err.message}`);
+        return null;
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -136,6 +201,14 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const imageBuffer = await fetchImage(imageUrl);
+            await uploadImageBuffer(imageBuffer, "catgpt.png", {
+                visibility: "public",
+                relationship: "catgpt_bot_reply",
+                tags: ["catgpt", "catgpt-bot", "meme"],
+                parents: [SELFIE_CATGPT],
+                prompt,
+                model: MODEL,
+            });
             const attachment = new AttachmentBuilder(imageBuffer, {
                 name: "catgpt.png",
             });

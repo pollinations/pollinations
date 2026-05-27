@@ -6,10 +6,22 @@ import {
 } from './types';
 
 const POLLINATIONS_API_BASE = 'https://gen.pollinations.ai';
+const MEDIA_API_BASE = 'https://media.pollinations.ai';
+const MEDIA_UPLOAD_URL = `${MEDIA_API_BASE}/upload`;
+const MEDIA_HOST = 'media.pollinations.ai';
 const DEFAULT_CONFIG = {
   model: 'gptimage' as const,
   enhance: true,
   nologo: true,
+};
+
+type MediaUploadOptions = {
+  visibility?: 'private' | 'unlisted' | 'public';
+  relationship?: string;
+  tags?: string[];
+  parents?: string[];
+  prompt?: string;
+  model?: string;
 };
 
 export class PollinationsService {
@@ -93,8 +105,31 @@ export class PollinationsService {
         }
       }
 
+      let resultUrl = url.toString();
+      if (token) {
+        try {
+          const blob = await response.blob();
+          const mediaUrl = await this.uploadGeneratedMedia(
+            blob,
+            `slidepainter-${Date.now()}.png`,
+            token,
+            {
+              visibility: 'private',
+              relationship: inputImageUrl ? 'slide_edit' : 'slide_generation',
+              tags: ['slidepainter', 'slide'],
+              parents: inputImageUrl ? [inputImageUrl] : [],
+              prompt: finalPrompt,
+              model: payload.model,
+            }
+          );
+          if (mediaUrl) resultUrl = mediaUrl;
+        } catch (uploadError) {
+          console.warn('Media catalog upload failed, using generated image URL:', uploadError);
+        }
+      }
+
       const result: ImageGenerationResponse = {
-        url: url.toString(),
+        url: resultUrl,
         provider: 'pollinations',
         seed: payload.seed,
         cached: false,
@@ -115,5 +150,53 @@ export class PollinationsService {
     } catch {
       return false;
     }
+  }
+
+  private mediaParent(urlString: string): string | null {
+    try {
+      const url = new URL(urlString);
+      return url.hostname === MEDIA_HOST ? urlString : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private appendCatalogFields(formData: FormData, options: MediaUploadOptions): void {
+    formData.append('visibility', options.visibility ?? 'private');
+    formData.append('relationship', options.relationship ?? 'slide_generation');
+    formData.append('kind', 'generation');
+    for (const tag of options.tags ?? []) {
+      formData.append('tags', tag);
+    }
+    for (const parent of options.parents ?? []) {
+      const cleanParent = this.mediaParent(parent);
+      if (cleanParent) formData.append('parents', cleanParent);
+    }
+    if (options.prompt) formData.append('prompt', options.prompt);
+    if (options.model) formData.append('model', options.model);
+  }
+
+  private async uploadGeneratedMedia(
+    blob: Blob,
+    filename: string,
+    token: string,
+    options: MediaUploadOptions
+  ): Promise<string | null> {
+    const formData = new FormData();
+    formData.append('file', blob, filename);
+    this.appendCatalogFields(formData, options);
+
+    const response = await fetch(MEDIA_UPLOAD_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (data.url) return data.url;
+    if (data.id) return `${MEDIA_API_BASE}/${data.id}`;
+    return null;
   }
 }

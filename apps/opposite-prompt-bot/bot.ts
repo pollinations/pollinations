@@ -15,7 +15,17 @@ const TOKEN = process.env.BOT_TOKEN_OPPOSITE_PROMPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_API = "https://media.pollinations.ai";
+const MEDIA_UPLOAD = `${MEDIA_API}/upload`;
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+
+type CatalogUploadOptions = {
+    visibility?: "private" | "unlisted" | "public";
+    relationship?: string;
+    tags?: string[];
+    prompt?: string;
+    model?: string;
+};
 
 const OPPOSITE_PROMPT = `You are a safe image prompt generator. Your #1 rule: NEVER output anything involving nudity, bare skin, undressed people, children, violence, gore, or anything sexual. This rule overrides ALL other instructions.
 
@@ -85,6 +95,50 @@ async function fetchImage(prompt: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+function appendCatalogFields(form: FormData, options: CatalogUploadOptions) {
+    form.append("visibility", options.visibility || "public");
+    form.append(
+        "relationship",
+        options.relationship || "opposite_prompt_reply",
+    );
+    form.append("kind", "generation");
+    for (const tag of options.tags || []) form.append("tags", tag);
+    if (options.prompt) form.append("prompt", options.prompt);
+    if (options.model) form.append("model", options.model);
+}
+
+async function uploadImageBuffer(
+    buffer: Buffer,
+    filename: string,
+    options: CatalogUploadOptions,
+): Promise<string | null> {
+    if (!API_KEY) return null;
+
+    try {
+        const fileBytes = new ArrayBuffer(buffer.byteLength);
+        new Uint8Array(fileBytes).set(buffer);
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([fileBytes], { type: "image/png" }),
+            filename,
+        );
+        appendCatalogFields(form, options);
+
+        const res = await axios.post(MEDIA_UPLOAD, form, {
+            headers: AUTH,
+            timeout: 60_000,
+        });
+        const mediaUrl =
+            res.data?.url || (res.data?.id ? `${MEDIA_API}/${res.data.id}` : null);
+        if (mediaUrl) log(`Cataloged media: ${mediaUrl}`);
+        return mediaUrl;
+    } catch (err: any) {
+        logError(`Media catalog upload failed: ${err.message}`);
+        return null;
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -117,6 +171,13 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
             } catch {}
 
             const imageBuffer = await fetchImage(opposite);
+            await uploadImageBuffer(imageBuffer, "opposite.png", {
+                visibility: "public",
+                relationship: "opposite_prompt_reply",
+                tags: ["opposite-prompt", "opposite-prompt-bot"],
+                prompt: opposite,
+                model: "zimage",
+            });
             const attachment = new AttachmentBuilder(imageBuffer, {
                 name: "opposite.png",
             });

@@ -269,13 +269,13 @@
   </main>
 
 <script type="module">
+// biome-ignore assist/source/organizeImports: keep the remote bundle import readable.
 import {
   Input, Output, BlobSource, BufferTarget, Mp4OutputFormat,
   EncodedPacketSink, EncodedVideoPacketSource, EncodedAudioPacketSource,
   CanvasSource, Conversion, canEncodeVideo, ALL_FORMATS,
 } from "https://esm.sh/mediabunny@1.45.3";
 
-const KEY_STORAGE = "voice-edit:user-key";
 const PROMPT_STORAGE = "voice-edit:walkthrough-prompt";
 const NARRATE_STORAGE = "voice-edit:walkthrough-narrate";
 const NARRATE_DURATION_SEC = 3.5;
@@ -319,6 +319,7 @@ const app = {
   playAllIndex: 0,
   accountUser: "",
   accountBalance: null,
+  apiKey: "",
 };
 
 function setStatus(text) {
@@ -336,9 +337,8 @@ function clearError() {
 }
 
 function key() {
-  const token = localStorage.getItem(KEY_STORAGE);
-  if (!token) throw new Error("not connected - click Connect");
-  return token;
+  if (!app.apiKey) throw new Error("not connected - click Connect");
+  return app.apiKey;
 }
 
 const authHeaders = () => ({ Authorization: `Bearer ${key()}` });
@@ -348,7 +348,7 @@ function captureKeyFromFragment() {
   const params = new URLSearchParams(location.hash.slice(1));
   const apiKey = params.get("api_key");
   if (!apiKey) return;
-  localStorage.setItem(KEY_STORAGE, apiKey);
+  app.apiKey = apiKey;
   params.delete("api_key");
   history.replaceState(null, "", params.toString() ? `${location.pathname}#${params}` : location.pathname);
 }
@@ -363,12 +363,12 @@ function startConnect() {
 }
 
 function disconnect() {
-  localStorage.removeItem(KEY_STORAGE);
+  app.apiKey = "";
   refreshConnectionUI();
 }
 
 function renderAccount() {
-  if (!localStorage.getItem(KEY_STORAGE)) {
+  if (!app.apiKey) {
     els.account.textContent = "not connected";
     return;
   }
@@ -383,7 +383,7 @@ function renderAccount() {
 }
 
 function refreshConnectionUI() {
-  const connected = !!localStorage.getItem(KEY_STORAGE);
+  const connected = !!app.apiKey;
   els.connect.hidden = connected;
   renderAccount();
   if (connected) {
@@ -533,7 +533,7 @@ async function uploadBlob(blob, filename, fields = {}) {
 }
 
 function render() {
-  const connected = !!localStorage.getItem(KEY_STORAGE);
+  const connected = !!app.apiKey;
   const locked = app.busy || app.history.length < 2 || !connected || !app.modelsReady;
   els.make.disabled = locked;
   els.load.disabled = app.busy || !connected;
@@ -570,7 +570,7 @@ function renderViewer() {
     return;
   }
   const clip = app.clips[app.currentClip];
-  if (clip && clip.src) {
+  if (clip?.src) {
     const video = document.createElement("video");
     video.src = clip.src;
     video.controls = true;
@@ -889,7 +889,7 @@ function wrapText(ctx, text, maxWidth) {
     if (!words.length) { lines.push(""); continue; }
     let line = words[0];
     for (let i = 1; i < words.length; i++) {
-      const test = line + " " + words[i];
+      const test = `${line} ${words[i]}`;
       if (ctx.measureText(test).width > maxWidth) { lines.push(line); line = words[i]; }
       else line = test;
     }

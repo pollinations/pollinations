@@ -372,7 +372,6 @@
   </div>
 
 <script>
-const KEY_STORAGE = "voice-edit:user-key";
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
@@ -449,6 +448,7 @@ const app = {
   micAvailable: CAN_RECORD,
   accountUser: "",
   accountBalance: null,
+  apiKey: "",
   branchItems: [],
   branchesOpen: false,
 };
@@ -468,9 +468,8 @@ function clearError() {
 }
 
 function key() {
-  const token = localStorage.getItem(KEY_STORAGE);
-  if (!token) throw new Error("not connected - click Connect");
-  return token;
+  if (!app.apiKey) throw new Error("not connected - click Connect");
+  return app.apiKey;
 }
 
 const authHeaders = (extra = {}) => ({ Authorization: `Bearer ${key()}`, ...extra });
@@ -500,7 +499,7 @@ function setInputMode(mode) {
 }
 
 function renderAccount() {
-  if (!localStorage.getItem(KEY_STORAGE)) {
+  if (!app.apiKey) {
     els.account.textContent = "not connected";
     return;
   }
@@ -606,7 +605,7 @@ function captureKeyFromFragment() {
   const params = new URLSearchParams(location.hash.slice(1));
   const apiKey = params.get("api_key");
   if (apiKey) {
-    localStorage.setItem(KEY_STORAGE, apiKey);
+    app.apiKey = apiKey;
     history.replaceState(null, "", location.pathname + location.search);
   } else if (params.get("error")) {
     showError(`Authorization failed: ${params.get("error")}`);
@@ -614,7 +613,7 @@ function captureKeyFromFragment() {
 }
 
 function refreshConnectionUI() {
-  const connected = !!localStorage.getItem(KEY_STORAGE);
+  const connected = !!app.apiKey;
   els.connect.hidden = connected;
   els.frame.classList.toggle("locked", !connected);
   if (!connected) {
@@ -640,7 +639,7 @@ function startConnect() {
 }
 
 function disconnect() {
-  localStorage.removeItem(KEY_STORAGE);
+  app.apiKey = "";
   stopMic();
   refreshConnectionUI();
 }
@@ -1016,7 +1015,7 @@ async function friendlyError(response, label) {
     details = json.error?.message || json.message || text;
   } catch {}
   if (response.status === 401 || response.status === 403) {
-    localStorage.removeItem(KEY_STORAGE);
+    app.apiKey = "";
     refreshConnectionUI();
     return `${label}: authorization expired. Connect again.`;
   }

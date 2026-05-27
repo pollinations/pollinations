@@ -79,7 +79,7 @@ const packagingTypes: PackagingType[] = [
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://gen.pollinations.ai/image";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -236,7 +236,57 @@ function App() {
             setFile(null);
         }
     };
-    const uploadToPollinationsMedia = async (file: File): Promise<string> => {
+    const uploadMediaBlob = async (
+        blob: Blob,
+        filename: string,
+        fields: Record<string, string> = {},
+    ): Promise<string> => {
+        if (!apiKey) {
+            throw new Error("No API key available for media upload");
+        }
+
+        const formData = new FormData();
+        formData.append("file", blob, filename);
+        for (const [key, value] of Object.entries(fields)) {
+            if (value) formData.append(key, value);
+        }
+
+        const response = await fetch(POLLINATIONS_MEDIA_API, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: formData,
+            signal: AbortSignal.timeout(UPLOAD_TIMEOUT),
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Upload failed";
+            try {
+                const errorData = await response.json();
+                errorMessage =
+                    errorData.error?.message ||
+                    `HTTP ${response.status}: ${response.statusText}`;
+            } catch {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        if (!data.url && !data.secure_url && !data.media_url) {
+            throw new Error(
+                "Invalid response from Pollinations media service - no URL received",
+            );
+        }
+
+        return data.url || data.secure_url || data.media_url;
+    };
+
+    const uploadToPollinationsMedia = async (
+        file: File,
+        fields: Record<string, string> = {},
+    ): Promise<string> => {
         const validation = validateFile(file, MAX_FILE_SIZE);
         if (!validation.isValid) {
             throw new Error(validation.error || "File validation failed");
@@ -246,41 +296,8 @@ function App() {
             throw new Error("No API key available for media upload");
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
-
         try {
-            const response = await fetch(POLLINATIONS_MEDIA_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                },
-                body: formData,
-                signal: AbortSignal.timeout(UPLOAD_TIMEOUT),
-            });
-
-            if (!response.ok) {
-                let errorMessage = "Upload failed";
-                try {
-                    const errorData = await response.json();
-                    errorMessage =
-                        errorData.error?.message ||
-                        `HTTP ${response.status}: ${response.statusText}`;
-                } catch {
-                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            if (!data.url && !data.secure_url && !data.media_url) {
-                throw new Error(
-                    "Invalid response from Pollinations media service - no URL received",
-                );
-            }
-
-            const mediaUrl = data.url || data.secure_url || data.media_url;
-            return mediaUrl;
+            return await uploadMediaBlob(file, file.name, fields);
         } catch (error) {
             console.error("Pollinations media upload failed:", error);
 
@@ -335,7 +352,11 @@ function App() {
             let uploadedUrl: string = "";
 
             if (file) {
-                uploadedUrl = await uploadToPollinationsMedia(file);
+                uploadedUrl = await uploadToPollinationsMedia(file, {
+                    visibility: "private",
+                    source: "upload",
+                    prompt: brandName.trim() || "Packaging source image",
+                });
             } else {
                 uploadedUrl = uploadedImage || "";
             }
@@ -385,8 +406,17 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setGeneratedImage(blobUrl);
+            const mediaUrl = await uploadMediaBlob(
+                blob,
+                `packaging-mockup-${Date.now()}.png`,
+                {
+                    visibility: "private",
+                    source: "generation",
+                    prompt,
+                    model: "nanobanana",
+                },
+            );
+            setGeneratedImage(mediaUrl);
             setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);

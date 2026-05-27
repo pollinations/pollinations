@@ -1,5 +1,13 @@
-const MEDIA_URL = "https://gen.pollinations.ai";
+const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
 const MEDIA_HOST = "media.pollinations.ai";
+
+type MediaCatalogFields = {
+    visibility?: "private" | "public";
+    source?: "upload" | "generation" | "remix";
+    remixOf?: string;
+    prompt?: string;
+    model?: string;
+};
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
 function isMediaUrl(url: string): boolean {
@@ -18,6 +26,7 @@ function isMediaUrl(url: string): boolean {
 export async function uploadToMedia(
     genUrl: string,
     apiKey: string,
+    fields: MediaCatalogFields = {},
 ): Promise<string> {
     if (!genUrl || isMediaUrl(genUrl)) return genUrl;
 
@@ -28,8 +37,11 @@ export async function uploadToMedia(
         const blob = await response.blob();
         const formData = new FormData();
         formData.append("file", blob);
+        for (const [key, value] of Object.entries(fields)) {
+            if (value) formData.append(key, value);
+        }
 
-        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+        const uploadRes = await fetch(MEDIA_UPLOAD_URL, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: formData,

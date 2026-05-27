@@ -1,0 +1,35 @@
+{
+  "pr_number": 11324,
+  "title": "expose baseline_price and cost_usd in developer earnings export",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11324",
+  "merged_at": "2026-05-27T14:10:37Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `baseline_price` (sum of `dev_price`) and `cost_usd` (sum of `total_price`) to `/account/earnings` JSON and CSV\n- Per-bucket markup math is now `baseline_price + pollen_earned = cost_usd @ markup_rate`\n- `pollen_earned` and `markup_rate` already existed, kept as-is\n- `/account/usage` intentionally unchanged — breakdown lives on the earnings export only\n- New `account-earnings.test.ts` covers JSON shape and CSV header/rows\n\nPipe (`developer_earnings.pipe`) needs to be deployed to Tinybird staging then prod before this merges, otherwise `baseline_price` / `cost_usd` come back as undefined.\n\nFixes #10735",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Receipts, please",
+    "blurb": "We've added baseline price and total cost breakdowns to the developer earnings export. Now you can see exactly how your Pollen markup adds up!",
+    "summary": "Added baseline_price and cost_usd fields to the /account/earnings JSON and CSV exports to clarify markup math.",
+    "impact": "Developers can now see the exact breakdown of base costs versus earned markup in their earnings reports.",
+    "keywords": [
+      "earnings",
+      "csv",
+      "api",
+      "billing",
+      "developers"
+    ],
+    "visual_concept": "Polly the bee wearing tiny accountant glasses, reviewing a glowing retro terminal displaying a pixelated spreadsheet with gold coins.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny accountant glasses, reviewing a glowing retro terminal that displays a pixelated spreadsheet with gold coins. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11324.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny accountant glasses, reviewing a glowing retro terminal that displays a pixelated spreadsheet with gold coins. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-27T14:11:46.471132+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11336,
+  "title": "consolidate developer docs in gen; enter only emits its own schema",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11336",
+  "merged_at": "2026-05-27T23:21:09Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Enter's `docs.ts` shrinks from 1460 to 29 lines. All schema decoration — info description, tags, alias filtering, media merge, x-codeSamples, response examples — moves to gen and runs as a post-merge transform. Enter now exposes just two routes: a 301 redirect to gen for `/docs/`, and the raw schema endpoint gen consumes via the `ENTER` service binding.\n\nWhy:\n- Gen owns the public docs surface, so all decoration belongs there.\n- Before: alias lists drifted (enter only filtered image/text, gen also covered audio/embedding); media schema was fetched twice per docs render; ~12 of 17 `CODE_SAMPLES` entries silently no-op'd because they targeted gen-owned paths that enter doesn't have.\n- After: enter mirrors media — raw schema in, gen merges and decorates. Single mental model.\n\nAlso normalizes two route tags from `\"Account\"` to `\"👤 Account\"` ([api-keys.ts:377](enter.pollinations.ai/src/routes/api-keys.ts#L377), [app-lookup.ts:68](enter.pollinations.ai/src/routes/app-lookup.ts#L68)) so they group correctly in Scalar.\n\nVerified: enter biome + tsc + `test/docs-redirect.test.ts` (3/3), gen biome + tsc + `test/docs.test.ts` (6/6).\n\nFixes #11296\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One source of truth",
+    "blurb": "We've reorganized how our API documentation is generated under the hood. The result? A cleaner, more accurate reference page with all the code samples actually working.",
+    "summary": "Moved API schema decoration—including tags, alias filtering, and code samples—from the enter service to gen, reducing enter's docs route from 1460 to 29 lines.",
+    "impact": "The API reference now correctly displays all 17 code samples and properly groups the '👤 Account' routes in Scalar.",
+    "keywords": [
+      "docs",
+      "api",
+      "schema",
+      "scalar",
+      "refactor"
+    ],
+    "visual_concept": "The bee mascot acting as a librarian, organizing scattered documents into one central, glowing folder or book. Nomnom eating the old duplicate papers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing digital scrolls into a single neat filing cabinet. The round tan nomnom creature happily eats a messy stack of old duplicate papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11336.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing digital scrolls into a single neat filing cabinet. The round tan nomnom creature happily eats a messy stack of old duplicate papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-27T23:22:13.415039+00:00"
+}

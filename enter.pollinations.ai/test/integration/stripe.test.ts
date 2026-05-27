@@ -166,6 +166,7 @@ test("GET /api/stripe/products returns pack list", async () => {
 
     const data = (await response.json()) as {
         packs: {
+            packKey: string;
             amount: number;
             bonusPollen: number;
             pollenGrant: number;
@@ -173,6 +174,14 @@ test("GET /api/stripe/products returns pack list", async () => {
         }[];
     };
     expect(data.packs).toHaveLength(6);
+    expect(data.packs.map((p) => p.packKey)).toEqual([
+        "p2",
+        "p5",
+        "p10",
+        "p20",
+        "p50",
+        "p100",
+    ]);
     expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
     expect(data.packs.map((p) => p.pollenGrant)).toEqual([
         2, 6, 13, 28, 75, 160,

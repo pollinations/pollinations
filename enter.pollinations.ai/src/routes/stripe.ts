@@ -73,9 +73,10 @@ export const stripeRoutes = new Hono<Env>()
         const cancelUrl = successUrl;
 
         // Resolve cohort from buyer IP and derive the integration-currency
-        // amount. USD cohort: native USD. Non-USD cohorts: EUR derived from
-        // USD reference × live FX rate (Stripe AP then localizes EUR → buyer
-        // currency for display).
+        // amount. USD cohort: native USD. Non-USD cohorts (EUR / INR / GBP):
+        // pack.amountUsd × live USD→target FX rate. Cohorts with AP on (BR,
+        // APAC_ALIPAY, EU_CORE) then let Stripe localize the integration
+        // currency to the buyer's display currency at checkout.
         const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
         const unitAmount =
             cohort.checkoutCurrency === "usd"

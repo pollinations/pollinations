@@ -1,6 +1,7 @@
 // CatGPT Meme Generator — UI, state, and DOM logic
 
 import {
+    CATGPT_APP_KEY,
     clearApiKey,
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
@@ -13,6 +14,7 @@ import {
     getStoredApiKey,
     handleImageUpload,
     pickModel,
+    saveGeneratedMemeReference,
     storeApiKey,
 } from "./ai.js";
 
@@ -75,6 +77,7 @@ const dom = {
     shareBtn: $("shareBtn"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
+    publicGalleryGrid: $("publicGalleryGrid"),
     imageUpload: $("imageUpload"),
     imageUploadContainer: $("imageUploadContainer"),
     imageThumbnailContainer: $("imageThumbnailContainer"),
@@ -352,6 +355,36 @@ function loadUserMemes() {
     });
 }
 
+async function loadPublicGallery() {
+    if (!dom.publicGalleryGrid) return;
+    dom.publicGalleryGrid.innerHTML = "";
+    try {
+        const res = await fetch(
+            `https://media.pollinations.ai/gallery?${new URLSearchParams({
+                app_key: CATGPT_APP_KEY,
+                limit: "8",
+            })}`,
+        );
+        if (!res.ok) throw new Error("gallery failed");
+        const data = await res.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+            const p = document.createElement("p");
+            p.textContent = "No public memes saved yet.";
+            p.style.cssText =
+                "grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 2rem; font-style: italic;";
+            dom.publicGalleryGrid.appendChild(p);
+            return;
+        }
+        items.forEach((item, i) => {
+            const card = createMemeCard(item.prompt || "CatGPT", i, item.url);
+            if (card) dom.publicGalleryGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.warn("Could not load public gallery:", error);
+    }
+}
+
 function loadExamples() {
     dom.examplesGrid.innerHTML = "";
     EXAMPLE_PROMPTS.forEach((q, i) => {
@@ -411,17 +444,24 @@ async function generateMeme() {
             throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        // Use the pollinations URL directly (shareable, cacheable)
+        // Save the generated URL as a catalog reference; no blob re-upload.
         await response.blob(); // ensure the image is fully loaded
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+        const saved = await saveGeneratedMemeReference(
+            question,
+            imageUrl,
+            activeModel,
+        );
+        const finalUrl = saved?.url || imageUrl;
+        dom.generatedMeme.src = finalUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
+        saveGeneratedMeme(question, finalUrl);
         loadUserMemes();
+        loadPublicGallery();
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadPublicGallery();
     loadExamples();
     addFloatingEmojis();
     if (image) {

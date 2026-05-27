@@ -16,6 +16,13 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+const CATALOG_PREFIX = "catalog/v1";
+const TAG_PREFIX = "tags/v1";
+const MAX_LIST_LIMIT = 100;
+const DEFAULT_LIST_LIMIT = 50;
+const MAX_TAGS = 8;
+const TAG_PATTERN = /^[a-z0-9][a-z0-9._:+-]{0,95}$/i;
+const FACET_PATTERN = /^[a-z0-9][a-z0-9._-]{0,95}$/i;
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -24,8 +31,15 @@ interface Env {
 
 interface AuthResult {
     valid: boolean;
+    keyId?: string;
+    apiKeyId?: string;
     type: string;
     name: string | null;
+    userId?: string | null;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
+    appId?: string | null;
+    appName?: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -57,16 +71,68 @@ function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
 
+type Visibility = "private" | "public";
+
+type CatalogInput = {
+    url?: string;
+    visibility: Visibility;
+    tags: string[];
+    prompt: string | null;
+    model: string | null;
+};
+
+type CatalogItem = {
+    id: string;
+    url: string;
+    createdAt: string;
+    visibility: Visibility;
+    ownerId?: string;
+    ownerName?: string;
+    appId?: string;
+    appName?: string;
+    tags?: string[];
+    prompt?: string;
+    model?: string;
+    contentType?: string;
+    size?: number;
+};
+
 const UploadResponseSchema = z.object({
     id: z.string().describe("16-char hex content hash"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    cataloged: z
+        .boolean()
+        .optional()
+        .describe("true if a catalog reference was written"),
 });
 
 const ErrorSchema = z.object({
     error: z.string(),
+});
+
+const CatalogItemSchema = z.object({
+    id: z.string(),
+    url: z.string(),
+    createdAt: z.string(),
+    visibility: z.enum(["private", "public"]),
+    ownerId: z.string().optional(),
+    ownerName: z.string().optional(),
+    appId: z.string().optional(),
+    appName: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    prompt: z.string().optional(),
+    model: z.string().optional(),
+    contentType: z.string().optional(),
+    size: z.number().int().optional(),
+});
+
+const CatalogListResponseSchema = z.object({
+    items: z.array(CatalogItemSchema),
+    cursor: z.string().optional(),
+    nextCursor: z.string().optional(),
 });
 
 const MetadataResponseSchema = z.object({
@@ -80,6 +146,348 @@ const MetadataResponseSchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+function stringField(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+    key: string,
+): string | null {
+    const value =
+        fields instanceof FormData || fields instanceof URLSearchParams
+            ? fields.get(key)
+            : fields[key];
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function collectFieldValues(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+    keys: string[],
+): string[] {
+    const values: string[] = [];
+    for (const key of keys) {
+        if (fields instanceof FormData || fields instanceof URLSearchParams) {
+            for (const value of fields.getAll(key)) {
+                if (typeof value === "string") values.push(value);
+            }
+            continue;
+        }
+
+        const value = fields[key];
+        if (Array.isArray(value)) {
+            values.push(
+                ...value.filter(
+                    (entry): entry is string => typeof entry === "string",
+                ),
+            );
+        } else if (typeof value === "string") {
+            values.push(value);
+        }
+    }
+    return values;
+}
+
+function splitTagList(value: string): string[] {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[")) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                return parsed.filter(
+                    (entry): entry is string => typeof entry === "string",
+                );
+            }
+        } catch {
+            // Fall through to comma splitting.
+        }
+    }
+    return trimmed.split(",").map((part) => part.trim());
+}
+
+function normalizeTag(raw: string): string | null {
+    const tag = raw.trim().toLowerCase();
+    return TAG_PATTERN.test(tag) ? tag : null;
+}
+
+function normalizeTags(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+): string[] {
+    const tags = new Set<string>();
+    for (const value of collectFieldValues(fields, ["tag", "tags"])) {
+        for (const part of splitTagList(value)) {
+            const tag = normalizeTag(part);
+            if (tag) tags.add(tag);
+            if (tags.size >= MAX_TAGS) return [...tags];
+        }
+    }
+    return [...tags];
+}
+
+function parseVisibility(value: string | null): Visibility {
+    return value === "public" ? "public" : "private";
+}
+
+function boundedText(value: string | null, maxLength: number): string | null {
+    if (!value) return null;
+    return value.length > maxLength ? value.slice(0, maxLength) : value;
+}
+
+function parseCatalogInput(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+): CatalogInput {
+    return {
+        url: stringField(fields, "url") || undefined,
+        visibility: parseVisibility(stringField(fields, "visibility")),
+        tags: normalizeTags(fields),
+        prompt: boundedText(stringField(fields, "prompt"), 500),
+        model: boundedText(stringField(fields, "model"), 80),
+    };
+}
+
+function authUserId(auth: AuthResult): string | null {
+    return auth.userId || null;
+}
+
+function authAppId(auth: AuthResult): string | null {
+    return auth.byopClientKeyId || auth.appId || null;
+}
+
+function authAppName(auth: AuthResult): string | null {
+    return auth.byopClientName || auth.appName || null;
+}
+
+async function resolveAppIdFromQuery(
+    app: string | null,
+    appKey: string | null,
+): Promise<string | null> {
+    if (app?.trim()) {
+        const normalized = app.trim();
+        return FACET_PATTERN.test(normalized) ? normalized : null;
+    }
+    if (!appKey?.trim()) return null;
+    const auth = await verifyApiKey(appKey.trim());
+    return auth?.keyId || auth?.apiKeyId || null;
+}
+
+function reverseTimestamp(now = Date.now()): string {
+    return String(Number.MAX_SAFE_INTEGER - now).padStart(16, "0");
+}
+
+function catalogIndexKey(prefix: string, id: string, now = Date.now()): string {
+    return `${prefix}/${reverseTimestamp(now)}-${id}.json`;
+}
+
+function catalogItemKey(id: string): string {
+    return `${CATALOG_PREFIX}/items/${id}.json`;
+}
+
+async function putJson(bucket: R2Bucket, key: string, value: unknown) {
+    await bucket.put(key, JSON.stringify(value), {
+        httpMetadata: {
+            contentType: "application/json",
+            cacheControl: "no-store",
+        },
+    });
+}
+
+function publicCatalogItem(item: CatalogItem): CatalogItem {
+    const { ownerId: _ownerId, ownerName: _ownerName, ...publicItem } = item;
+    return publicItem;
+}
+
+async function readCatalogItem(
+    bucket: R2Bucket,
+    key: string,
+    includeOwner = false,
+): Promise<CatalogItem | null> {
+    const object = await bucket.get(key);
+    if (!object) return null;
+    try {
+        const item = (await object.json()) as CatalogItem;
+        return includeOwner ? item : publicCatalogItem(item);
+    } catch {
+        return null;
+    }
+}
+
+async function listCatalogItems(
+    bucket: R2Bucket,
+    prefix: string,
+    limit: number,
+    cursor?: string | null,
+    includeOwner = false,
+): Promise<{ items: CatalogItem[]; cursor?: string; nextCursor?: string }> {
+    const list = await bucket.list({
+        prefix,
+        limit: Math.min(limit * 3, 1000),
+        cursor: cursor || undefined,
+    });
+    const seen = new Set<string>();
+    const items: CatalogItem[] = [];
+    for (const object of list.objects) {
+        const item = await readCatalogItem(
+            bucket,
+            object.key,
+            includeOwner,
+        );
+        if (!item || seen.has(item.id)) continue;
+        seen.add(item.id);
+        items.push(item);
+        if (items.length >= limit) break;
+    }
+    return {
+        items,
+        ...(list.truncated && list.cursor
+            ? { cursor: list.cursor, nextCursor: list.cursor }
+            : {}),
+    };
+}
+
+function listLimit(raw: string | null): number {
+    const parsed = Number.parseInt(raw || "", 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIST_LIMIT;
+    return Math.min(parsed, MAX_LIST_LIMIT);
+}
+
+async function stableId(value: string): Promise<string> {
+    const hashBuffer = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(value),
+    );
+    return Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .substring(0, 16);
+}
+
+function mediaHashFromUrl(url: string): string | null {
+    try {
+        const parsed = new URL(url);
+        if (parsed.hostname !== DOMAIN) return null;
+        const hash = parsed.pathname.split("/").filter(Boolean)[0];
+        return hash && HASH_PATTERN.test(hash) ? hash.toLowerCase() : null;
+    } catch {
+        return null;
+    }
+}
+
+function normalizePollinationsUrl(raw: string): string | null {
+    try {
+        const url = new URL(raw);
+        if (url.protocol !== "https:") return null;
+
+        if (url.hostname === DOMAIN) {
+            const hash = url.pathname.split("/").filter(Boolean)[0];
+            return hash && HASH_PATTERN.test(hash) ? mediaUrl(hash) : null;
+        }
+
+        if (url.hostname === "gen.pollinations.ai") {
+            const [kind] = url.pathname.split("/").filter(Boolean);
+            if (!["image", "video", "audio"].includes(kind || "")) {
+                return null;
+            }
+            for (const secretParam of ["key", "api_key", "token"]) {
+                url.searchParams.delete(secretParam);
+            }
+            return url.toString();
+        }
+    } catch {
+        return null;
+    }
+    return null;
+}
+
+async function buildCatalogItem(params: {
+    auth: AuthResult;
+    input: CatalogInput;
+    url: string;
+    contentType?: string;
+    size?: number;
+    id?: string;
+}): Promise<CatalogItem | null> {
+    const normalizedUrl = normalizePollinationsUrl(params.url);
+    if (!normalizedUrl) return null;
+    const id =
+        params.id || mediaHashFromUrl(normalizedUrl) || (await stableId(normalizedUrl));
+    const ownerId = authUserId(params.auth);
+    const appId = authAppId(params.auth);
+    const appName = authAppName(params.auth);
+    return {
+        id,
+        url: normalizedUrl,
+        createdAt: new Date().toISOString(),
+        visibility: params.input.visibility,
+        ...(ownerId && { ownerId }),
+        ...(params.auth.name && { ownerName: params.auth.name }),
+        ...(appId && { appId }),
+        ...(appName && { appName }),
+        ...(params.input.tags.length > 0 && { tags: params.input.tags }),
+        ...(params.input.prompt && { prompt: params.input.prompt }),
+        ...(params.input.model && { model: params.input.model }),
+        ...(params.contentType && { contentType: params.contentType }),
+        ...(params.size !== undefined && { size: params.size }),
+    };
+}
+
+async function writeCatalogEntries(
+    bucket: R2Bucket,
+    item: CatalogItem,
+): Promise<boolean> {
+    const now = Date.now();
+    const keys = [catalogItemKey(item.id)];
+
+    if (item.ownerId) {
+        keys.push(
+            catalogIndexKey(
+                `${CATALOG_PREFIX}/by-owner/${item.ownerId}`,
+                item.id,
+                now,
+            ),
+        );
+        if (item.appId) {
+            keys.push(
+                catalogIndexKey(
+                    `${CATALOG_PREFIX}/by-owner-app/${item.ownerId}/${item.appId}`,
+                    item.id,
+                    now,
+                ),
+            );
+        }
+    }
+
+    if (item.visibility === "public") {
+        if (item.appId) {
+            keys.push(
+                catalogIndexKey(
+                    `${CATALOG_PREFIX}/public-app/${item.appId}`,
+                    item.id,
+                    now,
+                ),
+            );
+        }
+        for (const tag of item.tags || []) {
+            keys.push(catalogIndexKey(`${TAG_PREFIX}/${tag}`, item.id, now));
+            if (item.appId) {
+                keys.push(
+                    catalogIndexKey(
+                        `${TAG_PREFIX}/by-app/${item.appId}/${tag}`,
+                        item.id,
+                        now,
+                    ),
+                );
+            }
+        }
+    }
+
+    const results = await Promise.allSettled(
+        keys.map((key) => putJson(bucket, key, item)),
+    );
+    for (const result of results) {
+        if (result.status === "rejected") {
+            console.error("Catalog index write failed:", result.reason);
+        }
+    }
+    return results.every((result) => result.status === "fulfilled");
+}
 
 api.post(
     "/upload",
@@ -140,12 +548,14 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let catalogInput = parseCatalogInput(new URL(c.req.url).searchParams);
 
         const requestContentType = c.req.header("content-type") || "";
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
                 const formData = await c.req.formData();
+                catalogInput = parseCatalogInput(formData);
                 const file = formData.get("file") as File | null;
 
                 if (!(file instanceof File)) {
@@ -169,7 +579,13 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
+                    visibility?: string;
+                    tag?: string | string[];
+                    tags?: string | string[];
+                    prompt?: string;
+                    model?: string;
                 }>();
+                catalogInput = parseCatalogInput(body);
 
                 if (!body.data) {
                     return c.json(
@@ -240,17 +656,280 @@ api.post(
                 }),
             );
 
+            const catalogItem = await buildCatalogItem({
+                auth: authResult,
+                input: catalogInput,
+                url: mediaUrl(hash),
+                contentType,
+                size: fileBuffer.byteLength,
+                id: hash,
+            });
+            const cataloged = catalogItem
+                ? await writeCatalogEntries(c.env.MEDIA_BUCKET, catalogItem)
+                : false;
+
             return c.json({
                 id: hash,
                 url: mediaUrl(hash),
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                cataloged,
             });
         } catch (error) {
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.post(
+    "/save",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Save a media reference",
+        description:
+            "Catalog an existing Pollinations media or generation URL without uploading bytes. Use tags for app-specific grouping such as parent:<hash> or recipe:water+fire.",
+        responses: {
+            200: {
+                description: "Catalog item",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogItemSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid URL or catalog data",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) return c.json({ error: "API key required" }, 401);
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        try {
+            const requestContentType = c.req.header("content-type") || "";
+            const fields = requestContentType.includes("multipart/form-data")
+                ? await c.req.formData()
+                : requestContentType.includes("application/json")
+                  ? await c.req.json<Record<string, unknown>>()
+                  : new URL(c.req.url).searchParams;
+            const input = parseCatalogInput(fields);
+            if (!input.url) return c.json({ error: "Missing url" }, 400);
+
+            const item = await buildCatalogItem({
+                auth: authResult,
+                input,
+                url: input.url,
+            });
+            if (!item) {
+                return c.json(
+                    {
+                        error: "URL must be a media.pollinations.ai URL or a gen.pollinations.ai image/video/audio URL",
+                    },
+                    400,
+                );
+            }
+
+            const ok = await writeCatalogEntries(c.env.MEDIA_BUCKET, item);
+            if (!ok) return c.json({ error: "Catalog write failed" }, 500);
+            return c.json(item);
+        } catch (error) {
+            console.error("Save error:", error);
+            return c.json({ error: "Save failed" }, 500);
+        }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List authenticated user's saved media",
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) return c.json({ error: "API key required" }, 401);
+        const authResult = await verifyApiKey(apiKey);
+        const ownerId = authResult && authUserId(authResult);
+        if (!ownerId) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        const url = new URL(c.req.url);
+        const app = url.searchParams.get("app");
+        const appKey = url.searchParams.get("app_key");
+        const appId = await resolveAppIdFromQuery(app, appKey);
+        if ((app || appKey) && !appId) {
+            return c.json({ error: "Invalid app or app_key" }, 400);
+        }
+        const prefix = appId
+            ? `${CATALOG_PREFIX}/by-owner-app/${ownerId}/${appId}/`
+            : `${CATALOG_PREFIX}/by-owner/${ownerId}/`;
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                prefix,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+                true,
+            ),
+        );
+    },
+);
+
+api.get(
+    "/gallery",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public app media",
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Missing or invalid app",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const url = new URL(c.req.url);
+        const app = url.searchParams.get("app");
+        const appKey = url.searchParams.get("app_key");
+        const appId = await resolveAppIdFromQuery(app, appKey);
+        if (!appId) return c.json({ error: "app or app_key required" }, 400);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${CATALOG_PREFIX}/public-app/${appId}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/apps/:app/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media for a verified app id",
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid app id",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const app = c.req.param("app");
+        if (!FACET_PATTERN.test(app)) {
+            return c.json({ error: "Invalid app id" }, 400);
+        }
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                `${CATALOG_PREFIX}/public-app/${app}/`,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/tags/:tag",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media tagged with a user tag",
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid tag or app",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const tag = normalizeTag(c.req.param("tag"));
+        if (!tag) return c.json({ error: "Invalid tag" }, 400);
+
+        const url = new URL(c.req.url);
+        const app = url.searchParams.get("app");
+        const appKey = url.searchParams.get("app_key");
+        const appId = await resolveAppIdFromQuery(app, appKey);
+        if ((app || appKey) && !appId) {
+            return c.json({ error: "Invalid app or app_key" }, 400);
+        }
+        const prefix = appId
+            ? `${TAG_PREFIX}/by-app/${appId}/${tag}/`
+            : `${TAG_PREFIX}/${tag}/`;
+        return c.json(
+            await listCatalogItems(
+                c.env.MEDIA_BUCKET,
+                prefix,
+                listLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
     },
 );
 
@@ -452,6 +1131,10 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key)",
+            save: "POST /save (requires API key)",
+            myMedia: "GET /me/media (requires API key)",
+            gallery: "GET /gallery?app_key=pk_...",
+            tags: "GET /tags/:tag",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },
@@ -468,7 +1151,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+                    "Content-addressed media storage plus a lightweight catalog for saved Pollinations media references. Uploads and saves require a pollinations.ai API key (`pk_` or `sk_`). Retrieval and public catalog reads are public.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

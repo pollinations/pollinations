@@ -3,11 +3,13 @@
 const API = "https://gen.pollinations.ai/image";
 const ENTER = "https://enter.pollinations.ai";
 const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA_SAVE = "https://media.pollinations.ai/save";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
+export const CATGPT_APP_KEY = APP_KEY;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -120,6 +122,33 @@ export function generateImageURL(prompt, model, imageUrl = null) {
         url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
     }
     return url;
+}
+
+export async function saveGeneratedMemeReference(prompt, url, model) {
+    const key = getStoredApiKey();
+    if (!key || !url) return null;
+
+    try {
+        const res = await fetch(MEDIA_SAVE, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                url,
+                visibility: "public",
+                prompt,
+                model,
+                tags: ["catgpt", "meme"],
+            }),
+        });
+        if (!res.ok) return null;
+        return res.json();
+    } catch (err) {
+        console.warn("Media catalog save failed:", err);
+        return null;
+    }
 }
 
 // ── Models ──────────────────────────────────────────────────────────────────

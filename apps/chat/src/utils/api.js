@@ -1,5 +1,6 @@
 // Pollinations API utilities — updated to match gen.pollinations.ai spec
 const BASE_URL = "https://gen.pollinations.ai";
+const MEDIA_SAVE_URL = "https://media.pollinations.ai/save";
 const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || "";
 export const BYOP_STORAGE_KEY = "pollinations_byop_api_key";
 
@@ -73,6 +74,39 @@ const parseApiError = async (response) => {
         /* ignore */
     }
     return buildClientError(response.status);
+};
+
+const blobToDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+
+const saveGeneratedReference = async (url, token, fields) => {
+    if (!token) return null;
+    try {
+        const response = await fetch(MEDIA_SAVE_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                url,
+                visibility: "private",
+                tags: ["chat"],
+                ...fields,
+            }),
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.url || null;
+    } catch (error) {
+        console.warn("Media catalog save failed:", error);
+        return null;
+    }
 };
 
 export const loadModels = async () => {
@@ -530,13 +564,19 @@ export const generateImage = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, width, height, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+    const savedUrl = await saveGeneratedReference(url, token, {
+        prompt,
+        model,
+        tags: ["chat", "chat-image"],
     });
+    return {
+        url: savedUrl || (await blobToDataUrl(blob)),
+        prompt,
+        model,
+        width,
+        height,
+        seed,
+    };
 };
 
 export const generateVideo = async (prompt, options = {}) => {
@@ -556,13 +596,17 @@ export const generateVideo = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+    const savedUrl = await saveGeneratedReference(url, token, {
+        prompt,
+        model,
+        tags: ["chat", "chat-video"],
     });
+    return {
+        url: savedUrl || (await blobToDataUrl(blob)),
+        prompt,
+        model,
+        seed,
+    };
 };
 
 // Generate speech/audio — GET /audio/{text}?voice=...
@@ -578,11 +622,16 @@ export const generateAudio = async (text, options = {}) => {
 
     const blob = await response.blob();
     const mimeType = blob.type || "audio/mpeg";
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, text, voice, model, mimeType });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+    const savedUrl = await saveGeneratedReference(url, token, {
+        prompt: text,
+        model,
+        tags: ["chat", "chat-audio"],
     });
+    return {
+        url: savedUrl || (await blobToDataUrl(blob)),
+        text,
+        voice,
+        model,
+        mimeType,
+    };
 };

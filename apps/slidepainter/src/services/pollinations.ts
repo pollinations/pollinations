@@ -6,6 +6,7 @@ import {
 } from './types';
 
 const POLLINATIONS_API_BASE = 'https://gen.pollinations.ai';
+const MEDIA_SAVE_URL = 'https://media.pollinations.ai/save';
 const DEFAULT_CONFIG = {
   model: 'gptimage' as const,
   enhance: true,
@@ -93,8 +94,9 @@ export class PollinationsService {
         }
       }
 
+      await response.blob();
       const result: ImageGenerationResponse = {
-        url: url.toString(),
+        url: await this.saveGeneratedReference(url.toString(), payload.prompt, payload.model || DEFAULT_CONFIG.model) || url.toString(),
         provider: 'pollinations',
         seed: payload.seed,
         cached: false,
@@ -114,6 +116,38 @@ export class PollinationsService {
       return url.protocol === 'http:' || url.protocol === 'https:';
     } catch {
       return false;
+    }
+  }
+
+  private getToken(): string | null {
+    return this.token || import.meta.env.VITE_POLLINATIONS_AI_TOKEN_2 || import.meta.env.VITE_POLLINATIONS_AI_TOKEN || null;
+  }
+
+  private async saveGeneratedReference(url: string, prompt: string, model: string): Promise<string | null> {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const response = await fetch(MEDIA_SAVE_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          visibility: 'private',
+          tags: ['slidepainter'],
+          prompt,
+          model,
+        }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json() as { url?: string };
+      return data.url || null;
+    } catch (error) {
+      console.warn('Media catalog save failed:', error);
+      return null;
     }
   }
 }

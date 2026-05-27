@@ -14,7 +14,8 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
+const POLLINATIONS_MEDIA_SAVE_API = "https://media.pollinations.ai/save";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
 
 const MAKEUP_STYLES = [
@@ -139,6 +140,33 @@ function App() {
         return data.url || data.secure_url || data.media_url;
     };
 
+    const saveGeneratedReference = async (url, prompt) => {
+        if (!apiKey) return null;
+
+        try {
+            const response = await fetch(POLLINATIONS_MEDIA_SAVE_API, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    url,
+                    visibility: "private",
+                    tags: ["virtual-makeup"],
+                    prompt,
+                    model: "nanobanana",
+                }),
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            return typeof data.url === "string" ? data.url : null;
+        } catch (error) {
+            console.warn("Media catalog save failed:", error);
+            return null;
+        }
+    };
+
     const applyMakeup = async () => {
         if (!uploadedImage || !uploadedFile || !apiKey) return;
 
@@ -173,7 +201,8 @@ function App() {
 
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            const savedUrl = await saveGeneratedReference(apiUrl, prompt);
+            setMakeupImage(savedUrl || blobUrl);
             setImageLoaded(true);
             setIsLoading(false);
         } catch (error) {

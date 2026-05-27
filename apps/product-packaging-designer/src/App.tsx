@@ -12,7 +12,7 @@ import {
     Sun,
     Upload,
 } from "lucide-react";
-import { type React, useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 
 type StyleOption = {
     id: string;
@@ -79,7 +79,8 @@ const packagingTypes: PackagingType[] = [
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://gen.pollinations.ai/image";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
+const POLLINATIONS_MEDIA_SAVE_API = "https://media.pollinations.ai/save";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -189,7 +190,7 @@ function App() {
         localStorage.setItem("theme", newTheme);
     };
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
         // Check authentication first
         if (!isAuthenticated || !apiKey) {
             alert("Please authenticate with Pollinations to upload images.");
@@ -305,6 +306,36 @@ function App() {
         }
     };
 
+    const saveGeneratedReference = async (
+        url: string,
+        prompt: string,
+    ): Promise<string | null> => {
+        if (!apiKey) return null;
+
+        try {
+            const response = await fetch(POLLINATIONS_MEDIA_SAVE_API, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    url,
+                    visibility: "private",
+                    tags: ["product-packaging-designer"],
+                    prompt,
+                    model: "nanobanana",
+                }),
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            return typeof data.url === "string" ? data.url : null;
+        } catch (error) {
+            console.warn("Media catalog save failed:", error);
+            return null;
+        }
+    };
+
     const generatePackaging = async () => {
         // Check authentication
         if (!isAuthenticated || !apiKey) {
@@ -386,7 +417,8 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
 
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
-            setGeneratedImage(blobUrl);
+            const savedUrl = await saveGeneratedReference(imageUrl, prompt);
+            setGeneratedImage(savedUrl || blobUrl);
             setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);

@@ -17,6 +17,20 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    cataloged?: boolean;
+}
+
+interface CatalogItem {
+    id: string;
+    url: string;
+    visibility: "private" | "public";
+    ownerId?: string;
+    appId?: string;
+    tags?: string[];
+}
+
+interface CatalogList {
+    items: CatalogItem[];
 }
 
 const VALID_KEY = "pk_test_key_123";
@@ -31,8 +45,12 @@ function mockAuth() {
             200,
             JSON.stringify({
                 valid: true,
+                keyId: "app-test",
                 type: "publishable",
                 name: "test-user",
+                userId: "user-test",
+                byopClientKeyId: "app-test",
+                byopClientName: "Test App",
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -152,6 +170,117 @@ describe("media.pollinations.ai", () => {
         const upload1 = (await res1.json()) as UploadResponse;
         const upload2 = (await res2.json()) as UploadResponse;
         expect(upload1.id).not.toBe(upload2.id);
+    });
+
+    it("catalogs uploads for owner, app gallery, and tags", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "catalog.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        form.append("tag", "catgpt");
+        form.append("tag", "parent:0000000000000000");
+        form.append("prompt", "cat with a hat");
+        form.append("model", "flux");
+
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload?ownerId=spoofed&appId=spoofed",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.cataloged).toBe(true);
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media",
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        const mine = (await mineRes.json()) as CatalogList;
+        const mineItem = mine.items.find((item) => item.id === upload.id);
+        expect(mineItem?.ownerId).toBe("user-test");
+        expect(mineItem?.appId).toBe("app-test");
+
+        const galleryRes = await SELF.fetch(
+            "https://media.pollinations.ai/gallery?app=app-test",
+        );
+        const gallery = (await galleryRes.json()) as CatalogList;
+        const publicItem = gallery.items.find((item) => item.id === upload.id);
+        expect(publicItem?.ownerId).toBeUndefined();
+        expect(publicItem?.appId).toBe("app-test");
+
+        const taggedRes = await SELF.fetch(
+            "https://media.pollinations.ai/tags/parent:0000000000000000?app=app-test",
+        );
+        const tagged = (await taggedRes.json()) as CatalogList;
+        expect(tagged.items.some((item) => item.id === upload.id)).toBe(true);
+    });
+
+    it("saves cached generation URLs without uploading bytes", async () => {
+        const url =
+            "https://gen.pollinations.ai/image/steam?model=flux&width=512&height=512&seed=42&key=secret";
+        const saveRes = await SELF.fetch("https://media.pollinations.ai/save", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                url,
+                visibility: "public",
+                tags: ["recipe:fire+water", "element:steam"],
+                prompt: "steam",
+                model: "flux",
+            }),
+        });
+        expect(saveRes.status).toBe(200);
+        const saved = (await saveRes.json()) as CatalogItem;
+        expect(saved.id).toMatch(/^[a-f0-9]{16}$/);
+        expect(saved.url).not.toContain("key=secret");
+        expect(saved.url).toContain("seed=42");
+
+        const recipeRes = await SELF.fetch(
+            "https://media.pollinations.ai/tags/recipe:fire%2Bwater?app_key=pk_any",
+        );
+        expect(recipeRes.status).toBe(200);
+        const recipe = (await recipeRes.json()) as CatalogList;
+        expect(recipe.items.some((item) => item.id === saved.id)).toBe(true);
+    });
+
+    it("keeps private saved references out of public tag listings", async () => {
+        const saveRes = await SELF.fetch("https://media.pollinations.ai/save", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                url: "https://gen.pollinations.ai/image/private-cat?model=flux",
+                visibility: "private",
+                tag: "catgpt-private",
+            }),
+        });
+        const saved = (await saveRes.json()) as CatalogItem;
+
+        const publicTags = (await (
+            await SELF.fetch(
+                "https://media.pollinations.ai/tags/catgpt-private",
+            )
+        ).json()) as CatalogList;
+        expect(publicTags.items.some((item) => item.id === saved.id)).toBe(
+            false,
+        );
+
+        const mine = (await (
+            await SELF.fetch("https://media.pollinations.ai/me/media", {
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            })
+        ).json()) as CatalogList;
+        expect(mine.items.some((item) => item.id === saved.id)).toBe(true);
     });
 
     it("GET /:invalid-hash returns 400", async () => {

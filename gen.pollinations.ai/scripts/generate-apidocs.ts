@@ -366,8 +366,8 @@ function buildCurl(
     let url = `${BASE_URL}${path}`;
     // Replace {id} → :id-style placeholder
     url = url.replace(/{(\w+)}/g, ":$1");
-    // The /image and /video routes share a query schema whose `model` default is
-    // an image model. Override so the video example uses a video model.
+    // The /image and /video routes share a query schema whose `model` default
+    // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
         ? { model: "veo" }
         : {};
@@ -388,26 +388,97 @@ function buildCurl(
         url = `${url}?${queryStr}`;
     }
 
-    const lines = [
-        `curl${upperMethod !== "GET" ? ` -X ${upperMethod}` : ""} "${url}" \\`,
-        `  -H "Authorization: Bearer $POLLINATIONS_KEY"`,
-    ];
+    // An empty `security: []` on an operation overrides the global auth
+    // requirement — public endpoints (e.g. media retrieval) must not show an
+    // Authorization header in their curl example. We also pin a fallback list
+    // of public read paths so docs stay correct while the upstream media spec
+    // is being redeployed with the explicit `security: []` setting.
+    const opSecurity = op.security;
+    const isPublic =
+        (Array.isArray(opSecurity) && opSecurity.length === 0) ||
+        isPublicMediaRead(method, path);
 
-    const body = asObj(
-        asObj(asObj(op.requestBody).content)["application/json"],
-    );
-    if (body.schema) {
-        const operationId = asStr(op.operationId);
+    const segments: string[] = [
+        `curl${upperMethod !== "GET" ? ` -X ${upperMethod}` : ""} "${url}"`,
+    ];
+    if (!isPublic) {
+        segments.push(`-H "Authorization: Bearer $POLLINATIONS_KEY"`);
+    }
+
+    const reqBody = asObj(op.requestBody);
+    const reqContent = asObj(reqBody.content);
+    const operationId = asStr(op.operationId);
+    const jsonBody = asObj(reqContent["application/json"]);
+    const multipartBody = asObj(reqContent["multipart/form-data"]);
+
+    const curatedMultipart = CURATED_MULTIPART[operationId];
+
+    if (jsonBody.schema) {
         const ex =
             CURATED_BODIES[operationId] ??
-            pickExample(spec, asObj(body.schema), { compact: true });
+            pickExample(spec, asObj(jsonBody.schema), { compact: true });
         if (isMeaningfulExample(ex)) {
-            lines[lines.length - 1] += " \\";
-            lines.push(`  -H "Content-Type: application/json" \\`);
-            lines.push(`  -d '${JSON.stringify(ex)}'`);
+            segments.push(`-H "Content-Type: application/json"`);
+            segments.push(`-d '${JSON.stringify(ex)}'`);
         }
+    } else if (multipartBody.schema || curatedMultipart) {
+        const fields =
+            curatedMultipart ??
+            buildMultipartFields(spec, asObj(multipartBody.schema));
+        for (const [name, value] of fields) {
+            segments.push(`-F "${name}=${value}"`);
+        }
+    } else if (CURATED_BODIES[operationId]) {
+        // Fallback: spec has no requestBody but we have a curated JSON example.
+        segments.push(`-H "Content-Type: application/json"`);
+        segments.push(`-d '${JSON.stringify(CURATED_BODIES[operationId])}'`);
     }
-    return lines.join("\n");
+
+    return segments.join(" \\\n  ");
+}
+
+function isPublicMediaRead(method: string, path: string): boolean {
+    const lower = method.toLowerCase();
+    if (lower !== "get" && lower !== "head") return false;
+    return path === "/{hash}" || path === "/{hash}/metadata";
+}
+
+/**
+ * Synthesize multipart form-data fields from a schema. File-like fields
+ * (`string · binary`) become `@./path` placeholders; scalar fields use any
+ * example/default from the schema.
+ */
+function buildMultipartFields(
+    spec: Spec,
+    schema: Schema,
+): Array<[string, string]> {
+    const resolved = refName(schema) ? deref(spec, schema) : schema;
+    const props = asObj(resolved.properties);
+    const required = new Set(asArr(resolved.required) as string[]);
+    const fields: Array<[string, string]> = [];
+    for (const [name, raw] of Object.entries(props)) {
+        const prop = asObj(raw);
+        if (!required.has(name)) continue;
+        if (asStr(prop.format) === "binary") {
+            const ext = guessFileExtension(name, asStr(prop.contentMediaType));
+            fields.push([name, `@./input.${ext}`]);
+            continue;
+        }
+        const ex = pickExample(spec, prop);
+        if (ex !== undefined)
+            fields.push([name, typeof ex === "string" ? ex : String(ex)]);
+    }
+    return fields;
+}
+
+function guessFileExtension(fieldName: string, mediaType: string): string {
+    if (mediaType.startsWith("image/")) return mediaType.split("/")[1] || "png";
+    if (mediaType.startsWith("audio/")) return mediaType.split("/")[1] || "mp3";
+    if (mediaType.startsWith("video/")) return mediaType.split("/")[1] || "mp4";
+    if (fieldName.includes("image")) return "png";
+    if (fieldName.includes("audio")) return "mp3";
+    if (fieldName.includes("video")) return "mp4";
+    return "bin";
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -724,8 +795,13 @@ All endpoints return errors in this envelope:
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or tier for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
+| \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |
+| \`409\` | \`CONFLICT\` | Request conflicts with current resource state (e.g. duplicate key name). |
+| \`422\` | \`UNPROCESSABLE_ENTITY\` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
 | \`429\` | \`RATE_LIMITED\` | Too many requests. Slow down. |
-| \`500\` | \`INTERNAL_ERROR\` | Server error. We're on it. |`;
+| \`500\` | \`INTERNAL_ERROR\` | Server error. We're on it. |
+| \`502\` | \`BAD_GATEWAY\` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| \`503\` | \`SERVICE_UNAVAILABLE\` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -770,6 +846,28 @@ const CURATED_BODIES: Record<string, Json> = {
         messages: [{ role: "user", content: "Hello!" }],
         model: "openai",
     },
+    postAccountKeys: {
+        name: "my-app-backend",
+        permissions: ["generate:image", "generate:text"],
+    },
+};
+
+/**
+ * Curated multipart fields for operations whose request shapes don't lend
+ * themselves to schema-driven synthesis (file uploads, mixed binary+scalar
+ * fields). Keyed by operationId.
+ */
+const CURATED_MULTIPART: Record<string, Array<[string, string]>> = {
+    postV1AudioTranscriptions: [
+        ["file", "@./audio.mp3"],
+        ["model", "openai-audio"],
+    ],
+    postV1ImagesEdits: [
+        ["image", "@./input.png"],
+        ["prompt", "make the sky a vivid sunset"],
+        ["model", "kontext"],
+    ],
+    postUpload: [["file", "@./image.png"]],
 };
 
 const HTTP_METHODS = new Set([

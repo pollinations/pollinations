@@ -277,7 +277,9 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/account/keys" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-app-backend","permissions":["generate:image","generate:text"]}'
 ```
 
 ---
@@ -476,7 +478,9 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "file=@./audio.mp3" \
+  -F "model=openai-audio"
 ```
 
 ---
@@ -933,7 +937,10 @@ Returns [`CreateImageResponse`](#createimageresponse).
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "image=@./input.png" \
+  -F "prompt=make the sky a vivid sunset" \
+  -F "model=kontext"
 ```
 
 ### 🎬 Video
@@ -1002,7 +1009,8 @@ Upload an image, audio, or video file. Supports multipart/form-data, raw binary,
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/upload" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "file=@./image.png"
 ```
 
 ---
@@ -1024,8 +1032,7 @@ Get a file by its content hash. No authentication required. Responses are cached
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/:hash" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/:hash"
 ```
 
 ---
@@ -1047,8 +1054,7 @@ Check existence and metadata without downloading the file.
 💻 **Example**
 
 ```bash
-curl -X HEAD "https://gen.pollinations.ai/:hash" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl -X HEAD "https://gen.pollinations.ai/:hash"
 ```
 
 ---
@@ -1079,8 +1085,7 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/:hash/metadata" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl "https://gen.pollinations.ai/:hash/metadata"
 ```
 
 ## 🧩 Schemas
@@ -1270,5 +1275,10 @@ All endpoints return errors in this envelope:
 | `402` | `PAYMENT_REQUIRED` | Insufficient pollen balance or API key budget exhausted. |
 | `403` | `FORBIDDEN` | Access denied — insufficient permissions or tier for this model. |
 | `404` | `NOT_FOUND` | Resource not found. |
+| `405` | `METHOD_NOT_ALLOWED` | HTTP method not supported on this route. |
+| `409` | `CONFLICT` | Request conflicts with current resource state (e.g. duplicate key name). |
+| `422` | `UNPROCESSABLE_ENTITY` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
 | `429` | `RATE_LIMITED` | Too many requests. Slow down. |
 | `500` | `INTERNAL_ERROR` | Server error. We're on it. |
+| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| `503` | `SERVICE_UNAVAILABLE` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |

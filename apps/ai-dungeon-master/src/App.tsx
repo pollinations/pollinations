@@ -12,6 +12,7 @@ const API_URL = {
     story: "https://gen.pollinations.ai/v1/chat/completions",
     image: "https://gen.pollinations.ai/image/",
 };
+const CATALOG_APP_TAG = "ai-dungeon-master";
 // Enhanced interfaces
 interface Character {
     name: string;
@@ -175,28 +176,70 @@ export default function App() {
             let uploadedSceneImage = gameState.currentScene.image;
 
             if (withUpload && apiKey) {
-                const sceneUpload = uploadToMedia(
-                    gameState.currentScene.image,
+                const originalLastStoryImage =
+                    gameState.storyHistory[gameState.storyHistory.length - 1]
+                        ?.image;
+                character.avatar = await uploadToMedia(
+                    character.avatar,
                     apiKey,
+                    {
+                        visibility: "private",
+                        tags: [CATALOG_APP_TAG, "ai-dungeon-avatar"],
+                        kind: "generation",
+                        prompt: `${character.name} the ${character.class}. ${character.backstory}`,
+                        model: "flux",
+                    },
                 );
-                await Promise.all([
-                    uploadToMedia(character.avatar, apiKey).then((url) => {
-                        character.avatar = url;
-                    }),
-                    sceneUpload.then((url) => {
-                        uploadedSceneImage = url;
-                    }),
-                    ...storyHistory.map((entry, idx) =>
-                        uploadToMedia(entry.image, apiKey).then((url) => {
-                            storyHistory[idx].image = url;
-                        }),
-                    ),
-                    ...inventory.map((item, idx) =>
-                        uploadToMedia(item.image, apiKey).then((url) => {
+
+                let previousStoryImage = character.avatar;
+                for (let idx = 0; idx < storyHistory.length; idx++) {
+                    const entry = storyHistory[idx];
+                    storyHistory[idx].image = await uploadToMedia(
+                        entry.image,
+                        apiKey,
+                        {
+                            visibility: "private",
+                            tags: [CATALOG_APP_TAG, "ai-dungeon-story"],
+                            parents: [previousStoryImage].filter(Boolean),
+                            kind: "generation",
+                            prompt: entry.description,
+                            model: "flux",
+                        },
+                    );
+                    previousStoryImage = storyHistory[idx].image;
+                }
+
+                if (originalLastStoryImage === gameState.currentScene.image) {
+                    uploadedSceneImage = previousStoryImage;
+                } else {
+                    uploadedSceneImage = await uploadToMedia(
+                        gameState.currentScene.image,
+                        apiKey,
+                        {
+                            visibility: "private",
+                            tags: [CATALOG_APP_TAG, "ai-dungeon-scene"],
+                            parents: [previousStoryImage].filter(Boolean),
+                            kind: "generation",
+                            prompt: gameState.currentScene.description,
+                            model: "flux",
+                        },
+                    );
+                }
+
+                await Promise.all(
+                    inventory.map((item, idx) =>
+                        uploadToMedia(item.image, apiKey, {
+                            visibility: "private",
+                            tags: [CATALOG_APP_TAG, "ai-dungeon-item"],
+                            parents: [uploadedSceneImage].filter(Boolean),
+                            kind: "generation",
+                            prompt: `${item.name}: ${item.description}`,
+                            model: "flux",
+                        }).then((url) => {
                             inventory[idx].image = url;
                         }),
                     ),
-                ]);
+                );
             }
 
             const currentScene = {

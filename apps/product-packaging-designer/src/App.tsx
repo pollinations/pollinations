@@ -12,7 +12,8 @@ import {
     Sun,
     Upload,
 } from "lucide-react";
-import { type React, useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 type StyleOption = {
     id: string;
@@ -27,6 +28,15 @@ type PackagingType = {
     label: string;
     icon: typeof Box;
     prompt: string;
+};
+
+type CatalogFields = {
+    visibility?: "public" | "private";
+    tags?: string[];
+    parents?: string[];
+    kind?: "upload" | "generation" | "edit" | "saved_generation";
+    prompt?: string;
+    model?: string;
 };
 
 const styleOptions: StyleOption[] = [
@@ -79,7 +89,8 @@ const packagingTypes: PackagingType[] = [
     { id: "can", label: "Can", icon: Package, prompt: "can packaging" },
 ];
 const POLLINATIONS_API = "https://gen.pollinations.ai/image";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
+const PACKAGING_TAGS = ["product-packaging-designer"];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
@@ -236,18 +247,37 @@ function App() {
             setFile(null);
         }
     };
-    const uploadToPollinationsMedia = async (file: File): Promise<string> => {
-        const validation = validateFile(file, MAX_FILE_SIZE);
-        if (!validation.isValid) {
-            throw new Error(validation.error || "File validation failed");
-        }
+    const appendCatalogFields = (
+        formData: FormData,
+        {
+            visibility = "private",
+            tags = PACKAGING_TAGS,
+            parents = [],
+            kind = "generation",
+            prompt,
+            model,
+        }: CatalogFields = {},
+    ) => {
+        formData.append("visibility", visibility);
+        formData.append("kind", kind);
+        if (prompt) formData.append("prompt", prompt);
+        if (model) formData.append("model", model);
+        if (tags.length) formData.append("tags", JSON.stringify(tags));
+        if (parents.length) formData.append("parents", JSON.stringify(parents));
+    };
 
+    const uploadBlobToPollinationsMedia = async (
+        blob: Blob,
+        filename: string,
+        catalog: CatalogFields = {},
+    ): Promise<string> => {
         if (!apiKey) {
             throw new Error("No API key available for media upload");
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", blob, filename);
+        appendCatalogFields(formData, catalog);
 
         try {
             const response = await fetch(POLLINATIONS_MEDIA_API, {
@@ -303,6 +333,23 @@ function App() {
 
             throw new Error("An unexpected error occurred during upload");
         }
+    };
+
+    const uploadToPollinationsMedia = async (file: File): Promise<string> => {
+        const validation = validateFile(file, MAX_FILE_SIZE);
+        if (!validation.isValid) {
+            throw new Error(validation.error || "File validation failed");
+        }
+
+        return uploadBlobToPollinationsMedia(
+            file,
+            file.name || "packaging-source.png",
+            {
+                visibility: "private",
+                tags: [...PACKAGING_TAGS, "packaging-source"],
+                kind: "upload",
+            },
+        );
     };
 
     const generatePackaging = async () => {
@@ -385,8 +432,32 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setGeneratedImage(blobUrl);
+            let resultUrl = URL.createObjectURL(blob);
+            try {
+                resultUrl = await uploadBlobToPollinationsMedia(
+                    blob,
+                    `packaging-mockup-${Date.now()}.png`,
+                    {
+                        visibility: "private",
+                        tags: [
+                            ...PACKAGING_TAGS,
+                            "packaging-result",
+                            packagingType,
+                            style,
+                        ],
+                        parents: [uploadedUrl],
+                        kind: "edit",
+                        prompt,
+                        model: "nanobanana",
+                    },
+                );
+            } catch (uploadError) {
+                console.warn(
+                    "Packaging result catalog upload failed:",
+                    uploadError,
+                );
+            }
+            setGeneratedImage(resultUrl);
             setImageLoaded(true);
         } catch (error) {
             console.error("Error in generatePackaging:", error);

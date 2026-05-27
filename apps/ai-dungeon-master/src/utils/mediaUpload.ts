@@ -1,5 +1,15 @@
-const MEDIA_URL = "https://gen.pollinations.ai";
+const MEDIA_URL = "https://media.pollinations.ai";
+const MEDIA_UPLOAD_URL = `${MEDIA_URL}/upload`;
 const MEDIA_HOST = "media.pollinations.ai";
+
+export interface MediaCatalogFields {
+    visibility?: "public" | "private";
+    tags?: string[];
+    parents?: string[];
+    kind?: "upload" | "generation" | "edit" | "saved_generation";
+    prompt?: string;
+    model?: string;
+}
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
 function isMediaUrl(url: string): boolean {
@@ -10,6 +20,25 @@ function isMediaUrl(url: string): boolean {
     }
 }
 
+function appendCatalogFields(
+    formData: FormData,
+    {
+        visibility = "private",
+        tags = [],
+        parents = [],
+        kind = "generation",
+        prompt,
+        model,
+    }: MediaCatalogFields,
+) {
+    formData.append("visibility", visibility);
+    formData.append("kind", kind);
+    if (prompt) formData.append("prompt", prompt);
+    if (model) formData.append("model", model);
+    if (tags.length) formData.append("tags", JSON.stringify(tags));
+    if (parents.length) formData.append("parents", JSON.stringify(parents));
+}
+
 /**
  * Upload a gen.pollinations.ai image to media.pollinations.ai for permanent storage.
  * Returns the permanent media URL on success, or the original URL on any error.
@@ -18,6 +47,7 @@ function isMediaUrl(url: string): boolean {
 export async function uploadToMedia(
     genUrl: string,
     apiKey: string,
+    catalog: MediaCatalogFields = {},
 ): Promise<string> {
     if (!genUrl || isMediaUrl(genUrl)) return genUrl;
 
@@ -27,9 +57,10 @@ export async function uploadToMedia(
 
         const blob = await response.blob();
         const formData = new FormData();
-        formData.append("file", blob);
+        formData.append("file", blob, `ai-dungeon-${Date.now()}.png`);
+        appendCatalogFields(formData, catalog);
 
-        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+        const uploadRes = await fetch(MEDIA_UPLOAD_URL, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: formData,
@@ -38,7 +69,7 @@ export async function uploadToMedia(
         if (!uploadRes.ok) return genUrl;
 
         const data = await uploadRes.json();
-        return data.url || genUrl;
+        return data.url || (data.id ? `${MEDIA_URL}/${data.id}` : genUrl);
     } catch {
         return genUrl;
     }

@@ -18,22 +18,22 @@ curl https://gen.pollinations.ai/v1/models \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
-**3. Pick an endpoint** from the [Contents](#-contents) below.
+**3. Pick an endpoint** from the [📑 Contents](#-contents) below.
 
 **Integration guides:** [BYOP, CLI, MCP Server](/docs/guides)
 
 ## 📑 Contents
 
 - [🚀 Getting Started](#-getting-started)
-- [🛠️ Endpoints](#endpoints)
-  - [👤 Account](#account)
-  - [🔊 Audio](#audio)
-  - [🤖 Models](#models)
-  - [🔢 Embeddings](#embeddings)
-  - [✍️ Text](#text)
-  - [🖼️ Image](#image)
-  - [🎬 Video](#video)
-  - [📦 Media Storage](#media-storage)
+- [🛠️ Endpoints](#-endpoints)
+  - [👤 Account](#-account)
+  - [🔊 Audio](#-audio)
+  - [🤖 Models](#-models)
+  - [🔢 Embeddings](#-embeddings)
+  - [✍️ Text](#-text)
+  - [🖼️ Image](#-image)
+  - [🎬 Video](#-video)
+  - [📦 Media Storage](#-media-storage)
 - [🧩 Schemas](#-schemas)
 - [⚠️ Error Responses](#-error-responses)
 
@@ -976,7 +976,7 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/:prompt?model=zimage&width=1024" \
+curl "https://gen.pollinations.ai/video/:prompt?model=veo&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 

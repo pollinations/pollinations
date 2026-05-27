@@ -22,13 +22,20 @@ type Spec = {
 };
 
 const BASE_URL = "https://gen.pollinations.ai";
-const SECTION_EMOJI = {
-    start: "🚀",
-    contents: "📑",
-    endpoints: "🛠️",
-    schemas: "🧩",
-    errors: "⚠️",
-};
+const SECTIONS = {
+    start: { emoji: "🚀", title: "Getting Started" },
+    contents: { emoji: "📑", title: "Contents" },
+    endpoints: { emoji: "🛠️", title: "Endpoints" },
+    schemas: { emoji: "🧩", title: "Schemas" },
+    errors: { emoji: "⚠️", title: "Error Responses" },
+} as const;
+
+function sectionHeading(s: { emoji: string; title: string }): string {
+    return `${s.emoji} ${s.title}`;
+}
+function sectionAnchor(s: { emoji: string; title: string }): string {
+    return slug(sectionHeading(s));
+}
 const CALLOUT = {
     params: "⚙️ **Parameters**",
     body: "📥 **Request body**",
@@ -62,14 +69,22 @@ function deref(spec: Spec, schema: Schema): Schema {
 
 function refName(schema: Schema): string | null {
     const ref = asStr(schema?.$ref);
-    return ref ? ref.split("/").pop()! : null;
+    if (!ref) return null;
+    const parts = ref.split("/");
+    return parts[parts.length - 1] ?? null;
 }
 
+/**
+ * Matches github-slugger: strips chars that aren't letters/numbers/spaces/dashes/underscores
+ * (so emoji and VS-16 are removed), then converts whitespace to dashes. The space left
+ * behind by a leading emoji becomes a leading dash — required for `#-section` anchors
+ * to match GitHub's rendered heading IDs.
+ */
 function slug(s: string): string {
     return s
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+        .replace(/[^\p{Letter}\p{Number}\s_-]/gu, "")
+        .replace(/\s+/g, "-");
 }
 
 function escapePipe(s: string): string {
@@ -239,7 +254,7 @@ function renderRowsTable(rows: Row[]): string {
     return out.join("\n");
 }
 
-function renderParamsTable(spec: Spec, params: Schema[]): string {
+function renderParamsTable(_spec: Spec, params: Schema[]): string {
     if (params.length === 0) return "";
     const out: string[] = [];
     out.push("| Param | In | Type | Description |");
@@ -351,12 +366,21 @@ function buildCurl(
     let url = `${BASE_URL}${path}`;
     // Replace {id} → :id-style placeholder
     url = url.replace(/{(\w+)}/g, ":$1");
+    // The /image and /video routes share a query schema whose `model` default is
+    // an image model. Override so the video example uses a video model.
+    const queryOverrides: Record<string, string> = path.startsWith("/video/")
+        ? { model: "veo" }
+        : {};
     if (queryParams.length) {
         const queryStr = queryParams
             .slice(0, 2)
             .map((p) => {
                 const obj = asObj(p);
                 const name = asStr(obj.name);
+                const override = queryOverrides[name];
+                if (override !== undefined) {
+                    return `${name}=${encodeURIComponent(override)}`;
+                }
                 const ex = pickExample(spec, asObj(obj.schema));
                 return `${name}=${ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`}`;
             })
@@ -398,7 +422,6 @@ function renderEndpoint(
 ): string {
     const out: string[] = [];
     const summary = asStr(op.summary) || asStr(op.operationId);
-    const id = `${method.toUpperCase()} ${path}`;
     out.push(`#### \`${method.toUpperCase()}\` \`${path}\` — ${summary}`);
     out.push("");
 
@@ -589,7 +612,7 @@ function renderHeader(spec: Spec): string {
 }
 
 function renderGettingStarted(): string {
-    return `## ${SECTION_EMOJI.start} Getting Started
+    return `## ${sectionHeading(SECTIONS.start)}
 
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
 
@@ -603,7 +626,7 @@ curl ${BASE_URL}/v1/models \\
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 \`\`\`
 
-**3. Pick an endpoint** from the [Contents](#-contents) below.
+**3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
 **Integration guides:** [BYOP, CLI, MCP Server](/docs/guides)`;
 }
@@ -613,17 +636,25 @@ function renderTableOfContents(
     byTag: Map<string, { method: string; path: string; op: Operation }[]>,
 ): string {
     const out: string[] = [];
-    out.push(`## ${SECTION_EMOJI.contents} Contents`);
+    out.push(`## ${sectionHeading(SECTIONS.contents)}`);
     out.push("");
-    out.push(`- [${SECTION_EMOJI.start} Getting Started](#-getting-started)`);
-    out.push(`- [${SECTION_EMOJI.endpoints} Endpoints](#${slug("endpoints")})`);
+    out.push(
+        `- [${sectionHeading(SECTIONS.start)}](#${sectionAnchor(SECTIONS.start)})`,
+    );
+    out.push(
+        `- [${sectionHeading(SECTIONS.endpoints)}](#${sectionAnchor(SECTIONS.endpoints)})`,
+    );
     for (const tag of byTag.keys()) {
         out.push(`  - [${tag}](#${slug(tag)})`);
     }
     if (Object.keys(asObj(spec.components?.schemas)).length) {
-        out.push(`- [${SECTION_EMOJI.schemas} Schemas](#-schemas)`);
+        out.push(
+            `- [${sectionHeading(SECTIONS.schemas)}](#${sectionAnchor(SECTIONS.schemas)})`,
+        );
     }
-    out.push(`- [${SECTION_EMOJI.errors} Error Responses](#-error-responses)`);
+    out.push(
+        `- [${sectionHeading(SECTIONS.errors)}](#${sectionAnchor(SECTIONS.errors)})`,
+    );
     return out.join("\n");
 }
 
@@ -632,7 +663,7 @@ function renderEndpoints(
     byTag: Map<string, { method: string; path: string; op: Operation }[]>,
 ): string {
     const out: string[] = [];
-    out.push(`## ${SECTION_EMOJI.endpoints} Endpoints`);
+    out.push(`## ${sectionHeading(SECTIONS.endpoints)}`);
     out.push("");
     for (const [tag, ops] of byTag) {
         out.push(`### ${tag}`);
@@ -655,7 +686,7 @@ function renderSchemas(spec: Spec): string {
     const names = Object.keys(schemas);
     if (names.length === 0) return "";
     const out: string[] = [];
-    out.push(`## ${SECTION_EMOJI.schemas} Schemas`);
+    out.push(`## ${sectionHeading(SECTIONS.schemas)}`);
     out.push("");
     out.push(
         "Reusable request/response objects referenced from the endpoints above.",
@@ -668,7 +699,7 @@ function renderSchemas(spec: Spec): string {
 }
 
 function renderErrorResponses(): string {
-    return `## ${SECTION_EMOJI.errors} Error Responses
+    return `## ${sectionHeading(SECTIONS.errors)}
 
 All endpoints return errors in this envelope:
 
@@ -766,8 +797,12 @@ function groupByTag(
             const op = asObj(rawOp);
             const tags = asArr(op.tags) as string[];
             const tag = tags[0] || "Other";
-            if (!groups.has(tag)) groups.set(tag, []);
-            groups.get(tag)!.push({ method, path, op });
+            let bucket = groups.get(tag);
+            if (!bucket) {
+                bucket = [];
+                groups.set(tag, bucket);
+            }
+            bucket.push({ method, path, op });
         }
     }
     return groups;
@@ -796,7 +831,7 @@ async function main() {
     let markdown = sections.filter(Boolean).join("\n\n");
     // Collapse 3+ blank lines to 2
     markdown = markdown.replace(/\n{3,}/g, "\n\n");
-    markdown = markdown.trimEnd() + "\n";
+    markdown = `${markdown.trimEnd()}\n`;
 
     writeFileSync(OUTPUT_PATH, markdown);
     console.log(`✅ Saved to ${OUTPUT_PATH}`);

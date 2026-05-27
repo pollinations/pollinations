@@ -909,7 +909,24 @@ const HTTP_METHODS = new Set([
     "trace",
 ]);
 
-/** Group operations by tag while preserving spec order. */
+/**
+ * Canonical tag order. Generation surfaces first (most-used) then supporting
+ * resources. Mirrors the Scalar API reference grouping so the two docs read
+ * the same. Unknown tags get appended in spec order so a new endpoint never
+ * silently disappears — they show up at the end until added here.
+ */
+const TAG_ORDER = [
+    "✍️ Text",
+    "🖼️ Image",
+    "🎬 Video",
+    "🔊 Audio",
+    "🔢 Embeddings",
+    "🤖 Models",
+    "📦 Media Storage",
+    "👤 Account",
+];
+
+/** Group operations by tag, then re-key the map to follow TAG_ORDER. */
 function groupByTag(
     spec: Spec,
 ): Map<string, { method: string; path: string; op: Operation }[]> {
@@ -931,7 +948,25 @@ function groupByTag(
             bucket.push({ method, path, op });
         }
     }
-    return groups;
+
+    const ordered = new Map<
+        string,
+        { method: string; path: string; op: Operation }[]
+    >();
+    for (const tag of TAG_ORDER) {
+        const bucket = groups.get(tag);
+        if (bucket) {
+            ordered.set(tag, bucket);
+            groups.delete(tag);
+        }
+    }
+    for (const [tag, bucket] of groups) {
+        console.warn(
+            `⚠️  Tag "${tag}" not in TAG_ORDER — appended at end. Add it to TAG_ORDER in generate-apidocs.ts.`,
+        );
+        ordered.set(tag, bucket);
+    }
+    return ordered;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11302,
+  "title": "Rewrite API docs generator with custom markdown builder",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11302",
+  "merged_at": "2026-05-27T08:01:54Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "## Summary\nReplaced the `@scalar/openapi-to-markdown` dependency with a custom markdown generation implementation. The new generator provides more control over formatting, better handling of complex schemas, and improved documentation structure.\n\n## Key Changes\n- **Removed external dependency**: Eliminated `@scalar/openapi-to-markdown` in favor of custom implementation\n- **Custom markdown builder**: Implemented `MarkdownBuilder` class for structured document generation with proper heading hierarchy and section management\n- **Enhanced schema handling**: \n  - Added recursive schema dereferencing (`deref`) to resolve `$ref` pointers\n  - Improved type formatting with support for unions, enums, arrays, and nested objects\n  - Better handling of `anyOf`/`oneOf` schema compositions\n- **Flattened field tables**: Implemented one-level object flattening with dotted notation for nested properties (e.g., `config.quality`)\n- **Improved error documentation**: Consolidated error responses into a structured table with status codes, error codes, and descriptions\n- **Better formatting utilities**:\n  - Type-safe helpers (`asObj`, `asArr`, `asStr`) for safe type coercion\n  - Slug generation for anchor links\n  - Pipe character escaping for markdown tables\n  - Constraint formatting (min/max values, patterns, etc.)\n- **Enhanced callout system**: Added emoji-prefixed callouts for parameters, request bodies, responses, and examples\n- **Comprehensive schema documentation**: Generates detailed field tables with type information, required status, descriptions, and constraints\n\n## Notable Implementation Details\n- Schema dereferencing follows JSON Pointer syntax (`#/components/schemas/...`)\n- Type formatting intelligently handles nullable types and deduplicates union members\n- Field tables support constraints like `minLength`, `maxLength`, `minimum`, `maximum`, `pattern`, and `default` values\n- Generated markdown maintains consistent structure with emoji-prefixed section headers for visual organi",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bespoke API Docs",
+    "blurb": "We've built a custom markdown generator for our API docs, replacing the old scalar dependency. Expect cleaner tables, better schema handling, and a much more readable APIDOCS.md.",
+    "summary": "Replaced the `@scalar/openapi-to-markdown` dependency with a custom `MarkdownBuilder` that flattens nested properties, resolves `$ref` pointers, and formats complex schemas into clean markdown tables.",
+    "impact": "Developers reading the API documentation will see a much cleaner, more structured layout with flattened field tables, clear constraints, and consolidated error responses.",
+    "keywords": [
+      "docs",
+      "api",
+      "markdown",
+      "generator",
+      "schema"
+    ],
+    "visual_concept": "Polly the bee organizing a library or writing in a large book, surrounded by neat stacks of paper and glowing code snippets, representing the new structured documentation.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, organizing neat stacks of glowing documents in a warm wooden library. A chunky retro computer monitor displays clean, structured markdown tables. Soft lime green (#ecf874) and warm cream gradient background. Cozy 8-bit aesthetic, Stardew Valley vibes, warm lighting, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11302.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, organizing neat stacks of glowing documents in a warm wooden library. A chunky retro computer monitor displays clean, structured markdown tables. Soft lime green (#ecf874) and warm cream gradient background. Cozy 8-bit aesthetic, Stardew Valley vibes, warm lighting, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-27T08:02:53.572637+00:00"
+}

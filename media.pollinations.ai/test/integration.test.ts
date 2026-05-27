@@ -17,22 +17,86 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    owner: string | null;
+    app: string | null;
+    parent: string | null;
+    userTags: string[];
+}
+
+interface CatalogItem {
+    hash: string;
+    url: string;
+    contentType: string;
+    size: number;
+    createdAt: string;
+    owner: string | null;
+    app: string | null;
+    appName: string | null;
+    parent: string | null;
+    userTags: string[];
+}
+
+interface ListResponse {
+    items: CatalogItem[];
+    nextCursor: string | null;
 }
 
 const VALID_KEY = "pk_test_key_123";
+const OTHER_KEY = "pk_other_key_456";
+const NO_USER_KEY = "pk_anon_key_789";
 
 function mockAuth() {
     fetchMock.activate();
     fetchMock.disableNetConnect();
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
+    const pool = fetchMock.get("https://gen.pollinations.ai");
+
+    pool.intercept({
+        path: "/account/key",
+        headers: { authorization: `Bearer ${VALID_KEY}` },
+    })
         .reply(
             200,
             JSON.stringify({
                 valid: true,
                 type: "publishable",
                 name: "test-user",
+                userId: "user_alice",
+                appId: "catgpt",
+                appName: "CatGPT",
+            }),
+            { headers: { "content-type": "application/json" } },
+        )
+        .persist();
+
+    pool.intercept({
+        path: "/account/key",
+        headers: { authorization: `Bearer ${OTHER_KEY}` },
+    })
+        .reply(
+            200,
+            JSON.stringify({
+                valid: true,
+                type: "publishable",
+                name: "other-user",
+                userId: "user_bob",
+                appId: "voice-edit",
+                appName: "voice.edit",
+            }),
+            { headers: { "content-type": "application/json" } },
+        )
+        .persist();
+
+    pool.intercept({
+        path: "/account/key",
+        headers: { authorization: `Bearer ${NO_USER_KEY}` },
+    })
+        .reply(
+            200,
+            JSON.stringify({
+                valid: true,
+                type: "publishable",
+                name: "legacy-user",
+                // no userId / appId — legacy/anonymous key shape
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -166,5 +230,253 @@ describe("media.pollinations.ai", () => {
             "https://media.pollinations.ai/0000000000000000",
         );
         expect(res.status).toBe(404);
+    });
+
+    it("upload stamps server-attested owner and app from /account/key", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "stamped.png", { type: "image/png" }),
+        );
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(200);
+        const upload = (await res.json()) as UploadResponse;
+        expect(upload.owner).toBe("user_alice");
+        expect(upload.app).toBe("catgpt");
+        expect(upload.parent).toBeNull();
+        expect(upload.userTags).toEqual([]);
+    });
+
+    it("request-supplied owner/app params do NOT override verified identity", async () => {
+        // Adversarial: client tries to claim a different app/owner via the
+        // request. These keys are reserved for the server. The upload
+        // succeeds but stamps the verified values from /account/key.
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([new Uint8Array([1, 2, 3, 4])], "adv.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        form.append("app", "voice-edit");
+        form.append("owner", "user_bob");
+
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/upload?app=voice-edit&owner=user_bob",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(res.status).toBe(200);
+        const upload = (await res.json()) as UploadResponse;
+        expect(upload.owner).toBe("user_alice");
+        expect(upload.app).toBe("catgpt");
+    });
+
+    it("lineage: child appears under parent's /children listing", async () => {
+        // Upload parent
+        const parentForm = new FormData();
+        parentForm.append(
+            "file",
+            new File([new Uint8Array([10, 20, 30])], "parent.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        const parentRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: parentForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const parent = (await parentRes.json()) as UploadResponse;
+
+        // Upload child claiming parent
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([new Uint8Array([40, 50, 60])], "child.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        childForm.append("parent", parent.id);
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${OTHER_KEY}` },
+            },
+        );
+        const child = (await childRes.json()) as UploadResponse;
+        expect(child.parent).toBe(parent.id);
+
+        const listRes = await SELF.fetch(
+            `https://media.pollinations.ai/${parent.id}/children`,
+        );
+        expect(listRes.status).toBe(200);
+        const list = (await listRes.json()) as ListResponse;
+        expect(list.items.length).toBe(1);
+        expect(list.items[0]!.hash).toBe(child.id);
+        expect(list.items[0]!.app).toBe("voice-edit");
+    });
+
+    it("invalid parent hash is ignored (not stored as lineage)", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([new Uint8Array([99, 99, 99])], "noparent.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        form.append("parent", "not-a-hash");
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const upload = (await res.json()) as UploadResponse;
+        expect(upload.parent).toBeNull();
+    });
+
+    it("GET /me/media lists only the caller's uploads", async () => {
+        // Two uploads as alice, one as bob.
+        for (const name of ["alice-a.bin", "alice-b.bin"]) {
+            const form = new FormData();
+            form.append(
+                "file",
+                new File(
+                    [new Uint8Array([...name].map((c) => c.charCodeAt(0)))],
+                    name,
+                    {
+                        type: "application/octet-stream",
+                    },
+                ),
+            );
+            await SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            });
+        }
+        const bobForm = new FormData();
+        bobForm.append(
+            "file",
+            new File([new Uint8Array([66, 79, 66])], "bob.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: bobForm,
+            headers: { Authorization: `Bearer ${OTHER_KEY}` },
+        });
+
+        const res = await SELF.fetch("https://media.pollinations.ai/me/media", {
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        expect(res.status).toBe(200);
+        const list = (await res.json()) as ListResponse;
+        expect(list.items.length).toBeGreaterThanOrEqual(2);
+        for (const item of list.items) {
+            expect(item.owner).toBe("user_alice");
+        }
+    });
+
+    it("GET /me/media without auth returns 401", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/me/media");
+        expect(res.status).toBe(401);
+    });
+
+    it("GET /me/media with key lacking userId returns empty list", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/me/media", {
+            headers: { Authorization: `Bearer ${NO_USER_KEY}` },
+        });
+        expect(res.status).toBe(200);
+        const list = (await res.json()) as ListResponse;
+        expect(list.items).toEqual([]);
+    });
+
+    it("GET /apps/:app/media lists only that app's uploads", async () => {
+        // Alice uploads under catgpt, bob under voice-edit.
+        const aForm = new FormData();
+        aForm.append(
+            "file",
+            new File([new Uint8Array([1, 1, 1])], "a.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: aForm,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const bForm = new FormData();
+        bForm.append(
+            "file",
+            new File([new Uint8Array([2, 2, 2])], "b.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: bForm,
+            headers: { Authorization: `Bearer ${OTHER_KEY}` },
+        });
+
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/apps/catgpt/media",
+        );
+        expect(res.status).toBe(200);
+        const list = (await res.json()) as ListResponse;
+        for (const item of list.items) {
+            expect(item.app).toBe("catgpt");
+        }
+        expect(list.items.length).toBeGreaterThan(0);
+    });
+
+    it("user tags are lowercased, validated, and capped", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([new Uint8Array([7, 7, 7])], "tagged.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        form.append("tag", "Funny");
+        form.append("tag", "cats");
+        form.append("tag", "bad tag with spaces");
+        form.append("tag", "ok-2");
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const upload = (await res.json()) as UploadResponse;
+        expect(upload.userTags).toContain("funny");
+        expect(upload.userTags).toContain("cats");
+        expect(upload.userTags).toContain("ok-2");
+        expect(upload.userTags).not.toContain("bad tag with spaces");
+    });
+
+    it("apps endpoint rejects invalid app id format", async () => {
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/apps/bad%20id/media",
+        );
+        expect(res.status).toBe(400);
+    });
+
+    it("children endpoint rejects invalid hash", async () => {
+        const res = await SELF.fetch(
+            "https://media.pollinations.ai/not-a-hash/children",
+        );
+        expect(res.status).toBe(400);
     });
 });

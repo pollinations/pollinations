@@ -1440,6 +1440,24 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Display name of the API key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable owner user id. Server-attested.",
+                                        ),
+                                    appId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable id of the publishable app that minted this key (BYOP), or null. Server-attested.",
+                                        ),
+                                    appName: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the app that minted this key, or null.",
+                                        ),
                                     expiresAt: z
                                         .string()
                                         .nullable()
@@ -1546,10 +1564,19 @@ export const accountRoutes = new Hono<Env>()
                 account: apiKey.permissions?.account || null,
             };
 
+            // Stable user id and app attribution. Server-attested — services
+            // downstream (e.g. media.pollinations.ai) treat these as the
+            // owner/app identity for catalogs and lineage, never trusting
+            // client-supplied values for those facets.
+            const userId = c.var.auth.user?.id ?? null;
+
             return c.json({
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,
+                userId,
+                appId: apiKey.byopClientKeyId ?? null,
+                appName: apiKey.byopClientName ?? null,
                 expiresAt,
                 expiresIn,
                 permissions,

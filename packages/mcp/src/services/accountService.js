@@ -39,8 +39,8 @@ async function getUsage(params) {
     const records = data.usage || [];
 
     if (daily) {
-        const totalCost = records.reduce(
-            (sum, r) => sum + (r.cost_usd || 0),
+        const totalPollen = records.reduce(
+            (sum, r) => sum + (r.pollen_spent ?? r.cost_usd ?? 0),
             0,
         );
         const totalRequests = records.reduce(
@@ -54,7 +54,7 @@ async function getUsage(params) {
                     days: days ?? 90,
                     totals: {
                         requests: totalRequests,
-                        cost_usd: Number(totalCost.toFixed(4)),
+                        pollen_spent: Number(totalPollen.toFixed(4)),
                     },
                     records,
                     count: data.count ?? records.length,
@@ -90,7 +90,7 @@ export const accountTools = [
     [
         "getUsage",
         "Get usage history for the authenticated key. By default returns the most recent per-request " +
-            "records (model, cost, tokens, latency). Set 'daily: true' for a daily aggregated summary " +
+            "records (model, pollen spent, tokens, latency). Set 'daily: true' for a daily aggregated summary " +
             "grouped by date and model. Requires 'account:usage' permission.",
         {
             daily: z

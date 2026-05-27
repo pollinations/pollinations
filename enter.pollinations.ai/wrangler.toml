@@ -53,7 +53,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # every regional method we want considered: card, link, AP, GP, paypal,
 # klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
 # multibanco, satispay, revolut_pay, upi.
-STRIPE_PMC = "pmc_1TbkNQ6O03AauPe8ynCC2Sly"
+STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 
 [env.local]
@@ -97,7 +97,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # every regional method we want considered: card, link, AP, GP, paypal,
 # klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
 # multibanco, satispay, revolut_pay, upi.
-STRIPE_PMC = "pmc_1TbkNQ6O03AauPe8ynCC2Sly"
+STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
@@ -215,7 +215,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # every regional method we want considered: card, link, AP, GP, paypal,
 # klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
 # multibanco, satispay, revolut_pay, upi.
-STRIPE_PMC = "pmc_1TbkNQ6O03AauPe8ynCC2Sly"
+STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.dev]
 
@@ -267,7 +267,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # every regional method we want considered: card, link, AP, GP, paypal,
 # klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
 # multibanco, satispay, revolut_pay, upi.
-STRIPE_PMC = "pmc_1TbkNQ6O03AauPe8ynCC2Sly"
+STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.test]
 
@@ -316,4 +316,4 @@ BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad PMC (test env reuses the real sandbox PMC; mocked Stripe just
 # records what was sent so any string works, but real IDs avoid drift).
-STRIPE_PMC = "pmc_1TbkNQ6O03AauPe8ynCC2Sly"
+STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

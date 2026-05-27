@@ -227,7 +227,7 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     );
     expect(checkoutRequest?.body.customer).toBe("cus_mock_1");
     expect(checkoutRequest?.body.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
@@ -346,7 +346,7 @@ test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + BR PMC", async (
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("BR");
     expect(body?.["metadata[packCurrency]"]).toBe("eur");
@@ -385,7 +385,7 @@ test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP on + EU_CORE PMC
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
 });
@@ -417,7 +417,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + APAC PM
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
 });
@@ -451,7 +451,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("USD");
     // USD cohort never calls FX cache (no fetch to frankfurter).
@@ -486,7 +486,7 @@ test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + INDIA PMC", 
     expect(body?.["line_items[0][price_data][currency]"]).toBe("inr");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("INDIA");
     expect(body?.["metadata[packCurrency]"]).toBe("inr");
@@ -525,7 +525,7 @@ test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + UK PMC", async 
     expect(body?.["line_items[0][price_data][currency]"]).toBe("gbp");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
+        "pmc_1SrYT96O03AauPe8ijLy6sZU",
     );
     expect(body?.["metadata[cohort]"]).toBe("UK");
     expect(body?.["metadata[packCurrency]"]).toBe("gbp");

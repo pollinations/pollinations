@@ -15,5 +15,8 @@ export const POLLEN_BILLING_PRECISION = 8;
 export function roundPollenLedgerAmount(amount: number): number {
     if (!Number.isFinite(amount)) return 0;
     const factor = 10 ** POLLEN_BILLING_PRECISION;
-    return Math.round(amount * factor) / factor;
+    const rounded = Math.round(amount * factor) / factor;
+    // Collapse the `-0` that Math.round produces for sub-precision negatives
+    // into `+0`. Ledger amounts are unsigned-equivalent at the boundary.
+    return rounded === 0 ? 0 : rounded;
 }

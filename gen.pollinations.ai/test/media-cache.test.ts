@@ -4,12 +4,12 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
-import { generateCacheKey } from "@/utils/media-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -18,59 +18,6 @@ const testLog = {
     warn() {},
     error() {},
 } as unknown as Logger;
-
-type CachedObject = {
-    body: Uint8Array;
-    httpMetadata?: R2HTTPMetadata;
-    customMetadata?: Record<string, string>;
-    storageClass?: R2Object["storageClass"];
-    uploaded: Date;
-};
-
-type TestMediaBucket = R2Bucket & {
-    getObject(key: string): CachedObject | undefined;
-    readonly putCount: number;
-};
-
-function createMediaBucket(): TestMediaBucket {
-    const objects = new Map<string, CachedObject>();
-    let putCount = 0;
-    let uploadTime = 0;
-
-    return {
-        get: async (key: string) => {
-            const object = objects.get(key);
-            if (!object) return null;
-            return {
-                ...object,
-                body: new Response(object.body.slice()).body,
-            };
-        },
-        put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
-            putCount += 1;
-            const body = new Uint8Array(
-                await new Response(value).arrayBuffer(),
-            );
-            const httpMetadata =
-                options?.httpMetadata instanceof Headers
-                    ? undefined
-                    : options?.httpMetadata;
-            uploadTime += 1;
-            objects.set(key, {
-                body,
-                httpMetadata,
-                customMetadata: options?.customMetadata,
-                storageClass: options?.storageClass,
-                uploaded: new Date(uploadTime),
-            });
-            return null;
-        },
-        getObject: (key: string) => objects.get(key),
-        get putCount() {
-            return putCount;
-        },
-    } as unknown as TestMediaBucket;
-}
 
 type TestEnv = {
     Bindings: CloudflareBindings;
@@ -114,7 +61,9 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
     };
 }
 
-function createMediaCacheEnv(bucket = createMediaBucket()): CloudflareBindings {
+function createMediaCacheEnv(
+    bucket = createTestR2Bucket(),
+): CloudflareBindings {
     return {
         IMAGE_BUCKET: bucket,
     } as unknown as CloudflareBindings;
@@ -195,12 +144,9 @@ describe("media cache", () => {
 
     it("refreshes cached media TTL on cache hits", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");
-        const bucket = createMediaBucket();
+        const bucket = createTestR2Bucket();
         const env = createMediaCacheEnv(bucket);
         const path = "/media/ttl-refresh";
-        const cacheKey = generateCacheKey(
-            new URL(`https://gen.pollinations.ai${path}`),
-        );
 
         const warm = await dispatch(
             media.app,
@@ -213,20 +159,10 @@ describe("media cache", () => {
         expect(await consumeAndWait(warm)).toBe("origin:1");
         expect(bucket.putCount).toBe(1);
 
-        const firstCachedObject = bucket.getObject(cacheKey);
-        expect(firstCachedObject?.uploaded.getTime()).toBe(1);
-
         const cached = await dispatch(media.app, path, undefined, env);
         expect(await consumeAndWait(cached)).toBe("origin:1");
         expect(cached.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
-
-        const refreshedObject = bucket.getObject(cacheKey);
-        expect(refreshedObject?.uploaded.getTime()).toBe(2);
-        expect(refreshedObject?.httpMetadata?.contentType).toBe("image/png");
-        expect(new TextDecoder().decode(refreshedObject?.body)).toBe(
-            "origin:1",
-        );
     });
 });

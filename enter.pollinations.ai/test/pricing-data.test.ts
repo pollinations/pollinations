@@ -84,6 +84,7 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     const inputUsage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
+        promptImageTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
     const reasoningUsage = {
@@ -103,25 +104,25 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
 
         expect(definition.provider).toBe("azure");
         expect(definition.brand).toBe("xAI");
-        expect(definition.inputModalities).toEqual(["text"]);
+        expect(definition.inputModalities).toEqual(["text", "image"]);
         expect(definition.outputModalities).toEqual(["text"]);
         expect(definition.tools).toBe(true);
         expect(definition.contextLength).toBe(262144);
         expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.000002, 12);
         expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.0000002, 12);
-        expect(priceDefinition?.promptImageTokens).toBeUndefined();
+        expect(priceDefinition?.promptImageTokens).toBeCloseTo(0.000002, 12);
         expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.000006, 12);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }
 
     expect(grok.modelId).toBe("grok-4-20-non-reasoning");
     expect(grok.reasoning).toBeUndefined();
-    expect(calculateCost("grok", inputUsage).totalCost).toBeCloseTo(8.2, 8);
+    expect(calculateCost("grok", inputUsage).totalCost).toBeCloseTo(10.2, 8);
 
     expect(grokLarge.modelId).toBe("grok-4-20-reasoning");
     expect(grokLarge.reasoning).toBe(true);
     expect(calculateCost("grok-large", reasoningUsage).totalCost).toBeCloseTo(
-        14.2,
+        16.2,
         8,
     );
 });

@@ -87,10 +87,16 @@ export const getPollenPackByKey = (packKey: string): PollenPack | undefined =>
 // Amount-based lookup is kept only for auto-top-up, whose enrollment API is
 // genuinely amount-based (amountUsd as the user-facing knob). The checkout
 // route is packKey-only.
+//
+// Accepts nullable input because auto-top-up rows often carry `number | null`
+// from D1 / `number | undefined` from inbound request bodies; returning
+// undefined for nullish keeps callers from needing defensive narrowing.
 export const getPollenPackByAmount = (
-    amountUsd: number,
+    amountUsd: number | null | undefined,
 ): PollenPack | undefined =>
-    POLLEN_PACKS.find((pack) => pack.amountUsd === amountUsd);
+    typeof amountUsd === "number"
+        ? POLLEN_PACKS.find((pack) => pack.amountUsd === amountUsd)
+        : undefined;
 
 export const describePollenPack = (pack: PollenPack): string => {
     const bonusSuffix =

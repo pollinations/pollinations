@@ -31,17 +31,18 @@ export const stripeRoutes = new Hono<Env>()
      * GET /api/stripe/checkout/:packKey
      * Create a Stripe Checkout Session for pack purchases.
      *
-     * Path parameter accepts either the new pack key ("p2".."p100") or the
-     * legacy USD amount ("2".."100") so in-flight buy-pollen links keep
-     * working.
+     * Path parameter is the pack key ("p2".."p100"). The legacy USD-amount
+     * form ("2".."100") is no longer accepted — all first-party callers and
+     * the /products endpoint expose packKey.
      *
      * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides the
-     * integration currency, the per-cohort PMC, and whether Stripe Adaptive
-     * Pricing localizes presentment.
+     * integration currency and whether Stripe Adaptive Pricing localizes
+     * presentment. One PMC for all cohorts — Stripe filters methods per
+     * buyer by (currency, country).
      *
      * Pollen is the canonical unit: 1 pollen ≈ $1. USD cohort sends USD
-     * cents directly; non-USD cohorts convert via live USD→EUR FX, then
-     * Stripe AP (when on) shows the buyer their local-currency presentment.
+     * cents directly; non-USD cohorts convert via live USD→target FX, then
+     * Stripe AP (when on) can show local-currency presentment.
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
@@ -181,11 +182,13 @@ export const stripeRoutes = new Hono<Env>()
 
     /**
      * GET /api/stripe/products
-     * List available pack amounts
+     * List available packs. Returns packKey (canonical identifier for the
+     * /checkout/:packKey route) plus the USD amount for display.
      */
     .get("/products", async (c) => {
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
+                packKey: pack.packKey,
                 amount: pack.amountUsd,
                 bonusPollen: pack.bonusPollen,
                 pollenGrant: pack.pollenGrant,

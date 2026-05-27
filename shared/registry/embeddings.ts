@@ -6,6 +6,8 @@ type EmbeddingModelDefinitions = {
     "gemini-2": ModelDefinition<"gemini-embedding-2-preview">;
     "openai-3-small": ModelDefinition<"text-embedding-3-small">;
     "openai-3-large": ModelDefinition<"text-embedding-3-large">;
+    "cohere-embed-v4": ModelDefinition<"embed-v-4-0">;
+    "qwen3-embedding-8b": ModelDefinition<"accounts/fireworks/models/qwen3-embedding-8b">;
 };
 
 export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
@@ -43,7 +45,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
@@ -60,7 +62,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.13),
         },
@@ -69,5 +71,41 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
+    },
+    "cohere-embed-v4": {
+        aliases: ["embed-v-4-0", "cohere-embed-v-4-0"],
+        modelId: "embed-v-4-0",
+        provider: "azure",
+        brand: "Cohere",
+        category: "embedding",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1.5,
+        // Azure Cohere retail rates (Global). Image-token billing also available
+        // upstream ($0.47/1M Global text-img); we only expose text input for now.
+        cost: {
+            promptTextTokens: perMillion(0.12),
+        },
+        description:
+            "Cohere Embed v4 - Multilingual text embeddings via Azure. 1536 dimensions, 128K context.",
+        inputModalities: ["text"],
+        outputModalities: ["embedding"],
+        contextLength: 128000,
+    },
+    "qwen3-embedding-8b": {
+        aliases: ["qwen3-embedding"],
+        modelId: "accounts/fireworks/models/qwen3-embedding-8b",
+        provider: "fireworks",
+        brand: "Qwen",
+        category: "embedding",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+        },
+        description:
+            "Qwen3 Embedding 8B - Multilingual text embeddings via Fireworks. 4096 dimensions.",
+        inputModalities: ["text"],
+        outputModalities: ["embedding"],
+        contextLength: 32768,
     },
 };

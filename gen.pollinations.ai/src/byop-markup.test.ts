@@ -302,12 +302,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "gpt-5.5", resolved: "gpt-5.5" },
+            model: { requested: "llama-maverick", resolved: "llama-maverick" },
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "gpt-5.5")),
+            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });

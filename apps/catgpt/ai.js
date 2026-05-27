@@ -183,3 +183,68 @@ export async function handleImageUpload(file, notify) {
         }
     }
 }
+
+// Re-upload a generated meme blob into the media catalog. Returns the public
+// media URL (no API key in the query string, unlike the gen URL). Stamps
+// app:catgpt server-side because the upload uses CatGPT's authorized key.
+// Returns null on failure; callers should fall back to the raw gen URL only
+// if they accept that the URL embeds the user's key.
+export async function uploadGeneratedMeme(blob, filename, parentHash = null) {
+    const key = getStoredApiKey();
+    if (!key) return null;
+    try {
+        const form = new FormData();
+        form.append("file", new File([blob], filename, { type: blob.type }));
+        if (parentHash) form.append("parent", parentHash);
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}` },
+            body: form,
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.url || null;
+    } catch (err) {
+        console.error("Catalog upload failed:", err);
+        return null;
+    }
+}
+
+const MEDIA_HASH_RE = /^https:\/\/media\.pollinations\.ai\/([a-f0-9]{16})$/i;
+export function extractMediaHash(url) {
+    if (!url) return null;
+    const m = MEDIA_HASH_RE.exec(url);
+    return m ? m[1].toLowerCase() : null;
+}
+
+// ── Public catalogs ─────────────────────────────────────────────────────────
+
+const MEDIA_BASE = "https://media.pollinations.ai";
+
+export async function fetchMyMemes(limit = 8) {
+    const key = getStoredApiKey();
+    if (!key) return [];
+    try {
+        const res = await fetch(`${MEDIA_BASE}/me/media?limit=${limit}`, {
+            headers: { Authorization: `Bearer ${key}` },
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function fetchCatgptGallery(limit = 24) {
+    try {
+        const res = await fetch(
+            `${MEDIA_BASE}/apps/catgpt/media?limit=${limit}`,
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+    } catch {
+        return [];
+    }
+}

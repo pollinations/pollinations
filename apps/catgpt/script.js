@@ -5,7 +5,10 @@ import {
     createImageGenerationPrompt,
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
+    extractMediaHash,
     fetchBalance,
+    fetchCatgptGallery,
+    fetchMyMemes,
     fetchProfile,
     generateCatReply,
     generateImageURL,
@@ -14,6 +17,7 @@ import {
     handleImageUpload,
     pickModel,
     storeApiKey,
+    uploadGeneratedMeme,
 } from "./ai.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -75,6 +79,7 @@ const dom = {
     shareBtn: $("shareBtn"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
+    galleryGrid: $("galleryGrid"),
     imageUpload: $("imageUpload"),
     imageUploadContainer: $("imageUploadContainer"),
     imageThumbnailContainer: $("imageThumbnailContainer"),
@@ -159,15 +164,32 @@ function setActiveModel(model) {
 
 const STORAGE_KEY = "catgpt-generated";
 
+// A saved entry is safe to display/share only if it does NOT embed an API key.
+// Old localStorage entries from before the media-catalog rewrite stored the
+// gen URL with `?key=...` directly — those must never be re-rendered.
+function isShareableUrl(url) {
+    if (!url || typeof url !== "string") return false;
+    try {
+        const parsed = new URL(url, window.location.href);
+        if (parsed.searchParams.has("key")) return false;
+        if (parsed.searchParams.has("api_key")) return false;
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function getSavedMemes() {
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        return raw.filter((m) => isShareableUrl(m?.url));
     } catch {
         return [];
     }
 }
 
 function saveGeneratedMeme(prompt, url) {
+    if (!isShareableUrl(url)) return;
     const saved = getSavedMemes();
     const updated = [
         { prompt, url, model: activeModel },
@@ -333,23 +355,65 @@ function createMemeCard(prompt, index, imageUrl) {
     return card;
 }
 
-function loadUserMemes() {
-    dom.yourMemesGrid.innerHTML = "";
-    const saved = getSavedMemes();
-
-    if (!saved.length) {
+function renderMemeList(grid, items, emptyMessage) {
+    grid.innerHTML = "";
+    if (!items.length) {
         const p = document.createElement("p");
-        p.textContent = "No memes yet! Generate one to see it here. 🎨";
+        p.textContent = emptyMessage;
         p.style.cssText =
             "grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 2rem; font-style: italic;";
-        dom.yourMemesGrid.appendChild(p);
+        grid.appendChild(p);
         return;
     }
-
-    saved.forEach((meme, i) => {
+    items.forEach((meme, i) => {
         const card = createMemeCard(meme.prompt, i, meme.url);
-        if (card) dom.yourMemesGrid.appendChild(card);
+        if (card) grid.appendChild(card);
     });
+}
+
+async function loadUserMemes() {
+    // Render localStorage first for instant feedback, then merge in catalog.
+    renderMemeList(
+        dom.yourMemesGrid,
+        getSavedMemes(),
+        "No memes yet! Generate one to see it here. 🎨",
+    );
+    if (!getStoredApiKey()) return;
+    const items = await fetchMyMemes(12);
+    if (!items.length) return;
+    // Use the original prompt where we have one (URL → prompt map from
+    // localStorage); otherwise show the first user tag or "(saved)".
+    const localByUrl = new Map(getSavedMemes().map((m) => [m.url, m.prompt]));
+    const merged = items
+        .filter((it) => it.app === "catgpt")
+        .map((it) => ({
+            url: it.url,
+            prompt:
+                localByUrl.get(it.url) ||
+                (Array.isArray(it.userTags) && it.userTags[0]) ||
+                "(saved)",
+        }));
+    if (merged.length) {
+        renderMemeList(
+            dom.yourMemesGrid,
+            merged,
+            "No memes yet! Generate one to see it here. 🎨",
+        );
+    }
+}
+
+async function loadPublicGallery() {
+    if (!dom.galleryGrid) return;
+    const items = await fetchCatgptGallery(12);
+    renderMemeList(
+        dom.galleryGrid,
+        items.map((it) => ({
+            url: it.url,
+            prompt:
+                (Array.isArray(it.userTags) && it.userTags[0]) || "community",
+        })),
+        "No public memes yet — be the first 😼",
+    );
 }
 
 function loadExamples() {
@@ -411,17 +475,32 @@ async function generateMeme() {
             throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        // Use the pollinations URL directly (shareable, cacheable)
-        await response.blob(); // ensure the image is fully loaded
+        const blob = await response.blob();
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+
+        // Re-upload to media.pollinations.ai so the gallery URL has no API
+        // key in the query string and the meme is server-attested as
+        // app:catgpt for the public catalog.
+        const parentHash = extractMediaHash(uploadedImageUrl);
+        const catalogUrl = await uploadGeneratedMeme(
+            blob,
+            `catgpt-${Date.now()}.png`,
+            parentHash,
+        );
+        if (cancelled) return;
+        const displayUrl = catalogUrl || URL.createObjectURL(blob);
+        dom.generatedMeme.src = displayUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
-        loadUserMemes();
+        // Only persist URLs that don't embed the user's key. If the catalog
+        // upload failed we keep the meme in-session but skip saving.
+        if (catalogUrl) {
+            saveGeneratedMeme(question, catalogUrl);
+            loadUserMemes();
+        }
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadPublicGallery();
     loadExamples();
     addFloatingEmojis();
     if (image) {

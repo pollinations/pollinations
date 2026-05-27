@@ -18,14 +18,12 @@ describe("getCohortFromCountry", () => {
             expect(cohort.id).toBe("USD");
             expect(cohort.checkoutCurrency).toBe("usd");
             expect(cohort.adaptivePricing).toBe(false);
-            expect(cohort.pmcEnvVar).toBe("STRIPE_PMC_USD");
         });
 
         test("routes MO to USD (spoof-signal regression)", () => {
             // 99.8% of MO billing-country charges in the live audit were
             // US-issued cards — pure card-testing fingerprint. MO must not
-            // land in APAC_ALIPAY where the richer method set would help
-            // abusers probe.
+            // land in APAC_ALIPAY local-currency routing.
             expect(getCohortFromCountry("MO").id).toBe("USD");
         });
 
@@ -46,7 +44,6 @@ describe("getCohortFromCountry", () => {
                 id: "BR",
                 checkoutCurrency: "eur",
                 adaptivePricing: true,
-                pmcEnvVar: "STRIPE_PMC_BR",
             });
         });
     });
@@ -57,7 +54,6 @@ describe("getCohortFromCountry", () => {
             expect(cohort.id).toBe("APAC_ALIPAY");
             expect(cohort.checkoutCurrency).toBe("eur");
             expect(cohort.adaptivePricing).toBe(true);
-            expect(cohort.pmcEnvVar).toBe("STRIPE_PMC_APAC_ALIPAY");
         });
     });
 
@@ -87,8 +83,7 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("EU_CORE");
             expect(cohort.checkoutCurrency).toBe("eur");
-            expect(cohort.adaptivePricing).toBe(false);
-            expect(cohort.pmcEnvVar).toBe("STRIPE_PMC_EU_CORE");
+            expect(cohort.adaptivePricing).toBe(true);
         });
     });
 
@@ -99,7 +94,6 @@ describe("getCohortFromCountry", () => {
                 id: "INDIA",
                 checkoutCurrency: "inr",
                 adaptivePricing: false,
-                pmcEnvVar: "STRIPE_PMC_INDIA",
             });
         });
     });
@@ -111,7 +105,6 @@ describe("getCohortFromCountry", () => {
                 id: "UK",
                 checkoutCurrency: "gbp",
                 adaptivePricing: false,
-                pmcEnvVar: "STRIPE_PMC_UK",
             });
         });
     });

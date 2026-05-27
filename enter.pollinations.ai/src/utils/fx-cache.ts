@@ -18,9 +18,6 @@ export const FX_SAFETY_RATES: Record<FxTargetCurrency, number> = {
     gbp: 0.79,
 };
 
-// Back-compat export — used by tests written before the multi-currency refactor.
-export const FX_SAFETY_RATE_USD_EUR = FX_SAFETY_RATES.eur;
-
 type FrankfurterResponse = {
     base?: string;
     date?: string;
@@ -110,7 +107,3 @@ export async function getUsdToRate(
     );
     return safety;
 }
-
-// Back-compat wrapper. Prefer getUsdToRate(env, "eur") for new code.
-export const getUsdToEurRate = (env: CloudflareBindings): Promise<number> =>
-    getUsdToRate(env, "eur");

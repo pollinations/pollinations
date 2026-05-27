@@ -1,5 +1,5 @@
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPack } from "@shared/pollen-packs.ts";
+import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -295,8 +295,8 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    const packAmount = metadata.packAmount;
-    const pack = packAmount ? getPollenPack(packAmount) : undefined;
+    const packKey = metadata.packKey;
+    const pack = packKey ? getPollenPackByKey(packKey) : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
@@ -306,7 +306,7 @@ const handleCheckoutSessionCompleted = async (
     if (!pack) {
         console.error("Missing or invalid pack in checkout session:", {
             sessionId: session.id,
-            packAmount,
+            packKey,
         });
         return {
             success: false,

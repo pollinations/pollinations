@@ -1,12 +1,10 @@
 import {
     describePollenPack,
     getPackForeignCents,
-    getPollenPack,
+    getPollenPackByAmount,
     getPollenPackByKey,
-    isPollenPackAmount,
     isPollenPackKey,
     POLLEN_PACKS,
-    resolvePollenPack,
 } from "@shared/pollen-packs.ts";
 import { expect, test } from "vitest";
 
@@ -27,22 +25,19 @@ test("pollen pack catalog includes the stepped beta bonus ladder", () => {
     ]);
 });
 
-test("pack lookup validates supported checkout amounts", () => {
-    expect(isPollenPackAmount("2")).toBe(true);
-    expect(isPollenPackAmount("3")).toBe(false);
-    expect(getPollenPack("20")?.bonusPollen).toBe(8);
-    expect(getPollenPack(100)?.pollenGrant).toBe(160);
+test("pack lookup validates supported USD amounts", () => {
+    expect(getPollenPackByAmount(20)?.bonusPollen).toBe(8);
+    expect(getPollenPackByAmount(100)?.pollenGrant).toBe(160);
+    expect(getPollenPackByAmount(3)).toBeUndefined();
 });
 
-test("pack lookup validates pack keys and resolves either form", () => {
+test("pack lookup validates pack keys", () => {
     expect(isPollenPackKey("p20")).toBe(true);
     expect(isPollenPackKey("p3")).toBe(false);
     expect(getPollenPackByKey("p20")?.bonusPollen).toBe(8);
     expect(getPollenPackByKey("p100")?.pollenGrant).toBe(160);
-    // resolvePollenPack accepts both forms during the transition window
-    expect(resolvePollenPack("p20")?.amountUsd).toBe(20);
-    expect(resolvePollenPack("20")?.packKey).toBe("p20");
-    expect(resolvePollenPack("nope")).toBeUndefined();
+    expect(getPollenPackByKey("20")).toBeUndefined();
+    expect(getPollenPackByKey("nope")).toBeUndefined();
 });
 
 test("getPackForeignCents derives target-currency cents from USD reference × FX rate", () => {

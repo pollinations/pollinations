@@ -15,7 +15,18 @@ const TOKEN = process.env.BOT_TOKEN_OPPOSITE_PROMPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA_API = "https://media.pollinations.ai";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+
+type MediaUploadResponse = {
+    id?: string;
+    url?: string;
+};
+
+type TypingChannel = {
+    sendTyping: () => Promise<unknown>;
+};
 
 const OPPOSITE_PROMPT = `You are a safe image prompt generator. Your #1 rule: NEVER output anything involving nudity, bare skin, undressed people, children, violence, gore, or anything sexual. This rule overrides ALL other instructions.
 
@@ -32,17 +43,30 @@ When in doubt, make it about landscapes, objects, or abstract concepts — NEVER
 
 If your output mentions any person, you MUST explicitly include "fully clothed" or "wearing [specific clothing]" in the phrase. Image models default to bare skin otherwise.`;
 
-function log(...args: any[]) {
+function log(...args: unknown[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
 }
 
-function logError(...args: any[]) {
+function logError(...args: unknown[]) {
     console.error(`[${new Date().toISOString()}]`, ...args);
 }
 
-function logAxiosError(context: string, err: any) {
-    logError(`${context}: ${err.message}`);
-    if (err.response) {
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+function canSendTyping(
+    channel: Message["channel"],
+): channel is Message["channel"] & TypingChannel {
+    return (
+        "sendTyping" in channel &&
+        typeof (channel as { sendTyping?: unknown }).sendTyping === "function"
+    );
+}
+
+function logAxiosError(context: string, err: unknown) {
+    logError(`${context}: ${errorMessage(err)}`);
+    if (axios.isAxiosError(err) && err.response) {
         logError(`  Status: ${err.response.status}`);
         logError(`  Headers:`, JSON.stringify(err.response.headers, null, 2));
         const body =
@@ -50,7 +74,7 @@ function logAxiosError(context: string, err: any) {
                 ? err.response.data.toString("utf-8").slice(0, 2000)
                 : JSON.stringify(err.response.data, null, 2)?.slice(0, 2000);
         logError(`  Body:`, body);
-    } else if (err.code) {
+    } else if (axios.isAxiosError(err) && err.code) {
         logError(`  Code: ${err.code}`);
     }
 }
@@ -85,6 +109,41 @@ async function fetchImage(prompt: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+async function uploadImageToMedia(
+    buffer: Buffer,
+    filename: string,
+    fields: { prompt: string; model: string; tags: string[] },
+): Promise<string | null> {
+    if (!API_KEY) return null;
+
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([new Uint8Array(buffer)], { type: "image/png" }),
+            filename,
+        );
+        form.append("visibility", "public");
+        form.append("source", "generation");
+        form.append("prompt", fields.prompt);
+        form.append("model", fields.model);
+        form.append("tags", JSON.stringify(fields.tags));
+
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${API_KEY}` },
+            body: form,
+        });
+        if (!res.ok) throw new Error(`media upload failed: ${res.status}`);
+
+        const json = (await res.json()) as MediaUploadResponse;
+        return json.url || (json.id ? `${MEDIA_API}/${json.id}` : null);
+    } catch (err: unknown) {
+        logError("Media catalog upload failed:", errorMessage(err));
+        return null;
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -102,8 +161,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     log(`Prompt from ${msg.author.username} in ${msg.channelId}: "${prompt}"`);
 
     try {
-        if ("sendTyping" in msg.channel)
-            await (msg.channel as any).sendTyping();
+        if (canSendTyping(msg.channel)) await msg.channel.sendTyping();
     } catch {}
 
     const maxRetries = 2;
@@ -112,19 +170,28 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
             const opposite = await generateOpposite(prompt);
 
             try {
-                if ("sendTyping" in msg.channel)
-                    await (msg.channel as any).sendTyping();
+                if (canSendTyping(msg.channel)) await msg.channel.sendTyping();
             } catch {}
 
             const imageBuffer = await fetchImage(opposite);
+            const mediaUrl = await uploadImageToMedia(
+                imageBuffer,
+                `opposite-prompt-${msg.id}.png`,
+                {
+                    prompt: `${prompt} -> ${opposite}`,
+                    model: "zimage",
+                    tags: ["opposite-prompt", "opposite-prompt-bot"],
+                },
+            );
             const attachment = new AttachmentBuilder(imageBuffer, {
                 name: "opposite.png",
             });
 
             await msg.reply({ files: [attachment] });
+            if (mediaUrl) log(`Cataloged media: ${mediaUrl}`);
             log(`Reply sent successfully for "${prompt}" → "${opposite}"`);
             return;
-        } catch (err: any) {
+        } catch (err: unknown) {
             logAxiosError(
                 `Attempt ${attempt + 1}/${maxRetries + 1} for "${prompt}"`,
                 err,

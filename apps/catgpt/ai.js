@@ -3,11 +3,15 @@
 const API = "https://gen.pollinations.ai/image";
 const ENTER = "https://enter.pollinations.ai";
 const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA_API = "https://media.pollinations.ai";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
+const CATGPT_TAGS = ["catgpt", "catgpt-generated"];
+
+export const CATGPT_APP_KEY = APP_KEY;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -146,6 +150,77 @@ export async function pickModel(apiKey) {
 
 // ── Media Upload ─────────────────────────────────────────────────────────────
 
+function appendMediaCatalogFields(form, fields = {}) {
+    const {
+        visibility = "public",
+        tags = [],
+        parents = [],
+        source,
+        prompt,
+        model,
+    } = fields;
+    form.append("visibility", visibility);
+    if (source) form.append("source", source);
+    if (prompt) form.append("prompt", prompt);
+    if (model) form.append("model", model);
+    if (tags.length) form.append("tags", JSON.stringify(tags));
+    if (parents.length) form.append("parents", JSON.stringify(parents));
+}
+
+async function uploadToMedia(blob, filename, fields) {
+    const key = getStoredApiKey();
+    if (!key) throw new Error("No API key available for media upload");
+
+    const form = new FormData();
+    form.append("file", blob, filename);
+    appendMediaCatalogFields(form, fields);
+
+    const res = await fetch(MEDIA_UPLOAD, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}` },
+        body: form,
+    });
+    if (!res.ok) throw new Error("Media upload failed");
+    const json = await res.json();
+    return json.url || `${MEDIA_API}/${json.id}`;
+}
+
+export async function saveGeneratedMemeToMedia(
+    blob,
+    { question, model, parentUrls = [] },
+) {
+    return uploadToMedia(blob, `catgpt-meme-${Date.now()}.png`, {
+        visibility: "public",
+        tags: CATGPT_TAGS,
+        parents: [SELFIE_CATGPT, ...parentUrls].filter(Boolean),
+        source: "generation",
+        prompt: question,
+        model,
+    });
+}
+
+export async function fetchSavedCatGptMemes() {
+    const key = getStoredApiKey();
+    if (!key) return [];
+
+    const params = new URLSearchParams({
+        app_key: APP_KEY,
+        tag: "catgpt-generated",
+        limit: "12",
+    });
+    const res = await fetch(`${MEDIA_API}/me/media?${params}`, {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return (data.items || []).map((item) => ({
+        prompt: item.prompt || "CatGPT meme",
+        url: item.url,
+        model: item.model,
+    }));
+}
+
 export async function handleImageUpload(file, notify) {
     if (!file) return null;
     if (file.size > 5 * 1024 * 1024) {
@@ -155,15 +230,11 @@ export async function handleImageUpload(file, notify) {
 
     try {
         notify("Uploading image...", "info");
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch(MEDIA_UPLOAD, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${getStoredApiKey()}` },
-            body: form,
+        return await uploadToMedia(file, file.name || "catgpt-source.png", {
+            visibility: "private",
+            tags: ["catgpt", "catgpt-source"],
+            source: "upload",
         });
-        if (!res.ok) throw new Error("Upload failed");
-        return (await res.json()).url;
     } catch (err) {
         console.error("Media upload failed:", err);
         notify("Upload failed. Trying local fallback...", "warning");

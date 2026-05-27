@@ -1,5 +1,7 @@
 // Pollinations API utilities — updated to match gen.pollinations.ai spec
 const BASE_URL = "https://gen.pollinations.ai";
+const MEDIA_API_URL = "https://media.pollinations.ai";
+const MEDIA_UPLOAD_URL = `${MEDIA_API_URL}/upload`;
 const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || "";
 export const BYOP_STORAGE_KEY = "pollinations_byop_api_key";
 
@@ -74,6 +76,62 @@ const parseApiError = async (response) => {
     }
     return buildClientError(response.status);
 };
+
+function appendCatalogFields(form, fields = {}) {
+    const {
+        visibility = "private",
+        tags = [],
+        parents = [],
+        source = "generation",
+        prompt,
+        model,
+    } = fields;
+    form.append("visibility", visibility);
+    form.append("source", source);
+    if (prompt) form.append("prompt", prompt);
+    if (model) form.append("model", model);
+    if (tags.length) form.append("tags", JSON.stringify(tags));
+    if (parents.length) form.append("parents", JSON.stringify(parents));
+}
+
+async function uploadGeneratedMedia(blob, filename, fields) {
+    const token = getApiToken();
+    if (!token) throw new Error("No API key available for media upload");
+
+    const form = new FormData();
+    form.append("file", blob, filename);
+    appendCatalogFields(form, fields);
+
+    const response = await fetch(MEDIA_UPLOAD_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+    });
+    if (!response.ok) throw new Error("Media upload failed");
+
+    const data = await response.json();
+    if (data.url) return data.url;
+    if (data.id) return `${MEDIA_API_URL}/${data.id}`;
+    throw new Error("Media upload response missing URL");
+}
+
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function catalogOrDataUrl(blob, filename, fields) {
+    try {
+        return await uploadGeneratedMedia(blob, filename, fields);
+    } catch (error) {
+        console.warn("Media catalog upload failed, using data URL:", error);
+        return blobToDataUrl(blob);
+    }
+}
 
 export const loadModels = async () => {
     if (
@@ -530,13 +588,18 @@ export const generateImage = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, width, height, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const mediaUrl = await catalogOrDataUrl(
+        blob,
+        `chat-image-${Date.now()}.png`,
+        {
+            visibility: "private",
+            tags: ["chat", "chat-image"],
+            source: "generation",
+            prompt,
+            model,
+        },
+    );
+    return { url: mediaUrl, prompt, model, width, height, seed };
 };
 
 export const generateVideo = async (prompt, options = {}) => {
@@ -556,13 +619,18 @@ export const generateVideo = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const mediaUrl = await catalogOrDataUrl(
+        blob,
+        `chat-video-${Date.now()}.mp4`,
+        {
+            visibility: "private",
+            tags: ["chat", "chat-video"],
+            source: "generation",
+            prompt,
+            model,
+        },
+    );
+    return { url: mediaUrl, prompt, model, seed };
 };
 
 // Generate speech/audio — GET /audio/{text}?voice=...
@@ -578,11 +646,21 @@ export const generateAudio = async (text, options = {}) => {
 
     const blob = await response.blob();
     const mimeType = blob.type || "audio/mpeg";
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, text, voice, model, mimeType });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const ext = mimeType.includes("wav")
+        ? "wav"
+        : mimeType.includes("ogg")
+          ? "ogg"
+          : "mp3";
+    const mediaUrl = await catalogOrDataUrl(
+        blob,
+        `chat-audio-${Date.now()}.${ext}`,
+        {
+            visibility: "private",
+            tags: ["chat", "chat-audio"],
+            source: "generation",
+            prompt: text,
+            model,
+        },
+    );
+    return { url: mediaUrl, text, voice, model, mimeType };
 };

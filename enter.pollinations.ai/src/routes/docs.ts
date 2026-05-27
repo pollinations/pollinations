@@ -431,7 +431,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/key");
     lines.push(
-        "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
+        "Info about the current API key: { valid, type, userId, apiKeyId, name, byopClientKeyId, byopClientName, byopClientUserId, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
     );
     lines.push("Requires API key authentication (any key type).");
     lines.push("");
@@ -1044,7 +1044,12 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/key": {
         valid: true,
         type: "secret",
+        userId: "user_123",
+        apiKeyId: "key_123",
         name: "my-bot",
+        byopClientKeyId: null,
+        byopClientName: null,
+        byopClientUserId: null,
         expiresAt: null,
         expiresIn: null,
         permissions: {

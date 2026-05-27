@@ -178,21 +178,42 @@ export default function App() {
                 const sceneUpload = uploadToMedia(
                     gameState.currentScene.image,
                     apiKey,
+                    {
+                        visibility: "private",
+                        tags: ["ai-dungeon-master", "scene"],
+                        source: "saved_generation",
+                        prompt: gameState.currentScene.description,
+                    },
                 );
                 await Promise.all([
-                    uploadToMedia(character.avatar, apiKey).then((url) => {
+                    uploadToMedia(character.avatar, apiKey, {
+                        visibility: "private",
+                        tags: ["ai-dungeon-master", "character"],
+                        source: "saved_generation",
+                        prompt: character.name,
+                    }).then((url) => {
                         character.avatar = url;
                     }),
                     sceneUpload.then((url) => {
                         uploadedSceneImage = url;
                     }),
                     ...storyHistory.map((entry, idx) =>
-                        uploadToMedia(entry.image, apiKey).then((url) => {
+                        uploadToMedia(entry.image, apiKey, {
+                            visibility: "private",
+                            tags: ["ai-dungeon-master", "story"],
+                            source: "saved_generation",
+                            prompt: entry.description,
+                        }).then((url) => {
                             storyHistory[idx].image = url;
                         }),
                     ),
                     ...inventory.map((item, idx) =>
-                        uploadToMedia(item.image, apiKey).then((url) => {
+                        uploadToMedia(item.image, apiKey, {
+                            visibility: "private",
+                            tags: ["ai-dungeon-master", "inventory"],
+                            source: "saved_generation",
+                            prompt: item.name,
+                        }).then((url) => {
                             inventory[idx].image = url;
                         }),
                     ),

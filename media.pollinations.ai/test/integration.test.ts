@@ -17,9 +17,63 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    cataloged: boolean;
+    visibility: "private" | "unlisted" | "public";
+    source: "upload" | "generation" | "saved_generation" | "edit" | "remix";
+    parents: string[];
+    tags: string[];
+    appId?: string;
+    appName?: string;
+}
+
+interface CatalogListResponse {
+    items: Array<{
+        hash: string;
+        url: string;
+        visibility: "private" | "unlisted" | "public";
+        source: string;
+        appId?: string;
+        appName?: string;
+        parents: string[];
+        tags: string[];
+        prompt?: string;
+        model?: string;
+    }>;
+    nextCursor?: string;
 }
 
 const VALID_KEY = "pk_test_key_123";
+const AUTH_USER_ID = "user_test_1";
+const AUTH_API_KEY_ID = "api_key_test_1";
+const AUTH_APP_ID = "app_key_test_1";
+const AUTH_APP_NAME = "CatGPT Test";
+
+async function uploadPng(
+    name: string,
+    fields: Record<string, string> = {},
+): Promise<UploadResponse> {
+    const form = new FormData();
+    form.append("file", new File([TINY_PNG], name, { type: "image/png" }));
+    for (const [key, value] of Object.entries(fields)) {
+        form.append(key, value);
+    }
+
+    const response = await SELF.fetch("https://media.pollinations.ai/upload", {
+        method: "POST",
+        body: form,
+        headers: { Authorization: `Bearer ${VALID_KEY}` },
+    });
+    expect(response.status).toBe(200);
+    return (await response.json()) as UploadResponse;
+}
+
+async function listCatalog(path: string): Promise<CatalogListResponse> {
+    const response = await SELF.fetch(`https://media.pollinations.ai${path}`, {
+        headers: { Authorization: `Bearer ${VALID_KEY}` },
+    });
+    expect(response.status).toBe(200);
+    return (await response.json()) as CatalogListResponse;
+}
 
 function mockAuth() {
     fetchMock.activate();
@@ -33,6 +87,11 @@ function mockAuth() {
                 valid: true,
                 type: "publishable",
                 name: "test-user",
+                userId: AUTH_USER_ID,
+                apiKeyId: AUTH_API_KEY_ID,
+                byopClientKeyId: AUTH_APP_ID,
+                byopClientName: AUTH_APP_NAME,
+                byopClientUserId: "app_owner_test_1",
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -85,6 +144,8 @@ describe("media.pollinations.ai", () => {
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
+        expect(upload.cataloged).toBe(true);
+        expect(upload.visibility).toBe("private");
 
         // Retrieve — check Content-Disposition
         const getRes = await SELF.fetch(
@@ -152,6 +213,82 @@ describe("media.pollinations.ai", () => {
         const upload1 = (await res1.json()) as UploadResponse;
         const upload2 = (await res2.json()) as UploadResponse;
         expect(upload1.id).not.toBe(upload2.id);
+    });
+
+    it("catalogs owner media, app galleries, tags, and public lineage", async () => {
+        const nonce = crypto.randomUUID();
+        const parent = await uploadPng(`catalog-parent-${nonce}.png`, {
+            visibility: "public",
+            tags: "catgpt",
+            source: "generation",
+            prompt: "a source cat portrait",
+            model: "flux",
+        });
+        const privateChild = await uploadPng(`catalog-private-${nonce}.png`, {
+            parent: parent.url,
+            tags: "catgpt",
+            source: "edit",
+        });
+        const child = await uploadPng(`catalog-child-${nonce}.png`, {
+            parents: JSON.stringify([parent.url]),
+            tags: JSON.stringify(["CatGPT", "Remix!!"]),
+            visibility: "public",
+            source: "edit",
+            prompt: "add a tiny wizard hat",
+            model: "flux",
+        });
+
+        expect(child.cataloged).toBe(true);
+        expect(child.visibility).toBe("public");
+        expect(child.source).toBe("edit");
+        expect(child.parents).toEqual([parent.id]);
+        expect(child.tags).toEqual(["catgpt", "remix"]);
+        expect(child.appId).toBe(AUTH_APP_ID);
+        expect(child.appName).toBe(AUTH_APP_NAME);
+
+        const mine = await listCatalog("/me/media?limit=50");
+        expect(mine.items.some((item) => item.hash === child.id)).toBe(true);
+        expect(mine.items.some((item) => item.hash === privateChild.id)).toBe(
+            true,
+        );
+
+        const mineByApp = await listCatalog(
+            `/me/media?app=${AUTH_APP_ID}&tag=catgpt&limit=50`,
+        );
+        expect(mineByApp.items.some((item) => item.hash === child.id)).toBe(
+            true,
+        );
+
+        const appGallery = await listCatalog(
+            `/gallery?app=${AUTH_APP_ID}&tag=catgpt&limit=50`,
+        );
+        expect(appGallery.items.some((item) => item.hash === child.id)).toBe(
+            true,
+        );
+        expect(
+            appGallery.items.some((item) => item.hash === privateChild.id),
+        ).toBe(false);
+
+        const appAlias = await listCatalog(
+            `/apps/${AUTH_APP_ID}/media?tag=catgpt&limit=50`,
+        );
+        expect(appAlias.items.some((item) => item.hash === child.id)).toBe(
+            true,
+        );
+
+        const tagged = await listCatalog("/tags/remix?limit=50");
+        expect(tagged.items.some((item) => item.hash === child.id)).toBe(true);
+
+        const children = await listCatalog(`/${parent.id}/children?limit=50`);
+        const listedChild = children.items.find(
+            (item) => item.hash === child.id,
+        );
+        expect(listedChild).toBeTruthy();
+        expect(listedChild?.parents).toEqual([parent.id]);
+        expect(listedChild?.prompt).toBe("add a tiny wizard hat");
+        expect(
+            children.items.some((item) => item.hash === privateChild.id),
+        ).toBe(false);
     });
 
     it("GET /:invalid-hash returns 400", async () => {

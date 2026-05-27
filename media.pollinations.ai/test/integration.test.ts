@@ -201,11 +201,21 @@ describe("media.pollinations.ai", () => {
         expect(child.appKeyId).toBe("app_key_test_1");
         expect(child.attributionSource).toBe("byop_key");
 
-        const meRes = await SELF.fetch("https://media.pollinations.ai/me/media", {
-            headers: { Authorization: `Bearer ${VALID_KEY}` },
-        });
+        const meRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media",
+            {
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
         const me = (await meRes.json()) as CatalogListResponse;
         expect(me.items.some((item) => item.id === child.id)).toBe(true);
+
+        const meTaggedRes = await SELF.fetch(
+            `https://media.pollinations.ai/me/media?tag=${tag}&app_key_id=app_key_test_1`,
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        const meTagged = (await meTaggedRes.json()) as CatalogListResponse;
+        expect(meTagged.items.some((item) => item.id === child.id)).toBe(true);
 
         const appRes = await SELF.fetch(
             "https://media.pollinations.ai/media?app_key_id=app_key_test_1",
@@ -223,7 +233,9 @@ describe("media.pollinations.ai", () => {
             `https://media.pollinations.ai/${parent.id}/children`,
         );
         const children = (await childrenRes.json()) as CatalogListResponse;
-        const indexedChild = children.items.find((item) => item.id === child.id);
+        const indexedChild = children.items.find(
+            (item) => item.id === child.id,
+        );
         expect(indexedChild).toMatchObject({
             appKeyId: "app_key_test_1",
             appName: "CatGPT Test",

@@ -283,6 +283,7 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const HISTORY_KEYWORD = "pollinations:voice-edit:history";
+const WALKTHROUGH_TAGS = ["voice-edit", "voice-edit-walkthrough"];
 const DEFAULT_PROMPT = "Smooth visual transition from the first image to the second image. Preserve the subject, composition, and style. No text, labels, captions, or subtitles.";
 
 const $ = (id) => document.getElementById(id);
@@ -513,10 +514,32 @@ async function loadSource(url) {
   setStatus(state ? `loaded ${frames.length} clean frames` : "loaded image");
 }
 
-async function uploadBlob(blob, filename) {
+function catalogParents(...urls) {
+  return Array.from(new Set(urls.map(scrubURL).filter(Boolean)));
+}
+
+function appendCatalogFields(form, {
+  visibility = "public",
+  tags = WALKTHROUGH_TAGS,
+  parents = [],
+  kind = "generation",
+  prompt = "",
+  model = "",
+} = {}) {
+  form.append("visibility", visibility);
+  form.append("kind", kind);
+  if (prompt) form.append("prompt", prompt);
+  if (model) form.append("model", model);
+  if (tags.length) form.append("tags", JSON.stringify(tags));
+  const parentIds = catalogParents(...parents);
+  if (parentIds.length) form.append("parents", JSON.stringify(parentIds));
+}
+
+async function uploadBlob(blob, filename, catalog = {}) {
   setStatus("uploading...");
   const form = new FormData();
   form.append("file", blob, filename);
+  appendCatalogFields(form, catalog);
   const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
     headers: authHeaders(),
@@ -525,6 +548,22 @@ async function uploadBlob(blob, filename) {
   if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
   const json = await res.json();
   return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+async function catalogVideoClip(blob, index) {
+  try {
+    return await uploadBlob(blob, `voice-edit-walkthrough-${Date.now()}-${index + 1}.mp4`, {
+      visibility: "public",
+      tags: [...WALKTHROUGH_TAGS, "voice-edit-transition"],
+      parents: [app.sourceURL, app.history[index]?.url, app.history[index + 1]?.url],
+      kind: "generation",
+      prompt: currentPrompt(),
+      model: els.model.value,
+    });
+  } catch (err) {
+    console.warn(`walkthrough clip ${index + 1} catalog upload failed`, err);
+    return "";
+  }
 }
 
 function render() {
@@ -737,9 +776,11 @@ async function makeWalkthrough() {
       const res = await fetch(request, { headers: authHeaders() });
       if (!res.ok) throw new Error(await friendlyError(res, `Video ${i + 1} failed`));
       const blob = await res.blob();
+      const mediaURL = await catalogVideoClip(blob, i);
+      setProgress();
 
       // Fill the video slot
-      const videoEntry = { url: request.href, src: URL.createObjectURL(blob), blob, kind: "video" };
+      const videoEntry = { url: mediaURL || request.href, src: URL.createObjectURL(blob), blob, kind: "video" };
       app.clips[slot.videoSlot] = videoEntry;
       if (app.currentClip < 0) app.currentClip = slot.videoSlot;
 
@@ -838,7 +879,11 @@ els.file.addEventListener("change", async () => {
   const file = els.file.files?.[0];
   if (!file) return;
   try {
-    const mediaURL = await uploadBlob(file, file.name || "image");
+    const mediaURL = await uploadBlob(file, file.name || "image", {
+      visibility: "private",
+      tags: [...WALKTHROUGH_TAGS, "voice-edit-source"],
+      kind: "upload",
+    });
     setHash(mediaURL);
     await loadSource(mediaURL);
   } catch (err) {

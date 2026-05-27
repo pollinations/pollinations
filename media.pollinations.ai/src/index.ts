@@ -104,7 +104,10 @@ function stringValue(value: unknown): string | undefined {
     return typeof value === "string" ? value : undefined;
 }
 
-function truncate(value: string | undefined, maxLength: number): string | undefined {
+function truncate(
+    value: string | undefined,
+    maxLength: number,
+): string | undefined {
     if (!value) return undefined;
     return value.length > maxLength ? value.slice(0, maxLength) : value;
 }
@@ -366,7 +369,9 @@ function catalogItem(row: CatalogRow) {
         visibility: row.visibility,
         creationSource: row.creation_source,
         createdAt: new Date(row.event_created_at).toISOString(),
-        expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
+        expiresAt: row.expires_at
+            ? new Date(row.expires_at).toISOString()
+            : null,
         appKeyId: row.app_key_id,
         appName: row.app_name,
         attributionSource: row.attribution_source,
@@ -672,8 +677,46 @@ api.get(
         const url = new URL(c.req.url);
         const limit = parseLimit(url.searchParams.get("limit"));
         const cursor = parseCursor(url.searchParams.get("cursor"));
-        const cursorClause = cursor ? "AND e.created_at < ?" : "";
-        const binds = cursor ? [authResult.userId, cursor] : [authResult.userId];
+        const tag = parseTags(url.searchParams.get("tag"))[0];
+        const appKey = url.searchParams.get("app_key");
+        let appKeyId = url.searchParams.get("app_key_id");
+        if (!appKeyId && appKey) {
+            appKeyId = await resolveAppKeyId(appKey);
+            if (!appKeyId) return c.json({ items: [], nextCursor: null });
+        }
+
+        const clauses = ["e.user_id = ?"];
+        const binds: D1Bind[] = [authResult.userId];
+        if (appKeyId) {
+            clauses.push("e.app_key_id = ?");
+            binds.push(appKeyId);
+        }
+        if (cursor) {
+            clauses.push("e.created_at < ?");
+            binds.push(cursor);
+        }
+
+        if (tag) {
+            binds.unshift(tag);
+            return c.json(
+                await listCatalog(
+                    c.env.DB,
+                    `SELECT
+                        a.id, a.url, a.hash, a.content_type, a.size, a.expires_at,
+                        e.id AS event_id, e.created_at AS event_created_at,
+                        e.app_key_id, e.app_name, e.attribution_source,
+                        e.creation_source, e.visibility, e.prompt, e.model
+                     FROM media_tag t
+                     JOIN media_event e ON e.id = t.event_id
+                     JOIN media_asset a ON a.id = e.media_id
+                     WHERE t.tag = ? AND ${clauses.join(" AND ")}
+                     ORDER BY e.created_at DESC
+                     LIMIT ?`,
+                    binds,
+                    limit,
+                ),
+            );
+        }
 
         return c.json(
             await listCatalog(
@@ -685,7 +728,7 @@ api.get(
                     e.creation_source, e.visibility, e.prompt, e.model
                  FROM media_event e
                  JOIN media_asset a ON a.id = e.media_id
-                 WHERE e.user_id = ? ${cursorClause}
+                 WHERE ${clauses.join(" AND ")}
                  ORDER BY e.created_at DESC
                  LIMIT ?`,
                 binds,

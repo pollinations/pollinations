@@ -359,6 +359,7 @@ const STARTERS = [
 ];
 const STARTER = STARTERS[0].url;
 const HISTORY_KEYWORD = "pollinations:voice-edit:history";
+const REMIX_TAGS = ["voice-edit", "voice-edit-remix"];
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -899,15 +900,41 @@ async function promptTypedEdit(clientX, clientY) {
   });
 }
 
-async function uploadDataURL(dataURL, filename = "annot.png") {
-  const blob = await (await fetch(dataURL)).blob();
-  return uploadBlob(blob, filename);
+function catalogParents(...urls) {
+  return Array.from(new Set(urls.map(scrubURL).filter(Boolean)));
 }
 
-async function uploadBlob(blob, filename) {
+function appendCatalogFields(form, {
+  visibility = "public",
+  tags = REMIX_TAGS,
+  parents = [],
+  kind = "edit",
+  prompt = "",
+  model = "",
+} = {}) {
+  form.append("visibility", visibility);
+  form.append("kind", kind);
+  if (prompt) form.append("prompt", prompt);
+  if (model) form.append("model", model);
+  if (tags.length) form.append("tags", JSON.stringify(tags));
+  const parentIds = catalogParents(...parents);
+  if (parentIds.length) form.append("parents", JSON.stringify(parentIds));
+}
+
+function currentMediaURL() {
+  return app.history[app.historyIndex]?.url || app.imageURL || app.stateURL;
+}
+
+async function uploadDataURL(dataURL, filename = "annot.png", catalog = {}) {
+  const blob = await (await fetch(dataURL)).blob();
+  return uploadBlob(blob, filename, catalog);
+}
+
+async function uploadBlob(blob, filename, catalog = {}) {
   setStatus("uploading...");
   const form = new FormData();
   form.append("file", blob, filename);
+  appendCatalogFields(form, catalog);
   const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
     headers: authHeaders(),
@@ -967,8 +994,16 @@ async function runQueue() {
       render();
       setStatus(`editing... (${app.queue.length + 1} in queue)`);
       try {
+        const sourceURL = currentMediaURL();
         const snapshot = await composeSnapshot(job.marker);
-        const uploaded = await uploadDataURL(snapshot, "annot.png");
+        const uploaded = await uploadDataURL(snapshot, "annot.png", {
+          visibility: "private",
+          tags: [...REMIX_TAGS, "voice-edit-prep"],
+          parents: [sourceURL],
+          kind: "edit",
+          prompt: job.text,
+          model: job.model,
+        });
         mediaHistory.addSilent({
           kind: "prep",
           url: uploaded,
@@ -982,7 +1017,11 @@ async function runQueue() {
         const result = await runEdit(uploaded, prompt, job.model);
         await mediaHistory.set({ url: result }, { add: true });
         setStatus("packaging share link...");
-        const packaged = await packageCurrentFrameWithHistory();
+        const packaged = await packageCurrentFrameWithHistory({
+          parents: [sourceURL, uploaded, result],
+          prompt: job.text,
+          model: job.model,
+        });
         const frame = app.history[app.historyIndex];
         if (frame?.url === result) {
           frame.url = packaged;
@@ -1107,7 +1146,11 @@ els.file.addEventListener("change", async () => {
   const file = els.file.files?.[0];
   if (!file) return;
   try {
-    const mediaURL = await uploadBlob(file, file.name || "image");
+    const mediaURL = await uploadBlob(file, file.name || "image", {
+      visibility: "private",
+      tags: [...REMIX_TAGS, "voice-edit-source"],
+      kind: "upload",
+    });
     await openStartURL(mediaURL);
     setStatus(`loaded ${file.name || "image"}`);
   } catch (err) {
@@ -1136,7 +1179,11 @@ const setDrop = (drop) => (event) => {
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
   if (!file) return;
-  uploadBlob(file, file.name || "image")
+  uploadBlob(file, file.name || "image", {
+    visibility: "private",
+    tags: [...REMIX_TAGS, "voice-edit-source"],
+    kind: "upload",
+  })
     .then((mediaURL) => openStartURL(mediaURL))
     .then(() => setStatus(`loaded ${file.name || "image"}`))
     .catch((err) => showError(err.message));
@@ -1415,8 +1462,17 @@ async function openStartURL(mediaURL) {
   await followLocationStart();
 }
 
-async function packageCurrentFrameWithHistory() {
-  return uploadBlob(await remixPNGBlob(), "voice-edit-frame.png");
+async function packageCurrentFrameWithHistory(catalog = {}) {
+  const current = currentMediaURL();
+  const previous = app.history[app.historyIndex - 1]?.url;
+  return uploadBlob(await remixPNGBlob(), "voice-edit-frame.png", {
+    visibility: "public",
+    tags: [...REMIX_TAGS, "voice-edit-history"],
+    kind: "edit",
+    parents: catalog.parents || [previous, current],
+    prompt: catalog.prompt,
+    model: catalog.model,
+  });
 }
 
 const goHistory = (delta, label) => () => {
@@ -1436,7 +1492,12 @@ els.download.addEventListener("click", async () => {
 });
 els.share.addEventListener("click", async () => {
   try {
-    const mediaURL = await uploadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    const mediaURL = await uploadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`, {
+      visibility: "public",
+      tags: [...REMIX_TAGS, "voice-edit-share"],
+      parents: [currentMediaURL()],
+      kind: "edit",
+    });
     const frame = app.history[app.historyIndex];
     if (frame) {
       frame.url = mediaURL;

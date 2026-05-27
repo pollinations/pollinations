@@ -1040,8 +1040,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(1.5), // per 1M tokens
         },
-        description:
-            "Qwen3 Coder Next - Advanced Code Generation via DashScope",
+        description: "Qwen3 Coder Next - Advanced Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

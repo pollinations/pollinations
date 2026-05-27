@@ -15,7 +15,8 @@
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production'",
         "test": "vitest run",
         "typecheck": "tsc --noEmit",
-        "docs:generate": "tsx scripts/generate-apidocs.ts"
+        "docs:generate": "tsx scripts/generate-apidocs.ts",
+        "docs:validate": "tsx scripts/validate-apidocs.ts"
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.33.2",

@@ -6,7 +6,6 @@ import {
     createFetchMock,
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
-import { createMockFrankfurter } from "@shared/test/mocks/frankfurter.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
@@ -30,7 +29,6 @@ const createMocks = () => ({
     tinybird: createMockTinybird(),
     github: createMockGithub(),
     stripe: createMockStripe(),
-    frankfurter: createMockFrankfurter(),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

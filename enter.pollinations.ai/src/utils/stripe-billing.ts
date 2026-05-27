@@ -484,7 +484,6 @@ export async function processAutoTopUpForUser(
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
             autoTopUpAttemptId: attemptId,
-            packAmount: String(pack.amountUsd),
         };
 
         // auto_advance: false keeps collection explicit: one manual pay()

@@ -4,6 +4,7 @@ export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 
 export type PollenPack = {
     packKey: PollenPackKey;
+    stripeLookupKey: string;
     amountUsd: number;
     bonusPollen: number;
     pollenGrant: number;
@@ -17,9 +18,8 @@ const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
-// USD is the canonical reference: 1 pollen ≈ $1. Non-USD cohorts derive their
-// integration-currency amount from amountUsd × current FX rate at session
-// creation (see getPackForeignCents + fx-cache).
+// USD is the canonical reference: 1 pollen ≈ $1. Stripe managed Prices carry
+// manual currency_options for supported non-USD currencies.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     packKey: PollenPackKey;
     amountUsd: number;
@@ -58,6 +58,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
 
         return {
             packKey,
+            stripeLookupKey: `pollen_pack_${packKey}`,
             amountUsd,
             bonusPollen,
             pollenGrant,
@@ -68,15 +69,6 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
         };
     },
 );
-
-// Derive a foreign-currency-cents integration amount from a pack's USD
-// reference price and a USD→target FX rate. Used at Stripe Checkout creation
-// for non-USD cohorts (EUR, INR, GBP, ...); the USD cohort sends amountUsd
-// directly without an FX call.
-export const getPackForeignCents = (
-    pack: PollenPack,
-    usdToTargetRate: number,
-): number => Math.round(pack.amountUsd * 100 * usdToTargetRate);
 
 export const isPollenPackKey = (value: string): value is PollenPackKey =>
     PACK_KEY_SET.has(value as PollenPackKey);

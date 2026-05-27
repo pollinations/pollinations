@@ -59,7 +59,6 @@ function createAutoTopUpInvoiceEvent(
                 metadata: {
                     pollinations_user_id: userId,
                     pollinations_purpose: "auto_top_up",
-                    packAmount: "10",
                 },
                 ...invoiceOverrides,
             },
@@ -144,7 +143,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("stripe", "tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -157,8 +156,7 @@ test.for(
         },
         redirect: "manual",
     });
-    // 302 = redirect to Stripe checkout, 500 = Stripe API error (no real API key in test)
-    expect(sessionCookieResponse.status).toBeOneOf([302, 500]);
+    expect(sessionCookieResponse.status).toBe(302);
 });
 
 test("GET /api/stripe/products returns pack list", async () => {
@@ -253,22 +251,15 @@ test("GET /api/stripe/checkout/p10 snapshots pack grant into session metadata", 
     )?.body;
     expect(body).toBeTruthy();
 
-    // No cf-ipcountry header → USD default cohort: native USD pricing, no AP.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1000");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    // No cf-ipcountry header → USD default cohort: managed Price, no AP.
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.["line_items[0][price_data][product_data][name]"]).toMatch(
-        /10 Pollen \+ 3 FREE/,
-    );
 
     // Session metadata must snapshot the grant + pack identity so the webhook
-    // credits exactly what was displayed at checkout time. packCurrency /
-    // packAmountCents reflect the integration currency actually sent to
-    // Stripe; cohort identifies which routing branch was taken.
+    // credits exactly what was displayed at checkout time. cohort identifies
+    // which routing branch was taken.
     expect(body?.["metadata[packKey]"]).toBe("p10");
     expect(body?.["metadata[packAmountUsd]"]).toBe("10");
-    expect(body?.["metadata[packCurrency]"]).toBe("usd");
-    expect(body?.["metadata[packAmountCents]"]).toBe("1000");
     expect(body?.["metadata[packPollenGrant]"]).toBe("13");
     expect(body?.["metadata[packBonusPollen]"]).toBe("3");
     expect(body?.["metadata[cohort]"]).toBe("USD");
@@ -300,12 +291,8 @@ test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
     expect(body).toBeTruthy();
 
     // No cf-ipcountry header → USD default cohort.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("200");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p2");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.["line_items[0][price_data][product_data][name]"]).not.toMatch(
-        /FREE/,
-    );
 
     expect(body?.["metadata[packKey]"]).toBe("p2");
     expect(body?.["metadata[packAmountUsd]"]).toBe("2");
@@ -318,14 +305,13 @@ test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
 });
 
-// Cohort routing: cf-ipcountry determines integration currency and AP
-// behaviour. Mock frankfurter.dev returns 0.93 USD/EUR by default.
-test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + buy-pollen PMC", async ({
+// Cohort routing: cf-ipcountry determines AP behaviour and cohort metadata.
+// Managed Stripe Prices carry USD default pricing plus manual currency_options.
+test("cohort BR: cf-ipcountry=BR → managed Price + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_eur");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/p5`, {
         method: "GET",
@@ -342,26 +328,20 @@ test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + buy-pollen PMC",
     )?.body;
     expect(body).toBeTruthy();
 
-    // $5 × 100 × 0.93 = 465 EUR cents (€4.65). Stripe AP localizes EUR → BRL
-    // for the buyer's display, but the integration amount we send is EUR.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("465");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("BR");
-    expect(body?.["metadata[packCurrency]"]).toBe("eur");
-    expect(body?.["metadata[packAmountCents]"]).toBe("465");
     // Pollen grant stays USD-anchored ($5 + 1 bonus = 6 pollen).
     expect(body?.["metadata[packAmountUsd]"]).toBe("5");
     expect(body?.["metadata[packPollenGrant]"]).toBe("6");
 });
 
-test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP on + buy-pollen PMC", async ({
+test("cohort EU_CORE: cf-ipcountry=NL → managed Price + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_eur");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
@@ -378,21 +358,19 @@ test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP on + buy-pollen 
     )?.body;
     expect(body).toBeTruthy();
 
-    // $10 × 100 × 0.93 = 930 EUR cents (€9.30). AP is a no-op for
-    // EUR buyers and can localize for non-EUR European buyers.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("930");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    // EUR buyers use the Price's manual EUR currency option; AP can localize
+    // non-EUR European buyers.
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
 });
 
-test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + buy-pollen PMC", async ({
+test("cohort APAC_ALIPAY: cf-ipcountry=CN → managed Price + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_eur");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/p20`, {
         method: "GET",
@@ -409,9 +387,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + buy-pol
     )?.body;
     expect(body).toBeTruthy();
 
-    // $20 × 100 × 0.93 = 1860 EUR cents (€18.60). AP localizes EUR → CNY.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1860");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p20");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
@@ -421,8 +397,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_eur");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     // The 5,000-charge live audit showed 99.8% of MO billing-country charges
     // were US-issued cards. MO must drop to USD default.
@@ -441,21 +416,17 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     )?.body;
     expect(body).toBeTruthy();
 
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("500");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("USD");
-    // USD cohort never calls FX cache (no fetch to frankfurter).
-    expect(mocks.frankfurter.state.callCount).toBe(0);
 });
 
-test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + buy-pollen PMC", async ({
+test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_inr");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
@@ -472,26 +443,22 @@ test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + buy-pollen P
     )?.body;
     expect(body).toBeTruthy();
 
-    // $10 × 100 × 85.0 = 85000 paise (₹850.00). INR is the integration currency
-    // directly (required for UPI), so AP is off — no need to localize.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("85000");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("inr");
+    // INR is a manual currency option on the Price, so AP stays off.
+    expect(body?.currency).toBe("inr");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("INDIA");
-    expect(body?.["metadata[packCurrency]"]).toBe("inr");
-    expect(body?.["metadata[packAmountCents]"]).toBe("85000");
     // Pollen grant stays USD-anchored ($10 + 3 bonus = 13 pollen).
     expect(body?.["metadata[packAmountUsd]"]).toBe("10");
     expect(body?.["metadata[packPollenGrant]"]).toBe("13");
 });
 
-test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + buy-pollen PMC", async ({
+test("cohort UK: cf-ipcountry=GB → managed Price + AP off + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
-    await env.KV.delete("fx:usd_gbp");
-    await mocks.enable("stripe", "tinybird", "frankfurter");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/p5`, {
         method: "GET",
@@ -508,16 +475,13 @@ test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + buy-pollen PMC"
     )?.body;
     expect(body).toBeTruthy();
 
-    // $5 × 100 × 0.79 = 395 pence (£3.95). GBP is the integration currency
-    // directly; UK buyers see GBP natively, AP off — and Wise UK GBP receive
-    // account gives us zero Stripe FX margin on settlement.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("395");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("gbp");
+    // GBP is a manual currency option on the Price; UK buyers see GBP
+    // natively, AP off, and Wise GBP settlement avoids Stripe FX margin.
+    expect(body?.currency).toBe("gbp");
+    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
     expect(body?.["metadata[cohort]"]).toBe("UK");
-    expect(body?.["metadata[packCurrency]"]).toBe("gbp");
-    expect(body?.["metadata[packAmountCents]"]).toBe("395");
     expect(body?.["metadata[packAmountUsd]"]).toBe("5");
     expect(body?.["metadata[packPollenGrant]"]).toBe("6");
 });
@@ -878,7 +842,6 @@ test("GET /api/stripe/billing shows pending auto top-up invoice payment link", a
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
         hosted_invoice_url: hostedInvoiceUrl,
     });
@@ -1804,7 +1767,6 @@ test("POST /api/stripe/auto-top-up/trigger voids stale pending invoices", async 
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -1899,7 +1861,6 @@ test("POST /api/stripe/auto-top-up/trigger credits stale paid pending invoices",
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2294,7 +2255,6 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2378,7 +2338,6 @@ test("POST /api/webhooks/stripe fails declined invoices without disabling auto t
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2521,7 +2480,6 @@ test("POST /api/webhooks/stripe deletes draft failed auto top-up invoices", asyn
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2586,7 +2544,6 @@ test("POST /api/webhooks/stripe still credits paid invoice after payment_failed 
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2670,7 +2627,6 @@ test("POST /api/webhooks/stripe payment_failed retry does not disable when attem
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 

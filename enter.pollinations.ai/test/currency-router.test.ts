@@ -16,7 +16,6 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to USD", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("USD");
-            expect(cohort.checkoutCurrency).toBe("usd");
             expect(cohort.adaptivePricing).toBe(false);
         });
 
@@ -42,7 +41,6 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry("BR");
             expect(cohort).toEqual({
                 id: "BR",
-                checkoutCurrency: "eur",
                 adaptivePricing: true,
             });
         });
@@ -52,7 +50,6 @@ describe("getCohortFromCountry", () => {
         test.each(["CN", "HK", "TW"])("routes %s to APAC_ALIPAY", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("APAC_ALIPAY");
-            expect(cohort.checkoutCurrency).toBe("eur");
             expect(cohort.adaptivePricing).toBe(true);
         });
     });
@@ -82,7 +79,6 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to EU_CORE", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("EU_CORE");
-            expect(cohort.checkoutCurrency).toBe("eur");
             expect(cohort.adaptivePricing).toBe(true);
         });
     });
@@ -92,8 +88,8 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry("IN");
             expect(cohort).toEqual({
                 id: "INDIA",
-                checkoutCurrency: "inr",
                 adaptivePricing: false,
+                checkoutCurrency: "inr",
             });
         });
     });
@@ -103,8 +99,8 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry("GB");
             expect(cohort).toEqual({
                 id: "UK",
-                checkoutCurrency: "gbp",
                 adaptivePricing: false,
+                checkoutCurrency: "gbp",
             });
         });
     });

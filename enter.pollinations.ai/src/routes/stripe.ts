@@ -1,17 +1,17 @@
 import {
     describePollenPack,
-    getPackForeignCents,
     getPollenPackByKey,
     POLLEN_PACKS,
+    type PollenPack,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
-import { getUsdToRate } from "../utils/fx-cache.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -23,8 +23,8 @@ import {
 
 /**
  * Stripe pack configuration
- * Checkout copy and payout are controlled in-app so bonus changes do not
- * require Stripe catalog edits.
+ * Checkout uses managed Stripe Prices keyed from the shared pack catalog.
+ * Run scripts/sync-stripe-pollen-prices.ts after pack copy or amount changes.
  */
 export const stripeRoutes = new Hono<Env>()
     /**
@@ -33,13 +33,13 @@ export const stripeRoutes = new Hono<Env>()
      *
      * Path parameter is the pack key ("p2".."p100").
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides the
-     * integration currency and whether Stripe Adaptive Pricing localizes
-     * presentment.
+     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides whether
+     * Stripe Adaptive Pricing localizes presentment and, for INR/GBP, whether
+     * Checkout must use an explicit manual Price currency option.
      *
-     * Pollen is the canonical unit: 1 pollen ≈ $1. USD cohort sends USD
-     * cents directly; non-USD cohorts convert via live USD→target FX, then
-     * Stripe AP (when on) can show local-currency presentment.
+     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout references a
+     * managed Stripe Price by lookup key; explicit Price currency_options
+     * cover EUR/GBP/INR, and Stripe AP (when on) can localize the rest.
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
@@ -69,17 +69,9 @@ export const stripeRoutes = new Hono<Env>()
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
 
-        // Resolve cohort from buyer IP and derive the integration-currency
-        // amount. USD cohort: native USD. Non-USD cohorts: target currency
-        // derived from USD reference × live FX rate.
+        // Resolve cohort from buyer IP. The managed Stripe Price carries the
+        // actual currency amounts, so checkout does not call FX at runtime.
         const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
-        const unitAmount =
-            cohort.checkoutCurrency === "usd"
-                ? pack.amountUsd * 100
-                : getPackForeignCents(
-                      pack,
-                      await getUsdToRate(c.env, cohort.checkoutCurrency),
-                  );
         // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
         // default PMC) would hide a misconfigured deploy.
@@ -104,29 +96,21 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
                 packKey: pack.packKey,
                 packAmountUsd: String(pack.amountUsd),
-                packCurrency: cohort.checkoutCurrency,
-                packAmountCents: String(unitAmount),
                 packPollenGrant: String(pack.pollenGrant),
                 packBonusPollen: String(pack.bonusPollen),
                 cohort: cohort.id,
             };
+            const priceId = await resolvePollenPackStripePrice(stripe, pack);
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
+                ...(cohort.checkoutCurrency
+                    ? { currency: cohort.checkoutCurrency }
+                    : {}),
                 payment_method_configuration: pmcId,
                 line_items: [
                     {
-                        price_data: {
-                            currency: cohort.checkoutCurrency,
-                            unit_amount: unitAmount,
-                            tax_behavior: "inclusive",
-                            product_data: {
-                                name: pack.checkoutName,
-                                description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
-                                tax_code: pack.taxCode,
-                            },
-                        },
+                        price: priceId,
                         quantity: 1,
                     },
                 ],
@@ -352,4 +336,24 @@ function normalizeStripePortalError(error: unknown): string {
     }
 
     return message || "Failed to create billing portal session";
+}
+
+async function resolvePollenPackStripePrice(
+    stripe: Stripe,
+    pack: PollenPack,
+): Promise<string> {
+    const prices = await stripe.prices.list({
+        active: true,
+        lookup_keys: [pack.stripeLookupKey],
+        limit: 1,
+    });
+    const price = prices.data[0];
+
+    if (!price) {
+        throw new Error(
+            `Missing active Stripe Price for lookup key ${pack.stripeLookupKey}`,
+        );
+    }
+
+    return price.id;
 }

@@ -8,49 +8,45 @@ export type CohortId =
 
 export type CheckoutCohort = {
     id: CohortId;
-    checkoutCurrency: "usd" | "eur" | "inr" | "gbp";
     adaptivePricing: boolean;
+    checkoutCurrency?: "gbp" | "inr";
 };
 
 const COHORT_USD: CheckoutCohort = {
     id: "USD",
-    checkoutCurrency: "usd",
     adaptivePricing: false,
 };
 
 const COHORT_BR: CheckoutCohort = {
     id: "BR",
-    checkoutCurrency: "eur",
     adaptivePricing: true,
 };
 
 const COHORT_APAC_ALIPAY: CheckoutCohort = {
     id: "APAC_ALIPAY",
-    checkoutCurrency: "eur",
     adaptivePricing: true,
 };
 
 const COHORT_EU_CORE: CheckoutCohort = {
     id: "EU_CORE",
-    checkoutCurrency: "eur",
     adaptivePricing: true,
 };
 
-// INR is the integration currency (required for UPI to work end-to-end on
-// Stripe). AP off — INR is already what the Indian buyer sees, no need to
-// localize from EUR with a Stripe FX margin layer on top.
+// INR is a manual currency option on the managed Stripe Price. AP off because
+// UPI requires INR, so force the Checkout Session currency instead of relying
+// on Checkout's IP-based currency inference.
 const COHORT_INDIA: CheckoutCohort = {
     id: "INDIA",
-    checkoutCurrency: "inr",
     adaptivePricing: false,
+    checkoutCurrency: "inr",
 };
 
-// GBP-native integration so UK buyers see GBP without Stripe AP routing them
-// through a EUR→GBP conversion (which would add ~2-4% FX margin). AP off.
+// GBP is a manual currency option on the managed Stripe Price. Force GBP so UK
+// revenue settles to the configured Wise GBP account.
 const COHORT_UK: CheckoutCohort = {
     id: "UK",
-    checkoutCurrency: "gbp",
     adaptivePricing: false,
+    checkoutCurrency: "gbp",
 };
 
 // MO is intentionally absent: the 5,000-charge card-country audit found

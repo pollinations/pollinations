@@ -1,6 +1,5 @@
 import {
     describePollenPack,
-    getPackForeignCents,
     getPollenPackByAmount,
     getPollenPackByKey,
     isPollenPackKey,
@@ -23,6 +22,14 @@ test("pollen pack catalog includes the stepped beta bonus ladder", () => {
         "p50",
         "p100",
     ]);
+    expect(POLLEN_PACKS.map((pack) => pack.stripeLookupKey)).toEqual([
+        "pollen_pack_p2",
+        "pollen_pack_p5",
+        "pollen_pack_p10",
+        "pollen_pack_p20",
+        "pollen_pack_p50",
+        "pollen_pack_p100",
+    ]);
 });
 
 test("pack lookup validates supported USD amounts", () => {
@@ -38,33 +45,6 @@ test("pack lookup validates pack keys", () => {
     expect(getPollenPackByKey("p100")?.pollenGrant).toBe(160);
     expect(getPollenPackByKey("20")).toBeUndefined();
     expect(getPollenPackByKey("nope")).toBeUndefined();
-});
-
-test("getPackForeignCents derives target-currency cents from USD reference × FX rate", () => {
-    const p5 = getPollenPackByKey("p5");
-    if (!p5) throw new Error("p5 pack missing from catalog");
-
-    // EUR: $5 × 100 × 0.93 = 465 EUR cents (€4.65)
-    expect(getPackForeignCents(p5, 0.93)).toBe(465);
-    // Parity rate: $5 × 100 × 1.00 = 500 cents
-    expect(getPackForeignCents(p5, 1.0)).toBe(500);
-    // Rounding: $5 × 100 × 0.9123 = 456.15 → 456
-    expect(getPackForeignCents(p5, 0.9123)).toBe(456);
-
-    // Larger packs scale linearly (EUR).
-    const p100 = getPollenPackByKey("p100");
-    if (!p100) throw new Error("p100 pack missing from catalog");
-    expect(getPackForeignCents(p100, 0.93)).toBe(9300);
-
-    // INR: $10 × 100 × 85.0 = 85000 paise (₹850.00)
-    const p10 = getPollenPackByKey("p10");
-    if (!p10) throw new Error("p10 pack missing from catalog");
-    expect(getPackForeignCents(p10, 85.0)).toBe(85000);
-
-    // GBP: $20 × 100 × 0.79 = 1580 pence (£15.80)
-    const p20 = getPollenPackByKey("p20");
-    if (!p20) throw new Error("p20 pack missing from catalog");
-    expect(getPackForeignCents(p20, 0.79)).toBe(1580);
 });
 
 test("pack descriptions stay aligned with the shared catalog", () => {

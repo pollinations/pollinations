@@ -8,6 +8,7 @@ Upload files and get back a content-addressed URL to use with Pollinations model
 
 - **Upload** media files via `POST /upload`
 - **Retrieve** media by hash via `GET /:hash`
+- **Catalog** optional upload metadata for user libraries, public app galleries, tags, and remix lineage
 - **Deduplicate** - identical files return the same URL (SHA-256 content hashing)
 - **CORS enabled** for browser uploads
 
@@ -21,7 +22,10 @@ Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](ht
 # Multipart form-data
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
-  -F "file=@image.jpg"
+  -F "file=@image.jpg" \
+  -F "visibility=public" \
+  -F "tags=catgpt,remix" \
+  -F "parents=[\"10efdd0c1cfc65fa\"]"
 
 # Raw binary
 curl -X POST https://media.pollinations.ai/upload \
@@ -45,7 +49,12 @@ curl -X POST https://media.pollinations.ai/upload \
 #   "url": "https://media.pollinations.ai/a3f2b1c4d5e6f7...",
 #   "contentType": "image/jpeg",
 #   "size": 123456,
-#   "duplicate": false
+#   "duplicate": false,
+#   "cataloged": true,
+#   "visibility": "public",
+#   "source": "edit",
+#   "parents": ["10efdd0c1cfc65fa"],
+#   "tags": ["catgpt", "remix"]
 # }
 ```
 
@@ -80,6 +89,8 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
     "name": "image.jpg"
   }
   ```
+- Optional catalog fields: `visibility` (`private`, `unlisted`, `public`), `source` (`upload`, `generation`, `saved_generation`, `edit`, `remix`), `parents`/`parent`/`remixOf`, `tags`, `prompt`, `model`.
+- Owner and app attribution are stamped from the verified API key. Client-submitted app ids are ignored.
 
 **Response:**
 ```json
@@ -88,7 +99,12 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
   "url": "https://media.pollinations.ai/{hash}",
   "contentType": "image/jpeg",
   "size": 123456,
-  "duplicate": false
+  "duplicate": false,
+  "cataloged": true,
+  "visibility": "private",
+  "source": "upload",
+  "parents": [],
+  "tags": []
 }
 ```
 
@@ -125,6 +141,22 @@ Check if a file exists without downloading.
 ### `GET /`
 
 Service info and health check.
+
+### `GET /me/media`
+
+List cataloged media owned by the authenticated key user. Requires API key. Optional query parameters: `app`, `app_key`, `tag`, `limit`, `cursor`.
+
+### `GET /gallery?app=<app-key-id>`
+
+List public media stamped with a server-attested BYOP app key id. `app_key=<publishable-key>` is also accepted and resolved server-side.
+
+### `GET /tags/:tag`
+
+List public media carrying a normalized tag.
+
+### `GET /:hash/children`
+
+List public or unlisted catalog items that name `:hash` as a parent.
 
 
 
@@ -182,7 +214,7 @@ Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as
 
 - **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
-- **No user file listing:** There is no endpoint to list or manage your uploaded files.
+- **Catalog listing:** Authenticated users can list their cataloged uploads through `/me/media`. Public gallery endpoints only return items uploaded with `visibility=public`.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 
 ## 🔑 Authentication

@@ -14,8 +14,9 @@ import { useEffect, useRef, useState } from "react";
 
 const APP_KEY = "pk_pollinations_virtual_makeup";
 const POLLINATIONS_AUTH_URL = "https://enter.pollinations.ai/authorize";
-const POLLINATIONS_MEDIA_API = "https://gen.pollinations.ai/media";
+const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 const POLLINATIONS_IMAGE_API = "https://gen.pollinations.ai/image";
+const MAKEUP_TAGS = ["virtual-makeup"];
 
 const MAKEUP_STYLES = [
     {
@@ -117,9 +118,27 @@ function App() {
         }
     };
 
-    const uploadToPollinations = async (file) => {
+    const appendCatalogFields = (formData, fields = {}) => {
+        const {
+            visibility = "private",
+            tags = MAKEUP_TAGS,
+            parents = [],
+            source = "generation",
+            prompt,
+            model,
+        } = fields;
+        formData.append("visibility", visibility);
+        formData.append("source", source);
+        if (prompt) formData.append("prompt", prompt);
+        if (model) formData.append("model", model);
+        if (tags.length) formData.append("tags", JSON.stringify(tags));
+        if (parents.length) formData.append("parents", JSON.stringify(parents));
+    };
+
+    const uploadBlobToPollinations = async (blob, filename, catalog = {}) => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", blob, filename);
+        appendCatalogFields(formData, catalog);
 
         const response = await fetch(POLLINATIONS_MEDIA_API, {
             method: "POST",
@@ -137,6 +156,18 @@ function App() {
 
         const data = await response.json();
         return data.url || data.secure_url || data.media_url;
+    };
+
+    const uploadToPollinations = async (file) => {
+        return uploadBlobToPollinations(
+            file,
+            file.name || "makeup-source.png",
+            {
+                visibility: "private",
+                tags: [...MAKEUP_TAGS, "virtual-makeup-source"],
+                source: "upload",
+            },
+        );
     };
 
     const applyMakeup = async () => {
@@ -172,8 +203,31 @@ function App() {
             }
 
             const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setMakeupImage(blobUrl);
+            let resultUrl = URL.createObjectURL(blob);
+            try {
+                resultUrl = await uploadBlobToPollinations(
+                    blob,
+                    `makeup-result-${Date.now()}.png`,
+                    {
+                        visibility: "private",
+                        tags: [
+                            ...MAKEUP_TAGS,
+                            "virtual-makeup-result",
+                            selectedStyle,
+                        ],
+                        parents: [pollinationsUrl],
+                        source: "edit",
+                        prompt,
+                        model: "nanobanana",
+                    },
+                );
+            } catch (uploadError) {
+                console.warn(
+                    "Makeup result catalog upload failed:",
+                    uploadError,
+                );
+            }
+            setMakeupImage(resultUrl);
             setImageLoaded(true);
             setIsLoading(false);
         } catch (error) {

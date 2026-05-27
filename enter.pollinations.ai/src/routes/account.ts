@@ -1147,9 +1147,11 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
+            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
+            // any old cached rows that would render as undefined in CSV.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:debug:${devUserId}`
-                : `earnings:${devUserId}`;
+                ? `earnings:v2:debug:${devUserId}`
+                : `earnings:v2:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;

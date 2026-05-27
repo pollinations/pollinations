@@ -131,16 +131,17 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen: 0,
                 byModel: new Map(),
             };
+            const pollen = r.pollen_spent ?? r.cost_usd ?? 0;
             cur.requests += r.requests || 0;
-            cur.pollen += r.cost_usd || 0;
+            cur.pollen += pollen;
 
             const isTier = r.meter_source === "tier";
             if (isTier) {
                 cur.tierRequests += r.requests || 0;
-                cur.tierPollen += r.cost_usd || 0;
+                cur.tierPollen += pollen;
             } else {
                 cur.paidRequests += r.requests || 0;
-                cur.paidPollen += r.cost_usd || 0;
+                cur.paidPollen += pollen;
             }
 
             if (r.model) {
@@ -149,7 +150,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                     pollen: 0,
                 };
                 modelData.requests += r.requests || 0;
-                modelData.pollen += r.cost_usd || 0;
+                modelData.pollen += pollen;
                 cur.byModel.set(r.model, modelData);
             }
             buckets.set(dateKey, cur);
@@ -228,22 +229,18 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             (s: number, r: DailyUsageRecord) => s + (r.requests || 0),
             0,
         );
+        const pollenOf = (r: DailyUsageRecord) =>
+            r.pollen_spent ?? r.cost_usd ?? 0;
         const totalPollen = filtered.reduce(
-            (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
+            (s: number, r: DailyUsageRecord) => s + pollenOf(r),
             0,
         );
         const tierPollen = filtered
             .filter((r) => r.meter_source === "tier")
-            .reduce(
-                (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
-                0,
-            );
+            .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const paidPollen = filtered
             .filter((r) => r.meter_source !== "tier")
-            .reduce(
-                (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
-                0,
-            );
+            .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const modelTotals = new Map<
             string,
             { requests: number; pollen: number }
@@ -255,7 +252,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 pollen: 0,
             };
             cur.requests += r.requests || 0;
-            cur.pollen += r.cost_usd || 0;
+            cur.pollen += pollenOf(r);
             modelTotals.set(r.model, cur);
         }
         const topModelEntry = Array.from(modelTotals.entries()).sort(

@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-26",
+  "period_start": "2026-05-26",
+  "period_end": "2026-05-26",
+  "title": "Documentation built for LLMs",
+  "summary": "A complete overhaul of the documentation surface, featuring one-click copy buttons designed specifically for feeding context to LLM coding assistants.\n\nWe rebuilt the documentation surface with modular markdown and added a new guides section. The dashboard now features 'Copy for LLMs' buttons—one click grabs context-aware API, BYOP, CLI, or MCP documentation formatted specifically to be pasted into your AI coding assistant. Less typing, more generating.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 10960,
+      "date": "2026-05-26"
+    }
+  ],
+  "generated_at": "2026-05-27T07:22:00.853658+00:00"
+}

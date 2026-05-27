@@ -1,0 +1,34 @@
+{
+  "pr_number": 11325,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11325",
+  "merged_at": "2026-05-27T14:18:16Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh API Docs",
+    "blurb": "Our API documentation just got a fresh coat of paint to match the latest production deploy.",
+    "summary": "Automated sync of APIDOCS.md to reflect the latest OpenAPI spec changes from production.",
+    "impact": "Developers have access to the most up-to-date API endpoints and parameters.",
+    "keywords": [
+      "docs",
+      "api",
+      "openapi",
+      "bot"
+    ],
+    "visual_concept": "The bee mascot (Polly) organizing or reading a large pixelated book or scroll (representing documentation). The Nomnom creature eating old pages.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing a glowing pixelated scroll of documentation. The round tan nomnom creature happily eats the old deprecated pages. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11325.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing a glowing pixelated scroll of documentation. The round tan nomnom creature happily eats the old deprecated pages. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-27T14:19:13.387298+00:00"
+}

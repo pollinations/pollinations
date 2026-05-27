@@ -105,6 +105,35 @@
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn.accent { background: var(--accent); }
   .select { padding: 0 10px; max-width: min(100%, 20rem); }
+  .branch-strip {
+    display: none;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+  }
+  .branch-strip.visible { display: flex; }
+  .branch-card {
+    flex: 0 0 96px;
+    padding: 0;
+    background: var(--surface);
+    border: var(--border);
+    box-shadow: var(--raise);
+    cursor: pointer;
+  }
+  .branch-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+  .branch-card span {
+    display: block;
+    padding: 5px;
+    font-size: 0.65rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .mode-toggle, .swatches {
     display: inline-flex;
@@ -316,8 +345,10 @@
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
       <button id="downloadBtn" class="btn" title="download image with embedded history - drop it back onto the app to restore">save</button>
       <button id="shareBtn" class="btn" title="upload PNG with embedded history and copy link">share</button>
+      <button id="remixesBtn" class="btn" title="show public remixes of this image">remixes</button>
       <button id="walkthroughBtn" class="btn" title="open this remix history as a video walkthrough">walkthrough</button>
     </section>
+    <section id="branchStrip" class="branch-strip" aria-label="public remixes"></section>
 
     <section id="frame" class="frame">
       <div id="stage" class="stage">
@@ -392,7 +423,9 @@ const els = Object.fromEntries(Object.entries({
   redo: "redoBtn",
   download: "downloadBtn",
   share: "shareBtn",
+  remixes: "remixesBtn",
   walkthrough: "walkthroughBtn",
+  branches: "branchStrip",
   colorPicker: "colorPicker",
   pill: "cursorPill",
   pillText: "pillText",
@@ -416,6 +449,8 @@ const app = {
   micAvailable: CAN_RECORD,
   accountUser: "",
   accountBalance: null,
+  branchItems: [],
+  branchesOpen: false,
 };
 
 function setStatus(text) {
@@ -444,9 +479,10 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.shuffle, els.model, els.share, els.walkthrough].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.shuffle, els.model, els.share, els.remixes, els.walkthrough].forEach((el) => { el.disabled = locked; });
   renderInputMode(locked);
   renderPins();
+  renderBranches();
 }
 
 function renderInputMode(locked = false) {
@@ -513,6 +549,34 @@ function renderPins() {
     pin.classList.toggle("flip", flip);
     pin.style.maxWidth = `${clamp(flip ? leftSpace : rightSpace, 40, 256)}px`;
     return pin;
+  }));
+}
+
+function renderBranches() {
+  els.remixes.textContent = app.branchItems.length ? `remixes ${app.branchItems.length}` : "remixes";
+  els.branches.classList.toggle("visible", app.branchesOpen);
+  if (!app.branchesOpen) return;
+  if (!app.branchItems.length) {
+    const empty = document.createElement("span");
+    empty.className = "tagline";
+    empty.textContent = "no public remixes yet";
+    els.branches.replaceChildren(empty);
+    return;
+  }
+  els.branches.replaceChildren(...app.branchItems.map((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "branch-card";
+    button.title = item.prompt || "open remix";
+    const img = document.createElement("img");
+    img.src = item.url;
+    img.alt = item.prompt || "public remix";
+    img.loading = "lazy";
+    const label = document.createElement("span");
+    label.textContent = item.prompt || "remix";
+    button.append(img, label);
+    button.addEventListener("click", () => openStartURL(item.url).catch((err) => showError(err.message)));
+    return button;
   }));
 }
 
@@ -904,10 +968,13 @@ async function uploadDataURL(dataURL, filename = "annot.png") {
   return uploadBlob(blob, filename);
 }
 
-async function uploadBlob(blob, filename) {
+async function uploadBlob(blob, filename, fields = {}) {
   setStatus("uploading...");
   const form = new FormData();
   form.append("file", blob, filename);
+  for (const [key, value] of Object.entries(fields)) {
+    if (value != null && value !== "") form.append(key, String(value));
+  }
   const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
     headers: authHeaders(),
@@ -963,6 +1030,7 @@ async function runQueue() {
   try {
     while (app.queue.length) {
       const job = app.queue.shift();
+      const parentHash = mediaHashFromURL(app.stateURL || app.history[app.historyIndex]?.url || app.imageURL);
       app.currentJob = job;
       render();
       setStatus(`editing... (${app.queue.length + 1} in queue)`);
@@ -982,13 +1050,20 @@ async function runQueue() {
         const result = await runEdit(uploaded, prompt, job.model);
         await mediaHistory.set({ url: result }, { add: true });
         setStatus("packaging share link...");
-        const packaged = await packageCurrentFrameWithHistory();
+        const packaged = await packageCurrentFrameWithHistory(parentHash ? {
+          remixOf: parentHash,
+          visibility: "public",
+          source: "remix",
+          prompt: job.text,
+          model: job.model,
+        } : {});
         const frame = app.history[app.historyIndex];
         if (frame?.url === result) {
           frame.url = packaged;
           app.imageURL = packaged;
           app.stateURL = packaged;
           syncStartToCurrent({ force: true });
+          refreshBranches();
           render();
         }
         await loadBalance();
@@ -1254,6 +1329,18 @@ function scrubURL(url) {
   }
 }
 
+function mediaHashFromURL(url) {
+  if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return "";
+  try {
+    const parsed = new URL(url, location.href);
+    if (parsed.hostname !== "media.pollinations.ai") return "";
+    const hash = parsed.pathname.replace(/^\/+/, "").split("/")[0];
+    return /^[a-f0-9]{16}$/i.test(hash) ? hash.toLowerCase() : "";
+  } catch {
+    return "";
+  }
+}
+
 function cleanHistoryFrames(frames) {
   return frames
     .map((frame) => cleanHistoryFrame(frame))
@@ -1344,12 +1431,37 @@ async function loadStartImage(url) {
     const remix = await readRemixState(blob);
     if (remix) {
       await restoreRemix(remix, url, url);
+      refreshBranches();
       return;
     }
   } catch {
     // Fall through to URL loading; the browser may still be able to render it.
   }
   await mediaHistory.reset({ url }, url);
+  refreshBranches();
+}
+
+function refreshBranches(options) {
+  loadBranches(options).catch(() => {
+    app.branchItems = [];
+    renderBranches();
+  });
+}
+
+async function loadBranches({ show = false } = {}) {
+  const hash = mediaHashFromURL(app.stateURL || app.history[app.historyIndex]?.url || app.imageURL);
+  if (!hash) {
+    app.branchItems = [];
+    app.branchesOpen = false;
+    renderBranches();
+    return;
+  }
+  const res = await fetch(`https://media.pollinations.ai/${hash}/children?limit=12`);
+  if (!res.ok) return;
+  const data = await res.json();
+  app.branchItems = Array.isArray(data.items) ? data.items : [];
+  if (show) app.branchesOpen = true;
+  renderBranches();
 }
 
 function nextStarter() {
@@ -1398,6 +1510,7 @@ async function loadFromLocation() {
     await loadStartImage(startURL);
   } else {
     await mediaHistory.reset({ url: STARTER }, STARTER);
+    refreshBranches();
   }
 }
 
@@ -1415,8 +1528,8 @@ async function openStartURL(mediaURL) {
   await followLocationStart();
 }
 
-async function packageCurrentFrameWithHistory() {
-  return uploadBlob(await remixPNGBlob(), "voice-edit-frame.png");
+async function packageCurrentFrameWithHistory(fields = {}) {
+  return uploadBlob(await remixPNGBlob(), "voice-edit-frame.png", fields);
 }
 
 const goHistory = (delta, label) => () => {
@@ -1452,6 +1565,16 @@ els.share.addEventListener("click", async () => {
       window.prompt("share link", shareURL.href);
       setStatus("share link ready");
     }
+  } catch (err) {
+    showError(err.message);
+  }
+});
+els.remixes.addEventListener("click", async () => {
+  app.branchesOpen = !app.branchesOpen;
+  renderBranches();
+  if (!app.branchesOpen) return;
+  try {
+    await loadBranches({ show: true });
   } catch (err) {
     showError(err.message);
   }

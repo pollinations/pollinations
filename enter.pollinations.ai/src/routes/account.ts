@@ -1431,6 +1431,9 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether the API key is valid and active",
                                         ),
+                                    keyId: z
+                                        .string()
+                                        .describe("Stable API key id"),
                                     type: z
                                         .enum(["publishable", "secret"])
                                         .describe("Type of API key"),
@@ -1439,6 +1442,24 @@ export const accountRoutes = new Hono<Env>()
                                         .nullable()
                                         .describe(
                                             "Display name of the API key",
+                                        ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Owner user id for this API key",
+                                        ),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key id that minted this key, when present",
+                                        ),
+                                    byopClientName: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name for the app that minted this key, when present",
                                         ),
                                     expiresAt: z
                                         .string()
@@ -1548,8 +1569,12 @@ export const accountRoutes = new Hono<Env>()
 
             return c.json({
                 valid: true, // If we got here, the key is valid
+                keyId: apiKey.id,
                 type: keyType,
                 name: apiKey.name || null,
+                userId: c.var.auth.user?.id || null,
+                byopClientKeyId: apiKey.byopClientKeyId || null,
+                byopClientName: apiKey.byopClientName || null,
                 expiresAt,
                 expiresIn,
                 permissions,

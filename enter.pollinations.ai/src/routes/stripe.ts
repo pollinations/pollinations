@@ -34,8 +34,7 @@ export const stripeRoutes = new Hono<Env>()
      * Path parameter is the pack key ("p2".."p100").
      *
      * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides whether
-     * Stripe Adaptive Pricing localizes presentment and, for INR/GBP, whether
-     * Checkout must use an explicit manual Price currency option.
+     * Stripe Adaptive Pricing localizes presentment.
      *
      * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout references a
      * managed Stripe Price by lookup key; explicit Price currency_options
@@ -104,9 +103,6 @@ export const stripeRoutes = new Hono<Env>()
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
-                ...(cohort.checkoutCurrency
-                    ? { currency: cohort.checkoutCurrency }
-                    : {}),
                 payment_method_configuration: pmcId,
                 line_items: [
                     {

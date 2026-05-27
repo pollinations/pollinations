@@ -443,8 +443,9 @@ test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC"
     )?.body;
     expect(body).toBeTruthy();
 
-    // INR is a manual currency option on the Price, so AP stays off.
-    expect(body?.currency).toBe("inr");
+    // INR is a manual currency option on the Price; Checkout chooses it when
+    // Stripe localizes the buyer to India.
+    expect(body?.currency).toBeUndefined();
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);
@@ -475,9 +476,9 @@ test("cohort UK: cf-ipcountry=GB → managed Price + AP off + buy-pollen PMC", a
     )?.body;
     expect(body).toBeTruthy();
 
-    // GBP is a manual currency option on the Price; UK buyers see GBP
-    // natively, AP off, and Wise GBP settlement avoids Stripe FX margin.
-    expect(body?.currency).toBe("gbp");
+    // GBP is a manual currency option on the Price; Checkout chooses it when
+    // Stripe localizes the buyer to the UK.
+    expect(body?.currency).toBeUndefined();
     expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(buyPollenPmcId);

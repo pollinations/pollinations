@@ -9,7 +9,6 @@ export type CohortId =
 export type CheckoutCohort = {
     id: CohortId;
     adaptivePricing: boolean;
-    checkoutCurrency?: "gbp" | "inr";
 };
 
 const COHORT_USD: CheckoutCohort = {
@@ -32,21 +31,18 @@ const COHORT_EU_CORE: CheckoutCohort = {
     adaptivePricing: true,
 };
 
-// INR is a manual currency option on the managed Stripe Price. AP off because
-// UPI requires INR, so force the Checkout Session currency instead of relying
-// on Checkout's IP-based currency inference.
+// INR is a manual currency option on the managed Stripe Price. AP stays off so
+// Checkout can use the native INR price for Indian buyers.
 const COHORT_INDIA: CheckoutCohort = {
     id: "INDIA",
     adaptivePricing: false,
-    checkoutCurrency: "inr",
 };
 
-// GBP is a manual currency option on the managed Stripe Price. Force GBP so UK
-// revenue settles to the configured Wise GBP account.
+// GBP is a manual currency option on the managed Stripe Price. AP stays off so
+// Checkout can use the native GBP price for UK buyers.
 const COHORT_UK: CheckoutCohort = {
     id: "UK",
     adaptivePricing: false,
-    checkoutCurrency: "gbp",
 };
 
 // MO is intentionally absent: the 5,000-charge card-country audit found

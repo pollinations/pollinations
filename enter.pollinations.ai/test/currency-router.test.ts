@@ -84,23 +84,21 @@ describe("getCohortFromCountry", () => {
     });
 
     describe("INDIA cohort", () => {
-        test("routes IN to INDIA cohort (INR-native, AP off, UPI unlock)", () => {
+        test("routes IN to INDIA cohort (manual INR price, AP off)", () => {
             const cohort = getCohortFromCountry("IN");
             expect(cohort).toEqual({
                 id: "INDIA",
                 adaptivePricing: false,
-                checkoutCurrency: "inr",
             });
         });
     });
 
     describe("UK cohort", () => {
-        test("routes GB to UK cohort (GBP-native, AP off, free GBP settlement via Wise)", () => {
+        test("routes GB to UK cohort (manual GBP price, AP off)", () => {
             const cohort = getCohortFromCountry("GB");
             expect(cohort).toEqual({
                 id: "UK",
                 adaptivePricing: false,
-                checkoutCurrency: "gbp",
             });
         });
     });

@@ -4,7 +4,6 @@ export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 
 export type PollenPack = {
     packKey: PollenPackKey;
-    stripeLookupKey: string;
     amountUsd: number;
     bonusPollen: number;
     pollenGrant: number;
@@ -18,8 +17,7 @@ const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
-// USD is the canonical reference: 1 pollen ≈ $1. Stripe managed Prices carry
-// manual currency_options for supported non-USD currencies.
+// USD is the canonical reference: 1 pollen ≈ $1.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     packKey: PollenPackKey;
     amountUsd: number;
@@ -58,7 +56,6 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
 
         return {
             packKey,
-            stripeLookupKey: `pollen_pack_${packKey}`,
             amountUsd,
             bonusPollen,
             pollenGrant,

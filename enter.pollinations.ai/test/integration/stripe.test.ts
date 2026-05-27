@@ -28,6 +28,24 @@ function signStripeWebhookPayload(payload: string): string {
     return `t=${timestamp},v1=${signature}`;
 }
 
+function expectUsdPriceData(
+    body: Record<string, string> | undefined,
+    amountUsd: number,
+    expectedName?: string,
+): void {
+    expect(body?.["line_items[0][price]"]).toBeUndefined();
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
+        String(amountUsd * 100),
+    );
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    if (expectedName) {
+        expect(body?.["line_items[0][price_data][product_data][name]"]).toBe(
+            expectedName,
+        );
+    }
+}
+
 function createAutoTopUpInvoiceEvent(
     type:
         | "invoice.paid"
@@ -251,9 +269,10 @@ test("GET /api/stripe/checkout/p10 snapshots pack grant into session metadata", 
     )?.body;
     expect(body).toBeTruthy();
 
-    // No cf-ipcountry header → USD default cohort: managed Price, no AP.
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    // No cf-ipcountry header → USD default cohort. Checkout stays USD-native
+    // and Adaptive Pricing may localize presentment where supported.
+    expectUsdPriceData(body, 10);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     // Session metadata must snapshot the grant + pack identity so the webhook
     // credits exactly what was displayed at checkout time. cohort identifies
@@ -291,8 +310,8 @@ test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
     expect(body).toBeTruthy();
 
     // No cf-ipcountry header → USD default cohort.
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p2");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expectUsdPriceData(body, 2, "🪷 2 Pollen");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     expect(body?.["metadata[packKey]"]).toBe("p2");
     expect(body?.["metadata[packAmountUsd]"]).toBe("2");
@@ -305,9 +324,9 @@ test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
 });
 
-// Cohort routing: cf-ipcountry determines AP behaviour and cohort metadata.
-// Managed Stripe Prices carry USD default pricing plus manual currency_options.
-test("cohort BR: cf-ipcountry=BR → managed Price + AP on + buy-pollen PMC", async ({
+// Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends
+// USD price_data and leaves presentment localization to Stripe AP.
+test("cohort BR: cf-ipcountry=BR → USD price_data + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
@@ -328,7 +347,7 @@ test("cohort BR: cf-ipcountry=BR → managed Price + AP on + buy-pollen PMC", as
     )?.body;
     expect(body).toBeTruthy();
 
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
+    expectUsdPriceData(body, 5);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("BR");
@@ -337,7 +356,7 @@ test("cohort BR: cf-ipcountry=BR → managed Price + AP on + buy-pollen PMC", as
     expect(body?.["metadata[packPollenGrant]"]).toBe("6");
 });
 
-test("cohort EU_CORE: cf-ipcountry=NL → managed Price + AP on + buy-pollen PMC", async ({
+test("cohort EU_CORE: cf-ipcountry=NL → USD price_data + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
@@ -358,15 +377,13 @@ test("cohort EU_CORE: cf-ipcountry=NL → managed Price + AP on + buy-pollen PMC
     )?.body;
     expect(body).toBeTruthy();
 
-    // EUR buyers use the Price's manual EUR currency option; AP can localize
-    // non-EUR European buyers.
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
+    expectUsdPriceData(body, 10);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
 });
 
-test("cohort APAC_ALIPAY: cf-ipcountry=CN → managed Price + AP on + buy-pollen PMC", async ({
+test("cohort APAC_ALIPAY: cf-ipcountry=CN → USD price_data + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
@@ -387,7 +404,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → managed Price + AP on + buy-pollen
     )?.body;
     expect(body).toBeTruthy();
 
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p20");
+    expectUsdPriceData(body, 20);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
@@ -416,13 +433,13 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     )?.body;
     expect(body).toBeTruthy();
 
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expectUsdPriceData(body, 5);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("USD");
 });
 
-test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC", async ({
+test("cohort INDIA: cf-ipcountry=IN → USD price_data + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
@@ -443,11 +460,8 @@ test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC"
     )?.body;
     expect(body).toBeTruthy();
 
-    // INR is a manual currency option on the Price; Checkout chooses it when
-    // Stripe localizes the buyer to India.
-    expect(body?.currency).toBeUndefined();
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p10");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expectUsdPriceData(body, 10);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("INDIA");
     // Pollen grant stays USD-anchored ($10 + 3 bonus = 13 pollen).
@@ -455,7 +469,7 @@ test("cohort INDIA: cf-ipcountry=IN → managed Price + AP off + buy-pollen PMC"
     expect(body?.["metadata[packPollenGrant]"]).toBe("13");
 });
 
-test("cohort UK: cf-ipcountry=GB → managed Price + AP off + buy-pollen PMC", async ({
+test("cohort UK: cf-ipcountry=GB → USD price_data + AP on + buy-pollen PMC", async ({
     sessionToken,
     mocks,
 }) => {
@@ -476,11 +490,8 @@ test("cohort UK: cf-ipcountry=GB → managed Price + AP off + buy-pollen PMC", a
     )?.body;
     expect(body).toBeTruthy();
 
-    // GBP is a manual currency option on the Price; Checkout chooses it when
-    // Stripe localizes the buyer to the UK.
-    expect(body?.currency).toBeUndefined();
-    expect(body?.["line_items[0][price]"]).toBe("price_mock_p5");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expectUsdPriceData(body, 5);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("UK");
     expect(body?.["metadata[packAmountUsd]"]).toBe("5");

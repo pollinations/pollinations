@@ -16,7 +16,6 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to USD", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("USD");
-            expect(cohort.adaptivePricing).toBe(false);
         });
 
         test("routes MO to USD (spoof-signal regression)", () => {
@@ -41,7 +40,6 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry("BR");
             expect(cohort).toEqual({
                 id: "BR",
-                adaptivePricing: true,
             });
         });
     });
@@ -50,7 +48,6 @@ describe("getCohortFromCountry", () => {
         test.each(["CN", "HK", "TW"])("routes %s to APAC_ALIPAY", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("APAC_ALIPAY");
-            expect(cohort.adaptivePricing).toBe(true);
         });
     });
 
@@ -79,26 +76,23 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to EU_CORE", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("EU_CORE");
-            expect(cohort.adaptivePricing).toBe(true);
         });
     });
 
     describe("INDIA cohort", () => {
-        test("routes IN to INDIA cohort (manual INR price, AP off)", () => {
+        test("routes IN to INDIA cohort", () => {
             const cohort = getCohortFromCountry("IN");
             expect(cohort).toEqual({
                 id: "INDIA",
-                adaptivePricing: false,
             });
         });
     });
 
     describe("UK cohort", () => {
-        test("routes GB to UK cohort (manual GBP price, AP off)", () => {
+        test("routes GB to UK cohort", () => {
             const cohort = getCohortFromCountry("GB");
             expect(cohort).toEqual({
                 id: "UK",
-                adaptivePricing: false,
             });
         });
     });

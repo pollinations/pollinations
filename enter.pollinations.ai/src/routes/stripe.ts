@@ -2,13 +2,11 @@ import {
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
-    type PollenPack,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
@@ -23,8 +21,8 @@ import {
 
 /**
  * Stripe pack configuration
- * Checkout uses managed Stripe Prices keyed from the shared pack catalog.
- * Run scripts/sync-stripe-pollen-prices.ts after pack copy or amount changes.
+ * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
+ * localize buyer presentment where supported.
  */
 export const stripeRoutes = new Hono<Env>()
     /**
@@ -33,12 +31,11 @@ export const stripeRoutes = new Hono<Env>()
      *
      * Path parameter is the pack key ("p2".."p100").
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides whether
+     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort for analytics.
      * Stripe Adaptive Pricing localizes presentment.
      *
-     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout references a
-     * managed Stripe Price by lookup key; explicit Price currency_options
-     * cover EUR/GBP/INR, and Stripe AP (when on) can localize the rest.
+     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
+     * price_data and Stripe AP handles currency conversion.
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
@@ -68,8 +65,8 @@ export const stripeRoutes = new Hono<Env>()
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
 
-        // Resolve cohort from buyer IP. The managed Stripe Price carries the
-        // actual currency amounts, so checkout does not call FX at runtime.
+        // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
+        // and does not call FX at runtime.
         const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
         // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
@@ -99,18 +96,27 @@ export const stripeRoutes = new Hono<Env>()
                 packBonusPollen: String(pack.bonusPollen),
                 cohort: cohort.id,
             };
-            const priceId = await resolvePollenPackStripePrice(stripe, pack);
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
                 payment_method_configuration: pmcId,
                 line_items: [
                     {
-                        price: priceId,
+                        price_data: {
+                            currency: "usd",
+                            unit_amount: pack.amountUsd * 100,
+                            tax_behavior: "inclusive",
+                            product_data: {
+                                name: pack.checkoutName,
+                                description: pack.checkoutDescription,
+                                images: [pack.checkoutImageUrl],
+                                tax_code: pack.taxCode,
+                            },
+                        },
                         quantity: 1,
                     },
                 ],
-                adaptive_pricing: { enabled: cohort.adaptivePricing },
+                adaptive_pricing: { enabled: true },
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT
@@ -332,24 +338,4 @@ function normalizeStripePortalError(error: unknown): string {
     }
 
     return message || "Failed to create billing portal session";
-}
-
-async function resolvePollenPackStripePrice(
-    stripe: Stripe,
-    pack: PollenPack,
-): Promise<string> {
-    const prices = await stripe.prices.list({
-        active: true,
-        lookup_keys: [pack.stripeLookupKey],
-        limit: 1,
-    });
-    const price = prices.data[0];
-
-    if (!price) {
-        throw new Error(
-            `Missing active Stripe Price for lookup key ${pack.stripeLookupKey}`,
-        );
-    }
-
-    return price.id;
 }

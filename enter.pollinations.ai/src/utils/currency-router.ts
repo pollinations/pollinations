@@ -8,41 +8,30 @@ export type CohortId =
 
 export type CheckoutCohort = {
     id: CohortId;
-    adaptivePricing: boolean;
 };
 
 const COHORT_USD: CheckoutCohort = {
     id: "USD",
-    adaptivePricing: false,
 };
 
 const COHORT_BR: CheckoutCohort = {
     id: "BR",
-    adaptivePricing: true,
 };
 
 const COHORT_APAC_ALIPAY: CheckoutCohort = {
     id: "APAC_ALIPAY",
-    adaptivePricing: true,
 };
 
 const COHORT_EU_CORE: CheckoutCohort = {
     id: "EU_CORE",
-    adaptivePricing: true,
 };
 
-// INR is a manual currency option on the managed Stripe Price. AP stays off so
-// Checkout can use the native INR price for Indian buyers.
 const COHORT_INDIA: CheckoutCohort = {
     id: "INDIA",
-    adaptivePricing: false,
 };
 
-// GBP is a manual currency option on the managed Stripe Price. AP stays off so
-// Checkout can use the native GBP price for UK buyers.
 const COHORT_UK: CheckoutCohort = {
     id: "UK",
-    adaptivePricing: false,
 };
 
 // MO is intentionally absent: the 5,000-charge card-country audit found

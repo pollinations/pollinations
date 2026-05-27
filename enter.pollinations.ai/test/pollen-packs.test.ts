@@ -22,14 +22,6 @@ test("pollen pack catalog includes the stepped beta bonus ladder", () => {
         "p50",
         "p100",
     ]);
-    expect(POLLEN_PACKS.map((pack) => pack.stripeLookupKey)).toEqual([
-        "pollen_pack_p2",
-        "pollen_pack_p5",
-        "pollen_pack_p10",
-        "pollen_pack_p20",
-        "pollen_pack_p50",
-        "pollen_pack_p100",
-    ]);
 });
 
 test("pack lookup validates supported USD amounts", () => {

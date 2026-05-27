@@ -1,4 +1,3 @@
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import {
     createHonoMockHandler,
     type MockAPI,
@@ -127,18 +126,6 @@ type StripePaymentIntent = {
     status: string;
 };
 
-type StripePrice = {
-    id: string;
-    object: "price";
-    active: boolean;
-    currency: string;
-    lookup_key: string | null;
-    metadata: Record<string, string>;
-    product: string;
-    type: "one_time";
-    unit_amount: number;
-};
-
 type StripeRequest = {
     method: string;
     path: string;
@@ -155,7 +142,6 @@ export type MockStripeState = {
     invoices: StripeInvoice[];
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
-    prices: StripePrice[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
@@ -257,33 +243,6 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             };
             state.checkoutSessions.push(session);
             return c.json(session);
-        })
-        .get("/v1/prices", (c) => {
-            recordRequest(c, state);
-            const lookupKeys = parseArray(
-                new URL(c.req.url).searchParams,
-                "lookup_keys",
-            );
-            const active = c.req.query("active");
-            const data = state.prices.filter((price) => {
-                if (active != null && price.active !== (active === "true")) {
-                    return false;
-                }
-                if (
-                    lookupKeys &&
-                    !lookupKeys.includes(price.lookup_key ?? "")
-                ) {
-                    return false;
-                }
-                return true;
-            });
-
-            return c.json({
-                object: "list",
-                url: "/v1/prices",
-                has_more: false,
-                data,
-            });
         })
         .post("/v1/billing_portal/sessions", async (c) => {
             const form = await parseForm(c.req.raw);
@@ -538,21 +497,6 @@ function createInitialState(): MockStripeState {
         invoices: [],
         invoicePayments: [],
         paymentIntents: [],
-        prices: POLLEN_PACKS.map((pack) => ({
-            id: `price_mock_${pack.packKey}`,
-            object: "price",
-            active: true,
-            currency: "usd",
-            lookup_key: pack.stripeLookupKey,
-            metadata: {
-                packKey: pack.packKey,
-                packAmountUsd: String(pack.amountUsd),
-                packPollenGrant: String(pack.pollenGrant),
-            },
-            product: `prod_mock_${pack.packKey}`,
-            type: "one_time",
-            unit_amount: pack.amountUsd * 100,
-        })),
         requests: [],
         customerCreateByIdempotencyKey: {},
         payBehavior: {},

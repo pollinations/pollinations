@@ -687,7 +687,7 @@ const CODE_SAMPLES: Record<
             source: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://gen.pollinations.ai",
+    base_url="https://gen.pollinations.ai/v1",
     api_key="YOUR_API_KEY"
 )
 
@@ -703,7 +703,7 @@ print(response.choices[0].message.content)`,
             source: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
+  baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 
@@ -869,7 +869,7 @@ const audio = await response.blob();`,
             source: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://gen.pollinations.ai",
+    base_url="https://gen.pollinations.ai/v1",
     api_key="YOUR_API_KEY",
 )
 
@@ -886,7 +886,7 @@ response.stream_to_file("speech.mp3")`,
             source: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
+  baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 
@@ -913,7 +913,7 @@ const buffer = Buffer.from(await response.arrayBuffer());`,
             source: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://gen.pollinations.ai",
+    base_url="https://gen.pollinations.ai/v1",
     api_key="YOUR_API_KEY",
 )
 
@@ -930,7 +930,7 @@ print(transcript.text)`,
 import fs from "fs";
 
 const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
+  baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 
@@ -1042,7 +1042,7 @@ console.log(\`Valid: \${keyInfo.valid}, Type: \${keyInfo.type}\`);`,
             source: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://gen.pollinations.ai",
+    base_url="https://gen.pollinations.ai/v1",
     api_key="YOUR_API_KEY",
 )
 
@@ -1056,7 +1056,7 @@ for model in models.data:
             source: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://gen.pollinations.ai",
+  baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 

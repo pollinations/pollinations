@@ -1,0 +1,34 @@
+{
+  "pr_number": 11318,
+  "title": "docs: update README — 2026-05-27",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11318",
+  "merged_at": "2026-05-27T08:57:09Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News + Recent Apps sections.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily README Refresh",
+    "blurb": "Polly's been busy updating the community board with the latest news and apps.",
+    "summary": "Automated daily update to the README file to refresh the Latest News and Recent Apps sections.",
+    "impact": "Keeps the repository's landing page current with the latest community creations and updates.",
+    "keywords": [
+      "readme",
+      "docs",
+      "automated",
+      "news"
+    ],
+    "visual_concept": "Polly the bee pinning new polaroid photos of apps to a corkboard in a cozy garden shed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning tiny pixelated polaroid photos to a wooden corkboard in a garden shed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11318.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning tiny pixelated polaroid photos to a wooden corkboard in a garden shed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-27T08:57:58.766930+00:00"
+}

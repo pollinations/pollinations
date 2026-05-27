@@ -1,11 +1,12 @@
 #!/usr/bin/env tsx
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+const RECIPES_PATH = join(__dirname, "..", "src", "docs", "apidocs-recipes.md");
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
     "https://gen.pollinations.ai/docs/open-api/generate-schema";
@@ -705,6 +706,7 @@ curl ${BASE_URL}/v1/models \\
 function renderTableOfContents(
     spec: Spec,
     byTag: Map<string, { method: string; path: string; op: Operation }[]>,
+    recipeHeadings: string[],
 ): string {
     const out: string[] = [];
     out.push(`## ${sectionHeading(SECTIONS.contents)}`);
@@ -712,6 +714,9 @@ function renderTableOfContents(
     out.push(
         `- [${sectionHeading(SECTIONS.start)}](#${sectionAnchor(SECTIONS.start)})`,
     );
+    for (const heading of recipeHeadings) {
+        out.push(`- [${heading}](#${slug(heading)})`);
+    }
     out.push(
         `- [${sectionHeading(SECTIONS.endpoints)}](#${sectionAnchor(SECTIONS.endpoints)})`,
     );
@@ -727,6 +732,29 @@ function renderTableOfContents(
         `- [${sectionHeading(SECTIONS.errors)}](#${sectionAnchor(SECTIONS.errors)})`,
     );
     return out.join("\n");
+}
+
+/**
+ * Load the static recipes markdown (auth, SDK quickstart, streaming, vision,
+ * multipart uploads). Returns the raw content plus the H2 headings parsed out
+ * of it so the TOC can link to each section.
+ */
+function loadRecipes(): { content: string; headings: string[] } {
+    let content: string;
+    try {
+        content = readFileSync(RECIPES_PATH, "utf8").trim();
+    } catch (err) {
+        console.warn(
+            `⚠️  Skipping recipes — could not read ${RECIPES_PATH}: ${(err as Error).message}`,
+        );
+        return { content: "", headings: [] };
+    }
+    const headings: string[] = [];
+    for (const line of content.split("\n")) {
+        const m = line.match(/^##\s+(.+)$/);
+        if (m) headings.push(m[1].trim());
+    }
+    return { content, headings };
 }
 
 function renderEndpoints(
@@ -916,12 +944,14 @@ async function main() {
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);
+    const recipes = loadRecipes();
 
     console.log("Rendering markdown...");
     const sections = [
         renderHeader(spec),
         renderGettingStarted(),
-        renderTableOfContents(spec, byTag),
+        renderTableOfContents(spec, byTag, recipes.headings),
+        recipes.content,
         renderEndpoints(spec, byTag),
         renderSchemas(spec),
         renderErrorResponses(),

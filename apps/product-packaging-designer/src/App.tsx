@@ -12,7 +12,8 @@ import {
     Sun,
     Upload,
 } from "lucide-react";
-import { type React, useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 type StyleOption = {
     id: string;
@@ -370,7 +371,7 @@ ${brandName.trim() ? ` Brand name: "${brandName}".` : ""}
             const encodedPrompt = encodeURIComponent(prompt);
             const imageUrl = `${POLLINATIONS_API}/${encodedPrompt}?model=nanobanana&image=${encodeURIComponent(
                 uploadedUrl,
-            )}&quality=high`;
+            )}&quality=high&save=1&tag=product-packaging-designer&tag=product-packaging-designer:mockup`;
 
             const response = await fetch(imageUrl, {
                 headers: {

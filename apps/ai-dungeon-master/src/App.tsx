@@ -380,7 +380,7 @@ Core rules you must ALWAYS follow:
                 return generateFallbackImage("mysterious fantasy scene");
 
             const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
-            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${apiKey}`;
+            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}&key=${apiKey}&save=1&tag=ai-dungeon-master&tag=ai-dungeon-master:scene`;
 
             return imageUrl;
         } catch (error) {
@@ -392,7 +392,7 @@ Core rules you must ALWAYS follow:
     // Generate fallback image when main image generation fails
     const generateFallbackImage = (_description: string): string => {
         const fallbackPrompt = `fantasy rpg, medieval, atmospheric, digital art`;
-        return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback${apiKey ? `&key=${apiKey}` : ""}`;
+        return `${API_URL.image}${encodeURIComponent(fallbackPrompt)}?width=1024&height=768&model=flux&seed=fallback${apiKey ? `&key=${apiKey}&save=1&tag=ai-dungeon-master&tag=ai-dungeon-master:scene` : ""}`;
     };
 
     // Fetch AI-generated character avatar
@@ -404,7 +404,7 @@ Core rules you must ALWAYS follow:
         try {
             const avatarPrompt = `fantasy character portrait, ${character.name} the ${character.class}, ${character.backstory}, medieval fantasy art, detailed face, character design, portrait style`;
             if (!apiKey) return "";
-            const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${apiKey}`;
+            const avatarUrl = `${API_URL.image}${encodeURIComponent(avatarPrompt)}?width=512&height=512&model=flux&key=${apiKey}&save=1&tag=ai-dungeon-master&tag=ai-dungeon-master:avatar`;
             return avatarUrl;
         } catch (error) {
             console.error("Error fetching character avatar:", error);
@@ -656,7 +656,7 @@ Core rules you must ALWAYS follow:
         try {
             const imagePrompt = `fantasy RPG item, ${itemName}, ${itemType}, detailed game asset, item icon, clean background`;
             if (!apiKey) return "";
-            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${apiKey}`;
+            const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=256&height=256&model=flux&key=${apiKey}&save=1&tag=ai-dungeon-master&tag=ai-dungeon-master:item`;
             return imageUrl;
         } catch (error) {
             console.error("Error fetching item image:", error);

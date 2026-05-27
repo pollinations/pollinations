@@ -17,9 +17,22 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    entryId: string;
+    visibility: string;
+    tags: string[];
 }
 
 const VALID_KEY = "pk_test_key_123";
+const TEST_USER_ID = "test-user-id";
+const TEST_API_KEY_ID = "test-api-key-id";
+const TEST_APP_KEY_ID = "test-app-key-id";
+const TEST_APP_NAME = "CatGPT";
+
+interface CatalogListResponse {
+    media: Array<Record<string, unknown>>;
+    count: number;
+    limit: number;
+}
 
 function mockAuth() {
     fetchMock.activate();
@@ -33,6 +46,12 @@ function mockAuth() {
                 valid: true,
                 type: "publishable",
                 name: "test-user",
+                userId: TEST_USER_ID,
+                apiKeyId: TEST_API_KEY_ID,
+                keyId: TEST_API_KEY_ID,
+                byopClientKeyId: TEST_APP_KEY_ID,
+                byopClientName: TEST_APP_NAME,
+                byopClientUserId: "test-app-owner-id",
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -124,6 +143,111 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("catalogs uploads with public tags and redacts public lists", async () => {
+        const tag = `test:${crypto.randomUUID()}`;
+        const parentTag = "parent:abcdef1234567890";
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([TINY_PNG], "catalog.png", { type: "image/png" }),
+        );
+        form.append("visibility", "public");
+        form.append("tags", `catgpt,${tag},${parentTag}`);
+        form.append("prompt", "catalog test prompt");
+        form.append("model", "flux");
+
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.entryId).toBeTruthy();
+        expect(upload.visibility).toBe("public");
+        expect(upload.tags).toContain(tag);
+        expect(upload.tags).toContain(parentTag);
+
+        const meRes = await SELF.fetch(
+            "https://media.pollinations.ai/me/media",
+            { headers: { Authorization: `Bearer ${VALID_KEY}` } },
+        );
+        expect(meRes.status).toBe(200);
+        const me = (await meRes.json()) as CatalogListResponse;
+        const privateItem = me.media.find(
+            (item) => item.entryId === upload.entryId,
+        );
+        expect(privateItem).toBeTruthy();
+        expect(privateItem?.ownerUserId).toBe(TEST_USER_ID);
+        expect(privateItem?.apiKeyId).toBe(TEST_API_KEY_ID);
+
+        const tagRes = await SELF.fetch(
+            `https://media.pollinations.ai/tags/${encodeURIComponent(tag)}`,
+        );
+        expect(tagRes.status).toBe(200);
+        const byTag = (await tagRes.json()) as CatalogListResponse;
+        const publicItem = byTag.media.find(
+            (item) => item.entryId === upload.entryId,
+        );
+        expect(publicItem).toBeTruthy();
+        expect(publicItem?.appName).toBe(TEST_APP_NAME);
+        expect(publicItem?.ownerUserId).toBeUndefined();
+        expect(publicItem?.apiKeyId).toBeUndefined();
+
+        const hashRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}/catalog`,
+        );
+        expect(hashRes.status).toBe(200);
+        const byHash = (await hashRes.json()) as CatalogListResponse;
+        expect(
+            byHash.media.some((item) => item.entryId === upload.entryId),
+        ).toBe(true);
+    });
+
+    it("catalogs existing gen URLs without storing the key in the URL", async () => {
+        const tag = `gen:${crypto.randomUUID()}`;
+        const res = await SELF.fetch("https://media.pollinations.ai/catalog", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${VALID_KEY}`,
+            },
+            body: JSON.stringify({
+                url: `https://gen.pollinations.ai/image/test?width=512&key=${VALID_KEY}&save=1&tag=ignored`,
+                visibility: "public",
+                tags: ["catgpt", tag, "parent:abcdef1234567890"],
+                prompt: "test",
+                model: "flux",
+                contentType: "image/png",
+                size: 67,
+            }),
+        });
+        expect(res.status).toBe(200);
+        const entry = (await res.json()) as Record<string, unknown>;
+        expect(entry.cataloged).toBe(true);
+        expect(entry.url).toBe(
+            "https://gen.pollinations.ai/image/test?width=512",
+        );
+        expect(entry.appKeyId).toBe(TEST_APP_KEY_ID);
+
+        const galleryRes = await SELF.fetch(
+            `https://media.pollinations.ai/gallery?tag=${encodeURIComponent(tag)}`,
+        );
+        expect(galleryRes.status).toBe(200);
+        const gallery = (await galleryRes.json()) as CatalogListResponse;
+        const publicItem = gallery.media.find(
+            (item) => item.entryId === entry.entryId,
+        );
+        expect(publicItem).toBeTruthy();
+        expect(publicItem?.url).toBe(
+            "https://gen.pollinations.ai/image/test?width=512",
+        );
+        expect(publicItem?.apiKeyId).toBeUndefined();
     });
 
     it("same content with different filename produces different hash", async () => {

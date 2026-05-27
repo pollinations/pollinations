@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
 
 const MEDIA_HOST = "media.pollinations.ai";
+const GEN_HOST = "gen.pollinations.ai";
 
 interface Character {
     name: string;
@@ -44,7 +45,14 @@ const RARITY_COLORS: Record<string, string> = {
 
 function isUploaded(url: string): boolean {
     try {
-        return !!url && new URL(url).hostname === MEDIA_HOST;
+        const parsed = new URL(url);
+        return (
+            !!url &&
+            (parsed.hostname === MEDIA_HOST ||
+                (parsed.hostname === GEN_HOST &&
+                    (parsed.searchParams.get("save") === "1" ||
+                        parsed.searchParams.get("catalog") === "1")))
+        );
     } catch {
         return false;
     }

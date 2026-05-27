@@ -70,6 +70,9 @@ export class PollinationsService {
         } else {
           headers['Authorization'] = `Bearer ${token}`;
         }
+        url.searchParams.set('save', '1');
+        url.searchParams.append('tag', 'slidepainter');
+        url.searchParams.append('tag', 'slidepainter:slide');
       }
 
       const response = await fetch(url.toString(), {

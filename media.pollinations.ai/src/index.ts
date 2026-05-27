@@ -2,6 +2,22 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
+import {
+    type CatalogEntry,
+    type CatalogFields,
+    catalogFieldsFromFormData,
+    catalogFieldsFromObject,
+    catalogFieldsFromSearchParams,
+    catalogItem,
+    catalogPrefix,
+    createCatalogEntry,
+    listCatalogEntries,
+    normalizeCatalogUrl,
+    parseListLimit,
+    resolveCatalogAppFacet,
+    safeFacet,
+    writeCatalogEntry,
+} from "./catalog";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -26,6 +42,12 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    userId?: string;
+    apiKeyId?: string;
+    keyId?: string;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
+    byopClientUserId?: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -57,16 +79,75 @@ function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
 
+function authCatalogFields(authResult: AuthResult) {
+    return {
+        ownerUserId: authResult.userId,
+        ownerName: authResult.name,
+        apiKeyId: authResult.apiKeyId || authResult.keyId,
+        keyType: authResult.type,
+        appKeyId: authResult.byopClientKeyId ?? null,
+        appName: authResult.byopClientName ?? null,
+        appOwnerUserId: authResult.byopClientUserId ?? null,
+    };
+}
+
+async function requireApiKey(req: Request) {
+    const apiKey = extractApiKey(req);
+    if (!apiKey) return null;
+    return verifyApiKey(apiKey);
+}
+
+function catalogListResponse(
+    entries: CatalogEntry[],
+    limit: number,
+    includePrivateFields = false,
+) {
+    const media = entries.map((entry) =>
+        catalogItem(entry, includePrivateFields),
+    );
+    return { media, count: media.length, limit };
+}
+
 const UploadResponseSchema = z.object({
     id: z.string().describe("16-char hex content hash"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    entryId: z.string().describe("Catalog entry ID"),
+    visibility: z.enum(["private", "public", "unlisted"]),
+    tags: z.array(z.string()),
+    appKeyId: z.string().nullable().optional(),
+    appName: z.string().nullable().optional(),
 });
 
 const ErrorSchema = z.object({
     error: z.string(),
+});
+
+const CatalogItemSchema = z.object({
+    entryId: z.string(),
+    url: z.string(),
+    hash: z.string().optional(),
+    contentType: z.string().optional(),
+    size: z.number().int().optional(),
+    createdAt: z.string(),
+    visibility: z.enum(["private", "public", "unlisted"]),
+    tags: z.array(z.string()),
+    prompt: z.string().optional(),
+    model: z.string().optional(),
+    appKeyId: z.string().optional(),
+    appName: z.string().optional(),
+});
+
+const CatalogListResponseSchema = z.object({
+    media: z.array(CatalogItemSchema),
+    count: z.number().int(),
+    limit: z.number().int(),
+});
+
+const CatalogCreateResponseSchema = CatalogItemSchema.extend({
+    cataloged: z.boolean(),
 });
 
 const MetadataResponseSchema = z.object({
@@ -140,12 +221,16 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let catalogFields: CatalogFields = catalogFieldsFromSearchParams(
+            new URL(c.req.url).searchParams,
+        );
 
         const requestContentType = c.req.header("content-type") || "";
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
                 const formData = await c.req.formData();
+                catalogFields = catalogFieldsFromFormData(formData);
                 const file = formData.get("file") as File | null;
 
                 if (!(file instanceof File)) {
@@ -169,7 +254,15 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
+                    tag?: string | string[];
+                    tags?: string | string[];
+                    visibility?: string;
+                    prompt?: string;
+                    model?: string;
                 }>();
+                catalogFields = catalogFieldsFromObject(
+                    body as Record<string, unknown>,
+                );
 
                 if (!body.data) {
                     return c.json(
@@ -228,6 +321,16 @@ api.post(
                 },
             });
 
+            const entry = createCatalogEntry({
+                url: mediaUrl(hash),
+                hash,
+                contentType,
+                size: fileBuffer.byteLength,
+                fields: catalogFields,
+                ...authCatalogFields(authResult),
+            });
+            await writeCatalogEntry(c.env.MEDIA_BUCKET, entry);
+
             console.log(
                 JSON.stringify({
                     event: "upload",
@@ -236,7 +339,12 @@ api.post(
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
+                    userId: authResult.userId,
+                    appKeyId: authResult.byopClientKeyId,
                     duplicate: !!existing,
+                    entryId: entry.entryId,
+                    visibility: entry.visibility,
+                    tags: entry.tags,
                 }),
             );
 
@@ -246,6 +354,11 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                entryId: entry.entryId,
+                visibility: entry.visibility,
+                tags: entry.tags,
+                appKeyId: entry.appKeyId,
+                appName: entry.appName,
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -253,6 +366,218 @@ api.post(
         }
     },
 );
+
+api.post(
+    "/catalog",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Catalog existing media",
+        description:
+            "Create a tag-indexed catalog entry for an existing Pollinations media URL without uploading bytes again. Relationships can be modeled as ordinary tags such as `parent:<hash>`.",
+        responses: {
+            200: {
+                description: "Catalog entry created",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogCreateResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid URL or catalog fields",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const authResult = await requireApiKey(c.req.raw);
+        if (!authResult) {
+            return c.json({ error: "Missing or invalid API key" }, 401);
+        }
+
+        try {
+            const requestContentType = c.req.header("content-type") || "";
+            let body: Record<string, unknown>;
+            let fields: CatalogFields;
+
+            if (requestContentType.includes("multipart/form-data")) {
+                const formData = await c.req.formData();
+                body = Object.fromEntries(formData.entries());
+                fields = catalogFieldsFromFormData(formData);
+            } else {
+                body = (await c.req.json()) as Record<string, unknown>;
+                fields = catalogFieldsFromObject(body);
+            }
+
+            const normalized = normalizeCatalogUrl(body.url);
+            const entry = createCatalogEntry({
+                ...normalized,
+                contentType: fields.contentType,
+                size: fields.size,
+                fields,
+                ...authCatalogFields(authResult),
+            });
+            await writeCatalogEntry(c.env.MEDIA_BUCKET, entry);
+
+            return c.json({
+                cataloged: true,
+                ...catalogItem(entry, true),
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Catalog failed";
+            return c.json({ error: message }, 400);
+        }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List my media",
+        description:
+            "List catalog entries created by the authenticated user, including private entries.",
+        responses: {
+            200: {
+                description: "Catalog entries",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const authResult = await requireApiKey(c.req.raw);
+        if (!authResult) {
+            return c.json({ error: "Missing or invalid API key" }, 401);
+        }
+
+        const limit = parseListLimit(c.req.query("limit") ?? null);
+        const owner = safeFacet(authResult.userId || authResult.name);
+        const entries = await listCatalogEntries(
+            c.env.MEDIA_BUCKET,
+            catalogPrefix("owner", owner),
+            limit,
+        );
+        return c.json(catalogListResponse(entries, limit, true));
+    },
+);
+
+api.get(
+    "/gallery",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media",
+        description:
+            "List public catalog entries. Filter with `tag`, `app`, or `app_key`.",
+        security: [],
+        responses: {
+            200: {
+                description: "Public catalog entries",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const limit = parseListLimit(c.req.query("limit") ?? null);
+        const tag = c.req.query("tag");
+        const appRef = c.req.query("app_key") || c.req.query("app");
+        const appFacet = await resolveCatalogAppFacet(
+            appRef ?? null,
+            verifyApiKey,
+        );
+        if (appRef && !appFacet) {
+            return c.json(catalogListResponse([], limit));
+        }
+        const prefix = tag
+            ? catalogPrefix("tag", tag)
+            : appFacet
+              ? catalogPrefix("app", appFacet)
+              : catalogPrefix("public");
+        const entries = (
+            await listCatalogEntries(c.env.MEDIA_BUCKET, prefix, limit)
+        ).filter((entry) => entry.visibility === "public");
+        return c.json(catalogListResponse(entries, limit));
+    },
+);
+
+api.get("/apps/:app/media", async (c) => {
+    const limit = parseListLimit(c.req.query("limit") ?? null);
+    const appFacet = await resolveCatalogAppFacet(
+        c.req.param("app"),
+        verifyApiKey,
+    );
+    if (!appFacet) return c.json({ error: "Invalid app" }, 400);
+    const entries = (
+        await listCatalogEntries(
+            c.env.MEDIA_BUCKET,
+            catalogPrefix("app", appFacet),
+            limit,
+        )
+    ).filter((entry) => entry.visibility === "public");
+    return c.json(catalogListResponse(entries, limit));
+});
+
+api.get("/tags/:tag", async (c) => {
+    const limit = parseListLimit(c.req.query("limit") ?? null);
+    const entries = (
+        await listCatalogEntries(
+            c.env.MEDIA_BUCKET,
+            catalogPrefix("tag", c.req.param("tag")),
+            limit,
+        )
+    ).filter((entry) => entry.visibility === "public");
+    return c.json(catalogListResponse(entries, limit));
+});
+
+api.get("/tags/:tag/media", async (c) => {
+    const limit = parseListLimit(c.req.query("limit") ?? null);
+    const entries = (
+        await listCatalogEntries(
+            c.env.MEDIA_BUCKET,
+            catalogPrefix("tag", c.req.param("tag")),
+            limit,
+        )
+    ).filter((entry) => entry.visibility === "public");
+    return c.json(catalogListResponse(entries, limit));
+});
+
+api.get("/:hash/catalog", async (c) => {
+    const hash = c.req.param("hash");
+    if (!HASH_PATTERN.test(hash)) {
+        return c.json({ error: "Invalid hash format" }, 400);
+    }
+    const limit = parseListLimit(c.req.query("limit") ?? null);
+    const entries = (
+        await listCatalogEntries(
+            c.env.MEDIA_BUCKET,
+            catalogPrefix("hash", hash),
+            limit,
+        )
+    ).filter((entry) => entry.visibility === "public");
+    return c.json(catalogListResponse(entries, limit));
+});
 
 api.get(
     "/:hash",
@@ -452,6 +777,9 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key)",
+            catalog: "POST /catalog (requires API key)",
+            myMedia: "GET /me/media (requires API key)",
+            gallery: "GET /gallery",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },

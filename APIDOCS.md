@@ -1067,7 +1067,7 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings` — Get Developer Earnings
 
-Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total_price − dev_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
+Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
@@ -1090,7 +1090,9 @@ Returns developer earnings (BYOP markup) in one response: per-(date, app) bucket
 | `daily[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
 | `daily[].app_name` * | `string` | App display name |
 | `daily[].requests` * | `number` | Number of billed requests |
-| `daily[].pollen_earned` * | `number` | Pollen earned (markup take) |
+| `daily[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
+| `daily[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
+| `daily[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
 | `daily[].markup_rate` * | `number` | Average markup rate applied |
 | `daily[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
 | `perApp` * | `object`[] | Per-app rollups for the period |
@@ -1098,7 +1100,9 @@ Returns developer earnings (BYOP markup) in one response: per-(date, app) bucket
 | `perApp[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
 | `perApp[].app_name` * | `string` | App display name |
 | `perApp[].requests` * | `number` | Number of billed requests |
-| `perApp[].pollen_earned` * | `number` | Pollen earned (markup take) |
+| `perApp[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
+| `perApp[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
+| `perApp[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
 | `perApp[].markup_rate` * | `number` | Average markup rate applied |
 | `perApp[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
 | `global` * | `object` \| `null` | Global rollup across all apps for the period |

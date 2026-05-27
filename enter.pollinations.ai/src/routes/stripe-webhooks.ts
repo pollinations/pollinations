@@ -1,8 +1,5 @@
 import { user as userTable } from "@shared/db/better-auth.ts";
-import {
-    getPollenPackByAmount,
-    getPollenPackByKey,
-} from "@shared/pollen-packs.ts";
+import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -298,16 +295,8 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    // packKey is the canonical pack identity. packAmount is kept as a fallback
-    // only to handle in-flight sessions created by the pre-cohort code; remove
-    // the fallback after in-flight sessions have drained (~24h post-deploy).
     const packKey = metadata.packKey;
-    const packAmount = metadata.packAmount;
-    const pack = packKey
-        ? getPollenPackByKey(packKey)
-        : packAmount
-          ? getPollenPackByAmount(Number(packAmount))
-          : undefined;
+    const pack = packKey ? getPollenPackByKey(packKey) : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
@@ -318,7 +307,6 @@ const handleCheckoutSessionCompleted = async (
         console.error("Missing or invalid pack in checkout session:", {
             sessionId: session.id,
             packKey,
-            packAmount,
         });
         return {
             success: false,

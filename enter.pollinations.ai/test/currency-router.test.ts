@@ -16,15 +16,12 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to USD", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("USD");
-            expect(cohort.checkoutCurrency).toBe("usd");
-            expect(cohort.adaptivePricing).toBe(false);
         });
 
         test("routes MO to USD (spoof-signal regression)", () => {
             // 99.8% of MO billing-country charges in the live audit were
             // US-issued cards — pure card-testing fingerprint. MO must not
-            // land in APAC_ALIPAY where the richer method set would help
-            // abusers probe.
+            // land in APAC_ALIPAY local-currency routing.
             expect(getCohortFromCountry("MO").id).toBe("USD");
         });
 
@@ -43,8 +40,6 @@ describe("getCohortFromCountry", () => {
             const cohort = getCohortFromCountry("BR");
             expect(cohort).toEqual({
                 id: "BR",
-                checkoutCurrency: "eur",
-                adaptivePricing: true,
             });
         });
     });
@@ -53,8 +48,6 @@ describe("getCohortFromCountry", () => {
         test.each(["CN", "HK", "TW"])("routes %s to APAC_ALIPAY", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("APAC_ALIPAY");
-            expect(cohort.checkoutCurrency).toBe("eur");
-            expect(cohort.adaptivePricing).toBe(true);
         });
     });
 
@@ -83,29 +76,23 @@ describe("getCohortFromCountry", () => {
         ])("routes %s to EU_CORE", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort.id).toBe("EU_CORE");
-            expect(cohort.checkoutCurrency).toBe("eur");
-            expect(cohort.adaptivePricing).toBe(true);
         });
     });
 
     describe("INDIA cohort", () => {
-        test("routes IN to INDIA cohort (INR-native, AP off, UPI unlock)", () => {
+        test("routes IN to INDIA cohort", () => {
             const cohort = getCohortFromCountry("IN");
             expect(cohort).toEqual({
                 id: "INDIA",
-                checkoutCurrency: "inr",
-                adaptivePricing: false,
             });
         });
     });
 
     describe("UK cohort", () => {
-        test("routes GB to UK cohort (GBP-native, AP off, free GBP settlement via Wise)", () => {
+        test("routes GB to UK cohort", () => {
             const cohort = getCohortFromCountry("GB");
             expect(cohort).toEqual({
                 id: "UK",
-                checkoutCurrency: "gbp",
-                adaptivePricing: false,
             });
         });
     });

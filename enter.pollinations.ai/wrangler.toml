@@ -48,11 +48,7 @@ STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
 # Stripe Payment Method Configurations (sandbox)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-# Single broad PMC for all cohorts (sandbox) — Stripe filters methods per
-# buyer at runtime by (session currency, buyer country). Composition includes
-# every regional method we want considered: card, link, AP, GP, paypal,
-# klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
-# multibanco, satispay, revolut_pay, upi.
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 
@@ -92,11 +88,7 @@ STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-# Single broad PMC for all cohorts (sandbox) — Stripe filters methods per
-# buyer at runtime by (session currency, buyer country). Composition includes
-# every regional method we want considered: card, link, AP, GP, paypal,
-# klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
-# multibanco, satispay, revolut_pay, upi.
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 POLLEN_REFILL_PER_HOUR = 1
 
@@ -155,11 +147,7 @@ STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 BETTER_AUTH_URL = "https://enter.pollinations.ai"
 # Stripe Payment Method Configurations (live)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
-# Single broad PMC for all cohorts (live) — Stripe filters methods per buyer
-# at runtime by (session currency, buyer country). This is the same PMC the
-# pre-cohort code referenced as STRIPE_BUY_POLLEN_PMC_ID, repurposed and
-# renamed to "top_up" (it's also Stripe's mandatory Default PMC for the
-# account, so it's the natural single source of truth).
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 
 [env.staging]
@@ -211,11 +199,7 @@ STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-# Single broad PMC for all cohorts (sandbox) — Stripe filters methods per
-# buyer at runtime by (session currency, buyer country). Composition includes
-# every regional method we want considered: card, link, AP, GP, paypal,
-# klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
-# multibanco, satispay, revolut_pay, upi.
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.dev]
@@ -263,11 +247,7 @@ STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-# Single broad PMC for all cohorts (sandbox) — Stripe filters methods per
-# buyer at runtime by (session currency, buyer country). Composition includes
-# every regional method we want considered: card, link, AP, GP, paypal,
-# klarna, pix, alipay (mainland), ideal, bancontact, sepa_debit, eps, mb_way,
-# multibanco, satispay, revolut_pay, upi.
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.test]
@@ -315,6 +295,5 @@ STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
-# Single broad PMC (test env reuses the real sandbox PMC; mocked Stripe just
-# records what was sent so any string works, but real IDs avoid drift).
+# Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

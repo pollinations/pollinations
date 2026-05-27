@@ -1,6 +1,5 @@
 import {
     describePollenPack,
-    getPackForeignCents,
     getPollenPackByKey,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
@@ -11,7 +10,6 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
-import { getUsdToRate } from "../utils/fx-cache.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -23,8 +21,8 @@ import {
 
 /**
  * Stripe pack configuration
- * Checkout copy and payout are controlled in-app so bonus changes do not
- * require Stripe catalog edits.
+ * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
+ * localize buyer presentment where supported.
  */
 export const stripeRoutes = new Hono<Env>()
     /**
@@ -35,14 +33,11 @@ export const stripeRoutes = new Hono<Env>()
      * form ("2".."100") is no longer accepted — all first-party callers and
      * the /products endpoint expose packKey.
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort decides the
-     * integration currency and whether Stripe Adaptive Pricing localizes
-     * presentment. One PMC for all cohorts — Stripe filters methods per
-     * buyer by (currency, country).
+     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort for analytics.
+     * Stripe Adaptive Pricing localizes presentment.
      *
-     * Pollen is the canonical unit: 1 pollen ≈ $1. USD cohort sends USD
-     * cents directly; non-USD cohorts convert via live USD→target FX, then
-     * Stripe AP (when on) can show local-currency presentment.
+     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
+     * price_data and Stripe AP handles currency conversion.
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
@@ -72,27 +67,16 @@ export const stripeRoutes = new Hono<Env>()
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
 
-        // Resolve cohort from buyer IP and derive the integration-currency
-        // amount. USD cohort: native USD. Non-USD cohorts (EUR / INR / GBP):
-        // pack.amountUsd × live USD→target FX rate. Cohorts with AP on (BR,
-        // APAC_ALIPAY, EU_CORE) then let Stripe localize the integration
-        // currency to the buyer's display currency at checkout.
+        // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
+        // and does not call FX at runtime.
         const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
-        const unitAmount =
-            cohort.checkoutCurrency === "usd"
-                ? pack.amountUsd * 100
-                : getPackForeignCents(
-                      pack,
-                      await getUsdToRate(c.env, cohort.checkoutCurrency),
-                  );
         // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
-        // default PMC) would hide a misconfigured deploy. One PMC for all
-        // cohorts — Stripe filters methods per buyer by (currency, location).
+        // default PMC) would hide a misconfigured deploy.
         const pmcId = c.env.STRIPE_PMC;
         if (!pmcId) {
             console.error(
-                `Missing required env var STRIPE_PMC on ${c.env.ENVIRONMENT}`,
+                `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
             );
             return c.json({ error: "Checkout configuration error" }, 500);
         }
@@ -110,8 +94,6 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
                 packKey: pack.packKey,
                 packAmountUsd: String(pack.amountUsd),
-                packCurrency: cohort.checkoutCurrency,
-                packAmountCents: String(unitAmount),
                 packPollenGrant: String(pack.pollenGrant),
                 packBonusPollen: String(pack.bonusPollen),
                 cohort: cohort.id,
@@ -123,8 +105,8 @@ export const stripeRoutes = new Hono<Env>()
                 line_items: [
                     {
                         price_data: {
-                            currency: cohort.checkoutCurrency,
-                            unit_amount: unitAmount,
+                            currency: "usd",
+                            unit_amount: pack.amountUsd * 100,
                             tax_behavior: "inclusive",
                             product_data: {
                                 name: pack.checkoutName,
@@ -136,7 +118,7 @@ export const stripeRoutes = new Hono<Env>()
                         quantity: 1,
                     },
                 ],
-                adaptive_pricing: { enabled: cohort.adaptivePricing },
+                adaptive_pricing: { enabled: true },
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT

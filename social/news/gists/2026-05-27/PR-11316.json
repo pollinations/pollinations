@@ -1,0 +1,35 @@
+{
+  "pr_number": 11316,
+  "title": "fix: cohere brand logo + strip provider names from model descriptions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11316",
+  "merged_at": "2026-05-27T08:20:45Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Post-merge cleanup for #11299.\n\n**1. Cohere brand logo** — `cohere-embed-v4` landed with `brand: \\\"Cohere\\\"` but no matching logo file, so the dashboard model card fell back to no logo.\n- New monochrome SVG at `enter.pollinations.ai/frontend/public/brand-logos/cohere.svg` (uses `currentColor` like the other 22 brand logos)\n- Added `Cohere: \\\"cohere\\\"` entry to the `BRAND_LOGOS` map in [model-info.ts](enter.pollinations.ai/frontend/src/components/models/model-info.ts)\n\n**2. Strip hosting-provider names from descriptions** — per [model-management skill §11.2](.claude/skills/model-management/SKILL.md#L562), descriptions must not carry provider/inference attribution (\\\"via Azure\\\", \\\"via DashScope\\\", etc.). The \\`provider\\` and \\`brand\\` fields already carry that.\n- 2 of mine from #11299 (\\`cohere-embed-v4\\`, \\`qwen3-embedding-8b\\`)\n- 5 pre-existing drift across \\`text.ts\\`, \\`image.ts\\` (Wan 2.6/2.2/2.7, Qwen Image Plus, Qwen3 Coder Next, Seedance 2.0)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A fresh coat of polish",
+    "blurb": "We've added the official Cohere logo to our dashboard and cleaned up some model descriptions for a sleeker look. Just a little housekeeping to keep the hive looking sharp!",
+    "summary": "Added the Cohere brand logo to the dashboard and removed redundant hosting-provider names from seven model descriptions across the text, image, and embedding registries.",
+    "impact": "Model cards on the dashboard now display the correct Cohere branding and feature cleaner descriptions without repetitive provider tags.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "cohere",
+      "models",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee wearing a painter's beret, carefully polishing a Cohere logo on a dashboard screen, assisted by the monitor robot holding cleaning supplies.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, carefully polishing a glowing Cohere logo on a retro computer monitor. A cute chunky monitor robot stands nearby holding a small pixelated cleaning cloth. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11316.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, carefully polishing a glowing Cohere logo on a retro computer monitor. A cute chunky monitor robot stands nearby holding a small pixelated cleaning cloth. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-27T08:21:44.259097+00:00"
+}

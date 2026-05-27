@@ -18,6 +18,7 @@ SQL >
         resolved_model_requested as model,
         splitByChar(':', selected_meter_slug)[-1] as meter_source,
         count() as requests,
+        sum(total_price) as pollen_spent,
         sum(total_price) as cost_usd
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}

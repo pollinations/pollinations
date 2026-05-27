@@ -11,15 +11,17 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     app_key_id: "key_byop_app_1",
     app_name: "BYOP App",
     requests: 5,
-    baseline_price: 0.4,
+    pollen_baseline: 0.4,
     pollen_earned: 0.1,
+    pollen_spent: 0.5,
+    baseline_price: 0.4,
     cost_usd: 0.5,
     markup_rate: 0.25,
     unique_users: 0,
     ...overrides,
 });
 
-test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_usd in JSON", async ({
+test("GET /api/account/earnings returns pollen_baseline, pollen_spent and deprecated aliases in JSON", async ({
     sessionToken,
     mocks,
 }) => {
@@ -29,20 +31,12 @@ test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_
         earningsRow(),
         earningsRow({
             date: "",
-            requests: 5,
-            baseline_price: 0.4,
-            pollen_earned: 0.1,
-            cost_usd: 0.5,
             unique_users: 3,
         }),
         earningsRow({
             date: "",
             app_key_id: "",
             app_name: "",
-            requests: 5,
-            baseline_price: 0.4,
-            pollen_earned: 0.1,
-            cost_usd: 0.5,
             unique_users: 3,
         }),
     ];
@@ -59,27 +53,23 @@ test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_
         global: Record<string, number> | null;
     };
 
-    expect(body.daily).toHaveLength(1);
-    expect(body.daily[0]).toMatchObject({
+    const expectAllFields = {
+        pollen_baseline: 0.4,
         baseline_price: 0.4,
         pollen_earned: 0.1,
+        pollen_spent: 0.5,
         cost_usd: 0.5,
         markup_rate: 0.25,
-    });
+    };
+
+    expect(body.daily).toHaveLength(1);
+    expect(body.daily[0]).toMatchObject(expectAllFields);
     expect(body.perApp).toHaveLength(1);
-    expect(body.perApp[0]).toMatchObject({
-        baseline_price: 0.4,
-        pollen_earned: 0.1,
-        cost_usd: 0.5,
-    });
-    expect(body.global).toMatchObject({
-        baseline_price: 0.4,
-        pollen_earned: 0.1,
-        cost_usd: 0.5,
-    });
+    expect(body.perApp[0]).toMatchObject(expectAllFields);
+    expect(body.global).toMatchObject(expectAllFields);
 });
 
-test("GET /api/account/earnings emits baseline_price/pollen_earned/cost_usd columns in CSV", async ({
+test("GET /api/account/earnings CSV emits pollen_spent + deprecated cost_usd alongside each other", async ({
     sessionToken,
     mocks,
 }) => {
@@ -88,15 +78,19 @@ test("GET /api/account/earnings emits baseline_price/pollen_earned/cost_usd colu
     mocks.tinybird.state.earningsResponse = [
         earningsRow({
             date: "2026-04-14",
+            pollen_baseline: 0.4,
             baseline_price: 0.4,
             pollen_earned: 0.1,
+            pollen_spent: 0.5,
             cost_usd: 0.5,
             markup_rate: 0.25,
         }),
         earningsRow({
             date: "2026-04-15",
+            pollen_baseline: 0.8,
             baseline_price: 0.8,
             pollen_earned: 0.2,
+            pollen_spent: 1,
             cost_usd: 1,
             markup_rate: 0.25,
         }),
@@ -113,10 +107,48 @@ test("GET /api/account/earnings emits baseline_price/pollen_earned/cost_usd colu
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate",
+        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,baseline_price,cost_usd,markup_rate",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.25",
+        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.4,0.5,0.25",
     );
-    expect(rows[1]).toBe("2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.25");
+    expect(rows[1]).toBe(
+        "2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.8,1,0.25",
+    );
+});
+
+test("GET /api/account/earnings CSV falls back to deprecated names when pipe returns only the old fields", async ({
+    sessionToken,
+    mocks,
+}) => {
+    // Simulates a stale cached payload from before the dual-emit landed.
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.earningsResponse = [
+        {
+            date: "2026-04-14",
+            app_key_id: "key_byop_app_1",
+            app_name: "BYOP App",
+            requests: 5,
+            baseline_price: 0.4,
+            pollen_earned: 0.1,
+            cost_usd: 0.5,
+            markup_rate: 0.25,
+            unique_users: 0,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=30&format=csv",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(response.status).toBe(200);
+
+    const csv = await response.text();
+    const [, firstRow] = csv.split("\n");
+    // pollen_baseline and pollen_spent columns are derived from the deprecated
+    // baseline_price / cost_usd values when the pipe response omits them.
+    expect(firstRow).toBe(
+        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.4,0.5,0.25",
+    );
 });

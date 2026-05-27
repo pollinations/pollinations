@@ -371,7 +371,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/usage/daily");
     lines.push(
-        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
+        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, pollen_spent }. `cost_usd` is also emitted as a deprecated alias during the rename window.",
     );
     lines.push(
         "Query params: format (json|csv, default json), days (1-90, default 90)",
@@ -971,7 +971,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 for record in response.json()["usage"]:
-    print(f"{record['model']}: {record['cost_usd']} pollen")`,
+    print(f"{record['model']}: {record['pollen_spent']} pollen")`,
         },
     ],
     "get /account/usage/daily": [

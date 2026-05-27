@@ -183,3 +183,59 @@ export async function handleImageUpload(file, notify) {
         }
     }
 }
+
+// Re-upload a generated meme blob into the media catalog. Tagging it with
+// `catgpt` opts it in to the public /tags/catgpt listing. The returned URL
+// is keyless (unlike the gen URL which embeds the user's key), so it's
+// safe to render in galleries and to persist in localStorage.
+//
+// Lineage convention (no first-class lineage in the catalog): if this meme
+// was generated from a user-uploaded portrait, we also stamp
+// `parent:<hash>`. The community can list a portrait's remixes via
+// /tags/parent:<hash>.
+export async function uploadGeneratedMeme(blob, { prompt, parentHash } = {}) {
+    const key = getStoredApiKey();
+    if (!key) return null;
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([blob], `catgpt-${Date.now()}.png`, { type: blob.type }),
+        );
+        form.append("tag", "catgpt");
+        if (parentHash) form.append("tag", `parent:${parentHash}`);
+        if (prompt) form.append("prompt", prompt);
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}` },
+            body: form,
+        });
+        if (!res.ok) return null;
+        return (await res.json()).url || null;
+    } catch (err) {
+        console.warn("catalog upload failed:", err);
+        return null;
+    }
+}
+
+const MEDIA_HASH_RE = /^https:\/\/media\.pollinations\.ai\/([a-f0-9]{16})$/i;
+export function extractMediaHash(url) {
+    if (!url) return null;
+    const m = MEDIA_HASH_RE.exec(url);
+    return m ? m[1].toLowerCase() : null;
+}
+
+// Public community gallery — anyone, no auth needed. Items here are opt-in:
+// every CatGPT meme is tagged `catgpt` at upload time.
+export async function fetchCatgptGallery(limit = 12) {
+    try {
+        const res = await fetch(
+            `https://media.pollinations.ai/tags/catgpt?limit=${limit}`,
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+    } catch {
+        return [];
+    }
+}

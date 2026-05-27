@@ -1493,6 +1493,35 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether rate limiting is enabled for this key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable user id that owns this key — server-attested.",
+                                        ),
+                                    keyId: z
+                                        .string()
+                                        .describe(
+                                            "Stable id of this API key — server-attested.",
+                                        ),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key (`pk_*`) that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
+                                        ),
+                                    byopClientName: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the BYOP app, when applicable.",
+                                        ),
+                                    byopClientUserId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "User id of the BYOP app owner.",
+                                        ),
                                 }),
                             ),
                         },
@@ -1570,6 +1599,14 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget: apiKey.pollenBalance ?? null,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
+                // Server-attested identity. Downstream services (media catalog)
+                // stamp uploads from these values — never from request params —
+                // so the BYOP app id cannot be spoofed.
+                userId: c.var.auth.user?.id ?? null,
+                keyId: apiKey.id,
+                byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopClientName: apiKey.byopClientName ?? null,
+                byopClientUserId: apiKey.byopClientUserId ?? null,
             });
         },
     )

@@ -17,6 +17,26 @@ const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 
+// Catalog primitives. The catalog is opt-in: an upload only appears in any
+// listing if the uploader explicitly tagged it. The owner index is the only
+// exception — it lists what you uploaded with your key, since that's just
+// "show me what I sent", not a publish action.
+//
+// Hash-is-capability: GET /:hash is public, period. Anyone who knows the
+// hash can fetch the bytes. There is no "private" mode and the catalog does
+// not pretend otherwise. The catalog only controls discoverability.
+const OWNER_PREFIX = "catalog/v1/by-owner/";
+const ITEM_PREFIX = "catalog/v1/items/";
+const TAG_PREFIX = "tags/v1/";
+const TAG_BY_APP_PREFIX = "tags/v1/by-app/";
+const MAX_TAGS = 8;
+const MAX_PROMPT_LEN = 2000;
+const MAX_MODEL_LEN = 128;
+const TAG_PATTERN = /^[a-z0-9][a-z0-9_.:+-]{0,127}$/i;
+const FACET_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const DEFAULT_LIMIT = 24;
+const MAX_LIMIT = 100;
+
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
@@ -26,6 +46,25 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    userId?: string | null;
+    keyId?: string | null;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
+}
+
+interface CatalogEntry {
+    id: string;
+    hash: string;
+    url: string;
+    contentType: string;
+    size: number;
+    owner: string | null;
+    app: string | null;
+    appName: string | null;
+    tags: string[];
+    prompt: string | null;
+    model: string | null;
+    createdAt: string;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -57,12 +96,189 @@ function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
 
+// ── Catalog helpers ─────────────────────────────────────────────────────────
+
+function safeFacet(value: string | null | undefined): string | null {
+    if (!value) return null;
+    return FACET_PATTERN.test(value) ? value : null;
+}
+
+function asString(v: unknown): string | null {
+    if (typeof v !== "string") return null;
+    const t = v.trim();
+    return t.length ? t : null;
+}
+
+function clampString(v: unknown, max: number): string | null {
+    const s = asString(v);
+    if (!s) return null;
+    return s.length > max ? s.slice(0, max) : s;
+}
+
+function collectFieldValues(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+    keys: string[],
+): string[] {
+    const out: string[] = [];
+    if (fields instanceof FormData || fields instanceof URLSearchParams) {
+        for (const key of keys)
+            for (const v of fields.getAll(key))
+                if (typeof v === "string") out.push(v);
+        return out;
+    }
+    for (const key of keys) {
+        const v = (fields as Record<string, unknown>)[key];
+        if (Array.isArray(v)) {
+            for (const e of v) {
+                if (typeof e === "string") out.push(e);
+            }
+        } else if (typeof v === "string") {
+            out.push(v);
+        }
+    }
+    return out;
+}
+
+function stringField(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+    key: string,
+): string | null {
+    if (fields instanceof FormData || fields instanceof URLSearchParams)
+        return asString(fields.get(key));
+    return asString((fields as Record<string, unknown>)[key]);
+}
+
+function normalizeTags(
+    fields: FormData | URLSearchParams | Record<string, unknown>,
+): string[] {
+    const out = new Set<string>();
+    for (const raw of collectFieldValues(fields, ["tag", "tags"])) {
+        for (const part of raw.split(",")) {
+            const t = part.trim().toLowerCase();
+            if (TAG_PATTERN.test(t)) out.add(t);
+            if (out.size >= MAX_TAGS) return [...out];
+        }
+    }
+    return [...out];
+}
+
+function revToken(ms: number): string {
+    // (2^53 - 1).toString() is 16 chars; pad so R2 lex sort yields newest-first.
+    return (Number.MAX_SAFE_INTEGER - ms).toString().padStart(16, "0");
+}
+
+function newEntryId(now: number): string {
+    const rand = Math.floor(Math.random() * 0xffffff)
+        .toString(16)
+        .padStart(6, "0");
+    return `${now.toString(36)}-${rand}`;
+}
+
+function clampLimit(raw: string | null): number {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return DEFAULT_LIMIT;
+    return Math.min(Math.floor(n), MAX_LIMIT);
+}
+
+async function writeCatalogEntry(
+    bucket: R2Bucket,
+    entry: CatalogEntry,
+): Promise<void> {
+    const body = JSON.stringify(entry);
+    const opts = { httpMetadata: { contentType: "application/json" } };
+    const rev = revToken(Date.parse(entry.createdAt));
+    const writes: Promise<unknown>[] = [
+        bucket.put(`${ITEM_PREFIX}${entry.hash}/${entry.id}.json`, body, opts),
+    ];
+    if (entry.owner) {
+        writes.push(
+            bucket.put(
+                `${OWNER_PREFIX}${entry.owner}/${rev}-${entry.id}.json`,
+                body,
+                opts,
+            ),
+        );
+    }
+    // Per-tag indexes are the only "public" listing surface. An upload only
+    // appears in any tag listing if the uploader explicitly tagged it.
+    for (const tag of entry.tags) {
+        writes.push(
+            bucket.put(
+                `${TAG_PREFIX}${tag}/${rev}-${entry.id}.json`,
+                body,
+                opts,
+            ),
+        );
+        if (entry.app) {
+            writes.push(
+                bucket.put(
+                    `${TAG_BY_APP_PREFIX}${entry.app}/${tag}/${rev}-${entry.id}.json`,
+                    body,
+                    opts,
+                ),
+            );
+        }
+    }
+    // Best-effort: an index write failure doesn't fail the upload.
+    await Promise.allSettled(writes);
+}
+
+async function listCatalog(
+    bucket: R2Bucket,
+    prefix: string,
+    limit: number,
+    cursor: string | null,
+): Promise<{ items: CatalogEntry[]; cursor: string | null }> {
+    const listed = await bucket.list({
+        prefix,
+        limit,
+        ...(cursor ? { cursor } : {}),
+    });
+    const hydrated = await Promise.all(
+        listed.objects.map((o) => bucket.get(o.key)),
+    );
+    const items: CatalogEntry[] = [];
+    for (const obj of hydrated) {
+        if (!obj) continue;
+        try {
+            items.push((await obj.json()) as CatalogEntry);
+        } catch {
+            // skip malformed
+        }
+    }
+    return {
+        items,
+        cursor: listed.truncated ? (listed.cursor ?? null) : null,
+    };
+}
+
 const UploadResponseSchema = z.object({
     id: z.string().describe("16-char hex content hash"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    tags: z.array(z.string()).optional().describe("Tags echoed back, when any"),
+});
+
+const CatalogEntrySchema = z.object({
+    id: z.string(),
+    hash: z.string(),
+    url: z.string(),
+    contentType: z.string(),
+    size: z.number().int(),
+    owner: z.string().nullable(),
+    app: z.string().nullable(),
+    appName: z.string().nullable(),
+    tags: z.array(z.string()),
+    prompt: z.string().nullable(),
+    model: z.string().nullable(),
+    createdAt: z.string(),
+});
+
+const CatalogListResponseSchema = z.object({
+    items: z.array(CatalogEntrySchema),
+    cursor: z.string().nullable(),
 });
 
 const ErrorSchema = z.object({
@@ -141,6 +357,17 @@ api.post(
         let contentType: string;
         let fileName: string | undefined;
 
+        // Catalog input sources: query params first (always parseable), then
+        // overridden by body fields when a structured body is present. None of
+        // this affects ownership — owner/app come from the verified key only.
+        const urlParams = new URL(c.req.url).searchParams;
+        let tags = normalizeTags(urlParams);
+        let prompt = clampString(
+            stringField(urlParams, "prompt"),
+            MAX_PROMPT_LEN,
+        );
+        let model = clampString(stringField(urlParams, "model"), MAX_MODEL_LEN);
+
         const requestContentType = c.req.header("content-type") || "";
 
         try {
@@ -164,11 +391,27 @@ api.post(
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
+                const formTags = normalizeTags(formData);
+                if (formTags.length) tags = formTags;
+                prompt =
+                    clampString(
+                        stringField(formData, "prompt"),
+                        MAX_PROMPT_LEN,
+                    ) ?? prompt;
+                model =
+                    clampString(
+                        stringField(formData, "model"),
+                        MAX_MODEL_LEN,
+                    ) ?? model;
             } else if (requestContentType.includes("application/json")) {
                 const body = await c.req.json<{
                     data: string;
                     contentType?: string;
                     name?: string;
+                    tag?: string | string[];
+                    tags?: string | string[];
+                    prompt?: string;
+                    model?: string;
                 }>();
 
                 if (!body.data) {
@@ -197,6 +440,12 @@ api.post(
 
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
+                const bodyTags = normalizeTags(
+                    body as unknown as Record<string, unknown>,
+                );
+                if (bodyTags.length) tags = bodyTags;
+                prompt = clampString(body.prompt, MAX_PROMPT_LEN) ?? prompt;
+                model = clampString(body.model, MAX_MODEL_LEN) ?? model;
             } else {
                 fileBuffer = await c.req.arrayBuffer();
 
@@ -237,8 +486,29 @@ api.post(
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
                     duplicate: !!existing,
+                    tags: tags.length,
                 }),
             );
+
+            // Owner and app come from the verified key — never request params.
+            const now = Date.now();
+            const owner = safeFacet(authResult.userId);
+            const app = safeFacet(authResult.byopClientKeyId);
+            const entry: CatalogEntry = {
+                id: newEntryId(now),
+                hash,
+                url: mediaUrl(hash),
+                contentType,
+                size: fileBuffer.byteLength,
+                owner,
+                app,
+                appName: app ? (authResult.byopClientName ?? null) : null,
+                tags,
+                prompt,
+                model,
+                createdAt: new Date(now).toISOString(),
+            };
+            await writeCatalogEntry(c.env.MEDIA_BUCKET, entry);
 
             return c.json({
                 id: hash,
@@ -246,11 +516,103 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                ...(tags.length ? { tags } : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List media you uploaded",
+        description:
+            "Lists media uploaded with the calling key, newest first. Optionally filter by `tag` (exact, repeat for multiple — items matching any tag are returned by independent calls to a single tag). Use `?app=<keyId>` to limit to one app's uploads. Returns full metadata including server-attested owner and app — this endpoint reveals identity because it's *your* inbox, not a public listing.",
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) return c.json({ error: "API key required" }, 401);
+        const authResult = await verifyApiKey(apiKey);
+        const owner = safeFacet(authResult?.userId);
+        if (!owner) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        const url = new URL(c.req.url);
+        return c.json(
+            await listCatalog(
+                c.env.MEDIA_BUCKET,
+                `${OWNER_PREFIX}${owner}/`,
+                clampLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
+    },
+);
+
+api.get(
+    "/tags/:tag",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List public media by tag",
+        description:
+            "Lists media that was uploaded with the given tag, newest first. No auth — anyone tagging an upload opted in to public discovery by tag. Pass `?app=<keyId>` to scope to a single app's tag namespace (useful when apps use generic tag values like `recipe:water+fire`).",
+        security: [],
+        responses: {
+            200: {
+                description: "Catalog items",
+                content: {
+                    "application/json": {
+                        schema: resolver(CatalogListResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid tag",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const rawTag = c.req.param("tag");
+        const tag = rawTag.toLowerCase();
+        if (!TAG_PATTERN.test(tag)) {
+            return c.json({ error: "Invalid tag" }, 400);
+        }
+        const url = new URL(c.req.url);
+        const app = safeFacet(url.searchParams.get("app"));
+        const prefix = app
+            ? `${TAG_BY_APP_PREFIX}${app}/${tag}/`
+            : `${TAG_PREFIX}${tag}/`;
+        return c.json(
+            await listCatalog(
+                c.env.MEDIA_BUCKET,
+                prefix,
+                clampLimit(url.searchParams.get("limit")),
+                url.searchParams.get("cursor"),
+            ),
+        );
     },
 );
 
@@ -451,8 +813,10 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload (requires API key)",
+            upload: "POST /upload (requires API key; optional ?tag=&prompt=&model=)",
             retrieve: "GET /:hash",
+            myMedia: "GET /me/media (requires API key)",
+            byTag: "GET /tags/:tag?app=<keyId>",
             docs: "GET /openapi.json",
         },
         limits: {

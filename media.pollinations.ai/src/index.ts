@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
+import { refreshR2ObjectTtl } from "../../shared/r2-cache";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -311,15 +312,14 @@ api.get(
                 );
             }
 
-            const [responseBody, refreshBody] = object.body.tee();
-            c.executionCtx.waitUntil(
-                c.env.MEDIA_BUCKET.put(hash, refreshBody, {
-                    httpMetadata: object.httpMetadata,
-                    customMetadata: object.customMetadata,
-                    storageClass: object.storageClass,
-                }).catch((error) => {
+            const responseBody = refreshR2ObjectTtl(
+                c.env.MEDIA_BUCKET,
+                hash,
+                object,
+                (promise) => c.executionCtx.waitUntil(promise),
+                (error) => {
                     console.error("TTL refresh error:", error);
-                }),
+                },
             );
 
             return new Response(responseBody, { headers });

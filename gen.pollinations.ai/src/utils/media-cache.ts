@@ -141,31 +141,3 @@ export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
             }),
     );
 }
-
-export function refreshMediaCacheTtl<TEnv extends MediaCacheEnv>(
-    bucket: R2Bucket,
-    cacheKey: string,
-    c: Context<TEnv>,
-    cached: R2ObjectBody,
-): ReadableStream {
-    const [responseBody, refreshBody] = cached.body.tee();
-
-    c.executionCtx.waitUntil(
-        bucket
-            .put(cacheKey, refreshBody, {
-                httpMetadata: cached.httpMetadata,
-                customMetadata: cached.customMetadata,
-                storageClass: cached.storageClass,
-            })
-            .catch((error) => {
-                c.get("log").error(
-                    "Error refreshing media cache TTL: {error}",
-                    {
-                        error,
-                    },
-                );
-            }),
-    );
-
-    return responseBody;
-}

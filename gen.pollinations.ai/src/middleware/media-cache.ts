@@ -9,6 +9,7 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { refreshR2ObjectTtl } from "@shared/r2-cache.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
@@ -16,7 +17,6 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheMediaResponse,
     generateCacheKey,
-    refreshMediaCacheTtl,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
 
@@ -64,11 +64,17 @@ export function createMediaCache(config: MediaCacheConfig) {
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Type", "EXACT");
                 return c.body(
-                    refreshMediaCacheTtl(
+                    refreshR2ObjectTtl(
                         c.env.IMAGE_BUCKET,
                         cacheKey,
-                        c,
                         cached,
+                        (promise) => c.executionCtx.waitUntil(promise),
+                        (error) => {
+                            log.error(
+                                "Error refreshing media cache TTL: {error}",
+                                { error },
+                            );
+                        },
                     ),
                 );
             }

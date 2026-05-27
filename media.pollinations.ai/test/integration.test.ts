@@ -17,6 +17,29 @@ interface UploadResponse {
     contentType: string;
     size: number;
     duplicate: boolean;
+    recordId: string;
+    visibility: string;
+    parentIds: string[];
+    tags: string[];
+    appKeyId: string | null;
+    attributionSource: string;
+    createdAt: string;
+    expiresAt: string;
+}
+
+interface CatalogListResponse {
+    items: Array<{
+        id: string;
+        url: string;
+        recordId: string;
+        appKeyId: string | null;
+        appName: string | null;
+        visibility: string;
+        creationSource: string;
+        prompt: string | null;
+        model: string | null;
+    }>;
+    nextCursor: string | null;
 }
 
 const VALID_KEY = "pk_test_key_123";
@@ -31,8 +54,13 @@ function mockAuth() {
             200,
             JSON.stringify({
                 valid: true,
-                type: "publishable",
+                type: "secret",
                 name: "test-user",
+                userId: "user_test_1",
+                apiKeyId: "api_key_test_1",
+                byopClientKeyId: "app_key_test_1",
+                byopClientName: "CatGPT Test",
+                byopClientUserId: "app_owner_test_1",
             }),
             { headers: { "content-type": "application/json" } },
         )
@@ -124,6 +152,85 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("indexes uploads for user, app, tag, and child queries", async () => {
+        const tag = `catgpt-${crypto.randomUUID()}`;
+        const parentForm = new FormData();
+        parentForm.append(
+            "file",
+            new File([TINY_PNG], "catalog-parent.png", { type: "image/png" }),
+        );
+
+        const parentRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: parentForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const parent = (await parentRes.json()) as UploadResponse;
+
+        const childForm = new FormData();
+        childForm.append(
+            "file",
+            new File([TINY_PNG], "catalog-child.png", { type: "image/png" }),
+        );
+        childForm.append("parents", parent.url);
+        childForm.append("tags", `${tag},remix`);
+        childForm.append("kind", "edit");
+        childForm.append("prompt", "make it stranger");
+        childForm.append("model", "nanobanana");
+
+        const childRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: childForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(childRes.status).toBe(200);
+        const child = (await childRes.json()) as UploadResponse;
+        expect(child.recordId).toMatch(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        );
+        expect(child.parentIds).toEqual([parent.id]);
+        expect(child.tags).toContain(tag);
+        expect(child.appKeyId).toBe("app_key_test_1");
+        expect(child.attributionSource).toBe("byop_key");
+
+        const meRes = await SELF.fetch("https://media.pollinations.ai/me/media", {
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
+        const me = (await meRes.json()) as CatalogListResponse;
+        expect(me.items.some((item) => item.id === child.id)).toBe(true);
+
+        const appRes = await SELF.fetch(
+            "https://media.pollinations.ai/media?app_key_id=app_key_test_1",
+        );
+        const app = (await appRes.json()) as CatalogListResponse;
+        expect(app.items.some((item) => item.id === child.id)).toBe(true);
+
+        const tagRes = await SELF.fetch(
+            `https://media.pollinations.ai/tags/${tag}`,
+        );
+        const tagged = (await tagRes.json()) as CatalogListResponse;
+        expect(tagged.items.some((item) => item.id === child.id)).toBe(true);
+
+        const childrenRes = await SELF.fetch(
+            `https://media.pollinations.ai/${parent.id}/children`,
+        );
+        const children = (await childrenRes.json()) as CatalogListResponse;
+        const indexedChild = children.items.find((item) => item.id === child.id);
+        expect(indexedChild).toMatchObject({
+            appKeyId: "app_key_test_1",
+            appName: "CatGPT Test",
+            creationSource: "edit",
+            prompt: "make it stranger",
+            model: "nanobanana",
+        });
     });
 
     it("same content with different filename produces different hash", async () => {

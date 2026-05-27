@@ -15,6 +15,11 @@ MAX_FILE_SIZE = "52428800"  # 50MB in bytes
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
 
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
+
 # Production environment
 [env.production]
 name = "pollinations-media-prod"
@@ -31,12 +36,22 @@ custom_domain = true
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
 
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "production-pollinations-enter-db"
+database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
+
 [vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 
 # Dev server settings
 [dev]

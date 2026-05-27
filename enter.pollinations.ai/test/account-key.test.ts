@@ -40,6 +40,9 @@ test(
         const data = await response.json();
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
+        expect(typeof data.userId).toBe("string");
+        expect(typeof data.apiKeyId).toBe("string");
+        expect(data.byopClientKeyId).toBeNull();
         expect(data.name).toBeTruthy();
         expect(data).toHaveProperty("expiresAt");
         expect(data).toHaveProperty("expiresIn");

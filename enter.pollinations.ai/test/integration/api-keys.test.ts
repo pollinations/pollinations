@@ -289,6 +289,20 @@ describe("API Key Management", () => {
             expect(matchingCreated.metadata.createdForApp).toBeUndefined();
             expect(matchingCreated.metadata.createdForUserId).toBeUndefined();
             expect(matchingCreated.byopClientKeyId).toBe(appKey.id);
+
+            const keyInfoResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: {
+                        Authorization: `Bearer ${matchingCreated.key}`,
+                    },
+                },
+            );
+            expect(keyInfoResponse.status).toBe(200);
+            const keyInfo = await keyInfoResponse.json();
+            expect(keyInfo.apiKeyId).toBe(matchingCreated.id);
+            expect(keyInfo.byopClientKeyId).toBe(appKey.id);
+            expect(keyInfo.byopClientName).toBe("registered-app");
         });
 
         test("stores app attribution even when rewards are currently disabled", async ({

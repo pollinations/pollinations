@@ -174,8 +174,22 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
         // Browser cache: immutable since same request = same response
         headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
+        const [responseBody, refreshBody] = cachedObject.body.tee();
+        c.executionCtx.waitUntil(
+            c.env.TEXT_BUCKET.put(key, refreshBody, {
+                httpMetadata: cachedObject.httpMetadata,
+                customMetadata: cachedObject.customMetadata,
+                storageClass: cachedObject.storageClass,
+            }).catch((error) => {
+                c.get("log")?.error(
+                    "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
+                    { error },
+                );
+            }),
+        );
+
         // Create response from cached object
-        return new Response(cachedObject.body, {
+        return new Response(responseBody, {
             status: parseInt(metadata.status || "200", 10),
             statusText: metadata.statusText || "OK",
             headers,

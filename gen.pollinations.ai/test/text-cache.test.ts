@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { validator } from "@/middleware/validator.ts";
+import { generateCacheKey } from "@/utils/text-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -23,11 +24,20 @@ const testLog = {
 type CachedObject = {
     body: Uint8Array;
     customMetadata?: Record<string, string>;
+    httpMetadata?: R2HTTPMetadata;
+    storageClass?: R2Object["storageClass"];
     uploaded: Date;
 };
 
-function createTextBucket(): R2Bucket {
+type TestTextBucket = R2Bucket & {
+    getObject(key: string): CachedObject | undefined;
+    readonly putCount: number;
+};
+
+function createTextBucket(): TestTextBucket {
     const objects = new Map<string, CachedObject>();
+    let putCount = 0;
+    let uploadTime = 0;
 
     return {
         get: async (key: string) => {
@@ -35,21 +45,33 @@ function createTextBucket(): R2Bucket {
             if (!object) return null;
             return {
                 ...object,
-                body: object.body.slice(),
+                body: new Response(object.body.slice()).body,
             };
         },
         put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
+            putCount += 1;
             const body = new Uint8Array(
                 await new Response(value).arrayBuffer(),
             );
+            const httpMetadata =
+                options?.httpMetadata instanceof Headers
+                    ? undefined
+                    : options?.httpMetadata;
+            uploadTime += 1;
             objects.set(key, {
                 body,
+                httpMetadata,
                 customMetadata: options?.customMetadata,
-                uploaded: new Date(),
+                storageClass: options?.storageClass,
+                uploaded: new Date(uploadTime),
             });
             return null;
         },
-    } as unknown as R2Bucket;
+        getObject: (key: string) => objects.get(key),
+        get putCount() {
+            return putCount;
+        },
+    } as unknown as TestTextBucket;
 }
 
 type TestEnv = {
@@ -103,10 +125,10 @@ function createTextCacheApp() {
     };
 }
 
-function createTextCacheEnv(): CloudflareBindings {
+function createTextCacheEnv(bucket = createTextBucket()): CloudflareBindings {
     return {
-        TEXT_BUCKET: createTextBucket(),
-    } as CloudflareBindings;
+        TEXT_BUCKET: bucket,
+    } as unknown as CloudflareBindings;
 }
 
 async function dispatch(
@@ -320,6 +342,42 @@ describe("text cache", () => {
         expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(body).toBe("hit:1:cache-test-prompt");
         expect(cache.originHits).toBe(1);
+    });
+
+    it("refreshes cached text TTL on cache hits", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const bucket = createTextBucket();
+        const env = createTextCacheEnv(bucket);
+        const path = "/text/ttl-refresh?model=openai-fast";
+        const cacheKey = await generateCacheKey(
+            new Request(`https://gen.pollinations.ai${path}`),
+        );
+
+        const first = await dispatch(app, path, undefined, env);
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(bucket.putCount).toBe(1);
+
+        const firstCachedObject = bucket.getObject(cacheKey);
+        expect(firstCachedObject?.uploaded.getTime()).toBe(1);
+
+        const second = await dispatch(app, path, undefined, env);
+        const body = await consumeAndWait(second);
+
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(body).toBe("hit:1:ttl-refresh");
+        expect(cache.originHits).toBe(1);
+        expect(bucket.putCount).toBe(2);
+
+        const refreshedObject = bucket.getObject(cacheKey);
+        expect(refreshedObject?.uploaded.getTime()).toBe(2);
+        expect(refreshedObject?.customMetadata?.response_content_type).toBe(
+            "text/plain",
+        );
+        expect(new TextDecoder().decode(refreshedObject?.body)).toBe(
+            "hit:1:ttl-refresh",
+        );
     });
 
     it("normalizes GET query parameter order for cache keys", async () => {

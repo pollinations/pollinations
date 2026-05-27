@@ -15,6 +15,8 @@ const TOKEN = process.env.BOT_TOKEN_CATGPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA_API = "https://media.pollinations.ai";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
@@ -22,12 +24,34 @@ const ORIGINAL_CATGPT =
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const MODEL = "nanobanana";
 
-function log(...args: any[]) {
+type MediaUploadResponse = {
+    id?: string;
+    url?: string;
+};
+
+type TypingChannel = {
+    sendTyping: () => Promise<unknown>;
+};
+
+function log(...args: unknown[]) {
     console.log(`[${new Date().toISOString()}]`, ...args);
 }
 
-function logError(...args: any[]) {
+function logError(...args: unknown[]) {
     console.error(`[${new Date().toISOString()}]`, ...args);
+}
+
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+function canSendTyping(
+    channel: Message["channel"],
+): channel is Message["channel"] & TypingChannel {
+    return (
+        "sendTyping" in channel &&
+        typeof (channel as { sendTyping?: unknown }).sendTyping === "function"
+    );
 }
 
 const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat who barely tolerates humans. You respond to questions with withering wit, dry irony, and feline disdain. Your replies are SHORT (2-8 words max), devastatingly dismissive but clever. You don't just say "no" — you find the most cutting, ironic angle. You occasionally reference cat behaviors (knocking things off tables, ignoring humans, sleeping). Never break character. Never be helpful. Never be impressed by human achievements. If an image is attached, you may roast whatever is in it (person, object, pet — anything) in your usual aloof cat way. Examples:
@@ -103,6 +127,61 @@ async function fetchImage(url: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+function appendCatalogFields(
+    form: FormData,
+    fields: {
+        prompt: string;
+        model: string;
+        parents?: string[];
+        tags: string[];
+    },
+) {
+    form.append("visibility", "public");
+    form.append("source", "generation");
+    form.append("prompt", fields.prompt);
+    form.append("model", fields.model);
+    form.append("tags", JSON.stringify(fields.tags));
+    if (fields.parents?.length) {
+        form.append("parents", JSON.stringify(fields.parents));
+    }
+}
+
+async function uploadImageToMedia(
+    buffer: Buffer,
+    filename: string,
+    fields: {
+        prompt: string;
+        model: string;
+        parents?: string[];
+        tags: string[];
+    },
+): Promise<string | null> {
+    if (!API_KEY) return null;
+
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([new Uint8Array(buffer)], { type: "image/png" }),
+            filename,
+        );
+        appendCatalogFields(form, fields);
+
+        const res = await fetch(MEDIA_UPLOAD, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${API_KEY}` },
+            body: form,
+        });
+        if (!res.ok) throw new Error(`media upload failed: ${res.status}`);
+
+        const json = (await res.json()) as MediaUploadResponse;
+        return json.url || (json.id ? `${MEDIA_API}/${json.id}` : null);
+    } catch (err: unknown) {
+        logError("Media catalog upload failed:", errorMessage(err));
+        return null;
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -120,8 +199,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     log(`Question from ${msg.author.username}: "${question}"`);
 
     try {
-        if ("sendTyping" in msg.channel)
-            await (msg.channel as any).sendTyping();
+        if (canSendTyping(msg.channel)) await msg.channel.sendTyping();
     } catch {}
 
     const avatarUrl = msg.author.displayAvatarURL({
@@ -136,15 +214,26 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const imageBuffer = await fetchImage(imageUrl);
+            const mediaUrl = await uploadImageToMedia(
+                imageBuffer,
+                `catgpt-bot-${msg.id}.png`,
+                {
+                    prompt: question,
+                    model: MODEL,
+                    parents: [SELFIE_CATGPT],
+                    tags: ["catgpt", "catgpt-bot"],
+                },
+            );
             const attachment = new AttachmentBuilder(imageBuffer, {
                 name: "catgpt.png",
             });
             await msg.reply({ files: [attachment] });
+            if (mediaUrl) log(`Cataloged media: ${mediaUrl}`);
             log(`Reply sent for "${question}"`);
             return;
-        } catch (err: any) {
+        } catch (err: unknown) {
             logError(
-                `Attempt ${attempt + 1}/${maxRetries + 1}: ${err.message}`,
+                `Attempt ${attempt + 1}/${maxRetries + 1}: ${errorMessage(err)}`,
             );
             if (attempt < maxRetries) {
                 const wait = 2000 * (attempt + 1);

@@ -117,11 +117,14 @@ test("GET /api/account/earnings CSV emits pollen_spent + deprecated cost_usd alo
     );
 });
 
-test("GET /api/account/earnings CSV falls back to deprecated names when pipe returns only the old fields", async ({
+test("GET /api/account/earnings backfills pollen_* fields when the pipe returns only deprecated USD names (JSON + CSV)", async ({
     sessionToken,
     mocks,
 }) => {
-    // Simulates a stale cached payload from before the dual-emit landed.
+    // Simulates a stale pipe payload (e.g. from before the dual-emit landed
+    // or from a workspace still on the old schema). Worker normalization
+    // must populate pollen_baseline / pollen_spent so JSON and CSV match
+    // the canonical schema.
     await mocks.enable("tinybird");
 
     mocks.tinybird.state.earningsResponse = [
@@ -138,16 +141,28 @@ test("GET /api/account/earnings CSV falls back to deprecated names when pipe ret
         },
     ];
 
-    const response = await SELF.fetch(
+    const jsonResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=30",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(jsonResponse.status).toBe(200);
+    const body = (await jsonResponse.json()) as {
+        daily: Record<string, number>[];
+    };
+    expect(body.daily[0]).toMatchObject({
+        pollen_baseline: 0.4,
+        pollen_spent: 0.5,
+        baseline_price: 0.4,
+        cost_usd: 0.5,
+    });
+
+    const csvResponse = await SELF.fetch(
         "http://localhost:3000/api/account/earnings?days=30&format=csv",
         { headers: authHeaders(sessionToken) },
     );
-    expect(response.status).toBe(200);
-
-    const csv = await response.text();
+    expect(csvResponse.status).toBe(200);
+    const csv = await csvResponse.text();
     const [, firstRow] = csv.split("\n");
-    // pollen_baseline and pollen_spent columns are derived from the deprecated
-    // baseline_price / cost_usd values when the pipe response omits them.
     expect(firstRow).toBe(
         "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.4,0.5,0.25",
     );

@@ -1887,7 +1887,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
-     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * usage.forEach(r => console.log(r.model, r.pollen_spent));
      * ```
      */
     async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
@@ -1916,7 +1916,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const { usage } = await pollinations.accountUsageDaily();
-     * usage.forEach(r => console.log(r.date, r.requests, r.cost_usd));
+     * usage.forEach(r => console.log(r.date, r.requests, r.pollen_spent));
      * ```
      */
     async accountUsageDaily(

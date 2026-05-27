@@ -529,14 +529,35 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
     });
 }
 
+// Backfill canonical pollen_* fields from deprecated USD aliases so the
+// JSON response, CSV export, and any downstream consumer see one shape
+// regardless of whether the row came from a freshly-deployed pipe, a
+// stale KV cache, or a pre-rename pipe in another workspace.
+function normalizeUsageRow<
+    T extends { pollen_spent?: number; cost_usd?: number },
+>(row: T): T & { pollen_spent: number; cost_usd: number } {
+    const value = row.pollen_spent ?? row.cost_usd ?? 0;
+    return { ...row, pollen_spent: value, cost_usd: value };
+}
+
+function normalizeEarningsRow(row: DeveloperEarningsRow): DeveloperEarningsRow {
+    const spent = row.pollen_spent ?? row.cost_usd ?? 0;
+    const baseline = row.pollen_baseline ?? row.baseline_price ?? 0;
+    return {
+        ...row,
+        pollen_spent: spent,
+        cost_usd: spent,
+        pollen_baseline: baseline,
+        baseline_price: baseline,
+    };
+}
+
 function usageRecordToCsvRow(row: UsageRecord): string {
-    const pollenSpent = row.pollen_spent ?? row.cost_usd;
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${pollenSpent},${pollenSpent},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.pollen_spent},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    const pollenSpent = row.pollen_spent ?? row.cost_usd;
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${pollenSpent},${pollenSpent}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.pollen_spent},${row.cost_usd}`;
 }
 
 type DeveloperEarningsRow = {
@@ -962,7 +983,9 @@ export const accountRoutes = new Hono<Env>()
                             before,
                         },
                     )
-                ).map(stripUsageCursor);
+                )
+                    .map(stripUsageCursor)
+                    .map(normalizeUsageRow);
 
                 log.debug("Fetched {count} usage records", {
                     count: usage.length,
@@ -1069,7 +1092,7 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        usage = cachedData;
+                        usage = cachedData.map(normalizeUsageRow);
                         cached = true;
                     }
                 } catch (err) {
@@ -1096,7 +1119,9 @@ export const accountRoutes = new Hono<Env>()
                             ),
                         ),
                     );
-                    usage = sortDailyUsageRecords(chunkResults.flat());
+                    usage = sortDailyUsageRecords(
+                        chunkResults.flat().map(normalizeUsageRow),
+                    );
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(usage), {
@@ -1230,7 +1255,13 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        payload = cachedData;
+                        payload = {
+                            daily: cachedData.daily.map(normalizeEarningsRow),
+                            perApp: cachedData.perApp.map(normalizeEarningsRow),
+                            global: cachedData.global
+                                ? normalizeEarningsRow(cachedData.global)
+                                : null,
+                        };
                         cached = true;
                     }
                 } catch (err) {
@@ -1238,21 +1269,23 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 if (!payload) {
-                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
-                        tinybirdOrigin,
-                        "/v0/pipes/developer_earnings.json",
-                        tinybirdToken,
-                        {
-                            dev_user_id: devUserId,
-                            since: window.since,
-                            until: window.until,
-                            grain,
-                            api_key_ids:
-                                apiKeyIds.length > 0
-                                    ? apiKeyIds.join(",")
-                                    : undefined,
-                        },
-                    );
+                    const rows = (
+                        await fetchTinybirdRows<DeveloperEarningsRow>(
+                            tinybirdOrigin,
+                            "/v0/pipes/developer_earnings.json",
+                            tinybirdToken,
+                            {
+                                dev_user_id: devUserId,
+                                since: window.since,
+                                until: window.until,
+                                grain,
+                                api_key_ids:
+                                    apiKeyIds.length > 0
+                                        ? apiKeyIds.join(",")
+                                        : undefined,
+                            },
+                        )
+                    ).map(normalizeEarningsRow);
                     const daily = rows.filter((r) => r.date !== "");
                     const rollups = rows.filter((r) => r.date === "");
                     const perApp = [...rollups]
@@ -1694,7 +1727,9 @@ export const accountRoutes = new Hono<Env>()
                             before,
                         },
                     )
-                ).map(stripUsageCursor);
+                )
+                    .map(stripUsageCursor)
+                    .map(normalizeUsageRow);
 
                 if (format === "csv") {
                     const rows = usage.map(usageRecordToCsvRow);

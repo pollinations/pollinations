@@ -630,6 +630,9 @@ export interface UsageRecord {
     output_audio_seconds: number;
     output_image_tokens: number;
     output_video_seconds: number;
+    /** Pollen charged for this request (debited from the user's wallet). */
+    pollen_spent: number;
+    /** @deprecated Renamed to `pollen_spent`. Same value. Will be removed after the rename window closes. */
     cost_usd: number;
     response_time_ms: number;
 }
@@ -668,6 +671,9 @@ export interface DailyUsageRecord {
     model: string;
     meter_source: string;
     requests: number;
+    /** Total pollen charged for the bucket (debited from the user's wallet). */
+    pollen_spent: number;
+    /** @deprecated Renamed to `pollen_spent`. Same value. Will be removed after the rename window closes. */
     cost_usd: number;
 }
 

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11319,
+  "title": "fix: strip temperature/top_p/top_k for claude-opus-4-7",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11319",
+  "merged_at": "2026-05-27T09:08:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Anthropic deprecated `temperature`, `top_p`, and `top_k` on Claude Opus 4.7 — non-default values return 400 from Bedrock with `\\`temperature\\` is deprecated for this model`. Strip all three in `parameterProcessor` for any model whose id matches `claude-opus-4-7`.\n\nImpact: 63 errors in the last 4h on `claude-opus-4.7` per Tinybird.\n\n- Added tests covering the strip behavior and a regression guard so Opus 4.6 still passes `temperature` through.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Cooling down Claude Opus",
+    "blurb": "Claude Opus 4.7 decided it doesn't like temperature settings anymore, so we're automatically stripping them out behind the scenes. Your requests will now succeed without throwing errors!",
+    "summary": "Automatically strips deprecated temperature, top_p, and top_k parameters from Claude Opus 4.7 requests to prevent 400 errors from Bedrock.",
+    "impact": "Users can now safely send standard sampling parameters to Claude Opus 4.7 without their requests failing.",
+    "keywords": [
+      "claude",
+      "bug-fix",
+      "api",
+      "bedrock",
+      "parameters"
+    ],
+    "visual_concept": "The Nomnom creature eating a thermometer (temperature) and control dials to protect a glowing server, while Polly the bee watches amused. Represents stripping out the deprecated parameters to keep the system happy.",
+    "image_prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a pixelated thermometer and control dials while the cute bee mascot watches amused. A retro server rack nearby glows lime green (#ecf874) with the word 'CLAUDE' on a small CRT screen. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-27/PR-11319.jpg",
+    "prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a pixelated thermometer and control dials while the cute bee mascot watches amused. A retro server rack nearby glows lime green (#ecf874) with the word 'CLAUDE' on a small CRT screen. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-05-27T09:09:36.391556+00:00"
+}

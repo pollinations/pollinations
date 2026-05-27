@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-26",
+  "period_start": "2026-05-26",
+  "period_end": "2026-05-26",
+  "generated_at": "2026-05-27T07:22:00.853658+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-26/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped raw markdown sources for our docs. your llms can now actually read them instead of guessing how the api works. humans get copy buttons on the dashboard rail as a consolation prize."
+}

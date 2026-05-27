@@ -1,11 +1,11 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
-    <img alt="Pollinations API" src="assets/logo-text-black.svg" width="420">
-  </picture>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
+  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">
+</picture>
 
 > Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+
+# API docs
 
 **Version:** `0.3.0` · **OpenAPI:** `3.1.0` · **Base URL:** `https://gen.pollinations.ai`
 

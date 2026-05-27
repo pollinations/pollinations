@@ -1,4 +1,9 @@
-# 🌸 Pollinations API
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">
+    <img alt="Pollinations API" src="assets/logo-text-black.svg" width="420">
+  </picture>
+</p>
 
 > Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
 

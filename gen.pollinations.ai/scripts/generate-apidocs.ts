@@ -691,7 +691,19 @@ function renderSchema(spec: Spec, name: string, schema: Schema): string {
 
 function renderHeader(spec: Spec): string {
     const out: string[] = [];
-    out.push("# 🌸 Pollinations API");
+    // Logo block replaces the text H1. The two SVGs are designed for light/dark
+    // backgrounds; GitHub respects prefers-color-scheme on <picture><source>.
+    // `alt` carries the semantic title so screen readers and feeds still get it.
+    out.push('<p align="center">');
+    out.push("  <picture>");
+    out.push(
+        '    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">',
+    );
+    out.push(
+        '    <img alt="Pollinations API" src="assets/logo-text-black.svg" width="420">',
+    );
+    out.push("  </picture>");
+    out.push("</p>");
     out.push("");
     out.push(
         "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",

@@ -1,5 +1,6 @@
 // Pollinations API utilities — updated to match gen.pollinations.ai spec
 const BASE_URL = "https://gen.pollinations.ai";
+const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
 const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || "";
 export const BYOP_STORAGE_KEY = "pollinations_byop_api_key";
 
@@ -73,6 +74,57 @@ const parseApiError = async (response) => {
         /* ignore */
     }
     return buildClientError(response.status);
+};
+
+const blobToDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+
+const extensionForMime = (mimeType, fallback) => {
+    if (mimeType?.includes("png")) return "png";
+    if (mimeType?.includes("jpeg")) return "jpg";
+    if (mimeType?.includes("webp")) return "webp";
+    if (mimeType?.includes("mp4")) return "mp4";
+    if (mimeType?.includes("webm")) return "webm";
+    if (mimeType?.includes("mpeg")) return "mp3";
+    if (mimeType?.includes("wav")) return "wav";
+    return fallback;
+};
+
+const uploadGeneratedMedia = async (blob, token, filename, fields) => {
+    if (!token) return null;
+
+    try {
+        const form = new FormData();
+        form.append("file", blob, filename);
+
+        for (const [key, value] of Object.entries(fields)) {
+            if (value !== undefined && value !== null && value !== "") {
+                form.append(key, String(value));
+            }
+        }
+
+        const response = await fetch(MEDIA_UPLOAD_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+        });
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return (
+            data.url ||
+            (data.id ? `https://media.pollinations.ai/${data.id}` : null)
+        );
+    } catch (error) {
+        console.warn("Media catalog upload failed:", error);
+        return null;
+    }
 };
 
 export const loadModels = async () => {
@@ -530,13 +582,28 @@ export const generateImage = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, width, height, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const extension = extensionForMime(blob.type, "png");
+    const mediaUrl = await uploadGeneratedMedia(
+        blob,
+        token,
+        `chat-image-${Date.now()}.${extension}`,
+        {
+            visibility: "private",
+            source: "generation",
+            prompt,
+            model,
+            tag: "chat",
+        },
+    );
+
+    return {
+        url: mediaUrl || (await blobToDataUrl(blob)),
+        prompt,
+        model,
+        width,
+        height,
+        seed,
+    };
 };
 
 export const generateVideo = async (prompt, options = {}) => {
@@ -556,13 +623,26 @@ export const generateVideo = async (prompt, options = {}) => {
     if (!response.ok) throw await parseApiError(response);
 
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, prompt, model, seed });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const extension = extensionForMime(blob.type, "mp4");
+    const mediaUrl = await uploadGeneratedMedia(
+        blob,
+        token,
+        `chat-video-${Date.now()}.${extension}`,
+        {
+            visibility: "private",
+            source: "generation",
+            prompt,
+            model,
+            tag: "chat",
+        },
+    );
+
+    return {
+        url: mediaUrl || (await blobToDataUrl(blob)),
+        prompt,
+        model,
+        seed,
+    };
 };
 
 // Generate speech/audio — GET /audio/{text}?voice=...
@@ -578,11 +658,25 @@ export const generateAudio = async (text, options = {}) => {
 
     const blob = await response.blob();
     const mimeType = blob.type || "audio/mpeg";
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-            resolve({ url: reader.result, text, voice, model, mimeType });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    const extension = extensionForMime(mimeType, "mp3");
+    const mediaUrl = await uploadGeneratedMedia(
+        blob,
+        token,
+        `chat-audio-${Date.now()}.${extension}`,
+        {
+            visibility: "private",
+            source: "generation",
+            prompt: text,
+            model,
+            tag: "chat",
+        },
+    );
+
+    return {
+        url: mediaUrl || (await blobToDataUrl(blob)),
+        text,
+        voice,
+        model,
+        mimeType,
+    };
 };

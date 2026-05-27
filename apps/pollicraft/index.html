@@ -110,6 +110,7 @@ const MEDIA_BASE = "https://media.pollinations.ai";
 const ENTER_BASE = "https://enter.pollinations.ai";
 const APP_KEY = "pk_pollicraft";  // replace with a real publishable key once minted
 const APP_ID = "pollicraft";
+const APP_TAG = `app:${APP_ID}`;
 const KEY_STORAGE = "pollicraft:apiKey";
 
 const SEEDS = [
@@ -194,7 +195,7 @@ async function generateElementImage(name, leftName, rightName) {
   const url = `${GEN_BASE}/image/${encodeURIComponent(prompt)}?model=flux&width=512&height=512&nologo=true`;
   const res = await fetch(url, { headers: authHeaders() });
   if (!res.ok) throw new Error(`image gen failed: ${res.status}`);
-  return res.blob();
+  return { blob: await res.blob(), prompt };
 }
 
 // Ask a tiny LLM to name the combination.
@@ -225,13 +226,18 @@ function slugify(name) {
 
 // ── Media catalog integration ───────────────────────────────────────────────
 
-async function uploadElement(blob, slug, name, leftHash, rightHash, recipeTag) {
+async function uploadElement(blob, slug, name, leftHash, rightHash, recipeTag, prompt) {
   const form = new FormData();
   form.append("file", new File([blob], `${slug}.png`, { type: blob.type || "image/png" }));
-  // Pick one parent hash for the lineage edge — by convention the alphabetically
-  // first ingredient. The recipe tag below records both for community lookup.
-  const parent = [leftHash, rightHash].filter(Boolean).sort()[0];
-  if (parent) form.append("parent", parent);
+  for (const parent of [leftHash, rightHash].filter(Boolean)) {
+    form.append("parent", parent);
+  }
+  form.append("visibility", "public");
+  form.append("source", "generation");
+  form.append("relationship", "combine");
+  form.append("prompt", prompt);
+  form.append("model", "flux");
+  form.append("tag", APP_TAG);
   form.append("tag", `element:${slug}`);
   form.append("tag", recipeTag);
   form.append("tag", `name:${slugify(name)}`);
@@ -249,44 +255,80 @@ function recipeTag(a, b) {
   return `recipe:${[a, b].sort().join("+")}`;
 }
 
+function hasRegisteredAppKey() {
+  return APP_KEY && APP_KEY !== "pk_pollicraft";
+}
+
+function itemTags(item) {
+  return Array.isArray(item.tags) ? item.tags : Array.isArray(item.userTags) ? item.userTags : [];
+}
+
+function isPollicraftItem(item) {
+  return item.appId === APP_ID || item.app === APP_ID || itemTags(item).includes(APP_TAG);
+}
+
+function appScopedQuery(limit) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (hasRegisteredAppKey()) {
+    params.set("app_key", APP_KEY);
+  } else {
+    params.set("app", APP_ID);
+  }
+  return params;
+}
+
+function taggedUrl(tag, params) {
+  return `${MEDIA_BASE}/tags/${encodeURIComponent(tag)}?${params}`;
+}
+
 // Look up an existing community discovery for a given recipe.
 async function lookupRecipe(a, b) {
   const tag = recipeTag(a, b);
-  // tags/v1/<tag>/... is read-public; we hit the per-app catalog filtered
-  // client-side because there is no dedicated tag-read endpoint yet.
-  const res = await fetch(`${MEDIA_BASE}/apps/${APP_ID}/media?limit=200`);
-  if (!res.ok) return null;
-  const data = await res.json();
+  const res = await fetch(taggedUrl(tag, appScopedQuery(20)));
+  if (!res.ok && hasRegisteredAppKey()) return null;
+  const data = res.ok ? await res.json() : { items: [] };
   for (const item of data.items || []) {
-    if (Array.isArray(item.userTags) && item.userTags.includes(tag)) {
-      return item;
-    }
+    if (isPollicraftItem(item)) return item;
+  }
+  if (hasRegisteredAppKey()) return null;
+
+  const fallback = await fetch(taggedUrl(tag, new URLSearchParams({ limit: "20" })));
+  if (!fallback.ok) return null;
+  const fallbackData = await fallback.json();
+  for (const item of fallbackData.items || []) {
+    if (isPollicraftItem(item)) return item;
   }
   return null;
 }
 
 async function fetchMyInventory() {
   if (!state.apiKey) return [];
-  const res = await fetch(`${MEDIA_BASE}/me/media?limit=100`, { headers: authHeaders() });
+  const params = hasRegisteredAppKey()
+    ? new URLSearchParams({ app_key: APP_KEY, limit: "100" })
+    : new URLSearchParams({ limit: "100" });
+  const res = await fetch(`${MEDIA_BASE}/me/media?${params}`, { headers: authHeaders() });
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.items || []).filter((it) => it.app === APP_ID);
+  return (data.items || []).filter(isPollicraftItem);
 }
 
 async function fetchCommunityInventory() {
-  const res = await fetch(`${MEDIA_BASE}/apps/${APP_ID}/media?limit=100`);
+  const url = hasRegisteredAppKey()
+    ? `${MEDIA_BASE}/gallery?${new URLSearchParams({ app_key: APP_KEY, limit: "100" })}`
+    : taggedUrl(APP_TAG, new URLSearchParams({ limit: "100" }));
+  const res = await fetch(url);
   if (!res.ok) return [];
   const data = await res.json();
-  return data.items || [];
+  return (data.items || []).filter(isPollicraftItem);
 }
 
 function itemToElement(item) {
-  const tags = Array.isArray(item.userTags) ? item.userTags : [];
+  const tags = itemTags(item);
   const elementTag = tags.find((t) => t.startsWith("element:"));
   const nameTag = tags.find((t) => t.startsWith("name:"));
   const slug = elementTag ? elementTag.slice("element:".length) : item.hash;
   const name = nameTag ? nameTag.slice("name:".length).replace(/-/g, " ") : slug;
-  return { slug, name, url: item.url, hash: item.hash, parent: item.parent };
+  return { slug, name, url: item.url, hash: item.hash, parent: item.remixOf || item.parent };
 }
 
 // ── Inventory rendering ─────────────────────────────────────────────────────
@@ -475,8 +517,8 @@ async function craftFromPlaced(a, b) {
     }
     const name = await pickElementName(a.name, b.name);
     const slug = slugify(name) || `${a.slug}-${b.slug}`;
-    const blob = await generateElementImage(name, a.name, b.name);
-    const uploaded = await uploadElement(blob, slug, name, a.hash, b.hash, recipeTag(a.slug, b.slug));
+    const generated = await generateElementImage(name, a.name, b.name);
+    const uploaded = await uploadElement(generated.blob, slug, name, a.hash, b.hash, recipeTag(a.slug, b.slug), generated.prompt);
     const el = { slug, name, url: uploaded.url, hash: uploaded.id, parent: uploaded.parent };
     addToInventory("mine", el);
     placeOnTable(el, (a.x + b.x) / 2, (a.y + b.y) / 2);

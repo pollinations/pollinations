@@ -547,22 +547,36 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
     if (!response.ok) return undefined;
     const schema = (await response.json()) as OpenApiSchema;
 
-    for (const operations of Object.values(asRecord(schema.paths))) {
+    for (const [path, operations] of Object.entries(asRecord(schema.paths))) {
         if (!operations || typeof operations !== "object") continue;
         (operations as OpenApiSchema).servers = [
             { url: "https://media.pollinations.ai" },
         ];
-        for (const operation of Object.values(operations as OpenApiSchema)) {
+        for (const [method, operation] of Object.entries(
+            operations as OpenApiSchema,
+        )) {
             if (!operation || typeof operation !== "object") continue;
-            const record = operation as { tags?: unknown };
+            const record = operation as { tags?: unknown; security?: unknown };
             if (!Array.isArray(record.tags)) continue;
             record.tags = record.tags.map((tag) =>
                 tag === "media.pollinations.ai" ? "📦 Media Storage" : tag,
             );
+            // Public read routes do not require auth. Defensive override in
+            // case the upstream media spec hasn't been redeployed with the
+            // explicit `security: []` setting yet.
+            if (isPublicMediaRead(method, path)) {
+                record.security = [];
+            }
         }
     }
 
     return schema;
+}
+
+function isPublicMediaRead(method: string, path: string): boolean {
+    const lower = method.toLowerCase();
+    if (lower !== "get" && lower !== "head") return false;
+    return path === "/{hash}" || path === "/{hash}/metadata";
 }
 
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {

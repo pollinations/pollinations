@@ -11,6 +11,7 @@ import {
     type Bucket,
 } from "./deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
+import { roundPollenLedgerAmount } from "./precision.ts";
 
 const log = getLogger(["track", "helpers"]);
 
@@ -85,11 +86,16 @@ export async function resolveDevMarkup(
 
 /**
  * Handles balance deduction and BYOP dev credit for billable requests.
+ *
+ * Returns `billedPrice` — the rounded amount actually debited from the payer
+ * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
+ * should use this for analytics/event totals so they match the ledger.
  */
 export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     markup: MarkupResolution | null;
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
+    billedPrice: number;
 }> {
     const {
         db,
@@ -107,6 +113,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             markup: null,
             payerBucket: null,
             postDeductionPackBalance: null,
+            billedPrice: 0,
         };
     }
 
@@ -117,7 +124,9 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         userId,
     );
     const markup: MarkupResolution | null = resolved;
-    const billedPrice = totalPrice + (markup?.devCredit ?? 0);
+    const billedPrice = roundPollenLedgerAmount(
+        totalPrice + (markup?.devCredit ?? 0),
+    );
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
 
@@ -144,11 +153,12 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 throw new Error("BYOP markup requires a payer balance bucket");
             }
             const creditBucket = payerBucket;
+            const creditAmount = roundPollenLedgerAmount(markup.devCredit);
             const { ok } = await atomicCreditUserBalance(
                 db,
                 markup.devUserId,
                 creditBucket,
-                markup.devCredit,
+                creditAmount,
             );
             if (!ok) {
                 throw new Error(
@@ -158,7 +168,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             log.debug(
                 "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
                 {
-                    credit: markup.devCredit,
+                    credit: creditAmount,
                     devUserId: markup.devUserId,
                     bucket: creditBucket,
                     pct: (markup.markupRate * 100).toFixed(0),
@@ -191,7 +201,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         throw error;
     }
 
-    return { markup, payerBucket, postDeductionPackBalance };
+    return { markup, payerBucket, postDeductionPackBalance, billedPrice };
 }
 
 function hasApiKeyBudget(

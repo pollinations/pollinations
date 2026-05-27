@@ -2,24 +2,37 @@ import { Hono } from "hono";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 export type MockFrankfurterState = {
-    rate: number;
+    rates: Record<string, number>;
     callCount: number;
 };
 
-const DEFAULT_RATE = 0.93;
+const DEFAULT_RATES: Record<string, number> = {
+    EUR: 0.93,
+    INR: 85.0,
+    GBP: 0.79,
+};
 
 export function createMockFrankfurter(): MockAPI<MockFrankfurterState> {
     const state: MockFrankfurterState = {
-        rate: DEFAULT_RATE,
+        rates: { ...DEFAULT_RATES },
         callCount: 0,
     };
 
     const frankfurterAPI = new Hono().get("/v1/latest", (c) => {
         state.callCount += 1;
+        const symbolsParam = c.req.query("symbols") ?? "";
+        const requested = symbolsParam
+            ? symbolsParam.split(",").map((s) => s.trim().toUpperCase())
+            : Object.keys(DEFAULT_RATES);
+        const rates: Record<string, number> = {};
+        for (const symbol of requested) {
+            const rate = state.rates[symbol];
+            if (rate !== undefined) rates[symbol] = rate;
+        }
         return c.json({
             base: "USD",
             date: "2026-05-19",
-            rates: { EUR: state.rate },
+            rates,
         });
     });
 
@@ -28,7 +41,7 @@ export function createMockFrankfurter(): MockAPI<MockFrankfurterState> {
     };
 
     const reset = () => {
-        state.rate = DEFAULT_RATE;
+        state.rates = { ...DEFAULT_RATES };
         state.callCount = 0;
     };
 

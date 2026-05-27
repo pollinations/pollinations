@@ -1,6 +1,6 @@
 import {
     describePollenPack,
-    getPackEurCents,
+    getPackForeignCents,
     POLLEN_PACKS,
     resolvePollenPack,
 } from "@shared/pollen-packs.ts";
@@ -14,7 +14,7 @@ import {
     type CheckoutCohort,
     getCohortFromCountry,
 } from "../utils/currency-router.ts";
-import { getUsdToEurRate } from "../utils/fx-cache.ts";
+import { getUsdToRate } from "../utils/fx-cache.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -82,7 +82,10 @@ export const stripeRoutes = new Hono<Env>()
         const unitAmount =
             cohort.checkoutCurrency === "usd"
                 ? pack.amountUsd * 100
-                : getPackEurCents(pack, await getUsdToEurRate(c.env));
+                : getPackForeignCents(
+                      pack,
+                      await getUsdToRate(c.env, cohort.checkoutCurrency),
+                  );
         // Fail closed if the cohort's PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
         // default PMC) would silently bypass cohort-specific method sets and
@@ -372,5 +375,9 @@ function resolveCohortPmcId(
             return env.STRIPE_PMC_APAC_ALIPAY;
         case "STRIPE_PMC_EU_CORE":
             return env.STRIPE_PMC_EU_CORE;
+        case "STRIPE_PMC_INDIA":
+            return env.STRIPE_PMC_INDIA;
+        case "STRIPE_PMC_UK":
+            return env.STRIPE_PMC_UK;
     }
 }

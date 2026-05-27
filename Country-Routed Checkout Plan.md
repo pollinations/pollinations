@@ -50,10 +50,12 @@ type CheckoutCohort = {
 
 | Cohort | Countries | Currency | AP | PMC contents |
 |---|---|---|---|---|
-| **USD** (default) | US, CA, GB, AU, NZ, UA + everything else (unknown / `XX` / unrouted, **including MO**) | `usd` | off | Cards, Link, Apple Pay, Google Pay, Klarna, PayPal |
+| **USD** (default) | US, CA, AU, NZ, UA + everything else (unknown / `XX` / unrouted, **including MO**) | `usd` | off | Cards, Link, Apple Pay, Google Pay, Klarna, PayPal |
 | **BR** | BR | `eur` | on → BRL | Cards, Link, Apple Pay, Google Pay, **Pix**, PayPal |
 | **APAC_ALIPAY** | CN, HK, TW (**not MO**) | `eur` | on → CNY/HKD/TWD | Cards, Link, Apple Pay, Google Pay, **mainland Alipay**, PayPal. UnionPay covered by Cards. |
 | **EU_CORE** | NL, DE, FR, ES, BE, AT, PT, IE, IT, LU, GR, CY, MT, SI, SK, EE, LV, LT, IS, LI | `eur` | off | Cards, Link, Apple Pay, Google Pay, **iDEAL / Bancontact / EPS / MB Way / SEPA Debit / Multibanco / Satispay**, PayPal, Revolut Pay, Klarna |
+| **INDIA** | IN | `inr` | off | Cards, Link, Apple Pay, Google Pay, **UPI**, PayPal. INR-native integration (UPI requires INR). Cross-border INR settles via Stripe FX → EUR (~2-4% margin) until INR multi-currency settlement is justified. |
+| **UK** | GB | `gbp` | off | Cards, Link, Apple Pay, Google Pay, Klarna, **Revolut Pay**, PayPal. GBP-native integration; Wise UK GBP receive account already configured → **zero Stripe FX margin** on settlement. |
 
 **Why MO is excluded from APAC_ALIPAY.** The 99.8% spoof signal. Routing MO into APAC_ALIPAY would just give US card testers a cohort with more methods to probe. MO drops into the USD default where the abuse plan's filters apply. Covered by a regression test (`test/integration/stripe.test.ts` — `MO → USD-regression`).
 
@@ -148,30 +150,34 @@ The webhook handler now forwards `session.metadata.cohort` (and the equivalent `
 
 ### Stage D — Live Stripe setup (requires your explicit live-mode approvals)
 
-- [ ] 👤 Stripe Dashboard → **Live mode** → Settings → Payments → Checkout → toggle **Adaptive Pricing ON** (sandbox may already be on; verify live)
-- [ ] 👤 Tell Claude "go: create live PMCs" — Claude creates 4 LIVE PMCs matching sandbox composition:
+> **Adaptive Pricing Dashboard toggle: leave OFF.** Stripe docs confirm session-level `adaptive_pricing.enabled` overrides the Dashboard setting. This PR sets it explicitly per cohort on every session (`true` for BR/APAC, `false` for USD/EU_CORE), so the toggle is functionally irrelevant for our checkout flow. Keeping it OFF is the safer default for any future code path that forgets to set the param. **Flipping it ON before this PR ships would localize all current non-US prod buyers immediately** (current main code omits the param, so account-level wins; baseline 1307/1307 last-30-day completions are USD-presented, confirming toggle is currently off).
+
+- [x] 👤 + 🤖 Created 6 LIVE PMCs (2026-05-27):
   ```
-  cohort_usd:  card, link, apple_pay, google_pay, klarna, paypal
-  cohort_br:   card, link, apple_pay, google_pay, pix, paypal
-  cohort_apac_alipay:  card, link, apple_pay, google_pay, alipay, paypal
-  cohort_eu_core:  card, link, apple_pay, google_pay, ideal, bancontact,
-                    eps, mb_way, sepa_debit, multibanco, satispay,
-                    paypal, revolut_pay, klarna
+  cohort_usd          pmc_1Tbgzs7rcjS3l7trck2OpNsW  card, link, apple_pay, google_pay, klarna, paypal
+  cohort_br           pmc_1Tbgzu7rcjS3l7trPDmtQRhj  card, link, apple_pay, google_pay, pix, paypal
+  cohort_apac_alipay  pmc_1Tbgzv7rcjS3l7trzKOOIOKY  card, link, apple_pay, google_pay, alipay, paypal
+  cohort_eu_core      pmc_1Tbgzx7rcjS3l7tr95IKoZfZ  card, link, apple_pay, google_pay, ideal, bancontact,
+                                                     eps, mb_way, sepa_debit, multibanco, satispay,
+                                                     paypal, revolut_pay, klarna
+  cohort_uk           pmc_1Tbj1i7rcjS3l7trcLV1Q4uY  card, link, apple_pay, google_pay, paypal, klarna,
+                                                     revolut_pay
+  cohort_india        pmc_1Tbj1p7rcjS3l7trpgXBYh7S  card, link, apple_pay, google_pay, paypal, upi
   ```
-- [ ] 🤖 Verify each LIVE PMC has every configured method showing `available: true` (especially Pix, mainland Alipay, SEPA Debit, Klarna, Multibanco, Satispay — these need account capability)
+  Sandbox PMCs for the same six cohorts: `pmc_1TYjwI…spSyH3ph` (USD), `pmc_1TYjxa…w1niCN1s` (BR), `pmc_1TYjxo…hw5qidqt` (APAC_ALIPAY), `pmc_1TYjy1…QDf9zVag` (EU_CORE), `pmc_1Tbj1g…zYgi1YMc` (UK), `pmc_1Tbj1m…YrA3inzu` (INDIA).
+- [x] 🤖 Verified every configured method on every PMC reports `available: true` (61/61 OK — account fully capability-enabled for Pix, mainland Alipay, SEPA Debit, Klarna, Multibanco, Satispay, Revolut Pay, **UPI**)
 - [ ] 🤖 Update `[env.production.vars]` in `wrangler.toml` with the 4 LIVE PMC IDs (`STRIPE_PMC_USD/BR/APAC_ALIPAY/EU_CORE`)
 - [ ] 🤖 Remove the now-orphan `STRIPE_BUY_POLLEN_PMC_ID` from `[env.production.vars]` (last reference — sandbox sections already cleaned)
 - [ ] 🤖 Commit `wrangler.toml` changes to the same PR/branch and push
 
 ### Stage E — Multi-currency settlement (can run in parallel with Stage D)
 
-Required so USD-cohort revenue settles in USD (zero Stripe FX margin on the dominant cohort). Without this step, USD-cohort payouts still convert to EUR via Stripe's FX rate (~2% margin).
+Goal: settle each cohort's integration currency natively (zero Stripe FX margin) where possible.
 
-- [ ] 👤 Confirm Wise USD + EUR EBANs are verified and active
-- [ ] 👤 Stripe Dashboard → **Sandbox** → Settings → Payouts → enable USD payout → link Wise USD EBAN
-- [ ] 👤 Send a $1 test payout from sandbox → verify it lands in your Wise USD EBAN
-- [ ] 👤 Stripe Dashboard → **Live** → Settings → Payouts → enable USD payout → link Wise USD EBAN (do **only after** sandbox test succeeds)
-- [ ] 👤 Confirm EUR payout destination is already set to Wise EUR EBAN (probably is, since EUR is current settlement)
+- [x] 👤 EUR (default) → Wise Europe EUR IBAN ✓ confirmed active 2026-05-27
+- [x] 👤 USD → Wise US (Column N.A.) ✓ confirmed active 2026-05-27 (1% Stripe settlement fee — standard for non-US merchant, no FX margin)
+- [x] 👤 GBP → Wise UK ✓ confirmed active 2026-05-27 (FREE settlement, zero Stripe FX margin — UK cohort settles GBP→GBP natively)
+- [ ] 👤 INR settlement — **not configured**. India cohort revenue auto-converts to EUR at Stripe's FX rate (~2-4% margin). Revisit if INR volume justifies; may require Stripe support ticket about INR multi-currency settlement availability for EE merchants (Stripe is not PA-CB licensed in India, so options may be limited)
 
 ### Stage F — Coupon / promo code audit
 

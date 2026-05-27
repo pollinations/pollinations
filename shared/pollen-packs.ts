@@ -76,13 +76,14 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     },
 );
 
-// Derive an EUR-cents integration amount from a pack's USD reference price and
-// the current USD→EUR FX rate. Used at Stripe Checkout creation for non-USD
-// cohorts; the USD cohort sends amountUsd directly.
-export const getPackEurCents = (
+// Derive a foreign-currency-cents integration amount from a pack's USD
+// reference price and a USD→target FX rate. Used at Stripe Checkout creation
+// for non-USD cohorts (EUR, INR, GBP, ...); the USD cohort sends amountUsd
+// directly without an FX call.
+export const getPackForeignCents = (
     pack: PollenPack,
-    usdToEurRate: number,
-): number => Math.round(pack.amountUsd * 100 * usdToEurRate);
+    usdToTargetRate: number,
+): number => Math.round(pack.amountUsd * 100 * usdToTargetRate);
 
 export const isPollenPackAmount = (value: string): value is PollenPackAmount =>
     PACK_AMOUNT_SET.has(value as PollenPackAmount);

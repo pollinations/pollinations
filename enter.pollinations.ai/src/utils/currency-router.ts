@@ -1,14 +1,22 @@
-export type CohortId = "USD" | "BR" | "APAC_ALIPAY" | "EU_CORE";
+export type CohortId =
+    | "USD"
+    | "BR"
+    | "APAC_ALIPAY"
+    | "EU_CORE"
+    | "INDIA"
+    | "UK";
 
 export type CohortPmcEnvVar =
     | "STRIPE_PMC_USD"
     | "STRIPE_PMC_BR"
     | "STRIPE_PMC_APAC_ALIPAY"
-    | "STRIPE_PMC_EU_CORE";
+    | "STRIPE_PMC_EU_CORE"
+    | "STRIPE_PMC_INDIA"
+    | "STRIPE_PMC_UK";
 
 export type CheckoutCohort = {
     id: CohortId;
-    checkoutCurrency: "usd" | "eur";
+    checkoutCurrency: "usd" | "eur" | "inr" | "gbp";
     adaptivePricing: boolean;
     pmcEnvVar: CohortPmcEnvVar;
 };
@@ -39,6 +47,25 @@ const COHORT_EU_CORE: CheckoutCohort = {
     checkoutCurrency: "eur",
     adaptivePricing: false,
     pmcEnvVar: "STRIPE_PMC_EU_CORE",
+};
+
+// INR is the integration currency (required for UPI to work end-to-end on
+// Stripe). AP off — INR is already what the Indian buyer sees, no need to
+// localize from EUR with a Stripe FX margin layer on top.
+const COHORT_INDIA: CheckoutCohort = {
+    id: "INDIA",
+    checkoutCurrency: "inr",
+    adaptivePricing: false,
+    pmcEnvVar: "STRIPE_PMC_INDIA",
+};
+
+// GBP-native integration so UK buyers see GBP without Stripe AP routing them
+// through a EUR→GBP conversion (which would add ~2-4% FX margin). AP off.
+const COHORT_UK: CheckoutCohort = {
+    id: "UK",
+    checkoutCurrency: "gbp",
+    adaptivePricing: false,
+    pmcEnvVar: "STRIPE_PMC_UK",
 };
 
 // MO is intentionally absent: the 5,000-charge card-country audit found
@@ -73,6 +100,9 @@ const COHORT_BY_COUNTRY: Record<string, CheckoutCohort> = {
     LT: COHORT_EU_CORE,
     IS: COHORT_EU_CORE,
     LI: COHORT_EU_CORE,
+
+    IN: COHORT_INDIA,
+    GB: COHORT_UK,
 };
 
 export function getCohortFromCountry(

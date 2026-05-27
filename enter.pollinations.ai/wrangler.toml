@@ -53,6 +53,9 @@ STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
 STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
 STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
 STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
+# Phase 1b cohort PMCs (sandbox, IN + UK) — populated after sandbox PMC create
+STRIPE_PMC_INDIA = "pmc_1Tbj1m6O03AauPe8YrA3inzu"
+STRIPE_PMC_UK = "pmc_1Tbj1g6O03AauPe8zYgi1YMc"
 
 
 [env.local]
@@ -96,6 +99,9 @@ STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
 STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
 STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
 STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
+# Phase 1b cohort PMCs (sandbox, IN + UK) — populated after sandbox PMC create
+STRIPE_PMC_INDIA = "pmc_1Tbj1m6O03AauPe8YrA3inzu"
+STRIPE_PMC_UK = "pmc_1Tbj1g6O03AauPe8zYgi1YMc"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
@@ -209,6 +215,9 @@ STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
 STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
 STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
 STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
+# Phase 1b cohort PMCs (sandbox, IN + UK) — populated after sandbox PMC create
+STRIPE_PMC_INDIA = "pmc_1Tbj1m6O03AauPe8YrA3inzu"
+STRIPE_PMC_UK = "pmc_1Tbj1g6O03AauPe8zYgi1YMc"
 
 [env.dev]
 
@@ -260,6 +269,9 @@ STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
 STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
 STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
 STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
+# Phase 1b cohort PMCs (sandbox, IN + UK) — populated after sandbox PMC create
+STRIPE_PMC_INDIA = "pmc_1Tbj1m6O03AauPe8YrA3inzu"
+STRIPE_PMC_UK = "pmc_1Tbj1g6O03AauPe8zYgi1YMc"
 
 [env.test]
 
@@ -312,3 +324,6 @@ STRIPE_PMC_USD = "pmc_1TYjwI6O03AauPe8spSyH3ph"
 STRIPE_PMC_BR = "pmc_1TYjxa6O03AauPe8w1niCN1s"
 STRIPE_PMC_APAC_ALIPAY = "pmc_1TYjxo6O03AauPe8hw5qidqt"
 STRIPE_PMC_EU_CORE = "pmc_1TYjy16O03AauPe8QDf9zVag"
+# Phase 1b cohort PMCs (sandbox, IN + UK) — populated after sandbox PMC create
+STRIPE_PMC_INDIA = "pmc_1Tbj1m6O03AauPe8YrA3inzu"
+STRIPE_PMC_UK = "pmc_1Tbj1g6O03AauPe8zYgi1YMc"

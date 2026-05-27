@@ -457,6 +457,82 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     expect(mocks.frankfurter.state.callCount).toBe(0);
 });
 
+test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + INDIA PMC", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_inr");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    const response = await SELF.fetch(`${base}/checkout/10`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "IN",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // $10 × 100 × 85.0 = 85000 paise (₹850.00). INR is the integration currency
+    // directly (required for UPI), so AP is off — no need to localize.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("85000");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("inr");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1Tbj1m6O03AauPe8YrA3inzu",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("INDIA");
+    expect(body?.["metadata[packCurrency]"]).toBe("inr");
+    expect(body?.["metadata[packAmountCents]"]).toBe("85000");
+    // Pollen grant stays USD-anchored ($10 + 3 bonus = 13 pollen).
+    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
+    expect(body?.["metadata[packPollenGrant]"]).toBe("13");
+});
+
+test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + UK PMC", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await env.KV.delete("fx:usd_gbp");
+    await mocks.enable("stripe", "tinybird", "frankfurter");
+
+    const response = await SELF.fetch(`${base}/checkout/5`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "GB",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // $5 × 100 × 0.79 = 395 pence (£3.95). GBP is the integration currency
+    // directly; UK buyers see GBP natively, AP off — and Wise UK GBP receive
+    // account gives us zero Stripe FX margin on settlement.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("395");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("gbp");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBe(
+        "pmc_1Tbj1g6O03AauPe8zYgi1YMc",
+    );
+    expect(body?.["metadata[cohort]"]).toBe("UK");
+    expect(body?.["metadata[packCurrency]"]).toBe("gbp");
+    expect(body?.["metadata[packAmountCents]"]).toBe("395");
+    expect(body?.["metadata[packAmountUsd]"]).toBe("5");
+    expect(body?.["metadata[packPollenGrant]"]).toBe("6");
+});
+
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     sessionToken,
     mocks,

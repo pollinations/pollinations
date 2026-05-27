@@ -6,13 +6,11 @@ describe("getCohortFromCountry", () => {
         test.each([
             "US",
             "CA",
-            "GB",
             "AU",
             "NZ",
             "UA",
             "JP",
             "KR",
-            "IN",
             "ZA",
             "ZZ",
         ])("routes %s to USD", (country) => {
@@ -94,11 +92,37 @@ describe("getCohortFromCountry", () => {
         });
     });
 
+    describe("INDIA cohort", () => {
+        test("routes IN to INDIA cohort (INR-native, AP off, UPI unlock)", () => {
+            const cohort = getCohortFromCountry("IN");
+            expect(cohort).toEqual({
+                id: "INDIA",
+                checkoutCurrency: "inr",
+                adaptivePricing: false,
+                pmcEnvVar: "STRIPE_PMC_INDIA",
+            });
+        });
+    });
+
+    describe("UK cohort", () => {
+        test("routes GB to UK cohort (GBP-native, AP off, free GBP settlement via Wise)", () => {
+            const cohort = getCohortFromCountry("GB");
+            expect(cohort).toEqual({
+                id: "UK",
+                checkoutCurrency: "gbp",
+                adaptivePricing: false,
+                pmcEnvVar: "STRIPE_PMC_UK",
+            });
+        });
+    });
+
     describe("case insensitivity", () => {
         test("lowercase country code routes to same cohort as uppercase", () => {
             expect(getCohortFromCountry("br").id).toBe("BR");
             expect(getCohortFromCountry("cn").id).toBe("APAC_ALIPAY");
             expect(getCohortFromCountry("nl").id).toBe("EU_CORE");
+            expect(getCohortFromCountry("in").id).toBe("INDIA");
+            expect(getCohortFromCountry("gb").id).toBe("UK");
             expect(getCohortFromCountry("us").id).toBe("USD");
         });
     });

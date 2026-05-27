@@ -8,16 +8,23 @@ const TINYBIRD_MODEL_STATS_URL =
 const CACHE_KEY = "model-stats:v2";
 const CACHE_TTL = 3600;
 
-export type TinybirdModelStats = {
-    data: Array<{
-        model: string;
-        pollen_avg_price: number;
-        /** @deprecated Renamed to pollen_avg_price. Removed after the rename window closes. */
-        avg_cost_usd: number;
-        request_count?: number;
-        priced_success_count?: number;
-    }>;
+export type ModelStatsRow = {
+    model: string;
+    pollen_avg_price: number;
+    /** @deprecated Renamed to pollen_avg_price. Removed after the rename window closes. */
+    avg_cost_usd: number;
+    request_count?: number;
+    priced_success_count?: number;
 };
+
+export type TinybirdModelStats = {
+    data: ModelStatsRow[];
+};
+
+function normalizeModelStatsRow(row: ModelStatsRow): ModelStatsRow {
+    const value = row.pollen_avg_price ?? row.avg_cost_usd ?? 0;
+    return { ...row, pollen_avg_price: value, avg_cost_usd: value };
+}
 
 export async function getModelStats(
     kv: KVNamespace,
@@ -46,7 +53,8 @@ async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {
         if (!response.ok) {
             throw new Error(`Tinybird API error: ${response.status}`);
         }
-        return (await response.json()) as TinybirdModelStats;
+        const raw = (await response.json()) as TinybirdModelStats;
+        return { data: (raw.data ?? []).map(normalizeModelStatsRow) };
     } catch (error) {
         log.error("Failed to fetch model stats from Tinybird: {error}", {
             error,

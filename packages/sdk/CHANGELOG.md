@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
+## [4.4.0] - 2026-05-27
+
+### Added
+- `UsageRecord.pollen_spent` and `DailyUsageRecord.pollen_spent` — canonical field for pollen the user spent on a request / daily bucket. Mirrors the new server-side schema.
+
+### Deprecated
+- `UsageRecord.cost_usd` and `DailyUsageRecord.cost_usd` — same value as `pollen_spent`, retained for backwards compatibility during the rename window. Will be removed in a future major release.
+
 ## [4.1.0] - 2026-03-05
 
 ### Added

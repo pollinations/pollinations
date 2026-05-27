@@ -1,5 +1,11 @@
-import { fetchMock, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    fetchMock,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import app from "../src/index";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -20,6 +26,84 @@ interface UploadResponse {
 }
 
 const VALID_KEY = "pk_test_key_123";
+
+type StoredObject = {
+    body: Uint8Array;
+    httpMetadata?: R2HTTPMetadata;
+    customMetadata?: Record<string, string>;
+    storageClass?: R2Object["storageClass"];
+    uploaded: Date;
+};
+
+type TestMediaBucket = R2Bucket & {
+    getObject(key: string): StoredObject | undefined;
+    readonly putCount: number;
+};
+
+function createMediaBucket(): TestMediaBucket {
+    const objects = new Map<string, StoredObject>();
+    let putCount = 0;
+    let uploadTime = 0;
+
+    function r2Object(key: string, object: StoredObject): R2Object {
+        return {
+            key,
+            version: "test",
+            size: object.body.byteLength,
+            etag: "test",
+            httpEtag: '"test"',
+            uploaded: object.uploaded,
+            httpMetadata: object.httpMetadata,
+            customMetadata: object.customMetadata,
+            storageClass: object.storageClass,
+            checksums: {},
+        } as unknown as R2Object;
+    }
+
+    return {
+        head: async (key: string) => {
+            const object = objects.get(key);
+            if (!object) return null;
+            return r2Object(key, object);
+        },
+        get: async (key: string) => {
+            const object = objects.get(key);
+            if (!object) return null;
+            return {
+                ...r2Object(key, object),
+                body: new Response(object.body.slice()).body,
+            };
+        },
+        put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
+            putCount += 1;
+            uploadTime += 1;
+            const httpMetadata =
+                options?.httpMetadata instanceof Headers
+                    ? undefined
+                    : options?.httpMetadata;
+
+            objects.set(key, {
+                body: new Uint8Array(await new Response(value).arrayBuffer()),
+                httpMetadata,
+                customMetadata: options?.customMetadata,
+                storageClass: options?.storageClass,
+                uploaded: new Date(uploadTime),
+            });
+            return null;
+        },
+        getObject: (key: string) => objects.get(key),
+        get putCount() {
+            return putCount;
+        },
+    } as unknown as TestMediaBucket;
+}
+
+function createMediaEnv(bucket = createMediaBucket()) {
+    return {
+        MEDIA_BUCKET: bucket,
+        MAX_FILE_SIZE: "52428800",
+    };
+}
 
 function mockAuth() {
     fetchMock.activate();
@@ -124,6 +208,53 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("refreshes uploaded media TTL on GET", async () => {
+        const bucket = createMediaBucket();
+        const env = createMediaEnv(bucket);
+        const uploadCtx = createExecutionContext();
+
+        const uploadRes = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/png",
+                },
+            }),
+            env,
+            uploadCtx,
+        );
+        await waitOnExecutionContext(uploadCtx);
+
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(bucket.putCount).toBe(1);
+
+        const firstObject = bucket.getObject(upload.id);
+        expect(firstObject?.uploaded.getTime()).toBe(1);
+
+        const getCtx = createExecutionContext();
+        const getRes = await app.fetch(
+            new Request(`https://media.pollinations.ai/${upload.id}`),
+            env,
+            getCtx,
+        );
+        const body = new Uint8Array(await getRes.arrayBuffer());
+        await waitOnExecutionContext(getCtx);
+
+        expect(getRes.status).toBe(200);
+        expect(body.length).toBe(TINY_PNG.length);
+        expect(bucket.putCount).toBe(2);
+
+        const refreshedObject = bucket.getObject(upload.id);
+        expect(refreshedObject?.uploaded.getTime()).toBe(2);
+        expect(refreshedObject?.httpMetadata?.contentType).toBe("image/png");
+        expect(refreshedObject?.customMetadata?.uploadedAt).toBe(
+            firstObject?.customMetadata?.uploadedAt,
+        );
     });
 
     it("same content with different filename produces different hash", async () => {

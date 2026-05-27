@@ -260,7 +260,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+            "Get a file by its content hash. No authentication required. Responses are cached immutably. Retrieval refreshes the file retention timer.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
@@ -311,7 +311,18 @@ api.get(
                 );
             }
 
-            return new Response(object.body, { headers });
+            const [responseBody, refreshBody] = object.body.tee();
+            c.executionCtx.waitUntil(
+                c.env.MEDIA_BUCKET.put(hash, refreshBody, {
+                    httpMetadata: object.httpMetadata,
+                    customMetadata: object.customMetadata,
+                    storageClass: object.storageClass,
+                }).catch((error) => {
+                    console.error("TTL refresh error:", error);
+                }),
+            );
+
+            return new Response(responseBody, { headers });
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);

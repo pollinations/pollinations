@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pollicraft — paper alchemy</title>
+<style>
+  :root {
+    --paper: #f6f1e3;
+    --ink: #1d1c18;
+    --ink-soft: #6f6a5a;
+    --accent: #b53a2c;
+    --shadow: 0 1px 0 rgba(29,28,24,.12), 0 8px 18px rgba(29,28,24,.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Iowan Old Style", "Book Antiqua", "Palatino Linotype", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { display: grid; grid-template-columns: 1fr 280px; gap: 18px; height: 100%; padding: 18px; }
+  @media (max-width: 720px) { .app { grid-template-columns: 1fr; padding: 10px; gap: 12px; } }
+
+  header {
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--ink-soft); padding-bottom: 8px;
+  }
+  header h1 {
+    margin: 0; font-family: "Segoe Print", "Bradley Hand ITC", "Comic Sans MS", cursive;
+    font-size: 1.6rem; font-weight: 600;
+  }
+  header .tagline { color: var(--ink-soft); font-style: italic; }
+  header .account { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 14px; }
+
+  .btn {
+    background: transparent; color: var(--ink); border: 1px solid var(--ink-soft);
+    border-radius: 6px; padding: 6px 10px; cursor: pointer; font: inherit;
+  }
+  .btn.accent { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .table {
+    position: relative; min-height: 320px; background: var(--paper);
+    border: 1px dashed var(--ink-soft); border-radius: 14px;
+    overflow: hidden; box-shadow: var(--shadow);
+  }
+  .placed {
+    position: absolute; width: 96px; height: 96px; cursor: grab;
+    border-radius: 10px; background: var(--paper);
+    box-shadow: var(--shadow); display: grid; place-items: center; padding: 6px;
+    text-align: center; font-size: 12px; touch-action: none; user-select: none;
+  }
+  .placed img { max-width: 100%; max-height: 64px; pointer-events: none; }
+  .placed .name { margin-top: 2px; font-weight: 600; }
+  .placed.dragging { cursor: grabbing; z-index: 5; }
+  .placed.crafting { outline: 2px dashed var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+
+  .shelf {
+    background: var(--paper); border: 1px solid var(--ink-soft); border-radius: 14px;
+    padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 0;
+    box-shadow: var(--shadow);
+  }
+  .shelf h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+  .shelf .tabs { display: flex; gap: 6px; font-size: 13px; }
+  .shelf .tabs button { background: transparent; border: 0; cursor: pointer; padding: 4px 6px; border-bottom: 2px solid transparent; }
+  .shelf .tabs button.active { border-color: var(--accent); color: var(--accent); }
+  .inventory {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+    gap: 8px; overflow-y: auto; padding-right: 4px;
+  }
+  .inv-item {
+    border: 1px solid var(--ink-soft); border-radius: 8px; padding: 6px; text-align: center;
+    cursor: grab; background: var(--paper); touch-action: none; user-select: none;
+  }
+  .inv-item img { width: 56px; height: 56px; object-fit: contain; pointer-events: none; }
+  .inv-item .name { font-size: 11px; margin-top: 2px; font-weight: 600; }
+  .inv-item .meta { font-size: 10px; color: var(--ink-soft); }
+
+  .status { color: var(--ink-soft); font-size: 13px; padding: 4px 0; min-height: 18px; }
+  .error { color: var(--accent); font-weight: 600; }
+</style>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>Pollicraft</h1>
+      <span class="tagline">paper alchemy · drag two to craft</span>
+      <div class="account">
+        <span id="status" class="status">ready</span>
+        <button id="connectBtn" class="btn accent">connect</button>
+      </div>
+    </header>
+
+    <section class="table" id="table"></section>
+
+    <aside class="shelf">
+      <h2>Inventory</h2>
+      <div class="tabs">
+        <button class="active" data-tab="mine">mine</button>
+        <button data-tab="community">community</button>
+      </div>
+      <div id="inventory" class="inventory"></div>
+    </aside>
+  </main>
+
+<script type="module">
+const GEN_BASE = "https://gen.pollinations.ai";
+const MEDIA_BASE = "https://media.pollinations.ai";
+const ENTER_BASE = "https://enter.pollinations.ai";
+const APP_KEY = "pk_pollicraft";  // replace with a real publishable key once minted
+const KEY_STORAGE = "pollicraft:apiKey";
+
+const SEEDS = [
+  { slug: "water", name: "Water" },
+  { slug: "fire", name: "Fire" },
+  { slug: "wind", name: "Wind" },
+  { slug: "earth", name: "Earth" },
+];
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  table: $("table"),
+  inventory: $("inventory"),
+  status: $("status"),
+  connect: $("connectBtn"),
+};
+
+const state = {
+  // Inventory keyed by slug -> { slug, name, url, hash, parent }
+  // `mine` = personal discoveries; `community` = catalog reads
+  inventoryByTab: { mine: new Map(), community: new Map() },
+  activeTab: "mine",
+  placed: [],  // { uid, slug, x, y, el }
+  apiKey: localStorage.getItem(KEY_STORAGE) || null,
+};
+
+function setStatus(msg, isError = false) {
+  els.status.textContent = msg;
+  els.status.classList.toggle("error", isError);
+}
+
+function authHeaders(extra = {}) {
+  return state.apiKey
+    ? { Authorization: `Bearer ${state.apiKey}`, ...extra }
+    : { ...extra };
+}
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+function extractKeyFromFragment() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  const k = new URLSearchParams(hash).get("api_key");
+  return k && /^(sk_|pk_|plln_)/.test(k) ? k : null;
+}
+
+function refreshConnectionUI() {
+  els.connect.textContent = state.apiKey ? "connected" : "connect";
+  els.connect.disabled = !!state.apiKey;
+}
+
+els.connect.addEventListener("click", () => {
+  const redirect = window.location.href.split("#")[0];
+  const url = `${ENTER_BASE}/authorize?${new URLSearchParams({
+    redirect_url: redirect,
+    app_key: APP_KEY,
+    budget: "5",
+    models: "flux,nanobanana",
+    permissions: "profile,usage",
+  })}`;
+  window.location.href = url;
+});
+
+(function captureKeyFromFragment() {
+  const k = extractKeyFromFragment();
+  if (k) {
+    state.apiKey = k;
+    localStorage.setItem(KEY_STORAGE, k);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  refreshConnectionUI();
+})();
+
+// ── Element creation ────────────────────────────────────────────────────────
+
+function buildPrompt(name, leftName, rightName) {
+  return `small hand-painted ${name}, paper texture, indie game icon, made from ${leftName} and ${rightName}, white background`;
+}
+
+async function generateElementImage(name, leftName, rightName) {
+  const prompt = buildPrompt(name, leftName, rightName);
+  const url = `${GEN_BASE}/image/${encodeURIComponent(prompt)}?model=flux&width=512&height=512&nologo=true`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`image gen failed: ${res.status}`);
+  return res.blob();
+}
+
+// Ask a tiny LLM to name the combination.
+async function pickElementName(leftName, rightName) {
+  const res = await fetch(`${GEN_BASE}/v1/chat/completions`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({
+      model: "openai-fast",
+      messages: [
+        {
+          role: "system",
+          content: "You play a craft naming game. Given two ingredients, reply with the most evocative one-word (or short two-word) name for what they make together. Lowercase. No punctuation, no quotes, no explanation. Just the name.",
+        },
+        { role: "user", content: `${leftName} + ${rightName} =` },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`naming failed: ${res.status}`);
+  const data = await res.json();
+  const raw = (data.choices?.[0]?.message?.content || "").trim().toLowerCase();
+  return raw.replace(/[^a-z0-9 ]/g, "").slice(0, 40) || `${leftName}-${rightName}`;
+}
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32);
+}
+
+// ── Media catalog integration ───────────────────────────────────────────────
+
+async function uploadElement(blob, slug, name, leftHash, rightHash, recipeTagStr) {
+  const form = new FormData();
+  form.append("file", new File([blob], `${slug}.png`, { type: blob.type || "image/png" }));
+  // Lineage-as-tag convention. Catalog has no first-class parent — apps that
+  // want a parent/child link emit `tag=parent:<hash>`. Pollicraft items have
+  // two ingredients; we record both as separate parent tags, and the recipe
+  // tag below is the deterministic lookup key.
+  if (leftHash) form.append("tag", `parent:${leftHash}`);
+  if (rightHash && rightHash !== leftHash) form.append("tag", `parent:${rightHash}`);
+  // Generic opt-in tag so `/tags/pollicraft` lists every discovery.
+  form.append("tag", "pollicraft");
+  form.append("tag", `element:${slug}`);
+  form.append("tag", recipeTagStr);
+  form.append("tag", `name:${slugify(name)}`);
+  const res = await fetch(`${MEDIA_BASE}/upload`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(`upload failed: ${res.status}`);
+  return res.json();
+}
+
+// Build the deterministic recipe tag from two slugs.
+function recipeTag(a, b) {
+  return `recipe:${[a, b].sort().join("+")}`;
+}
+
+// Look up an existing community discovery for a given recipe — direct tag
+// query, no client-side filter needed. `recipe:<a+b>` is unique per app
+// (per-app tag namespace), so this returns the canonical discovery if any.
+async function lookupRecipe(a, b) {
+  const tag = recipeTag(a, b);
+  const res = await fetch(`${MEDIA_BASE}/tags/${encodeURIComponent(tag)}?limit=1`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return (data.items && data.items[0]) || null;
+}
+
+async function fetchMyInventory() {
+  if (!state.apiKey) return [];
+  const res = await fetch(`${MEDIA_BASE}/me/media?limit=100`, { headers: authHeaders() });
+  if (!res.ok) return [];
+  const data = await res.json();
+  // /me/media returns everything the user uploaded across apps — narrow to
+  // pollicraft discoveries via the opt-in tag.
+  return (data.items || []).filter((it) => (it.tags || []).includes("pollicraft"));
+}
+
+async function fetchCommunityInventory() {
+  const res = await fetch(`${MEDIA_BASE}/tags/pollicraft?limit=100`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+function itemToElement(item) {
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const elementTag = tags.find((t) => t.startsWith("element:"));
+  const nameTag = tags.find((t) => t.startsWith("name:"));
+  const parentTag = tags.find((t) => t.startsWith("parent:"));
+  const slug = elementTag ? elementTag.slice("element:".length) : item.hash;
+  const name = nameTag ? nameTag.slice("name:".length).replace(/-/g, " ") : slug;
+  const parent = parentTag ? parentTag.slice("parent:".length) : null;
+  return { slug, name, url: item.url, hash: item.hash, parent };
+}
+
+// ── Inventory rendering ─────────────────────────────────────────────────────
+
+function ensureSeeds(tab) {
+  const map = state.inventoryByTab[tab];
+  for (const seed of SEEDS) {
+    if (!map.has(seed.slug)) {
+      // Seeds use placeholder icons (CSS-only) — no media hash yet, so they
+      // never produce a `parent` edge when used in a first-time combination.
+      map.set(seed.slug, { slug: seed.slug, name: seed.name, url: "", hash: null });
+    }
+  }
+}
+
+function renderInventory() {
+  const map = state.inventoryByTab[state.activeTab];
+  els.inventory.innerHTML = "";
+  const items = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  for (const item of items) {
+    const card = document.createElement("div");
+    card.className = "inv-item";
+    card.draggable = false;
+    card.dataset.slug = item.slug;
+    if (item.url) {
+      const img = document.createElement("img");
+      img.src = item.url;
+      img.alt = item.name;
+      img.loading = "lazy";
+      card.appendChild(img);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.style.cssText = "width:56px;height:56px;display:grid;place-items:center;font-size:32px;";
+      placeholder.textContent = { water: "💧", fire: "🔥", wind: "🌬️", earth: "🪨" }[item.slug] || "🜍";
+      card.appendChild(placeholder);
+    }
+    const n = document.createElement("div");
+    n.className = "name";
+    n.textContent = item.name;
+    card.appendChild(n);
+    card.addEventListener("pointerdown", (e) => beginDragFromInventory(e, item));
+    els.inventory.appendChild(card);
+  }
+}
+
+for (const tabBtn of document.querySelectorAll(".tabs button")) {
+  tabBtn.addEventListener("click", async () => {
+    for (const b of document.querySelectorAll(".tabs button")) {
+      b.classList.toggle("active", b === tabBtn);
+    }
+    state.activeTab = tabBtn.dataset.tab;
+    if (state.activeTab === "community" && state.inventoryByTab.community.size === 0) {
+      setStatus("loading community discoveries...");
+      const items = await fetchCommunityInventory();
+      for (const it of items) {
+        const el = itemToElement(it);
+        state.inventoryByTab.community.set(el.slug, el);
+      }
+      setStatus(`${items.length} community discoveries`);
+    }
+    ensureSeeds(state.activeTab);
+    renderInventory();
+  });
+}
+
+// ── Table drag + craft ──────────────────────────────────────────────────────
+
+let dragState = null;
+
+function placeOnTable(item, x, y) {
+  const uid = Math.random().toString(36).slice(2, 9);
+  const el = document.createElement("div");
+  el.className = "placed";
+  el.style.left = `${x - 48}px`;
+  el.style.top = `${y - 48}px`;
+  if (item.url) {
+    const img = document.createElement("img");
+    img.src = item.url; img.alt = item.name; el.appendChild(img);
+  } else {
+    const ph = document.createElement("div");
+    ph.style.fontSize = "40px";
+    ph.textContent = { water: "💧", fire: "🔥", wind: "🌬️", earth: "🪨" }[item.slug] || "🜍";
+    el.appendChild(ph);
+  }
+  const n = document.createElement("div");
+  n.className = "name"; n.textContent = item.name; el.appendChild(n);
+  els.table.appendChild(el);
+  const placed = { uid, slug: item.slug, name: item.name, hash: item.hash, x, y, el };
+  el.addEventListener("pointerdown", (e) => beginDragPlaced(e, placed));
+  el.addEventListener("dblclick", () => removePlaced(placed));
+  state.placed.push(placed);
+  return placed;
+}
+
+function removePlaced(p) {
+  p.el.remove();
+  state.placed = state.placed.filter((q) => q !== p);
+}
+
+function beginDragFromInventory(e, item) {
+  e.preventDefault();
+  const tableRect = els.table.getBoundingClientRect();
+  const insideTable = e.clientX >= tableRect.left && e.clientX <= tableRect.right
+    && e.clientY >= tableRect.top && e.clientY <= tableRect.bottom;
+  let placed;
+  if (insideTable) {
+    placed = placeOnTable(item, e.clientX - tableRect.left, e.clientY - tableRect.top);
+  } else {
+    placed = placeOnTable(item, tableRect.width / 2, tableRect.height / 2);
+  }
+  beginDragPlaced(e, placed);
+}
+
+function beginDragPlaced(e, p) {
+  e.preventDefault();
+  const rect = p.el.getBoundingClientRect();
+  dragState = {
+    placed: p,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+  };
+  p.el.classList.add("dragging");
+  p.el.setPointerCapture(e.pointerId);
+  p.el.addEventListener("pointermove", onDragMove);
+  p.el.addEventListener("pointerup", onDragEnd, { once: true });
+  p.el.addEventListener("pointercancel", onDragEnd, { once: true });
+}
+
+function onDragMove(e) {
+  if (!dragState) return;
+  const tableRect = els.table.getBoundingClientRect();
+  const x = e.clientX - tableRect.left - dragState.offsetX + 48;
+  const y = e.clientY - tableRect.top - dragState.offsetY + 48;
+  dragState.placed.x = x;
+  dragState.placed.y = y;
+  dragState.placed.el.style.left = `${x - 48}px`;
+  dragState.placed.el.style.top = `${y - 48}px`;
+  highlightCollision(dragState.placed);
+}
+
+function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function highlightCollision(active) {
+  for (const p of state.placed) p.el.classList.remove("crafting");
+  const partner = findCollision(active);
+  if (partner) {
+    active.el.classList.add("crafting");
+    partner.el.classList.add("crafting");
+  }
+}
+
+function findCollision(active) {
+  return state.placed.find((p) => p !== active && distance(p, active) < 80) || null;
+}
+
+async function onDragEnd() {
+  if (!dragState) return;
+  const active = dragState.placed;
+  active.el.classList.remove("dragging");
+  active.el.removeEventListener("pointermove", onDragMove);
+  const partner = findCollision(active);
+  dragState = null;
+  for (const p of state.placed) p.el.classList.remove("crafting");
+  if (!partner) return;
+  if (active.slug === partner.slug) return;
+  await craftFromPlaced(active, partner);
+}
+
+async function craftFromPlaced(a, b) {
+  if (!state.apiKey) {
+    setStatus("connect first to craft new elements", true);
+    return;
+  }
+  setStatus(`crafting ${a.name} + ${b.name}...`);
+  try {
+    // First, check community catalog for a pre-existing recipe.
+    const existing = await lookupRecipe(a.slug, b.slug);
+    if (existing) {
+      const el = itemToElement(existing);
+      addToInventory("mine", el);
+      placeOnTable(el, (a.x + b.x) / 2, (a.y + b.y) / 2);
+      removePlaced(a); removePlaced(b);
+      setStatus(`discovered ${el.name} (from community)`);
+      renderInventory();
+      return;
+    }
+    const name = await pickElementName(a.name, b.name);
+    const slug = slugify(name) || `${a.slug}-${b.slug}`;
+    const blob = await generateElementImage(name, a.name, b.name);
+    const uploaded = await uploadElement(blob, slug, name, a.hash, b.hash, recipeTag(a.slug, b.slug));
+    const el = { slug, name, url: uploaded.url, hash: uploaded.id, parent: uploaded.parent };
+    addToInventory("mine", el);
+    placeOnTable(el, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    removePlaced(a); removePlaced(b);
+    setStatus(`✨ discovered ${name}`);
+    renderInventory();
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "craft failed", true);
+  }
+}
+
+function addToInventory(tab, el) {
+  state.inventoryByTab[tab].set(el.slug, el);
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+
+(async function init() {
+  ensureSeeds("mine");
+  ensureSeeds("community");
+  renderInventory();
+  if (state.apiKey) {
+    setStatus("loading your inventory...");
+    const items = await fetchMyInventory();
+    for (const it of items) {
+      const el = itemToElement(it);
+      state.inventoryByTab.mine.set(el.slug, el);
+    }
+    setStatus(`${items.length} of your discoveries loaded`);
+    renderInventory();
+  }
+})();
+</script>
+</body>
+</html>

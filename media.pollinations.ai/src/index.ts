@@ -7,20 +7,25 @@ import { z } from "zod";
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+const KEY_VERIFY_PATH = "/account/key";
+const STORAGE_CHARGE_PATH = "/account/storage-charge";
 // Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
 // Content-addressed storage means the URL → bytes mapping is fixed forever:
-// re-uploading the
-// same content reproduces the same URL, and there is no other content the URL
-// could ever point to. R2's 30-day lifecycle can delete the underlying object,
-// but a fresh upload restores byte-identical content, so `immutable` is safe.
+// re-uploading the same content reproduces the same URL, and there is no
+// other content the URL could ever point to. R2's lifecycle can delete the
+// underlying object, but a fresh upload restores byte-identical content, so
+// `immutable` is safe.
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+const DEFAULT_RETENTION_DAYS = 30;
+const MIN_RETENTION_DAYS = 0.01; // ~14 minutes; supports 0.04 ≈ 1h short-lived uploads
+const MAX_RETENTION_DAYS = 730; // ~2 years
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    BILLING_URL: string;
 }
 
 interface AuthResult {
@@ -29,9 +34,12 @@ interface AuthResult {
     name: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
+async function verifyApiKey(
+    billingUrl: string,
+    apiKey: string,
+): Promise<AuthResult | null> {
     try {
-        const res = await fetch(KEY_VERIFY_URL, {
+        const res = await fetch(`${billingUrl}${KEY_VERIFY_PATH}`, {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
@@ -39,6 +47,41 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
         return data.valid ? data : null;
     } catch {
         return null;
+    }
+}
+
+async function chargeStorage(
+    billingUrl: string,
+    apiKey: string,
+    sizeBytes: number,
+    days: number,
+    hash: string,
+): Promise<{ ok: boolean; costPollen: number; error?: string }> {
+    try {
+        const res = await fetch(`${billingUrl}${STORAGE_CHARGE_PATH}`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ sizeBytes, days, hash }),
+        });
+        const data = await res.json<{
+            ok: boolean;
+            costPollen: number;
+            error?: string;
+        }>();
+        return {
+            ok: res.ok && data.ok,
+            costPollen: data.costPollen ?? 0,
+            error: data.error,
+        };
+    } catch {
+        return {
+            ok: false,
+            costPollen: 0,
+            error: "Billing service unavailable",
+        };
     }
 }
 
@@ -64,6 +107,9 @@ const UploadResponseSchema = z.object({
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    expiresAt: z.string().describe("ISO-8601 expiry timestamp"),
+    retentionDays: z.number().describe("Retention period in days"),
+    costPollen: z.number().describe("Pollen charged for storage"),
 });
 
 const ErrorSchema = z.object({
@@ -78,6 +124,8 @@ const MetadataResponseSchema = z.object({
         .string()
         .optional()
         .describe("ISO-8601 upload timestamp, when recorded"),
+    expiresAt: z.string().optional().describe("ISO-8601 expiry timestamp"),
+    retentionDays: z.number().optional().describe("Retention period in days"),
 });
 
 const api = new Hono<{ Bindings: Env }>();
@@ -88,7 +136,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Use `?expires` (float days, default 30, range 0.01–730) to set the retention period. Storage is billed upfront: `cost_pollen = size_GB × days × 0.000767`.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -98,8 +146,20 @@ api.post(
                     },
                 },
             },
+            400: {
+                description: "Invalid request or days parameter out of range",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             401: {
                 description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            402: {
+                description: "Insufficient Pollen balance",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -122,9 +182,31 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+
+        const billingUrl = c.env.BILLING_URL;
+        const authResult = await verifyApiKey(billingUrl, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        // Parse and validate retention period
+        const expiresParam = new URL(c.req.url).searchParams.get("expires");
+        let retentionDays = DEFAULT_RETENTION_DAYS;
+        if (expiresParam !== null) {
+            const parsed = Number(expiresParam);
+            if (
+                !Number.isFinite(parsed) ||
+                parsed < MIN_RETENTION_DAYS ||
+                parsed > MAX_RETENTION_DAYS
+            ) {
+                return c.json(
+                    {
+                        error: `Invalid 'expires' parameter. Must be a number between ${MIN_RETENTION_DAYS} and ${MAX_RETENTION_DAYS} days.`,
+                    },
+                    400,
+                );
+            }
+            retentionDays = parsed;
         }
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -212,8 +294,29 @@ api.post(
             }
 
             const hash = await generateHash(fileBuffer, fileName);
-
             const existing = await c.env.MEDIA_BUCKET.head(hash);
+
+            // Debit pollen before writing to R2 — on failure nothing was stored.
+            const charge = await chargeStorage(
+                billingUrl,
+                apiKey,
+                fileBuffer.byteLength,
+                retentionDays,
+                hash,
+            );
+            if (!charge.ok) {
+                return c.json(
+                    {
+                        error: charge.error ?? "Insufficient Pollen balance",
+                        costPollen: charge.costPollen,
+                    },
+                    402,
+                );
+            }
+
+            const expiresAt = new Date(
+                Date.now() + retentionDays * 24 * 60 * 60 * 1000,
+            ).toISOString();
 
             // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
@@ -226,6 +329,8 @@ api.post(
                     originalName: fileName || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
+                    expiresAt,
+                    retentionDays: String(retentionDays),
                 },
             });
 
@@ -238,6 +343,9 @@ api.post(
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
                     duplicate: !!existing,
+                    retentionDays,
+                    expiresAt,
+                    costPollen: charge.costPollen,
                 }),
             );
 
@@ -247,6 +355,9 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                expiresAt,
+                retentionDays,
+                costPollen: charge.costPollen,
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -261,7 +372,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. Access keeps files from expiring.",
+            "Get a file by its content hash. No authentication required. Responses are cached immutably. Returns 410 if the file has expired. Access resets the TTL for recently-uploaded files.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
@@ -273,6 +384,12 @@ api.get(
             },
             404: {
                 description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            410: {
+                description: "File has expired",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -293,6 +410,11 @@ api.get(
                 return c.json({ error: "Not found" }, 404);
             }
 
+            const expiresAtStr = object.customMetadata?.expiresAt;
+            if (expiresAtStr && new Date(expiresAtStr) < new Date()) {
+                return c.json({ error: "Content has expired" }, 410);
+            }
+
             const headers = new Headers();
             headers.set(
                 "Content-Type",
@@ -301,6 +423,10 @@ api.get(
             headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
             headers.set("X-Content-Size", object.size.toString());
+
+            if (expiresAtStr) {
+                headers.set("X-Expires-At", expiresAtStr);
+            }
 
             const originalName = object.customMetadata?.originalName;
             if (originalName) {
@@ -336,7 +462,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Get file metadata",
         description:
-            "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+            "Return file metadata (hash, content type, size, upload timestamp, expiry) as JSON without downloading the file body.",
         security: [],
         responses: {
             200: {
@@ -376,6 +502,7 @@ api.get(
             }
 
             c.header("Cache-Control", CACHE_CONTROL);
+            const retentionDaysStr = object.customMetadata?.retentionDays;
             return c.json({
                 hash,
                 contentType:
@@ -384,6 +511,12 @@ api.get(
                 size: object.size,
                 ...(object.customMetadata?.uploadedAt && {
                     uploadedAt: object.customMetadata.uploadedAt,
+                }),
+                ...(object.customMetadata?.expiresAt && {
+                    expiresAt: object.customMetadata.expiresAt,
+                }),
+                ...(retentionDaysStr && {
+                    retentionDays: Number(retentionDaysStr),
                 }),
             });
         } catch (error) {
@@ -400,7 +533,7 @@ api.on(
         tags: ["media.pollinations.ai"],
         summary: "Check if media exists",
         description:
-            "Check existence and metadata without downloading the file.",
+            "Check existence and metadata without downloading the file. Returns 410 if the file has expired.",
         security: [],
         responses: {
             200: {
@@ -409,6 +542,7 @@ api.on(
             },
             400: { description: "Invalid hash format" },
             404: { description: "File not found" },
+            410: { description: "File has expired" },
         },
     }),
     async (c) => {
@@ -425,6 +559,11 @@ api.on(
                 return new Response(null, { status: 404 });
             }
 
+            const expiresAtStr = object.customMetadata?.expiresAt;
+            if (expiresAtStr && new Date(expiresAtStr) < new Date()) {
+                return new Response(null, { status: 410 });
+            }
+
             const headers = new Headers();
             headers.set(
                 "Content-Type",
@@ -436,6 +575,9 @@ api.on(
 
             if (object.customMetadata?.uploadedAt) {
                 headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
+            }
+            if (expiresAtStr) {
+                headers.set("X-Expires-At", expiresAtStr);
             }
 
             return new Response(null, { status: 200, headers });
@@ -453,7 +595,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Hash", "X-Content-Size", "X-Expires-At"],
     }),
 );
 
@@ -468,6 +610,16 @@ app.get("/", (c) => {
         },
         limits: {
             maxFileSize: "50MB",
+            expires: {
+                default: DEFAULT_RETENTION_DAYS,
+                min: MIN_RETENTION_DAYS,
+                max: MAX_RETENTION_DAYS,
+                unit: "days",
+            },
+        },
+        pricing: {
+            formula: "cost_pollen = size_GB × days × 0.000767",
+            ratePerGBDay: 0.023 / 30,
         },
     });
 });
@@ -479,7 +631,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Storage is billed upfront in Pollen: `cost = size_GB × days × 0.000767`.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -558,4 +710,48 @@ function detectContentType(filename: string): string {
     return MIME_TYPES[ext] || "application/octet-stream";
 }
 
-export default app;
+// Cron trigger: daily at 04:00 UTC. Scans all R2 objects and deletes any that
+// have an expiresAt metadata field in the past.
+async function deleteExpiredObjects(env: Env): Promise<void> {
+    const bucket = env.MEDIA_BUCKET;
+    const now = Date.now();
+    let deleted = 0;
+    let cursor: string | undefined;
+
+    do {
+        const listed = await bucket.list({
+            limit: 1000,
+            cursor,
+            include: ["customMetadata"],
+        });
+
+        for (const obj of listed.objects) {
+            const expiresAtStr = obj.customMetadata?.expiresAt;
+            if (expiresAtStr && new Date(expiresAtStr).getTime() < now) {
+                await bucket.delete(obj.key);
+                deleted++;
+            }
+        }
+
+        cursor = listed.truncated ? listed.cursor : undefined;
+    } while (cursor);
+
+    console.log(
+        JSON.stringify({
+            event: "cleanup",
+            deleted,
+            timestamp: new Date().toISOString(),
+        }),
+    );
+}
+
+export default {
+    fetch: app.fetch,
+    async scheduled(
+        _event: ScheduledEvent,
+        env: Env,
+        ctx: ExecutionContext,
+    ): Promise<void> {
+        ctx.waitUntil(deleteExpiredObjects(env));
+    },
+};

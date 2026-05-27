@@ -819,24 +819,48 @@ curl "https://gen.pollinations.ai/audio/models" \
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.
+Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs.
+
+Storage is billed upfront in Pollen: `cost_pollen = size_GB × days × 0.000767` (anchored to S3 Standard ~$0.023/GB-month).
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `expires` | `query` | `float` | Retention in days. Default `30`, range `0.01`–`730`. Fractional values work (e.g. `0.04` ≈ 1 h). Re-uploading resets the expiry to the new value. |
 
 📤 **Response** · `200` · `application/json` — Upload successful
 
 | Field | Type | Description |
 |---|---|---|
-| `id` * | `string` | — |
-| `url` * | `string` | — |
-| `contentType` * | `string` | — |
-| `size` * | `integer` | — |
-| `duplicate` * | `boolean` | — |
+| `id` * | `string` | 16-char hex content hash |
+| `url` * | `string` | Public retrieval URL |
+| `contentType` * | `string` | MIME type |
+| `size` * | `integer` | File size in bytes |
+| `duplicate` * | `boolean` | `true` if file already existed |
+| `expiresAt` * | `string` | ISO-8601 expiry timestamp |
+| `retentionDays` * | `number` | Retention period in days |
+| `costPollen` * | `number` | Pollen charged for storage |
 
 <sub>`*` = required field</sub>
+
+📤 **Response** · `402` — Insufficient Pollen balance
 
 💻 **Example**
 
 ```bash
+# Default retention (30 days)
 curl -X POST "https://gen.pollinations.ai/upload" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "file=@./image.png"
+
+# Short-lived (1 hour ≈ 0.04 days)
+curl -X POST "https://gen.pollinations.ai/upload?expires=0.04" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "file=@./image.png"
+
+# 90-day retention
+curl -X POST "https://gen.pollinations.ai/upload?expires=90" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./image.png"
 ```
@@ -845,7 +869,7 @@ curl -X POST "https://gen.pollinations.ai/upload" \
 
 #### `GET` `/{hash}` — Retrieve media
 
-Get a file by its content hash. No authentication required. Responses are cached immutably.
+Get a file by its content hash. No authentication required. Responses are cached immutably. Returns `410 Gone` if the file has expired.
 
 ⚙️ **Parameters**
 

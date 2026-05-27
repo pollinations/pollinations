@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-26",
+  "period_start": "2026-05-26",
+  "period_end": "2026-05-26",
+  "generated_at": "2026-05-27T07:22:00.853658+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-26/images/reddit.jpg"
+    }
+  ],
+  "title": "We updated our docs to be readable by LLMs using scalar markdown",
+  "text": "Small infrastructure update today. We just merged PR #10960 which focuses on making our documentation more accessible, specifically for LLMs.\n\nIf you've tried feeding standard documentation sites into Claude or GPT lately, you know it can be a mess of nested HTML tags and broken formatting that wastes tokens. We updated our setup to expose scalar markdown sources directly. This means if you are building an agent or just using an LLM to help write your integration with pollinations.ai, the context ingestion is clean. The models can read the raw markdown without choking on UI elements.\n\nWe also made a couple of human-focused changes. We surfaced the /docs/guides section to make the tutorials less buried in the navigation tree. Finally, we added copy buttons to the dashboard rail. It is a minor quality-of-life fix, but manually highlighting API keys or endpoint URLs gets tedious.\n\nThe updates are live. You can pull the raw markdown sources directly from our docs now. Let us know if your LLMs are still hallucinating any endpoints based on the new markdown structure, we are trying to optimize the context ingestion as much as possible."
+}

@@ -1,3 +1,4 @@
+- **2026-05-26** – **🤖 LLM-Ready Docs** We added "Copy for LLMs" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.
 - **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
 - **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
 - **2026-05-21** – **🔌 MCP Server** The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.

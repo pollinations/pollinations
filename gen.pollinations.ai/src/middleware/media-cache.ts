@@ -16,6 +16,7 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheMediaResponse,
     generateCacheKey,
+    refreshMediaCacheTtl,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
 
@@ -62,7 +63,14 @@ export function createMediaCache(config: MediaCacheConfig) {
                 c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Type", "EXACT");
-                return c.body(cached.body);
+                return c.body(
+                    refreshMediaCacheTtl(
+                        c.env.IMAGE_BUCKET,
+                        cacheKey,
+                        c,
+                        cached,
+                    ),
+                );
             }
 
             log.debug("Cache MISS");

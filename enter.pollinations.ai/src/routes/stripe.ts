@@ -1,8 +1,8 @@
 import {
     describePollenPack,
     getPackForeignCents,
+    getPollenPackByKey,
     POLLEN_PACKS,
-    resolvePollenPack,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -10,10 +10,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import {
-    type CheckoutCohort,
-    getCohortFromCountry,
-} from "../utils/currency-router.ts";
+import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { getUsdToRate } from "../utils/fx-cache.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
@@ -48,7 +45,7 @@ export const stripeRoutes = new Hono<Env>()
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
-        const pack = resolvePollenPack(packKeyParam);
+        const pack = getPollenPackByKey(packKeyParam);
 
         if (!pack) {
             return c.json({ error: "Invalid pack" }, 400);
@@ -86,14 +83,14 @@ export const stripeRoutes = new Hono<Env>()
                       pack,
                       await getUsdToRate(c.env, cohort.checkoutCurrency),
                   );
-        // Fail closed if the cohort's PMC env var is missing. The alternative
+        // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
-        // default PMC) would silently bypass cohort-specific method sets and
-        // hide a misconfigured deploy.
-        const pmcId = resolveCohortPmcId(c.env, cohort);
+        // default PMC) would hide a misconfigured deploy. One PMC for all
+        // cohorts — Stripe filters methods per buyer by (currency, location).
+        const pmcId = c.env.STRIPE_PMC;
         if (!pmcId) {
             console.error(
-                `Missing required env var ${cohort.pmcEnvVar} for cohort ${cohort.id} on ${c.env.ENVIRONMENT}`,
+                `Missing required env var STRIPE_PMC on ${c.env.ENVIRONMENT}`,
             );
             return c.json({ error: "Checkout configuration error" }, 500);
         }
@@ -110,7 +107,6 @@ export const stripeRoutes = new Hono<Env>()
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
-                packAmount: String(pack.amountUsd),
                 packAmountUsd: String(pack.amountUsd),
                 packCurrency: cohort.checkoutCurrency,
                 packAmountCents: String(unitAmount),
@@ -360,24 +356,4 @@ function normalizeStripePortalError(error: unknown): string {
     }
 
     return message || "Failed to create billing portal session";
-}
-
-function resolveCohortPmcId(
-    env: CloudflareBindings,
-    cohort: CheckoutCohort,
-): string | undefined {
-    switch (cohort.pmcEnvVar) {
-        case "STRIPE_PMC_USD":
-            return env.STRIPE_PMC_USD;
-        case "STRIPE_PMC_BR":
-            return env.STRIPE_PMC_BR;
-        case "STRIPE_PMC_APAC_ALIPAY":
-            return env.STRIPE_PMC_APAC_ALIPAY;
-        case "STRIPE_PMC_EU_CORE":
-            return env.STRIPE_PMC_EU_CORE;
-        case "STRIPE_PMC_INDIA":
-            return env.STRIPE_PMC_INDIA;
-        case "STRIPE_PMC_UK":
-            return env.STRIPE_PMC_UK;
-    }
 }

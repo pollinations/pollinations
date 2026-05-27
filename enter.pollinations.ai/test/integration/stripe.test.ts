@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPack } from "@shared/pollen-packs.ts";
+import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -11,12 +11,12 @@ import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const checkoutAmounts = [
-    "/checkout/2",
-    "/checkout/5",
-    "/checkout/10",
-    "/checkout/20",
-    "/checkout/50",
-    "/checkout/100",
+    "/checkout/p2",
+    "/checkout/p5",
+    "/checkout/p10",
+    "/checkout/p20",
+    "/checkout/p50",
+    "/checkout/p100",
 ];
 
 function signStripeWebhookPayload(payload: string): string {
@@ -201,7 +201,7 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -227,18 +227,18 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     );
     expect(checkoutRequest?.body.customer).toBe("cus_mock_1");
     expect(checkoutRequest?.body.payment_method_configuration).toBe(
-        "pmc_1TYjwI6O03AauPe8spSyH3ph",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
-test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", async ({
+test("GET /api/stripe/checkout/p10 snapshots pack grant into session metadata", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -263,7 +263,7 @@ test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", a
     // packAmountCents reflect the integration currency actually sent to
     // Stripe; cohort identifies which routing branch was taken.
     expect(body?.["metadata[packKey]"]).toBe("p10");
-    expect(body?.["metadata[packAmount]"]).toBe("10");
+    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
     expect(body?.["metadata[packAmountUsd]"]).toBe("10");
     expect(body?.["metadata[packCurrency]"]).toBe("usd");
     expect(body?.["metadata[packAmountCents]"]).toBe("1000");
@@ -274,18 +274,18 @@ test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", a
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p10");
-    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("10");
+    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("10");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("13");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("3");
 });
 
-test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
+test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/2`, {
+    const response = await SELF.fetch(`${base}/checkout/p2`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -306,12 +306,12 @@ test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
     );
 
     expect(body?.["metadata[packKey]"]).toBe("p2");
-    expect(body?.["metadata[packAmount]"]).toBe("2");
+    expect(body?.["metadata[packAmountUsd]"]).toBe("2");
     expect(body?.["metadata[packPollenGrant]"]).toBe("2");
     expect(body?.["metadata[packBonusPollen]"]).toBe("0");
     expect(body?.["metadata[cohort]"]).toBe("USD");
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
-    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("2");
+    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
 });
@@ -325,7 +325,7 @@ test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + BR PMC", async (
     await env.KV.delete("fx:usd_eur");
     await mocks.enable("stripe", "tinybird", "frankfurter");
 
-    const response = await SELF.fetch(`${base}/checkout/5`, {
+    const response = await SELF.fetch(`${base}/checkout/p5`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -346,7 +346,7 @@ test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + BR PMC", async (
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TYjxa6O03AauPe8w1niCN1s",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("BR");
     expect(body?.["metadata[packCurrency]"]).toBe("eur");
@@ -356,14 +356,14 @@ test("cohort BR: cf-ipcountry=BR → EUR (FX-derived) + AP on + BR PMC", async (
     expect(body?.["metadata[packPollenGrant]"]).toBe("6");
 });
 
-test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP off + EU_CORE PMC", async ({
+test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP on + EU_CORE PMC", async ({
     sessionToken,
     mocks,
 }) => {
     await env.KV.delete("fx:usd_eur");
     await mocks.enable("stripe", "tinybird", "frankfurter");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -378,13 +378,14 @@ test("cohort EU_CORE: cf-ipcountry=NL → EUR (FX-derived) + AP off + EU_CORE PM
     )?.body;
     expect(body).toBeTruthy();
 
-    // $10 × 100 × 0.93 = 930 EUR cents (€9.30). EU buyers see EUR natively,
-    // so AP is off — avoids a redundant Stripe FX margin layer.
+    // $10 × 100 × 0.93 = 930 EUR cents (€9.30). EUR-card buyers see EUR natively
+    // (AP no-op); non-EUR-card buyers in EU_CORE countries get localized
+    // presentment via AP — symmetric with BR + APAC_ALIPAY.
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("930");
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TYjy16O03AauPe8QDf9zVag",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
 });
@@ -396,7 +397,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + APAC PM
     await env.KV.delete("fx:usd_eur");
     await mocks.enable("stripe", "tinybird", "frankfurter");
 
-    const response = await SELF.fetch(`${base}/checkout/20`, {
+    const response = await SELF.fetch(`${base}/checkout/p20`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -416,7 +417,7 @@ test("cohort APAC_ALIPAY: cf-ipcountry=CN → EUR (FX-derived) + AP on + APAC PM
     expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TYjxo6O03AauPe8hw5qidqt",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
 });
@@ -431,7 +432,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     // The 5,000-charge live audit showed 99.8% of MO billing-country charges
     // were US-issued cards. Routing MO into APAC_ALIPAY would hand abusers
     // a richer payment-method menu. MO must drop to USD default.
-    const response = await SELF.fetch(`${base}/checkout/5`, {
+    const response = await SELF.fetch(`${base}/checkout/p5`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -450,7 +451,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1TYjwI6O03AauPe8spSyH3ph",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("USD");
     // USD cohort never calls FX cache (no fetch to frankfurter).
@@ -464,7 +465,7 @@ test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + INDIA PMC", 
     await env.KV.delete("fx:usd_inr");
     await mocks.enable("stripe", "tinybird", "frankfurter");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -485,7 +486,7 @@ test("cohort INDIA: cf-ipcountry=IN → INR (FX-derived) + AP off + INDIA PMC", 
     expect(body?.["line_items[0][price_data][currency]"]).toBe("inr");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1Tbj1m6O03AauPe8YrA3inzu",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("INDIA");
     expect(body?.["metadata[packCurrency]"]).toBe("inr");
@@ -502,7 +503,7 @@ test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + UK PMC", async 
     await env.KV.delete("fx:usd_gbp");
     await mocks.enable("stripe", "tinybird", "frankfurter");
 
-    const response = await SELF.fetch(`${base}/checkout/5`, {
+    const response = await SELF.fetch(`${base}/checkout/p5`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -524,7 +525,7 @@ test("cohort UK: cf-ipcountry=GB → GBP (FX-derived) + AP off + UK PMC", async 
     expect(body?.["line_items[0][price_data][currency]"]).toBe("gbp");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
     expect(body?.payment_method_configuration).toBe(
-        "pmc_1Tbj1g6O03AauPe8zYgi1YMc",
+        "pmc_1TbkNQ6O03AauPe8ynCC2Sly",
     );
     expect(body?.["metadata[cohort]"]).toBe("UK");
     expect(body?.["metadata[packCurrency]"]).toBe("gbp");
@@ -1193,7 +1194,7 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
 
     expect(user).toBeTruthy();
     if (!user) throw new Error("Expected seeded test user");
-    const pack = getPollenPack("10");
+    const pack = getPollenPackByAmount(10);
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 

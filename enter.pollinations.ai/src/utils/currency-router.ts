@@ -6,47 +6,38 @@ export type CohortId =
     | "INDIA"
     | "UK";
 
-export type CohortPmcEnvVar =
-    | "STRIPE_PMC_USD"
-    | "STRIPE_PMC_BR"
-    | "STRIPE_PMC_APAC_ALIPAY"
-    | "STRIPE_PMC_EU_CORE"
-    | "STRIPE_PMC_INDIA"
-    | "STRIPE_PMC_UK";
-
 export type CheckoutCohort = {
     id: CohortId;
     checkoutCurrency: "usd" | "eur" | "inr" | "gbp";
     adaptivePricing: boolean;
-    pmcEnvVar: CohortPmcEnvVar;
 };
 
 const COHORT_USD: CheckoutCohort = {
     id: "USD",
     checkoutCurrency: "usd",
     adaptivePricing: false,
-    pmcEnvVar: "STRIPE_PMC_USD",
 };
 
 const COHORT_BR: CheckoutCohort = {
     id: "BR",
     checkoutCurrency: "eur",
     adaptivePricing: true,
-    pmcEnvVar: "STRIPE_PMC_BR",
 };
 
 const COHORT_APAC_ALIPAY: CheckoutCohort = {
     id: "APAC_ALIPAY",
     checkoutCurrency: "eur",
     adaptivePricing: true,
-    pmcEnvVar: "STRIPE_PMC_APAC_ALIPAY",
 };
 
+// AP on so non-EUR cards (CZK/PLN/SEK/etc. cards visiting EU_CORE countries)
+// get localized presentment. EUR-card buyers in EU see EUR natively (AP no-op
+// for them), so the only cost is a small Stripe FX margin on the edge cases
+// that benefit from the localization. Symmetric with BR + APAC_ALIPAY.
 const COHORT_EU_CORE: CheckoutCohort = {
     id: "EU_CORE",
     checkoutCurrency: "eur",
-    adaptivePricing: false,
-    pmcEnvVar: "STRIPE_PMC_EU_CORE",
+    adaptivePricing: true,
 };
 
 // INR is the integration currency (required for UPI to work end-to-end on
@@ -56,7 +47,6 @@ const COHORT_INDIA: CheckoutCohort = {
     id: "INDIA",
     checkoutCurrency: "inr",
     adaptivePricing: false,
-    pmcEnvVar: "STRIPE_PMC_INDIA",
 };
 
 // GBP-native integration so UK buyers see GBP without Stripe AP routing them
@@ -65,7 +55,6 @@ const COHORT_UK: CheckoutCohort = {
     id: "UK",
     checkoutCurrency: "gbp",
     adaptivePricing: false,
-    pmcEnvVar: "STRIPE_PMC_UK",
 };
 
 // MO is intentionally absent: the 5,000-charge card-country audit found

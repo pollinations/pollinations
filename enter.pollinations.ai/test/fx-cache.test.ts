@@ -1,7 +1,6 @@
 import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
-    FX_SAFETY_RATE_USD_EUR,
     FX_SAFETY_RATES,
     type FxTargetCurrency,
     getUsdToRate,
@@ -64,7 +63,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         expect(await env.KV.get(FX_KEY_EUR)).toBeNull();
     });
 
@@ -75,7 +74,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         expect(await env.KV.get(FX_KEY_EUR)).toBeNull();
     });
 
@@ -89,7 +88,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         expect(await env.KV.get(FX_KEY_EUR)).toBeNull();
     });
 
@@ -103,7 +102,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         expect(await env.KV.get(FX_KEY_EUR)).toBeNull();
     });
 
@@ -112,7 +111,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         expect(await env.KV.get(FX_KEY_EUR)).toBeNull();
     });
 
@@ -161,7 +160,7 @@ describe("getUsdToRate (EUR)", () => {
 
         const rate = await getUsdToRate(env, "eur");
 
-        expect(rate).toBe(FX_SAFETY_RATE_USD_EUR);
+        expect(rate).toBe(FX_SAFETY_RATES.eur);
         kvGetSpy.mockRestore();
     });
 });

@@ -1,6 +1,5 @@
 import { PUBLIC_URLS } from "./public-urls.ts";
 
-export type PollenPackAmount = "2" | "5" | "10" | "20" | "50" | "100";
 export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 
 export type PollenPack = {
@@ -33,12 +32,6 @@ const BASE_POLLEN_PACKS: ReadonlyArray<{
     { packKey: "p50", amountUsd: 50, bonusPollen: 25 },
     { packKey: "p100", amountUsd: 100, bonusPollen: 60 },
 ];
-
-const PACK_AMOUNT_SET = new Set<PollenPackAmount>(
-    BASE_POLLEN_PACKS.map(
-        ({ amountUsd }) => String(amountUsd) as PollenPackAmount,
-    ),
-);
 
 const PACK_KEY_SET = new Set<PollenPackKey>(
     BASE_POLLEN_PACKS.map(({ packKey }) => packKey),
@@ -85,28 +78,19 @@ export const getPackForeignCents = (
     usdToTargetRate: number,
 ): number => Math.round(pack.amountUsd * 100 * usdToTargetRate);
 
-export const isPollenPackAmount = (value: string): value is PollenPackAmount =>
-    PACK_AMOUNT_SET.has(value as PollenPackAmount);
-
 export const isPollenPackKey = (value: string): value is PollenPackKey =>
     PACK_KEY_SET.has(value as PollenPackKey);
-
-export const getPollenPack = (value: string | number): PollenPack | undefined =>
-    POLLEN_PACKS.find((pack) => String(pack.amountUsd) === String(value));
 
 export const getPollenPackByKey = (packKey: string): PollenPack | undefined =>
     POLLEN_PACKS.find((pack) => pack.packKey === packKey);
 
-/**
- * Resolve a checkout URL parameter to a pack.
- * Accepts the new packKey form ("p2".."p100") and the legacy USD-amount form
- * ("2".."100") so existing buy-pollen links keep working through the transition.
- */
-export const resolvePollenPack = (value: string): PollenPack | undefined => {
-    if (isPollenPackKey(value)) return getPollenPackByKey(value);
-    if (isPollenPackAmount(value)) return getPollenPack(value);
-    return undefined;
-};
+// Amount-based lookup is kept only for auto-top-up, whose enrollment API is
+// genuinely amount-based (amountUsd as the user-facing knob). The checkout
+// route is packKey-only.
+export const getPollenPackByAmount = (
+    amountUsd: number,
+): PollenPack | undefined =>
+    POLLEN_PACKS.find((pack) => pack.amountUsd === amountUsd);
 
 export const describePollenPack = (pack: PollenPack): string => {
     const bonusSuffix =

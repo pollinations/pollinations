@@ -5,7 +5,9 @@
  * Supports image, video, text, and audio generation via gen.pollinations.ai
  */
 
-import { pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
@@ -15,6 +17,16 @@ import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
+
+// Single source of truth: package.json — keeps MCP metadata and startup
+// banner in sync with the published version, no risk of drift on bumps.
+const pkg = JSON.parse(
+    readFileSync(
+        join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"),
+        "utf8",
+    ),
+);
+const VERSION = pkg.version;
 
 // Combine all tools
 const allTools = [
@@ -28,7 +40,7 @@ const allTools = [
 /**
  * Server instructions shown to MCP clients
  */
-const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.1
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v${VERSION}
 
 ## Authentication
 Set your API key first using the setApiKey tool:
@@ -99,7 +111,7 @@ export async function startMcpServer() {
         const server = new McpServer(
             {
                 name: "pollinations-mcp",
-                version: "2.1.0",
+                version: VERSION,
                 instructions: SERVER_INSTRUCTIONS,
             },
             {
@@ -160,7 +172,7 @@ export async function startMcpServer() {
         const transport = new StdioServerTransport();
         await server.connect(transport);
 
-        console.error("Pollinations MCP Server v2.1.0 running on stdio");
+        console.error(`Pollinations MCP Server v${VERSION} running on stdio`);
         console.error("API: https://gen.pollinations.ai");
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);

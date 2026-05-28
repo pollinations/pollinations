@@ -86,7 +86,12 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             : "0%",
                                 }}
                                 className={cn(
-                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
+                                    "absolute top-0 whitespace-nowrap",
+                                    isFirst
+                                        ? "text-left"
+                                        : isLast
+                                          ? "-translate-x-full text-right"
+                                          : "-translate-x-1/2 text-center",
                                     isSelected && "font-bold text-amber-900",
                                 )}
                             >

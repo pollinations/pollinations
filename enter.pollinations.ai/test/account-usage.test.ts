@@ -16,9 +16,9 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
         {
             date: "2026-04-14",
             model: "openai-fast",
-            meter_source: "tier",
-            requests: 3,
-            pollen_spent: 10,
+            pollen_meter: "tier",
+            request_count: 3,
+            spent_pollen: 10,
         },
     ];
 
@@ -157,7 +157,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
-            meter_source: "tier",
+            pollen_meter: "tier",
             input_text_tokens: 10,
             input_cached_tokens: 0,
             input_audio_tokens: 0,
@@ -169,7 +169,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             output_audio_seconds: 0,
             output_image_tokens: 0,
             output_video_seconds: 0,
-            pollen_spent: 1,
+            spent_pollen: 1,
             response_time_ms: 123,
         },
     ];
@@ -188,7 +188,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const lines = csv.trim().split("\n");
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("timestamp,type,model");
-    expect(lines[0]).toContain("pollen_spent,response_time_ms");
+    expect(lines[0]).toContain("spent_pollen,response_time_ms");
     expect(lines[1]).toContain("2026-04-14 12:10:00");
     expect(lines[1]).toContain("alpha");
     expect(lines[1]).toContain(",1,123");

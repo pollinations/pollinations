@@ -12,8 +12,8 @@ interface UsageRecord {
     timestamp: string;
     type: string;
     model: string;
-    pollen_spent: number;
-    meter_source: string;
+    spent_pollen: number;
+    pollen_meter: string;
 }
 
 interface UsageResponse {
@@ -24,9 +24,9 @@ interface UsageResponse {
 interface DailyUsageRecord {
     date: string;
     model: string;
-    meter_source: string;
-    requests: number;
-    pollen_spent: number;
+    pollen_meter: string;
+    request_count: number;
+    spent_pollen: number;
 }
 
 interface DailyUsageResponse {
@@ -34,9 +34,9 @@ interface DailyUsageResponse {
     count: number;
 }
 
-const pollen = (row: { pollen_spent?: number }): string => {
-    return row.pollen_spent != null
-        ? `${row.pollen_spent.toFixed(4)} pollen`
+const pollen = (row: { spent_pollen?: number }): string => {
+    return row.spent_pollen != null
+        ? `${row.spent_pollen.toFixed(4)} pollen`
         : "-";
 };
 
@@ -73,7 +73,7 @@ export const usageCommand = new Command("usage")
             }
 
             // In JSON mode, pass the raw API rows through (they carry numeric
-            // `pollen_spent`). In human mode, collapse to a single `pollen`
+            // `spent_pollen`). In human mode, collapse to a single `pollen`
             // column for display.
             const json = getOutputMode() === "json";
 
@@ -90,9 +90,9 @@ export const usageCommand = new Command("usage")
                     data.usage.map((r) => ({
                         date: r.date,
                         model: r.model,
-                        requests: r.requests,
+                        requests: r.request_count,
                         pollen: pollen(r),
-                        source: r.meter_source,
+                        source: r.pollen_meter,
                     })),
                 );
                 return;
@@ -117,7 +117,7 @@ export const usageCommand = new Command("usage")
                     type: r.type,
                     model: r.model,
                     pollen: pollen(r),
-                    source: r.meter_source,
+                    source: r.pollen_meter,
                 })),
             );
         } catch (err) {

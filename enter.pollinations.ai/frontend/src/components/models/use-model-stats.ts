@@ -8,15 +8,15 @@ import { apiClient } from "../../api.ts";
 
 export type ModelStats = Record<
     string,
-    { avgCost: number; requestCount: number }
+    { avgBasePrice: number; requestCount: number }
 >;
 
 type TinybirdResponse = {
     data?: Array<{
         model: string;
-        pollen_avg_price?: number;
+        avg_base_price_pollen?: number;
         request_count?: number;
-        priced_success_count?: number;
+        base_price_request_count?: number;
     }>;
 };
 
@@ -46,9 +46,11 @@ export function useModelStats(): {
                 const statsMap: ModelStats = {};
                 for (const row of data.data || []) {
                     statsMap[row.model] = {
-                        avgCost: row.pollen_avg_price ?? 0,
+                        avgBasePrice: row.avg_base_price_pollen ?? 0,
                         requestCount:
-                            row.request_count ?? row.priced_success_count ?? 0,
+                            row.request_count ??
+                            row.base_price_request_count ??
+                            0,
                     };
                 }
 

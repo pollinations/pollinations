@@ -143,9 +143,9 @@ export default function App() {
                         };
                         weekMap.set(row.week, {
                             ...existing,
-                            wau: row.active_users,
-                            payingUsers: row.paying_users,
-                            totalRequests: row.total_requests,
+                            wau: row.active_user_count,
+                            payingUsers: row.charged_user_count,
+                            totalRequests: row.request_count,
                         });
                     }
                 }
@@ -162,7 +162,7 @@ export default function App() {
                             tokensPerUser: row.tokens_per_user,
                             textRequests: row.text_requests,
                             imageRequests: row.image_requests,
-                            usdCost: row.usd_cost,
+                            costUsd: row.cost_usd,
                         });
                     }
                 }
@@ -176,7 +176,7 @@ export default function App() {
                         weekMap.set(row.week, {
                             ...existing,
                             revenue: row.revenue,
-                            packPurchases: row.purchases,
+                            paidPurchases: row.purchases,
                         });
                     }
                 }
@@ -207,12 +207,12 @@ export default function App() {
                         };
                         weekMap.set(week, {
                             ...existing,
-                            byopUsers: row.byop_users,
-                            byopPollen: row.byop_pollen,
-                            otherUsers: row.other_users,
-                            otherPollen: row.other_pollen,
+                            byopUsers: row.byop_user_count,
+                            byopPollen: row.byop_charged_pollen,
+                            otherUsers: row.non_byop_user_count,
+                            otherPollen: row.non_byop_charged_pollen,
                             byopUserPct: row.byop_user_pct,
-                            byopPollenPct: row.byop_pollen_pct,
+                            byopPollenPct: row.byop_charged_pct,
                         });
                     }
                 }
@@ -330,8 +330,8 @@ export default function App() {
         weeklyData?.filter((w) => w.week !== partialWeek?.week) || [];
 
     // North Star: WAPC (Weekly Active Paying Customers)
-    const wapc = currentWeek?.packPurchases || 0;
-    const wapcPrev = previousWeek?.packPurchases || 0;
+    const wapc = currentWeek?.paidPurchases || 0;
+    const wapcPrev = previousWeek?.paidPurchases || 0;
     const wapcChange = calcChange(wapc, wapcPrev);
 
     // Funnel data
@@ -356,10 +356,10 @@ export default function App() {
               { stage: "Active (WAU)", count: currentWeek.wau || 0, rate: 100 },
               {
                   stage: "Paying",
-                  count: currentWeek.packPurchases || 0,
+                  count: currentWeek.paidPurchases || 0,
                   rate: currentWeek.wau
                       ? (
-                            (currentWeek.packPurchases / currentWeek.wau) *
+                            (currentWeek.paidPurchases / currentWeek.wau) *
                             100
                         ).toFixed(1)
                       : 0,
@@ -376,7 +376,7 @@ export default function App() {
                 "WAU",
                 "Tokens",
                 "Revenue",
-                "Pack Purchases",
+                "Paid Purchases",
             ].join(","),
             ...weeklyData.map((row) =>
                 [
@@ -386,7 +386,7 @@ export default function App() {
                     row.wau,
                     row.tokens,
                     row.revenue,
-                    row.packPurchases,
+                    row.paidPurchases,
                 ].join(","),
             ),
         ].join("\n");
@@ -593,7 +593,7 @@ export default function App() {
                         )}
                         icon={DollarSign}
                         format="currency"
-                        tooltip="Pollen pack purchases (Stripe + Polar legacy)"
+                        tooltip="Paid pollen purchases (Stripe + Polar legacy)"
                     />
                     <StatCard
                         title="GitHub Stars"

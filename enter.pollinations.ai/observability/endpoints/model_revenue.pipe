@@ -3,9 +3,9 @@ TOKEN tinybird_read READ
 DESCRIPTION >
 Per-model pollen revenue breakdown for successful requests, grouped by model and event type.
 Splits by which balance bucket actually paid:
-  - pollen_paid: requests billed to a pack (paid top-up) meter
-  - pollen_tier: requests billed to tier allowance
-Both are pollen sums (sourced from `total_price`). Only successful (2xx) requests are summed.
+  - charged_paid_pollen: successful requests charged to paid balance
+  - charged_tier_pollen: successful requests charged to tier allowance
+Both are pollen sums sourced from `total_price`, which includes BYOP markup.
 PRIVATE: uses `tinybird_read` only (not `tinybird_read_public`) — exposes monetization
 data per model, not suitable for the public model monitor token.
 Time window controlled by the `minutes` parameter (default 60).
@@ -16,13 +16,13 @@ SQL >
     SELECT
         resolved_model_requested as model,
         event_type,
-        count() as total_requests,
-        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
-        round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack' AND response_status >= 200 AND response_status < 300), 4) as pollen_paid,
-        round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as pollen_tier
+        count() as request_count,
+        countIf(response_status >= 200 AND response_status < 300) as success_request_count,
+        round(sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack') AND response_status >= 200 AND response_status < 300), 4) as charged_paid_pollen,
+        round(sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND response_status >= 200 AND response_status < 300), 4) as charged_tier_pollen
     FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY resolved_model_requested, event_type
-    ORDER BY pollen_paid DESC
+    ORDER BY charged_paid_pollen DESC
 
 TYPE endpoint

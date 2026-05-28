@@ -25,7 +25,7 @@ function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
         KV: {
             get: async () => ({
                 value: {
-                    data: [{ model, pollen_avg_price: price }],
+                    data: [{ model, avg_base_price_pollen: price }],
                 },
                 ttl: 3600,
             }),
@@ -152,7 +152,7 @@ describe("BYOP markup", () => {
         expect(creatorBalances.packBalance).toBe(0);
     });
 
-    it("credits creator pack balance when payer spends pack balance", async () => {
+    it("credits creator paid balance when payer spends paid balance", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
         await db
             .update(userTable)
@@ -290,7 +290,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("requires paid-only preflight to have pack balance above the model estimate", async () => {
+    it("requires paid-only preflight to have paid balance above the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
@@ -396,7 +396,7 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("does not credit or deduct for unbilled requests", async () => {
+    it("does not credit or deduct for uncharged requests", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({

@@ -4,6 +4,7 @@ DESCRIPTION >
     Daily rows have a non-empty `date`; rollup rows have empty `date`.
     Within rollups, the global row has empty `app_key_id`.
     Earnings per event = total_price - dev_price (the dev's markup take).
+    earned_paid_pollen and earned_tier_pollen split that earning by payer bucket.
     Attribution uses the immutable `api_key_created_for_user_id` recorded on
     each event. Names come from a left join against the latest `d1_apikey`
     snapshot; events from deleted/unsynced apps fall back to `app_key_id`.
@@ -29,9 +30,10 @@ SQL >
         ge.api_key_client_id AS app_key_id,
         ge.user_id AS user_id,
         ge.start_time AS start_time,
-        ge.dev_price AS pollen_baseline,
-        ge.total_price AS pollen_spent,
-        ge.total_price - ge.dev_price AS pollen_earned,
+        ge.selected_meter_slug AS selected_meter_slug,
+        ge.dev_price AS base_price_pollen,
+        ge.total_price AS charged_pollen,
+        ge.total_price - ge.dev_price AS earned_pollen,
         ge.markup_rate AS markup_rate,
         coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
     FROM generation_event ge
@@ -60,12 +62,14 @@ SQL >
         ) AS date,
         app_key_id,
         any(app_name) AS app_name,
-        count() AS requests,
-        sum(pollen_baseline) AS pollen_baseline,
-        sum(pollen_earned) AS pollen_earned,
-        sum(pollen_spent) AS pollen_spent,
+        count() AS request_count,
+        sum(base_price_pollen) AS base_price_pollen,
+        sum(earned_pollen) AS earned_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sum(charged_pollen) AS charged_pollen,
         avg(markup_rate) AS markup_rate,
-        toUInt64(0) AS unique_users
+        toUInt64(0) AS unique_user_count
     FROM dev_events
     GROUP BY date, app_key_id
 
@@ -75,12 +79,14 @@ SQL >
         '' AS date,
         app_key_id,
         any(app_name) AS app_name,
-        count() AS requests,
-        sum(pollen_baseline) AS pollen_baseline,
-        sum(pollen_earned) AS pollen_earned,
-        sum(pollen_spent) AS pollen_spent,
+        count() AS request_count,
+        sum(base_price_pollen) AS base_price_pollen,
+        sum(earned_pollen) AS earned_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sum(charged_pollen) AS charged_pollen,
         avg(markup_rate) AS markup_rate,
-        uniq(user_id) AS unique_users
+        uniq(user_id) AS unique_user_count
     FROM dev_events
     GROUP BY app_key_id
 
@@ -90,12 +96,14 @@ SQL >
         '' AS date,
         '' AS app_key_id,
         '' AS app_name,
-        count() AS requests,
-        sum(pollen_baseline) AS pollen_baseline,
-        sum(pollen_earned) AS pollen_earned,
-        sum(pollen_spent) AS pollen_spent,
+        count() AS request_count,
+        sum(base_price_pollen) AS base_price_pollen,
+        sum(earned_pollen) AS earned_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sum(charged_pollen) AS charged_pollen,
         if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
-        uniq(user_id) AS unique_users
+        uniq(user_id) AS unique_user_count
     FROM dev_events
 
 NODE developer_earnings_node

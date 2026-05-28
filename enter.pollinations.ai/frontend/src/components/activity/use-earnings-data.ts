@@ -7,14 +7,14 @@ export type DeveloperEarningsRow = {
     date: string;
     app_key_id: string;
     app_name: string;
-    requests: number;
-    pollen_earned: number;
-    /** Earnings from paid-balance spend. Optional — pipe may not yet split. */
-    paid_earned?: number;
-    /** Earnings from tier-balance spend. Optional — pipe may not yet split. */
-    tier_earned?: number;
+    request_count: number;
+    base_price_pollen: number;
+    earned_pollen: number;
+    charged_pollen: number;
+    earned_paid_pollen: number;
+    earned_tier_pollen: number;
     markup_rate: number;
-    unique_users: number;
+    unique_user_count: number;
 };
 
 export type EarningsFilterState = {
@@ -41,7 +41,6 @@ type EarningsDataResult = {
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
-        averageMarkupRate: number;
         activeUsers: number;
         appCount: number;
         topApp: TopApp | null;
@@ -149,19 +148,18 @@ export function useEarningsData(
                 tier: 0,
                 byApp: new Map(),
             };
-            cur.requests += r.requests;
-            cur.pollen += r.pollen_earned;
-            // If pipe doesn't yet split, fall back to all-paid.
-            cur.paid += r.paid_earned ?? r.pollen_earned;
-            cur.tier += r.tier_earned ?? 0;
+            cur.requests += r.request_count;
+            cur.pollen += r.earned_pollen;
+            cur.paid += r.earned_paid_pollen;
+            cur.tier += r.earned_tier_pollen;
 
             const appData = cur.byApp.get(r.app_key_id) || {
                 label: r.app_name,
                 requests: 0,
                 pollen: 0,
             };
-            appData.requests += r.requests;
-            appData.pollen += r.pollen_earned;
+            appData.requests += r.request_count;
+            appData.pollen += r.earned_pollen;
             cur.byApp.set(r.app_key_id, appData);
             buckets.set(dateKey, cur);
         }
@@ -228,26 +226,24 @@ export function useEarningsData(
     }, [dailyEarnings, filters.period]);
 
     const stats = useMemo(() => {
-        const totalPollen = globalSummary?.pollen_earned ?? 0;
-        const totalPaid =
-            globalSummary?.paid_earned ?? globalSummary?.pollen_earned ?? 0;
-        const totalTier = globalSummary?.tier_earned ?? 0;
-        const averageMarkupRate = globalSummary?.markup_rate ?? 0;
-        const activeUsers = globalSummary?.unique_users ?? 0;
+        const totalPollen = globalSummary?.earned_pollen ?? 0;
+        const totalPaid = globalSummary?.earned_paid_pollen ?? 0;
+        const totalTier = globalSummary?.earned_tier_pollen ?? 0;
+        const activeUsers = globalSummary?.unique_user_count ?? 0;
         const appCount = perApp.length;
 
         const topAppRow = [...perApp].sort(
-            (a, b) => b.pollen_earned - a.pollen_earned,
+            (a, b) => b.earned_pollen - a.earned_pollen,
         )[0];
         const topApp: TopApp | null = topAppRow
             ? {
                   id: topAppRow.app_key_id,
                   label: topAppRow.app_name,
-                  requests: topAppRow.requests,
-                  pollen: topAppRow.pollen_earned,
-                  paidPollen: topAppRow.paid_earned ?? topAppRow.pollen_earned,
-                  tierPollen: topAppRow.tier_earned ?? 0,
-                  uniqueUsers: topAppRow.unique_users,
+                  requests: topAppRow.request_count,
+                  pollen: topAppRow.earned_pollen,
+                  paidPollen: topAppRow.earned_paid_pollen,
+                  tierPollen: topAppRow.earned_tier_pollen,
+                  uniqueUsers: topAppRow.unique_user_count,
               }
             : null;
 
@@ -255,7 +251,6 @@ export function useEarningsData(
             totalPollen,
             totalPaid,
             totalTier,
-            averageMarkupRate,
             activeUsers,
             appCount,
             topApp,

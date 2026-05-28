@@ -131,16 +131,16 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen: 0,
                 byModel: new Map(),
             };
-            const pollen = r.pollen_spent ?? 0;
-            cur.requests += r.requests || 0;
+            const pollen = r.spent_pollen ?? 0;
+            cur.requests += r.request_count || 0;
             cur.pollen += pollen;
 
-            const isTier = r.meter_source === "tier";
+            const isTier = r.pollen_meter === "tier";
             if (isTier) {
-                cur.tierRequests += r.requests || 0;
+                cur.tierRequests += r.request_count || 0;
                 cur.tierPollen += pollen;
             } else {
-                cur.paidRequests += r.requests || 0;
+                cur.paidRequests += r.request_count || 0;
                 cur.paidPollen += pollen;
             }
 
@@ -149,7 +149,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                     requests: 0,
                     pollen: 0,
                 };
-                modelData.requests += r.requests || 0;
+                modelData.requests += r.request_count || 0;
                 modelData.pollen += pollen;
                 cur.byModel.set(r.model, modelData);
             }
@@ -226,19 +226,19 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         });
 
         const totalReq = filtered.reduce(
-            (s: number, r: DailyUsageRecord) => s + (r.requests || 0),
+            (s: number, r: DailyUsageRecord) => s + (r.request_count || 0),
             0,
         );
-        const pollenOf = (r: DailyUsageRecord) => r.pollen_spent ?? 0;
+        const pollenOf = (r: DailyUsageRecord) => r.spent_pollen ?? 0;
         const totalPollen = filtered.reduce(
             (s: number, r: DailyUsageRecord) => s + pollenOf(r),
             0,
         );
         const tierPollen = filtered
-            .filter((r) => r.meter_source === "tier")
+            .filter((r) => r.pollen_meter === "tier")
             .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const paidPollen = filtered
-            .filter((r) => r.meter_source !== "tier")
+            .filter((r) => r.pollen_meter !== "tier")
             .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const modelTotals = new Map<
             string,
@@ -250,7 +250,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 requests: 0,
                 pollen: 0,
             };
-            cur.requests += r.requests || 0;
+            cur.requests += r.request_count || 0;
             cur.pollen += pollenOf(r);
             modelTotals.set(r.model, cur);
         }
@@ -296,10 +296,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             audio: 0,
         };
         for (const r of filtered) {
-            if (!r.model || !r.requests) continue;
+            if (!r.model || !r.request_count) continue;
             const registered = ALL_MODELS.find((m) => m.id === r.model);
             if (!registered) continue;
-            requestsByModality[registered.type] += r.requests;
+            requestsByModality[registered.type] += r.request_count;
         }
 
         return {

@@ -10,8 +10,8 @@ import { balance } from "../middleware/balance.ts";
 import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
-    pollen_paid_week: number;
-    pollen_tier_week: number;
+    earned_paid_pollen: number;
+    earned_tier_pollen: number;
 };
 
 /**
@@ -26,7 +26,7 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack).",
+                "Get detailed balance breakdown for the current user (tier, paid).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
@@ -92,8 +92,8 @@ export const customerRoutes = new Hono<Env>()
             };
             const row = body.data[0];
             return c.json({
-                paidWeek: row?.pollen_paid_week ?? 0,
-                tierWeek: row?.pollen_tier_week ?? 0,
+                paidWeek: row?.earned_paid_pollen ?? 0,
+                tierWeek: row?.earned_tier_pollen ?? 0,
             });
         },
     );

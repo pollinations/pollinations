@@ -7,7 +7,7 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
+import { getEstimatedBasePrice, getModelStats } from "@/utils/model-stats.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &
@@ -30,24 +30,24 @@ export async function checkBalance(
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
     const stats = await getModelStats(env.KV, log);
-    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+    const estimatedBasePrice = getEstimatedBasePrice(stats, model.resolved);
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
-    const requiredBudget = Math.max(0, estimatedCost);
+    const requiredBudget = Math.max(0, estimatedBasePrice);
     if (typeof apiKeyBudget === "number" && apiKeyBudget <= requiredBudget) {
         throw new HTTPException(402, {
-            message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+            message: `API key budget too low. This request costs ~${estimatedBasePrice.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
     }
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+    if (!canCoverEstimatedCharge(userBalance, estimatedBasePrice, isPaidOnly)) {
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new HTTPException(402, {
-            message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+            message: `Insufficient balance. This request costs ~${estimatedBasePrice.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });
     }
 

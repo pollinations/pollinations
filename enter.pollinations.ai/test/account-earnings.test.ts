@@ -10,16 +10,18 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     date: "2026-04-14",
     app_key_id: "key_byop_app_1",
     app_name: "BYOP App",
-    requests: 5,
-    pollen_baseline: 0.4,
-    pollen_earned: 0.1,
-    pollen_spent: 0.5,
+    request_count: 5,
+    base_price_pollen: 0.4,
+    earned_pollen: 0.1,
+    earned_paid_pollen: 0.06,
+    earned_tier_pollen: 0.04,
+    charged_pollen: 0.5,
     markup_rate: 0.25,
-    unique_users: 0,
+    unique_user_count: 0,
     ...overrides,
 });
 
-test("GET /api/account/earnings returns pollen_baseline and pollen_spent in JSON", async ({
+test("GET /api/account/earnings returns base, earned, and charged pollen in JSON", async ({
     sessionToken,
     mocks,
 }) => {
@@ -29,13 +31,13 @@ test("GET /api/account/earnings returns pollen_baseline and pollen_spent in JSON
         earningsRow(),
         earningsRow({
             date: "",
-            unique_users: 3,
+            unique_user_count: 3,
         }),
         earningsRow({
             date: "",
             app_key_id: "",
             app_name: "",
-            unique_users: 3,
+            unique_user_count: 3,
         }),
     ];
 
@@ -52,9 +54,11 @@ test("GET /api/account/earnings returns pollen_baseline and pollen_spent in JSON
     };
 
     const expectAllFields = {
-        pollen_baseline: 0.4,
-        pollen_earned: 0.1,
-        pollen_spent: 0.5,
+        base_price_pollen: 0.4,
+        earned_pollen: 0.1,
+        earned_paid_pollen: 0.06,
+        earned_tier_pollen: 0.04,
+        charged_pollen: 0.5,
         markup_rate: 0.25,
     };
 
@@ -65,7 +69,7 @@ test("GET /api/account/earnings returns pollen_baseline and pollen_spent in JSON
     expect(body.global).toMatchObject(expectAllFields);
 });
 
-test("GET /api/account/earnings CSV emits pollen_baseline and pollen_spent columns", async ({
+test("GET /api/account/earnings CSV emits base, earned, and charged pollen columns", async ({
     sessionToken,
     mocks,
 }) => {
@@ -74,16 +78,20 @@ test("GET /api/account/earnings CSV emits pollen_baseline and pollen_spent colum
     mocks.tinybird.state.earningsResponse = [
         earningsRow({
             date: "2026-04-14",
-            pollen_baseline: 0.4,
-            pollen_earned: 0.1,
-            pollen_spent: 0.5,
+            base_price_pollen: 0.4,
+            earned_pollen: 0.1,
+            earned_paid_pollen: 0.06,
+            earned_tier_pollen: 0.04,
+            charged_pollen: 0.5,
             markup_rate: 0.25,
         }),
         earningsRow({
             date: "2026-04-15",
-            pollen_baseline: 0.8,
-            pollen_earned: 0.2,
-            pollen_spent: 1,
+            base_price_pollen: 0.8,
+            earned_pollen: 0.2,
+            earned_paid_pollen: 0.2,
+            earned_tier_pollen: 0,
+            charged_pollen: 1,
             markup_rate: 0.25,
         }),
     ];
@@ -99,10 +107,12 @@ test("GET /api/account/earnings CSV emits pollen_baseline and pollen_spent colum
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,markup_rate",
+        "date,app_key_id,app_name,request_count,base_price_pollen,earned_pollen,earned_paid_pollen,earned_tier_pollen,charged_pollen,markup_rate",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.25",
+        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.06,0.04,0.5,0.25",
     );
-    expect(rows[1]).toBe("2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.25");
+    expect(rows[1]).toBe(
+        "2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,0.2,0,1,0.25",
+    );
 });

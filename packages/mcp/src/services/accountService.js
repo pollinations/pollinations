@@ -40,11 +40,11 @@ async function getUsage(params) {
 
     if (daily) {
         const totalPollen = records.reduce(
-            (sum, r) => sum + (r.pollen_spent ?? 0),
+            (sum, r) => sum + (r.spent_pollen ?? 0),
             0,
         );
         const totalRequests = records.reduce(
-            (sum, r) => sum + (r.requests || 0),
+            (sum, r) => sum + (r.request_count || 0),
             0,
         );
         return createMCPResponse([
@@ -53,8 +53,8 @@ async function getUsage(params) {
                     mode: "daily",
                     days: days ?? 90,
                     totals: {
-                        requests: totalRequests,
-                        pollen_spent: Number(totalPollen.toFixed(4)),
+                        request_count: totalRequests,
+                        spent_pollen: Number(totalPollen.toFixed(4)),
                     },
                     records,
                     count: data.count ?? records.length,

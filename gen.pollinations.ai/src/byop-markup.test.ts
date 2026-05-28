@@ -25,7 +25,7 @@ function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
         KV: {
             get: async () => ({
                 value: {
-                    data: [{ model, avg_cost_usd: price }],
+                    data: [{ model, pollen_avg_price: price }],
                 },
                 ttl: 3600,
             }),

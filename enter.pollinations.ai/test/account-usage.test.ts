@@ -19,7 +19,6 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
             meter_source: "tier",
             requests: 3,
             pollen_spent: 10,
-            cost_usd: 10,
         },
     ];
 
@@ -171,7 +170,6 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             output_image_tokens: 0,
             output_video_seconds: 0,
             pollen_spent: 1,
-            cost_usd: 1,
             response_time_ms: 123,
         },
     ];
@@ -190,10 +188,10 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const lines = csv.trim().split("\n");
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("timestamp,type,model");
-    expect(lines[0]).toContain("pollen_spent,cost_usd");
+    expect(lines[0]).toContain("pollen_spent,response_time_ms");
     expect(lines[1]).toContain("2026-04-14 12:10:00");
     expect(lines[1]).toContain("alpha");
-    expect(lines[1]).toContain(",1,1,");
+    expect(lines[1]).toContain(",1,123");
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("user_usage.json"),

@@ -14,14 +14,12 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     pollen_baseline: 0.4,
     pollen_earned: 0.1,
     pollen_spent: 0.5,
-    baseline_price: 0.4,
-    cost_usd: 0.5,
     markup_rate: 0.25,
     unique_users: 0,
     ...overrides,
 });
 
-test("GET /api/account/earnings returns pollen_baseline, pollen_spent and deprecated aliases in JSON", async ({
+test("GET /api/account/earnings returns pollen_baseline and pollen_spent in JSON", async ({
     sessionToken,
     mocks,
 }) => {
@@ -55,10 +53,8 @@ test("GET /api/account/earnings returns pollen_baseline, pollen_spent and deprec
 
     const expectAllFields = {
         pollen_baseline: 0.4,
-        baseline_price: 0.4,
         pollen_earned: 0.1,
         pollen_spent: 0.5,
-        cost_usd: 0.5,
         markup_rate: 0.25,
     };
 
@@ -69,7 +65,7 @@ test("GET /api/account/earnings returns pollen_baseline, pollen_spent and deprec
     expect(body.global).toMatchObject(expectAllFields);
 });
 
-test("GET /api/account/earnings CSV emits pollen_spent + deprecated cost_usd alongside each other", async ({
+test("GET /api/account/earnings CSV emits pollen_baseline and pollen_spent columns", async ({
     sessionToken,
     mocks,
 }) => {
@@ -79,19 +75,15 @@ test("GET /api/account/earnings CSV emits pollen_spent + deprecated cost_usd alo
         earningsRow({
             date: "2026-04-14",
             pollen_baseline: 0.4,
-            baseline_price: 0.4,
             pollen_earned: 0.1,
             pollen_spent: 0.5,
-            cost_usd: 0.5,
             markup_rate: 0.25,
         }),
         earningsRow({
             date: "2026-04-15",
             pollen_baseline: 0.8,
-            baseline_price: 0.8,
             pollen_earned: 0.2,
             pollen_spent: 1,
-            cost_usd: 1,
             markup_rate: 0.25,
         }),
     ];
@@ -107,63 +99,10 @@ test("GET /api/account/earnings CSV emits pollen_spent + deprecated cost_usd alo
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,baseline_price,cost_usd,markup_rate",
+        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,markup_rate",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.4,0.5,0.25",
+        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.25",
     );
-    expect(rows[1]).toBe(
-        "2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.8,1,0.25",
-    );
-});
-
-test("GET /api/account/earnings backfills pollen_* fields when the pipe returns only deprecated USD names (JSON + CSV)", async ({
-    sessionToken,
-    mocks,
-}) => {
-    // Simulates a stale pipe payload (e.g. from before the dual-emit landed
-    // or from a workspace still on the old schema). Worker normalization
-    // must populate pollen_baseline / pollen_spent so JSON and CSV match
-    // the canonical schema.
-    await mocks.enable("tinybird");
-
-    mocks.tinybird.state.earningsResponse = [
-        {
-            date: "2026-04-14",
-            app_key_id: "key_byop_app_1",
-            app_name: "BYOP App",
-            requests: 5,
-            baseline_price: 0.4,
-            pollen_earned: 0.1,
-            cost_usd: 0.5,
-            markup_rate: 0.25,
-            unique_users: 0,
-        },
-    ];
-
-    const jsonResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/earnings?days=30",
-        { headers: authHeaders(sessionToken) },
-    );
-    expect(jsonResponse.status).toBe(200);
-    const body = (await jsonResponse.json()) as {
-        daily: Record<string, number>[];
-    };
-    expect(body.daily[0]).toMatchObject({
-        pollen_baseline: 0.4,
-        pollen_spent: 0.5,
-        baseline_price: 0.4,
-        cost_usd: 0.5,
-    });
-
-    const csvResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/earnings?days=30&format=csv",
-        { headers: authHeaders(sessionToken) },
-    );
-    expect(csvResponse.status).toBe(200);
-    const csv = await csvResponse.text();
-    const [, firstRow] = csv.split("\n");
-    expect(firstRow).toBe(
-        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.4,0.5,0.25",
-    );
+    expect(rows[1]).toBe("2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.25");
 });

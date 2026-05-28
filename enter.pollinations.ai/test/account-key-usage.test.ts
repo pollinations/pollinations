@@ -42,7 +42,7 @@ describe("GET /api/account/key/usage", () => {
                 output_audio_seconds: 0,
                 output_image_tokens: 0,
                 output_video_seconds: 0,
-                cost_usd: 0.001,
+                pollen_spent: 0.001,
                 response_time_ms: 100,
             },
         ];

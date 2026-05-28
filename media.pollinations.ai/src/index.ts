@@ -1,4 +1,3 @@
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
@@ -56,6 +55,58 @@ function fileTooLargeError(maxSize: number): { error: string } {
 
 function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
+}
+
+async function writeReadableToWritable(
+    readable: ReadableStream<Uint8Array>,
+    writable: WritableStream<ArrayBuffer | ArrayBufferView>,
+): Promise<void> {
+    const reader = readable.getReader();
+    const writer = writable.getWriter();
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            await writer.write(value);
+        }
+        await writer.close();
+    } catch (error) {
+        await writer.abort(error).catch(() => undefined);
+        throw error;
+    } finally {
+        reader.releaseLock();
+        writer.releaseLock();
+    }
+}
+
+function refreshMediaRetention(
+    bucket: R2Bucket,
+    key: string,
+    object: R2ObjectBody,
+    waitUntil: (promise: Promise<unknown>) => void,
+    onError: (error: unknown) => void,
+): ReadableStream {
+    const [responseBody, refreshBody] = object.body.tee();
+    const fixedLengthStream = new FixedLengthStream(object.size);
+
+    waitUntil(
+        Promise.all([
+            writeReadableToWritable(
+                refreshBody as ReadableStream<Uint8Array>,
+                fixedLengthStream.writable,
+            ),
+            bucket.put(key, fixedLengthStream.readable, {
+                httpMetadata: object.httpMetadata,
+                customMetadata: object.customMetadata,
+                storageClass: object.storageClass,
+            }),
+        ])
+            .then(() => undefined)
+            .catch(onError),
+    );
+
+    return responseBody;
 }
 
 const UploadResponseSchema = z.object({
@@ -312,7 +363,7 @@ api.get(
                 );
             }
 
-            const responseBody = refreshR2ObjectTtl(
+            const responseBody = refreshMediaRetention(
                 c.env.MEDIA_BUCKET,
                 hash,
                 object,

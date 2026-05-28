@@ -12,11 +12,31 @@ import { Chip } from "../ui/chip.tsx";
 const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
 
-const formatPackAriaLabel = (pack: PollenPack): string => {
+/**
+ * Optional per-pack local-currency estimates from the FX-quote endpoint
+ * (`/api/stripe/localized-prices`). When present, the slider shows the buyer's
+ * local "≈ €X" instead of USD; checkout still localizes the real charge.
+ */
+export type LocalizedPackPrices = {
+    currency: string | null;
+    prices: Record<string, { amount: number; formatted: string }>;
+} | null;
+
+const packPriceLabel = (
+    pack: PollenPack,
+    localizedPrices: LocalizedPackPrices,
+): string =>
+    localizedPrices?.prices[pack.packKey]?.formatted ??
+    formatPollenPackPriceUsd(pack.priceUsd);
+
+const formatPackAriaLabel = (
+    pack: PollenPack,
+    localizedPrices: LocalizedPackPrices,
+): string => {
     const discountPercent = getPackDiscountPercent(pack);
     const discountLabel =
         discountPercent > 0 ? `, ${discountPercent}% off` : "";
-    return `${formatPollenPackValue(pack.pollenGrant)} pollen, about ${formatPollenPackPriceUsd(pack.priceUsd)}${discountLabel}`;
+    return `${formatPollenPackValue(pack.pollenGrant)} pollen, about ${packPriceLabel(pack, localizedPrices)}${discountLabel}`;
 };
 
 type PollenPackSliderProps = {
@@ -25,6 +45,7 @@ type PollenPackSliderProps = {
     packs?: ReadonlyArray<PollenPack>;
     label?: string;
     disabled?: boolean;
+    localizedPrices?: LocalizedPackPrices;
 };
 
 export const PollenPackSlider: FC<PollenPackSliderProps> = ({
@@ -33,6 +54,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     packs = POLLEN_PACKS,
     label = "Select amount",
     disabled = false,
+    localizedPrices = null,
 }) => {
     const selectedIndex = Math.max(
         0,
@@ -60,7 +82,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     aria-label={label}
                     aria-valuetext={
                         selectedPack
-                            ? formatPackAriaLabel(selectedPack)
+                            ? formatPackAriaLabel(selectedPack, localizedPrices)
                             : undefined
                     }
                     style={{ background: sliderGradient(progressPercent) }}
@@ -151,8 +173,9 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 )}
                                             >
                                                 ≈{" "}
-                                                {formatPollenPackPriceUsd(
-                                                    pack.priceUsd,
+                                                {packPriceLabel(
+                                                    pack,
+                                                    localizedPrices,
                                                 )}
                                             </span>
                                             {hasDiscount && (

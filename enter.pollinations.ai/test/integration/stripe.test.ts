@@ -5,6 +5,12 @@ import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import {
+    AP_MARKUPS_KV_KEY,
+    FX_RATES_KV_KEY,
+    getApMarkups,
+    recordObservedMarkup,
+} from "../../src/utils/fx-quotes.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -211,6 +217,109 @@ test("GET /api/stripe/products returns pack list", async () => {
     expect(data.packs.map((p) => p.discountPercent)).toEqual([
         0, 10, 20, 25, 28, 30,
     ]);
+});
+
+type LocalizedPricesResponse = {
+    currency: string | null;
+    prices: Record<string, { amount: number; formatted: string }>;
+};
+
+test("GET /api/stripe/localized-prices: DE → EUR estimate via FX quote", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "DE" },
+    });
+    expect(response.status).toBe(200);
+
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBe("eur");
+    // (70 / 1.1617 mid-market) * 1.04 cold-start markup = 62.67
+    expect(data.prices.p100).toEqual({ amount: 62.67, formatted: "€62.67" });
+    expect(data.prices.p2).toEqual({ amount: 1.79, formatted: "€1.79" });
+    expect(Object.keys(data.prices)).toHaveLength(6);
+});
+
+test("GET /api/stripe/localized-prices: JP → zero-decimal JPY", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "JP" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBe("jpy");
+    // (70 / 0.00627132 mid-market) * 1.04 = 11608.3 → 11608 (whole yen)
+    expect(data.prices.p100).toEqual({ amount: 11608, formatted: "¥11,608" });
+});
+
+test("GET /api/stripe/localized-prices: US falls back to USD with no FX call", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "US" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBeNull();
+    expect(data.prices).toEqual({});
+    expect(
+        mocks.stripe.state.requests.some((r) => r.path === "/v1/fx_quotes"),
+    ).toBe(false);
+});
+
+test("GET /api/stripe/localized-prices: unmapped country falls back to USD", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "ZZ" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBeNull();
+});
+
+test("GET /api/stripe/localized-prices: uses the learned markup over the default", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+    // Seed a learned EUR markup (1.0368) lower than the 4% cold-start default.
+    await env.KV.put(AP_MARKUPS_KV_KEY, JSON.stringify({ eur: 1.0368 }));
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "DE" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    // (70 / 1.1617) * 1.0368 = 62.47, not the 62.67 the 4% default would give.
+    expect(data.prices.p100).toEqual({ amount: 62.47, formatted: "€62.47" });
+});
+
+test("recordObservedMarkup learns and EMA-blends the per-currency markup", async () => {
+    // Mid-market rate must be cached for the markup to be recoverable.
+    await env.KV.put(FX_RATES_KV_KEY, JSON.stringify({ eur: 1.1617 }));
+
+    // First real purchase: €7.14 (714) for $8.00 (800) → markup 1.0368.
+    await recordObservedMarkup(env, "eur", 714, 800);
+    expect((await getApMarkups(env)).eur).toBeCloseTo(1.0368, 4);
+
+    // Second purchase at the same rate keeps the EMA at 1.0368.
+    await recordObservedMarkup(env, "eur", 714, 800);
+    expect((await getApMarkups(env)).eur).toBeCloseTo(1.0368, 4);
+
+    // Unsupported currency and uncached rate are silent no-ops.
+    await recordObservedMarkup(env, "xyz", 100, 800);
+    expect((await getApMarkups(env)).xyz).toBeUndefined();
+});
+
+test("recordObservedMarkup no-ops when the mid-market rate is not cached", async () => {
+    // No FX_RATES_KV_KEY seeded → nothing to compute against.
+    await recordObservedMarkup(env, "gbp", 600, 800);
+    expect((await getApMarkups(env)).gbp).toBeUndefined();
 });
 
 test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({

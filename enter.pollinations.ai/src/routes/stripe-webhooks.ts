@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { recordObservedMarkup } from "../utils/fx-quotes.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -509,6 +510,26 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                                 ),
                             ),
                         );
+
+                        // Learn the real Adaptive Pricing markup for this
+                        // currency so the slider's local-price estimate tracks
+                        // what buyers actually pay. Off the credit path,
+                        // best-effort (no-ops for USD / uncached rate).
+                        if (result.presentmentCurrency) {
+                            c.executionCtx.waitUntil(
+                                recordObservedMarkup(
+                                    c.env,
+                                    result.presentmentCurrency,
+                                    result.presentmentAmount ?? 0,
+                                    session.amount_total ?? 0,
+                                ).catch((err) =>
+                                    console.error(
+                                        "AP markup record failed:",
+                                        err,
+                                    ),
+                                ),
+                            );
+                        }
                     } else {
                         console.error(
                             "Failed to process checkout:",

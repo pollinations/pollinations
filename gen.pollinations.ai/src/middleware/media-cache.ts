@@ -9,7 +9,7 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-cache.ts";
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";

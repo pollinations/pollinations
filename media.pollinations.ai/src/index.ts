@@ -1,4 +1,4 @@
-import { refreshR2ObjectTtl } from "@shared/r2-cache.ts";
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";

@@ -1,8 +1,8 @@
-import { refreshR2ObjectTtl } from "@shared/r2-cache.ts";
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { describe, expect, it } from "vitest";
 
-describe("R2 cache helpers", () => {
+describe("R2 storage helpers", () => {
     it("refreshes object TTL while preserving content and metadata", async () => {
         const bucket = createTestR2Bucket();
         await bucket.put("cache-key", "cached body", {

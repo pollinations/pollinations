@@ -75,6 +75,13 @@ jobs:
       - name: Regenerate APIDOCS.md
         run: npm run docs:generate --workspace pollinations-gen
 
+      # Static validation gate — fails the workflow if the regenerated doc has
+      # broken anchors, write-method curl examples without a body, image models
+      # under /video/, or Authorization headers on public read endpoints. This
+      # keeps known regression classes out of `main`.
+      - name: Validate APIDOCS.md
+        run: npm run docs:validate --workspace pollinations-gen
+
       - name: Check for changes
         id: changes
         run: |

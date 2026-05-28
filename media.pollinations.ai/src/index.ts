@@ -261,6 +261,7 @@ api.get(
         summary: "Retrieve media",
         description:
             "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+        security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
             400: {
@@ -325,6 +326,7 @@ api.get(
         summary: "Get file metadata",
         description:
             "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+        security: [],
         responses: {
             200: {
                 description: "File metadata",
@@ -388,6 +390,7 @@ api.on(
         summary: "Check if media exists",
         description:
             "Check existence and metadata without downloading the file.",
+        security: [],
         responses: {
             200: {
                 description:

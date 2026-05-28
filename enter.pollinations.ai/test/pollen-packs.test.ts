@@ -15,10 +15,10 @@ test("pollen pack catalog includes the stepped discount ladder", () => {
         2, 5, 10, 20, 50, 100,
     ]);
     expect(POLLEN_PACKS.map((pack) => pack.discountPercent)).toEqual([
-        0, 10, 20, 25, 28, 30,
+        0, 15, 20, 25, 30, 35,
     ]);
     expect(POLLEN_PACKS.map((pack) => pack.priceCents)).toEqual([
-        200, 450, 800, 1500, 3600, 7000,
+        200, 425, 800, 1500, 3500, 6500,
     ]);
     expect(POLLEN_PACKS.map((pack) => pack.packKey)).toEqual([
         "p2",
@@ -32,7 +32,7 @@ test("pollen pack catalog includes the stepped discount ladder", () => {
 
 test("pack lookup validates supported USD amounts", () => {
     expect(getPollenPackByAmount(20)?.discountPercent).toBe(25);
-    expect(getPollenPackByAmount(100)?.priceCents).toBe(7000);
+    expect(getPollenPackByAmount(100)?.priceCents).toBe(6500);
     expect(getPollenPackByAmount(3)).toBeUndefined();
 });
 
@@ -56,7 +56,7 @@ test("pack descriptions stay aligned with the shared catalog", () => {
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain("2 Pollen for $2.");
     expect(POLLEN_PACKS[1]?.checkoutName).toBe("🪷 5 Pollen");
     expect(POLLEN_PACKS[1]?.checkoutDescription).toContain(
-        "5 Pollen for $4.50 (10% off).",
+        "5 Pollen for $4.25 (15% off).",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
         "https://enter.pollinations.ai/checkout/pollen-pack.png",
@@ -65,6 +65,6 @@ test("pack descriptions stay aligned with the shared catalog", () => {
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
         "https://discord.gg/z5uMbEYK",
     );
-    expect(describePollenPack(lastPack)).toBe("100 pollen for $70 (30% off)");
+    expect(describePollenPack(lastPack)).toBe("100 pollen for $65 (35% off)");
     expect(describePollenPack(POLLEN_PACKS[0])).toBe("2 pollen for $2");
 });

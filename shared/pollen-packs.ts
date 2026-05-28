@@ -26,11 +26,11 @@ const BASE_POLLEN_PACKS: ReadonlyArray<{
     discountPercent: number;
 }> = [
     { packKey: "p2", amountUsd: 2, discountPercent: 0 },
-    { packKey: "p5", amountUsd: 5, discountPercent: 10 },
+    { packKey: "p5", amountUsd: 5, discountPercent: 15 },
     { packKey: "p10", amountUsd: 10, discountPercent: 20 },
     { packKey: "p20", amountUsd: 20, discountPercent: 25 },
-    { packKey: "p50", amountUsd: 50, discountPercent: 28 },
-    { packKey: "p100", amountUsd: 100, discountPercent: 30 },
+    { packKey: "p50", amountUsd: 50, discountPercent: 30 },
+    { packKey: "p100", amountUsd: 100, discountPercent: 35 },
 ];
 
 const PACK_KEY_SET = new Set<PollenPackKey>(

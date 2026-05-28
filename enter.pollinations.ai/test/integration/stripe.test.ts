@@ -212,10 +212,10 @@ test("GET /api/stripe/products returns pack list", async () => {
         2, 5, 10, 20, 50, 100,
     ]);
     expect(data.packs.map((p) => p.priceCents)).toEqual([
-        200, 450, 800, 1500, 3600, 7000,
+        200, 425, 800, 1500, 3500, 6500,
     ]);
     expect(data.packs.map((p) => p.discountPercent)).toEqual([
-        0, 10, 20, 25, 28, 30,
+        0, 15, 20, 25, 30, 35,
     ]);
 });
 
@@ -236,8 +236,8 @@ test("GET /api/stripe/localized-prices: DE → EUR estimate via FX quote", async
 
     const data = (await response.json()) as LocalizedPricesResponse;
     expect(data.currency).toBe("eur");
-    // (70 / 1.1617 mid-market) * 1.04 cold-start markup = 62.67
-    expect(data.prices.p100).toEqual({ amount: 62.67, formatted: "€62.67" });
+    // (65 / 1.1617 mid-market) * 1.04 cold-start markup = 58.19
+    expect(data.prices.p100).toEqual({ amount: 58.19, formatted: "€58.19" });
     expect(data.prices.p2).toEqual({ amount: 1.79, formatted: "€1.79" });
     expect(Object.keys(data.prices)).toHaveLength(6);
 });
@@ -252,8 +252,8 @@ test("GET /api/stripe/localized-prices: JP → zero-decimal JPY", async ({
     });
     const data = (await response.json()) as LocalizedPricesResponse;
     expect(data.currency).toBe("jpy");
-    // (70 / 0.00627132 mid-market) * 1.04 = 11608.3 → 11608 (whole yen)
-    expect(data.prices.p100).toEqual({ amount: 11608, formatted: "¥11,608" });
+    // (65 / 0.00627132 mid-market) * 1.04 = 10779.2 → 10779 (whole yen)
+    expect(data.prices.p100).toEqual({ amount: 10779, formatted: "¥10,779" });
 });
 
 test("GET /api/stripe/localized-prices: US falls back to USD with no FX call", async ({
@@ -295,8 +295,8 @@ test("GET /api/stripe/localized-prices: uses the learned markup over the default
         headers: { "cf-ipcountry": "DE" },
     });
     const data = (await response.json()) as LocalizedPricesResponse;
-    // (70 / 1.1617) * 1.0368 = 62.47, not the 62.67 the 4% default would give.
-    expect(data.prices.p100).toEqual({ amount: 62.47, formatted: "€62.47" });
+    // (65 / 1.1617) * 1.0368 = 58.01, not the 58.19 the 4% default would give.
+    expect(data.prices.p100).toEqual({ amount: 58.01, formatted: "€58.01" });
 });
 
 test("recordObservedMarkup learns and EMA-blends the per-currency markup", async () => {
@@ -481,11 +481,11 @@ test("cohort BR: cf-ipcountry=BR → USD price_data + AP on + buy-pollen PMC", a
     )?.body;
     expect(body).toBeTruthy();
 
-    expectUsdPriceData(body, 4.5);
+    expectUsdPriceData(body, 4.25);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("BR");
-    expect(body?.["metadata[packPriceCents]"]).toBe("450");
+    expect(body?.["metadata[packPriceCents]"]).toBe("425");
     expect(body?.["metadata[packPollenGrant]"]).toBe("5");
 });
 
@@ -566,7 +566,7 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     )?.body;
     expect(body).toBeTruthy();
 
-    expectUsdPriceData(body, 4.5);
+    expectUsdPriceData(body, 4.25);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("USD");
@@ -622,11 +622,11 @@ test("cohort UK: cf-ipcountry=GB → USD price_data + AP on + buy-pollen PMC", a
     )?.body;
     expect(body).toBeTruthy();
 
-    expectUsdPriceData(body, 4.5);
+    expectUsdPriceData(body, 4.25);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("UK");
-    expect(body?.["metadata[packPriceCents]"]).toBe("450");
+    expect(body?.["metadata[packPriceCents]"]).toBe("425");
     expect(body?.["metadata[packPollenGrant]"]).toBe("5");
 });
 

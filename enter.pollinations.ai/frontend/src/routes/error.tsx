@@ -10,20 +10,29 @@ export const Route = createFileRoute("/error")({
 function ErrorPage() {
     const { error } = Route.useSearch();
     const isBanned = error === "banned";
+    const isStagingInviteOnly = error === "staging_is_invite-only";
+
+    const emoji = isBanned ? "🐝" : isStagingInviteOnly ? "🔒" : "🌸";
+    const title = isBanned
+        ? "Account Deactivated"
+        : isStagingInviteOnly
+          ? "Staging is invite-only"
+          : "Something went wrong";
+    const message = isBanned
+        ? "Your account has been deactivated. This might be a mistake — reach out and we'll sort it out together."
+        : isStagingInviteOnly
+          ? "This is the staging environment and access is limited to the Pollinations team. Head to pollinations.ai to use the production app."
+          : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <div className="max-w-md w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 text-center">
-                <div className="text-5xl mb-4">{isBanned ? "🐝" : "🌸"}</div>
+                <div className="text-5xl mb-4">{emoji}</div>
 
-                <h1 className="font-heading text-3xl mb-3">
-                    {isBanned ? "Account Deactivated" : "Something went wrong"}
-                </h1>
+                <h1 className="font-heading text-3xl mb-3">{title}</h1>
 
                 <p className="font-body text-green-800 mb-6 leading-relaxed">
-                    {isBanned
-                        ? "Your account has been deactivated. This might be a mistake — reach out and we'll sort it out together."
-                        : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening."}
+                    {message}
                 </p>
 
                 <div className="flex flex-col gap-3">

@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-27** – **🚀 Six new brains for the hive** Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models).
 - **2026-05-26** – **🤖 LLM-Ready Docs** We added "Copy for LLMs" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.
 - **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
 - **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
 - **2026-05-18** – **✨ Uncapped Generations** We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).
 - **2026-05-17** – **🎬 Keyframe your videos** You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).
-- **2026-05-17** – **🗣️ Speaker diarization** The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.
 ---
 
 ## 🌱 Introduction

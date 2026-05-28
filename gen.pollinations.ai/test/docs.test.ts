@@ -106,6 +106,18 @@ describe("docs routes", () => {
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
+
+        // Code samples are injected post-merge on both gen-owned and
+        // enter-owned paths.
+        const chatPost = (
+            schema.paths["/v1/chat/completions"] as Record<string, unknown>
+        )?.post as Record<string, unknown> | undefined;
+        expect(chatPost?.["x-codeSamples"]).toBeDefined();
+
+        const accountKeyGet = (
+            schema.paths["/account/key"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {

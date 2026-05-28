@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-05-13",
-        emoji: "🌻",
-        title: "Pollen pack bonuses are stepping down",
+        date: "2026-05-28",
+        emoji: "💳",
+        title: "Local payment methods are here",
         description:
-            "As the service keeps improving, the bonus Pollen included with each pack is being reduced.",
+            "Buy Pollen your way — UPI in India, Pix in Brazil, Alipay in China, and iDEAL in Europe. More local options now show automatically based on your country.",
     },
     {
         date: "2026-05-07",

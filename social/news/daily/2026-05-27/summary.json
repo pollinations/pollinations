@@ -1,0 +1,27 @@
+{
+  "date": "2026-05-27",
+  "period_start": "2026-05-27",
+  "period_end": "2026-05-27",
+  "title": "Flagship models hit the free tier",
+  "summary": "Massive model drop for the free tier, a custom rewrite for API docs, and better transparency for developer earnings.\n\nSix new models just landed, including Grok 4.3, Wan Pro for video, and Gemini 3 search variants. More importantly, we moved five heavyweights—including GPT-5.5, DeepSeek Pro, and Grok Large—to the free tier. We also shuffled some backend providers to make embeddings cheaper.\n\nWe ripped out our old OpenAPI-to-markdown dependency and wrote a custom builder. It flattens nested properties, resolves pointers, and turns complex schemas into highly readable markdown tables. The API docs are now significantly easier to parse.\n\nClaude Opus 4.7 via Bedrock gets very upset if you send it standard sampling parameters, so we now quietly strip temperature, top_p, and top_k before it can throw a 400 error. On the billing side, we added baseline cost fields to the developer earnings export so you can see exactly how your markup math works.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 11299,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11302,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11319,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11324,
+      "date": "2026-05-27"
+    }
+  ],
+  "generated_at": "2026-05-28T07:15:38.850527+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11172,
+  "title": "feat: country-routed checkout (phase 1 backend)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11172",
+  "merged_at": "2026-05-28T13:59:00Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Routes Stripe Checkout sessions by buyer cohort based on `CF-IPCountry` (Cloudflare-set, not spoofable), but keeps pricing USD-native and lets Stripe Adaptive Pricing handle buyer-currency localization.\n\nEarlier iterations of this branch tried per-cohort integration currencies (EUR/INR/GBP) backed by frankfurter.dev FX so we could unlock UPI, Pix, and mainland Alipay as currency-locked payment methods. The cost (FX cache, multi-currency settlement plumbing, extra Tinybird modeling) wasn't justified by the short-term volume, so checkout collapsed back to USD + Adaptive Pricing in 3c2c05125. The cohort enum stays as the hook point for any future currency-routed checkout and for analytics.\n\n**What this PR ships**\n\n- USD-native `price_data` (`unit_amount: pack.amountUsd * 100`) with `adaptive_pricing: { enabled: true }` on every checkout session — Stripe localizes presentment per buyer where supported (see `enter.pollinations.ai/src/routes/stripe.ts` lines 107 and 121)\n- `getCohortFromCountry(cf-ipcountry)` resolves a `CheckoutCohort` enum (USD / BR / APAC_ALIPAY / EU_CORE / INDIA / UK). The cohort id is written to `session.metadata` + `payment_intent.metadata` only — Stripe stores it for free, no schema commitment downstream. It does not influence pricing, PMC, or currency, and is not forwarded to Tinybird (geographic signals already on `stripe_event` — `card_country` from Radar and buyer billing-address country via the stored Stripe `payload` JSON — cover the analytics need)\n- MO routes to USD default rather than APAC_ALIPAY — a 5,000-charge live audit found 99.8% of MO billing-country charges were US-issued cards (card-testing fingerprint). Covered by `currency-router.test.ts`\n- Pollen grants stay USD-anchored (`5+1 = 6 pollen` regardless of buyer-displayed currency)\n- Single `STRIPE_PMC` env var per environment; Stripe filters methods by buyer (currency, country) at runtime. Sandbox + Live both point at the repurposed account Default PMC (renamed `top_up`)\n- Legacy ",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive goes global",
+    "blurb": "Pollen packs now automatically adapt to your local currency at checkout. No more mental math when fueling up your API usage!",
+    "summary": "Enabled Stripe Adaptive Pricing on all checkout sessions, allowing users to pay for Pollen packs in their local currency while keeping grants USD-anchored.",
+    "impact": "When buying Pollen, you will now see prices automatically localized to your region's currency at checkout.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "checkout",
+      "localization",
+      "adaptive-pricing"
+    ],
+    "visual_concept": "Polly the bee at a cozy market stall or checkout terminal, interacting with the Monitor Robot. Floating currency symbols ($, €, £) to represent global/localized payments. Lush garden setting to keep the nature motif.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot operating a tiny wooden checkout stand in a lush digital garden. A chunky retro robot with a CRT monitor head stands at the counter, holding a glowing pixelated credit card. Small floating currency symbols ($, €, £) hover around the stand. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-28/PR-11172.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot operating a tiny wooden checkout stand in a lush digital garden. A chunky retro robot with a CRT monitor head stands at the counter, holding a glowing pixelated credit card. Small floating currency symbols ($, €, £) hover around the stand. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-28T14:00:25.802107+00:00"
+}

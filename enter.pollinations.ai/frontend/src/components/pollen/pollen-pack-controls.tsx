@@ -102,11 +102,14 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             <span
                                 key={pack.amountUsd}
                                 style={{
-                                    left: isLast
-                                        ? "calc(100% + 11px)"
-                                        : lastIndex > 0
-                                          ? `${(index / lastIndex) * 100}%`
-                                          : "0%",
+                                    // Cancel the container's px-[11px] at both
+                                    // ends so the first/last items sit flush
+                                    // against the rail edges (not indented).
+                                    left: isFirst
+                                        ? "-11px"
+                                        : isLast
+                                          ? "calc(100% + 11px)"
+                                          : `${(index / lastIndex) * 100}%`,
                                 }}
                                 className={cn(
                                     "absolute top-0 whitespace-nowrap",

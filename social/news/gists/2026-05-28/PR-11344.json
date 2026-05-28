@@ -1,0 +1,34 @@
+{
+  "pr_number": 11344,
+  "title": "chore(enter): remove pollen pack bonus pinned banner",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11344",
+  "merged_at": "2026-05-28T14:04:46Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the \"Pollen pack bonuses are stepping down\" pinned banner entry (2026-05-13) from `news-banner.tsx`\n- Announcement has run its course; the 💳 local payment methods and 🪷 developer earnings entries remain\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Clearing the bulletin board",
+    "blurb": "We've taken down the old pollen pack bonus announcement from the news banner to keep things tidy.",
+    "summary": "Removed the outdated 'Pollen pack bonuses are stepping down' announcement from the pinned news banner.",
+    "impact": "Users will see a cleaner news banner with only the current local payment and developer earnings announcements.",
+    "keywords": [
+      "ui",
+      "banner",
+      "cleanup",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee taking down an old poster from a wooden bulletin board, keeping the space tidy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot taking down an old paper poster from a wooden bulletin board. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-28/PR-11344.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot taking down an old paper poster from a wooden bulletin board. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-28T14:05:56.263775+00:00"
+}

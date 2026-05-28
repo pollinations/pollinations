@@ -24,7 +24,6 @@ SCHEMA >
 `card_network` LowCardinality(String) `json:$.card_network` DEFAULT '',
 `risk_level` LowCardinality(String) `json:$.risk_level` DEFAULT '',
 `risk_score` UInt16 `json:$.risk_score` DEFAULT 0,
-`cohort` LowCardinality(String) `json:$.cohort` DEFAULT '',
 `customer_email` String `json:$.customer_email` DEFAULT '',
 `livemode` UInt8 `json:$.livemode` DEFAULT 0,
 `payload` String `json:$.payload`

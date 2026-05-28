@@ -2877,55 +2877,13 @@ test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-
     expect(after?.count).toBe(before?.count);
 });
 
-test("POST /api/webhooks/stripe forwards cohort from event metadata to Tinybird", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
-
-    // charge.metadata.cohort flows from the session's payment_intent_data.metadata
-    // set at checkout-session-creation time (see stripe.ts cohort routing).
-    const chargeEvent = {
-        id: "evt_test_cohort_forward",
-        type: "charge.succeeded",
-        livemode: false,
-        data: {
-            object: {
-                id: "ch_test_cohort_forward",
-                object: "charge",
-                amount: 429,
-                currency: "eur",
-                status: "succeeded",
-                metadata: { userId: "u_test", cohort: "BR" },
-                billing_details: { email: "buyer@example.com" },
-                payment_method_details: {
-                    type: "card",
-                    card: { brand: "visa", country: "BR", network: "visa" },
-                },
-                outcome: { risk_level: "normal", risk_score: 10 },
-            },
-        },
-    };
-
-    const response = await postSignedStripeWebhook(chargeEvent);
-    expect(response.status).toBe(200);
-
-    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
-    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
-        event_id: "evt_test_cohort_forward",
-        cohort: "BR",
-        currency: "eur",
-        card_country: "BR",
-    });
-});
-
-test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird with cohort", async ({
+test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
     // Delayed-payment methods (BR Pix, EU SEPA) surface failure via
-    // checkout.session.async_payment_failed. Cohort flows from
-    // session.metadata.cohort set at checkout-session-creation time.
+    // checkout.session.async_payment_failed — exercise the dedicated handler.
     const failedEvent = {
         id: "evt_test_async_failed",
         type: "checkout.session.async_payment_failed",
@@ -2938,7 +2896,7 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
                 currency: "eur",
                 payment_status: "unpaid",
                 payment_method_types: ["sepa_debit"],
-                metadata: { userId: "u_test", cohort: "EU_CORE" },
+                metadata: { userId: "u_test" },
                 customer_email: "buyer@example.com",
             },
         },
@@ -2951,7 +2909,6 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
         event_id: "evt_test_async_failed",
         event_type: "checkout.session.async_payment_failed",
-        cohort: "EU_CORE",
         currency: "eur",
         payment_status: "unpaid",
         payment_methods_offered: "sepa_debit",

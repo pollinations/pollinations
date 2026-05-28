@@ -29,13 +29,6 @@ const PINNED_NEWS: Highlight[] = [
             "Buy Pollen your way — UPI in India, Pix in Brazil, Alipay & WeChat Pay in China, and iDEAL in Europe. More local options now show automatically based on your country.",
     },
     {
-        date: "2026-05-13",
-        emoji: "🌻",
-        title: "Pollen pack bonuses are stepping down",
-        description:
-            "As the service keeps improving, the bonus Pollen included with each pack is being reduced.",
-    },
-    {
         date: "2026-05-07",
         emoji: "🪷",
         title: "Developer earnings are live",

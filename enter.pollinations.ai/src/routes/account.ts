@@ -1,9 +1,9 @@
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
@@ -1672,11 +1672,7 @@ const BILLING_PRECISION = 1e8; // 8 decimal places
 
 const StorageChargeSchema = z.object({
     sizeBytes: z.number().int().positive().describe("File size in bytes"),
-    days: z
-        .number()
-        .positive()
-        .max(730)
-        .describe("Retention period in days"),
+    days: z.number().positive().max(730).describe("Retention period in days"),
     hash: z
         .string()
         .regex(/^[a-f0-9]{16}$/i)

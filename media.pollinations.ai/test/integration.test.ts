@@ -271,7 +271,10 @@ describe("media.pollinations.ai", () => {
 
     it("?expires=0.04 (~1h) is accepted", async () => {
         const form = new FormData();
-        form.append("file", new File([TINY_PNG], "short.png", { type: "image/png" }));
+        form.append(
+            "file",
+            new File([TINY_PNG], "short.png", { type: "image/png" }),
+        );
         const res = await SELF.fetch(
             "https://media.pollinations.ai/upload?expires=0.04",
             {
@@ -287,7 +290,10 @@ describe("media.pollinations.ai", () => {
 
     it("?expires=0 (zero) returns 400", async () => {
         const form = new FormData();
-        form.append("file", new File([TINY_PNG], "x.png", { type: "image/png" }));
+        form.append(
+            "file",
+            new File([TINY_PNG], "x.png", { type: "image/png" }),
+        );
         const res = await SELF.fetch(
             "https://media.pollinations.ai/upload?expires=0",
             {
@@ -301,7 +307,10 @@ describe("media.pollinations.ai", () => {
 
     it("?expires negative returns 400", async () => {
         const form = new FormData();
-        form.append("file", new File([TINY_PNG], "x.png", { type: "image/png" }));
+        form.append(
+            "file",
+            new File([TINY_PNG], "x.png", { type: "image/png" }),
+        );
         const res = await SELF.fetch(
             "https://media.pollinations.ai/upload?expires=-1",
             {
@@ -315,7 +324,10 @@ describe("media.pollinations.ai", () => {
 
     it("?expires above maximum (~2 years) returns 400", async () => {
         const form = new FormData();
-        form.append("file", new File([TINY_PNG], "x.png", { type: "image/png" }));
+        form.append(
+            "file",
+            new File([TINY_PNG], "x.png", { type: "image/png" }),
+        );
         const res = await SELF.fetch(
             "https://media.pollinations.ai/upload?expires=800",
             {
@@ -348,15 +360,15 @@ describe("media.pollinations.ai", () => {
             );
 
         const form = new FormData();
-        form.append("file", new File([TINY_PNG], "broke.png", { type: "image/png" }));
-        const res = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
-                method: "POST",
-                body: form,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
-            },
+        form.append(
+            "file",
+            new File([TINY_PNG], "broke.png", { type: "image/png" }),
         );
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: form,
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
+        });
         expect(res.status).toBe(402);
         const body = (await res.json()) as { error: string };
         expect(body.error).toContain("balance");

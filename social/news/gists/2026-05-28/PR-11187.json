@@ -1,0 +1,35 @@
+{
+  "pr_number": 11187,
+  "title": "fix: detect additive token convention to prevent quarantine",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11187",
+  "merged_at": "2026-05-28T15:33:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Fixes #11183.\nCloses #11208.\n\n## Problem\n\nSuccessful generations were being quarantined from Tinybird analytics because `openaiUsageToUsage` derived negative text-token counts, and Tinybird stores these fields as `UInt32`.\n\nNegative tokens mean the provider usage object does not match our assumption about whether detail buckets are included in or additive to the headline token counts.\n\n## Fix\n\n`openaiUsageToUsage` detects the convention per row from `total_tokens`:\n\n- `total_tokens = prompt_tokens + completion_tokens`: details are inclusive subcategories.\n- xAI/Grok reasoning: reasoning can be additive while prompt cache remains inclusive.\n- Inclusive detail buckets are capped to their top-level token budget to avoid impossible negative usage.\n\nThis preserves additive reasoning usage without overcounting OpenAI/OpenRouter-style inclusive rows.\n\n## Verification\n\nReal endpoint checks using SOPS-encrypted provider secrets:\n\n- OpenAI `gpt-5.1`: `prompt=13`, `completion=15`, `reasoning=5`, `total=28` -> reasoning is inside completion.\n- xAI `grok-4.3`: `prompt=137`, `completion=1`, `cached=128`, `reasoning=136`, `total=274` -> cached prompt is inclusive, reasoning is additive.\n- Azure Grok `grok-4.20-beta-0309-reasoning`: `prompt=7`, `completion=1`, `reasoning=418`, `total=426` -> reasoning is additive.\n- OpenRouter `mistralai/mistral-small-2603`: `prompt=26`, `completion=101`, `reasoning=133`, `total=127` -> total proves inclusive accounting, so details must be capped.\n- Fireworks `deepseek-v4-flash`: `prompt=11`, `completion=25`, `total=36` -> normal inclusive arithmetic.\n\nLocal checks:\n\n- `npx biome check --write ../shared/registry/usage-headers.ts test/usage-headers.test.ts`\n- `npx vitest run test/usage-headers.test.ts` — 24 tests passing\n- `npm run typecheck` in `gen.pollinations.ai`\n- `npm run test` in `gen.pollinations.ai` — 227 tests passing\n- `git diff --check`\n\n## Scope\n\nForward-only producer fix. Historical quarantined rows still require provider logs or anoth",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The great token reconciliation",
+    "blurb": "Different AI models couldn't agree on how to count their tokens, leading to some impossible math behind the scenes. We've taught our systems to translate everyone's unique counting habits so our analytics stay perfectly balanced.",
+    "summary": "The openaiUsageToUsage parser now dynamically detects whether provider token details like reasoning or cached tokens are inclusive or additive, preventing negative token counts from quarantining analytics rows in Tinybird.",
+    "impact": "Internal usage metrics now accurately reflect token consumption across diverse providers like xAI, OpenAI, and OpenRouter without failing UInt32 constraints.",
+    "keywords": [
+      "analytics",
+      "tokens",
+      "tinybird",
+      "usage",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a giant chalkboard or glowing terminal filled with math equations and different token jars. The robot looks confused by a jar labeled '-5 tokens', while Polly is happily organizing them into a neat, glowing lime green master ledger.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny wizard glasses, organizing glowing token jars on a wooden desk alongside a chunky Monitor Robot. The robot points at a chalkboard filled with complex math equations. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-28/PR-11187.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny wizard glasses, organizing glowing token jars on a wooden desk alongside a chunky Monitor Robot. The robot points at a chalkboard filled with complex math equations. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-28T15:35:01.122720+00:00"
+}

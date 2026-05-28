@@ -1,7 +1,8 @@
 import { cn } from "@frontend/lib/cn.ts";
 import {
+    formatPollenPackPriceUsd,
     formatPollenPackValue,
-    getPackBonusPercent,
+    getPackDiscountPercent,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -12,9 +13,10 @@ const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
 
 const formatPackAriaLabel = (pack: PollenPack): string => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
+    const discountPercent = getPackDiscountPercent(pack);
+    const discountLabel =
+        discountPercent > 0 ? `, ${discountPercent}% off` : "";
+    return `${formatPollenPackValue(pack.pollenGrant)} pollen, about ${formatPollenPackPriceUsd(pack.priceUsd)}${discountLabel}`;
 };
 
 type PollenPackSliderProps = {
@@ -72,8 +74,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             pack.amountUsd === selectedPack?.amountUsd;
                         const isFirst = index === 0;
                         const isLast = lastIndex > 0 && index === lastIndex;
-                        const bonusPercent = getPackBonusPercent(pack);
-                        const hasBonus = pack.bonusPollen > 0;
+                        const discountPercent = getPackDiscountPercent(pack);
+                        const hasDiscount = discountPercent > 0;
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -96,7 +98,10 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 "text-2xl leading-none text-paid-deep",
                                         )}
                                     >
-                                        ${pack.amountUsd}
+                                        {formatPollenPackValue(
+                                            pack.pollenGrant,
+                                        )}
+                                        {isSelected ? " pollen" : "p"}
                                     </span>
                                     {isSelected && (
                                         <Chip
@@ -120,12 +125,12 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                           : "text-center",
                                                 )}
                                             >
-                                                {formatPollenPackValue(
-                                                    pack.pollenGrant,
-                                                )}{" "}
-                                                pollen
+                                                ≈{" "}
+                                                {formatPollenPackPriceUsd(
+                                                    pack.priceUsd,
+                                                )}
                                             </span>
-                                            {hasBonus && (
+                                            {hasDiscount && (
                                                 <span
                                                     className={cn(
                                                         "text-amber-700",
@@ -136,7 +141,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                               : "text-center",
                                                     )}
                                                 >
-                                                    +{bonusPercent}% bonus
+                                                    {discountPercent}% off
                                                 </span>
                                             )}
                                         </Chip>

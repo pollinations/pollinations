@@ -1,5 +1,9 @@
 import { formatPollen } from "@frontend/lib/format-pollen.ts";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    formatPollenPackPriceUsd,
+    formatPollenPackValue,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
 import { Button } from "../ui/button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
@@ -356,7 +360,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             />
                         </div>
                         <Tooltip
-                            content={`Buy $${selectedPack.amountUsd} pollen pack`}
+                            content={`Buy ${formatPollenPackValue(selectedPack.pollenGrant)} pollen for ${formatPollenPackPriceUsd(selectedPack.priceUsd)}`}
                             displayContents
                         >
                             <Button

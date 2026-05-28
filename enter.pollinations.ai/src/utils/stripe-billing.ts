@@ -433,7 +433,7 @@ export async function processAutoTopUpForUser(
     const claimed = await claimAutoTopUpAttempt(env.DB, {
         attemptId,
         userId,
-        amountUsd: pack.amountUsd,
+        amountUsd: pack.priceUsd,
         pollenGrant: pack.pollenGrant,
     });
     if (!claimed) {
@@ -515,7 +515,7 @@ export async function processAutoTopUpForUser(
             {
                 customer: customerId,
                 invoice: invoice.id,
-                amount: pack.amountUsd * 100,
+                amount: pack.priceCents,
                 currency: "usd",
                 description: pack.checkoutName,
                 tax_behavior: "inclusive",
@@ -589,7 +589,7 @@ export async function creditAutoTopUpInvoice(
             invoiceStatus: invoice.status,
             amountPaid: invoice.amount_paid,
             currency: invoice.currency,
-            expectedAmountCents: attempt.amountUsd * 100,
+            expectedAmountCents: Math.round(attempt.amountUsd * 100),
             expectedCurrency: "usd",
         });
         await markAttemptFailedByInvoice(
@@ -1083,7 +1083,7 @@ function verifyAutoTopUpInvoicePayment(
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    if (invoice.amount_paid !== attempt.amountUsd * 100) {
+    if (invoice.amount_paid !== Math.round(attempt.amountUsd * 100)) {
         return { ok: false, reason: "amount mismatch" };
     }
 

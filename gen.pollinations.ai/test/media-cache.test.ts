@@ -6,7 +6,7 @@ import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 
@@ -130,6 +130,11 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
     it.each([
         { label: "image", cache: imageCache, contentType: "image/png" },
         { label: "audio", cache: audioCache, contentType: "audio/mpeg" },
@@ -174,6 +179,56 @@ describe("media cache", () => {
             "Authentication required",
         );
         expect(missNoAuth.response.status).toBe(401);
+        expect(media.originHits).toBe(1);
+    });
+
+    it("queues save/catalog writes without changing cache identity", async () => {
+        const catalogFetch = vi.fn<
+            (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+        >(async () => Response.json({ ok: true }));
+        vi.stubGlobal("fetch", catalogFetch);
+
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const env = createMediaCacheEnv();
+        const saved = await dispatch(
+            media.app,
+            "/media/generated?save=1&visibility=public&tag=catgpt&tags=parent:abc123&model=flux&key=test-key",
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
+            env,
+        );
+
+        expect(await consumeAndWait(saved)).toBe("origin:1");
+        expect(catalogFetch).toHaveBeenCalledOnce();
+        const [catalogUrl, catalogRequest] = catalogFetch.mock.calls[0];
+        expect(catalogUrl).toBe("https://media.pollinations.ai/catalog");
+
+        if (!catalogRequest) throw new Error("Missing catalog request init");
+        const catalogBody = JSON.parse(catalogRequest.body as string);
+        expect(catalogRequest.headers).toMatchObject({
+            Authorization: "Bearer test-key",
+        });
+        expect(catalogBody).toMatchObject({
+            url: "https://gen.pollinations.ai/media/generated?model=flux",
+            visibility: "public",
+            tags: ["catgpt", "parent:abc123"],
+            contentType: "image/png",
+            model: "flux",
+        });
+
+        const cachedWithoutCatalogParams = await dispatch(
+            media.app,
+            "/media/generated?model=flux",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(cachedWithoutCatalogParams)).toBe(
+            "origin:1",
+        );
+        expect(cachedWithoutCatalogParams.response.headers.get("X-Cache")).toBe(
+            "HIT",
+        );
         expect(media.originHits).toBe(1);
     });
 });

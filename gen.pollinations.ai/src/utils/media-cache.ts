@@ -9,7 +9,16 @@ import { parseSafeFeatures } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
 
-const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+const EXCLUDED_PARAMS = [
+    "nofeed",
+    "no-cache",
+    "key",
+    "save",
+    "catalog",
+    "tag",
+    "tags",
+    "visibility",
+];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
 

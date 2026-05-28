@@ -1454,6 +1454,39 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Display name of the API key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .describe(
+                                            "User ID that owns this API key",
+                                        ),
+                                    apiKeyId: z
+                                        .string()
+                                        .describe(
+                                            "Stable API key ID. This is not the secret key value.",
+                                        ),
+                                    keyId: z
+                                        .string()
+                                        .describe(
+                                            "Alias for apiKeyId for callers that already use keyId.",
+                                        ),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key ID that minted this BYOP key, when present.",
+                                        ),
+                                    byopClientName: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the app that minted this BYOP key, when present.",
+                                        ),
+                                    byopClientUserId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Owner user ID of the app that minted this BYOP key, when present.",
+                                        ),
                                     expiresAt: z
                                         .string()
                                         .nullable()
@@ -1515,6 +1548,7 @@ export const accountRoutes = new Hono<Env>()
                         "API key required. This endpoint validates API keys.",
                 });
             }
+            const user = c.var.auth.requireUser();
 
             log.debug("Returning status for API key: {keyId}", {
                 keyId: apiKey.id,
@@ -1564,6 +1598,12 @@ export const accountRoutes = new Hono<Env>()
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,
+                userId: user.id,
+                apiKeyId: apiKey.id,
+                keyId: apiKey.id,
+                byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopClientName: apiKey.byopClientName ?? null,
+                byopClientUserId: apiKey.byopClientUserId ?? null,
                 expiresAt,
                 expiresIn,
                 permissions,

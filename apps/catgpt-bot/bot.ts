@@ -82,7 +82,9 @@ function createPrompt(
 
 function buildImageUrl(prompt: string, avatarUrl: string | null): string {
     let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}&nologo=true`;
-    if (API_KEY) url += `&key=${encodeURIComponent(API_KEY)}`;
+    if (API_KEY) {
+        url += `&key=${encodeURIComponent(API_KEY)}&save=1&visibility=public&tag=catgpt&tag=catgpt-bot`;
+    }
 
     if (avatarUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${avatarUrl},${SELFIE_CATGPT}`)}`;

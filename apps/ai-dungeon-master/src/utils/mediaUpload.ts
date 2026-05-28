@@ -1,44 +1,47 @@
-const MEDIA_URL = "https://gen.pollinations.ai";
+const MEDIA_URL = "https://media.pollinations.ai";
 const MEDIA_HOST = "media.pollinations.ai";
+const GEN_HOST = "gen.pollinations.ai";
 
-/** Check if a URL is already uploaded to media.pollinations.ai */
-function isMediaUrl(url: string): boolean {
+/** Check if a URL is already durable or already asks gen to catalog it. */
+function isPersistedUrl(url: string): boolean {
     try {
-        return new URL(url).hostname === MEDIA_HOST;
+        const parsed = new URL(url);
+        return (
+            parsed.hostname === MEDIA_HOST ||
+            (parsed.hostname === GEN_HOST &&
+                (parsed.searchParams.get("save") === "1" ||
+                    parsed.searchParams.get("catalog") === "1"))
+        );
     } catch {
         return false;
     }
 }
 
 /**
- * Upload a gen.pollinations.ai image to media.pollinations.ai for permanent storage.
- * Returns the permanent media URL on success, or the original URL on any error.
- * Skips upload if already a media URL (idempotent).
+ * Catalog a gen.pollinations.ai image for later lookup without downloading and
+ * re-uploading bytes. Returns the original URL so existing saves remain stable.
  */
 export async function uploadToMedia(
     genUrl: string,
     apiKey: string,
 ): Promise<string> {
-    if (!genUrl || isMediaUrl(genUrl)) return genUrl;
+    if (!genUrl || isPersistedUrl(genUrl)) return genUrl;
 
     try {
-        const response = await fetch(genUrl);
-        if (!response.ok) return genUrl;
-
-        const blob = await response.blob();
-        const formData = new FormData();
-        formData.append("file", blob);
-
-        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+        await fetch(`${MEDIA_URL}/catalog`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${apiKey}` },
-            body: formData,
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                url: genUrl,
+                tags: ["ai-dungeon-master"],
+                visibility: "private",
+            }),
         });
 
-        if (!uploadRes.ok) return genUrl;
-
-        const data = await uploadRes.json();
-        return data.url || genUrl;
+        return genUrl;
     } catch {
         return genUrl;
     }
@@ -58,24 +61,24 @@ export function countPendingUploads(gameState: {
 
     if (
         gameState.character?.avatar &&
-        !isMediaUrl(gameState.character.avatar)
+        !isPersistedUrl(gameState.character.avatar)
     ) {
         count++;
     }
 
     if (
         gameState.currentScene?.image &&
-        !isMediaUrl(gameState.currentScene.image)
+        !isPersistedUrl(gameState.currentScene.image)
     ) {
         count++;
     }
 
     for (const entry of gameState.storyHistory) {
-        if (entry.image && !isMediaUrl(entry.image)) count++;
+        if (entry.image && !isPersistedUrl(entry.image)) count++;
     }
 
     for (const item of gameState.inventory) {
-        if (item.image && !isMediaUrl(item.image)) count++;
+        if (item.image && !isPersistedUrl(item.image)) count++;
     }
 
     return count;

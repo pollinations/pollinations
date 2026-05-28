@@ -6,7 +6,9 @@ import {
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
     fetchBalance,
+    fetchMyCatGptMemes,
     fetchProfile,
+    fetchPublicCatGptMemes,
     generateCatReply,
     generateImageURL,
     getAuthorizeUrl,
@@ -73,6 +75,7 @@ const dom = {
     generatedMeme: $("generatedMeme"),
     downloadBtn: $("downloadBtn"),
     shareBtn: $("shareBtn"),
+    communityMemesGrid: $("communityMemesGrid"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
     imageUpload: $("imageUpload"),
@@ -174,6 +177,25 @@ function saveGeneratedMeme(prompt, url) {
         ...saved.filter((m) => m.prompt !== prompt),
     ].slice(0, 8);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+function catalogItemToMeme(item) {
+    return {
+        prompt: item.prompt || "CatGPT meme",
+        url: item.url,
+        model: item.model,
+    };
+}
+
+function mergeMemes(remoteItems, localItems) {
+    const seen = new Set();
+    return [...remoteItems.map(catalogItemToMeme), ...localItems].filter(
+        (item) => {
+            if (!item.url || seen.has(item.url)) return false;
+            seen.add(item.url);
+            return true;
+        },
+    );
 }
 
 // ── Animations ───────────────────────────────────────────────────────────────
@@ -333,9 +355,19 @@ function createMemeCard(prompt, index, imageUrl) {
     return card;
 }
 
-function loadUserMemes() {
+async function loadUserMemes() {
     dom.yourMemesGrid.innerHTML = "";
-    const saved = getSavedMemes();
+    const localMemes = getSavedMemes();
+    let saved = localMemes;
+
+    const apiKey = getStoredApiKey();
+    if (apiKey) {
+        try {
+            saved = mergeMemes(await fetchMyCatGptMemes(apiKey), localMemes);
+        } catch (error) {
+            console.warn("Could not load cataloged CatGPT memes:", error);
+        }
+    }
 
     if (!saved.length) {
         const p = document.createElement("p");
@@ -350,6 +382,30 @@ function loadUserMemes() {
         const card = createMemeCard(meme.prompt, i, meme.url);
         if (card) dom.yourMemesGrid.appendChild(card);
     });
+}
+
+async function loadCommunityMemes() {
+    if (!dom.communityMemesGrid) return;
+    dom.communityMemesGrid.innerHTML = "";
+
+    try {
+        const memes = (await fetchPublicCatGptMemes()).map(catalogItemToMeme);
+        if (!memes.length) {
+            const p = document.createElement("p");
+            p.textContent = "No public CatGPT memes yet.";
+            p.style.cssText =
+                "grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 2rem; font-style: italic;";
+            dom.communityMemesGrid.appendChild(p);
+            return;
+        }
+
+        memes.forEach((meme, i) => {
+            const card = createMemeCard(meme.prompt, i, meme.url);
+            if (card) dom.communityMemesGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.warn("Could not load public CatGPT gallery:", error);
+    }
 }
 
 function loadExamples() {
@@ -400,6 +456,7 @@ async function generateMeme() {
         createImageGenerationPrompt(question, catReply, !!uploadedImageUrl),
         activeModel,
         uploadedImageUrl,
+        { save: true },
     );
 
     try {
@@ -422,6 +479,7 @@ async function generateMeme() {
         celebrate();
         saveGeneratedMeme(question, imageUrl);
         loadUserMemes();
+        loadCommunityMemes();
     } catch (error) {
         if (cancelled) return;
         console.error("Generation error:", error);
@@ -618,6 +676,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
+    loadCommunityMemes();
     loadExamples();
     addFloatingEmojis();
     if (image) {

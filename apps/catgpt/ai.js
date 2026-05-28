@@ -3,11 +3,13 @@
 const API = "https://gen.pollinations.ai/image";
 const ENTER = "https://enter.pollinations.ai";
 const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA_CATALOG = "https://media.pollinations.ai";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
+const APP_TAG = `app:${APP_KEY.toLowerCase()}`;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -110,16 +112,70 @@ export function createImageGenerationPrompt(
         : `${base} Human with bob hair.`;
 }
 
-export function generateImageURL(prompt, model, imageUrl = null) {
+export function generateImageURL(prompt, model, imageUrl = null, options = {}) {
     const key = getStoredApiKey();
-    let url = `${API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${model}&key=${encodeURIComponent(key)}`;
+    const url = new URL(`${API}/${encodeURIComponent(prompt)}`);
+    url.searchParams.set("height", "1024");
+    url.searchParams.set("width", "1024");
+    url.searchParams.set("model", model);
+
+    if (key && options.save) {
+        url.searchParams.set("key", key);
+        url.searchParams.set("save", "1");
+        url.searchParams.set("visibility", "public");
+        url.searchParams.append("tag", "catgpt");
+        url.searchParams.append("tag", "catgpt:meme");
+    }
 
     if (imageUrl) {
-        url += `&enhance=false&image=${encodeURIComponent(`${imageUrl},${SELFIE_CATGPT}`)}`;
+        url.searchParams.set("enhance", "false");
+        url.searchParams.set("image", `${imageUrl},${SELFIE_CATGPT}`);
+        const parentHash = mediaHashFromUrl(imageUrl);
+        if (parentHash) url.searchParams.append("tag", `parent:${parentHash}`);
     } else {
-        url += `&enhance=true&image=${encodeURIComponent(ORIGINAL_CATGPT)}`;
+        url.searchParams.set("enhance", "true");
+        url.searchParams.set("image", ORIGINAL_CATGPT);
     }
-    return url;
+    return url.toString();
+}
+
+function mediaHashFromUrl(url) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.hostname !== "media.pollinations.ai") return null;
+        const hash = parsed.pathname.split("/").filter(Boolean)[0];
+        return /^[a-f0-9]{16}$/i.test(hash) ? hash.toLowerCase() : null;
+    } catch {
+        return null;
+    }
+}
+
+function normalizeCatalogItems(data) {
+    return Array.isArray(data?.media)
+        ? data.media.filter((item) => item?.url)
+        : [];
+}
+
+export async function fetchMyCatGptMemes(apiKey) {
+    const res = await fetch(`${MEDIA_CATALOG}/catalog?scope=mine&limit=24`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new Error(`My media failed: ${res.status}`);
+    return normalizeCatalogItems(await res.json()).filter(
+        (item) =>
+            item.appName === "CatGPT" ||
+            item.tags?.includes(APP_TAG) ||
+            item.tags?.includes("catgpt") ||
+            item.tags?.includes("catgpt:meme"),
+    );
+}
+
+export async function fetchPublicCatGptMemes() {
+    const res = await fetch(
+        `${MEDIA_CATALOG}/catalog?tag=${encodeURIComponent(APP_TAG)}&limit=24`,
+    );
+    if (!res.ok) throw new Error(`Gallery failed: ${res.status}`);
+    return normalizeCatalogItems(await res.json());
 }
 
 // ── Models ──────────────────────────────────────────────────────────────────

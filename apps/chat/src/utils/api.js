@@ -15,6 +15,13 @@ const getApiToken = () => {
     return ENV_API_TOKEN;
 };
 
+const addCatalogParams = (params, tags) => {
+    const token = getApiToken();
+    if (!token) return;
+    params.set("save", "1");
+    for (const tag of tags) params.append("tag", tag);
+};
+
 let textModels = [];
 let imageModels = [];
 let videoModels = [];
@@ -523,6 +530,7 @@ export const generateImage = async (prompt, options = {}) => {
         safe,
         quality,
     });
+    addCatalogParams(params, ["pollinations-chat", "pollinations-chat:image"]);
     const url = `${BASE_URL}/image/${encodeURIComponent(prompt)}?${params}`;
     const token = getApiToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -548,6 +556,7 @@ export const generateVideo = async (prompt, options = {}) => {
     } = options;
 
     const params = new URLSearchParams({ model, seed, nologo, nofeed });
+    addCatalogParams(params, ["pollinations-chat", "pollinations-chat:video"]);
     // Correct endpoint: /video/{prompt}  (not /image/{prompt})
     const url = `${BASE_URL}/video/${encodeURIComponent(prompt)}?${params}`;
     const token = getApiToken();
@@ -570,6 +579,7 @@ export const generateAudio = async (text, options = {}) => {
     const { voice = "nova", model = "openai-audio" } = options;
 
     const params = new URLSearchParams({ voice, model });
+    addCatalogParams(params, ["pollinations-chat", "pollinations-chat:audio"]);
     const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;
     const token = getApiToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};

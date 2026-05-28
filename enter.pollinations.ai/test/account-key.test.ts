@@ -41,6 +41,12 @@ test(
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();
+        expect(data.userId).toBeTruthy();
+        expect(data.apiKeyId).toBeTruthy();
+        expect(data.keyId).toBe(data.apiKeyId);
+        expect(data.byopClientKeyId).toBeNull();
+        expect(data.byopClientName).toBeNull();
+        expect(data.byopClientUserId).toBeNull();
         expect(data).toHaveProperty("expiresAt");
         expect(data).toHaveProperty("expiresIn");
         expect(data).toHaveProperty("permissions");

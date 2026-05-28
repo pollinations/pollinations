@@ -342,6 +342,20 @@ describe("API Key Management", () => {
             const created = await response.json();
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.byopClientKeyId).toBe(appKey.id);
+
+            const keyInfoResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: {
+                        Authorization: `Bearer ${created.key}`,
+                    },
+                },
+            );
+            expect(keyInfoResponse.status).toBe(200);
+            const keyInfo = await keyInfoResponse.json();
+            expect(keyInfo.byopClientKeyId).toBe(appKey.id);
+            expect(keyInfo.byopClientName).toBe(appKey.name);
+            expect(keyInfo.byopClientUserId).toBeTruthy();
         });
 
         test("allows device-flow attribution without redirect_uri when client_id matches the device code", async ({

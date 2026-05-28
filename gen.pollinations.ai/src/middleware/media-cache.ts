@@ -10,6 +10,7 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -33,11 +34,22 @@ type MediaCacheConfig = {
     label: string;
 };
 
+const MEDIA_CATALOG_URL = "https://media.pollinations.ai/catalog";
+const CATALOG_CONTROL_PARAMS = [
+    "key",
+    "save",
+    "catalog",
+    "tag",
+    "tags",
+    "visibility",
+];
+
 export function createMediaCache(config: MediaCacheConfig) {
     return createMiddleware<MediaCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(config.label);
+        const requestUrl = new URL(c.req.url);
 
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
+        const seedParam = requestUrl.searchParams.get("seed");
         if (seedParam === "-1") {
             log.debug("seed=-1 detected, skipping cache");
             return next();
@@ -53,6 +65,12 @@ export function createMediaCache(config: MediaCacheConfig) {
             const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
             if (cached) {
                 log.info("Cache HIT");
+                queueMediaCatalogWrite(
+                    c,
+                    requestUrl,
+                    cached.httpMetadata?.contentType ||
+                        config.defaultContentType,
+                );
                 setHttpMetadataHeaders(
                     c,
                     cached.httpMetadata,
@@ -88,8 +106,111 @@ export function createMediaCache(config: MediaCacheConfig) {
                 config.defaultContentType,
                 c.res,
             );
+            queueMediaCatalogWrite(
+                c,
+                requestUrl,
+                contentType || config.defaultContentType,
+            );
         }
     });
+}
+
+function queueMediaCatalogWrite(
+    c: Context<MediaCacheEnv>,
+    requestUrl: URL,
+    contentType: string,
+): void {
+    if (!shouldCatalog(requestUrl)) return;
+
+    const apiKey = extractApiKey(c.req.raw, requestUrl);
+    if (!apiKey) return;
+
+    const canonicalUrl = new URL(requestUrl);
+    for (const param of CATALOG_CONTROL_PARAMS) {
+        canonicalUrl.searchParams.delete(param);
+    }
+
+    const tags = extractTags(requestUrl);
+    const model = requestUrl.searchParams.get("model");
+    const prompt = promptFromPath(requestUrl.pathname);
+    const body = {
+        url: canonicalUrl.toString(),
+        visibility: normalizeVisibility(
+            requestUrl.searchParams.get("visibility"),
+        ),
+        tags,
+        contentType,
+        ...(model && { model }),
+        ...(prompt && { prompt }),
+    };
+
+    c.header("X-Media-Catalog", "queued");
+    c.executionCtx.waitUntil(
+        fetch(MEDIA_CATALOG_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(body),
+        })
+            .then(async (response) => {
+                if (response.ok) return;
+                const text = await response.text().catch(() => "");
+                c.get("log").warn(
+                    "Media catalog write failed with status {status}: {body}",
+                    {
+                        status: response.status,
+                        body: text.slice(0, 200),
+                    },
+                );
+            })
+            .catch((error) => {
+                c.get("log").warn("Media catalog write failed: {error}", {
+                    error,
+                });
+            }),
+    );
+}
+
+function shouldCatalog(url: URL): boolean {
+    const value =
+        url.searchParams.get("save") || url.searchParams.get("catalog");
+    return value === "1" || value === "true" || value === "yes";
+}
+
+function extractApiKey(request: Request, url: URL): string | null {
+    const bearer = request.headers
+        .get("authorization")
+        ?.match(/^Bearer (.+)$/)?.[1];
+    if (bearer) return bearer;
+    return url.searchParams.get("key");
+}
+
+function normalizeVisibility(
+    value: string | null,
+): "private" | "public" | "unlisted" {
+    return value === "public" || value === "unlisted" ? value : "private";
+}
+
+function extractTags(url: URL): string[] {
+    const tags = [
+        ...url.searchParams.getAll("tag"),
+        ...url.searchParams.getAll("tags").flatMap((value) => value.split(",")),
+    ]
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    return [...new Set(tags)];
+}
+
+function promptFromPath(pathname: string): string | undefined {
+    const match = pathname.match(/^\/(?:image|video|audio)\/(.+)$/);
+    if (!match) return undefined;
+    try {
+        return decodeURIComponent(match[1]);
+    } catch {
+        return match[1];
+    }
 }
 
 export const imageCache = createMediaCache({

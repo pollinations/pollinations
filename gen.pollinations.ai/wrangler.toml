@@ -167,6 +167,9 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# GitHub OAuth lockdown — must match enter.pollinations.ai staging allowlist.
+# Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
 
 [env.test]
 

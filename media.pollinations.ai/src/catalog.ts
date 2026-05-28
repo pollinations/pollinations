@@ -7,6 +7,7 @@ const MAX_TEXT_LENGTH = 1000;
 const MAX_MODEL_LENGTH = 128;
 const MAX_CONTENT_TYPE_LENGTH = 128;
 const REVERSE_TIMESTAMP_MAX = 9_999_999_999_999;
+const RESERVED_SYSTEM_TAG_PREFIXES = ["app:", "hash:"];
 
 const ALLOWED_CATALOG_HOSTS = new Set([
     "gen.pollinations.ai",
@@ -124,6 +125,11 @@ export function createCatalogEntry(input: {
     appName?: string | null;
     appOwnerUserId?: string | null;
 }): CatalogEntry {
+    const tags = mergeTags(input.fields.tags, [
+        input.hash ? `hash:${input.hash}` : null,
+        input.appKeyId ? `app:${input.appKeyId}` : null,
+    ]);
+
     return {
         entryId: crypto.randomUUID(),
         url: input.url,
@@ -132,7 +138,7 @@ export function createCatalogEntry(input: {
         ...(input.size !== undefined && { size: input.size }),
         createdAt: new Date().toISOString(),
         visibility: input.fields.visibility,
-        tags: input.fields.tags,
+        tags,
         ...(input.fields.prompt && { prompt: input.fields.prompt }),
         ...(input.fields.model && { model: input.fields.model }),
         ...(input.ownerUserId && { ownerUserId: input.ownerUserId }),
@@ -161,15 +167,8 @@ export async function writeCatalogEntry(
     }
 
     if (entry.visibility === "public") {
-        keys.add(`${CATALOG_PREFIX}/public/${suffix}`);
-        if (entry.hash) {
-            keys.add(`${CATALOG_PREFIX}/hash/${entry.hash}/${suffix}`);
-        }
         for (const tag of entry.tags) {
             keys.add(`${CATALOG_PREFIX}/tag/${safeFacet(tag)}/${suffix}`);
-        }
-        for (const app of appFacets(entry)) {
-            keys.add(`${CATALOG_PREFIX}/app/${app}/${suffix}`);
         }
     }
 
@@ -208,11 +207,7 @@ export async function listCatalogEntries(
     });
 }
 
-export function catalogPrefix(
-    kind: "public" | "owner" | "tag" | "app" | "hash",
-    facet?: string,
-): string {
-    if (kind === "public") return `${CATALOG_PREFIX}/public/`;
+export function catalogPrefix(kind: "owner" | "tag", facet?: string): string {
     return `${CATALOG_PREFIX}/${kind}/${safeFacet(facet)}/`;
 }
 
@@ -278,26 +273,6 @@ export function normalizeCatalogUrl(input: unknown): {
     };
 }
 
-export async function resolveCatalogAppFacet(
-    appRef: string | null,
-    verifyApiKey: (apiKey: string) => Promise<{
-        apiKeyId?: string;
-        keyId?: string;
-        name?: string | null;
-    } | null>,
-): Promise<string | null> {
-    if (!appRef) return null;
-    if (/^(pk_|plln_pk_)/.test(appRef)) {
-        const verified = await verifyApiKey(appRef);
-        return (
-            normalizeTag(verified?.apiKeyId) ||
-            normalizeTag(verified?.keyId) ||
-            normalizeTag(verified?.name)
-        );
-    }
-    return normalizeTag(appRef);
-}
-
 function normalizeCatalogFields(raw: Record<string, unknown>): CatalogFields {
     return {
         visibility: normalizeVisibility(raw.visibility),
@@ -342,11 +317,29 @@ function normalizeTags(input: unknown[]): string[] {
     const seen = new Set<string>();
     for (const part of input.flatMap(tagParts)) {
         const tag = normalizeTag(part);
-        if (!tag || seen.has(tag)) continue;
+        if (!tag || isReservedSystemTag(tag) || seen.has(tag)) continue;
         seen.add(tag);
         if (seen.size >= MAX_TAGS) break;
     }
     return [...seen];
+}
+
+function mergeTags(
+    userTags: string[],
+    systemTagInputs: Array<string | null>,
+): string[] {
+    const seen = new Set(userTags);
+    for (const input of systemTagInputs) {
+        const tag = normalizeTag(input);
+        if (tag) seen.add(tag);
+    }
+    return [...seen];
+}
+
+function isReservedSystemTag(tag: string): boolean {
+    return RESERVED_SYSTEM_TAG_PREFIXES.some((prefix) =>
+        tag.startsWith(prefix),
+    );
 }
 
 function tagParts(input: unknown): string[] {
@@ -373,9 +366,4 @@ function reverseTimestamp(createdAt: string): string {
     const timestamp = Date.parse(createdAt);
     const reversed = REVERSE_TIMESTAMP_MAX - timestamp;
     return String(reversed).padStart(13, "0");
-}
-
-function appFacets(entry: CatalogEntry): string[] {
-    const facets = [normalizeTag(entry.appKeyId), normalizeTag(entry.appName)];
-    return [...new Set(facets.filter((facet): facet is string => !!facet))];
 }

@@ -13,8 +13,8 @@ import {
     createCatalogEntry,
     listCatalogEntries,
     normalizeCatalogUrl,
+    normalizeTag,
     parseListLimit,
-    resolveCatalogAppFacet,
     safeFacet,
     writeCatalogEntry,
 } from "./catalog";
@@ -102,10 +102,30 @@ function catalogListResponse(
     limit: number,
     includePrivateFields = false,
 ) {
-    const media = entries.map((entry) =>
-        catalogItem(entry, includePrivateFields),
-    );
+    const seen = new Set<string>();
+    const media = entries
+        .filter((entry) => {
+            if (seen.has(entry.entryId)) return false;
+            seen.add(entry.entryId);
+            return true;
+        })
+        .map((entry) => catalogItem(entry, includePrivateFields));
     return { media, count: media.length, limit };
+}
+
+function catalogQueryTags(req: {
+    queries: (key: string) => string[] | undefined;
+}) {
+    return [
+        ...(req.queries("tag") ?? []),
+        ...(req.queries("tags") ?? []).flatMap((value) => value.split(",")),
+    ]
+        .map((tag) => normalizeTag(tag))
+        .filter((tag): tag is string => !!tag);
+}
+
+function isMineCatalogQuery(value: string | undefined): boolean {
+    return value === "mine";
 }
 
 const UploadResponseSchema = z.object({
@@ -440,12 +460,13 @@ api.post(
 );
 
 api.get(
-    "/me/media",
+    "/catalog",
     describeRoute({
         tags: ["media.pollinations.ai"],
-        summary: "List my media",
+        summary: "List catalog entries",
         description:
-            "List catalog entries created by the authenticated user, including private entries.",
+            "List public catalog entries by tag. Pass `scope=mine` with an API key to list entries created by the caller, including private entries. App and media-hash attribution are server-stamped tags such as `app:<app-key-id>` and `hash:<media-hash>`.",
+        security: [],
         responses: {
             200: {
                 description: "Catalog entries",
@@ -455,8 +476,14 @@ api.get(
                     },
                 },
             },
+            400: {
+                description: "Missing tag for public catalog query",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             401: {
-                description: "Missing or invalid API key",
+                description: "Missing or invalid API key for scope=mine",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -464,120 +491,54 @@ api.get(
         },
     }),
     async (c) => {
-        const authResult = await requireApiKey(c.req.raw);
-        if (!authResult) {
-            return c.json({ error: "Missing or invalid API key" }, 401);
+        const limit = parseListLimit(c.req.query("limit") ?? null);
+        const queryTags = catalogQueryTags(c.req);
+
+        if (isMineCatalogQuery(c.req.query("scope"))) {
+            const authResult = await requireApiKey(c.req.raw);
+            if (!authResult) {
+                return c.json({ error: "Missing or invalid API key" }, 401);
+            }
+
+            const owner = safeFacet(authResult.userId || authResult.name);
+            const entries = (
+                await listCatalogEntries(
+                    c.env.MEDIA_BUCKET,
+                    catalogPrefix("owner", owner),
+                    limit,
+                )
+            ).filter(
+                (entry) =>
+                    queryTags.length === 0 ||
+                    queryTags.some((tag) => entry.tags.includes(tag)),
+            );
+            return c.json(catalogListResponse(entries, limit, true));
         }
 
-        const limit = parseListLimit(c.req.query("limit") ?? null);
-        const owner = safeFacet(authResult.userId || authResult.name);
-        const entries = await listCatalogEntries(
-            c.env.MEDIA_BUCKET,
-            catalogPrefix("owner", owner),
-            limit,
-        );
-        return c.json(catalogListResponse(entries, limit, true));
-    },
-);
-
-api.get(
-    "/gallery",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "List public media",
-        description:
-            "List public catalog entries. Filter with `tag`, `app`, or `app_key`.",
-        security: [],
-        responses: {
-            200: {
-                description: "Public catalog entries",
-                content: {
-                    "application/json": {
-                        schema: resolver(CatalogListResponseSchema),
-                    },
-                },
-            },
-        },
-    }),
-    async (c) => {
-        const limit = parseListLimit(c.req.query("limit") ?? null);
-        const tag = c.req.query("tag");
-        const appRef = c.req.query("app_key") || c.req.query("app");
-        const appFacet = await resolveCatalogAppFacet(
-            appRef ?? null,
-            verifyApiKey,
-        );
-        if (appRef && !appFacet) {
-            return c.json(catalogListResponse([], limit));
+        if (queryTags.length === 0) {
+            return c.json({ error: "tag is required unless scope=mine" }, 400);
         }
-        const prefix = tag
-            ? catalogPrefix("tag", tag)
-            : appFacet
-              ? catalogPrefix("app", appFacet)
-              : catalogPrefix("public");
+
         const entries = (
-            await listCatalogEntries(c.env.MEDIA_BUCKET, prefix, limit)
-        ).filter((entry) => entry.visibility === "public");
-        return c.json(catalogListResponse(entries, limit));
+            await Promise.all(
+                queryTags.map((tag) =>
+                    listCatalogEntries(
+                        c.env.MEDIA_BUCKET,
+                        catalogPrefix("tag", tag),
+                        limit,
+                    ),
+                ),
+            )
+        ).flat();
+
+        return c.json(
+            catalogListResponse(
+                entries.filter((entry) => entry.visibility === "public"),
+                limit,
+            ),
+        );
     },
 );
-
-api.get("/apps/:app/media", async (c) => {
-    const limit = parseListLimit(c.req.query("limit") ?? null);
-    const appFacet = await resolveCatalogAppFacet(
-        c.req.param("app"),
-        verifyApiKey,
-    );
-    if (!appFacet) return c.json({ error: "Invalid app" }, 400);
-    const entries = (
-        await listCatalogEntries(
-            c.env.MEDIA_BUCKET,
-            catalogPrefix("app", appFacet),
-            limit,
-        )
-    ).filter((entry) => entry.visibility === "public");
-    return c.json(catalogListResponse(entries, limit));
-});
-
-api.get("/tags/:tag", async (c) => {
-    const limit = parseListLimit(c.req.query("limit") ?? null);
-    const entries = (
-        await listCatalogEntries(
-            c.env.MEDIA_BUCKET,
-            catalogPrefix("tag", c.req.param("tag")),
-            limit,
-        )
-    ).filter((entry) => entry.visibility === "public");
-    return c.json(catalogListResponse(entries, limit));
-});
-
-api.get("/tags/:tag/media", async (c) => {
-    const limit = parseListLimit(c.req.query("limit") ?? null);
-    const entries = (
-        await listCatalogEntries(
-            c.env.MEDIA_BUCKET,
-            catalogPrefix("tag", c.req.param("tag")),
-            limit,
-        )
-    ).filter((entry) => entry.visibility === "public");
-    return c.json(catalogListResponse(entries, limit));
-});
-
-api.get("/:hash/catalog", async (c) => {
-    const hash = c.req.param("hash");
-    if (!HASH_PATTERN.test(hash)) {
-        return c.json({ error: "Invalid hash format" }, 400);
-    }
-    const limit = parseListLimit(c.req.query("limit") ?? null);
-    const entries = (
-        await listCatalogEntries(
-            c.env.MEDIA_BUCKET,
-            catalogPrefix("hash", hash),
-            limit,
-        )
-    ).filter((entry) => entry.visibility === "public");
-    return c.json(catalogListResponse(entries, limit));
-});
 
 api.get(
     "/:hash",
@@ -778,8 +739,8 @@ app.get("/", (c) => {
         endpoints: {
             upload: "POST /upload (requires API key)",
             catalog: "POST /catalog (requires API key)",
-            myMedia: "GET /me/media (requires API key)",
-            gallery: "GET /gallery",
+            catalogQuery:
+                "GET /catalog?tag=<tag> or /catalog?scope=mine (scope=mine requires API key)",
             retrieve: "GET /:hash",
             docs: "GET /openapi.json",
         },

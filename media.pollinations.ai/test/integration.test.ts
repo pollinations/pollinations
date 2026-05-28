@@ -83,6 +83,11 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
+    it("public catalog reads require a tag", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/catalog");
+        expect(res.status).toBe(400);
+    });
+
     it("upload, retrieve, and deduplicate", async () => {
         const form = new FormData();
         form.append(
@@ -154,7 +159,10 @@ describe("media.pollinations.ai", () => {
             new File([TINY_PNG], "catalog.png", { type: "image/png" }),
         );
         form.append("visibility", "public");
-        form.append("tags", `catgpt,${tag},${parentTag}`);
+        form.append(
+            "tags",
+            `catgpt,${tag},${parentTag},app:forged,hash:forged`,
+        );
         form.append("prompt", "catalog test prompt");
         form.append("model", "flux");
 
@@ -172,9 +180,13 @@ describe("media.pollinations.ai", () => {
         expect(upload.visibility).toBe("public");
         expect(upload.tags).toContain(tag);
         expect(upload.tags).toContain(parentTag);
+        expect(upload.tags).toContain(`app:${TEST_APP_KEY_ID}`);
+        expect(upload.tags).toContain(`hash:${upload.id}`);
+        expect(upload.tags).not.toContain("app:forged");
+        expect(upload.tags).not.toContain("hash:forged");
 
         const meRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
+            "https://media.pollinations.ai/catalog?scope=mine",
             { headers: { Authorization: `Bearer ${VALID_KEY}` } },
         );
         expect(meRes.status).toBe(200);
@@ -187,7 +199,7 @@ describe("media.pollinations.ai", () => {
         expect(privateItem?.apiKeyId).toBe(TEST_API_KEY_ID);
 
         const tagRes = await SELF.fetch(
-            `https://media.pollinations.ai/tags/${encodeURIComponent(tag)}`,
+            `https://media.pollinations.ai/catalog?tag=${encodeURIComponent(tag)}`,
         );
         expect(tagRes.status).toBe(200);
         const byTag = (await tagRes.json()) as CatalogListResponse;
@@ -200,7 +212,7 @@ describe("media.pollinations.ai", () => {
         expect(publicItem?.apiKeyId).toBeUndefined();
 
         const hashRes = await SELF.fetch(
-            `https://media.pollinations.ai/${upload.id}/catalog`,
+            `https://media.pollinations.ai/catalog?tag=${encodeURIComponent(`hash:${upload.id}`)}`,
         );
         expect(hashRes.status).toBe(200);
         const byHash = (await hashRes.json()) as CatalogListResponse;
@@ -235,12 +247,12 @@ describe("media.pollinations.ai", () => {
         );
         expect(entry.appKeyId).toBe(TEST_APP_KEY_ID);
 
-        const galleryRes = await SELF.fetch(
-            `https://media.pollinations.ai/gallery?tag=${encodeURIComponent(tag)}`,
+        const catalogRes = await SELF.fetch(
+            `https://media.pollinations.ai/catalog?tag=${encodeURIComponent(tag)}`,
         );
-        expect(galleryRes.status).toBe(200);
-        const gallery = (await galleryRes.json()) as CatalogListResponse;
-        const publicItem = gallery.media.find(
+        expect(catalogRes.status).toBe(200);
+        const catalog = (await catalogRes.json()) as CatalogListResponse;
+        const publicItem = catalog.media.find(
             (item) => item.entryId === entry.entryId,
         );
         expect(publicItem).toBeTruthy();

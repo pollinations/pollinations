@@ -9,6 +9,7 @@ const ORIGINAL_CATGPT =
 const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
+const APP_TAG = `app:${APP_KEY.toLowerCase()}`;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -156,20 +157,23 @@ function normalizeCatalogItems(data) {
 }
 
 export async function fetchMyCatGptMemes(apiKey) {
-    const res = await fetch(`${MEDIA_CATALOG}/me/media?limit=24`, {
+    const res = await fetch(`${MEDIA_CATALOG}/catalog?scope=mine&limit=24`, {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) throw new Error(`My media failed: ${res.status}`);
     return normalizeCatalogItems(await res.json()).filter(
         (item) =>
             item.appName === "CatGPT" ||
+            item.tags?.includes(APP_TAG) ||
             item.tags?.includes("catgpt") ||
             item.tags?.includes("catgpt:meme"),
     );
 }
 
 export async function fetchPublicCatGptMemes() {
-    const res = await fetch(`${MEDIA_CATALOG}/gallery?app=catgpt&limit=24`);
+    const res = await fetch(
+        `${MEDIA_CATALOG}/catalog?tag=${encodeURIComponent(APP_TAG)}&limit=24`,
+    );
     if (!res.ok) throw new Error(`Gallery failed: ${res.status}`);
     return normalizeCatalogItems(await res.json());
 }

@@ -12,6 +12,9 @@ PORTKEY_REPO="https://github.com/pollinations/gateway.git"
 PORTKEY_COMMIT="${PORTKEY_COMMIT:-c0de03381d2aad52045b405ac21aef1972cd9d8e}"  # v1.15.2 sync + fork patches (merge commit on main)
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
+PORTKEY_ACCOUNT_ID="${PORTKEY_ACCOUNT_ID:-b6ec751c0862027ba269faf7029b2501}"
+PORTKEY_PRODUCTION_HOST="${PORTKEY_PRODUCTION_HOST:-portkey.myceli.ai}"
+PORTKEY_PRODUCTION_ZONE="${PORTKEY_PRODUCTION_ZONE:-myceli.ai}"
 
 echo "🚀 Deploying Portkey Gateway"
 echo "   Commit: $PORTKEY_COMMIT"
@@ -33,6 +36,30 @@ if [ "$ACTUAL_COMMIT" != "$PORTKEY_COMMIT" ]; then
     exit 1
 fi
 echo "✓ Verified commit: $ACTUAL_COMMIT"
+
+if [ "$ENVIRONMENT" = "production" ]; then
+    echo "Rewriting production route to ${PORTKEY_PRODUCTION_HOST}..."
+    node <<'NODE'
+const fs = require("fs");
+
+const path = "wrangler.toml";
+let config = fs.readFileSync(path, "utf8");
+
+if (!/^account_id\s*=/.test(config)) {
+    config = config.replace(
+        /^(main\s*=\s*".*")$/m,
+        `$1\naccount_id = "${process.env.PORTKEY_ACCOUNT_ID}"`,
+    );
+}
+
+config = config.replace(
+    /\{ pattern = "portkey\.pollinations\.ai", custom_domain = true \}/,
+    `{ pattern = "${process.env.PORTKEY_PRODUCTION_HOST}", zone_name = "${process.env.PORTKEY_PRODUCTION_ZONE}", custom_domain = true }`,
+);
+
+fs.writeFileSync(path, config);
+NODE
+fi
 
 # Install dependencies
 echo "📥 Installing dependencies..."

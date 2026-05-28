@@ -72,9 +72,9 @@ export const CreateEmbeddingRequestSchema = z
                 description: `Input text or content parts to embed. Supports strings, arrays of strings (max ${MAX_EMBEDDING_BATCH_SIZE} inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only.`,
                 example: "Hello world",
             }),
-        dimensions: z.number().int().min(128).max(3072).optional().meta({
+        dimensions: z.number().int().min(128).max(4096).optional().meta({
             description:
-                "Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.",
+                "Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536.",
             example: 768,
         }),
         task_type: z

@@ -148,6 +148,16 @@ export const IMAGE_CONFIG = {
         defaultResolution: "480p",
     },
 
+    // Alibaba Wan 2.7 - Newer video generation (720P default, bundled audio)
+    "wan-pro": {
+        type: "alibaba-dashscope-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "720p",
+    },
+
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
         type: "alibaba-dashscope-image",

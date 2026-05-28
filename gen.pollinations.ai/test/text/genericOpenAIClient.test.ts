@@ -204,7 +204,7 @@ describe("genericOpenAIClient", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("preserves upstream 429 status for callers to back off", async () => {
+    it("maps upstream 429 to 502 while preserving upstream status", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
                 { error: { message: "rate limited" } },
@@ -218,7 +218,7 @@ describe("genericOpenAIClient", () => {
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
             ),
-        ).rejects.toMatchObject({ status: 429 });
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
     it("passes through successful empty completions", async () => {

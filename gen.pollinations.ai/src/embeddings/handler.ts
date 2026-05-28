@@ -1,6 +1,11 @@
 import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
+    callCohereAzureEmbed,
+    extractCohereAzureUsage,
+} from "./cohereAzure.ts";
+import { callFireworksEmbed, extractFireworksUsage } from "./fireworks.ts";
+import {
     badRequest,
     inputToGeminiParts,
     inputToText,
@@ -39,7 +44,85 @@ export async function generateEmbeddings(
         return await generateOpenAIEmbeddings(env, request, responseModel);
     }
 
+    if (serviceDef.provider === "azure") {
+        return await generateCohereAzureEmbeddings(env, request, responseModel);
+    }
+
+    if (serviceDef.provider === "fireworks") {
+        return await generateFireworksEmbeddings(env, request, responseModel);
+    }
+
     throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
+}
+
+async function generateCohereAzureEmbeddings(
+    env: CloudflareBindings,
+    request: EmbeddingRequest,
+    responseModel: string,
+): Promise<Response> {
+    if (request.task_type) {
+        badRequest("task_type is only supported by Gemini embedding models");
+    }
+
+    const inputs = normalizeInputs(request.input);
+    const textInputs = inputs.map(inputToText);
+
+    if (textInputs.length === 0) {
+        return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
+    }
+
+    const result = await callCohereAzureEmbed(
+        env,
+        request.model,
+        textInputs,
+        request.dimensions,
+    );
+    const usage = extractCohereAzureUsage(result);
+
+    const data = [...result.data]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding" as const,
+            embedding: encodeEmbedding(embedding, request.encoding_format),
+            index,
+        }));
+
+    return embeddingsResponse(responseModel, data, usage);
+}
+
+async function generateFireworksEmbeddings(
+    env: CloudflareBindings,
+    request: EmbeddingRequest,
+    responseModel: string,
+): Promise<Response> {
+    if (request.task_type) {
+        badRequest("task_type is only supported by Gemini embedding models");
+    }
+
+    const inputs = normalizeInputs(request.input);
+    const textInputs = inputs.map(inputToText);
+
+    if (textInputs.length === 0) {
+        return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
+    }
+
+    const result = await callFireworksEmbed(
+        env,
+        request.model,
+        textInputs,
+        request.dimensions,
+    );
+    const usage = extractFireworksUsage(result);
+
+    const data = [...result.data]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding" as const,
+            embedding: encodeEmbedding(embedding, request.encoding_format),
+            index,
+        }));
+
+    return embeddingsResponse(responseModel, data, usage);
 }
 
 async function generateGeminiEmbeddings(

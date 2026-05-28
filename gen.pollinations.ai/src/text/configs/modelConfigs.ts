@@ -101,6 +101,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
             "grok-4-20-reasoning",
         ),
+    "grok-4.3": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
+            "grok-4.3",
+        ),
 
     // -- DeepInfra (Gemma) ----------------------------------------------------
     "google/gemma-4-26B-A4B-it": () =>
@@ -108,13 +114,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "google/gemma-4-26B-A4B-it",
         }),
 
-    // -- OpenRouter (DeepSeek) -----------------------------------------------
-    "deepseek/deepseek-v4-flash": () =>
-        createOpenRouterModelConfig({
-            model: "deepseek/deepseek-v4-flash",
-        }),
-
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
+    "accounts/fireworks/models/deepseek-v4-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4-flash",
+        }),
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-pro",

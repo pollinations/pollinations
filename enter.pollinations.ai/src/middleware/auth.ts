@@ -8,7 +8,7 @@ import {
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { Session, User } from "@/auth.ts";
+import type { Session, User } from "../auth.ts";
 import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
 

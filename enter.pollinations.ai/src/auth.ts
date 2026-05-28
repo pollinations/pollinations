@@ -1,3 +1,4 @@
+import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
     createApiKeyPlugin,
@@ -8,6 +9,7 @@ import {
     account as accountTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
@@ -36,6 +38,11 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     });
 
     return betterAuth({
+        // Always anchor auth (callbacks, cookies, redirects) to the public
+        // Pollinations hostname, never the Myceli upstream. The proxy
+        // architecture treats *.myceli.ai as internal; direct auth flows
+        // against it are intentionally non-functional.
+        baseURL: env.BETTER_AUTH_URL,
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
@@ -63,27 +70,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         },
 
         trustedOrigins: [
-            "https://pollinations.ai",
-            "https://*.pollinations.ai",
+            ...AUTH_TRUSTED_ORIGINS,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
         ],
         user: {
-            additionalFields: {
-                githubId: {
-                    type: "number",
-                    input: false,
-                },
-                githubUsername: {
-                    type: "string",
-                    input: false,
-                },
-                tier: {
-                    type: "string",
-                    defaultValue: "spore",
-                    input: false,
-                },
-            },
+            additionalFields: authAdditionalFields.user,
         },
         socialProviders: {
             github: {

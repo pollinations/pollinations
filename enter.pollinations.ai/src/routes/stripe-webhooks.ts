@@ -1,9 +1,9 @@
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
-import { getPollenPack } from "@/pollen-packs.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
@@ -293,8 +293,8 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    const packAmount = metadata.packAmount;
-    const pack = packAmount ? getPollenPack(packAmount) : undefined;
+    const packKey = metadata.packKey;
+    const pack = packKey ? getPollenPackByKey(packKey) : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
@@ -304,7 +304,7 @@ const handleCheckoutSessionCompleted = async (
     if (!pack) {
         console.error("Missing or invalid pack in checkout session:", {
             sessionId: session.id,
-            packAmount,
+            packKey,
         });
         return {
             success: false,
@@ -574,6 +574,27 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_failed": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Async payment failed for session ${session.id}`);
+                const methodsOffered = (
+                    session.payment_method_types ?? []
+                ).join(",");
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: session.id,
+                        userId: session.metadata?.userId || "",
+                        amountCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        paymentStatus: session.payment_status || "unpaid",
+                        paymentMethod: "unknown",
+                        paymentMethodsOffered: methodsOffered,
+                        customerEmail: session.customer_email || "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
                 break;
             }
 

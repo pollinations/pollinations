@@ -34,4 +34,30 @@ describe("processParameters", () => {
         expect(result.options.max_tokens).toBe(128);
         expect(result.options.max_completion_tokens).toBeUndefined();
     });
+
+    it("strips temperature/top_p/top_k for Claude Opus 4.7", () => {
+        const result = processParameters(messages, {
+            model: "us.anthropic.claude-opus-4-7",
+            temperature: 0.7,
+            top_p: 0.9,
+            top_k: 40,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(result.options.temperature).toBeUndefined();
+        expect(result.options.top_p).toBeUndefined();
+        expect(result.options.top_k).toBeUndefined();
+    });
+
+    it("does not strip temperature for Claude Opus 4.6", () => {
+        const result = processParameters(messages, {
+            model: "us.anthropic.claude-opus-4-6-v1",
+            temperature: 0.7,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(result.options.temperature).toBe(0.7);
+    });
 });

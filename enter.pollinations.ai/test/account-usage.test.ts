@@ -132,8 +132,11 @@ test("GET /api/account/usage/daily rejects periods outside supported bounds", as
     );
     expect(beforeUsage.status).toBe(400);
 
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const futurePeriod = tomorrow.toISOString().slice(0, 10);
     const future = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-05-01",
+        `http://localhost:3000/api/account/usage/daily?granularity=day&period=${futurePeriod}`,
         { headers: authHeaders(sessionToken) },
     );
     expect(future.status).toBe(400);
@@ -158,11 +161,14 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             input_text_tokens: 10,
             input_cached_tokens: 0,
             input_audio_tokens: 0,
+            input_audio_seconds: 0,
             input_image_tokens: 0,
             output_text_tokens: 20,
             output_reasoning_tokens: 0,
             output_audio_tokens: 0,
+            output_audio_seconds: 0,
             output_image_tokens: 0,
+            output_video_seconds: 0,
             cost_usd: 1,
             response_time_ms: 123,
         },

@@ -19,7 +19,7 @@ describe("validateInputModalities", () => {
     it("rejects image input for text-only models", () => {
         expect(() =>
             validateInputModalities(imageMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }),
         ).toThrow(
@@ -30,6 +30,15 @@ describe("validateInputModalities", () => {
                     "Model 'deepseek' does not support image input. Choose a model with image input support.",
             }),
         );
+    });
+
+    it("allows image input for Azure Grok models", () => {
+        expect(
+            validateInputModalities(imageMessage, {
+                model: "grok-4.3",
+                requestedModel: "grok-4.3",
+            }).messages,
+        ).toBe(imageMessage);
     });
 
     it("allows image input for vision-capable models", () => {
@@ -46,7 +55,7 @@ describe("validateInputModalities", () => {
 
         expect(
             validateInputModalities(textMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }).messages,
         ).toBe(textMessage);

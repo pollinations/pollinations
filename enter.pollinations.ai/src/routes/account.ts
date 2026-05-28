@@ -461,11 +461,14 @@ type UsageRecord = {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number | null;
 };
@@ -513,7 +516,7 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
 }
 
 function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
@@ -525,7 +528,9 @@ type DeveloperEarningsRow = {
     app_key_id: string;
     app_name: string;
     requests: number;
+    baseline_price: number;
     pollen_earned: number;
+    cost_usd: number;
     markup_rate: number;
     unique_users: number;
 };
@@ -541,7 +546,17 @@ const developerEarningsRowSchema = z.object({
         .describe("BYOP app key id; empty string on the global rollup row"),
     app_name: z.string().describe("App display name"),
     requests: z.number().describe("Number of billed requests"),
-    pollen_earned: z.number().describe("Pollen earned (markup take)"),
+    baseline_price: z
+        .number()
+        .describe("Model cost before markup (sum over the bucket)"),
+    pollen_earned: z
+        .number()
+        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+    cost_usd: z
+        .number()
+        .describe(
+            "Markup-inclusive total charged to payers (sum over the bucket)",
+        ),
     markup_rate: z.number().describe("Average markup rate applied"),
     unique_users: z
         .number()
@@ -563,7 +578,7 @@ const developerEarningsResponseSchema = z.object({
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.pollen_earned},${row.markup_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -662,6 +677,9 @@ const usageRecordSchema = z.object({
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
+    input_audio_seconds: z
+        .number()
+        .describe("Duration of input audio in seconds (for transcription/STT)"),
     input_image_tokens: z.number().describe("Number of input image tokens"),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
@@ -670,9 +688,17 @@ const usageRecordSchema = z.object({
             "Number of reasoning tokens (for models with chain-of-thought)",
         ),
     output_audio_tokens: z.number().describe("Number of output audio tokens"),
+    output_audio_seconds: z
+        .number()
+        .describe(
+            "Duration of output audio in seconds (for TTS/music generation)",
+        ),
     output_image_tokens: z
         .number()
         .describe("Number of output image tokens (1 per image)"),
+    output_video_seconds: z
+        .number()
+        .describe("Duration of output video in seconds"),
     cost_usd: z.number().describe("Cost in USD for this request"),
     response_time_ms: z
         .number()
@@ -862,7 +888,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
@@ -1074,7 +1100,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total_price − dev_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Combined earnings buckets and rollups",
@@ -1121,9 +1147,11 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
+            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
+            // any old cached rows that would render as undefined in CSV.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:debug:${devUserId}`
-                : `earnings:${devUserId}`;
+                ? `earnings:v2:debug:${devUserId}`
+                : `earnings:v2:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
@@ -1207,7 +1235,7 @@ export const accountRoutes = new Hono<Env>()
 
                 if (format === "csv") {
                     const header =
-                        "date,app_key_id,app_name,requests,pollen_earned,markup_rate";
+                        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1594,7 +1622,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",

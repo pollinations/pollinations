@@ -1,14 +1,15 @@
+import {
+    describePollenPack,
+    getPollenPackByKey,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import {
-    describePollenPack,
-    getPollenPack,
-    isPollenPackAmount,
-    POLLEN_PACKS,
-} from "@/pollen-packs.ts";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -20,20 +21,30 @@ import {
 
 /**
  * Stripe pack configuration
- * Checkout copy and payout are controlled in-app so bonus changes do not
- * require Stripe catalog edits.
+ * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
+ * localize buyer presentment where supported.
  */
 export const stripeRoutes = new Hono<Env>()
     /**
-     * GET /api/stripe/checkout/:amount
-     * Create a Stripe Checkout Session for pack purchases
-     * Amount is in USD (2, 5, 10, 20, 50, 100)
+     * GET /api/stripe/checkout/:packKey
+     * Create a Stripe Checkout Session for pack purchases.
+     *
+     * Path parameter is the pack key ("p2".."p100"). The legacy USD-amount
+     * form ("2".."100") is no longer accepted — all first-party callers and
+     * the /products endpoint expose packKey.
+     *
+     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort for analytics.
+     * Stripe Adaptive Pricing localizes presentment.
+     *
+     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
+     * price_data and Stripe AP handles currency conversion.
      */
-    .get("/checkout/:amount", async (c) => {
-        const amount = c.req.param("amount");
+    .get("/checkout/:packKey", async (c) => {
+        const packKeyParam = c.req.param("packKey");
+        const pack = getPollenPackByKey(packKeyParam);
 
-        if (!isPollenPackAmount(amount)) {
-            return c.json({ error: "Invalid pack amount" }, 400);
+        if (!pack) {
+            return c.json({ error: "Invalid pack" }, 400);
         }
 
         // Get authenticated user
@@ -48,19 +59,27 @@ export const stripeRoutes = new Hono<Env>()
 
         const userId = session.user.id;
 
-        const pack = getPollenPack(amount);
-
-        if (!pack) {
-            return c.json({ error: "Invalid pack amount" }, 400);
-        }
-
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
         // Determine success URL based on environment
         const successUrl =
-            c.env.STRIPE_SUCCESS_URL || "https://enter.pollinations.ai";
+            c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
+
+        // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
+        // and does not call FX at runtime.
+        const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
+        // Fail closed if the checkout PMC env var is missing. The alternative
+        // (omit payment_method_configuration → Stripe falls back to account
+        // default PMC) would hide a misconfigured deploy.
+        const pmcId = c.env.STRIPE_PMC;
+        if (!pmcId) {
+            console.error(
+                `Missing required env var STRIPE_PMC for checkout on ${c.env.ENVIRONMENT}`,
+            );
+            return c.json({ error: "Checkout configuration error" }, 500);
+        }
 
         try {
             const stripeCustomerId = await getOrCreateStripeCustomerId(
@@ -68,15 +87,21 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
             );
 
-            // Create Checkout Session with automatic tax, VAT, and invoice creation
-            // Checkout copy is derived from the shared pack catalog so it stays
-            // in sync with the credited pollen amount.
+            // Snapshot of pack identity + grant at session creation time. The
+            // webhook reads this back to credit exactly what the user saw,
+            // independent of how Adaptive Pricing localized the presentment.
+            const packMetadata = {
+                userId,
+                packKey: pack.packKey,
+                packAmountUsd: String(pack.amountUsd),
+                packPollenGrant: String(pack.pollenGrant),
+                packBonusPollen: String(pack.bonusPollen),
+                cohort: cohort.id,
+            };
+
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
-                ...(c.env.STRIPE_BUY_POLLEN_PMC_ID && {
-                    payment_method_configuration:
-                        c.env.STRIPE_BUY_POLLEN_PMC_ID,
-                }),
+                payment_method_configuration: pmcId,
                 line_items: [
                     {
                         price_data: {
@@ -93,6 +118,7 @@ export const stripeRoutes = new Hono<Env>()
                         quantity: 1,
                     },
                 ],
+                adaptive_pricing: { enabled: true },
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT
@@ -107,12 +133,7 @@ export const stripeRoutes = new Hono<Env>()
                     name: "auto",
                 },
                 payment_intent_data: {
-                    metadata: {
-                        userId,
-                        packAmount: String(pack.amountUsd),
-                        packPollenGrant: String(pack.pollenGrant),
-                        packBonusPollen: String(pack.bonusPollen),
-                    },
+                    metadata: packMetadata,
                 },
                 // Invoice creation after payment
                 invoice_creation: {
@@ -123,15 +144,7 @@ export const stripeRoutes = new Hono<Env>()
                         },
                     },
                 },
-                // Snapshot the grant shown at checkout time so the webhook
-                // credits exactly what the user saw, even if the catalog
-                // changes between session creation and payment.
-                metadata: {
-                    userId,
-                    packAmount: String(pack.amountUsd),
-                    packPollenGrant: String(pack.pollenGrant),
-                    packBonusPollen: String(pack.bonusPollen),
-                },
+                metadata: packMetadata,
                 success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${cancelUrl}?stripe_canceled=true`,
             });
@@ -152,11 +165,13 @@ export const stripeRoutes = new Hono<Env>()
 
     /**
      * GET /api/stripe/products
-     * List available pack amounts
+     * List available packs. Returns packKey (canonical identifier for the
+     * /checkout/:packKey route) plus the USD amount for display.
      */
     .get("/products", async (c) => {
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
+                packKey: pack.packKey,
                 amount: pack.amountUsd,
                 bonusPollen: pack.bonusPollen,
                 pollenGrant: pack.pollenGrant,

@@ -29,6 +29,8 @@ SQL >
         ge.api_key_client_id AS app_key_id,
         ge.user_id AS user_id,
         ge.start_time AS start_time,
+        ge.dev_price AS baseline_price,
+        ge.total_price AS cost_usd,
         ge.total_price - ge.dev_price AS earned,
         ge.markup_rate AS markup_rate,
         coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
@@ -59,7 +61,9 @@ SQL >
         app_key_id,
         any(app_name) AS app_name,
         count() AS requests,
+        sum(baseline_price) AS baseline_price,
         sum(earned) AS pollen_earned,
+        sum(cost_usd) AS cost_usd,
         avg(markup_rate) AS markup_rate,
         toUInt64(0) AS unique_users
     FROM dev_events
@@ -72,7 +76,9 @@ SQL >
         app_key_id,
         any(app_name) AS app_name,
         count() AS requests,
+        sum(baseline_price) AS baseline_price,
         sum(earned) AS pollen_earned,
+        sum(cost_usd) AS cost_usd,
         avg(markup_rate) AS markup_rate,
         uniq(user_id) AS unique_users
     FROM dev_events
@@ -85,7 +91,9 @@ SQL >
         '' AS app_key_id,
         '' AS app_name,
         count() AS requests,
+        sum(baseline_price) AS baseline_price,
         sum(earned) AS pollen_earned,
+        sum(cost_usd) AS cost_usd,
         if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
         uniq(user_id) AS unique_users
     FROM dev_events

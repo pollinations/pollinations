@@ -73,7 +73,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek/deepseek-v4-flash"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
     },
     {
         name: "gemma",
@@ -90,6 +90,10 @@ const models: ModelDefinition[] = [
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+    },
+    {
+        name: "grok-4.3",
+        config: portkeyConfig["grok-4.3"],
     },
     {
         name: "openai-audio",
@@ -161,13 +165,31 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-search-fast",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-search-large",
+        config: portkeyConfig["gemini-3.5-flash"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "midijourney",
-        config: portkeyConfig["claude-haiku-4-5"],
+        config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "midijourney-large",
-        config: portkeyConfig["claude-opus-4-6"],
+        config: portkeyConfig["gpt-5.5"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {

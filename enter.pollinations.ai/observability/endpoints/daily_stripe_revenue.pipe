@@ -8,7 +8,7 @@ SQL >
     %
     SELECT
         toDate(timestamp) AS date,
-        round(sum(amount_cents) / 100, 2) AS revenue,
+        round(sum(amount_cents) / 100, 2) AS usd_revenue,
         count() AS purchases
     FROM stripe_event
     WHERE

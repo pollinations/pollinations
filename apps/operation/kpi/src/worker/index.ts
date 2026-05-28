@@ -375,7 +375,7 @@ async function fetchStripeRevenue(
     if (result.error) return [];
 
     const data = { data: result.data } as {
-        data: Array<{ date: string; revenue: number; purchases: number }>;
+        data: Array<{ date: string; usd_revenue: number; purchases: number }>;
     };
 
     // Aggregate daily data into weekly
@@ -389,7 +389,7 @@ async function fetchStripeRevenue(
         if (!weeklyData[weekStart]) {
             weeklyData[weekStart] = { revenue: 0, purchases: 0 };
         }
-        weeklyData[weekStart].revenue += row.revenue;
+        weeklyData[weekStart].revenue += row.usd_revenue;
         weeklyData[weekStart].purchases += row.purchases;
     }
 

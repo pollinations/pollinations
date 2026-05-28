@@ -24,14 +24,16 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
  *
  * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the
  * inclusive grand total, with `*_details` subcategories that sum into it.
- * Some providers violate this: Grok-reasoning (Azure), Mistral/DeepSeek
- * reasoning models (OpenRouter), and certain Gemini responses report
- * subcategories as additive counters separate from the grand total.
+ * Some providers violate or extend this: Grok/xAI reasoning can report
+ * reasoning as an additive counter separate from completion_tokens. Others
+ * have returned inconsistent inclusive details greater than the headline
+ * count, which we cap to avoid impossible negative usage.
  *
  * We detect the convention per-row from `total_tokens`. If total_tokens is
  * prompt + completion, details are inclusive subcategories. If total_tokens
- * includes the detail counters beyond prompt + completion, those details are
- * additive and `*_tokens` are already the visible-text count.
+ * includes detail counters beyond prompt + completion, only the matching
+ * detail bucket is additive and the related top-level count is already the
+ * visible-text count.
  */
 export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens: number;
@@ -55,11 +57,13 @@ export function openaiUsageToUsage(openaiUsage: {
         openaiUsage.prompt_tokens_details?.image_tokens || 0,
     ];
 
+    const rawCompletionReasoningTokens =
+        openaiUsage.completion_tokens_details?.reasoning_tokens || 0;
     const completionDetails = [
         openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.audio_tokens || 0,
-        openaiUsage.completion_tokens_details?.reasoning_tokens || 0,
+        rawCompletionReasoningTokens,
     ];
 
     const promptDetailTokens = sumTokens(promptDetails);
@@ -69,6 +73,7 @@ export function openaiUsageToUsage(openaiUsage: {
             openaiUsage,
             promptDetailTokens,
             completionDetailTokens,
+            rawCompletionReasoningTokens,
         );
 
     const cappedPromptDetails = promptDetailsAreAdditive
@@ -123,6 +128,7 @@ function detectUsageConvention(
     },
     promptDetailTokens: number,
     completionDetailTokens: number,
+    completionReasoningTokens: number,
 ): {
     promptDetailsAreAdditive: boolean;
     completionDetailsAreAdditive: boolean;
@@ -142,6 +148,17 @@ function detectUsageConvention(
         return {
             promptDetailsAreAdditive: promptDetailTokens > 0,
             completionDetailsAreAdditive: completionDetailTokens > 0,
+        };
+    }
+
+    // Known additive Grok/xAI rows expose the extra total as reasoning tokens.
+    if (
+        completionReasoningTokens > 0 &&
+        additiveDetails === completionReasoningTokens
+    ) {
+        return {
+            promptDetailsAreAdditive: false,
+            completionDetailsAreAdditive: true,
         };
     }
 

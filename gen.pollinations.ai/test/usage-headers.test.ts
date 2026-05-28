@@ -195,6 +195,27 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionReasoningTokens).toBe(345);
     });
 
+    it("keeps additive reasoning when prompt detail has the same token count", () => {
+        const openaiUsage = {
+            prompt_tokens: 1000,
+            completion_tokens: 500,
+            total_tokens: 1733,
+            prompt_tokens_details: {
+                cached_tokens: 233,
+            },
+            completion_tokens_details: {
+                reasoning_tokens: 233,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(767);
+        expect(usage.promptCachedTokens).toBe(233);
+        expect(usage.completionTextTokens).toBe(500);
+        expect(usage.completionReasoningTokens).toBe(233);
+    });
+
     it("keeps inclusive reasoning inside completion_tokens when total_tokens is prompt plus completion", () => {
         // Production shape from mistral-4 with reasoning enabled:
         // prompt=54, completion=256, reasoning=203, total=310.

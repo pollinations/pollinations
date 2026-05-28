@@ -1,0 +1,34 @@
+{
+  "pr_number": 11169,
+  "title": "lock down staging signups to github id allowlist",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11169",
+  "merged_at": "2026-05-28T15:52:22Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Closes #11137.\n\n`staging.enter.pollinations.ai` was publicly accessible — anyone could sign in via GitHub OAuth, mint an API key, and hit `staging.gen.pollinations.ai` which holds the **production** provider keys. Sandbox Stripe = fake money in, real OpenAI/Google/etc. bills out.\n\nThis gates GitHub OAuth sign-in on staging to an env-var allowlist of numeric GitHub IDs (`STAGING_ALLOWED_GITHUB_IDS`). Two Better Auth `databaseHooks`:\n- `user.create.before` blocks new signups whose `githubId` isn't in the set\n- `session.create.before` blocks every login (covers users that already exist in staging D1)\n\nBoth throw `APIError(\"FORBIDDEN\")`, which Better Auth redirects to `/error?error=staging_is_invite-only`. Plugin is a no-op outside staging.\n\nGitHub **IDs**, not usernames — usernames are mutable (silent lockout if someone renames). Not the DB user ID either — that only exists post-signup, so it can't gate a fresh OAuth callback.\n\nExisting staging D1 already cleaned: 4 external dev accounts deleted + cascades. Remaining 5 users match the allowlist.\n\nInitial allowlist:\n- `36901823` ElliotEtag\n- `5099901` voodoohop\n- `235942848` thomashmyceli\n- `248917639` fouchyelliot-rgb\n- `241978997` pollen-router\n\nProduction untouched.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "VIPs only in the staging garden",
+    "blurb": "We've locked down the staging environment to an allowlist of GitHub IDs. No more accidental free rides on the staging API!",
+    "summary": "Secured the staging environment by restricting GitHub OAuth sign-ins to a specific allowlist of GitHub IDs via Better Auth hooks.",
+    "impact": "Internal developers can still access staging, but public users are now blocked from minting API keys in the sandbox environment.",
+    "keywords": [
+      "security",
+      "staging",
+      "auth",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly bouncer at a garden gate, checking a list. Represents the new allowlist for the staging environment.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security badge, holding a clipboard and checking IDs at a glowing lime green (#ecf874) garden gate. A chunky retro robot waits in line. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-28/PR-11169.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security badge, holding a clipboard and checking IDs at a glowing lime green (#ecf874) garden gate. A chunky retro robot waits in line. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-28T15:53:26.613857+00:00"
+}

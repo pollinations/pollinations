@@ -135,14 +135,14 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                     <span
                                         className={cn(
                                             "inline-block",
-                                            isSelected &&
-                                                "text-2xl leading-none text-paid-deep",
+                                            isSelected
+                                                ? "text-2xl leading-none text-paid-deep"
+                                                : "text-sm",
                                         )}
                                     >
                                         {formatPollenPackValue(
                                             pack.pollenGrant,
                                         )}
-                                        {!isSelected && "p"}
                                     </span>
                                     {isSelected && (
                                         <span className="mt-0.5 text-sm leading-none text-paid-deep/80">
@@ -150,49 +150,35 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         </span>
                                     )}
                                     {isSelected && (
-                                        <Chip
-                                            theme="amber"
-                                            size="sm"
+                                        <span
                                             className={cn(
-                                                "absolute top-full mt-1 gap-0.5 px-2.5 py-1 flex-col items-stretch whitespace-nowrap",
+                                                "absolute top-full mt-1 flex flex-col gap-1 whitespace-nowrap",
                                                 isFirst
-                                                    ? "left-0"
+                                                    ? "left-0 items-start"
                                                     : isLast
-                                                      ? "right-0"
-                                                      : "left-1/2 -translate-x-1/2",
+                                                      ? "right-0 items-end"
+                                                      : "left-1/2 -translate-x-1/2 items-center",
                                             )}
                                         >
-                                            <span
-                                                className={cn(
-                                                    "text-base leading-none text-paid-deep",
-                                                    isFirst
-                                                        ? "text-left"
-                                                        : isLast
-                                                          ? "text-right"
-                                                          : "text-center",
-                                                )}
+                                            <Chip
+                                                theme="amber"
+                                                size="sm"
+                                                className="px-2.5 py-1 whitespace-nowrap"
                                             >
-                                                ≈{" "}
-                                                {packPriceLabel(
-                                                    pack,
-                                                    localizedPrices,
-                                                )}
-                                            </span>
-                                            {hasDiscount && (
-                                                <span
-                                                    className={cn(
-                                                        "text-amber-700",
-                                                        isFirst
-                                                            ? "text-left"
-                                                            : isLast
-                                                              ? "text-right"
-                                                              : "text-center",
+                                                <span className="text-base font-bold leading-none text-paid-deep">
+                                                    ≈{" "}
+                                                    {packPriceLabel(
+                                                        pack,
+                                                        localizedPrices,
                                                     )}
-                                                >
+                                                </span>
+                                            </Chip>
+                                            {hasDiscount && (
+                                                <span className="text-amber-700">
                                                     {discountPercent}% off
                                                 </span>
                                             )}
-                                        </Chip>
+                                        </span>
                                     )}
                                 </span>
                             </span>

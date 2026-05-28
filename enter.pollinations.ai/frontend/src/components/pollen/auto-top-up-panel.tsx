@@ -62,23 +62,20 @@ type AutoTopUpPanelProps = {
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
-    <div className="space-y-2">
-        <div>
-            <strong>Auto top-up</strong> keeps your{" "}
-            <strong>paid balance</strong> topped up automatically.
+    <div className="space-y-2 font-normal">
+        <div className="font-semibold">
+            Auto top-up keeps your paid balance topped up automatically.
         </div>
         <ul className="list-disc space-y-1 pl-4">
             <li>
-                Triggers when your <strong>paid balance</strong> drops to{" "}
-                <strong>5 pollen or below</strong>
+                Triggers when your paid balance drops to{" "}
+                <strong className="font-semibold">5 pollen or below</strong>
             </li>
             <li>
-                Charges your <strong>default Stripe card</strong> for the pack
-                size you select
+                Charges your default Stripe card for the pack size you select
             </li>
             <li>
-                Only your <strong>paid balance</strong> counts — tier pollen is
-                not considered
+                Only your paid balance counts — tier pollen is not considered
             </li>
         </ul>
     </div>

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-27",
+  "period_start": "2026-05-27",
+  "period_end": "2026-05-27",
+  "generated_at": "2026-05-28T07:15:38.850527+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-27/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-27/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-27/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Pushed a few updates this week. The main event: 5 flagship models just moved to the free tier. If you're building something fun and have zero budget, you've got more toys to play with now.\n\nWe also wrote a custom markdown builder to clean up the API docs (because the old one was driving us crazy), and added cost breakdowns to the developer earnings export so you actually know what's happening under the hood. Plus some Claude Opus fixes.\n\nGo build something cool. Repo link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #llm #apidevelopment #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

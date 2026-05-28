@@ -448,8 +448,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd: number;
 };
 
 type UsageRecord = {
@@ -472,8 +470,6 @@ type UsageRecord = {
     output_image_tokens: number;
     output_video_seconds: number;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd: number;
     response_time_ms: number | null;
 };
 
@@ -496,12 +492,6 @@ const dailyUsageRecordSchema = z.object({
         .number()
         .describe(
             "Total pollen charged for the bucket (debited from the user's wallet).",
-        ),
-    cost_usd: z
-        .number()
-        .meta({ deprecated: true })
-        .describe(
-            "Deprecated — renamed to pollen_spent. Same value. Will be removed after the rename window closes.",
         ),
 });
 
@@ -529,35 +519,12 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
     });
 }
 
-// Backfill canonical pollen_* fields from deprecated USD aliases so the
-// JSON response, CSV export, and any downstream consumer see one shape
-// regardless of whether the row came from a freshly-deployed pipe, a
-// stale KV cache, or a pre-rename pipe in another workspace.
-function normalizeUsageRow<
-    T extends { pollen_spent?: number; cost_usd?: number },
->(row: T): T & { pollen_spent: number; cost_usd: number } {
-    const value = row.pollen_spent ?? row.cost_usd ?? 0;
-    return { ...row, pollen_spent: value, cost_usd: value };
-}
-
-function normalizeEarningsRow(row: DeveloperEarningsRow): DeveloperEarningsRow {
-    const spent = row.pollen_spent ?? row.cost_usd ?? 0;
-    const baseline = row.pollen_baseline ?? row.baseline_price ?? 0;
-    return {
-        ...row,
-        pollen_spent: spent,
-        cost_usd: spent,
-        pollen_baseline: baseline,
-        baseline_price: baseline,
-    };
-}
-
 function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.pollen_spent},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.pollen_spent},${escapeCSV(row.response_time_ms)}`;
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.pollen_spent},${row.cost_usd}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.pollen_spent}`;
 }
 
 type DeveloperEarningsRow = {
@@ -568,10 +535,6 @@ type DeveloperEarningsRow = {
     pollen_baseline: number;
     pollen_earned: number;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_baseline. Removed after the rename window closes. */
-    baseline_price: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd: number;
     markup_rate: number;
     unique_users: number;
 };
@@ -600,18 +563,6 @@ const developerEarningsRowSchema = z.object({
         .describe(
             "Markup-inclusive total charged to payers in pollen (sum over the bucket).",
         ),
-    baseline_price: z
-        .number()
-        .meta({ deprecated: true })
-        .describe(
-            "Deprecated — renamed to pollen_baseline. Same value. Will be removed after the rename window closes.",
-        ),
-    cost_usd: z
-        .number()
-        .meta({ deprecated: true })
-        .describe(
-            "Deprecated — renamed to pollen_spent. Same value. Will be removed after the rename window closes.",
-        ),
     markup_rate: z.number().describe("Average markup rate applied"),
     unique_users: z
         .number()
@@ -633,9 +584,7 @@ const developerEarningsResponseSchema = z.object({
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    const pollenBaseline = row.pollen_baseline ?? row.baseline_price;
-    const pollenSpent = row.pollen_spent ?? row.cost_usd;
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${pollenBaseline},${row.pollen_earned},${pollenSpent},${pollenBaseline},${pollenSpent},${row.markup_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.pollen_baseline},${row.pollen_earned},${row.pollen_spent},${row.markup_rate}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -760,12 +709,6 @@ const usageRecordSchema = z.object({
         .number()
         .describe(
             "Pollen charged for this request (debited from the user's wallet).",
-        ),
-    cost_usd: z
-        .number()
-        .meta({ deprecated: true })
-        .describe(
-            "Deprecated — renamed to pollen_spent. Same value. Will be removed after the rename window closes.",
         ),
     response_time_ms: z
         .number()
@@ -955,7 +898,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,pollen_spent,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,pollen_spent,response_time_ms";
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
@@ -983,9 +926,7 @@ export const accountRoutes = new Hono<Env>()
                             before,
                         },
                     )
-                )
-                    .map(stripUsageCursor)
-                    .map(normalizeUsageRow);
+                ).map(stripUsageCursor);
 
                 log.debug("Fetched {count} usage records", {
                     count: usage.length,
@@ -1067,9 +1008,8 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v2: payload added `pollen_spent` (deprecating cost_usd). Bump so
-            // cached v1 payloads — which lack pollen_spent — don't show as
-            // undefined in JSON or CSV.
+            // v2: payload renamed `cost_usd` → `pollen_spent`. Bump so cached
+            // v1 payloads (which only have cost_usd) don't render as undefined.
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:v2:debug:${usageUserId}`
                 : `usage:daily:v2:${usageUserId}`;
@@ -1092,7 +1032,7 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        usage = cachedData.map(normalizeUsageRow);
+                        usage = cachedData;
                         cached = true;
                     }
                 } catch (err) {
@@ -1119,9 +1059,7 @@ export const accountRoutes = new Hono<Env>()
                             ),
                         ),
                     );
-                    usage = sortDailyUsageRecords(
-                        chunkResults.flat().map(normalizeUsageRow),
-                    );
+                    usage = sortDailyUsageRecords(chunkResults.flat());
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(usage), {
@@ -1147,7 +1085,7 @@ export const accountRoutes = new Hono<Env>()
 
                 if (format === "csv") {
                     const header =
-                        "date,model,meter_source,requests,pollen_spent,cost_usd";
+                        "date,model,meter_source,requests,pollen_spent";
                     const rows = usage.map(dailyUsageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1175,7 +1113,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `pollen_baseline` (model cost in pollen before markup), `pollen_earned` (developer credit = `pollen_spent − pollen_baseline`), `pollen_spent` (markup-inclusive total charged to payers in pollen), and average `markup_rate`. `baseline_price` and `cost_usd` are deprecated aliases for `pollen_baseline` / `pollen_spent` retained during the rename window — same values. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `pollen_baseline` (model cost in pollen before markup), `pollen_earned` (developer credit = `pollen_spent − pollen_baseline`), `pollen_spent` (markup-inclusive total charged to payers in pollen), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Combined earnings buckets and rollups",
@@ -1222,9 +1160,9 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v3: payload added `pollen_baseline` and `pollen_spent` (deprecating
-            // baseline_price / cost_usd). Bump so cached v2 payloads — which
-            // lack the new fields — don't show as undefined in JSON or CSV.
+            // v3: payload renamed `baseline_price` → `pollen_baseline` and
+            // `cost_usd` → `pollen_spent`. Bump so cached v2 payloads (which
+            // only have the old field names) don't render as undefined.
             const cacheKeyPrefix = devUserOverridden
                 ? `earnings:v3:debug:${devUserId}`
                 : `earnings:v3:${devUserId}`;
@@ -1255,13 +1193,7 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        payload = {
-                            daily: cachedData.daily.map(normalizeEarningsRow),
-                            perApp: cachedData.perApp.map(normalizeEarningsRow),
-                            global: cachedData.global
-                                ? normalizeEarningsRow(cachedData.global)
-                                : null,
-                        };
+                        payload = cachedData;
                         cached = true;
                     }
                 } catch (err) {
@@ -1269,23 +1201,21 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 if (!payload) {
-                    const rows = (
-                        await fetchTinybirdRows<DeveloperEarningsRow>(
-                            tinybirdOrigin,
-                            "/v0/pipes/developer_earnings.json",
-                            tinybirdToken,
-                            {
-                                dev_user_id: devUserId,
-                                since: window.since,
-                                until: window.until,
-                                grain,
-                                api_key_ids:
-                                    apiKeyIds.length > 0
-                                        ? apiKeyIds.join(",")
-                                        : undefined,
-                            },
-                        )
-                    ).map(normalizeEarningsRow);
+                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
+                        tinybirdOrigin,
+                        "/v0/pipes/developer_earnings.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            since: window.since,
+                            until: window.until,
+                            grain,
+                            api_key_ids:
+                                apiKeyIds.length > 0
+                                    ? apiKeyIds.join(",")
+                                    : undefined,
+                        },
+                    );
                     const daily = rows.filter((r) => r.date !== "");
                     const rollups = rows.filter((r) => r.date === "");
                     const perApp = [...rollups]
@@ -1319,7 +1249,7 @@ export const accountRoutes = new Hono<Env>()
 
                 if (format === "csv") {
                     const header =
-                        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,baseline_price,cost_usd,markup_rate";
+                        "date,app_key_id,app_name,requests,pollen_baseline,pollen_earned,pollen_spent,markup_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1706,7 +1636,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,pollen_spent,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,pollen_spent,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
@@ -1727,9 +1657,7 @@ export const accountRoutes = new Hono<Env>()
                             before,
                         },
                     )
-                )
-                    .map(stripUsageCursor)
-                    .map(normalizeUsageRow);
+                ).map(stripUsageCursor);
 
                 if (format === "csv") {
                     const rows = usage.map(usageRecordToCsvRow);

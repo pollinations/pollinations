@@ -40,7 +40,7 @@ async function getUsage(params) {
 
     if (daily) {
         const totalPollen = records.reduce(
-            (sum, r) => sum + (r.pollen_spent ?? r.cost_usd ?? 0),
+            (sum, r) => sum + (r.pollen_spent ?? 0),
             0,
         );
         const totalRequests = records.reduce(

@@ -29,7 +29,6 @@ SQL >
         token_count_completion_image as output_image_tokens,
         token_count_completion_video_seconds as output_video_seconds,
         total_price as pollen_spent,
-        total_price as cost_usd,
         response_time as response_time_ms
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}

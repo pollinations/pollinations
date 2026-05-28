@@ -4,8 +4,6 @@ export type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd?: number;
 };
 
 export type PeriodGranularity = "day" | "week" | "month";

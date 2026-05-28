@@ -64,8 +64,6 @@ SQL >
         sum(baseline) AS pollen_baseline,
         sum(earned) AS pollen_earned,
         sum(gross) AS pollen_spent,
-        sum(baseline) AS baseline_price,
-        sum(gross) AS cost_usd,
         avg(markup_rate) AS markup_rate,
         toUInt64(0) AS unique_users
     FROM dev_events
@@ -81,8 +79,6 @@ SQL >
         sum(baseline) AS pollen_baseline,
         sum(earned) AS pollen_earned,
         sum(gross) AS pollen_spent,
-        sum(baseline) AS baseline_price,
-        sum(gross) AS cost_usd,
         avg(markup_rate) AS markup_rate,
         uniq(user_id) AS unique_users
     FROM dev_events
@@ -98,8 +94,6 @@ SQL >
         sum(baseline) AS pollen_baseline,
         sum(earned) AS pollen_earned,
         sum(gross) AS pollen_spent,
-        sum(baseline) AS baseline_price,
-        sum(gross) AS cost_usd,
         if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
         uniq(user_id) AS unique_users
     FROM dev_events

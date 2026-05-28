@@ -3,16 +3,14 @@ import { cached } from "../cache.ts";
 
 const TINYBIRD_MODEL_STATS_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=200";
-// v2: pipe now emits `pollen_avg_price` alongside `avg_cost_usd`. Bump so
-// cached v1 payloads (lacking pollen_avg_price) don't render as undefined.
+// v2: pipe renamed `avg_cost_usd` → `pollen_avg_price`. Bump so cached v1
+// payloads (which only have avg_cost_usd) don't render as undefined.
 const CACHE_KEY = "model-stats:v2";
 const CACHE_TTL = 3600; // 1 hour
 
 export type ModelStatsRow = {
     model: string;
     pollen_avg_price: number;
-    /** @deprecated Renamed to pollen_avg_price. Removed after the rename window closes. */
-    avg_cost_usd: number;
     request_count?: number;
     priced_success_count?: number;
 };
@@ -20,14 +18,6 @@ export type ModelStatsRow = {
 export type TinybirdModelStats = {
     data: ModelStatsRow[];
 };
-
-// Backfill canonical pollen_avg_price from the deprecated avg_cost_usd alias
-// so the route response and consumers see one shape regardless of whether
-// the pipe (or a stale KV cache) still carries only the old field.
-function normalizeModelStatsRow(row: ModelStatsRow): ModelStatsRow {
-    const value = row.pollen_avg_price ?? row.avg_cost_usd ?? 0;
-    return { ...row, pollen_avg_price: value, avg_cost_usd: value };
-}
 
 export async function getModelStats(
     kv: KVNamespace,
@@ -47,7 +37,7 @@ export function getEstimatedPrice(
 ): number {
     if (!model) return 0;
     const row = stats.data?.find((r) => r.model === model);
-    return row?.pollen_avg_price ?? row?.avg_cost_usd ?? 0;
+    return row?.pollen_avg_price ?? 0;
 }
 
 async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {
@@ -56,8 +46,7 @@ async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {
         if (!response.ok) {
             throw new Error(`Tinybird API error: ${response.status}`);
         }
-        const raw = (await response.json()) as TinybirdModelStats;
-        return { data: (raw.data ?? []).map(normalizeModelStatsRow) };
+        return (await response.json()) as TinybirdModelStats;
     } catch (error) {
         log.error("Failed to fetch model stats from Tinybird: {error}", {
             error,

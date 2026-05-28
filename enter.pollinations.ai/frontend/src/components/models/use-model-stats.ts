@@ -15,8 +15,6 @@ type TinybirdResponse = {
     data?: Array<{
         model: string;
         pollen_avg_price?: number;
-        /** @deprecated Renamed to pollen_avg_price. Removed after the rename window closes. */
-        avg_cost_usd?: number;
         request_count?: number;
         priced_success_count?: number;
     }>;
@@ -48,7 +46,7 @@ export function useModelStats(): {
                 const statsMap: ModelStats = {};
                 for (const row of data.data || []) {
                     statsMap[row.model] = {
-                        avgCost: row.pollen_avg_price ?? row.avg_cost_usd ?? 0,
+                        avgCost: row.pollen_avg_price ?? 0,
                         requestCount:
                             row.request_count ?? row.priced_success_count ?? 0,
                     };

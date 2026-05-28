@@ -371,7 +371,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/usage/daily");
     lines.push(
-        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, pollen_spent }. `cost_usd` is also emitted as a deprecated alias during the rename window.",
+        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, pollen_spent }.",
     );
     lines.push(
         "Query params: format (json|csv, default json), days (1-90, default 90)",

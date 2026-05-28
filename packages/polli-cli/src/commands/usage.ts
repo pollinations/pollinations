@@ -13,8 +13,6 @@ interface UsageRecord {
     type: string;
     model: string;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd?: number;
     meter_source: string;
 }
 
@@ -29,8 +27,6 @@ interface DailyUsageRecord {
     meter_source: string;
     requests: number;
     pollen_spent: number;
-    /** @deprecated Renamed to pollen_spent. Removed after the rename window closes. */
-    cost_usd?: number;
 }
 
 interface DailyUsageResponse {
@@ -38,9 +34,10 @@ interface DailyUsageResponse {
     count: number;
 }
 
-const pollen = (row: { pollen_spent?: number; cost_usd?: number }): string => {
-    const value = row.pollen_spent ?? row.cost_usd;
-    return value != null ? `${value.toFixed(4)} pollen` : "-";
+const pollen = (row: { pollen_spent?: number }): string => {
+    return row.pollen_spent != null
+        ? `${row.pollen_spent.toFixed(4)} pollen`
+        : "-";
 };
 
 interface BalanceResponse {
@@ -75,10 +72,9 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            // In JSON mode, pass the raw API rows through (they already carry
-            // `pollen_spent` plus the deprecated `cost_usd` alias from worker
-            // normalization, so consumers can read either). In human mode,
-            // collapse to a single `pollen` column for display.
+            // In JSON mode, pass the raw API rows through (they carry numeric
+            // `pollen_spent`). In human mode, collapse to a single `pollen`
+            // column for display.
             const json = getOutputMode() === "json";
 
             if (opts.daily) {

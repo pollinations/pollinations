@@ -131,7 +131,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen: 0,
                 byModel: new Map(),
             };
-            const pollen = r.pollen_spent ?? r.cost_usd ?? 0;
+            const pollen = r.pollen_spent ?? 0;
             cur.requests += r.requests || 0;
             cur.pollen += pollen;
 
@@ -229,8 +229,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             (s: number, r: DailyUsageRecord) => s + (r.requests || 0),
             0,
         );
-        const pollenOf = (r: DailyUsageRecord) =>
-            r.pollen_spent ?? r.cost_usd ?? 0;
+        const pollenOf = (r: DailyUsageRecord) => r.pollen_spent ?? 0;
         const totalPollen = filtered.reduce(
             (s: number, r: DailyUsageRecord) => s + pollenOf(r),
             0,

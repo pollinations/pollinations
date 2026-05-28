@@ -1,0 +1,35 @@
+{
+  "pr_number": 11347,
+  "title": "fix(enter): drop WeChat Pay from payment banner",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11347",
+  "merged_at": "2026-05-28T15:04:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Removes \"WeChat Pay\" from the local-payment-methods pinned banner\n- WeChat Pay is not enabled on the live Stripe PMC (only Alipay is)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Banner accuracy check",
+    "blurb": "Cleaned up the payment methods banner to accurately reflect our supported options. Alipay is still good to go!",
+    "summary": "Removed WeChat Pay from the local payment methods banner, as it is not currently enabled on the live Stripe configuration.",
+    "impact": "Users will no longer see WeChat Pay listed as an available payment option, preventing confusion at checkout.",
+    "keywords": [
+      "frontend",
+      "billing",
+      "banner",
+      "stripe",
+      "bug_fix"
+    ],
+    "visual_concept": "Polly the bee acting as a sign painter, updating a shop banner to be accurate. The robot companion helps by holding the paint.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting over a small wooden shop sign. A chunky pixel robot with a CRT monitor head holds a bucket of lime green (#ecf874) paint. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-28/PR-11347.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting over a small wooden shop sign. A chunky pixel robot with a CRT monitor head holds a bucket of lime green (#ecf874) paint. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-28T15:05:27.382700+00:00"
+}

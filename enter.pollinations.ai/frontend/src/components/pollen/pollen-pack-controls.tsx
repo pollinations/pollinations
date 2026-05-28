@@ -80,10 +80,11 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             <span
                                 key={pack.amountUsd}
                                 style={{
-                                    left:
-                                        lastIndex > 0
-                                            ? `${(index / lastIndex) * 100}%`
-                                            : "0%",
+                                    left: isLast
+                                        ? "calc(100% + 11px)"
+                                        : lastIndex > 0
+                                          ? `${(index / lastIndex) * 100}%`
+                                          : "0%",
                                 }}
                                 className={cn(
                                     "absolute top-0 whitespace-nowrap",
@@ -95,7 +96,20 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                     isSelected && "font-bold text-amber-900",
                                 )}
                             >
-                                <span className="relative inline-block">
+                                <span
+                                    className={cn(
+                                        "relative",
+                                        isSelected
+                                            ? "inline-flex flex-col"
+                                            : "inline-block",
+                                        isSelected &&
+                                            (isFirst
+                                                ? "items-start"
+                                                : isLast
+                                                  ? "items-end"
+                                                  : "items-center"),
+                                    )}
+                                >
                                     <span
                                         className={cn(
                                             "inline-block",
@@ -106,14 +120,19 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         {formatPollenPackValue(
                                             pack.pollenGrant,
                                         )}
-                                        {isSelected ? " pollen" : "p"}
+                                        {!isSelected && "p"}
                                     </span>
+                                    {isSelected && (
+                                        <span className="mt-0.5 text-sm leading-none text-paid-deep/80">
+                                            pollen
+                                        </span>
+                                    )}
                                     {isSelected && (
                                         <Chip
                                             theme="amber"
                                             size="sm"
                                             className={cn(
-                                                "absolute top-full mt-1 flex-col items-stretch whitespace-nowrap",
+                                                "absolute top-full mt-1 gap-0.5 px-2.5 py-1 flex-col items-stretch whitespace-nowrap",
                                                 isFirst
                                                     ? "left-0"
                                                     : isLast
@@ -123,6 +142,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         >
                                             <span
                                                 className={cn(
+                                                    "text-base leading-none text-paid-deep",
                                                     isFirst
                                                         ? "text-left"
                                                         : isLast

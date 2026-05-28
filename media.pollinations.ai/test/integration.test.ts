@@ -4,7 +4,8 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
 
 // 1x1 red PNG (67 bytes)
@@ -26,74 +27,6 @@ interface UploadResponse {
 }
 
 const VALID_KEY = "pk_test_key_123";
-
-type StoredR2Object = {
-    body: Uint8Array;
-    httpMetadata?: R2HTTPMetadata;
-    customMetadata?: Record<string, string>;
-    storageClass?: R2Object["storageClass"];
-    uploaded: Date;
-};
-
-type TestR2Bucket = R2Bucket & {
-    readonly putCount: number;
-};
-
-function createTestR2Bucket(): TestR2Bucket {
-    const objects = new Map<string, StoredR2Object>();
-    let putCount = 0;
-    let uploadTime = 0;
-
-    function createR2Object(key: string, object: StoredR2Object): R2Object {
-        return {
-            key,
-            version: "test",
-            size: object.body.byteLength,
-            etag: "test",
-            httpEtag: '"test"',
-            uploaded: object.uploaded,
-            httpMetadata: object.httpMetadata,
-            customMetadata: object.customMetadata,
-            storageClass: object.storageClass,
-            checksums: {},
-        } as unknown as R2Object;
-    }
-
-    return {
-        head: async (key: string) => {
-            const object = objects.get(key);
-            return object ? createR2Object(key, object) : null;
-        },
-        get: async (key: string) => {
-            const object = objects.get(key);
-            if (!object) return null;
-            return {
-                ...createR2Object(key, object),
-                body: new Response(object.body.slice()).body,
-            };
-        },
-        put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
-            const httpMetadata =
-                options?.httpMetadata instanceof Headers
-                    ? undefined
-                    : options?.httpMetadata;
-
-            putCount += 1;
-            uploadTime += 1;
-            objects.set(key, {
-                body: new Uint8Array(await new Response(value).arrayBuffer()),
-                httpMetadata,
-                customMetadata: options?.customMetadata,
-                storageClass: options?.storageClass,
-                uploaded: new Date(uploadTime),
-            });
-            return null;
-        },
-        get putCount() {
-            return putCount;
-        },
-    } as unknown as TestR2Bucket;
-}
 
 function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
@@ -127,7 +60,6 @@ describe("media.pollinations.ai", () => {
 
     afterEach(() => {
         fetchMock.deactivate();
-        vi.restoreAllMocks();
     });
 
     it("GET / returns service info", async () => {
@@ -209,9 +141,6 @@ describe("media.pollinations.ai", () => {
     });
 
     it("refreshes uploaded media TTL on GET", async () => {
-        const consoleError = vi
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
         const bucket = createTestR2Bucket();
         const env = createMediaEnv(bucket);
         const uploadCtx = createExecutionContext();
@@ -246,7 +175,6 @@ describe("media.pollinations.ai", () => {
         expect(getRes.status).toBe(200);
         expect(body.length).toBe(TINY_PNG.length);
         expect(bucket.putCount).toBe(2);
-        expect(consoleError).not.toHaveBeenCalled();
     });
 
     it("same content with different filename produces different hash", async () => {

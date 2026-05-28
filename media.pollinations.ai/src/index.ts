@@ -1,3 +1,4 @@
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
@@ -8,8 +9,8 @@ const DOMAIN = "media.pollinations.ai";
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
-// Inlined because this worker has no @shared path mapping. Content-addressed
-// storage means the URL → bytes mapping is fixed forever: re-uploading the
+// Content-addressed storage means the URL → bytes mapping is fixed forever:
+// re-uploading the
 // same content reproduces the same URL, and there is no other content the URL
 // could ever point to. R2's 30-day lifecycle can delete the underlying object,
 // but a fresh upload restores byte-identical content, so `immutable` is safe.
@@ -55,58 +56,6 @@ function fileTooLargeError(maxSize: number): { error: string } {
 
 function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
-}
-
-async function writeReadableToWritable(
-    readable: ReadableStream<Uint8Array>,
-    writable: WritableStream<ArrayBuffer | ArrayBufferView>,
-): Promise<void> {
-    const reader = readable.getReader();
-    const writer = writable.getWriter();
-
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            await writer.write(value);
-        }
-        await writer.close();
-    } catch (error) {
-        await writer.abort(error).catch(() => undefined);
-        throw error;
-    } finally {
-        reader.releaseLock();
-        writer.releaseLock();
-    }
-}
-
-function refreshMediaRetention(
-    bucket: R2Bucket,
-    key: string,
-    object: R2ObjectBody,
-    waitUntil: (promise: Promise<unknown>) => void,
-    onError: (error: unknown) => void,
-): ReadableStream {
-    const [responseBody, refreshBody] = object.body.tee();
-    const fixedLengthStream = new FixedLengthStream(object.size);
-
-    waitUntil(
-        Promise.all([
-            writeReadableToWritable(
-                refreshBody as ReadableStream<Uint8Array>,
-                fixedLengthStream.writable,
-            ),
-            bucket.put(key, fixedLengthStream.readable, {
-                httpMetadata: object.httpMetadata,
-                customMetadata: object.customMetadata,
-                storageClass: object.storageClass,
-            }),
-        ])
-            .then(() => undefined)
-            .catch(onError),
-    );
-
-    return responseBody;
 }
 
 const UploadResponseSchema = z.object({
@@ -363,7 +312,7 @@ api.get(
                 );
             }
 
-            const responseBody = refreshMediaRetention(
+            const responseBody = refreshR2ObjectTtl(
                 c.env.MEDIA_BUCKET,
                 hash,
                 object,

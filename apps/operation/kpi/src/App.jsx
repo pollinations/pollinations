@@ -162,7 +162,7 @@ export default function App() {
                             tokensPerUser: row.tokens_per_user,
                             textRequests: row.text_requests,
                             imageRequests: row.image_requests,
-                            costUsd: row.cost_usd,
+                            usdCost: row.usd_cost,
                         });
                     }
                 }

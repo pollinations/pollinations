@@ -10,8 +10,8 @@ import { balance } from "../middleware/balance.ts";
 import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
-    paid_week: number;
-    tier_week: number;
+    pollen_paid_week: number;
+    pollen_tier_week: number;
 };
 
 /**
@@ -92,8 +92,8 @@ export const customerRoutes = new Hono<Env>()
             };
             const row = body.data[0];
             return c.json({
-                paidWeek: row?.paid_week ?? 0,
-                tierWeek: row?.tier_week ?? 0,
+                paidWeek: row?.pollen_paid_week ?? 0,
+                tierWeek: row?.pollen_tier_week ?? 0,
             });
         },
     );

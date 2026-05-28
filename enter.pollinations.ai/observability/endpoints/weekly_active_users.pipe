@@ -15,7 +15,7 @@ SQL >
         uniqExactIf(user_id, total_price > 0) AS paying_users,
         count() AS total_requests,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
-        sum(total_price) AS total_revenue
+        sum(total_price) AS pollen_total
     FROM generation_event
     WHERE
         {% if defined(start_date) %}

@@ -162,7 +162,7 @@ export function KPITrendTable({ weeklyData, title }) {
             format: "percent",
             calc: (w) =>
                 w.revenue > 0
-                    ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
+                    ? ((w.revenue - (w.usdCost || 0)) / w.revenue) * 100
                     : null,
             tooltip:
                 "Formula: (Revenue - COGS) / Revenue × 100. Higher is better. COGS = compute costs from generation_event.total_cost (GPU, tokens, providers).",

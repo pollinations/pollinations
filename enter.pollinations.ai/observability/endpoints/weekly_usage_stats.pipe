@@ -17,8 +17,8 @@ SQL >
         sum(token_count_prompt_text) AS prompt_tokens,
         sum(token_count_completion_text) AS completion_tokens,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
-        sum(total_price) AS revenue_usd,
-        sum(total_cost) AS cost_usd,
+        sum(total_price) AS pollen_revenue,
+        sum(total_cost) AS usd_cost,
         uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_users,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user

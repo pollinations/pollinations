@@ -168,7 +168,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 size="sm"
                                                 className="px-2.5 py-1 whitespace-nowrap"
                                             >
-                                                <span className="text-base font-bold leading-none text-paid-deep">
+                                                <span className="text-sm font-semibold leading-none text-paid-deep">
                                                     ≈{" "}
                                                     {packPriceLabel(
                                                         pack,
@@ -177,7 +177,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 </span>
                                             </Chip>
                                             {hasDiscount && (
-                                                <span className="text-amber-700">
+                                                <span className="text-[11px] font-semibold leading-none text-amber-700">
                                                     {discountPercent}% off
                                                 </span>
                                             )}

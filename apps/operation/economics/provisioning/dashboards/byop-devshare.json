@@ -296,7 +296,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Total Pollen consumed through BYOP apps (total_price = baseline + dev markup credit).",
+            "description": "Total charged Pollen through BYOP apps (total_price = base price + earned pollen).",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -353,7 +353,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Pollen consumed",
+            "title": "Charged pollen",
             "type": "stat"
         },
         {
@@ -426,7 +426,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Daily BYOP Pollen split by meter: paid balance vs tier (subsidy). Paid growth = healthy. Tier growth = subsidy burn.",
+            "description": "Daily BYOP charged Pollen split by meter: paid balance vs tier balance. Paid growth = paid-balance spend. Tier growth = tier-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -544,7 +544,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Daily BYOP Pollen \u2014 Paid vs Tier",
+            "title": "Daily BYOP charged pollen \u2014 paid vs tier",
             "type": "timeseries"
         },
         {
@@ -705,7 +705,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Top BYOP apps ranked by charged Pollen. App name resolved via d1_apikey; falls back to client_id if unsynced. Paid/tier split shows revenue vs subsidy mix per app.",
+            "description": "Top BYOP apps ranked by charged Pollen. App name resolved via d1_apikey; falls back to client_id if unsynced. Paid/tier split shows charged paid vs charged tier mix per app.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1100,7 +1100,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Tier composition of BYOP end-users: how much of their Pollen comes from free-tier subsidy vs paid pollen. Paid-heavy traffic is monetized; tier-heavy means BYOP apps are mostly serving free-tier users.",
+            "description": "Tier composition of BYOP end-users: how much of their charged Pollen comes from tier balance vs paid balance. Paid-heavy traffic is paid-balance spend; tier-heavy traffic is tier-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1431,7 +1431,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Developer-earned pollen from paid-balance events as a share of charged paid pollen. Shows what fraction of paying-user revenue is redirected to developers.",
+            "description": "Developer-earned pollen from paid-balance events as a share of charged paid pollen. Shows what fraction of charged paid pollen becomes developer-earned pollen.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1626,7 +1626,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Daily developer-earned pollen, split by the meter the spending user paid from. Paid = from paid balance. Tier = from subsidy-funded usage.",
+            "description": "Daily developer-earned pollen, split by the meter the spending user paid from. Paid = paid-balance spend. Tier = tier-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -2526,7 +2526,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Legacy Pollen",
+            "title": "Legacy charged pollen",
             "type": "stat"
         },
         {
@@ -2701,7 +2701,7 @@
                             },
                             {
                                 "id": "displayName",
-                                "value": "Pollen \u03c1"
+                                "value": "Charged \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -2737,7 +2737,7 @@
                 "sortBy": [
                     {
                         "desc": true,
-                        "displayName": "Pollen \u03c1"
+                        "displayName": "Charged \u03c1"
                     }
                 ]
             },

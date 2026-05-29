@@ -261,7 +261,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. Requested files stay available longer.",
+            "Get a file by its content hash. Access keeps files from expiring.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },

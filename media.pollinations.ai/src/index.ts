@@ -1,3 +1,4 @@
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
@@ -8,8 +9,8 @@ const DOMAIN = "media.pollinations.ai";
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
-// Inlined because this worker has no @shared path mapping. Content-addressed
-// storage means the URL → bytes mapping is fixed forever: re-uploading the
+// Content-addressed storage means the URL → bytes mapping is fixed forever:
+// re-uploading the
 // same content reproduces the same URL, and there is no other content the URL
 // could ever point to. R2's 30-day lifecycle can delete the underlying object,
 // but a fresh upload restores byte-identical content, so `immutable` is safe.
@@ -260,7 +261,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+            "Get a file by its content hash. Access keeps files from expiring.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
@@ -311,7 +312,17 @@ api.get(
                 );
             }
 
-            return new Response(object.body, { headers });
+            const responseBody = refreshR2ObjectTtl(
+                c.env.MEDIA_BUCKET,
+                hash,
+                object,
+                (promise) => c.executionCtx.waitUntil(promise),
+                (error) => {
+                    console.error("TTL refresh error:", error);
+                },
+            );
+
+            return new Response(responseBody, { headers });
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);

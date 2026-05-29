@@ -1,5 +1,9 @@
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
-import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
+import {
+    assertStagingAccess,
+    createApiKeyPlugin,
+    StagingAccessDeniedError,
+} from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -87,6 +91,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),
+            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -263,4 +268,51 @@ function onAfterUserCreate(
             });
         }
     };
+}
+
+/**
+ * Restricts new signups on staging to an allowlist of GitHub user IDs
+ * (immutable, unlike usernames). No-op outside staging.
+ *
+ * This is a thin UX layer only — it rejects disallowed users during OAuth
+ * before a `user` row is created, so /error shows "staging is invite-only"
+ * instead of a 403 after they think they're logged in. The actual security
+ * boundary is {@link assertStagingAccess} called per-request in
+ * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
+ * blocks spend on the production provider keys held by staging-gen. See #11137.
+ */
+function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    if (env.ENVIRONMENT !== "staging") {
+        return { id: "staging-access" };
+    }
+    return {
+        id: "staging-access",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    user: {
+                        create: {
+                            before: async (user: GenericUser) => {
+                                try {
+                                    assertStagingAccess(env, {
+                                        githubId: (
+                                            user as { githubId?: number }
+                                        ).githubId,
+                                    });
+                                } catch (e) {
+                                    if (e instanceof StagingAccessDeniedError) {
+                                        throw new APIError("FORBIDDEN", {
+                                            message: e.message,
+                                        });
+                                    }
+                                    throw e;
+                                }
+                                return { data: user };
+                            },
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
 }

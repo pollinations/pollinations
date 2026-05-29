@@ -3,6 +3,7 @@ import {
     type AuthUser,
     authenticateApiKeyRequest,
     BannedAccountError,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -40,7 +41,10 @@ export const auth = () =>
                     ctx: c.executionCtx,
                 });
             } catch (error) {
-                if (error instanceof BannedAccountError) {
+                if (
+                    error instanceof BannedAccountError ||
+                    error instanceof StagingAccessDeniedError
+                ) {
                     throw new HTTPException(403, { message: error.message });
                 }
                 throw error;

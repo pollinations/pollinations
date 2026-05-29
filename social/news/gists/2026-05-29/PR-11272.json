@@ -1,0 +1,35 @@
+{
+  "pr_number": 11272,
+  "title": "feat(gen): add realtime voice/audio API (gpt-realtime-2)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11272",
+  "merged_at": "2026-05-29T15:19:46Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Summary\n- New endpoint: `/v1/realtime` on `gen.pollinations.ai` — OpenAI-compatible realtime API for low-latency voice and multimodal sessions\n- Single model: `gpt-realtime-2` (text + audio in/out, tools, reasoning)\n- Drop-in for any OpenAI realtime SDK by pointing it at `gen.pollinations.ai`\n- Registered in `shared/registry/realtime.ts` (paid-only) so pricing, model discovery, and billing reuse the existing pipeline\n- Per-session billing settled on close: one `generate.realtime` Tinybird event with the summed usage\n- Public proxy fix: WS 101 responses now pass through with their `webSocket` field intact (the proxy was dropping it, returning HTTP 500 at the edge)\n- Credential query params (`key`, `token`, `api_key`) redacted in logger + observability captures — browsers must use `?key=` since `new WebSocket()` can't set headers\n- 7 vitest cases cover proxy behavior, auth, model gating, aggregate billing, usage fallback, and `/v1/models` listing\n\n## Test plan\n- [x] `npm run test -- realtime docs error-observability` — 15/15 pass\n- [x] `npx tsc --noEmit` clean\n- [x] Proxy worker deployed to staging (`pollinations-proxy-staging` version `73bd8ff1`)\n- [x] Gen worker deployed to staging (`pollinations-gen-staging` version `6924a9a0`)\n- [x] End-to-end voice session through `wss://staging.gen.pollinations.ai/v1/realtime` with a paid BYOP key: real mic in, audio reply out, balance debits per registry rate\n\n## Notes\n- Pricing per token (multiplier 1.0): prompt audio 0.000032 / completion audio 0.000064 / prompt text 0.000004 / completion text 0.000024 / cached 0.0000004 / prompt image 0.000005\n- Direct to OpenAI; Azure has `gpt-realtime-2` GA in 6 regions and the swap would be ~10 lines if we want to migrate later\n- `?key=` accepts both `pk_` and `sk_`; recommend `pk_` for browser clients since URL query strings leak through referrers\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Speak to the swarm",
+    "blurb": "Added the new /v1/realtime endpoint with gpt-realtime-2. Now you can build low-latency voice and multimodal apps just by pointing your OpenAI SDK at pollinations.",
+    "summary": "Added the /v1/realtime endpoint to gen.pollinations.ai, providing an OpenAI-compatible WebSocket connection for low-latency voice and multimodal sessions using gpt-realtime-2.",
+    "impact": "Developers can now build real-time voice applications by simply pointing any standard OpenAI realtime SDK at the pollinations endpoint.",
+    "keywords": [
+      "realtime",
+      "voice",
+      "websocket",
+      "api",
+      "gpt-realtime-2"
+    ],
+    "visual_concept": "Polly the bee wearing headphones and speaking into a microphone, with the Monitor Robot displaying soundwaves, representing the new real-time voice and audio WebSocket API.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny studio headphones and speaking into a retro microphone. A chunky pixel robot with a CRT monitor head stands nearby, its screen displaying glowing lime green (#ecf874) soundwaves. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11272.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny studio headphones and speaking into a retro microphone. A chunky pixel robot with a CRT monitor head stands nearby, its screen displaying glowing lime green (#ecf874) soundwaves. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-29T15:20:56.872217+00:00"
+}

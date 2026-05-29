@@ -151,19 +151,50 @@ function RouteComponent() {
         githubUsername,
         apiKeys,
         tierData,
-        tierBalance,
-        packBalance,
+        tierBalance: initialTierBalance,
+        packBalance: initialPackBalance,
         billingState,
         paidWeek,
         tierWeek,
     } = Route.useLoaderData();
 
+    const [tierBalance, setTierBalance] = useState(initialTierBalance);
+    const [packBalance, setPackBalance] = useState(initialPackBalance);
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activePage, setActivePage] = useState<DashboardPage>(() =>
         pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
     );
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+
+    useEffect(() => {
+        let eventSource: EventSource | null = null;
+        try {
+            eventSource = new EventSource("/api/customer/balance/stream");
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.tierBalance !== undefined) {
+                        setTierBalance(data.tierBalance);
+                    }
+                    if (data.packBalance !== undefined) {
+                        setPackBalance(data.packBalance);
+                    }
+                } catch (err) {
+                    console.error("Error parsing balance SSE", err);
+                }
+            };
+            eventSource.onerror = () => {
+                // Connection lost or error; EventSource will automatically try to reconnect.
+                console.error("SSE connection error for balance stream.");
+            };
+        } catch (err) {
+            console.error("Failed to setup SSE for balance stream", err);
+        }
+        return () => {
+            eventSource?.close();
+        };
+    }, []);
 
     useEffect(() => {
         function syncPageFromHash(): void {

@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
+import { streamSSE } from "hono/streaming";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";
@@ -48,6 +49,61 @@ export const customerRoutes = new Hono<Env>()
                 tierBalance,
                 packBalance,
                 lastTierGrant,
+            });
+        },
+    )
+    .get(
+        "/balance/stream",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Stream balance updates (SSE) for the current user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const log = c.get("log").getChild("balance-stream");
+
+            return streamSSE(c, async (stream) => {
+                let aborted = false;
+                stream.onAbort(() => {
+                    aborted = true;
+                });
+
+                let lastTierBalance: number | null = null;
+                let lastPackBalance: number | null = null;
+
+                while (!aborted) {
+                    try {
+                        const { tierBalance, packBalance } =
+                            await c.var.balance.getBalance(user.id);
+
+                        if (
+                            lastTierBalance !== tierBalance ||
+                            lastPackBalance !== packBalance
+                        ) {
+                            lastTierBalance = tierBalance;
+                            lastPackBalance = packBalance;
+
+                            await stream.writeSSE({
+                                data: JSON.stringify({
+                                    tierBalance,
+                                    packBalance,
+                                }),
+                            });
+                        }
+                    } catch (error) {
+                        log.error("Error fetching balance for SSE: {error}", {
+                            error,
+                        });
+                    }
+
+                    // Wait 30s before the next check.
+                    // Break it down to smaller intervals to respond to abort quickly.
+                    for (let i = 0; i < 30 && !aborted; i++) {
+                        await stream.sleep(1000);
+                    }
+                }
             });
         },
     )

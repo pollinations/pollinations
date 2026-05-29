@@ -964,6 +964,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.0525,
     },
   },
+  "step-3.5-flash": {
+    "cost": {
+      "completionTextTokens": 3e-7,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 9e-8,
+    },
+    "price": {
+      "completionTextTokens": 3e-7,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 9e-8,
+    },
+  },
   "step-flash": {
     "cost": {
       "completionTextTokens": 0.00000115,

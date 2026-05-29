@@ -204,6 +204,7 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
+    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
@@ -255,6 +256,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3-vl-235b-a22b-thinking": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-235b-a22b-thinking",
+        }),
+
+    // -- OpenRouter (StepFun) -------------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.7-flash",
         }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------

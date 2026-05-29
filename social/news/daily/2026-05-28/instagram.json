@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-28",
+  "period_start": "2026-05-28",
+  "period_end": "2026-05-28",
+  "generated_at": "2026-05-29T07:15:38.289709+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-28/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-28/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-28/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Merged the first phase of country-routed checkout today (PR #11172). \n\nWhat does that actually mean? Pollen packs are learning to speak your local currency. No more doing mental math with exchange rates just to get some credits for your AI projects. It's a backend plumbing update, but it's the kind of infrastructure work that makes the whole garden run a little smoother. Rolling out fully soon. \n\nCode is always open at github.com/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #backend",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

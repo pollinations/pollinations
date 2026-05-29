@@ -6,6 +6,7 @@ import type { Usage, UsageType } from "./registry.ts";
 export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
+    promptCacheWriteTokens: "x-usage-prompt-cache-write-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
     promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
@@ -44,6 +45,8 @@ export function openaiUsageToUsage(openaiUsage: {
         audio_tokens?: number | null;
         image_tokens?: number | null;
     } | null;
+    cache_read_input_tokens?: number | null;
+    cache_creation_input_tokens?: number | null;
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
@@ -51,8 +54,14 @@ export function openaiUsageToUsage(openaiUsage: {
         rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
+    const promptCachedTokens =
+        openaiUsage.prompt_tokens_details?.cached_tokens ||
+        openaiUsage.cache_read_input_tokens ||
+        0;
+    const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
     const promptDetails = [
-        openaiUsage.prompt_tokens_details?.cached_tokens || 0,
+        promptCachedTokens,
+        promptCacheWriteTokens,
         openaiUsage.prompt_tokens_details?.audio_tokens || 0,
         openaiUsage.prompt_tokens_details?.image_tokens || 0,
     ];
@@ -91,14 +100,19 @@ export function openaiUsageToUsage(openaiUsage: {
         ? openaiUsage.completion_tokens
         : openaiUsage.completion_tokens - sumTokens(cappedCompletionDetails);
 
-    const [promptCachedTokens, promptAudioTokens, promptImageTokens] =
-        cappedPromptDetails;
+    const [
+        cappedPromptCachedTokens,
+        cappedPromptCacheWriteTokens,
+        promptAudioTokens,
+        promptImageTokens,
+    ] = cappedPromptDetails;
     const [, , completionAudioTokens, completionReasoningTokens] =
         cappedCompletionDetails;
 
     return {
         promptTextTokens,
-        promptCachedTokens,
+        promptCachedTokens: cappedPromptCachedTokens,
+        promptCacheWriteTokens: cappedPromptCacheWriteTokens,
         promptAudioTokens,
         promptImageTokens,
         completionTextTokens,

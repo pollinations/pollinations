@@ -48,6 +48,17 @@ describe("buildUsageHeaders", () => {
         expect(headers["x-usage-prompt-cached-tokens"]).toBe("50");
     });
 
+    it("should include prompt cache write tokens header when present", () => {
+        const usage: Usage = {
+            promptTextTokens: 100,
+            promptCacheWriteTokens: 4096,
+            completionTextTokens: 20,
+        };
+        const headers = buildUsageHeaders("claude-large", usage);
+
+        expect(headers["x-usage-prompt-cache-write-tokens"]).toBe("4096");
+    });
+
     it("should include reasoning tokens header when present", () => {
         const usage: Usage = {
             promptTextTokens: 100,
@@ -113,6 +124,26 @@ describe("openaiUsageToUsage", () => {
 
         expect(usage.promptTextTokens).toBe(70); // 100 - 30
         expect(usage.promptCachedTokens).toBe(30);
+    });
+
+    it("should handle Anthropic cache creation tokens", () => {
+        const openaiUsage = {
+            prompt_tokens: 8596,
+            completion_tokens: 8,
+            total_tokens: 8604,
+            prompt_tokens_details: {
+                cached_tokens: 0,
+            },
+            cache_read_input_tokens: 0,
+            cache_creation_input_tokens: 8584,
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(12);
+        expect(usage.promptCacheWriteTokens).toBe(8584);
+        expect(usage.promptCachedTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(8);
     });
 
     it("should handle reasoning tokens in completion_tokens_details", () => {
@@ -346,12 +377,14 @@ describe("parseUsageHeaders", () => {
             "x-model-used": "claude-large",
             "x-usage-prompt-text-tokens": "200",
             "x-usage-prompt-cached-tokens": "100",
+            "x-usage-prompt-cache-write-tokens": "4096",
         });
 
         const usage = parseUsageHeaders(headers);
 
         expect(usage.promptTextTokens).toBe(200);
         expect(usage.promptCachedTokens).toBe(100);
+        expect(usage.promptCacheWriteTokens).toBe(4096);
     });
 
     it("should omit missing headers", () => {
@@ -372,6 +405,7 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         const originalUsage: Usage = {
             promptTextTokens: 100,
             promptCachedTokens: 50,
+            promptCacheWriteTokens: 4096,
             promptAudioTokens: 200,
             completionTextTokens: 75,
             completionReasoningTokens: 150,
@@ -386,6 +420,9 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         );
         expect(parsedUsage.promptCachedTokens).toBe(
             originalUsage.promptCachedTokens,
+        );
+        expect(parsedUsage.promptCacheWriteTokens).toBe(
+            originalUsage.promptCacheWriteTokens,
         );
         expect(parsedUsage.promptAudioTokens).toBe(
             originalUsage.promptAudioTokens,

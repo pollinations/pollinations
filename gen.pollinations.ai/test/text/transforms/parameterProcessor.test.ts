@@ -35,9 +35,12 @@ describe("processParameters", () => {
         expect(result.options.max_completion_tokens).toBeUndefined();
     });
 
-    it("strips temperature/top_p/top_k for Claude Opus 4.7", () => {
+    it.each([
+        "us.anthropic.claude-opus-4-7",
+        "us.anthropic.claude-opus-4-8",
+    ])("strips temperature/top_p/top_k for %s", (model) => {
         const result = processParameters(messages, {
-            model: "us.anthropic.claude-opus-4-7",
+            model,
             temperature: 0.7,
             top_p: 0.9,
             top_k: 40,

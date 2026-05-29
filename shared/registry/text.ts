@@ -637,6 +637,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(1.1),
             promptCachedTokens: perMillion(0.11),
+            promptCacheWriteTokens: perMillion(1.375),
             completionTextTokens: perMillion(5.5),
         },
         description: "Claude Haiku 4.5 - Fast & Intelligent",
@@ -658,6 +659,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(3.3),
             promptCachedTokens: perMillion(0.33),
+            promptCacheWriteTokens: perMillion(4.125),
             completionTextTokens: perMillion(16.5),
         },
         description: "Claude Sonnet 4.6 - Most Capable & Balanced",
@@ -679,6 +681,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
+            promptCacheWriteTokens: perMillion(6.875),
             completionTextTokens: perMillion(27.5),
         },
         description: "Claude Opus 4.6 - Most Intelligent Model",
@@ -700,6 +703,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
+            promptCacheWriteTokens: perMillion(6.875),
             completionTextTokens: perMillion(27.5),
         },
         description: "Claude Opus 4.7 - Most Intelligent Model",
@@ -707,6 +711,30 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "claude-opus-4.8": {
+        aliases: [],
+        modelId: "claude-opus-4-8",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        cost: {
+            // Bedrock us.anthropic.claude-opus-4-8 — Anthropic list $5/$25 per M
+            // (+ ~10% Bedrock premium), 5-minute cache writes at 1.25x input.
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(0.55),
+            promptCacheWriteTokens: perMillion(6.875),
+            completionTextTokens: perMillion(27.5),
+        },
+        description: "Claude Opus 4.8 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "perplexity-fast": {

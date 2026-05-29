@@ -62,6 +62,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
     },
     {
+        name: "step-flash",
+        config: portkeyConfig["stepfun/step-3.7-flash"],
+    },
+    {
         name: "mistral",
         config: portkeyConfig["mistral-small-2503"],
         transform: stripCacheControl,

@@ -257,6 +257,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3-vl-235b-a22b-thinking",
         }),
 
+    // -- OpenRouter (StepFun) -------------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.7-flash",
+        }),
+
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),

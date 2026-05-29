@@ -291,7 +291,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(1);
     });
 
-    it("refreshes cached text TTL on cache hits", async () => {
+    it("refreshes cached text TTL on aged cache hits", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const bucket = createTestR2Bucket();

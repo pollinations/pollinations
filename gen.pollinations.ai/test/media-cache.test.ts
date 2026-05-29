@@ -142,7 +142,7 @@ describe("media cache", () => {
         expect(media.originHits).toBe(1);
     });
 
-    it("refreshes cached media TTL on cache hits", async () => {
+    it("refreshes cached media TTL on aged cache hits", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");
         const bucket = createTestR2Bucket();
         const env = createMediaCacheEnv(bucket);

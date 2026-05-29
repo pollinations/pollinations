@@ -140,7 +140,7 @@ describe("media.pollinations.ai", () => {
         expect(dup.duplicate).toBe(true);
     });
 
-    it("refreshes uploaded media TTL on GET", async () => {
+    it("refreshes uploaded media TTL on aged GET", async () => {
         const bucket = createTestR2Bucket();
         const env = createMediaEnv(bucket);
         const uploadCtx = createExecutionContext();

@@ -87,6 +87,7 @@ describe("docs routes", () => {
             { url: "https://gen.pollinations.ai" },
         ]);
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/realtime"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
@@ -113,6 +114,15 @@ describe("docs routes", () => {
             schema.paths["/v1/chat/completions"] as Record<string, unknown>
         )?.post as Record<string, unknown> | undefined;
         expect(chatPost?.["x-codeSamples"]).toBeDefined();
+
+        const realtimeGet = (
+            schema.paths["/v1/realtime"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        const realtimeResponses = realtimeGet?.responses as
+            | Record<string, unknown>
+            | undefined;
+        expect(realtimeResponses?.["426"]).toBeDefined();
+        expect(realtimeResponses?.["503"]).toBeDefined();
 
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
@@ -214,6 +224,12 @@ describe("docs routes", () => {
         expect(apiRes.status).toBe(200);
         const apiBody = await apiRes.text();
         expect(apiBody).toContain("Base URL:");
+        expect(apiBody).toContain(
+            "browser WebSocket clients can use `?key=pk_...`",
+        );
+        expect(apiBody).toContain(
+            "Input transcription sessions are not supported yet.",
+        );
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

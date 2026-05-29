@@ -1184,11 +1184,13 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.04),
             completionTextTokens: perMillion(1.15),
         },
-        description: "StepFun Step 3.7 Flash - Fast multimodal model",
+        description: "StepFun Step 3.7 Flash - Fast multimodal reasoning model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        reasoning: false,
+        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
+        // tokens are billed within completion_tokens at the completionText rate.
+        reasoning: true,
         contextLength: 256000,
         isSpecialized: false,
     },

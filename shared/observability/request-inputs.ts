@@ -7,7 +7,12 @@ export type RequestInputs = {
 };
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const CREDENTIAL_QUERY_PARAMS = new Set(["api_key", "key", "token"]);
+const CREDENTIAL_QUERY_PARAMS = new Set([
+    "access_token",
+    "api_key",
+    "key",
+    "token",
+]);
 const REDACTED = "[redacted]";
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {

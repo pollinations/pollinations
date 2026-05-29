@@ -982,6 +982,7 @@ const TAG_ORDER = [
     "🖼️ Image",
     "🎬 Video",
     "🔊 Audio",
+    "🎙️ Realtime",
     "🔢 Embeddings",
     "🤖 Models",
     "📦 Media Storage",

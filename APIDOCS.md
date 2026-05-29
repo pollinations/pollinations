@@ -41,6 +41,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [🖼️ Image](#-image)
   - [🎬 Video](#-video)
   - [🔊 Audio](#-audio)
+  - [🎙️ Realtime](#-realtime)
   - [🔢 Embeddings](#-embeddings)
   - [🤖 Models](#-models)
   - [📦 Media Storage](#-media-storage)
@@ -67,7 +68,7 @@ Authorization: Bearer <key>
 GET /image/cat?key=<key>
 ```
 
-The header is preferred for everything except plain-`GET` browser flows that can't set custom headers (image and audio `GET` endpoints).
+The header is preferred for everything except browser flows that can't set custom headers (image/audio `GET` endpoints and WebSocket realtime sessions).
 
 **Endpoints with relaxed auth requirements**
 
@@ -81,7 +82,7 @@ The header is preferred for everything except plain-`GET` browser flows that can
 
 ## 🧪 Use any OpenAI SDK
 
-Pollinations speaks the OpenAI Chat Completions, Images, Embeddings, and Audio APIs. Point the SDK at `https://gen.pollinations.ai/v1` and pass your `sk_…` key as the OpenAI key.
+Pollinations speaks the OpenAI Chat Completions, Images, Embeddings, Audio, and Realtime APIs. Point the SDK at `https://gen.pollinations.ai/v1` and pass your `sk_…` key as the OpenAI key.
 
 **Python**
 
@@ -668,6 +669,40 @@ Generate speech or music from text via a simple GET request.
 ```bash
 curl "https://gen.pollinations.ai/audio/Hello%2C%20welcome%20to%20Pollinations!?voice=nova&response_format=mp3" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### 🎙️ Realtime
+
+#### `GET` `/v1/realtime` — Realtime WebSocket
+
+OpenAI-compatible Realtime WebSocket proxy.
+
+Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket. Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
+
+**Model:** `gpt-realtime-2`.
+
+**Billing:** requires paid pack balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `model` | `query` | `"gpt-realtime-2"` | Realtime model to use. Currently only gpt-realtime-2 is supported. · default: `"gpt-realtime-2"` |
+| `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
+
+📤 **Response** · `101` — WebSocket connection established
+
+💻 **Example**
+
+```javascript
+const ws = new WebSocket(
+  "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2&key=pk_your_publishable_key"
+);
+
+ws.send(JSON.stringify({
+  type: "session.update",
+  session: { instructions: "You are concise." }
+}));
 ```
 
 ### 🔢 Embeddings

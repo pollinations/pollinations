@@ -115,6 +115,15 @@ describe("docs routes", () => {
         )?.post as Record<string, unknown> | undefined;
         expect(chatPost?.["x-codeSamples"]).toBeDefined();
 
+        const realtimeGet = (
+            schema.paths["/v1/realtime"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        const realtimeResponses = realtimeGet?.responses as
+            | Record<string, unknown>
+            | undefined;
+        expect(realtimeResponses?.["426"]).toBeDefined();
+        expect(realtimeResponses?.["503"]).toBeDefined();
+
         const accountKeyGet = (
             schema.paths["/account/key"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
@@ -215,6 +224,12 @@ describe("docs routes", () => {
         expect(apiRes.status).toBe(200);
         const apiBody = await apiRes.text();
         expect(apiBody).toContain("Base URL:");
+        expect(apiBody).toContain(
+            "browser WebSocket clients can use `?key=pk_...`",
+        );
+        expect(apiBody).toContain(
+            "Input transcription sessions are not supported yet.",
+        );
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

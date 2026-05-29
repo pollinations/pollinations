@@ -16,8 +16,14 @@ type Env = {
 
 function redactCredentialQueryParams(url: URL): string {
     const redacted = new URL(url);
-    for (const param of ["key", "token", "api_key"]) {
-        if (redacted.searchParams.has(param)) {
+    const credentialParams = new Set([
+        "access_token",
+        "api_key",
+        "key",
+        "token",
+    ]);
+    for (const param of redacted.searchParams.keys()) {
+        if (credentialParams.has(param.toLowerCase())) {
             redacted.searchParams.set(param, "[redacted]");
         }
     }

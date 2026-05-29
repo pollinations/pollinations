@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-28",
+  "period_start": "2026-05-28",
+  "period_end": "2026-05-28",
+  "title": "Local currency checkout for Pollen packs",
+  "summary": "Checkout now speaks your local currency when buying Pollen packs.\n\nStripe Adaptive Pricing is now live on the backend. If you're buying Pollen packs outside the US, checkout will automatically route to your local currency. Grants stay USD-anchored, but paying for things just got a little more native to wherever you happen to be.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11172,
+      "date": "2026-05-28"
+    }
+  ],
+  "generated_at": "2026-05-29T07:15:38.289709+00:00"
+}

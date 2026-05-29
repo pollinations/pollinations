@@ -1,0 +1,35 @@
+{
+  "pr_number": 11395,
+  "title": "Add Claude Opus 4.8",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11395",
+  "merged_at": "2026-05-29T21:18:57Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Claude Opus 4.8 via AWS Bedrock.\n\n- Model `claude-opus-4.8` → `us.anthropic.claude-opus-4-8`\n- Sets `paidOnly: true`, `priceMultiplier: 1.5`, text+image input, tools, and 1M context\n- Adds Claude prompt-cache-write billing from `cache_creation_input_tokens`\n- Adds usage headers, event schema fields, Tinybird columns, and tests for cache writes\n\nVerified:\n- Tinybird staging deployment #20 live\n- Tinybird prod deployment #124 live\n- enter pricing tests: 205 passed\n- gen usage/model/parameter tests: 39 passed\n- gen + enter typecheck passed",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Opus joins the hive",
+    "blurb": "We've added Claude Opus 4.8 to our model lineup! It's ready for your biggest prompts with a massive 1M context window and full prompt caching support.",
+    "summary": "Added Claude Opus 4.8 (claude-opus-4.8) via AWS Bedrock with a 1M context window, tool support, and prompt-cache-write billing.",
+    "impact": "Paid tier users can now access Claude Opus 4.8 with full support for text, image inputs, and prompt caching.",
+    "keywords": [
+      "claude",
+      "opus",
+      "models",
+      "api",
+      "prompt-caching"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot interacting with a massive, glowing book (representing 'Opus' and the 1M context window).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, hovering over a massive, glowing ancient book representing Claude Opus. The chunky monitor robot stands nearby, its screen displaying a 1M context window loading bar. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11395.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, hovering over a massive, glowing ancient book representing Claude Opus. The chunky monitor robot stands nearby, its screen displaying a 1M context window loading bar. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-29T21:19:57.663576+00:00"
+}

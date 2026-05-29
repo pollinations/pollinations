@@ -9,12 +9,11 @@ export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         aliases: [],
         modelId: DEFAULT_REALTIME_MODEL,
-        provider: "openai",
+        provider: "azure",
         brand: "OpenAI",
         category: "realtime",
         addedDate: new Date("2026-05-23").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
         cost: {
             promptTextTokens: 0.000004,
             promptCachedTokens: 0.0000004,

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11401,
+  "title": "fix: use global pricing for Claude Opus 4.8",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11401",
+  "merged_at": "2026-05-29T22:47:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Switches Claude Opus 4.8 Bedrock routing to `global.anthropic.claude-opus-4-8`\n- Uses AWS/Anthropic global rates as the cost basis before the `1.5x` multiplier\n- Updates the effective pricing snapshot and parameter transform test fixture\n\nVerified:\n- `npx biome check --write shared/registry/text.ts gen.pollinations.ai/src/text/configs/modelConfigs.ts gen.pollinations.ai/test/text/transforms/parameterProcessor.test.ts enter.pollinations.ai/test/__snapshots__/effective-prices.snapshot.test.ts.snap`\n- `npx vitest run test/effective-prices.snapshot.test.ts`\n- `npx vitest run test/text/transforms/parameterProcessor.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Global Opus routing",
+    "blurb": "We've updated the routing and pricing calculations for Claude Opus 4.8 to use the correct global rates. Just a little housekeeping to keep the pollen math accurate!",
+    "summary": "Updated Claude Opus 4.8 Bedrock routing to use `global.anthropic.claude-opus-4-8`, ensuring the 1.5x multiplier is applied to the correct AWS/Anthropic global rates.",
+    "impact": "Pollen credit deductions for Claude Opus 4.8 will now accurately reflect the global pricing tier.",
+    "keywords": [
+      "claude",
+      "opus",
+      "pricing",
+      "bedrock",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny accountant visor, adjusting a price tag on a retro terminal showing a globe. Nomnom eating a receipt.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, adjusting a glowing price tag on a retro terminal that displays a pixelated globe. The round tan nomnom creature happily eats a long paper receipt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11401.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, adjusting a glowing price tag on a retro terminal that displays a pixelated globe. The round tan nomnom creature happily eats a long paper receipt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-29T22:48:35.581634+00:00"
+}

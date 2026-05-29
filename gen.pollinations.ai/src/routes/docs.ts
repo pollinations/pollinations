@@ -179,6 +179,8 @@ const REALTIME_DOCS = [
     'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
     "```",
     "",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "",
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");
 const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);

@@ -222,25 +222,25 @@ def get_fallback_classification(_: bool) -> dict:
         "project": None,
         "priority": None,
         "labels": [],
-        "epic": None,
+        "tracking_issue": None,
         "reasoning": "AI classification failed; skipping automation"
     }
 
 
-def classify_with_ai(is_internal: bool, epics: Optional[list] = None) -> dict:
+def classify_with_ai(is_internal: bool, tracking_issues: Optional[list] = None) -> dict:
     base_prompt = read_prompt_file()
     item_kind = "pull request" if IS_PULL_REQUEST else "issue"
 
-    epics_block = ""
-    if epics:
-        epic_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in epics)
-        epics_block = (
-            "\n\n## Dev Epics (choose `epic` from these for dev issues)\n"
-            f"{epic_lines}\n"
+    tracking_block = ""
+    if tracking_issues:
+        tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
+        tracking_block = (
+            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for dev issues)\n"
+            f"{tracking_lines}\n"
         )
 
     system_prompt = f"""{base_prompt}
-{epics_block}
+{tracking_block}
 ---
 **Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
 """
@@ -333,20 +333,20 @@ Body: {ISSUE_BODY[:2000]}
                 invalid = [l for l in labels if l.upper() not in valid_for_project]
                 log_error(f"AI returned invalid labels for {project}: {invalid}")
 
-            epic_raw = raw.get("epic")
-            epic = None
-            if isinstance(epic_raw, bool):
-                epic = None
-            elif isinstance(epic_raw, int):
-                epic = epic_raw
-            elif isinstance(epic_raw, str) and epic_raw.strip().lstrip("#").isdigit():
-                epic = int(epic_raw.strip().lstrip("#"))
+            tracking_raw = raw.get("tracking_issue")
+            tracking_number = None
+            if isinstance(tracking_raw, bool):
+                tracking_number = None
+            elif isinstance(tracking_raw, int):
+                tracking_number = tracking_raw
+            elif isinstance(tracking_raw, str) and tracking_raw.strip().lstrip("#").isdigit():
+                tracking_number = int(tracking_raw.strip().lstrip("#"))
 
             classification = {
                 "project": project,
                 "priority": priority,
                 "labels": filtered_labels,
-                "epic": epic,
+                "tracking_issue": tracking_number,
                 "reasoning": raw.get("reasoning", ""),
                 "is_app_submission": is_app_submission,
             }
@@ -405,15 +405,15 @@ def add_to_project(project_id: str) -> Optional[str]:
     return item_id
 
 
-_DEV_EPICS: Optional[list] = None
+_TRACKING_ISSUES: Optional[list] = None
 
 
-def fetch_dev_epics() -> list:
-    """Open Dev epics (issues labelled DEV-TRACKING). Returns [{number, title}] so the
+def fetch_tracking_issues() -> list:
+    """Open Dev tracking issues (labelled DEV-TRACKING). Returns [{number, title}] so the
     AI can pick the best-fit parent. Cached for the lifetime of the process."""
-    global _DEV_EPICS
-    if _DEV_EPICS is not None:
-        return _DEV_EPICS
+    global _TRACKING_ISSUES
+    if _TRACKING_ISSUES is not None:
+        return _TRACKING_ISSUES
     try:
         r = requests.get(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues",
@@ -422,24 +422,24 @@ def fetch_dev_epics() -> list:
             timeout=15,
         )
         if r.status_code != 200:
-            log_error(f"Failed to fetch dev epics: {r.status_code} - {r.text[:200]}")
-            _DEV_EPICS = []
-            return _DEV_EPICS
-        _DEV_EPICS = [
+            log_error(f"Failed to fetch tracking issues: {r.status_code} - {r.text[:200]}")
+            _TRACKING_ISSUES = []
+            return _TRACKING_ISSUES
+        _TRACKING_ISSUES = [
             {"number": i["number"], "title": i.get("title", "")}
             for i in r.json()
             if "pull_request" not in i and i.get("number") != ISSUE_NUMBER
         ]
-        log_debug(f"Loaded {len(_DEV_EPICS)} open dev epics")
-        return _DEV_EPICS
+        log_debug(f"Loaded {len(_TRACKING_ISSUES)} open tracking issues")
+        return _TRACKING_ISSUES
     except (requests.RequestException, ValueError) as e:
-        log_error(f"Exception fetching dev epics: {e}")
-        _DEV_EPICS = []
-        return _DEV_EPICS
+        log_error(f"Exception fetching tracking issues: {e}")
+        _TRACKING_ISSUES = []
+        return _TRACKING_ISSUES
 
 
-def assign_to_epic(parent_number: int, child_db_id: int) -> bool:
-    """Link the current issue as a native sub-issue of epic #parent_number."""
+def assign_to_tracking_issue(parent_number: int, child_db_id: int) -> bool:
+    """Link the current issue as a native sub-issue of tracking issue #parent_number."""
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
@@ -448,9 +448,9 @@ def assign_to_epic(parent_number: int, child_db_id: int) -> bool:
             timeout=15,
         )
         if r.status_code in (200, 201):
-            log_debug(f"Linked #{ISSUE_NUMBER} as sub-issue of epic #{parent_number}")
+            log_debug(f"Linked #{ISSUE_NUMBER} as sub-issue of tracking issue #{parent_number}")
             return True
-        log_error(f"Failed to link #{ISSUE_NUMBER} under epic #{parent_number}: {r.status_code} - {r.text[:200]}")
+        log_error(f"Failed to link #{ISSUE_NUMBER} under tracking issue #{parent_number}: {r.status_code} - {r.text[:200]}")
         return False
     except requests.RequestException as e:
         log_error(f"Exception linking sub-issue under #{parent_number}: {e}")
@@ -569,8 +569,8 @@ def main():
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
 
-    epics = [] if IS_PULL_REQUEST else fetch_dev_epics()
-    classification = classify_with_ai(is_internal, epics)
+    tracking_issues = [] if IS_PULL_REQUEST else fetch_tracking_issues()
+    classification = classify_with_ai(is_internal, tracking_issues)
     
     if classification.get("is_app_submission"):
         log_debug("AI detected app submission, routing to Apps project")
@@ -636,17 +636,17 @@ def main():
     else:
         add_labels(labels)
 
-    # Parent new Dev issues under the best-fit epic (skip PRs and epics themselves)
-    is_epic = "DEV-TRACKING" in existing_labels or "DEV-TRACKING" in labels
-    if project_key == "dev" and not IS_PULL_REQUEST and ISSUE_DB_ID and not is_epic:
-        epic = classification.get("epic")
-        valid_epic_numbers = {e["number"] for e in epics}
-        if epic in valid_epic_numbers:
-            assign_to_epic(epic, ISSUE_DB_ID)
-        elif epic is not None:
-            log_debug(f"AI returned epic #{epic} not in current epic list; leaving #{ISSUE_NUMBER} unparented")
+    # Parent new Dev issues under the best-fit tracking issue (skip PRs and tracking issues themselves)
+    is_tracking_issue = "DEV-TRACKING" in existing_labels or "DEV-TRACKING" in labels
+    if project_key == "dev" and not IS_PULL_REQUEST and ISSUE_DB_ID and not is_tracking_issue:
+        parent = classification.get("tracking_issue")
+        valid_parents = {e["number"] for e in tracking_issues}
+        if parent in valid_parents:
+            assign_to_tracking_issue(parent, ISSUE_DB_ID)
+        elif parent is not None:
+            log_debug(f"AI returned tracking issue #{parent} not in current list; leaving #{ISSUE_NUMBER} unparented")
         else:
-            log_debug(f"No epic selected for #{ISSUE_NUMBER}; left unparented")
+            log_debug(f"No tracking issue selected for #{ISSUE_NUMBER}; left unparented")
 
 if __name__ == "__main__":
     main()

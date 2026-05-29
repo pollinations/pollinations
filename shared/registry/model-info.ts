@@ -11,9 +11,10 @@ import {
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
-// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
-//         promptImageTokens, completionTextTokens, completionReasoningTokens,
-//         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
+// Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
+//         promptAudioTokens, promptAudioSeconds, promptImageTokens,
+//         completionTextTokens, completionReasoningTokens, completionAudioTokens,
+//         completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),

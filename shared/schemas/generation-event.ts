@@ -61,6 +61,7 @@ export type TinybirdEvent = {
     // Pricing
     tokenPricePromptText: number;
     tokenPricePromptCached: number;
+    tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
@@ -75,6 +76,7 @@ export type TinybirdEvent = {
     tokenCountPromptText: number;
     tokenCountPromptAudio: number;
     tokenCountPromptCached: number;
+    tokenCountPromptCacheWrite: number;
     tokenCountPromptImage: number;
     tokenCountPromptVideo: number;
     tokenCountCompletionText: number;
@@ -127,6 +129,7 @@ export type SelectGenerationEvent = TinybirdEvent;
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;
     tokenPricePromptCached: number;
+    tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
@@ -141,6 +144,7 @@ export type GenerationEventPriceParams = {
 export type GenerationEventUsageParams = {
     tokenCountPromptText: number;
     tokenCountPromptCached: number;
+    tokenCountPromptCacheWrite: number;
     tokenCountPromptAudio: number;
     tokenCountPromptImage: number;
     tokenCountPromptVideo: number;
@@ -164,6 +168,8 @@ export function priceToEventParams(
             priceDefinition?.promptTextTokens || 0,
         tokenPricePromptCached: 
             priceDefinition?.promptCachedTokens || 0,
+        tokenPricePromptCacheWrite:
+            priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
         tokenPricePromptImage:
@@ -191,6 +197,7 @@ export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
     return {
         tokenCountPromptText: usage?.promptTextTokens || 0,
         tokenCountPromptCached: usage?.promptCachedTokens || 0,
+        tokenCountPromptCacheWrite: usage?.promptCacheWriteTokens || 0,
         tokenCountPromptAudio: usage?.promptAudioTokens || 0,
         tokenCountPromptImage: usage?.promptImageTokens || 0,
         tokenCountPromptVideo: usage?.promptVideoTokens || 0,

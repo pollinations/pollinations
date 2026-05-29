@@ -13,11 +13,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude": {
     "cost": {
       "completionTextTokens": 0.0000165,
+      "promptCacheWriteTokens": 0.000004125,
       "promptCachedTokens": 3.3e-7,
       "promptTextTokens": 0.0000033,
     },
     "price": {
       "completionTextTokens": 0.0000165,
+      "promptCacheWriteTokens": 0.000004125,
       "promptCachedTokens": 3.3e-7,
       "promptTextTokens": 0.0000033,
     },
@@ -25,11 +27,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-fast": {
     "cost": {
       "completionTextTokens": 0.0000055,
+      "promptCacheWriteTokens": 0.000001375,
       "promptCachedTokens": 1.1e-7,
       "promptTextTokens": 0.0000011,
     },
     "price": {
       "completionTextTokens": 0.0000055,
+      "promptCacheWriteTokens": 0.000001375,
       "promptCachedTokens": 1.1e-7,
       "promptTextTokens": 0.0000011,
     },
@@ -37,11 +41,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-large": {
     "cost": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
     "price": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
@@ -49,11 +55,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-opus-4.7": {
     "cost": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
     "price": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
@@ -61,11 +69,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-opus-4.8": {
     "cost": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
     "price": {
       "completionTextTokens": 0.00004125,
+      "promptCacheWriteTokens": 0.0000103125,
       "promptCachedTokens": 8.25e-7,
       "promptTextTokens": 0.00000825,
     },

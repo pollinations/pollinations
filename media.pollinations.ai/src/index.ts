@@ -261,7 +261,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. No authentication required. Responses are cached immutably. Files fetched after 15 days refresh their 30-day retention window.",
+            "Get a file by its content hash. Requested files stay available longer.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },

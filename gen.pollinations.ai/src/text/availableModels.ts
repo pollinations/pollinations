@@ -125,6 +125,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
+        name: "claude-opus-4.8",
+        config: portkeyConfig["claude-opus-4-8"],
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(

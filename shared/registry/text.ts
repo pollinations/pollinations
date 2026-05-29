@@ -709,6 +709,29 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "claude-opus-4.8": {
+        aliases: [],
+        modelId: "claude-opus-4-8",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        cost: {
+            // Bedrock us.anthropic.claude-opus-4-8 — Anthropic list $5/$25 per M
+            // (+ ~10% Bedrock premium), prompt-cache read at $0.55/M.
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(0.55),
+            completionTextTokens: perMillion(27.5),
+        },
+        description: "Claude Opus 4.8 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 200000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",

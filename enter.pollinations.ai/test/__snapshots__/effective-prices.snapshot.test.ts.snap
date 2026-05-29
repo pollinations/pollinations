@@ -58,6 +58,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000055,
     },
   },
+  "claude-opus-4.8": {
+    "cost": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+    "price": {
+      "completionTextTokens": 0.00004125,
+      "promptCachedTokens": 8.25e-7,
+      "promptTextTokens": 0.00000825,
+    },
+  },
   "cohere-embed-v4": {
     "cost": {
       "promptTextTokens": 1.2e-7,

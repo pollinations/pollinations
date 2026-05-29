@@ -1,9 +1,11 @@
 /// <reference types="@cloudflare/workers-types" />
 
-export const DEFAULT_R2_TTL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 
 type RefreshR2ObjectTtlOptions = {
-    minRefreshIntervalMs?: number;
+    minRefreshAgeMs?: number;
     now?: () => Date;
 };
 
@@ -38,14 +40,14 @@ export function refreshR2ObjectTtl(
     onError: (error: unknown) => void,
     options: RefreshR2ObjectTtlOptions = {},
 ): ReadableStream {
-    const minRefreshIntervalMs =
-        options.minRefreshIntervalMs ?? DEFAULT_R2_TTL_REFRESH_INTERVAL_MS;
+    const minRefreshAgeMs =
+        options.minRefreshAgeMs ?? DEFAULT_R2_TTL_REFRESH_AGE_MS;
     const ageMs =
         (options.now?.() ?? new Date()).getTime() - object.uploaded.getTime();
 
     // R2 has no metadata-only touch; rewriting resets lifecycle age but is a
-    // Class A write, so avoid refreshing hot objects on every read.
-    if (ageMs < minRefreshIntervalMs) {
+    // Class A write, so refresh only after half of the fixed 30-day lifecycle.
+    if (ageMs < minRefreshAgeMs) {
         return object.body;
     }
 

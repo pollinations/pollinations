@@ -1,11 +1,15 @@
 import {
-    DEFAULT_R2_TTL_REFRESH_INTERVAL_MS,
+    DEFAULT_R2_TTL_REFRESH_AGE_MS,
     refreshR2ObjectTtl,
 } from "@shared/r2-storage.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { describe, expect, it } from "vitest";
 
 describe("R2 storage helpers", () => {
+    it("uses half of the fixed 30-day lifecycle as the default refresh age", () => {
+        expect(DEFAULT_R2_TTL_REFRESH_AGE_MS).toBe(15 * 24 * 60 * 60 * 1000);
+    });
+
     it("refreshes object TTL while preserving content and metadata", async () => {
         const bucket = createTestR2Bucket();
         await bucket.put("cache-key", "cached body", {
@@ -62,7 +66,7 @@ describe("R2 storage helpers", () => {
                 now: () =>
                     new Date(
                         cached.uploaded.getTime() +
-                            DEFAULT_R2_TTL_REFRESH_INTERVAL_MS -
+                            DEFAULT_R2_TTL_REFRESH_AGE_MS -
                             1,
                     ),
             },

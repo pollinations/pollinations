@@ -5,7 +5,8 @@ export type EventType =
     | "generate.text"
     | "generate.image"
     | "generate.audio"
-    | "generate.embedding";
+    | "generate.embedding"
+    | "generate.realtime";
 export type ApiKeyType = "secret" | "publishable";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)

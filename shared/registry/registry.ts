@@ -14,12 +14,23 @@ import {
     type ImageModelId,
     type ImageModelName,
 } from "./image";
+import {
+    REALTIME_SERVICES,
+    type RealtimeModelId,
+    type RealtimeModelName,
+} from "./realtime";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
 // Current Pollen ledger precision for the final customer charge.
 const POLLEN_BILLING_PRECISION = 8;
 
-export type Category = "text" | "image" | "audio" | "video" | "embedding";
+export type Category =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "realtime";
 
 export type UsageType =
     | "promptTextTokens"
@@ -59,12 +70,14 @@ export type ModelId =
     | ImageModelId
     | TextModelId
     | AudioModelId
-    | EmbeddingModelId;
+    | EmbeddingModelId
+    | RealtimeModelId;
 export type ModelName =
     | ImageModelName
     | TextModelName
     | AudioModelName
-    | EmbeddingServiceId;
+    | EmbeddingServiceId
+    | RealtimeModelName;
 
 export type VideoCapability =
     | "start_frame"
@@ -146,6 +159,7 @@ const MODEL_REGISTRY = {
     ...IMAGE_SERVICES,
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
+    ...REALTIME_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -210,6 +224,13 @@ export function getEmbeddingModels(): EmbeddingServiceId[] {
     return Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[];
 }
 
+/**
+ * Get realtime model names
+ */
+export function getRealtimeModels(): RealtimeModelName[] {
+    return Object.keys(REALTIME_SERVICES) as RealtimeModelName[];
+}
+
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
@@ -221,6 +242,8 @@ export const getVisibleImageModels = () => filterVisible(getImageModels());
 export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>
     filterVisible(getEmbeddingModels());
+export const getVisibleRealtimeModels = () =>
+    filterVisible(getRealtimeModels());
 
 /**
  * Get a model definition by public model name

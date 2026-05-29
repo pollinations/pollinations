@@ -5,6 +5,7 @@ import {
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleRealtimeModels,
     getVisibleTextModels,
     type ModelName,
 } from "./registry";
@@ -104,4 +105,11 @@ export function getAudioModelsInfo(): ModelInfo[] {
  */
 export function getEmbeddingModelsInfo(): ModelInfo[] {
     return getVisibleEmbeddingModels().map(getModelInfo);
+}
+
+/**
+ * Get all realtime models with enriched information
+ */
+export function getRealtimeModelsInfo(): ModelInfo[] {
+    return getVisibleRealtimeModels().map(getModelInfo);
 }

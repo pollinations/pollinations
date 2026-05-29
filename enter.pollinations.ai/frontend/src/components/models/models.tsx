@@ -23,12 +23,14 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
+    const realtimeModels = allModels.filter((m) => m.type === "realtime");
     const textModels = allModels.filter((m) => m.type === "text");
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",
         "video",
         ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
+        ...(realtimeModels.length > 0 ? (["realtime"] as SectionType[]) : []),
         "text",
         ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
     ];
@@ -77,6 +79,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         imageModels={imageModels}
                         videoModels={videoModels}
                         audioModels={audioModels}
+                        realtimeModels={realtimeModels}
                         textModels={textModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}

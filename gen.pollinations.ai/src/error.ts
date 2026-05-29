@@ -316,7 +316,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 426, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -331,6 +331,7 @@ export function getDefaultErrorMessage(status: number): string {
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",
         422: "Your request looks good, but some required fields are missing or invalid.",
+        426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",

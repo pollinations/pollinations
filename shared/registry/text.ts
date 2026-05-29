@@ -716,17 +716,66 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1,
+        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
+        // (~$5/1k at low search_context_size), which our token-based billing
+        // cannot capture directly. Temporary until a per-request fee field exists.
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        description: "Perplexity Sonar - Fast & Affordable with Web Search",
-        inputModalities: ["text", "image"],
+        description: "Perplexity Sonar - Fast & affordable web search",
+        // Sonar is text-only — verified empirically (image input is ignored,
+        // no image tokens billed). Do not add "image".
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
         search: true,
-        contextLength: 127072,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "perplexity-deep": {
+        aliases: ["sonar-deep"],
+        modelId: "sonar",
+        provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        // Same sonar base as perplexity-fast but high search_context_size for
+        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
+        // matches fast for now — they bill identically until a per-request fee
+        // field lets us price the deeper search separately.
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(1.0),
+        },
+        description: "Perplexity Sonar - Deep web search with broad grounding",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "perplexity": {
+        aliases: ["sonar-pro", "perplexity-pro"],
+        modelId: "sonar-pro",
+        provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1.5,
+        cost: {
+            promptTextTokens: perMillion(3.0),
+            completionTextTokens: perMillion(15.0),
+        },
+        description: "Perplexity Sonar Pro - Advanced multi-source web search",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "perplexity-reasoning": {
@@ -736,14 +785,14 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
         },
         description:
-            "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
-        inputModalities: ["text", "image"],
+            "Perplexity Sonar Reasoning - Step-by-step reasoning with web search",
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
         reasoning: true,
@@ -1118,6 +1167,31 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
+        isSpecialized: false,
+    },
+    "step-flash": {
+        aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
+        modelId: "stepfun/step-3.7-flash",
+        provider: "openrouter",
+        brand: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
+            // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
+            promptTextTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.04),
+            completionTextTokens: perMillion(1.15),
+        },
+        description: "StepFun Step 3.7 Flash - Fast multimodal reasoning model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
+        // tokens are billed within completion_tokens at the completionText rate.
+        reasoning: true,
+        contextLength: 256000,
         isSpecialized: false,
     },
     "qwen-safety": {

@@ -132,6 +132,25 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(false);
     });
 
+    test("rejects non-web redirect schemes even when allowlisted", () => {
+        for (const uri of [
+            "javascript://x/%0afetch('https://example.com')//",
+            "data://x/text/html,<script>alert(1)</script>",
+            "file://localhost/tmp/callback",
+            "com.example.app://callback",
+        ]) {
+            expect(redirectUriMatchesAllowlist(uri, [uri])).toBe(false);
+        }
+    });
+
+    test("rejects public http redirect URIs even when allowlisted", () => {
+        expect(
+            redirectUriMatchesAllowlist("http://app.com/cb", [
+                "http://app.com/cb",
+            ]),
+        ).toBe(false);
+    });
+
     test("accepts any port for loopback entries (RFC 8252 §7.3)", () => {
         expect(
             redirectUriMatchesAllowlist("http://127.0.0.1:54321/cb", [

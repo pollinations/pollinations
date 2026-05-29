@@ -3,7 +3,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
-import { redirectUriMatchesAllowlist } from "./redirect-uri.ts";
+import {
+    isAllowedRedirectUrl,
+    redirectUriMatchesAllowlist,
+} from "./redirect-uri.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -78,6 +81,12 @@ export function validateRedirectUriFormat(redirectUri: string): void {
     if (parsed.hash) {
         throw new HTTPException(400, {
             message: "Redirect URI must not include a fragment",
+        });
+    }
+    if (!isAllowedRedirectUrl(parsed)) {
+        throw new HTTPException(400, {
+            message:
+                "Redirect URI must use https://, except http:// is allowed for loopback hosts",
         });
     }
 }

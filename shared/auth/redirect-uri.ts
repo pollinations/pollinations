@@ -2,6 +2,8 @@
  * Match an incoming `redirect_uri` against a registered allowlist for a `pk_`.
  *
  * Comparison rules:
+ * - Only https:// redirect URIs are accepted, except http:// is accepted for
+ *   loopback hosts used by local native/CLI apps.
  * - Scheme + hostname + path are matched exactly (after lowercasing host).
  * - Trailing slash on the path is insignificant: `/cb` and `/cb/` match.
  * - Query strings are ignored when the registered URI has no query: apps
@@ -25,7 +27,13 @@ export function redirectUriMatchesAllowlist(
     if (!allowlist?.length) return false;
     const incoming = safeParse(uri);
     if (!incoming) return false;
+    if (!isAllowedRedirectUrl(incoming)) return false;
     return allowlist.some((entry) => matchesEntry(incoming, entry));
+}
+
+export function isAllowedRedirectUrl(url: URL): boolean {
+    if (url.protocol === "https:") return true;
+    return url.protocol === "http:" && isLoopbackHostname(url.hostname);
 }
 
 export function isLoopbackHostname(hostname: string): boolean {
@@ -59,6 +67,7 @@ function normalizePathname(pathname: string): string {
 function matchesEntry(incoming: URL, entryUrl: string): boolean {
     const entry = safeParse(entryUrl);
     if (!entry) return false;
+    if (!isAllowedRedirectUrl(entry)) return false;
     if (incoming.hash || entry.hash) return false;
     if (incoming.protocol !== entry.protocol) return false;
     if (

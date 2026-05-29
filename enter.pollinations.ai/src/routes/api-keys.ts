@@ -182,16 +182,16 @@ const CreateApiKeySchema = z.object({
  */
 const UrlWithSchemeSchema = z.string().refine(
     (val) => {
-        if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val)) return false;
         try {
-            return new URL(val).hash === "";
+            validateRedirectUriFormat(val);
+            return true;
         } catch {
             return false;
         }
     },
     {
         message:
-            "Must be a valid URL with a scheme and no fragment (e.g. https://...)",
+            "Must be an https:// redirect URI with no fragment, or http:// on a loopback host",
     },
 );
 

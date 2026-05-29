@@ -1,7 +1,7 @@
 /**
  * Single source of truth for modality colors.
  *
- * Each of the 5 modalities (text/image/video/audio/embedding) gets one
+ * Each modality (text/image/video/audio/realtime/embedding) gets one
  * page-theme hue, applied at the soft `-200/-900/-400` chip recipe.
  * Used in two places:
  *   1. The model-selection buttons in the API key creation flow.
@@ -12,7 +12,13 @@
  * renders as `rounded-lg` chips. Page-theme hues only — no rogue
  * indigo/rose.
  */
-export type Modality = "text" | "image" | "video" | "audio" | "embedding";
+export type Modality =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "realtime"
+    | "embedding";
 
 type ModalityColorSet = {
     /** Selected/filled state: `bg + text + border` classes. */
@@ -45,6 +51,11 @@ export const MODALITY_COLORS: Record<Modality, ModalityColorSet> = {
         hover: "hover:bg-violet-100 hover:text-violet-900",
         text: "text-violet-800",
     },
+    realtime: {
+        filled: "bg-green-200 text-green-900",
+        hover: "hover:bg-green-100 hover:text-green-900",
+        text: "text-green-800",
+    },
     embedding: {
         filled: "bg-amber-200 text-amber-900",
         hover: "hover:bg-amber-100 hover:text-amber-900",
@@ -62,6 +73,7 @@ function normalize(category: string): Modality | null {
         lower === "image" ||
         lower === "video" ||
         lower === "audio" ||
+        lower === "realtime" ||
         lower === "embedding"
     ) {
         return lower;

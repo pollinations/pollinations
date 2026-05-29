@@ -264,6 +264,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------
+    "stepfun/step-3.5-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.5-flash",
+        }),
     "stepfun/step-3.7-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.7-flash",

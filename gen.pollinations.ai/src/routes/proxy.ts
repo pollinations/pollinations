@@ -525,7 +525,7 @@ export const proxyRoutes = new Hono<Env>()
     .post(
         "/v1/chat/completions",
         describeRoute({
-            tags: ["✍️ Text Generation"],
+            tags: ["✍️ Text"],
             summary: "Chat Completions",
             description: [
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
@@ -562,7 +562,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
                 "",
-                "**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.",
+                "**Dimensions:** Defaults are model-specific. `qwen3-embedding-8b` supports up to 4096 dimensions; `gemini-2` and `openai-3-large` support up to 3072; `openai-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {
@@ -597,7 +597,7 @@ export const proxyRoutes = new Hono<Env>()
     .post(
         "/text",
         describeRoute({
-            tags: ["✍️ Text Generation"],
+            tags: ["✍️ Text"],
             summary: "Text Generation With Messages",
             description: [
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
@@ -644,7 +644,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/:prompt{[\\s\\S]+}",
         describeRoute({
-            tags: ["✍️ Text Generation"],
+            tags: ["✍️ Text"],
             summary: "Simple Text Generation",
             description: [
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
@@ -712,7 +712,7 @@ export const proxyRoutes = new Hono<Env>()
         // This creates a named param for OpenAPI docs while matching any characters
         "/image/:prompt{[\\s\\S]+}",
         describeRoute({
-            tags: ["🖼️ Image Generation"],
+            tags: ["🖼️ Image"],
             summary: "Generate Image",
             description: [
                 "Generate an image from a text prompt. Returns JPEG or PNG.",
@@ -757,7 +757,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/video/:prompt{[\\s\\S]+}",
         describeRoute({
-            tags: ["🎬 Video Generation"],
+            tags: ["🎬 Video"],
             summary: "Generate Video",
             description: [
                 "Generate a video from a text prompt. Returns MP4.",
@@ -800,7 +800,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/audio/:text",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["🔊 Audio"],
             summary: "Generate Audio",
             description: [
                 "Generate speech or music from text via a simple GET request.",
@@ -914,7 +914,7 @@ export const proxyRoutes = new Hono<Env>()
     .post(
         "/v1/images/generations",
         describeRoute({
-            tags: ["🖼️ Image Generation"],
+            tags: ["🖼️ Image"],
             summary: "Generate Image (OpenAI-compatible)",
             description: [
                 "OpenAI-compatible image generation endpoint.",
@@ -943,7 +943,7 @@ export const proxyRoutes = new Hono<Env>()
     .post(
         "/v1/images/edits",
         describeRoute({
-            tags: ["🖼️ Image Generation"],
+            tags: ["🖼️ Image"],
             summary: "Edit Image (OpenAI-compatible)",
             description: [
                 "OpenAI-compatible image editing endpoint.",

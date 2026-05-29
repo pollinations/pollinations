@@ -374,7 +374,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/metadata",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update metadata for an API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

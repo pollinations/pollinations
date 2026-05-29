@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |
 | [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
 | [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
@@ -29,7 +30,6 @@
 | [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |
 | [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |
 | [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |
-| [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-27** – **🚀 Six new brains for the hive** Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models).
+- **2026-05-26** – **🤖 LLM-Ready Docs** We added "Copy for LLMs" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.
+- **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
 - **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
 - **2026-05-21** – **🔌 MCP Server** The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.
 - **2026-05-20** – **🤖 Polly Upgrades** We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
 - **2026-05-18** – **✨ Uncapped Generations** We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).
 - **2026-05-17** – **🎬 Keyframe your videos** You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).
-- **2026-05-17** – **🗣️ Speaker diarization** The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.
-- **2026-05-17** – **🎲 Dynamic roleplay backgrounds** A clever new community integration detects location changes in your SillyTavern chats and automatically generates the environment visuals in the background. [View repo](https://github.com/ZapoVerde/SillyTavern-Localyze) <!-- app -->
-- **2026-05-17** – **✨ Prompt Evolution Engine** Stop guessing what the image model wants. This community tool runs your basic ideas through a 5-step interactive refinement process to spit out highly detailed, cinematic prompts. [Try it](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) <!-- app -->
 ---
 
 ## 🌱 Introduction

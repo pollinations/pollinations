@@ -885,7 +885,7 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/speech",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["🔊 Audio"],
             summary: "Text to Speech (OpenAI-compatible)",
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
@@ -1007,7 +1007,7 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["🔊 Audio"],
             summary: "Transcribe Audio",
             description: [
                 "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",

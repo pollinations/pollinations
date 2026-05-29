@@ -1,0 +1,35 @@
+{
+  "pr_number": 11352,
+  "title": "chore: update app metrics 2026-05-29",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11352",
+  "merged_at": "2026-05-29T05:38:36Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bots just finished their daily rounds, updating health metrics for all the community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statuses in the repository.",
+    "impact": "Keeps the app directory and greenhouse documentation up-to-date with the latest health and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "A cute robot watering plants in a greenhouse, with Polly the bee hovering nearby with a tiny clipboard checking off a list.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11352.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-29T05:39:45.846383+00:00"
+}

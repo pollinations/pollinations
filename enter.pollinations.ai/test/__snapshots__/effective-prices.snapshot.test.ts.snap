@@ -732,14 +732,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.036,
     },
   },
+  "perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.0000225,
+      "promptTextTokens": 0.0000045,
+    },
+  },
+  "perplexity-deep": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "perplexity-fast": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "perplexity-reasoning": {
@@ -748,8 +768,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.000008,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.000012,
+      "promptTextTokens": 0.000003,
     },
   },
   "polly": {
@@ -902,6 +922,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0525,
+    },
+  },
+  "step-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 4e-8,
+      "promptTextTokens": 2e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 4e-8,
+      "promptTextTokens": 2e-7,
     },
   },
   "universal-2": {

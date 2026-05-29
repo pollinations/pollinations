@@ -1222,6 +1222,29 @@ export const TEXT_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
+    "step-3.5-flash": {
+        aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
+        modelId: "stepfun/step-3.5-flash",
+        provider: "openrouter",
+        brand: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter stepfun/step-3.5-flash posted rates (2026-05-29):
+            // prompt $0.09/M, completion $0.30/M, cache read $0.02/M
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0.3),
+        },
+        description: "StepFun Step 3.5 Flash - Fast text reasoning model",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",

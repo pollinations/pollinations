@@ -1,0 +1,35 @@
+{
+  "pr_number": 11400,
+  "title": "Add StepFun Step 3.5 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11400",
+  "merged_at": "2026-05-29T21:47:32Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds OpenRouter StepFun Step 3.5 Flash.\n\n- Adds `step-3.5-flash` → `stepfun/step-3.5-flash`\n- Sets text-only modalities, reasoning, tools, 262144 context\n- Adds OpenRouter pricing: $0.09/M input, $0.30/M output, $0.02/M cache read\n- Updates effective pricing snapshot\n\nVerified:\n- `npx biome check --write ...`\n- enter model/pricing tests: 207 passed\n- gen model tests: 8 passed\n- gen + enter typecheck passed\n- local gen E2E: basic, streaming, tools",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flash Forward with StepFun",
+    "blurb": "We've added StepFun's Step 3.5 Flash model to the hive. It's fast, supports reasoning and tools, and boasts a massive 256k context window for your biggest ideas.",
+    "summary": "Added StepFun Step 3.5 Flash (step-3.5-flash) via OpenRouter, featuring reasoning, tool use, and a 262,144 token context window.",
+    "impact": "Users can now generate text using the step-3.5-flash model, taking advantage of its massive context window and tool-calling capabilities.",
+    "keywords": [
+      "models",
+      "stepfun",
+      "openrouter",
+      "text-generation",
+      "api"
+    ],
+    "visual_concept": "The PR is about adding a 'Flash' model by 'StepFun'. Visuals could include lightning/flash motifs, steps/stairs, and the bee mascot moving fast. Let's use the bee with a superhero cape zipping up glowing pixel stairs, with the Monitor Robot tracking the speed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny red superhero cape, zipping up a glowing staircase made of code blocks. A chunky pixel robot with a CRT monitor head stands at the bottom, holding a stopwatch and cheering. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11400.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny red superhero cape, zipping up a glowing staircase made of code blocks. A chunky pixel robot with a CRT monitor head stands at the bottom, holding a stopwatch and cheering. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-29T21:48:32.721528+00:00"
+}

@@ -26,6 +26,7 @@ ITEM_DATA = (
 )
 
 ISSUE_NUMBER = ITEM_DATA.get("number")
+ISSUE_DB_ID = ITEM_DATA.get("id")
 ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
@@ -180,7 +181,7 @@ def read_prompt_file() -> str:
 
 
 VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-APP", "DEV-UI-UX"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER",
@@ -221,16 +222,25 @@ def get_fallback_classification(_: bool) -> dict:
         "project": None,
         "priority": None,
         "labels": [],
+        "epic": None,
         "reasoning": "AI classification failed; skipping automation"
     }
 
 
-def classify_with_ai(is_internal: bool) -> dict:
+def classify_with_ai(is_internal: bool, epics: Optional[list] = None) -> dict:
     base_prompt = read_prompt_file()
     item_kind = "pull request" if IS_PULL_REQUEST else "issue"
 
-    system_prompt = f"""{base_prompt}
+    epics_block = ""
+    if epics:
+        epic_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in epics)
+        epics_block = (
+            "\n\n## Dev Epics (choose `epic` from these for dev issues)\n"
+            f"{epic_lines}\n"
+        )
 
+    system_prompt = f"""{base_prompt}
+{epics_block}
 ---
 **Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
 """
@@ -323,10 +333,20 @@ Body: {ISSUE_BODY[:2000]}
                 invalid = [l for l in labels if l.upper() not in valid_for_project]
                 log_error(f"AI returned invalid labels for {project}: {invalid}")
 
+            epic_raw = raw.get("epic")
+            epic = None
+            if isinstance(epic_raw, bool):
+                epic = None
+            elif isinstance(epic_raw, int):
+                epic = epic_raw
+            elif isinstance(epic_raw, str) and epic_raw.strip().lstrip("#").isdigit():
+                epic = int(epic_raw.strip().lstrip("#"))
+
             classification = {
                 "project": project,
                 "priority": priority,
                 "labels": filtered_labels,
+                "epic": epic,
                 "reasoning": raw.get("reasoning", ""),
                 "is_app_submission": is_app_submission,
             }
@@ -383,6 +403,58 @@ def add_to_project(project_id: str) -> Optional[str]:
     else:
         log_error(f"Failed to add to project {project_id}")
     return item_id
+
+
+_DEV_EPICS: Optional[list] = None
+
+
+def fetch_dev_epics() -> list:
+    """Open Dev epics (issues labelled DEV-TRACKING). Returns [{number, title}] so the
+    AI can pick the best-fit parent. Cached for the lifetime of the process."""
+    global _DEV_EPICS
+    if _DEV_EPICS is not None:
+        return _DEV_EPICS
+    try:
+        r = requests.get(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues",
+            headers=GITHUB_HEADERS,
+            params={"labels": "DEV-TRACKING", "state": "open", "per_page": 100},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            log_error(f"Failed to fetch dev epics: {r.status_code} - {r.text[:200]}")
+            _DEV_EPICS = []
+            return _DEV_EPICS
+        _DEV_EPICS = [
+            {"number": i["number"], "title": i.get("title", "")}
+            for i in r.json()
+            if "pull_request" not in i and i.get("number") != ISSUE_NUMBER
+        ]
+        log_debug(f"Loaded {len(_DEV_EPICS)} open dev epics")
+        return _DEV_EPICS
+    except (requests.RequestException, ValueError) as e:
+        log_error(f"Exception fetching dev epics: {e}")
+        _DEV_EPICS = []
+        return _DEV_EPICS
+
+
+def assign_to_epic(parent_number: int, child_db_id: int) -> bool:
+    """Link the current issue as a native sub-issue of epic #parent_number."""
+    try:
+        r = requests.post(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
+            headers=GITHUB_HEADERS,
+            json={"sub_issue_id": child_db_id},
+            timeout=15,
+        )
+        if r.status_code in (200, 201):
+            log_debug(f"Linked #{ISSUE_NUMBER} as sub-issue of epic #{parent_number}")
+            return True
+        log_error(f"Failed to link #{ISSUE_NUMBER} under epic #{parent_number}: {r.status_code} - {r.text[:200]}")
+        return False
+    except requests.RequestException as e:
+        log_error(f"Exception linking sub-issue under #{parent_number}: {e}")
+        return False
 
 
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
@@ -471,9 +543,9 @@ def main():
         else:
             log_error("Apps project not configured")
             return
-    if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
-        log_debug("Found quest label; Quest project auto-add owns routing")
-        return
+    is_quest = "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels
+    if is_quest:
+        log_debug("Found quest label; routing to Dev (label-only quest model)")
 
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
@@ -496,8 +568,9 @@ def main():
     
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
-    
-    classification = classify_with_ai(is_internal)
+
+    epics = [] if IS_PULL_REQUEST else fetch_dev_epics()
+    classification = classify_with_ai(is_internal, epics)
     
     if classification.get("is_app_submission"):
         log_debug("AI detected app submission, routing to Apps project")
@@ -519,7 +592,11 @@ def main():
     
     project_key = classification["project"].lower()
 
-    if IS_PULL_REQUEST:
+    if is_quest:
+        if project_key != "dev":
+            log_debug(f"Quest issue #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (quests live in Dev)")
+        project_key = "dev"
+    elif IS_PULL_REQUEST:
         if project_key != "dev":
             log_debug(f"PR #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (PRs always route to dev)")
         project_key = "dev"
@@ -558,6 +635,18 @@ def main():
         log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")
     else:
         add_labels(labels)
+
+    # Parent new Dev issues under the best-fit epic (skip PRs and epics themselves)
+    is_epic = "DEV-TRACKING" in existing_labels or "DEV-TRACKING" in labels
+    if project_key == "dev" and not IS_PULL_REQUEST and ISSUE_DB_ID and not is_epic:
+        epic = classification.get("epic")
+        valid_epic_numbers = {e["number"] for e in epics}
+        if epic in valid_epic_numbers:
+            assign_to_epic(epic, ISSUE_DB_ID)
+        elif epic is not None:
+            log_debug(f"AI returned epic #{epic} not in current epic list; leaving #{ISSUE_NUMBER} unparented")
+        else:
+            log_debug(f"No epic selected for #{ISSUE_NUMBER}; left unparented")
 
 if __name__ == "__main__":
     main()

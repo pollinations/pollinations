@@ -187,7 +187,7 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
         "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
     }
-    dev_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-VOTING"}
+    dev_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-VOTING", "DEV-APP", "DEV-UI-UX"}
     if project_key == "dev":
         # Strip stale DEV-* (to be re-applied) and stale support labels (left over from past Support membership)
         to_remove = [l for l in current_labels if l.startswith("DEV-") or l in support_labels or l.upper() in support_labels]

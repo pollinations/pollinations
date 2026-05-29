@@ -82,7 +82,7 @@ async function main(): Promise<void> {
         const action = row.action;
         const packPollen = Number.parseFloat(row.pack_pollen) || 0;
         const errorRate = Number.parseFloat(row.error_rate_pct) || 0;
-        const requestCount = Number.parseInt(row.request_count) || 0;
+        const requestCount = Number.parseInt(row.request_count, 10) || 0;
 
         let newAction = action;
 

@@ -131,7 +131,7 @@ export const auth = (options: AuthOptions) =>
         };
 
         function requireModelAccess(): void {
-            if (!apiKey || !apiKey.permissions?.models) return;
+            if (!apiKey?.permissions?.models) return;
 
             const model = c.var.model;
             if (!model) return;

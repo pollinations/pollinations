@@ -130,7 +130,7 @@
             }
         };
 
-        function startAuth() {
+        function _startAuth() {
             const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(CALLBACK_URL)}`;
             window.location.href = authUrl;
         }
@@ -151,10 +151,10 @@
 
         function showError(msg) {
             document.getElementById('errorCard').style.display = 'block';
-            document.getElementById('errorMsg').textContent = 'oops: ' + msg;
+            document.getElementById('errorMsg').textContent = `oops: ${msg}`;
         }
 
-        async function testImageGen() {
+        async function _testImageGen() {
             if (!apiKey) {
                 showError('No API key available');
                 return;

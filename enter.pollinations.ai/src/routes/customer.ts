@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { describeRoute } from "hono-openapi";
 import { streamSSE } from "hono/streaming";
+import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";
@@ -56,8 +56,7 @@ export const customerRoutes = new Hono<Env>()
         "/balance/stream",
         describeRoute({
             tags: ["👤 Account"],
-            description:
-                "Stream balance updates (SSE) for the current user.",
+            description: "Stream balance updates (SSE) for the current user.",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {

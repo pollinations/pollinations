@@ -15,7 +15,7 @@ export const formatPricePer1M = (price: number): string => {
     const formatted = per1M.toFixed(decimals);
     // Remove trailing zeros but keep at least .0 for whole numbers
     const result = formatted.replace(/0+$/, "");
-    return result.endsWith(".") ? result + "0" : result;
+    return result.endsWith(".") ? `${result}0` : result;
 };
 
 export const formatPrice = (
@@ -40,5 +40,5 @@ export const formatPricePerImage = (price: number): string => {
 
     // Remove trailing zeros but keep at least .0 for whole numbers
     const result = formatted.replace(/0+$/, "");
-    return result.endsWith(".") ? result + "0" : result;
+    return result.endsWith(".") ? `${result}0` : result;
 };

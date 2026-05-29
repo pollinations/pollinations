@@ -777,7 +777,7 @@ describe("API Key Management", () => {
                 },
             });
             expect(createResponse.data).toBeTruthy();
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Update the name
             const updateResponse = await SELF.fetch(
@@ -825,7 +825,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Update with model restrictions
             const updateResponse = await SELF.fetch(
@@ -1020,7 +1020,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Set budget to 50
             const updateResponse = await SELF.fetch(
@@ -1065,7 +1065,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Set expiry to 30 days from now
             const futureDate = new Date();
@@ -1119,7 +1119,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // First set some permissions
             await SELF.fetch(
@@ -1203,7 +1203,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Try updating without authentication
             const response = await SELF.fetch(
@@ -1235,7 +1235,7 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
+            const keyId = createResponse.data?.id;
 
             // Update 1: Set name and budget
             await SELF.fetch(
@@ -1317,8 +1317,8 @@ describe("API Key Management", () => {
                     },
                 },
             });
-            const keyId = createResponse.data!.id;
-            const apiKey = createResponse.data!.key;
+            const keyId = createResponse.data?.id;
+            const apiKey = createResponse.data?.key;
 
             // Set expiry to past
             const pastDate = new Date();

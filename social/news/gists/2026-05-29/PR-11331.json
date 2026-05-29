@@ -1,0 +1,33 @@
+{
+  "pr_number": 11331,
+  "title": "fix: refresh R2 storage ttl on access",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11331",
+  "merged_at": "2026-05-29T00:37:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds shared `refreshR2ObjectTtl` helper for R2-backed media/text/image cache reads.\n- Refreshes `MEDIA_BUCKET`, `IMAGE_BUCKET`, and `TEXT_BUCKET` objects when they are fetched after half of the fixed 30-day lifecycle has passed.\n- Resets the R2 lifecycle age with one background `put`, so the object gets a fresh 30-day retention window without writing on fresh cache hits.\n- Uses `FixedLengthStream` plus a manual stream pump so background R2 `put` receives a known-length body.\n\nCost note:\n- R2 has no metadata-only touch; lifecycle refresh requires a write-like operation.\n- `PutObject`/`CopyObject` are Class A, so this PR avoids normal per-read writes by refreshing only after the 15-day half-life gate.\n- Concurrent stale hits may still enqueue duplicate refresh attempts; this PR intentionally avoids extra locking/coordination for that rare case.\n\nTests:\n- `npx biome check --write shared/r2-storage.ts gen.pollinations.ai/test/r2-storage.test.ts`\n- `npm run test -- test/r2-storage.test.ts test/text-cache.test.ts test/media-cache.test.ts`\n- `npm run typecheck --workspace pollinations-gen -- --pretty false`\n- `npm run test -- test/integration.test.ts --testNamePattern=\"refreshes uploaded media TTL\"`\n- `npx tsc --noEmit --project media.pollinations.ai/tsconfig.json --pretty false`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive remembers",
+    "blurb": "Active generations now get a new lease on life! We've added a smart refresh system that resets the 30-day expiration timer on your images, text, and media whenever they're accessed.",
+    "summary": "Implemented a background TTL refresh for R2-backed media, image, and text caches that resets the 30-day retention lifecycle when an object is accessed after 15 days.",
+    "impact": "Frequently accessed generated content will no longer expire after a fixed 30 days, remaining available as long as it is requested at least once every 15 days.",
+    "keywords": [
+      "cache",
+      "storage",
+      "r2",
+      "retention",
+      "ttl"
+    ],
+    "visual_concept": "Polly the bee topping up glowing memory jars (representing cache) before they run out, with the Nomnom creature watching.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot using a tiny watering can to top up glowing lime green (#ecf874) memory crystals inside glass jars on a wooden shelf. The round tan Nomnom creature happily watches the crystals glow brighter. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-29/PR-11331.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot using a tiny watering can to top up glowing lime green (#ecf874) memory crystals inside glass jars on a wooden shelf. The round tan Nomnom creature happily watches the crystals glow brighter. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-29T00:38:24.815548+00:00"
+}

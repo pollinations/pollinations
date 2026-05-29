@@ -6,6 +6,13 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+const INTRODUCTION_PATH = join(
+    __dirname,
+    "..",
+    "src",
+    "docs",
+    "introduction.md",
+);
 const RECIPES_PATH = join(__dirname, "..", "src", "docs", "apidocs-recipes.md");
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
@@ -703,9 +710,7 @@ function renderHeader(spec: Spec): string {
     );
     out.push("</picture>");
     out.push("");
-    out.push(
-        "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
-    );
+    out.push(loadIntroductionTagline());
     out.push("");
     out.push("# API docs");
     out.push("");
@@ -713,6 +718,18 @@ function renderHeader(spec: Spec): string {
         `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
     );
     return out.join("\n");
+}
+
+function loadIntroductionTagline(): string {
+    const introduction = readFileSync(INTRODUCTION_PATH, "utf8");
+    const tagline = introduction
+        .split("\n")
+        .find((line) => line.trim().startsWith(">"))
+        ?.trim();
+    if (!tagline) {
+        throw new Error(`Missing blockquote tagline in ${INTRODUCTION_PATH}`);
+    }
+    return tagline;
 }
 
 function renderGettingStarted(): string {

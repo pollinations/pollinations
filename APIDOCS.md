@@ -3,7 +3,7 @@
   <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">
 </picture>
 
-> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+> Generate text, images, video, audio, realtime voice, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
 
 # API docs
 
@@ -76,7 +76,7 @@ The header is preferred for everything except browser flows that can't set custo
 |---|---|
 | `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
 | `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
-| Everything else | Bearer key required |
+| Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
 
@@ -677,11 +677,12 @@ curl "https://gen.pollinations.ai/audio/Hello%2C%20welcome%20to%20Pollinations!?
 
 OpenAI-compatible Realtime WebSocket proxy.
 
-Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket. Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
+Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket.
+Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
 **Model:** `gpt-realtime-2`.
 
-**Billing:** requires paid pack balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.
+**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.
 
 ⚙️ **Parameters**
 
@@ -690,19 +691,13 @@ Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and se
 | `model` | `query` | `"gpt-realtime-2"` | Realtime model to use. Currently only gpt-realtime-2 is supported. · default: `"gpt-realtime-2"` |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
-📤 **Response** · `101` — WebSocket connection established
+<sub>`*` = required parameter</sub>
 
 💻 **Example**
 
-```javascript
-const ws = new WebSocket(
-  "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2&key=pk_your_publishable_key"
-);
-
-ws.send(JSON.stringify({
-  type: "session.update",
-  session: { instructions: "You are concise." }
-}));
+```bash
+curl "https://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2&key=:key" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### 🔢 Embeddings
@@ -763,7 +758,7 @@ curl -X POST "https://gen.pollinations.ai/v1/embeddings" \
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models (text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -794,7 +789,7 @@ curl "https://gen.pollinations.ai/v1/models" \
 
 #### `GET` `/models` — List Models
 
-Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns all available text, image, video, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 📤 **Response** · `200` · `application/json` — Success
 

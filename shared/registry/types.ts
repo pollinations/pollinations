@@ -11,5 +11,6 @@ export const eventTypeValues = [
     "generate.image",
     "generate.audio",
     "generate.embedding",
+    "generate.realtime",
 ] as const;
 export type EventType = (typeof eventTypeValues)[number];

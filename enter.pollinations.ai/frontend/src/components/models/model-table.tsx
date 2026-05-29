@@ -25,13 +25,20 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
-export type SectionType = "image" | "video" | "audio" | "text" | "embedding";
+export type SectionType =
+    | "image"
+    | "video"
+    | "audio"
+    | "realtime"
+    | "text"
+    | "embedding";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
     tierBalance?: number;
@@ -119,6 +126,7 @@ const unitLabels: Record<string, string> = {
     image: "images",
     video: "videos",
     audio: "responses",
+    realtime: "sessions",
     embedding: "embeddings",
 };
 
@@ -126,6 +134,7 @@ export const sectionLabels: Record<SectionType, string> = {
     image: "Image",
     video: "Video",
     audio: "Audio",
+    realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
 };
@@ -552,6 +561,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
+    realtimeModels,
     embeddingModels,
     activeTab,
     tierBalance,
@@ -562,6 +572,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "video", models: videoModels },
         ...(audioModels.length > 0
             ? [{ type: "audio" as const, models: audioModels }]
+            : []),
+        ...(realtimeModels.length > 0
+            ? [{ type: "realtime" as const, models: realtimeModels }]
             : []),
         { type: "text", models: textModels },
         ...(embeddingModels.length > 0

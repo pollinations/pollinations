@@ -306,6 +306,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
   },
+  "gpt-realtime-2": {
+    "cost": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 4e-7,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 4e-7,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
+    },
+  },
   "gptimage": {
     "cost": {
       "completionImageTokens": 0.000008,

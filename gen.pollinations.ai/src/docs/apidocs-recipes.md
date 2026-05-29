@@ -17,7 +17,7 @@ Authorization: Bearer <key>
 GET /image/cat?key=<key>
 ```
 
-The header is preferred for everything except plain-`GET` browser flows that can't set custom headers (image and audio `GET` endpoints).
+The header is preferred for everything except browser flows that can't set custom headers (image/audio `GET` endpoints and WebSocket realtime sessions).
 
 **Endpoints with relaxed auth requirements**
 
@@ -25,13 +25,13 @@ The header is preferred for everything except plain-`GET` browser flows that can
 |---|---|
 | `GET /{hash}`, `GET /{hash}/metadata`, `HEAD /{hash}` | None — content-addressed media URLs are public reads |
 | `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None — model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
-| Everything else | Bearer key required |
+| Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
 
 ## 🧪 Use any OpenAI SDK
 
-Pollinations speaks the OpenAI Chat Completions, Images, Embeddings, and Audio APIs. Point the SDK at `https://gen.pollinations.ai/v1` and pass your `sk_…` key as the OpenAI key.
+Pollinations speaks the OpenAI Chat Completions, Images, Embeddings, Audio, and Realtime APIs. Point the SDK at `https://gen.pollinations.ai/v1` and pass your `sk_…` key as the OpenAI key.
 
 **Python**
 

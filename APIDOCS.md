@@ -1349,6 +1349,8 @@ Reusable request/response objects referenced from the endpoints above.
 
 | Field | Type | Description |
 |---|---|---|
+| `cache_creation_input_tokens` | `integer` \| `null` | — |
+| `cache_read_input_tokens` | `integer` \| `null` | — |
 | `completion_tokens` * | `integer` | — |
 | `completion_tokens_details` | `object` \| `null` | — |
 | `prompt_tokens` * | `integer` | — |

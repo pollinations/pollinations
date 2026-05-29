@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-28",
+  "period_start": "2026-05-28",
+  "period_end": "2026-05-28",
+  "generated_at": "2026-05-29T07:15:38.289709+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipping phase 1 of local currency routing for Pollen checkouts",
+  "text": "Just merged PR #11172 which lays the backend groundwork for country-routed checkouts. Until now, getting Pollen credits meant dealing with USD conversions regardless of where you were making the API calls from. For an open-source infrastructure used by developers globally, forcing everyone through a single currency bottleneck was a friction point we finally decided to fix.\n\nThis is phase 1. The backend now detects the origin country and routes the checkout session to the appropriate localized currency tier. It's a relatively standard implementation, but doing it cleanly without adding latency to the core API took some planning.\n\nWe are still rolling out the frontend components to surface these local currencies correctly, so you won't see the UI changes just yet. Once phase 2 lands, Pollen packs will reflect local pricing automatically. No more mental math on exchange rates just to run some heavy image generation jobs.\n\nIf you're curious about how we structured the routing logic, the code is open. You can check the implementation details in the repo here: github.com/pollinations/pollinations."
+}

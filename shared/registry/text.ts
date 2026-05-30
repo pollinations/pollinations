@@ -637,6 +637,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(1.1),
             promptCachedTokens: perMillion(0.11),
+            promptCacheWriteTokens: perMillion(1.375),
             completionTextTokens: perMillion(5.5),
         },
         description: "Claude Haiku 4.5 - Fast & Intelligent",
@@ -658,6 +659,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(3.3),
             promptCachedTokens: perMillion(0.33),
+            promptCacheWriteTokens: perMillion(4.125),
             completionTextTokens: perMillion(16.5),
         },
         description: "Claude Sonnet 4.6 - Most Capable & Balanced",
@@ -679,6 +681,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
+            promptCacheWriteTokens: perMillion(6.875),
             completionTextTokens: perMillion(27.5),
         },
         description: "Claude Opus 4.6 - Most Intelligent Model",
@@ -700,6 +703,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
+            promptCacheWriteTokens: perMillion(6.875),
             completionTextTokens: perMillion(27.5),
         },
         description: "Claude Opus 4.7 - Most Intelligent Model",
@@ -707,6 +711,29 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "claude-opus-4.8": {
+        aliases: [],
+        modelId: "claude-opus-4-8",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.5,
+        cost: {
+            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
+        },
+        description: "Claude Opus 4.8 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "perplexity-fast": {
@@ -1192,6 +1219,29 @@ export const TEXT_SERVICES = {
         // tokens are billed within completion_tokens at the completionText rate.
         reasoning: true,
         contextLength: 256000,
+        isSpecialized: false,
+    },
+    "step-3.5-flash": {
+        aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
+        modelId: "stepfun/step-3.5-flash",
+        provider: "openrouter",
+        brand: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter stepfun/step-3.5-flash posted rates (2026-05-29):
+            // prompt $0.09/M, completion $0.30/M, cache read $0.02/M
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0.3),
+        },
+        description: "StepFun Step 3.5 Flash - Fast text reasoning model",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "qwen-safety": {

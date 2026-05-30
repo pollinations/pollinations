@@ -35,6 +35,7 @@ export type Category =
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
+    | "promptCacheWriteTokens"
     | "promptAudioTokens"
     | "promptAudioSeconds"
     | "promptImageTokens"

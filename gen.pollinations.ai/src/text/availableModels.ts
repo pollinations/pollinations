@@ -63,6 +63,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
     },
     {
+        name: "step-3.5-flash",
+        config: portkeyConfig["stepfun/step-3.5-flash"],
+    },
+    {
         name: "step-flash",
         config: portkeyConfig["stepfun/step-3.7-flash"],
     },
@@ -123,6 +127,10 @@ const models: ModelDefinition[] = [
     {
         name: "claude-opus-4.7",
         config: portkeyConfig["claude-opus-4-7"],
+    },
+    {
+        name: "claude-opus-4.8",
+        config: portkeyConfig["claude-opus-4-8"],
     },
     {
         name: "gemini",

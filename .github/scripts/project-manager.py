@@ -443,7 +443,7 @@ def assign_to_tracking_issue(parent_number: int, child_db_id: int) -> bool:
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
-            headers=GITHUB_HEADERS,
+            headers={**GITHUB_HEADERS, "X-GitHub-Api-Version": "2026-03-10"},
             json={"sub_issue_id": child_db_id},
             timeout=15,
         )
@@ -543,9 +543,13 @@ def main():
         else:
             log_error("Apps project not configured")
             return
-    is_quest = "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels
+    is_quest = (
+        "POLLEN-QUEST" in existing_labels
+        or "DRAFT-QUEST" in existing_labels
+        or bool(re.search(r"\[\s*🎯?\s*QUEST\b", ISSUE_TITLE, re.IGNORECASE))
+    )
     if is_quest:
-        log_debug("Found quest label; routing to Dev (label-only quest model)")
+        log_debug("Detected quest (label or title); routing to Dev (label-only quest model)")
 
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")

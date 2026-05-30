@@ -9,7 +9,9 @@
  */
 export function omit<T, K extends keyof T>(obj: T, ...keys: K[]): Omit<T, K> {
     const result = { ...obj };
-    keys.forEach((key) => delete result[key]);
+    for (const key of keys) {
+        delete result[key];
+    }
     return result;
 }
 
@@ -21,7 +23,7 @@ export function omit<T, K extends keyof T>(obj: T, ...keys: K[]): Omit<T, K> {
  * @example safeRound(1.23456789, 4) // 1.2346
  */
 export function safeRound(amount: number, precision: number = 6): number {
-    if (!isFinite(amount) || isNaN(amount)) {
+    if (!Number.isFinite(amount) || Number.isNaN(amount)) {
         return 0;
     }
     // Handle very small amounts (avoid floating point issues)

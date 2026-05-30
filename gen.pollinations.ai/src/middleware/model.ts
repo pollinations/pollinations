@@ -42,6 +42,7 @@ export type ModelVariables = {
 
 type ResolveModelOptions = {
     defaultModel?: string;
+    parseMultipart?: boolean;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -74,7 +75,10 @@ export function resolveModel(
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";
-            if (contentType.includes("multipart/form-data")) {
+            if (
+                options?.parseMultipart &&
+                contentType.includes("multipart/form-data")
+            ) {
                 try {
                     const formData = await c.req.formData();
                     rawModel = (formData.get("model") as string) || null;

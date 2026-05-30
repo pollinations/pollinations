@@ -774,6 +774,23 @@ test("malformed image edit multipart bodies return tracked 400", async ({
     });
 });
 
+test("unauthenticated image edit multipart bodies are rejected before parsing", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const { response, wait } = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            "content-type": "multipart/form-data; boundary=bad",
+        },
+        body: "this is not valid multipart",
+    });
+
+    expect(response.status).toBe(401);
+    await wait();
+});
+
 test("malformed audio transcription multipart bodies return tracked 400", async ({
     paidApiKey,
     mocks,
@@ -813,4 +830,21 @@ test("malformed audio transcription multipart bodies return tracked 400", async 
         eventType: "generate.audio",
         responseStatus: 400,
     });
+});
+
+test("unauthenticated audio transcription multipart bodies are rejected before parsing", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const { response, wait } = await fetchWorker("/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+            "content-type": "multipart/form-data; boundary=bad",
+        },
+        body: "this is not valid multipart",
+    });
+
+    expect(response.status).toBe(401);
+    await wait();
 });

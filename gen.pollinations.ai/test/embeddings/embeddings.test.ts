@@ -425,6 +425,82 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
+    test("rejects private remote media URLs before fetching", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: [
+                    { type: "text", text: "canary" },
+                    {
+                        type: "video_url",
+                        video_url: {
+                            url: "http://127.0.0.1:8787/internal.mp4",
+                            mime_type: "video/mp4",
+                        },
+                    },
+                ],
+            }),
+        });
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: "Private or credentialed media URLs are not allowed",
+            },
+        });
+        expect(mocks.vertex.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects localhost-equivalent remote media URLs before fetching", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const blockedUrls = [
+            "http://localhost./internal.mp4",
+            "http://foo.localhost./internal.mp4",
+        ];
+
+        for (const url of blockedUrls) {
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({
+                    input: [
+                        {
+                            type: "video_url",
+                            video_url: {
+                                url,
+                                mime_type: "video/mp4",
+                            },
+                        },
+                    ],
+                }),
+            });
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: "Private or credentialed media URLs are not allowed",
+                },
+            });
+            expect(mocks.vertex.state.requests).toHaveLength(0);
+            await wait();
+        }
+    });
+
     test("rejects string batches above the public input limit", async ({
         apiKey,
         mocks,
@@ -822,7 +898,7 @@ describe("POST /v1/embeddings", () => {
         const body = await response.text();
 
         expect(response.status).toBe(400);
-        expect(body).toContain("Failed to fetch image");
+        expect(body).toContain("Invalid media URL: not-a-url");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

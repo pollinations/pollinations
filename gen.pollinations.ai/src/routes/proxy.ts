@@ -87,6 +87,9 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
+const multipartBodyLimit = bodyLimit({
+    maxSize: 20 * 1024 * 1024,
+});
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -975,7 +978,12 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image"),
+        async (c, next) => {
+            await c.var.auth.requireAuthorization();
+            await next();
+        },
+        multipartBodyLimit,
+        resolveModel("generate.image", { parseMultipart: true }),
         track("generate.image"),
         handleImageEdit(checkBalance),
     );

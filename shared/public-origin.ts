@@ -1,5 +1,7 @@
 import type { Context } from "hono";
 
+export const PROXY_SECRET_HEADER = "x-pollinations-proxy-secret";
+
 const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
     "enter.myceli.ai": "enter.pollinations.ai",
     "staging.enter.myceli.ai": "staging.enter.pollinations.ai",
@@ -9,7 +11,16 @@ const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
     "media.myceli.ai": "media.pollinations.ai",
 };
 
+function hasValidProxySecret(c: Context): boolean {
+    const expected = (c.env as { POLLINATIONS_PROXY_SECRET?: string } | undefined)
+        ?.POLLINATIONS_PROXY_SECRET;
+    if (!expected) return false;
+    return c.req.header(PROXY_SECRET_HEADER) === expected;
+}
+
 function getTrustedForwardedHost(c: Context): string | undefined {
+    if (!hasValidProxySecret(c)) return undefined;
+
     const requestHost = new URL(c.req.url).host;
     const forwardedHost = c.req.header("x-forwarded-host");
 

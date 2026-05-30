@@ -1,11 +1,34 @@
 import { HTTPException } from "hono/http-exception";
-import { HttpError } from "@/image/httpError.ts";
-import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
 import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
 
+const MAX_REMOTE_MEDIA_BYTES = 20 * 1024 * 1024;
+const BLOCKED_HOSTNAMES = /^localhost$/i;
+const REMOTE_MEDIA_USER_AGENT = "Pollinations/1.0";
+
 export function badRequest(message: string): never {
     throw new HTTPException(400, { message });
+}
+
+function isBlockedRemoteHost(hostname: string): boolean {
+    const host = hostname.replace(/^\[|\]$/g, "").replace(/\.+$/g, "");
+    const normalized = host.toLowerCase();
+    if (
+        BLOCKED_HOSTNAMES.test(normalized) ||
+        normalized.endsWith(".localhost")
+    ) {
+        return true;
+    }
+
+    // Block IP literals. Cloudflare Workers cannot reliably re-resolve DNS here,
+    // so we still require redirect-free direct public URLs below.
+    if (normalized.includes(":")) return true;
+
+    const parts = normalized.split(".").map(Number);
+    return (
+        parts.length === 4 &&
+        parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+    );
 }
 
 function parseRemoteMediaUrl(url: string): URL {
@@ -14,6 +37,13 @@ function parseRemoteMediaUrl(url: string): URL {
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
             badRequest(`Unsupported media URL protocol: ${parsed.protocol}`);
         }
+        if (
+            parsed.username ||
+            parsed.password ||
+            isBlockedRemoteHost(parsed.hostname)
+        ) {
+            badRequest("Private or credentialed media URLs are not allowed");
+        }
         return parsed;
     } catch (error) {
         if (error instanceof HTTPException) throw error;
@@ -21,27 +51,95 @@ function parseRemoteMediaUrl(url: string): URL {
     }
 }
 
+function mediaTypeAllowed(
+    contentType: string | null,
+    expectedFamily: "image" | "video",
+): boolean {
+    if (!contentType) return false;
+    return contentType
+        .split(";", 1)[0]
+        .trim()
+        .toLowerCase()
+        .startsWith(`${expectedFamily}/`);
+}
+
+async function readBoundedResponse(
+    response: Response,
+    maxBytes: number,
+): Promise<ArrayBuffer> {
+    const contentLength = response.headers.get("content-length");
+    if (contentLength && Number(contentLength) > maxBytes) {
+        badRequest(`Media too large: ${contentLength} bytes (max ${maxBytes})`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength > maxBytes) {
+            badRequest(`Media too large: ${buffer.byteLength} bytes (max ${maxBytes})`);
+        }
+        return buffer;
+    }
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            total += value.byteLength;
+            if (total > maxBytes) {
+                badRequest(`Media too large: ${total} bytes (max ${maxBytes})`);
+            }
+            chunks.push(value);
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return bytes.buffer;
+}
+
 async function fetchMedia(
     url: string,
+    expectedFamily: "image" | "video",
 ): Promise<{ data: string; contentType: string }> {
     const parsed = parseRemoteMediaUrl(url);
     let response: Response;
     try {
-        response = await fetch(parsed);
+        response = await fetch(parsed.toString(), {
+            redirect: "manual",
+            headers: { "User-Agent": REMOTE_MEDIA_USER_AGENT },
+        });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         badRequest(`Failed to fetch media: ${message}`);
+    }
+    if (response.status >= 300 && response.status < 400) {
+        badRequest("Media URLs must not redirect");
     }
     if (!response.ok) {
         badRequest(
             `Failed to fetch media: ${response.status} ${response.statusText}`,
         );
     }
-    const buffer = await response.arrayBuffer();
+    const contentType =
+        response.headers.get("content-type") || "application/octet-stream";
+    if (!mediaTypeAllowed(contentType, expectedFamily)) {
+        badRequest(
+            `Invalid media content type: expected ${expectedFamily}/*, got ${contentType}`,
+        );
+    }
+    const buffer = await readBoundedResponse(response, MAX_REMOTE_MEDIA_BYTES);
     return {
         data: Buffer.from(buffer).toString("base64"),
-        contentType:
-            response.headers.get("content-type") || "application/octet-stream",
+        contentType,
     };
 }
 
@@ -61,24 +159,18 @@ function parseDataUrl(dataUrl: string): { mimeType: string; data: string } {
 async function urlToInlineData(
     url: string,
     mimeOverride?: string,
+    expectedFamily: "image" | "video" = "video",
 ): Promise<GeminiPart> {
     if (url.startsWith("data:")) {
         const { mimeType, data } = parseDataUrl(url);
         return { inlineData: { mimeType: mimeOverride || mimeType, data } };
     }
-    const { data, contentType } = await fetchMedia(url);
+    const { data, contentType } = await fetchMedia(url, expectedFamily);
     return { inlineData: { mimeType: mimeOverride || contentType, data } };
 }
 
 async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
-    if (url.startsWith("data:")) return urlToInlineData(url);
-    try {
-        const { base64, mimeType } = await downloadImageAsBase64(url);
-        return { inlineData: { mimeType, data: base64 } };
-    } catch (error) {
-        if (error instanceof HttpError) badRequest(error.message);
-        throw error;
-    }
+    return urlToInlineData(url, undefined, "image");
 }
 
 export async function inputToGeminiParts(

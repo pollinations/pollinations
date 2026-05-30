@@ -1,5 +1,6 @@
 interface Env {
     UPSTREAM_MAP: string;
+    POLLINATIONS_PROXY_SECRET?: string;
 }
 
 export default {
@@ -22,6 +23,16 @@ export default {
         const headers = new Headers(req.headers);
         headers.set("X-Forwarded-Host", publicHost);
         headers.set("X-Forwarded-Proto", "https");
+        if (!env.POLLINATIONS_PROXY_SECRET) {
+            return new Response("Proxy secret not configured", {
+                status: 500,
+                headers: {
+                    "Content-Type": "text/plain; charset=utf-8",
+                    "Cache-Control": "no-store",
+                },
+            });
+        }
+        headers.set("X-Pollinations-Proxy-Secret", env.POLLINATIONS_PROXY_SECRET);
 
         const clientIp = req.headers.get("CF-Connecting-IP");
         if (clientIp) {

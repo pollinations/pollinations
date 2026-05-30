@@ -2,6 +2,7 @@ interface CloudflareBindings {
     ENTER: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
+    POLLINATIONS_PROXY_SECRET?: string;
     ELEVENLABS_API_KEY: string;
     ASSEMBLYAI_API_KEY?: string;
     OVHCLOUD_API_KEY: string;

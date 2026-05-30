@@ -16,6 +16,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -32,6 +33,10 @@ import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
+
+const multipartBodyLimit = bodyLimit({
+    maxSize: 20 * 1024 * 1024,
+});
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -1119,8 +1124,14 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
+        async (c, next) => {
+            await c.var.auth.requireAuthorization();
+            await next();
+        },
+        multipartBodyLimit,
         resolveModel("generate.audio", {
             defaultModel: "whisper-large-v3",
+            parseMultipart: true,
         }),
         track("generate.audio"),
         async (c) => {

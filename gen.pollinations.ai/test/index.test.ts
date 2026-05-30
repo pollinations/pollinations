@@ -37,6 +37,17 @@ async function fetchWorker(
     return response;
 }
 
+async function fetchWorkerUrl(
+    url: string,
+    env = envWithEnter(),
+    init: RequestInit = {},
+): Promise<Response> {
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(new Request(url, init), env, ctx);
+    await waitOnExecutionContext(ctx);
+    return response;
+}
+
 async function optionsWorker(
     path: string,
     headers: Record<string, string>,
@@ -82,6 +93,51 @@ describe("gen worker routing", () => {
         expect(response.status).toBe(301);
         expect(response.headers.get("Location")).toBe(
             "https://staging.gen.pollinations.ai/docs/open-api/generate-schema?format=json",
+        );
+    });
+
+    it("ignores spoofed forwarded host headers without the proxy secret", async () => {
+        const response = await fetchWorkerUrl(
+            "https://gen.myceli.ai/",
+            {
+                ...envWithEnter(),
+                POLLINATIONS_PROXY_SECRET: "test-secret",
+            } as CloudflareBindings,
+            {
+                headers: {
+                    "x-forwarded-host": "staging.gen.pollinations.ai",
+                    "x-forwarded-proto": "https",
+                    "x-original-client-ip": "198.51.100.10",
+                },
+            },
+        );
+
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://gen.myceli.ai/docs",
+        );
+    });
+
+    it("honors forwarded host headers with the proxy secret", async () => {
+        const response = await fetchWorkerUrl(
+            "https://gen.myceli.ai/",
+            {
+                ...envWithEnter(),
+                POLLINATIONS_PROXY_SECRET: "test-secret",
+            } as CloudflareBindings,
+            {
+                headers: {
+                    "x-forwarded-host": "gen.pollinations.ai",
+                    "x-forwarded-proto": "https",
+                    "x-original-client-ip": "198.51.100.10",
+                    "x-pollinations-proxy-secret": "test-secret",
+                },
+            },
+        );
+
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://gen.pollinations.ai/docs",
         );
     });
 

@@ -1,6 +1,8 @@
+import type { Category } from "@shared/registry/registry.ts";
+
 export type ModelPrice = {
     name: string;
-    type: "text" | "image" | "video" | "audio" | "embedding";
+    type: Category;
     perToken?: boolean;
     // Text pricing
     promptTextPrice?: string;

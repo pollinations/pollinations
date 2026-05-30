@@ -5,6 +5,7 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { REALTIME_SERVICES } from "@shared/registry/realtime.ts";
 import {
     getPriceDefinition,
     type ModelName,
@@ -141,6 +142,51 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 ),
             });
         }
+    }
+
+    // Add realtime models
+    for (const [serviceName, serviceConfig] of Object.entries(
+        REALTIME_SERVICES,
+    )) {
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestPrice = getPriceDefinition(
+            serviceName as ModelName,
+        ) as PriceDefinition | null;
+        if (!latestPrice) continue;
+
+        prices.push({
+            name: serviceName,
+            type: serviceConfig.category,
+            perToken: true,
+            promptTextPrice: formatPrice(
+                latestPrice.promptTextTokens,
+                formatPricePer1M,
+            ),
+            promptCachedPrice: formatPrice(
+                latestPrice.promptCachedTokens,
+                formatPricePer1M,
+            ),
+            promptAudioPrice: formatPrice(
+                latestPrice.promptAudioTokens,
+                formatPricePer1M,
+            ),
+            promptImagePrice: formatPrice(
+                latestPrice.promptImageTokens,
+                formatPricePer1M,
+            ),
+            completionTextPrice: formatPrice(
+                latestPrice.completionTextTokens,
+                formatPricePer1M,
+            ),
+            completionAudioPrice: formatPrice(
+                latestPrice.completionAudioTokens,
+                formatPricePer1M,
+            ),
+            completionAudioTokens: formatPrice(
+                latestPrice.completionAudioTokens,
+                formatPricePer1M,
+            ),
+        });
     }
 
     // Add embedding models — input-only pricing (output is a vector).

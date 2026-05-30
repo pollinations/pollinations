@@ -5,6 +5,7 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
+import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
@@ -60,6 +61,14 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision-pro",
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
+    },
+    {
+        name: "step-3.5-flash",
+        config: portkeyConfig["stepfun/step-3.5-flash"],
+    },
+    {
+        name: "step-flash",
+        config: portkeyConfig["stepfun/step-3.7-flash"],
     },
     {
         name: "mistral",
@@ -118,6 +127,10 @@ const models: ModelDefinition[] = [
     {
         name: "claude-opus-4.7",
         config: portkeyConfig["claude-opus-4-7"],
+    },
+    {
+        name: "claude-opus-4.8",
+        config: portkeyConfig["claude-opus-4-8"],
     },
     {
         name: "gemini",
@@ -195,10 +208,22 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("low"),
+    },
+    {
+        name: "perplexity-deep",
+        config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("high"),
+    },
+    {
+        name: "perplexity",
+        config: portkeyConfig["sonar-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "kimi",

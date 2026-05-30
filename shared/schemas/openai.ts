@@ -407,6 +407,8 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
+        cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
         completion_tokens_details: z
             .object({
@@ -429,6 +431,7 @@ export const CompletionUsageSchema = z
             .object({
                 audio_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         total_tokens: z.number().int().nonnegative(),

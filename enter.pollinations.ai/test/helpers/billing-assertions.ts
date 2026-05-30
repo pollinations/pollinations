@@ -14,6 +14,7 @@ type BillingEvent = {
     selectedMeterSlug?: string | null;
     tokenPricePromptText: number;
     tokenPricePromptCached: number;
+    tokenPricePromptCacheWrite?: number;
     tokenPricePromptAudio: number;
     tokenPricePromptImage: number;
     tokenPriceCompletionText: number;
@@ -24,6 +25,7 @@ type BillingEvent = {
     tokenPriceCompletionVideoTokens?: number;
     tokenCountPromptText: number;
     tokenCountPromptCached: number;
+    tokenCountPromptCacheWrite?: number;
     tokenCountPromptAudio: number;
     tokenCountPromptImage: number;
     tokenCountCompletionText: number;
@@ -40,6 +42,7 @@ function usageFromEvent(event: BillingEvent): Usage {
     return {
         promptTextTokens: event.tokenCountPromptText,
         promptCachedTokens: event.tokenCountPromptCached,
+        promptCacheWriteTokens: event.tokenCountPromptCacheWrite || 0,
         promptAudioTokens: event.tokenCountPromptAudio,
         promptImageTokens: event.tokenCountPromptImage,
         completionTextTokens: event.tokenCountCompletionText,
@@ -72,6 +75,9 @@ export function assertTrackedBillingEvent(
     );
     expect(event.tokenPricePromptCached).toBe(
         priceDefinition?.promptCachedTokens || 0,
+    );
+    expect(event.tokenPricePromptCacheWrite || 0).toBe(
+        priceDefinition?.promptCacheWriteTokens || 0,
     );
     expect(event.tokenPricePromptAudio).toBe(
         priceDefinition?.promptAudioTokens || 0,

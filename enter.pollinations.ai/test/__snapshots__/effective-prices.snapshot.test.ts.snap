@@ -13,11 +13,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude": {
     "cost": {
       "completionTextTokens": 0.0000165,
+      "promptCacheWriteTokens": 0.000004125,
       "promptCachedTokens": 3.3e-7,
       "promptTextTokens": 0.0000033,
     },
     "price": {
       "completionTextTokens": 0.0000165,
+      "promptCacheWriteTokens": 0.000004125,
       "promptCachedTokens": 3.3e-7,
       "promptTextTokens": 0.0000033,
     },
@@ -25,11 +27,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-fast": {
     "cost": {
       "completionTextTokens": 0.0000055,
+      "promptCacheWriteTokens": 0.000001375,
       "promptCachedTokens": 1.1e-7,
       "promptTextTokens": 0.0000011,
     },
     "price": {
       "completionTextTokens": 0.0000055,
+      "promptCacheWriteTokens": 0.000001375,
       "promptCachedTokens": 1.1e-7,
       "promptTextTokens": 0.0000011,
     },
@@ -37,11 +41,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-large": {
     "cost": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
     "price": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
@@ -49,13 +55,29 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "claude-opus-4.7": {
     "cost": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
     },
     "price": {
       "completionTextTokens": 0.0000275,
+      "promptCacheWriteTokens": 0.000006875,
       "promptCachedTokens": 5.5e-7,
       "promptTextTokens": 0.0000055,
+    },
+  },
+  "claude-opus-4.8": {
+    "cost": {
+      "completionTextTokens": 0.000025,
+      "promptCacheWriteTokens": 0.00000625,
+      "promptCachedTokens": 5e-7,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000375,
+      "promptCacheWriteTokens": 0.000009375,
+      "promptCachedTokens": 7.5e-7,
+      "promptTextTokens": 0.0000075,
     },
   },
   "cohere-embed-v4": {
@@ -304,6 +326,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.00000125,
       "promptImageTokens": 0.000008,
       "promptTextTokens": 0.000005,
+    },
+  },
+  "gpt-realtime-2": {
+    "cost": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 4e-7,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionAudioTokens": 0.000064,
+      "completionTextTokens": 0.000024,
+      "promptAudioTokens": 0.000032,
+      "promptCachedTokens": 4e-7,
+      "promptImageTokens": 0.000005,
+      "promptTextTokens": 0.000004,
     },
   },
   "gptimage": {
@@ -732,14 +772,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.036,
     },
   },
+  "perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.0000225,
+      "promptTextTokens": 0.0000045,
+    },
+  },
+  "perplexity-deep": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "perplexity-fast": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.000001,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "perplexity-reasoning": {
@@ -748,8 +808,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.000008,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.000012,
+      "promptTextTokens": 0.000003,
     },
   },
   "polly": {
@@ -902,6 +962,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0525,
+    },
+  },
+  "step-3.5-flash": {
+    "cost": {
+      "completionTextTokens": 3e-7,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 9e-8,
+    },
+    "price": {
+      "completionTextTokens": 3e-7,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 9e-8,
+    },
+  },
+  "step-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 4e-8,
+      "promptTextTokens": 2e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 4e-8,
+      "promptTextTokens": 2e-7,
     },
   },
   "universal-2": {

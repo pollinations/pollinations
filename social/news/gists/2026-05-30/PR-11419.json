@@ -1,0 +1,35 @@
+{
+  "pr_number": 11419,
+  "title": "Add GrowthKit Studio from JCode to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11419",
+  "merged_at": "2026-05-30T13:43:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [GrowthKit Studio from JCode](https://growthkit.jcode.be) to business\n- GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports.\n\nFixes #11415",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Growing the business garden",
+    "blurb": "GrowthKit Studio by JCode just sprouted in our community greenhouse! They're using our LLM backend to generate comprehensive Business Kit reports.",
+    "summary": "Added GrowthKit Studio by JCode to the community apps showcase, highlighting its use of Pollinations.ai as an LLM backend for generating Business Kit reports.",
+    "impact": "Users can now discover GrowthKit Studio in the community directory and see a real-world example of Pollinations powering automated business reporting.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "business",
+      "llm"
+    ],
+    "visual_concept": "The PR is about 'GrowthKit Studio' (business, growth, reports) joining the community garden (Greenhouse). Visuals: Polly the bee wearing a tiny business accessory (like a tie or glasses), watering a 'business' plant that sprouts little charts or reports in a cozy greenhouse setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny red necktie, happily watering a glowing code-plant that is sprouting tiny bar charts and business reports from its leaves. A chunky retro computer monitor in the background displays a green upward trend line. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-30/PR-11419.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny red necktie, happily watering a glowing code-plant that is sprouting tiny bar charts and business reports from its leaves. A chunky retro computer monitor in the background displays a green upward trend line. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-30T13:44:42.359908+00:00",
+  "app_name": "GrowthKit Studio from JCode",
+  "app_url": "https://growthkit.jcode.be"
+}

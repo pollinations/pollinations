@@ -5,9 +5,7 @@ export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 export type PollenPack = {
     packKey: PollenPackKey;
     amountUsd: number;
-    discountPercent: number;
-    priceUsd: number;
-    priceCents: number;
+    bonusPollen: number;
     pollenGrant: number;
     checkoutName: string;
     checkoutDescription: string;
@@ -19,18 +17,18 @@ const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
-// `amountUsd` is the nominal pack size: 1 pollen ≈ $1 before discounts.
+// USD is the canonical reference: 1 pollen ≈ $1.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
     packKey: PollenPackKey;
     amountUsd: number;
-    discountPercent: number;
+    bonusPollen: number;
 }> = [
-    { packKey: "p2", amountUsd: 2, discountPercent: 0 },
-    { packKey: "p5", amountUsd: 5, discountPercent: 15 },
-    { packKey: "p10", amountUsd: 10, discountPercent: 20 },
-    { packKey: "p20", amountUsd: 20, discountPercent: 25 },
-    { packKey: "p50", amountUsd: 50, discountPercent: 30 },
-    { packKey: "p100", amountUsd: 100, discountPercent: 35 },
+    { packKey: "p2", amountUsd: 2, bonusPollen: 0 },
+    { packKey: "p5", amountUsd: 5, bonusPollen: 1 },
+    { packKey: "p10", amountUsd: 10, bonusPollen: 3 },
+    { packKey: "p20", amountUsd: 20, bonusPollen: 8 },
+    { packKey: "p50", amountUsd: 50, bonusPollen: 25 },
+    { packKey: "p100", amountUsd: 100, bonusPollen: 60 },
 ];
 
 const PACK_KEY_SET = new Set<PollenPackKey>(
@@ -54,23 +52,20 @@ export const formatPollenPackPriceUsd = (value: number): string =>
     });
 
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
-    ({ packKey, amountUsd, discountPercent }) => {
-        const pollenGrant = amountUsd;
-        const priceCents = Math.round(
-            amountUsd * 100 * (1 - discountPercent / 100),
-        );
-        const priceUsd = priceCents / 100;
-        const discountSuffix =
-            discountPercent > 0 ? ` (${discountPercent}% off)` : "";
-        const checkoutName = `🪷 ${formatPollenPackValue(pollenGrant)} Pollen`;
-        const checkoutDescription = `Tiny bits of creative energy for pollinations.ai 🌱 ${formatPollenPackValue(pollenGrant)} Pollen for ${formatPollenPackPriceUsd(priceUsd)}${discountSuffix}. Feedback: ${CHECKOUT_FEEDBACK_URL}`;
+    ({ packKey, amountUsd, bonusPollen }) => {
+        const pollenGrant = amountUsd + bonusPollen;
+        const hasBonus = bonusPollen > 0;
+        const checkoutName = hasBonus
+            ? `🪷 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`
+            : `🪷 ${formatPollenPackValue(amountUsd)} Pollen`;
+        const checkoutDescription = hasBonus
+            ? `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`
+            : `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`;
 
         return {
             packKey,
             amountUsd,
-            discountPercent,
-            priceUsd,
-            priceCents,
+            bonusPollen,
             pollenGrant,
             checkoutName,
             checkoutDescription,
@@ -86,8 +81,9 @@ export const isPollenPackKey = (value: string): value is PollenPackKey =>
 export const getPollenPackByKey = (packKey: string): PollenPack | undefined =>
     POLLEN_PACKS.find((pack) => pack.packKey === packKey);
 
-// Amount-based lookup is kept only for auto-top-up, whose enrollment API stores
-// the nominal pack amount as packAmountUsd. The checkout route is packKey-only.
+// Amount-based lookup is kept only for auto-top-up, whose enrollment API is
+// genuinely amount-based (amountUsd as the user-facing knob). The checkout
+// route is packKey-only.
 //
 // Accepts nullable input because auto-top-up rows often carry `number | null`
 // from D1 / `number | undefined` from inbound request bodies; returning
@@ -100,10 +96,14 @@ export const getPollenPackByAmount = (
         : undefined;
 
 export const describePollenPack = (pack: PollenPack): string => {
-    const discountSuffix =
-        pack.discountPercent > 0 ? ` (${pack.discountPercent}% off)` : "";
-    return `${formatPollenPackValue(pack.pollenGrant)} pollen for ${formatPollenPackPriceUsd(pack.priceUsd)}${discountSuffix}`;
+    const bonusSuffix =
+        pack.bonusPollen > 0
+            ? ` (+${formatPollenPackValue(pack.bonusPollen)} bonus)`
+            : "";
+    return `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusSuffix}`;
 };
 
-export const getPackDiscountPercent = (pack: PollenPack): number =>
-    pack.discountPercent;
+export const getPackBonusPercent = (pack: PollenPack): number =>
+    pack.amountUsd > 0
+        ? Math.round((pack.bonusPollen / pack.amountUsd) * 100)
+        : 0;

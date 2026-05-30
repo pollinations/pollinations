@@ -161,7 +161,7 @@ describe("buildLocalizedPrices", () => {
             const entry = prices[pack.packKey];
             expect(entry).toBeDefined();
             expect(entry.amount).toBe(
-                localizeUsdAmount(pack.priceUsd, 1.1617, "eur"),
+                localizeUsdAmount(pack.amountUsd, 1.1617, "eur"),
             );
             expect(entry.formatted).toBe(
                 formatLocalAmount(entry.amount, "eur"),

@@ -94,10 +94,9 @@ export const stripeRoutes = new Hono<Env>()
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
-                packPriceUsd: String(pack.priceUsd),
-                packPriceCents: String(pack.priceCents),
+                packAmountUsd: String(pack.amountUsd),
                 packPollenGrant: String(pack.pollenGrant),
-                packDiscountPercent: String(pack.discountPercent),
+                packBonusPollen: String(pack.bonusPollen),
                 cohort: cohort.id,
             };
 
@@ -108,7 +107,7 @@ export const stripeRoutes = new Hono<Env>()
                     {
                         price_data: {
                             currency: "usd",
-                            unit_amount: pack.priceCents,
+                            unit_amount: pack.amountUsd * 100,
                             tax_behavior: "inclusive",
                             product_data: {
                                 name: pack.checkoutName,
@@ -168,16 +167,14 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * GET /api/stripe/products
      * List available packs. Returns packKey (canonical identifier for the
-     * /checkout/:packKey route), pollen grant, and discounted USD price.
+     * /checkout/:packKey route) plus the USD amount for display.
      */
     .get("/products", async (c) => {
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
-                priceUsd: pack.priceUsd,
-                priceCents: pack.priceCents,
-                discountPercent: pack.discountPercent,
+                bonusPollen: pack.bonusPollen,
                 pollenGrant: pack.pollenGrant,
                 description: describePollenPack(pack),
             })),

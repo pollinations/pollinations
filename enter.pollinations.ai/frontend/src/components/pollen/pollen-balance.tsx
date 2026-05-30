@@ -369,7 +369,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             content={`Buy ${formatPollenPackValue(selectedPack.pollenGrant)} pollen for ${
                                 localizedPrices?.prices[selectedPack.packKey]
                                     ?.formatted ??
-                                formatPollenPackPriceUsd(selectedPack.priceUsd)
+                                formatPollenPackPriceUsd(selectedPack.amountUsd)
                             }`}
                             displayContents
                         >

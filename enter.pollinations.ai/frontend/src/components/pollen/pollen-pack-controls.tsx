@@ -2,7 +2,7 @@ import { cn } from "@frontend/lib/cn.ts";
 import {
     formatPollenPackPriceUsd,
     formatPollenPackValue,
-    getPackDiscountPercent,
+    getPackBonusPercent,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -27,16 +27,15 @@ const packPriceLabel = (
     localizedPrices: LocalizedPackPrices,
 ): string =>
     localizedPrices?.prices[pack.packKey]?.formatted ??
-    formatPollenPackPriceUsd(pack.priceUsd);
+    formatPollenPackPriceUsd(pack.amountUsd);
 
 const formatPackAriaLabel = (
     pack: PollenPack,
     localizedPrices: LocalizedPackPrices,
 ): string => {
-    const discountPercent = getPackDiscountPercent(pack);
-    const discountLabel =
-        discountPercent > 0 ? `, ${discountPercent}% off` : "";
-    return `${formatPollenPackValue(pack.pollenGrant)} pollen, about ${packPriceLabel(pack, localizedPrices)}${discountLabel}`;
+    const bonusPercent = getPackBonusPercent(pack);
+    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
+    return `${formatPollenPackValue(pack.pollenGrant)} pollen, about ${packPriceLabel(pack, localizedPrices)}${bonusLabel}`;
 };
 
 type PollenPackSliderProps = {
@@ -96,8 +95,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             pack.amountUsd === selectedPack?.amountUsd;
                         const isFirst = index === 0;
                         const isLast = lastIndex > 0 && index === lastIndex;
-                        const discountPercent = getPackDiscountPercent(pack);
-                        const hasDiscount = discountPercent > 0;
+                        const bonusPercent = getPackBonusPercent(pack);
+                        const hasBonus = bonusPercent > 0;
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -176,9 +175,9 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                     )}
                                                 </span>
                                             </Chip>
-                                            {hasDiscount && (
+                                            {hasBonus && (
                                                 <span className="text-[11px] font-semibold leading-none text-amber-700">
-                                                    {discountPercent}% off
+                                                    +{bonusPercent}% bonus
                                                 </span>
                                             )}
                                         </span>

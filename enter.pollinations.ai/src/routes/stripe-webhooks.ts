@@ -315,7 +315,7 @@ const handleCheckoutSessionCompleted = async (
 
     // Prefer the grant snapshotted into session metadata at checkout creation
     // time; this guarantees the user is credited exactly what they saw, even
-    // when pack prices or grants change between session creation and payment.
+    // when bonus values change between session creation and payment.
     const metadataGrantValue = metadata.packPollenGrant;
     const metadataGrant = metadataGrantValue
         ? Number.parseFloat(metadataGrantValue)
@@ -367,7 +367,7 @@ const handleCheckoutSessionCompleted = async (
     }
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: ${pack.pollenGrant} pollen, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
     );
 
     return {

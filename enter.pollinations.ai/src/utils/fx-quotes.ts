@@ -189,7 +189,12 @@ export function buildLocalizedPrices(
 ): Record<PollenPackKey, LocalizedPackPrice> {
     const prices = {} as Record<PollenPackKey, LocalizedPackPrice>;
     for (const pack of packs) {
-        const amount = localizeUsdAmount(pack.priceUsd, rate, currency, markup);
+        const amount = localizeUsdAmount(
+            pack.amountUsd,
+            rate,
+            currency,
+            markup,
+        );
         prices[pack.packKey] = {
             amount,
             formatted: formatLocalAmount(amount, currency),

@@ -4,7 +4,7 @@ import type { Env } from "../env.ts";
 
 const REPO = "pollinations/pollinations";
 const QUEST_LABELS = ["POLLEN-QUEST", "DEV-QUEST"] as const;
-const CACHE_KEY = "quests:overview:v1";
+const CACHE_KEY = "quests:overview:v2";
 const CACHE_TTL = 10 * 60;
 const GITHUB_HEADERS = {
     Accept: "application/vnd.github+json",
@@ -44,6 +44,10 @@ type GitHubTimelineEvent = {
     };
 };
 
+type GitHubPullRequest = {
+    merged_at: string | null;
+};
+
 export type QuestLinkedPullRequest = {
     number: number;
     title: string;
@@ -51,6 +55,7 @@ export type QuestLinkedPullRequest = {
     state: "open" | "closed";
     author: string | null;
     referencedAt: string | null;
+    mergedAt: string | null;
 };
 
 export type QuestOverviewItem = {
@@ -176,9 +181,14 @@ function normalizeLabels(labels: Array<string | { name?: string }>): string[] {
 async function fetchLinkedPullRequests(
     issueNumber: number,
 ): Promise<QuestLinkedPullRequest[]> {
-    const events = await githubJson<GitHubTimelineEvent[]>(
-        `https://api.github.com/repos/${REPO}/issues/${issueNumber}/timeline?per_page=100`,
-    );
+    let events: GitHubTimelineEvent[];
+    try {
+        events = await githubJson<GitHubTimelineEvent[]>(
+            `https://api.github.com/repos/${REPO}/issues/${issueNumber}/timeline?per_page=100`,
+        );
+    } catch {
+        return [];
+    }
     const byNumber = new Map<number, QuestLinkedPullRequest>();
 
     for (const event of events) {
@@ -192,10 +202,21 @@ async function fetchLinkedPullRequests(
             state: pr.state,
             author: pr.user?.login ?? null,
             referencedAt: event.created_at ?? null,
+            mergedAt: null,
         });
     }
 
-    return [...byNumber.values()].sort((a, b) => b.number - a.number);
+    const pullRequests = await Promise.all(
+        [...byNumber.values()].map(async (pr) => {
+            if (pr.state !== "closed") return pr;
+            return {
+                ...pr,
+                mergedAt: await fetchPullRequestMergedAt(pr.number),
+            };
+        }),
+    );
+
+    return pullRequests.sort((a, b) => b.number - a.number);
 }
 
 async function githubJson<T>(url: string): Promise<T> {
@@ -204,6 +225,19 @@ async function githubJson<T>(url: string): Promise<T> {
         throw new Error(`GitHub request failed: ${response.status} ${url}`);
     }
     return (await response.json()) as T;
+}
+
+async function fetchPullRequestMergedAt(
+    pullRequestNumber: number,
+): Promise<string | null> {
+    try {
+        const pullRequest = await githubJson<GitHubPullRequest>(
+            `https://api.github.com/repos/${REPO}/pulls/${pullRequestNumber}`,
+        );
+        return pullRequest.merged_at;
+    } catch {
+        return null;
+    }
 }
 
 function extractRewardPollen(body: string): number | null {

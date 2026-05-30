@@ -493,7 +493,8 @@ describe("POST /v1/embeddings", () => {
             expect(response.status).toBe(400);
             await expect(response.json()).resolves.toMatchObject({
                 error: {
-                    message: "Private or credentialed media URLs are not allowed",
+                    message:
+                        "Private or credentialed media URLs are not allowed",
                 },
             });
             expect(mocks.vertex.state.requests).toHaveLength(0);

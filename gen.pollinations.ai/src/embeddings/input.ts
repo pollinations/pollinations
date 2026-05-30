@@ -27,7 +27,9 @@ function isBlockedRemoteHost(hostname: string): boolean {
     const parts = normalized.split(".").map(Number);
     return (
         parts.length === 4 &&
-        parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+        parts.every(
+            (part) => Number.isInteger(part) && part >= 0 && part <= 255,
+        )
     );
 }
 
@@ -76,7 +78,9 @@ async function readBoundedResponse(
     if (!reader) {
         const buffer = await response.arrayBuffer();
         if (buffer.byteLength > maxBytes) {
-            badRequest(`Media too large: ${buffer.byteLength} bytes (max ${maxBytes})`);
+            badRequest(
+                `Media too large: ${buffer.byteLength} bytes (max ${maxBytes})`,
+            );
         }
         return buffer;
     }

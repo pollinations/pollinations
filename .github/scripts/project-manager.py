@@ -543,13 +543,9 @@ def main():
         else:
             log_error("Apps project not configured")
             return
-    is_quest = (
-        "POLLEN-QUEST" in existing_labels
-        or "DRAFT-QUEST" in existing_labels
-        or bool(re.search(r"\[\s*🎯?\s*QUEST\b", ISSUE_TITLE, re.IGNORECASE))
-    )
-    if is_quest:
-        log_debug("Detected quest (label or title); routing to Dev (label-only quest model)")
+    if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
+        log_debug("Found quest label; not project-manager's responsibility, skipping")
+        return
 
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
@@ -596,11 +592,7 @@ def main():
     
     project_key = classification["project"].lower()
 
-    if is_quest:
-        if project_key != "dev":
-            log_debug(f"Quest issue #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (quests live in Dev)")
-        project_key = "dev"
-    elif IS_PULL_REQUEST:
+    if IS_PULL_REQUEST:
         if project_key != "dev":
             log_debug(f"PR #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (PRs always route to dev)")
         project_key = "dev"

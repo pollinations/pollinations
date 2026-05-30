@@ -19,8 +19,8 @@ SQL >
         multiIf(
             selected_meter_slug = 'v1:meter:pack', 'paid',
             selected_meter_slug = 'local:pack', 'paid',
-            selected_meter_slug = 'v1:meter:tier', 'tier',
-            selected_meter_slug = 'local:tier', 'tier',
+            selected_meter_slug = 'v1:meter:tier', 'reward',
+            selected_meter_slug = 'local:tier', 'reward',
             splitByChar(':', selected_meter_slug)[-1]
         ) as pollen_meter,
         token_count_prompt_text as input_text_tokens,

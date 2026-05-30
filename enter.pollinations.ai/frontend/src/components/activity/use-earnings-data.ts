@@ -12,7 +12,7 @@ export type DeveloperEarningsRow = {
     earned_pollen: number;
     charged_pollen: number;
     earned_paid_pollen: number;
-    earned_tier_pollen: number;
+    earned_reward_pollen: number;
     markup_rate: number;
     unique_user_count: number;
 };
@@ -28,7 +28,7 @@ type TopApp = {
     requests: number;
     pollen: number;
     paidPollen: number;
-    tierPollen: number;
+    rewardPollen: number;
     uniqueUsers: number;
 };
 
@@ -40,7 +40,7 @@ type EarningsDataResult = {
     stats: {
         totalPollen: number;
         totalPaid: number;
-        totalTier: number;
+        totalReward: number;
         activeUsers: number;
         appCount: number;
         topApp: TopApp | null;
@@ -131,7 +131,7 @@ export function useEarningsData(
             requests: number;
             pollen: number;
             paid: number;
-            tier: number;
+            reward: number;
             byApp: Map<
                 string,
                 { label: string; requests: number; pollen: number }
@@ -145,13 +145,13 @@ export function useEarningsData(
                 requests: 0,
                 pollen: 0,
                 paid: 0,
-                tier: 0,
+                reward: 0,
                 byApp: new Map(),
             };
             cur.requests += r.request_count;
             cur.pollen += r.earned_pollen;
             cur.paid += r.earned_paid_pollen;
-            cur.tier += r.earned_tier_pollen;
+            cur.reward += r.earned_reward_pollen;
 
             const appData = cur.byApp.get(r.app_key_id) || {
                 label: r.app_name,
@@ -176,7 +176,7 @@ export function useEarningsData(
                 requests: 0,
                 pollen: 0,
                 paid: 0,
-                tier: 0,
+                reward: 0,
                 byApp: new Map<
                     string,
                     { label: string; requests: number; pollen: number }
@@ -217,7 +217,7 @@ export function useEarningsData(
                     }),
                 }),
                 value: d.pollen,
-                tierValue: d.tier,
+                rewardValue: d.reward,
                 paidValue: d.paid,
                 timestamp: date,
                 modelBreakdown: appBreakdown,
@@ -228,7 +228,7 @@ export function useEarningsData(
     const stats = useMemo(() => {
         const totalPollen = globalSummary?.earned_pollen ?? 0;
         const totalPaid = globalSummary?.earned_paid_pollen ?? 0;
-        const totalTier = globalSummary?.earned_tier_pollen ?? 0;
+        const totalReward = globalSummary?.earned_reward_pollen ?? 0;
         const activeUsers = globalSummary?.unique_user_count ?? 0;
         const appCount = perApp.length;
 
@@ -242,7 +242,7 @@ export function useEarningsData(
                   requests: topAppRow.request_count,
                   pollen: topAppRow.earned_pollen,
                   paidPollen: topAppRow.earned_paid_pollen,
-                  tierPollen: topAppRow.earned_tier_pollen,
+                  rewardPollen: topAppRow.earned_reward_pollen,
                   uniqueUsers: topAppRow.unique_user_count,
               }
             : null;
@@ -250,7 +250,7 @@ export function useEarningsData(
         return {
             totalPollen,
             totalPaid,
-            totalTier,
+            totalReward,
             activeUsers,
             appCount,
             topApp,

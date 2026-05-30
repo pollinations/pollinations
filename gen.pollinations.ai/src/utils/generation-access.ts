@@ -44,8 +44,8 @@ export async function checkBalance(
 
     if (!canCoverEstimatedCharge(userBalance, estimatedBasePrice, isPaidOnly)) {
         const available = isPaidOnly
-            ? userBalance.packBalance
-            : Math.max(userBalance.tierBalance, userBalance.packBalance);
+            ? userBalance.paidBalance
+            : Math.max(userBalance.rewardBalance, userBalance.paidBalance);
         throw new HTTPException(402, {
             message: `Insufficient balance. This request costs ~${estimatedBasePrice.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });
@@ -54,6 +54,7 @@ export async function checkBalance(
     balance.balanceCheckResult = createBalanceCheckResult(
         userBalance,
         isPaidOnly,
+        estimatedBasePrice,
     );
 }
 

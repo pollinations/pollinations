@@ -19,7 +19,7 @@ type UsageDataResult = {
     stats: {
         totalRequests: number;
         totalPollen: number;
-        tierPollen: number;
+        rewardPollen: number;
         paidPollen: number;
         averagePollenPerRequest: number;
         activeModelCount: number;
@@ -112,8 +112,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         type DayBucket = {
             requests: number;
             pollen: number;
-            tierRequests: number;
-            tierPollen: number;
+            rewardRequests: number;
+            rewardPollen: number;
             paidRequests: number;
             paidPollen: number;
             byModel: Map<string, { requests: number; pollen: number }>;
@@ -125,8 +125,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const cur = buckets.get(dateKey) || {
                 requests: 0,
                 pollen: 0,
-                tierRequests: 0,
-                tierPollen: 0,
+                rewardRequests: 0,
+                rewardPollen: 0,
                 paidRequests: 0,
                 paidPollen: 0,
                 byModel: new Map(),
@@ -135,10 +135,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             cur.requests += r.request_count || 0;
             cur.pollen += pollen;
 
-            const isTier = r.pollen_meter === "tier";
-            if (isTier) {
-                cur.tierRequests += r.request_count || 0;
-                cur.tierPollen += pollen;
+            const isReward = r.pollen_meter === "reward";
+            if (isReward) {
+                cur.rewardRequests += r.request_count || 0;
+                cur.rewardPollen += pollen;
             } else {
                 cur.paidRequests += r.request_count || 0;
                 cur.paidPollen += pollen;
@@ -167,8 +167,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
-                tierRequests: 0,
-                tierPollen: 0,
+                rewardRequests: 0,
+                rewardPollen: 0,
                 paidRequests: 0,
                 paidPollen: 0,
                 byModel: new Map(),
@@ -187,8 +187,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 })
                 .sort((a, b) => b.requests - a.requests);
 
-            const tierKey =
-                filters.metric === "requests" ? "tierRequests" : "tierPollen";
+            const rewardKey =
+                filters.metric === "requests"
+                    ? "rewardRequests"
+                    : "rewardPollen";
             const paidKey =
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
@@ -218,7 +220,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                     }),
                 }),
                 value: d[filters.metric],
-                tierValue: d[tierKey],
+                rewardValue: d[rewardKey],
                 paidValue: d[paidKey],
                 timestamp: date,
                 modelBreakdown,
@@ -234,11 +236,11 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             (s: number, r: DailyUsageRecord) => s + pollenOf(r),
             0,
         );
-        const tierPollen = filtered
-            .filter((r) => r.pollen_meter === "tier")
+        const rewardPollen = filtered
+            .filter((r) => r.pollen_meter === "reward")
             .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const paidPollen = filtered
-            .filter((r) => r.pollen_meter !== "tier")
+            .filter((r) => r.pollen_meter !== "reward")
             .reduce((s: number, r: DailyUsageRecord) => s + pollenOf(r), 0);
         const modelTotals = new Map<
             string,
@@ -307,7 +309,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             stats: {
                 totalRequests: totalReq,
                 totalPollen,
-                tierPollen,
+                rewardPollen,
                 paidPollen,
                 averagePollenPerRequest:
                     totalReq > 0 ? totalPollen / totalReq : 0,

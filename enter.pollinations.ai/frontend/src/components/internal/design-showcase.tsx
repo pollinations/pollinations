@@ -379,7 +379,7 @@ const ChipsDemo: FC = () => (
             </ChipRow>
             <ChipRow label="Balance identity (activity / usage)">
                 <Chip intent="paid">💳 Paid</Chip>
-                <Chip intent="tier">🌱 Tier</Chip>
+                <Chip intent="reward">🌱 Reward</Chip>
             </ChipRow>
             <ChipRow label="Neutral (icon container)">
                 <Chip intent="neutral" size="sm">
@@ -987,7 +987,7 @@ function buildSampleChartData(): DataPoint[] {
         return {
             label,
             value: tiers[i] + paids[i],
-            tierValue: tiers[i],
+            rewardValue: tiers[i],
             paidValue: paids[i],
             timestamp: ts,
             fullDate: ts.toISOString().slice(0, 10),
@@ -998,7 +998,7 @@ function buildSampleChartData(): DataPoint[] {
 const ChartDemo: FC = () => (
     <Section
         title="Chart"
-        caption="Stacked bar chart used by the Activity page. Bar fills come from PAID_COLOR + TIER_COLOR in lib/balance-colors.ts — currently the same oklch values as bg-paid-pale + bg-tier-pale, so the wallet card and chart bar share one visual identity."
+        caption="Stacked bar chart used by the Activity page. Bar fills come from PAID_COLOR + REWARD_COLOR in lib/balance-colors.ts — currently the same oklch values as bg-paid-pale + bg-tier-pale, so the wallet card and chart bar share one visual identity."
     >
         <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <Chart

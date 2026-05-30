@@ -30,7 +30,7 @@ User pays:         1.25 pollen
 You receive:       0.25 pollen
 ```
 
-Credits land in the same balance type the user paid from: tier balance when the request used tier balance, paid balance when it used paid balance.
+Credits land in the same balance type the user paid from: reward balance when the request used reward balance, paid balance when it used paid balance.
 
 Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 

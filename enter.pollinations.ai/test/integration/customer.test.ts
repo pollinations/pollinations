@@ -31,7 +31,7 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return tier, pack, and lastTierGrant", async ({
+test("/balance should return reward, paid, and lastTierGrant", async ({
     sessionToken,
     mocks,
 }) => {
@@ -50,17 +50,18 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     const session = await sessionResponse.json();
     const userId = session.user.id;
 
-    // Set up test balances for the user
+    // Set up raw stored balances for the user.
     const testBalances = {
-        tierBalance: 10.5,
-        packBalance: 25.3,
+        rewardBalance: 10.5,
+        paidBalance: 25.3,
     };
     const lastTierGrant = Date.now() - 3600000; // 1 hour ago
 
     await db
         .update(userTable)
         .set({
-            ...testBalances,
+            tierBalance: testBalances.rewardBalance,
+            packBalance: testBalances.paidBalance,
             tier: "seed",
             lastTierGrant,
         })
@@ -77,15 +78,15 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     expect(response.status).toBe(200);
     const data = await response.json();
 
-    // Verify all balance fields are returned correctly
+    // Verify all public balance fields are returned correctly.
     expect(data).toEqual({
-        tierBalance: testBalances.tierBalance,
-        packBalance: testBalances.packBalance,
+        rewardBalance: testBalances.rewardBalance,
+        paidBalance: testBalances.paidBalance,
         lastTierGrant,
     });
 });
 
-test("/balance should return raw tier and pack balances regardless of tier", async ({
+test("/balance should return reward and paid balances regardless of tier", async ({
     sessionToken,
     mocks,
 }) => {
@@ -125,8 +126,8 @@ test("/balance should return raw tier and pack balances regardless of tier", asy
 
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({
-            tierBalance: 1,
-            packBalance: 3,
+            rewardBalance: 1,
+            paidBalance: 3,
             lastTierGrant: null,
         });
     }
@@ -172,8 +173,8 @@ test("/balance should return zero balances for new users", async ({
     const data = await response.json();
 
     expect(data).toEqual({
-        tierBalance: 0,
-        packBalance: 0,
+        rewardBalance: 0,
+        paidBalance: 0,
         lastTierGrant: null,
     });
 });

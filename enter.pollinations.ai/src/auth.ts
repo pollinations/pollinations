@@ -103,7 +103,7 @@ export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
 /**
- * Plugin to initialize tier balance for new users in D1.
+ * Plugin to initialize reward balance for new users in D1.
  */
 function tierPlugin(
     env: Cloudflare.Env,
@@ -227,8 +227,8 @@ function onAfterSessionCreate(
 }
 
 /**
- * Set initial tier balance in D1 after user creation.
- * This guarantees new users get their default tier pollen.
+ * Set initial reward balance in D1 after user creation.
+ * This guarantees new users get their default tier reward drop.
  */
 function onAfterUserCreate(
     env: Cloudflare.Env,

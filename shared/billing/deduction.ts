@@ -6,36 +6,41 @@ import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
 export type Bucket = BalanceBucket;
 
 const BUCKET_COLUMNS = {
-    tier: userTable.tierBalance,
-    pack: userTable.packBalance,
+    reward: userTable.tierBalance,
+    paid: userTable.packBalance,
 } as const satisfies Record<Bucket, unknown>;
+
+const BUCKET_STORAGE_FIELDS = {
+    reward: "tierBalance",
+    paid: "packBalance",
+} as const satisfies Record<Bucket, "tierBalance" | "packBalance">;
 
 /**
  * Atomically deducts pollen from user balance.
  *
- * Regular requests are binary: tier pays when it can cover the actual charge,
- * pack pays when tier cannot cover and pack is positive, and regular overage
- * falls back to tier when pack is empty.
- * Paid-only requests always deduct from pack and never touch tier.
+ * Regular requests are binary: reward pays when it can cover the actual charge,
+ * paid pays when reward cannot cover and paid is positive, and regular overage
+ * falls back to reward when paid is empty.
+ * Paid-only requests always deduct from paid and never touch reward.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
     isPaidOnly = false,
-): Promise<{ ok: boolean; bucket: Bucket | null; packBalance: number | null }> {
-    if (amount <= 0) return { ok: true, bucket: null, packBalance: null };
+): Promise<{ ok: boolean; bucket: Bucket | null; paidBalance: number | null }> {
+    if (amount <= 0) return { ok: true, bucket: null, paidBalance: null };
 
-    const row = await db.get<{ bucket: Bucket; packBalance: number | null }>(
+    const row = await db.get<{ bucket: Bucket; paidBalance: number | null }>(
         sql`
         WITH decision AS MATERIALIZED (
             SELECT
                 id,
                 CASE
-                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
-                    WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
-                    WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
-                    ELSE 'tier'
+                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'paid'
+                    WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'reward'
+                    WHEN COALESCE(pack_balance, 0) > 0 THEN 'paid'
+                    ELSE 'reward'
                 END AS bucket
             FROM ${userTable}
             WHERE id = ${userId}
@@ -43,26 +48,26 @@ export async function atomicDeductUserBalance(
         UPDATE ${userTable}
         SET
             tier_balance = CASE
-                WHEN (SELECT bucket FROM decision) = 'tier'
+                WHEN (SELECT bucket FROM decision) = 'reward'
                     THEN COALESCE(tier_balance, 0) - ${amount}
                 ELSE tier_balance
             END,
             pack_balance = CASE
-                WHEN (SELECT bucket FROM decision) = 'pack'
+                WHEN (SELECT bucket FROM decision) = 'paid'
                     THEN COALESCE(pack_balance, 0) - ${amount}
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
         RETURNING
             (SELECT bucket FROM decision) AS bucket,
-            pack_balance AS packBalance
+            pack_balance AS paidBalance
     `,
     );
 
     return {
         ok: !!row,
         bucket: row?.bucket ?? null,
-        packBalance: row?.packBalance ?? null,
+        paidBalance: row?.paidBalance ?? null,
     };
 }
 
@@ -108,9 +113,10 @@ export async function atomicAdjustUserBalance(
     if (amount === 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
+    const storageField = BUCKET_STORAGE_FIELDS[bucket];
     const rows = await db
         .update(userTable)
-        .set({ [`${bucket}Balance`]: sql`COALESCE(${column}, 0) + ${amount}` })
+        .set({ [storageField]: sql`COALESCE(${column}, 0) + ${amount}` })
         .where(sql`${userTable.id} = ${userId}`)
         .returning({ newBalance: column });
 
@@ -136,7 +142,7 @@ export async function atomicCreditUserBalance(
  *
  * @param db - Drizzle database instance
  * @param userId - User ID to get balances for
- * @returns Object with tier and pack balances
+ * @returns Object with reward and paid balances
  */
 export async function getUserBalances(
     db: DrizzleD1Database,
@@ -144,8 +150,8 @@ export async function getUserBalances(
 ): Promise<UserBalance> {
     const result = await db
         .select({
-            tierBalance: userTable.tierBalance,
-            packBalance: userTable.packBalance,
+            rewardBalance: userTable.tierBalance,
+            paidBalance: userTable.packBalance,
         })
         .from(userTable)
         .where(sql`${userTable.id} = ${userId}`)
@@ -153,7 +159,7 @@ export async function getUserBalances(
 
     const user = result[0];
     return {
-        tierBalance: user?.tierBalance ?? 0,
-        packBalance: user?.packBalance ?? 0,
+        rewardBalance: user?.rewardBalance ?? 0,
+        paidBalance: user?.paidBalance ?? 0,
     };
 }

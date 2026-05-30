@@ -1,4 +1,4 @@
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
+import { PAID_COLOR, REWARD_COLOR } from "@frontend/lib/balance-colors.ts";
 import { formatPollen } from "@frontend/lib/format-pollen.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,9 +12,9 @@ type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
-    /** Override bar colors. Defaults to the system paid/tier brand hex. */
+    /** Override bar colors. Defaults to the system paid/reward brand hex. */
     paidBarColor?: string;
-    tierBarColor?: string;
+    rewardBarColor?: string;
 };
 
 export const Chart: FC<ChartProps> = ({
@@ -22,7 +22,7 @@ export const Chart: FC<ChartProps> = ({
     metric,
     showModelBreakdown,
     paidBarColor = PAID_COLOR,
-    tierBarColor = TIER_COLOR,
+    rewardBarColor = REWARD_COLOR,
 }) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
@@ -105,17 +105,17 @@ export const Chart: FC<ChartProps> = ({
         const gap = (cw / data.length) * 0.3;
 
         const barData = data.map((d, i) => {
-            const tierHeight = (d.tierValue / niceMaxVal) * ch;
+            const rewardHeight = (d.rewardValue / niceMaxVal) * ch;
             const paidHeight = (d.paidValue / niceMaxVal) * ch;
             return {
                 x: pad.left + i * (barWidth + gap) + gap / 2,
                 y: pad.top + ch - (d.value / niceMaxVal) * ch,
                 width: barWidth,
                 height: (d.value / niceMaxVal) * ch,
-                tierHeight,
+                rewardHeight,
                 paidHeight,
-                tierY: pad.top + ch - tierHeight,
-                paidY: pad.top + ch - tierHeight - paidHeight,
+                rewardY: pad.top + ch - rewardHeight,
+                paidY: pad.top + ch - rewardHeight - paidHeight,
                 ...d,
             };
         });
@@ -247,26 +247,26 @@ export const Chart: FC<ChartProps> = ({
                     </>
                 )}
 
-                {/* Bars - Stacked: tier (teal) at bottom, paid (purple) on top */}
+                {/* Bars - Stacked: reward at bottom, paid on top */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
-                        {/* Tier segment (bottom) - teal */}
-                        {bar.tierHeight > 0 && (
+                        {/* Reward segment (bottom) */}
+                        {bar.rewardHeight > 0 && (
                             <rect
                                 x={bar.x}
                                 y={
-                                    bar.tierY -
-                                    (bar.tierHeight * animationProgress -
-                                        bar.tierHeight)
+                                    bar.rewardY -
+                                    (bar.rewardHeight * animationProgress -
+                                        bar.rewardHeight)
                                 }
                                 width={bar.width}
                                 height={Math.max(
                                     0,
-                                    bar.tierHeight * animationProgress,
+                                    bar.rewardHeight * animationProgress,
                                 )}
                                 rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
-                                    fill: tierBarColor,
+                                    fill: rewardBarColor,
                                     opacity: hovered === idx ? 0.85 : 1,
                                     transition: "opacity 0.15s ease-out",
                                 }}

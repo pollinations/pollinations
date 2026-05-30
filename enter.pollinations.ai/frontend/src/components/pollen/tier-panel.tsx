@@ -63,7 +63,7 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
             <p className="flex items-start gap-1.5">
                 <TrendUpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                    Higher tier → bigger hourly refill on your tier balance.
+                    Higher tier → bigger hourly drop into your reward balance.
                     <InfoTip
                         content={
                             <ul className="list-disc space-y-1 pl-4">

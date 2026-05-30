@@ -2,7 +2,7 @@ DESCRIPTION >
     Recent developer pollen earnings (BYOP markup) split by which balance the
     spending user paid from. `earned_paid_pollen` aggregates earnings from events
     where the user was charged from their paid balance;
-    `earned_tier_pollen` aggregates earnings from tier-side debits.
+    `earned_reward_pollen` aggregates earnings from reward-balance debits.
     Window is the last 7 days (rolling). Scoped to the requesting dev via
     `api_key_created_for_user_id` — earnings from deleted app keys are
     still attributed to the dev who owned the app.
@@ -14,7 +14,7 @@ SQL >
     %
     SELECT
         sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
-        sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen
+        sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_reward_pollen
     FROM generation_event
     WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
       AND markup_rate > 0

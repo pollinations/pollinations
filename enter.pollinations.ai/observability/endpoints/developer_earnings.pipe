@@ -4,7 +4,7 @@ DESCRIPTION >
     Daily rows have a non-empty `date`; rollup rows have empty `date`.
     Within rollups, the global row has empty `app_key_id`.
     Earnings per event = total_price - dev_price (the dev's markup take).
-    earned_paid_pollen and earned_tier_pollen split that earning by payer bucket.
+    earned_paid_pollen and earned_reward_pollen split that earning by payer bucket.
     Attribution uses the immutable `api_key_created_for_user_id` recorded on
     each event. Names come from a left join against the latest `d1_apikey`
     snapshot; events from deleted/unsynced apps fall back to `app_key_id`.
@@ -66,7 +66,7 @@ SQL >
         sum(base_price_pollen) AS base_price_pollen,
         sum(earned_pollen) AS earned_pollen,
         sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
-        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_reward_pollen,
         sum(charged_pollen) AS charged_pollen,
         avg(markup_rate) AS markup_rate,
         toUInt64(0) AS unique_user_count
@@ -83,7 +83,7 @@ SQL >
         sum(base_price_pollen) AS base_price_pollen,
         sum(earned_pollen) AS earned_pollen,
         sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
-        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_reward_pollen,
         sum(charged_pollen) AS charged_pollen,
         avg(markup_rate) AS markup_rate,
         uniq(user_id) AS unique_user_count
@@ -100,7 +100,7 @@ SQL >
         sum(base_price_pollen) AS base_price_pollen,
         sum(earned_pollen) AS earned_pollen,
         sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,
-        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen,
+        sumIf(earned_pollen, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_reward_pollen,
         sum(charged_pollen) AS charged_pollen,
         if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
         uniq(user_id) AS unique_user_count

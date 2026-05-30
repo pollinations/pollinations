@@ -4,7 +4,7 @@ DESCRIPTION >
 Per-model pollen revenue breakdown for successful requests, grouped by model and event type.
 Splits by which balance bucket actually paid:
   - charged_paid_pollen: successful requests charged to paid balance
-  - charged_tier_pollen: successful requests charged to tier allowance
+  - charged_reward_pollen: successful requests charged to reward balance
 Both are pollen sums sourced from `total_price`, which includes BYOP markup.
 PRIVATE: uses `tinybird_read` only (not `tinybird_read_public`) — exposes monetization
 data per model, not suitable for the public model monitor token.
@@ -19,7 +19,7 @@ SQL >
         count() as request_count,
         countIf(response_status >= 200 AND response_status < 300) as success_request_count,
         round(sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack') AND response_status >= 200 AND response_status < 300), 4) as charged_paid_pollen,
-        round(sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND response_status >= 200 AND response_status < 300), 4) as charged_tier_pollen
+        round(sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND response_status >= 200 AND response_status < 300), 4) as charged_reward_pollen
     FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
     GROUP BY resolved_model_requested, event_type

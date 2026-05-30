@@ -276,7 +276,7 @@ async function sendStripeEventToTinybird(
 
 /**
  * Handle successful checkout session completion.
- * Credits pollen to user's packBalance and persists observability fields.
+ * Credits pollen to the user's paid balance and persists observability fields.
  * Pollen amount is derived from the selected pack metadata.
  */
 const handleCheckoutSessionCompleted = async (
@@ -327,7 +327,7 @@ const handleCheckoutSessionCompleted = async (
     const db = drizzle(env.DB);
 
     const [user] = await db
-        .select({ id: userTable.id, packBalance: userTable.packBalance })
+        .select({ id: userTable.id })
         .from(userTable)
         .where(eq(userTable.id, userId))
         .limit(1);

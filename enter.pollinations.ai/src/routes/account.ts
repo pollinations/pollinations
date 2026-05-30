@@ -16,7 +16,7 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
-// Calculate next tier refill time (null for tiers with no refill).
+// Calculate next reward drop time (null for tiers with no drops).
 // Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
 function getNextRefillAt(tier?: string | null): string | null {
     const cadence = tier ? getTierCadence(tier) : "none";
@@ -485,7 +485,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Pollen balance bucket used: 'tier' = tier balance, 'paid' = paid balance",
+            "Pollen balance bucket used: 'reward' = reward balance, 'paid' = paid balance",
         ),
     request_count: z.number().describe("Number of requests"),
     spent_pollen: z
@@ -533,7 +533,7 @@ type DeveloperEarningsRow = {
     base_price_pollen: number;
     earned_pollen: number;
     earned_paid_pollen: number;
-    earned_tier_pollen: number;
+    earned_reward_pollen: number;
     charged_pollen: number;
     markup_rate: number;
     unique_user_count: number;
@@ -561,9 +561,9 @@ const developerEarningsRowSchema = z.object({
     earned_paid_pollen: z
         .number()
         .describe("Developer earnings from paid-balance spend."),
-    earned_tier_pollen: z
+    earned_reward_pollen: z
         .number()
-        .describe("Developer earnings from tier-balance spend."),
+        .describe("Developer earnings from reward-balance spend."),
     charged_pollen: z
         .number()
         .describe("Markup-inclusive pollen charged to payers."),
@@ -588,7 +588,7 @@ const developerEarningsResponseSchema = z.object({
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.request_count},${row.base_price_pollen},${row.earned_pollen},${row.earned_paid_pollen},${row.earned_tier_pollen},${row.charged_pollen},${row.markup_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.request_count},${row.base_price_pollen},${row.earned_pollen},${row.earned_paid_pollen},${row.earned_reward_pollen},${row.charged_pollen},${row.markup_rate}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -639,7 +639,7 @@ const profileResponseSchema = z.object({
         .datetime()
         .nullable()
         .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
+            "Next reward drop timestamp (ISO 8601). `null` for tiers with no reward drops.",
         ),
     name: z
         .string()
@@ -661,7 +661,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of tier balance + paid balance)",
+            "Remaining pollen balance (sum of reward balance + paid balance)",
         ),
 });
 
@@ -682,7 +682,7 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Pollen balance bucket used: 'tier' = tier balance, 'paid' = paid balance",
+            "Pollen balance bucket used: 'reward' = reward balance, 'paid' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
@@ -737,7 +737,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, current tier, and next reward drop timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -831,17 +831,17 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
+                    rewardBalance: userTable.tierBalance,
+                    paidBalance: userTable.packBalance,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
                 .limit(1);
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
+            const rewardBalance = users[0]?.rewardBalance ?? 0;
+            const paidBalance = users[0]?.paidBalance ?? 0;
 
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json({ balance: rewardBalance + paidBalance });
         },
     )
     .get(
@@ -1117,7 +1117,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `base_price_pollen` (model price before markup), `earned_pollen` (developer credit = `charged_pollen − base_price_pollen`), `earned_paid_pollen` and `earned_tier_pollen` (earned slices by payer balance bucket), `charged_pollen` (markup-inclusive total charged to payers), and `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `base_price_pollen` (model price before markup), `earned_pollen` (developer credit = `charged_pollen − base_price_pollen`), `earned_paid_pollen` and `earned_reward_pollen` (earned slices by payer balance bucket), `charged_pollen` (markup-inclusive total charged to payers), and `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Combined earnings buckets and rollups",
@@ -1164,11 +1164,11 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v4: payload added earned paid/tier splits and uses billing terms.
-            // Bump so cached v3 payloads don't render as undefined.
+            // v5: payload renamed earned tier split to reward terminology.
+            // Bump so cached v4 payloads don't render as undefined.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v4:debug:${devUserId}`
-                : `earnings:v4:${devUserId}`;
+                ? `earnings:v5:debug:${devUserId}`
+                : `earnings:v5:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
@@ -1252,7 +1252,7 @@ export const accountRoutes = new Hono<Env>()
 
                 if (format === "csv") {
                     const header =
-                        "date,app_key_id,app_name,request_count,base_price_pollen,earned_pollen,earned_paid_pollen,earned_tier_pollen,charged_pollen,markup_rate";
+                        "date,app_key_id,app_name,request_count,base_price_pollen,earned_pollen,earned_paid_pollen,earned_reward_pollen,charged_pollen,markup_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
                     const csv = [header, ...rows].join("\n");
 

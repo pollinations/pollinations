@@ -32,7 +32,7 @@ export type ModelBreakdown = {
 export type DataPoint = {
     label: string;
     value: number;
-    tierValue: number;
+    rewardValue: number;
     paidValue: number;
     timestamp: Date;
     fullDate: string;

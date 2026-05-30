@@ -38,7 +38,7 @@ type UserStripeBillingRow = {
     id: string;
     name: string;
     email: string;
-    packBalance: number | null;
+    paidBalance: number | null;
     stripeCustomerId: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
@@ -396,7 +396,7 @@ export async function processAutoTopUpForUser(
     }
 
     const threshold = AUTO_TOP_UP_THRESHOLD_POLLEN;
-    if ((user.packBalance ?? 0) > threshold) {
+    if ((user.paidBalance ?? 0) > threshold) {
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
@@ -714,7 +714,7 @@ async function getUserStripeBillingRow(
             id: userTable.id,
             name: userTable.name,
             email: userTable.email,
-            packBalance: userTable.packBalance,
+            paidBalance: userTable.packBalance,
             stripeCustomerId: userTable.stripeCustomerId,
             autoTopUpEnabled: userTable.autoTopUpEnabled,
             autoTopUpAmountUsd: userTable.autoTopUpAmountUsd,

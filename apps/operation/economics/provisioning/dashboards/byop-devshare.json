@@ -426,7 +426,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Daily BYOP charged Pollen split by meter: paid balance vs tier balance. Paid growth = paid-balance spend. Tier growth = tier-balance spend.",
+            "description": "Daily BYOP charged Pollen split by meter: paid balance vs reward balance. Paid growth = paid-balance spend. Reward growth = reward-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -491,12 +491,12 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "charged_tier_pollen"
+                            "options": "charged_reward_pollen"
                         },
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Charged tier \u03c1"
+                                "value": "Charged reward \u03c1"
                             },
                             {
                                 "id": "color",
@@ -540,11 +540,11 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_tier_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_reward_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
                     "refId": "A"
                 }
             ],
-            "title": "Daily BYOP charged pollen \u2014 paid vs tier",
+            "title": "Daily BYOP charged pollen \u2014 paid vs reward",
             "type": "timeseries"
         },
         {
@@ -705,7 +705,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Top BYOP apps ranked by charged Pollen. App name resolved via d1_apikey; falls back to client_id if unsynced. Paid/tier split shows charged paid vs charged tier mix per app.",
+            "description": "Top BYOP apps ranked by charged Pollen. App name resolved via d1_apikey; falls back to client_id if unsynced. Paid/reward split shows charged paid vs charged reward mix per app.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -813,7 +813,7 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "charged_tier_pollen"
+                            "options": "charged_reward_pollen"
                         },
                         "properties": [
                             {
@@ -822,7 +822,7 @@
                             },
                             {
                                 "id": "displayName",
-                                "value": "Charged tier \u03c1"
+                                "value": "Charged reward \u03c1"
                             },
                             {
                                 "id": "unit",
@@ -894,7 +894,7 @@
                         "uid": "PAD1A0A25CD30D456"
                     },
                     "format": 1,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\napp_labels AS (\n  SELECT id AS app_key_id, coalesce(nullIf(name, ''), id) AS app_name, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(al.app_name, ge.api_key_client_id) AS app,\n  coalesce(dl.github_username, '') AS developer,\n  sum(ge.total_price) AS charged_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_tier_pollen,\n  uniqIf(ge.user_github_id, ge.user_github_id != '' AND ge.user_github_id != 'undefined') AS user_count,\n  count() AS request_count\nFROM generation_event ge\nLEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id\nLEFT JOIN dev_labels dl ON al.user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, developer\nORDER BY charged_pollen DESC\nLIMIT 200",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\napp_labels AS (\n  SELECT id AS app_key_id, coalesce(nullIf(name, ''), id) AS app_name, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(al.app_name, ge.api_key_client_id) AS app,\n  coalesce(dl.github_username, '') AS developer,\n  sum(ge.total_price) AS charged_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_reward_pollen,\n  uniqIf(ge.user_github_id, ge.user_github_id != '' AND ge.user_github_id != 'undefined') AS user_count,\n  count() AS request_count\nFROM generation_event ge\nLEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id\nLEFT JOIN dev_labels dl ON al.user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, developer\nORDER BY charged_pollen DESC\nLIMIT 200",
                     "refId": "A"
                 }
             ],
@@ -1100,7 +1100,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Tier composition of BYOP end-users: how much of their charged Pollen comes from tier balance vs paid balance. Paid-heavy traffic is paid-balance spend; tier-heavy traffic is tier-balance spend.",
+            "description": "Reward composition of BYOP end-users: how much of their charged Pollen comes from reward balance vs paid balance. Paid-heavy traffic is paid-balance spend; reward-heavy traffic is reward-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1164,12 +1164,12 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "tier_only_user_count"
+                            "options": "reward_only_user_count"
                         },
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Tier-only users"
+                                "value": "Reward-only users"
                             },
                             {
                                 "id": "color",
@@ -1213,11 +1213,11 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\nuser_day AS (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n    user_github_id,\n    countIf(selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_request_count,\n    countIf(selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_tier_request_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND user_github_id != '' AND user_github_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, user_github_id\n)\nSELECT\n  time,\n  countIf(charged_paid_request_count > 0) AS paid_user_count,\n  countIf(charged_paid_request_count = 0 AND charged_tier_request_count > 0) AS tier_only_user_count\nFROM user_day\nGROUP BY time ORDER BY time",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\nuser_day AS (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n    user_github_id,\n    countIf(selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS charged_paid_request_count,\n    countIf(selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS charged_reward_request_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND user_github_id != '' AND user_github_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, user_github_id\n)\nSELECT\n  time,\n  countIf(charged_paid_request_count > 0) AS paid_user_count,\n  countIf(charged_paid_request_count = 0 AND charged_reward_request_count > 0) AS reward_only_user_count\nFROM user_day\nGROUP BY time ORDER BY time",
                     "refId": "A"
                 }
             ],
-            "title": "End-User Tier Composition",
+            "title": "End-User Reward Composition",
             "type": "timeseries"
         },
         {
@@ -1626,7 +1626,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Daily developer-earned pollen, split by the meter the spending user paid from. Paid = paid-balance spend. Tier = tier-balance spend.",
+            "description": "Daily developer-earned pollen, split by the meter the spending user paid from. Paid = paid-balance spend. Reward = reward-balance spend.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1691,12 +1691,12 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "earned_tier_pollen"
+                            "options": "earned_reward_pollen"
                         },
                         "properties": [
                             {
                                 "id": "displayName",
-                                "value": "Earned tier \u03c1"
+                                "value": "Earned reward \u03c1"
                             },
                             {
                                 "id": "color",
@@ -1740,11 +1740,11 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_tier_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS earned_paid_pollen,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS earned_reward_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
                     "refId": "A"
                 }
             ],
-            "title": "Daily DevShare \u2014 Paid vs Tier",
+            "title": "Daily DevShare \u2014 Paid vs Reward",
             "type": "timeseries"
         },
         {

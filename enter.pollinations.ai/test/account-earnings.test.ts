@@ -14,7 +14,7 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     base_price_pollen: 0.4,
     earned_pollen: 0.1,
     earned_paid_pollen: 0.06,
-    earned_tier_pollen: 0.04,
+    earned_reward_pollen: 0.04,
     charged_pollen: 0.5,
     markup_rate: 0.25,
     unique_user_count: 0,
@@ -57,7 +57,7 @@ test("GET /api/account/earnings returns base, earned, and charged pollen in JSON
         base_price_pollen: 0.4,
         earned_pollen: 0.1,
         earned_paid_pollen: 0.06,
-        earned_tier_pollen: 0.04,
+        earned_reward_pollen: 0.04,
         charged_pollen: 0.5,
         markup_rate: 0.25,
     };
@@ -81,7 +81,7 @@ test("GET /api/account/earnings CSV emits base, earned, and charged pollen colum
             base_price_pollen: 0.4,
             earned_pollen: 0.1,
             earned_paid_pollen: 0.06,
-            earned_tier_pollen: 0.04,
+            earned_reward_pollen: 0.04,
             charged_pollen: 0.5,
             markup_rate: 0.25,
         }),
@@ -90,7 +90,7 @@ test("GET /api/account/earnings CSV emits base, earned, and charged pollen colum
             base_price_pollen: 0.8,
             earned_pollen: 0.2,
             earned_paid_pollen: 0.2,
-            earned_tier_pollen: 0,
+            earned_reward_pollen: 0,
             charged_pollen: 1,
             markup_rate: 0.25,
         }),
@@ -107,7 +107,7 @@ test("GET /api/account/earnings CSV emits base, earned, and charged pollen colum
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "date,app_key_id,app_name,request_count,base_price_pollen,earned_pollen,earned_paid_pollen,earned_tier_pollen,charged_pollen,markup_rate",
+        "date,app_key_id,app_name,request_count,base_price_pollen,earned_pollen,earned_paid_pollen,earned_reward_pollen,charged_pollen,markup_rate",
     );
     expect(rows[0]).toBe(
         "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.06,0.04,0.5,0.25",

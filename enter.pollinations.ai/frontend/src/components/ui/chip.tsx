@@ -7,11 +7,12 @@ import type { ThemeName } from "../layout/dashboard-theme.ts";
  *  - news    : newly-added model (green)
  *  - alpha   : experimental model (warning yellow)
  *  - paid    : paid pollen / paid-only model (orange, matches wallet)
- *  - tier    : tier pollen (yellow, matches wallet)
+ *  - reward  : reward pollen (yellow, matches wallet)
+ *  - tier    : user tier label (same yellow family)
  *  - neutral : bordered gray container for emoji icons
  *              (modalities + capabilities on the pricing rows).
  */
-type ChipIntent = "news" | "alpha" | "paid" | "tier" | "neutral";
+type ChipIntent = "news" | "alpha" | "paid" | "reward" | "tier" | "neutral";
 
 const chipSizes = {
     sm: "px-2 py-0.5 text-xs",
@@ -23,6 +24,7 @@ const intentClasses: Record<ChipIntent, string> = {
     news: "bg-[oklch(0.935_0.06_158)] text-[oklch(0.46_0.13_158)]",
     alpha: "bg-[oklch(0.93_0.06_300)] text-[oklch(0.42_0.18_300)]",
     paid: "bg-paid-pale text-paid-deep",
+    reward: "bg-tier-pale text-tier-deep",
     tier: "bg-tier-pale text-tier-deep",
     neutral: "border border-gray-400/70 bg-gray-100/80 text-gray-900",
 };

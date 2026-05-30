@@ -168,7 +168,7 @@ export const isNewModel = (modelName: string): boolean => {
 };
 
 /**
- * Check if a model requires paid balance only (no tier balance)
+ * Check if a model requires paid balance only (no reward balance)
  */
 export const isPaidOnly = (modelName: string): boolean => {
     const service = getModelDefinition(modelName as ModelName);

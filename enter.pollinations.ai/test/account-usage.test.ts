@@ -16,7 +16,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
         {
             date: "2026-04-14",
             model: "openai-fast",
-            pollen_meter: "tier",
+            pollen_meter: "reward",
             request_count: 3,
             spent_pollen: 10,
         },
@@ -157,7 +157,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
-            pollen_meter: "tier",
+            pollen_meter: "reward",
             input_text_tokens: 10,
             input_cached_tokens: 0,
             input_audio_tokens: 0,

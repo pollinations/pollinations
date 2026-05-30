@@ -1,4 +1,4 @@
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
+import { PAID_COLOR, REWARD_COLOR } from "@frontend/lib/balance-colors.ts";
 import { formatPollen } from "@frontend/lib/format-pollen.ts";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -145,7 +145,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
                             paidBarColor={PAID_COLOR}
-                            tierBarColor={TIER_COLOR}
+                            rewardBarColor={REWARD_COLOR}
                         />
                     )}
                 </div>
@@ -166,11 +166,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                             💳 {formatPollen(stats.paidPollen)}
                                         </Chip>
                                         <Chip
-                                            intent="tier"
+                                            intent="reward"
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            🌱 {formatPollen(stats.tierPollen)}
+                                            🌱{" "}
+                                            {formatPollen(stats.rewardPollen)}
                                         </Chip>
                                     </div>
                                 }

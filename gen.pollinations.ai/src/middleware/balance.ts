@@ -61,11 +61,11 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}",
+            "Local pollen balance for user {userId}: reward={rewardBalance}, paid={paidBalance}",
             {
                 userId,
-                tierBalance: balances.tierBalance,
-                packBalance: balances.packBalance,
+                rewardBalance: balances.rewardBalance,
+                paidBalance: balances.paidBalance,
             },
         );
 
@@ -83,9 +83,9 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        log.debug("Paid balance check for user {userId}: pack={packBalance}", {
+        log.debug("Paid balance check for user {userId}: paid={paidBalance}", {
             userId,
-            packBalance: balances.packBalance,
+            paidBalance: balances.paidBalance,
         });
 
         if (hasPositivePaidBalance(balances)) {
@@ -99,7 +99,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         throw new HTTPException(402, {
             message:
                 message ||
-                "This model requires 💳 paid balance. 🌱 Tier balance cannot be used.",
+                "This model requires 💳 paid balance. 🌱 Reward balance cannot be used.",
         });
     };
 

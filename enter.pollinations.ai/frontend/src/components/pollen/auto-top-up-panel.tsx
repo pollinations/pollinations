@@ -77,8 +77,8 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
                 size you select
             </li>
             <li>
-                Only your <strong>paid balance</strong> counts — tier pollen is
-                not considered
+                Only your <strong>paid balance</strong> counts — reward pollen
+                is not considered
             </li>
         </ul>
     </div>

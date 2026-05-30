@@ -28,12 +28,12 @@ async function triggerTierRefill() {
 
 describe("Tier System End-to-End", () => {
     describe("Hourly Usage Pattern", () => {
-        test("user exhausts tier balance and falls back to pack balance", async () => {
+        test("user exhausts reward balance and falls back to paid balance", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
             const userId = "heavy-user";
 
-            // User starts with flower tier (0.4 pollen/hour) and bought a pack (50 pollen)
+            // User starts with flower reward drop (0.4 pollen/hour) and bought a paid pack (50 pollen)
             await db
                 .insert(userTable)
                 .values({
@@ -73,8 +73,8 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Binary deduction: each charge is larger than tier, so pack pays
-            // the full 20 pollen and tier remains available for smaller calls.
+            // Binary deduction: each charge is larger than reward, so paid pays
+            // the full 20 pollen and reward remains available for smaller calls.
             expect(afterUsage[0]?.tierBalance).toBeCloseTo(0.4, 4);
             expect(afterUsage[0]?.packBalance).toBeCloseTo(30, 4);
 
@@ -92,7 +92,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier is already at its hourly floor and pack is unchanged.
+            // Reward is already at its hourly floor and paid is unchanged.
             expect(afterRefill[0]?.tierBalance).toBeCloseTo(0.4, 4);
             expect(afterRefill[0]?.packBalance).toBeCloseTo(30, 4);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
@@ -253,8 +253,8 @@ describe("Tier System End-to-End", () => {
             // Should get balance info even with 0 balance
             expect(response.status).toBe(200);
             const balance = await response.json();
-            expect(balance.tierBalance).toBe(0);
-            expect(balance.packBalance).toBe(0);
+            expect(balance.rewardBalance).toBe(0);
+            expect(balance.paidBalance).toBe(0);
         });
     });
 
@@ -386,17 +386,17 @@ describe("Tier System End-to-End", () => {
             expect(result[0]?.tierBalance).toBe(2);
         });
 
-        test("tier balance is consumed before pack balance", async () => {
+        test("reward balance is consumed before paid balance", async () => {
             const db = drizzle(env.DB);
-            const userId = "tier-pack-user";
+            const userId = "reward-paid-user";
 
-            // User with tier balance and pack purchase
+            // User with reward balance and paid purchase
             await db
                 .insert(userTable)
                 .values({
                     id: userId,
-                    email: "tier-pack@test.com",
-                    name: "Tier Pack User",
+                    email: "reward-paid@test.com",
+                    name: "Reward Paid User",
                     tier: "spore",
                     tierBalance: 1,
                     packBalance: 100,
@@ -411,7 +411,7 @@ describe("Tier System End-to-End", () => {
                     },
                 });
 
-            // Use 30 pollen — tier cannot cover the full charge, so pack pays it.
+            // Use 30 pollen — reward cannot cover the full charge, so paid pays it.
             await atomicDeductUserBalance(db, userId, 30);
 
             const balance = await db
@@ -427,7 +427,7 @@ describe("Tier System End-to-End", () => {
             expect(balance[0]?.packBalance).toBe(70);
         });
 
-        test("regular Azure model puts overage on positive pack when tier cannot cover actual price", async () => {
+        test("regular Azure model puts overage on positive paid balance when reward cannot cover actual price", async () => {
             const db = drizzle(env.DB);
             const userId = `azure-depletion-${crypto.randomUUID()}`;
             const modelResolved = "openai-fast";
@@ -459,18 +459,18 @@ describe("Tier System End-to-End", () => {
 
             await deduct();
             let balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(0.01, 10);
-            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.rewardBalance).toBeCloseTo(0.01, 10);
+            expect(balance.paidBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
             balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(-0.015, 10);
-            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.rewardBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.paidBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
             balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(-0.04, 10);
-            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.rewardBalance).toBeCloseTo(-0.04, 10);
+            expect(balance.paidBalance).toBeCloseTo(-0.015, 10);
         });
     });
 });

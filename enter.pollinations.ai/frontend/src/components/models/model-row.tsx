@@ -25,14 +25,14 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
+    rewardBalance?: number;
+    paidBalance?: number;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const modelDescription = getModelDescriptionWithoutName(model.name);
@@ -47,14 +47,14 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
 
-    const isSignedIn = packBalance !== undefined;
+    const isSignedIn = paidBalance !== undefined;
     const genPerPollen = calculatePerPollen(model);
     const isDisabled =
         isSignedIn &&
         !canAffordModel(
             model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
+            rewardBalance ?? 0,
+            paidBalance ?? 0,
             showPaidOnly,
         );
     const inputPriceBadges = groupPriceBadges([

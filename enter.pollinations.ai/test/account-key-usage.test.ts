@@ -30,7 +30,7 @@ describe("GET /api/account/key/usage", () => {
                 api_key_id: myKeyId,
                 api_key: "my-key",
                 api_key_type: "secret",
-                pollen_meter: "tier",
+                pollen_meter: "reward",
                 input_text_tokens: 10,
                 input_cached_tokens: 0,
                 input_audio_tokens: 0,

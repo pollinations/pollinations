@@ -11,11 +11,11 @@ import {
 import { useModelStats } from "./use-model-stats.ts";
 
 type ModelsProps = {
-    tierBalance?: number;
-    packBalance?: number;
+    rewardBalance?: number;
+    paidBalance?: number;
 };
 
-export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
+export const Models: FC<ModelsProps> = ({ rewardBalance, paidBalance }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
@@ -80,8 +80,8 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         textModels={textModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
+                        rewardBalance={rewardBalance}
+                        paidBalance={paidBalance}
                     />
                 </div>
                 <div className="mt-5 space-y-2 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">

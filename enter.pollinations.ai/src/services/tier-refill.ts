@@ -137,7 +137,7 @@ async function sendBulkTierRefillEvents(
  * Core refill logic — callable from both the HTTP endpoint and CF scheduled handler.
  * Runs hourly refills for all tiers with idempotency check.
  *
- * All tiers refill hourly: adds pollen increment each hour, capped at tier max.
+ * All tiers drop reward pollen hourly, capped at each tier's hourly max.
  */
 export async function runTierRefill(
     env: CloudflareBindings,
@@ -164,7 +164,7 @@ export async function runTierRefill(
         };
     }
 
-    // Snapshot balances before updates (for Tinybird events)
+    // Snapshot raw reward balances before updates (for Tinybird events).
     const usersBeforeRefill = await db
         .select({
             id: userTable.id,
@@ -174,8 +174,8 @@ export async function runTierRefill(
         .from(userTable)
         .where(sql`tier IS NOT NULL`);
 
-    // Restore the free tier floor without clobbering BYOP rewards credited into
-    // tier_balance. Negative balances recover gradually through hourly refills.
+    // Restore the tier reward floor without clobbering BYOP reward credits that
+    // share tier_balance storage. Negative balances recover gradually.
     const hourlyResult = await db.run(sql`
         UPDATE user
         SET

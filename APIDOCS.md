@@ -920,7 +920,7 @@ curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
 
 #### `GET` `/account/profile` — Get Profile
 
-Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.
+Returns your account profile. GitHub username, profile image, current tier, and next reward drop timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.
 
 📤 **Response** · `200` · `application/json` — User profile
 
@@ -929,7 +929,7 @@ Returns your account profile. GitHub username, profile image, current tier, and 
 | `githubUsername` * | `string` \| `null` | GitHub username if linked |
 | `image` * | `string` \| `null` | Profile picture URL (e.g. GitHub avatar) |
 | `tier` * | enum (7) — `"anonymous"`, `"microbe"`, `"spore"`, … | User's current tier level |
-| `nextResetAt` * | `string · date-time` \| `null` | Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill. |
+| `nextResetAt` * | `string · date-time` \| `null` | Next reward drop timestamp (ISO 8601). `null` for tiers with no reward drops. |
 | `name` | `string` \| `null` | User's display name (only returned when the key has `account:profile`) |
 | `email` | `string · email` \| `null` | User's email address (only returned when the key has `account:profile`) |
 
@@ -959,7 +959,7 @@ Returns the pollen balance visible to the caller. API keys with a budget always 
 
 | Field | Type | Description |
 |---|---|---|
-| `balance` * | `number` | Remaining pollen balance (sum of tier balance + paid balance) |
+| `balance` * | `number` | Remaining pollen balance (sum of reward balance + paid balance) |
 
 <sub>`*` = required field</sub>
 
@@ -999,7 +999,7 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].model` * | `string` \| `null` | Model used for generation |
 | `usage[].api_key` * | `string` \| `null` | API key identifier used (masked) |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
+| `usage[].pollen_meter` * | `string` \| `null` | Pollen balance bucket used: 'reward' = reward balance, 'paid' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
@@ -1011,7 +1011,7 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
 | `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
-| `usage[].cost_usd` * | `number` | Cost in USD for this request |
+| `usage[].spent_pollen` * | `number` | Pollen spent for this request |
 | `usage[].response_time_ms` * | `number` \| `null` | Response time in milliseconds |
 | `count` * | `number` | Number of records returned |
 
@@ -1049,9 +1049,9 @@ Returns daily aggregated usage for the requested time window, grouped by date an
 | `usage` * | `object`[] | Array of daily usage records |
 | `usage[].date` * | `string` | Date (YYYY-MM-DD format) |
 | `usage[].model` * | `string` \| `null` | Model used |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
-| `usage[].requests` * | `number` | Number of requests |
-| `usage[].cost_usd` * | `number` | Total cost in USD |
+| `usage[].pollen_meter` * | `string` \| `null` | Pollen balance bucket used: 'reward' = reward balance, 'paid' = paid balance |
+| `usage[].request_count` * | `number` | Number of requests |
+| `usage[].spent_pollen` * | `number` | Total pollen spent from the user's wallet for the bucket |
 | `count` * | `number` | Number of records returned |
 
 <sub>`*` = required field</sub>
@@ -1067,7 +1067,7 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings` — Get Developer Earnings
 
-Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
+Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `base_price_pollen` (model price before markup), `earned_pollen` (developer credit = `charged_pollen − base_price_pollen`), `earned_paid_pollen` and `earned_reward_pollen` (earned slices by payer balance bucket), `charged_pollen` (markup-inclusive total charged to payers), and `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
@@ -1089,22 +1089,26 @@ Returns developer earnings (BYOP markup) in one response: per-(date, app) bucket
 | `daily[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
 | `daily[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
 | `daily[].app_name` * | `string` | App display name |
-| `daily[].requests` * | `number` | Number of billed requests |
-| `daily[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
-| `daily[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
-| `daily[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
+| `daily[].request_count` * | `number` | Number of billed requests |
+| `daily[].base_price_pollen` * | `number` | Model price before markup (sum over the bucket) |
+| `daily[].earned_pollen` * | `number` | Developer credit: markup take (`charged_pollen − base_price_pollen`) |
+| `daily[].earned_paid_pollen` * | `number` | Developer earnings from paid-balance spend |
+| `daily[].earned_reward_pollen` * | `number` | Developer earnings from reward-balance spend |
+| `daily[].charged_pollen` * | `number` | Markup-inclusive pollen charged to payers (sum over the bucket) |
 | `daily[].markup_rate` * | `number` | Average markup rate applied |
-| `daily[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
+| `daily[].unique_user_count` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design; meaningful only on rollup rows (where date=''). |
 | `perApp` * | `object`[] | Per-app rollups for the period |
 | `perApp[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
 | `perApp[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
 | `perApp[].app_name` * | `string` | App display name |
-| `perApp[].requests` * | `number` | Number of billed requests |
-| `perApp[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
-| `perApp[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
-| `perApp[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
+| `perApp[].request_count` * | `number` | Number of billed requests |
+| `perApp[].base_price_pollen` * | `number` | Model price before markup (sum over the bucket) |
+| `perApp[].earned_pollen` * | `number` | Developer credit: markup take (`charged_pollen − base_price_pollen`) |
+| `perApp[].earned_paid_pollen` * | `number` | Developer earnings from paid-balance spend |
+| `perApp[].earned_reward_pollen` * | `number` | Developer earnings from reward-balance spend |
+| `perApp[].charged_pollen` * | `number` | Markup-inclusive pollen charged to payers (sum over the bucket) |
 | `perApp[].markup_rate` * | `number` | Average markup rate applied |
-| `perApp[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
+| `perApp[].unique_user_count` * | `number` | Distinct end-users who paid |
 | `global` * | `object` \| `null` | Global rollup across all apps for the period |
 
 <sub>`*` = required field</sub>
@@ -1245,7 +1249,7 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].model` * | `string` \| `null` | Model used for generation |
 | `usage[].api_key` * | `string` \| `null` | API key identifier used (masked) |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
+| `usage[].pollen_meter` * | `string` \| `null` | Pollen balance bucket used: 'reward' = reward balance, 'paid' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
@@ -1257,7 +1261,7 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
 | `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
-| `usage[].cost_usd` * | `number` | Cost in USD for this request |
+| `usage[].spent_pollen` * | `number` | Pollen spent for this request |
 | `usage[].response_time_ms` * | `number` \| `null` | Response time in milliseconds |
 | `count` * | `number` | Number of records returned |
 

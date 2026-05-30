@@ -36,13 +36,13 @@ export function calculatePerPollen(model: ModelPrice): string {
 
 export function canAffordModel(
     model: ModelPrice,
-    tierBalance: number,
-    packBalance: number,
+    rewardBalance: number,
+    paidBalance: number,
     isPaidOnly: boolean,
 ): boolean {
     const cost = model.realAvgBasePrice ?? 0;
     return canCoverEstimatedCharge(
-        { tierBalance, packBalance },
+        { rewardBalance, paidBalance },
         cost,
         isPaidOnly,
     );

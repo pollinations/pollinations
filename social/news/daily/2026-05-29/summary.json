@@ -1,0 +1,31 @@
+{
+  "date": "2026-05-29",
+  "period_start": "2026-05-29",
+  "period_end": "2026-05-29",
+  "title": "A massive model drop: Claude Opus 4.8, Perplexity Sonar, and StepFun",
+  "summary": "A massive model expansion including Claude Opus 4.8 and Perplexity Sonar, a new real-time voice API, and rolling retention for popular generated content.\n\nWe wired up a heavy lineup of new models. Claude Opus 4.8 brings a 1M context window and prompt caching. The Perplexity Sonar suite (`perplexity`, `perplexity-deep`) is now available with dynamic web search context sizing. We also added StepFun's Step 3.5 and 3.7 Flash models for multimodal reasoning and tool use.\n\nAdded a `/v1/realtime` endpoint to the generation API. It provides an OpenAI-compatible WebSocket connection for low-latency voice and multimodal sessions using `gpt-realtime-2`. Just point your standard OpenAI realtime SDK at Pollinations and it works.\n\nGenerated media, images, and text backed by R2 storage previously expired after a hard 30 days. We implemented a rolling TTL: if an object is accessed after 15 days, its 30-day lifecycle resets. If people keep requesting it, we keep hosting it.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 11272,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11331,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11358,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11395,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11400,
+      "date": "2026-05-29"
+    }
+  ],
+  "generated_at": "2026-05-30T06:58:00.844570+00:00"
+}

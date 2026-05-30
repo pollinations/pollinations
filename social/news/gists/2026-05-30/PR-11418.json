@@ -1,0 +1,35 @@
+{
+  "pr_number": 11418,
+  "title": "Add SceneWeave to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11418",
+  "merged_at": "2026-05-30T13:20:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [SceneWeave](https://scene-weave.vercel.app) to writing\n- Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing.\n\nFixes #10104",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Weaving stories into scenes",
+    "blurb": "A new community app called SceneWeave just landed in the greenhouse! Paste a story or drop a URL, and watch it weave your text into something magical.",
+    "summary": "Added the community-built SceneWeave app to the writing category, allowing users to input text stories or URLs for processing.",
+    "impact": "Users can now explore SceneWeave in the community showcase to experiment with text and URL-based story weaving.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "sceneweave",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee operating a magical loom that weaves glowing text and code into a tapestry, representing the 'SceneWeave' writing app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, operating a magical wooden loom that weaves glowing text and code into a beautiful tapestry. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-30/PR-11418.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, operating a magical wooden loom that weaves glowing text and code into a beautiful tapestry. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-30T13:21:45.841886+00:00",
+  "app_name": "SceneWeave",
+  "app_url": "https://scene-weave.vercel.app"
+}

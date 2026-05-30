@@ -756,21 +756,24 @@ describe("API Key Management", () => {
                 error: "redirect_uri_mismatch",
             });
 
-            const mint = await SELF.fetch("http://localhost:3000/api/api-keys", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({
-                    name: "legacy-unsafe-mint",
-                    type: "secret",
-                    metadata: {
-                        requestedClientId: appKey.key,
-                        redirectUri: legacyRedirectUri,
+            const mint = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
                     },
-                }),
-            });
+                    body: JSON.stringify({
+                        name: "legacy-unsafe-mint",
+                        type: "secret",
+                        metadata: {
+                            requestedClientId: appKey.key,
+                            redirectUri: legacyRedirectUri,
+                        },
+                    }),
+                },
+            );
             expect(mint.status).toBe(400);
         });
     });

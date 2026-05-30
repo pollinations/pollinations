@@ -1,0 +1,35 @@
+{
+  "pr_number": 11423,
+  "title": "Add PetalGen to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11423",
+  "merged_at": "2026-05-30T15:52:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PetalGen](https://petalgen.tools4all.ai) to build\n- PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot\n\nFixes #11421",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Petal power",
+    "blurb": "PetalGen just sprouted in the greenhouse! This clever new community app takes your giant image prompts and breaks them down into neat, remixable modules.",
+    "summary": "Added PetalGen, a community-built prompt engineering tool that decomposes monolithic image prompts into structured, remixable modules, to the app showcase.",
+    "impact": "Creators can now discover PetalGen in the Greenhouse to easily break down, analyze, and refine complex image generation prompts.",
+    "keywords": [
+      "community",
+      "app",
+      "prompt-engineering",
+      "image-generation",
+      "petalgen"
+    ],
+    "visual_concept": "Polly the bee acting as a botanist/engineer, carefully examining or assembling a glowing flower where each petal represents a different prompt module (Subject, Clothing, etc.).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses, carefully arranging glowing lime green (#ecf874) and pastel pink petals around a mechanical flower. A chunky retro monitor in the background displays structured code blocks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-30/PR-11423.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses, carefully arranging glowing lime green (#ecf874) and pastel pink petals around a mechanical flower. A chunky retro monitor in the background displays structured code blocks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-30T15:53:40.420645+00:00",
+  "app_name": "PetalGen",
+  "app_url": "https://petalgen.tools4all.ai"
+}

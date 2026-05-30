@@ -1,0 +1,35 @@
+{
+  "pr_number": 11402,
+  "title": "Auto-file new dev issues under tracking issues",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11402",
+  "merged_at": "2026-05-30T08:05:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "The project-manager automation added new issues to the Dev board but left them unparented, so they never joined a tracking issue. This wires that up.\n\n- Fetches open `DEV-TRACKING` issues and lets the classifier pick the best-fit parent, then links the new issue as a native sub-issue\n- Routes quest-labelled issues (`POLLEN-QUEST`/`DRAFT-QUEST`) to Dev with a `DEV-*` label instead of skipping them\n- Adds `DEV-APP` and `DEV-UI-UX` to the valid dev labels + prompt (previously filtered out)\n- Refreshes deprecated tier names in the prompt\n\nGuards: skips PRs and tracking issues themselves, and only links to a number actually present in the live list.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive mind gets organized",
+    "blurb": "Our GitHub project manager bot just got smarter. New dev issues are now automatically sorted into their proper tracking epics, keeping the hive perfectly organized.",
+    "summary": "Updated the project-manager GitHub automation to automatically link new dev issues as sub-issues under the best-fit DEV-TRACKING epic, while also routing quest-labelled issues to the Dev board.",
+    "impact": "Contributors will see new issues automatically categorized and parented to tracking epics, reducing manual triage work.",
+    "keywords": [
+      "github",
+      "automation",
+      "triage",
+      "issues",
+      "project-management"
+    ],
+    "visual_concept": "The robot monitor character and Polly the bee organizing files or folders. The robot is sorting papers into neat stacks or filing cabinets.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head organizing glowing digital folders into a neat filing cabinet. The tiny bee mascot hovers nearby holding a small clipboard, checking off tasks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-30/PR-11402.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head organizing glowing digital folders into a neat filing cabinet. The tiny bee mascot hovers nearby holding a small clipboard, checking off tasks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-30T08:06:27.512429+00:00"
+}

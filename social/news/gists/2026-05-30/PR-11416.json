@@ -1,0 +1,36 @@
+{
+  "pr_number": 11416,
+  "title": "Add Ai Web Translator to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11416",
+  "merged_at": "2026-05-30T13:14:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Ai Web Translator](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/) to learn\n- Enable AI Web Translation with BYOK support.\n\nFixes #10091",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Speaking your language",
+    "blurb": "A new community app just landed in the Greenhouse! AI Web Translator is a Firefox add-on that brings BYOK (Bring Your Own Key) AI translation right to your browser.",
+    "summary": "Added the AI Web Translator Firefox add-on to the community apps showcase, featuring Bring Your Own Key (BYOK) support for web translation.",
+    "impact": "Users can now discover and install this community-built extension to seamlessly translate web pages using their own AI API keys.",
+    "keywords": [
+      "community",
+      "app",
+      "translator",
+      "firefox",
+      "extension",
+      "byok"
+    ],
+    "visual_concept": "The PR is about a web translator extension. Visual symbols: a retro web browser, translation icons (speech bubbles with different symbols), the Pollinations bee interacting with a web page. The robot companion helping translate.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying a web page with floating speech bubbles containing different language symbols. A chunky pixel robot with a CRT head stands nearby holding a glowing translation dictionary. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-30/PR-11416.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying a web page with floating speech bubbles containing different language symbols. A chunky pixel robot with a CRT head stands nearby holding a glowing translation dictionary. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-30T13:15:00.313638+00:00",
+  "app_name": "Ai Web Translator",
+  "app_url": "https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/"
+}

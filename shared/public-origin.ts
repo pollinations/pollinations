@@ -12,8 +12,9 @@ const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
 };
 
 function hasValidProxySecret(c: Context): boolean {
-    const expected = (c.env as { POLLINATIONS_PROXY_SECRET?: string } | undefined)
-        ?.POLLINATIONS_PROXY_SECRET;
+    const expected = (
+        c.env as { POLLINATIONS_PROXY_SECRET?: string } | undefined
+    )?.POLLINATIONS_PROXY_SECRET;
     if (!expected) return false;
     return c.req.header(PROXY_SECRET_HEADER) === expected;
 }

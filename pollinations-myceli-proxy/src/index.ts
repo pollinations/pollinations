@@ -32,7 +32,10 @@ export default {
                 },
             });
         }
-        headers.set("X-Pollinations-Proxy-Secret", env.POLLINATIONS_PROXY_SECRET);
+        headers.set(
+            "X-Pollinations-Proxy-Secret",
+            env.POLLINATIONS_PROXY_SECRET,
+        );
 
         const clientIp = req.headers.get("CF-Connecting-IP");
         if (clientIp) {

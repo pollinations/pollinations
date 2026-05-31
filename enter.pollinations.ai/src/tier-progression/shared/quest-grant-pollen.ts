@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
 import { command, number, run, string } from "@drizzle-team/brocli";
 
 type Environment = "staging" | "production";
@@ -136,9 +135,4 @@ const grantCommand = command({
     },
 });
 
-if (
-    process.argv[1] &&
-    import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-    run([grantCommand]);
-}
+run([grantCommand]);

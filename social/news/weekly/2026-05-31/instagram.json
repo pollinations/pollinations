@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "generated_at": "2026-05-31T07:15:39.740007+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/instagram-3.jpg"
+    }
+  ],
+  "text": "18 PRs merged this week. The infrastructure is humming.\n\nWe added a real-time voice API (gpt-realtime-2), which means you can now talk to the machines with zero latency. To accompany that, we triggered a model avalanche: Helix AI, Claude Opus 4.8, Perplexity Sonar, and StepFun flash are all live. 5 of the new models are open on the free tier.\n\nOn the backend, we completely rewrote the API docs generator for better markdown parsing, fixed caching TTLs, and exposed baseline costs in developer exports.\n\nAlso, the showcase greenhouse is getting crowded. 6 new apps built by the community just went live.\n\nGo build something weird. link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #webdev #techupdates #api",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

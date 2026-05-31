@@ -1,0 +1,30 @@
+{
+  "name": "react.pollinations.ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "predev": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+    "build": "vite build",
+    "prebuild": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+    "preview": "vite preview",
+    "pretypecheck": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pollinations_ai/sdk": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@pollinations_ai/ui": "*"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.0"
+  }
+}

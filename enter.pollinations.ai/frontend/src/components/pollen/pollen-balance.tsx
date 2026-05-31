@@ -10,10 +10,7 @@ import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import {
-    type LocalizedPackPrices,
-    PollenPackSlider,
-} from "./pollen-pack-controls.tsx";
+import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -328,12 +325,10 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
-    localizedPrices?: LocalizedPackPrices;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
-    localizedPrices = null,
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [selectedPackAmount, setSelectedPackAmount] = useState(
@@ -362,14 +357,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
-                                localizedPrices={localizedPrices}
                             />
                         </div>
                         <Tooltip
-                            content={`Buy ${formatPollenPackValue(selectedPack.pollenGrant)} pollen for ${
-                                localizedPrices?.prices[selectedPack.packKey] ??
-                                formatPollenPackPriceUsd(selectedPack.amountUsd)
-                            }`}
+                            content={`Buy ${formatPollenPackValue(selectedPack.pollenGrant)} pollen for ${formatPollenPackPriceUsd(selectedPack.amountUsd)}`}
                             displayContents
                         >
                             <Button

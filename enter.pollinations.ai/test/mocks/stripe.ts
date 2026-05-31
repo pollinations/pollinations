@@ -436,39 +436,6 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             );
             if (!paymentIntent) return stripeNotFound(c);
             return c.json(paymentIntent);
-        })
-        .post("/v1/fx_quotes", async (c) => {
-            const form = await parseForm(c.req.raw);
-            recordRequest(c, state, form);
-            // Deterministic ECB mid-market reference rates (USD value of 1
-            // local unit), matching the live API's
-            // `rates[local].rate_details.reference_rate` shape.
-            const sampleReferenceRates: Record<string, number> = {
-                eur: 1.1617,
-                gbp: 1.34045,
-                jpy: 0.00627132,
-                brl: 0.197139,
-            };
-            const requested = form.getAll("from_currencies[]");
-            const rates: Record<
-                string,
-                { rate_details: { reference_rate: number } }
-            > = {};
-            for (const currency of requested) {
-                const referenceRate = sampleReferenceRates[currency];
-                if (referenceRate !== undefined)
-                    rates[currency] = {
-                        rate_details: { reference_rate: referenceRate },
-                    };
-            }
-            return c.json({
-                id: "fxq_mock_1",
-                object: "fx_quote",
-                lock_duration: "hour",
-                lock_status: "active",
-                to_currency: form.get("to_currency"),
-                rates,
-            });
         });
 
     return {

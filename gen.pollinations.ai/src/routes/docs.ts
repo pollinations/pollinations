@@ -329,6 +329,26 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
       setTimeout(function () { label.textContent = prev; }, 1200);
     });
   }
+    var dl = document.querySelector('.ph-fab-download');
+if (dl) {
+  var dlLabel = dl.querySelector('span');
+  dl.addEventListener('click', async function () {
+    var res = await fetch('/docs/llm.txt');
+    var blob = await res.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'pollinations-llm-docs.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    var prev = dlLabel.textContent;
+    dlLabel.textContent = 'Downloaded';
+    setTimeout(function () { dlLabel.textContent = prev; }, 1200);
+  });
+}
+
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.

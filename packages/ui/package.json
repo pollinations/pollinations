@@ -23,8 +23,14 @@
       "import": "./dist/showcase/index.js",
       "require": "./dist/showcase/index.cjs"
     },
+    "./wallet": {
+      "types": "./dist/wallet/index.d.ts",
+      "import": "./dist/wallet/index.js",
+      "require": "./dist/wallet/index.cjs"
+    },
     "./styles.css": "./dist/styles.css",
     "./app.css": "./dist/app.css",
+    "./wallet.css": "./dist/wallet.css",
     "./fonts/*": "./dist/fonts/*",
     "./package.json": "./package.json"
   },
@@ -39,7 +45,7 @@
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/app.css dist/app.css",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/app.css dist/app.css && cp src/wallet/styles.css dist/wallet.css",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1,5 +1,4 @@
 export { cn } from "./lib/cn-app.ts";
-export { formatPollen } from "./lib/format-pollen.ts";
 export {
     addUtcDays,
     currentPeriod,

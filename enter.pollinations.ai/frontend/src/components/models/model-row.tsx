@@ -1,4 +1,5 @@
 import { Chip, cn, InfoTip, Tooltip } from "@pollinations_ai/ui";
+import { PaidChip } from "@pollinations_ai/ui/wallet";
 import { type FC, useState } from "react";
 import {
     calculatePerPollen,
@@ -238,9 +239,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                             : "This model uses paid balance only."
                                     }
                                 >
-                                    <Chip intent="paid" size="sm">
-                                        PAID
-                                    </Chip>
+                                    <PaidChip size="sm">PAID</PaidChip>
                                 </Tooltip>
                             )}
                         </div>

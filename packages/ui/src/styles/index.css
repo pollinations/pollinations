@@ -54,12 +54,12 @@
 
 .polli-range-slider {
     --polli-range-slider-progress: 0%;
-    --polli-range-slider-fill: var(--polli-color-paid-soft);
-    --polli-range-slider-track: var(--polli-color-paid-pale);
-    --polli-range-slider-thumb-border: var(--polli-color-paid-deep);
+    --polli-range-slider-fill: var(--polli-color-bg-active);
+    --polli-range-slider-track: var(--polli-color-bg-pale);
+    --polli-range-slider-thumb-border: var(--polli-color-text-strong);
     --polli-range-slider-thumb-shadow: color-mix(
         in oklab,
-        var(--polli-color-paid-deep) 35%,
+        var(--polli-color-text-strong) 35%,
         transparent
     );
 

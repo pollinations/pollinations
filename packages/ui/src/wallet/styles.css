@@ -1,0 +1,38 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+:root {
+    --polli-color-paid-pale: oklch(0.93 0.09 95.746);
+    --polli-color-paid-soft: oklch(0.85 0.16 95.746);
+    --polli-color-paid-deep: #78350f;
+    --polli-color-tier-pale: oklch(0.93 0.06 55);
+    --polli-color-tier-soft: oklch(0.83 0.13 55);
+    --polli-color-tier-deep: #7c3f1e;
+}
+
+@theme inline {
+    --color-paid-pale: var(--polli-color-paid-pale);
+    --color-paid-soft: var(--polli-color-paid-soft);
+    --color-paid-deep: var(--polli-color-paid-deep);
+    --color-tier-pale: var(--polli-color-tier-pale);
+    --color-tier-soft: var(--polli-color-tier-soft);
+    --color-tier-deep: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-chip-paid {
+    background-color: var(--polli-color-paid-pale);
+    color: var(--polli-color-paid-deep);
+}
+
+.polli-wallet-chip-tier {
+    background-color: var(--polli-color-tier-pale);
+    color: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-panel-paid {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-paid-pale) 60%,
+        transparent
+    );
+    color: var(--polli-color-paid-deep);
+}

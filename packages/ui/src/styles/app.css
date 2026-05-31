@@ -12,13 +12,6 @@
     --text-micro:                   var(--polli-text-micro);
     --text-base:                    var(--polli-text-base);
 
-    --color-paid-pale:              var(--polli-color-paid-pale);
-    --color-paid-soft:              var(--polli-color-paid-soft);
-    --color-paid-deep:              var(--polli-color-paid-deep);
-    --color-tier-pale:              var(--polli-color-tier-pale);
-    --color-tier-soft:              var(--polli-color-tier-soft);
-    --color-tier-deep:              var(--polli-color-tier-deep);
-
     --color-theme-text-base:        var(--polli-color-text-base);
     --color-theme-text-strong:      var(--polli-color-text-strong);
     --color-theme-text-soft:        var(--polli-color-text-soft);

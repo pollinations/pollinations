@@ -67,10 +67,6 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
     </div>
 );
 
-// All tier levels render with the same `<Chip intent="tier">` recipe —
-// the soft yellow chip. Tier identity is communicated via the emoji +
-// name, not by colour.
-
 // ─── Microbe: Account Under Review ──────────────────────────
 
 const MicrobeLimitedPanel: FC = () => (

@@ -1,5 +1,8 @@
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
-import { formatPollen } from "@pollinations_ai/ui";
+import {
+    formatPollen,
+    PAID_BALANCE_CHART_COLOR,
+    TIER_BALANCE_CHART_COLOR,
+} from "@pollinations_ai/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";
@@ -12,7 +15,7 @@ type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
-    /** Override bar colors. Defaults to the system paid/tier brand hex. */
+    /** Override bar colors. Defaults to the package wallet colors. */
     paidBarColor?: string;
     tierBarColor?: string;
 };
@@ -21,8 +24,8 @@ export const Chart: FC<ChartProps> = ({
     data,
     metric,
     showModelBreakdown,
-    paidBarColor = PAID_COLOR,
-    tierBarColor = TIER_COLOR,
+    paidBarColor = PAID_BALANCE_CHART_COLOR,
+    tierBarColor = TIER_BALANCE_CHART_COLOR,
 }) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);

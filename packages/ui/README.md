@@ -69,6 +69,12 @@ package-owned app stylesheet instead:
 `app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
 and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 
+Wallet-specific colors and utilities live in a separate stylesheet:
+
+```css
+@import "@pollinations_ai/ui/wallet.css";
+```
+
 ## What's exported
 
 - `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
@@ -85,11 +91,14 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
   intent. The app composes layout, copy, and color.
 - `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
   internal preview surface for rendering primitives and tokens together.
+- `@pollinations_ai/ui/wallet` exports wallet-specific display helpers and
+  recipes: `formatPollen`, `PaidChip`, `TierChip`,
+  `PAID_BALANCE_CHART_COLOR`, and `TIER_BALANCE_CHART_COLOR`.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
   `Tooltip`, `ChevronIcon`.
-- **Helpers** — `cn`, `formatPollen`, `currentPeriod`,
+- **Helpers** — `cn`, `currentPeriod`,
   `formatPeriodLabel`, `getPeriodBucketKeys`, `isPeriodSelectable`,
   `periodBucketKeyToDate`, `periodFromDate`, `periodToWindow`,
   `startOfUtcDay`.
@@ -140,13 +149,18 @@ with host app tokens.
 | `--polli-font-pixel`          | Pixel/monospace fallback stack.               |
 | `--polli-text-micro`          | Micro label size.                             |
 | `--polli-text-base`           | Base text size.                               |
+| `--polli-color-surface-white` | Translucent white surface.                    |
+
+Wallet tokens are public when `@pollinations_ai/ui/wallet.css` is imported:
+
+| Token                         | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
 | `--polli-color-paid-pale`     | Paid-balance wash.                            |
 | `--polli-color-paid-soft`     | Paid-balance marker.                          |
 | `--polli-color-paid-deep`     | Paid-balance text.                            |
 | `--polli-color-tier-pale`     | Tier-balance wash.                            |
 | `--polli-color-tier-soft`     | Tier-balance marker.                          |
 | `--polli-color-tier-deep`     | Tier-balance text.                            |
-| `--polli-color-surface-white` | Translucent white surface.                    |
 
 **Intent (theme-independent):**
 

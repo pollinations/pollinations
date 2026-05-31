@@ -3,10 +3,10 @@ import {
     ChevronIcon,
     Chip,
     cn,
-    formatPollen,
     MailIcon,
     useScrollLock,
 } from "@pollinations_ai/ui";
+import { formatPollen } from "@pollinations_ai/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,

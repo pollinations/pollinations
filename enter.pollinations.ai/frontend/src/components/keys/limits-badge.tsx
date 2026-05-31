@@ -1,4 +1,5 @@
-import { cn, formatPollen } from "@pollinations_ai/ui";
+import { cn } from "@pollinations_ai/ui";
+import { formatPollen } from "@pollinations_ai/ui/wallet";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 

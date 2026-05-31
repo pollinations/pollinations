@@ -1,7 +1,7 @@
 import { useAccountKey, useAuthState } from "@pollinations_ai/sdk/react";
 import { cn } from "../lib/cn.ts";
-import { formatPollen } from "../lib/format-pollen.ts";
 import { Chip } from "../primitives/Chip.tsx";
+import { formatPollen } from "../wallet/format-pollen.ts";
 
 export type KeyBudgetProps = { className?: string };
 

@@ -8,12 +8,6 @@
     --polli-text-micro: 10px;
     --polli-text-base: 16px;
 
-    --polli-color-paid-pale: oklch(0.93 0.09 95.746);
-    --polli-color-paid-soft: oklch(0.85 0.16 95.746);
-    --polli-color-paid-deep: #78350f;
-    --polli-color-tier-pale: oklch(0.93 0.06 55);
-    --polli-color-tier-soft: oklch(0.83 0.13 55);
-    --polli-color-tier-deep: #7C3F1E;
     --polli-color-surface-white: oklch(1 0 0 / 0.8);
 }
 
@@ -129,13 +123,6 @@
     --font-pixel:                     "Pixelify Sans", ui-monospace, monospace;
     --text-micro:                     10px;
     --text-base:                      16px;
-
-    --color-paid-pale:                oklch(0.93 0.09 95.746);
-    --color-paid-soft:                oklch(0.85 0.16 95.746);
-    --color-paid-deep:                #78350f;
-    --color-tier-pale:                oklch(0.93 0.06 55);
-    --color-tier-soft:                oklch(0.83 0.13 55);
-    --color-tier-deep:                #7c3f1e;
 
     --color-theme-text-base:         var(--polli-color-text-base);
     --color-theme-text-strong:       var(--polli-color-text-strong);

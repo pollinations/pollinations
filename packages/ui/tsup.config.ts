@@ -1,7 +1,12 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-    entry: ["src/index.ts", "src/auth/index.ts", "src/showcase/index.ts"],
+    entry: [
+        "src/index.ts",
+        "src/auth/index.ts",
+        "src/showcase/index.ts",
+        "src/wallet/index.ts",
+    ],
     format: ["esm", "cjs"],
     dts: true,
     splitting: false,

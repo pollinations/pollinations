@@ -1,4 +1,5 @@
 import { ChevronIcon, Chip, cn, Tooltip } from "@pollinations_ai/ui";
+import { PaidChip } from "@pollinations_ai/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,
@@ -340,9 +341,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         </Chip>
                                     )}
                                     {showPaidOnly && (
-                                        <Chip intent="paid" size="sm">
-                                            PAID
-                                        </Chip>
+                                        <PaidChip size="sm">PAID</PaidChip>
                                     )}
                                 </div>
                             )}

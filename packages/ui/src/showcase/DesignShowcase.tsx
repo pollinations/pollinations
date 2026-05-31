@@ -1,5 +1,4 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { formatPollen } from "../lib/format-pollen.ts";
 import { currentPeriod, type PeriodSelection } from "../lib/period.ts";
 import { Button } from "../primitives/Button.tsx";
 import { Chip } from "../primitives/Chip.tsx";
@@ -18,13 +17,13 @@ import { Switch, type SwitchStatus } from "../primitives/Switch.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 import { type ThemeName, themes } from "../theme.ts";
+import { formatPollen, PaidChip, TierChip } from "../wallet/index.ts";
 
 /**
  * Package-owned design primitive showcase.
  *
- * This component is intentionally generic: it renders package primitives and
- * package tokens only. App-specific charts, model recipes, routes, and copy
- * belong in host apps.
+ * This component renders package primitives, tokens, and domain recipes only.
+ * App-specific charts, model recipes, routes, and copy belong in host apps.
  */
 export const DesignShowcase: FC = () => {
     const [theme, setTheme] = useState<ThemeName>("amber");
@@ -316,9 +315,11 @@ const ChipsDemo: FC = () => (
             <Row label="Intent">
                 <Chip intent="news">NEW</Chip>
                 <Chip intent="alpha">ALPHA</Chip>
-                <Chip intent="paid">Paid</Chip>
-                <Chip intent="tier">Tier</Chip>
                 <Chip intent="neutral">Neutral</Chip>
+            </Row>
+            <Row label="Wallet">
+                <PaidChip>Paid</PaidChip>
+                <TierChip>Tier</TierChip>
             </Row>
             <Row label="Theme override">
                 {themes.map((theme) => (
@@ -354,7 +355,7 @@ const SurfacesDemo: FC = () => (
                         A light themed wash for highlights and grouped state.
                     </p>
                 </Surface>
-                <div className="polli:rounded-xl polli:bg-paid-pale/60 polli:p-4 polli:text-paid-deep">
+                <div className="polli-wallet-panel-paid polli:rounded-xl polli:p-4">
                     <h3 className="polli:font-subheading polli:text-xl">
                         Static token
                     </h3>
@@ -642,9 +643,9 @@ const FeedbackDemo: FC = () => (
                     content="Formatted with formatPollen()"
                     displayContents
                 >
-                    <Chip intent="paid" size="lg">
+                    <PaidChip size="lg">
                         {formatPollen(1234.5678)} Pollen
-                    </Chip>
+                    </PaidChip>
                 </Tooltip>
                 <Tooltip
                     content="Use triggerAs='span' around inline text."

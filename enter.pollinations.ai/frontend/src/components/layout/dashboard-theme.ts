@@ -4,7 +4,7 @@ export { themes };
 export type { ThemeName };
 
 // Intent maps live per-primitive now: Button/Surface/IconButton support
-// `danger`; Chip supports the four label intents (news/alpha/paid/tier).
+// `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 
 export type DashboardPage =

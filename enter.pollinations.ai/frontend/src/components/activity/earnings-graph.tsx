@@ -1,11 +1,17 @@
 import {
     Button,
     Chip,
-    formatPollen,
     MultiSelect,
     Section,
     Tooltip,
 } from "@pollinations_ai/ui";
+import {
+    formatPollen,
+    PAID_BALANCE_CHART_COLOR,
+    PaidChip,
+    TIER_BALANCE_CHART_COLOR,
+    TierChip,
+} from "@pollinations_ai/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
@@ -18,8 +24,6 @@ type EarningsGraphProps = {
     apps: Array<{ id: string; name: string }>;
     theme: ThemeName;
 };
-
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
@@ -137,8 +141,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             data={chartData}
                             metric="pollen"
                             showModelBreakdown={showAppBreakdown}
-                            paidBarColor={PAID_COLOR}
-                            tierBarColor={TIER_COLOR}
+                            paidBarColor={PAID_BALANCE_CHART_COLOR}
+                            tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
                 </div>
@@ -156,8 +160,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             content={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
                                             displayContents
                                         >
-                                            <Chip
-                                                intent="paid"
+                                            <PaidChip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
@@ -167,14 +170,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                                         stats.totalPaid,
                                                     )}
                                                 </span>
-                                            </Chip>
+                                            </PaidChip>
                                         </Tooltip>
                                         <Tooltip
                                             content={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
                                             displayContents
                                         >
-                                            <Chip
-                                                intent="tier"
+                                            <TierChip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
@@ -184,7 +186,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                                         stats.totalTier,
                                                     )}
                                                 </span>
-                                            </Chip>
+                                            </TierChip>
                                         </Tooltip>
                                     </div>
                                 ) : null

@@ -5,7 +5,15 @@ import {
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { FC } from "react";
+import type { CSSProperties, FC } from "react";
+
+const pollenPackSliderStyle = {
+    "--polli-range-slider-fill": "var(--polli-color-paid-soft)",
+    "--polli-range-slider-track": "var(--polli-color-paid-pale)",
+    "--polli-range-slider-thumb-border": "var(--polli-color-paid-deep)",
+    "--polli-range-slider-thumb-shadow":
+        "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
+} as CSSProperties;
 
 const formatPackAriaLabel = (pack: PollenPack): string => {
     const bonusPercent = getPackBonusPercent(pack);
@@ -57,6 +65,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             : undefined
                     }
                     progress={progressPercent}
+                    style={pollenPackSliderStyle}
                 />
             </div>
             <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-amber-700/80 tabular-nums">

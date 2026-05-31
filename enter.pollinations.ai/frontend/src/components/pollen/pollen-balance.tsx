@@ -1,12 +1,12 @@
 import {
     Button,
     ClockIcon,
-    formatPollen,
     InfoTip,
     MailIcon,
     Tooltip,
     WalletIcon,
 } from "@pollinations_ai/ui";
+import { formatPollen } from "@pollinations_ai/ui/wallet";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";

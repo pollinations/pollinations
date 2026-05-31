@@ -1,12 +1,17 @@
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
 import {
     Chip,
-    formatPollen,
     MultiSelect,
     Section,
     TabButton,
     Tooltip,
 } from "@pollinations_ai/ui";
+import {
+    formatPollen,
+    PAID_BALANCE_CHART_COLOR,
+    PaidChip,
+    TIER_BALANCE_CHART_COLOR,
+    TierChip,
+} from "@pollinations_ai/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
@@ -146,8 +151,8 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             data={chartData}
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
-                            paidBarColor={PAID_COLOR}
-                            tierBarColor={TIER_COLOR}
+                            paidBarColor={PAID_BALANCE_CHART_COLOR}
+                            tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
                 </div>
@@ -160,20 +165,18 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 value={formatPollen(stats.totalPollen)}
                                 detail={
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Chip
-                                            intent="paid"
+                                        <PaidChip
                                             size="lg"
                                             className="font-semibold"
                                         >
                                             💳 {formatPollen(stats.paidPollen)}
-                                        </Chip>
-                                        <Chip
-                                            intent="tier"
+                                        </PaidChip>
+                                        <TierChip
                                             size="lg"
                                             className="font-semibold"
                                         >
                                             🌱 {formatPollen(stats.tierPollen)}
-                                        </Chip>
+                                        </TierChip>
                                     </div>
                                 }
                                 theme={theme}

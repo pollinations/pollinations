@@ -1,4 +1,4 @@
-import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAccountProfile, useAuthState } from "@pollinations_ai/sdk/react";
 import { cn } from "../lib/cn.ts";
 
 export type UserAvatarProps = {
@@ -24,7 +24,7 @@ function initials(name: string): string | null {
 /** Avatar from `profile.image`, or initials from `profile.name`. `null` otherwise. */
 export function UserAvatar({ size = "md", className }: UserAvatarProps) {
     const { isLoggedIn } = useAuthState();
-    const { profile } = useAuthProfile();
+    const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
     if (!isLoggedIn) return null;
 
     const base = cn(

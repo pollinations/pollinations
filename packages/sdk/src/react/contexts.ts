@@ -1,27 +1,11 @@
 import { createContext } from "react";
-import type { Pollinations } from "../client.js";
-import type { AccountBalance, AccountProfile, KeyInfo } from "../types.js";
-
-export type UserProfile = AccountProfile;
-export type UserBalance = AccountBalance;
-export type UserKey = KeyInfo;
+import type { AccountPermission } from "../types.js";
 
 export interface AuthStateValue {
     apiKey: string | null;
     isLoggedIn: boolean;
-}
-
-export interface AuthProfileValue {
-    profile: UserProfile | null;
-    balance: UserBalance | null;
-    isLoadingProfile: boolean;
-}
-
-export interface AuthKeyValue {
-    key: UserKey | null;
-    /** Account scopes actually present on the current API key. */
-    permissions: readonly string[];
-    isLoadingKey: boolean;
+    isHydrated: boolean;
+    error: Error | null;
 }
 
 /**
@@ -31,7 +15,7 @@ export interface AuthKeyValue {
  */
 export interface AuthorizeRequest {
     /** Extra OAuth scopes appended to provider defaults. */
-    permissions?: string[];
+    permissions?: AccountPermission[];
     /** Restrict the minted key to these model slugs. Omit / empty = all models. */
     models?: string[];
     /** Pollen budget to request for the minted key. */
@@ -43,29 +27,13 @@ export interface AuthorizeRequest {
 export interface AuthActionsValue {
     login: (request?: AuthorizeRequest) => void;
     logout: () => void;
-    refreshProfile: () => Promise<void>;
-    refreshBalance: () => Promise<void>;
-    refreshKey: () => Promise<void>;
-    refreshAuth: () => Promise<void>;
+    setApiKey: (apiKey: string | null) => void;
     /** Resolved enter URL, useful for top-up / dashboard links. */
     enterUrl: string;
+    /** Resolved account API URL used by opt-in account hooks. */
+    apiBaseUrl: string;
 }
 
-export interface AuthContextValue
-    extends AuthStateValue,
-        AuthProfileValue,
-        AuthKeyValue,
-        AuthActionsValue {}
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
 
-export const AuthStateContext = createContext<AuthStateValue | null>(null);
-export const AuthProfileContext = createContext<AuthProfileValue | null>(null);
-export const AuthKeyContext = createContext<AuthKeyValue | null>(null);
-export const AuthActionsContext = createContext<AuthActionsValue | null>(null);
-
-/**
- * Memoized API client. Null when logged out. Exposed via `useAuthClient` for
- * advanced use cases (calling SDK methods not yet covered by a dedicated hook)
- * and consumed internally by `useKeyUsage` etc. so each query hook doesn't
- * instantiate its own client.
- */
-export const AuthClientContext = createContext<Pollinations | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);

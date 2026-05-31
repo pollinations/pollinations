@@ -15,6 +15,11 @@
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
+    "baseUrl": ".",
+    "paths": {
+      "@pollinations_ai/sdk": ["../sdk/src/index.ts"],
+      "@pollinations_ai/sdk/react": ["../sdk/src/react/index.ts"]
+    },
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]

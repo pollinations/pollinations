@@ -1,25 +1,21 @@
 import {
     PolliProvider,
+    useAccountKey,
     useAuthActions,
-    useAuthKey,
     useAuthState,
 } from "@pollinations_ai/sdk/react";
+import { Button, Chip, LinkButton, Surface, Switch } from "@pollinations_ai/ui";
 import {
-    Button,
-    Chip,
     KeyBudget,
     KeyExpiry,
     KeyModels,
     KeyPrefix,
-    LinkButton,
     LoginButton,
     LogoutButton,
-    Surface,
-    Switch,
     UserAvatar,
     UserEmail,
     UserName,
-} from "@pollinations_ai/ui";
+} from "@pollinations_ai/ui/auth";
 import { type ReactNode, useEffect, useState } from "react";
 
 // Publishable key for this showcase (pk_… is safe to commit).
@@ -127,7 +123,10 @@ function UserCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
 }
 
 function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const { key, permissions, isLoadingKey } = useAuthKey();
+    const { data: key, isLoading } = useAccountKey({
+        enabled: enabled.keyBudget || enabled.keyExpiry || enabled.permissions,
+    });
+    const permissions = key?.permissions?.account ?? [];
     const showBudget = enabled.keyBudget && key?.pollenBudget != null;
     const showExpiry = enabled.keyExpiry && !!key?.expiresAt;
     const showPrefix = enabled.keyPrefix;
@@ -140,7 +139,7 @@ function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
         !showBudget &&
         !showPermissions &&
         !showModels &&
-        !isLoadingKey
+        !isLoading
     ) {
         return null;
     }
@@ -164,7 +163,7 @@ function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
             )}
             {showPermissions && (
                 <Metric label="Permission">
-                    {isLoadingKey ? (
+                    {isLoading ? (
                         <span className="text-sm text-stone-500">
                             Checking permissions…
                         </span>
@@ -236,12 +235,15 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
         enabled.permissions ||
         enabled.keyModels;
 
-    const uiImports = [
-        "LoginButton",
-        "LogoutButton",
+    const primitiveImports = [
         "LinkButton",
         "Surface",
         enabled.permissions && "Chip",
+    ].filter(Boolean) as string[];
+
+    const authImports = [
+        "LoginButton",
+        "LogoutButton",
         enabled.keyBudget && "KeyBudget",
         enabled.keyExpiry && "KeyExpiry",
         enabled.keyModels && "KeyModels",
@@ -252,12 +254,13 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
     ].filter(Boolean) as string[];
 
     const sdkHooks = ["PolliProvider", "useAuthActions", "useAuthState"];
-    if (enabled.permissions) sdkHooks.push("useAuthKey");
+    if (enabled.permissions) sdkHooks.push("useAccountKey");
 
     const hookLines = [
         "    const { isLoggedIn } = useAuthState();",
         "    const { enterUrl } = useAuthActions();",
-        enabled.permissions && "    const { permissions } = useAuthKey();",
+        enabled.permissions &&
+            "    const { data: key } = useAccountKey();\n    const permissions = key?.permissions?.account ?? [];",
     ].filter(Boolean) as string[];
 
     const identity = [
@@ -352,8 +355,12 @@ ${keyRows}
         : "";
 
     const uiImportBlock = `import {
-${uiImports.map((c) => `    ${c},`).join("\n")}
+${primitiveImports.map((c) => `    ${c},`).join("\n")}
 } from "@pollinations_ai/ui";\n`;
+
+    const authImportBlock = `import {
+${authImports.map((c) => `    ${c},`).join("\n")}
+} from "@pollinations_ai/ui/auth";\n`;
 
     const sdkImportBlock = `import {
 ${sdkHooks.map((h) => `    ${h},`).join("\n")}
@@ -368,6 +375,7 @@ ${sdkHooks.map((h) => `    ${h},`).join("\n")}
 import "@pollinations_ai/ui/styles.css";
 ${sdkImportBlock}
 ${uiImportBlock}
+${authImportBlock}
 const APP_KEY = "pk_your_key_here";
 ${permissionLabelsBlock}
 function Wallet() {
@@ -383,7 +391,7 @@ ${walletBody}
 
 export default function App() {
     return (
-        <PolliProvider appKey={APP_KEY}>
+        <PolliProvider appKey={APP_KEY} permissions={["profile"]}>
             <Wallet />
         </PolliProvider>
     );
@@ -393,7 +401,7 @@ export default function App() {
 const POLLI_TOKENS = [
     "PolliProvider",
     "useAuthActions",
-    "useAuthKey",
+    "useAccountKey",
     "useAuthState",
     "Surface",
     "Chip",
@@ -493,7 +501,7 @@ export default function App() {
                     </p>
                 </header>
 
-                <PolliProvider appKey={APP_KEY}>
+                <PolliProvider appKey={APP_KEY} permissions={["profile"]}>
                     <Wallet enabled={enabled} />
 
                     <section className="flex flex-col gap-5">

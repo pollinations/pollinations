@@ -578,6 +578,10 @@ export interface AuthorizeOptions {
     redirectUrl: string;
     /** Your app's publishable key (shows app name to user) */
     appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
     /** Restrict to specific models */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
@@ -655,6 +659,9 @@ export interface UsageOptions {
     /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
     period?: string;
 }
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
 
 /** Options for fetching daily usage */
 export interface DailyUsageOptions {

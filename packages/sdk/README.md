@@ -143,31 +143,51 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 ### React auth provider
 
-React apps can use the `@pollinations_ai/sdk/react` subpath for shared login state:
+React apps can use the `@pollinations_ai/sdk/react` subpath for shared login
+state. The provider only owns the session token and OAuth flow; account data is
+loaded by opt-in hooks.
 
 ```tsx
-import { PolliProvider, useAuthState } from '@pollinations_ai/sdk/react';
+import {
+  PolliProvider,
+  useAccountProfile,
+  useAuth,
+} from '@pollinations_ai/sdk/react';
 
 function AccountStatus() {
-  const { isLoggedIn } = useAuthState();
-  return isLoggedIn ? 'Logged in' : 'Logged out';
+  const { isLoggedIn, login, logout } = useAuth();
+  const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
+
+  if (!isLoggedIn) {
+    return <button onClick={() => login()}>Log in</button>;
+  }
+
+  return (
+    <button onClick={logout}>
+      Log out{profile?.name ? ` ${profile.name}` : ''}
+    </button>
+  );
 }
 
 export function App() {
   return (
-    <PolliProvider appKey="pk_your_publishable_key">
+    <PolliProvider appKey="pk_your_publishable_key" permissions={['profile']}>
       <AccountStatus />
     </PolliProvider>
   );
 }
 ```
 
+Account hooks are intentionally separate from the provider: `useAccountProfile`,
+`useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
+SDK response shapes plus `{ isLoading, error, refresh }`.
+
 #### SSR / Next.js App Router / RSC
 
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
 
 - **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
-- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. Profile / balance fetches start only once `apiKey` is set.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
 - **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
 
   ```tsx
@@ -185,7 +205,7 @@ export function App() {
   }
   ```
 
-- **React Server Components**: `useAuthState` / `useAuthProfile` / `useAuthActions` cannot be called from server components. Any component that reads auth state must be a client component.
+- **React Server Components**: `useAuth`, `useAuthState`, `useAuthActions`, and account hooks cannot be called from server components. Any component that reads auth state must be a client component.
 - **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
 
 ### Managing API keys

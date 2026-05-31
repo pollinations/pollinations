@@ -6,108 +6,154 @@ import {
     useRef,
     useState,
 } from "react";
-import type { Pollinations } from "../client.js";
-import type { UsageOptions, UsageResponse } from "../types.js";
+import type {
+    AccountBalance,
+    AccountProfile,
+    KeyInfo,
+    KeyUsageOptions,
+    UsageResponse,
+} from "../types.js";
 import { PollinationsError } from "../types.js";
 import {
-    AuthActionsContext,
     type AuthActionsValue,
-    AuthClientContext,
+    AuthContext,
     type AuthContextValue,
-    AuthKeyContext,
-    type AuthKeyValue,
-    AuthProfileContext,
-    type AuthProfileValue,
-    AuthStateContext,
     type AuthStateValue,
 } from "./contexts.js";
 
-export interface UseKeyUsageOptions extends Omit<UsageOptions, "format"> {
-    enabled?: boolean;
-}
-
-export interface UseKeyUsageValue {
-    usage: UsageResponse | null;
-    isLoading: boolean;
-    error: Error | null;
-    refresh: () => Promise<void>;
-}
-
-/** Only `apiKey` + `isLoggedIn`; does not re-render on profile/balance changes. */
-export function useAuthState(): AuthStateValue {
-    const ctx = useContext(AuthStateContext);
-    if (!ctx) {
-        throw new Error("useAuthState must be used within a <PolliProvider>");
-    }
-    return ctx;
-}
-
-/** Only `profile` + `balance`; does not re-render on `apiKey` changes. */
-export function useAuthProfile(): AuthProfileValue {
-    const ctx = useContext(AuthProfileContext);
-    if (!ctx) {
-        throw new Error("useAuthProfile must be used within a <PolliProvider>");
-    }
-    return ctx;
-}
-
-/** Current delegated key info from `/account/key`. */
-export function useAuthKey(): AuthKeyValue {
-    const ctx = useContext(AuthKeyContext);
-    if (!ctx) {
-        throw new Error("useAuthKey must be used within a <PolliProvider>");
-    }
-    return ctx;
-}
-
-/** Stable login/logout refs, refresh actions, and provider config. */
-export function useAuthActions(): AuthActionsValue {
-    const ctx = useContext(AuthActionsContext);
-    if (!ctx) {
-        throw new Error("useAuthActions must be used within a <PolliProvider>");
-    }
-    return ctx;
-}
-
-/**
- * Memoized SDK client. `null` when logged out. Use for SDK methods not yet
- * covered by a dedicated hook; for usage/profile/balance/key, prefer the
- * narrower hooks above so React can skip unrelated re-renders.
- */
-export function useAuthClient(): Pollinations | null {
-    return useContext(AuthClientContext);
-}
-
-/**
- * Combined hook. Subscribes to ALL four auth contexts, so the calling
- * component re-renders on any change. Prefer the narrow hooks for
- * performance — `useAuth` is only here for ergonomics.
- */
-export function useAuth(): AuthContextValue {
-    return {
-        ...useAuthState(),
-        ...useAuthProfile(),
-        ...useAuthKey(),
-        ...useAuthActions(),
-    };
-}
-
-/**
- * Internal: race-safe data fetcher tied to the provider's `client`.
- * Returns null data + loading=false when client is null (logged out).
- * Treats HTTP 401 by calling `onUnauthorized` (the provider then clears
- * the session). Other errors surface via `error`.
- */
-function useResource<T>(
-    client: Pollinations | null,
-    fetcher: (client: Pollinations) => Promise<T>,
-    onUnauthorized: () => void,
-): {
+export interface AccountResourceValue<T> {
     data: T | null;
     isLoading: boolean;
     error: Error | null;
     refresh: () => Promise<void>;
-} {
+}
+
+export interface UseAccountKeyUsageOptions extends KeyUsageOptions {
+    enabled?: boolean;
+}
+
+export type UseAccountProfileValue = AccountResourceValue<AccountProfile>;
+export type UseAccountBalanceValue = AccountResourceValue<AccountBalance>;
+export type UseAccountKeyValue = AccountResourceValue<KeyInfo>;
+export type UseAccountKeyUsageValue = AccountResourceValue<UsageResponse>;
+
+type AccountFetcher<T> = (apiBaseUrl: string, apiKey: string) => Promise<T>;
+
+function useRequiredAuth(): AuthContextValue {
+    const ctx = useContext(AuthContext);
+    if (!ctx) {
+        throw new Error(
+            "Pollinations auth hooks must be used within a <PolliProvider>",
+        );
+    }
+    return ctx;
+}
+
+/** Current auth session state only. Does not fetch account data. */
+export function useAuthState(): AuthStateValue {
+    const { apiKey, isLoggedIn, isHydrated, error } = useRequiredAuth();
+    return useMemo(
+        () => ({ apiKey, isLoggedIn, isHydrated, error }),
+        [apiKey, isLoggedIn, isHydrated, error],
+    );
+}
+
+/** Stable login/logout refs and provider config. */
+export function useAuthActions(): AuthActionsValue {
+    const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
+        useRequiredAuth();
+    return useMemo(
+        () => ({ login, logout, setApiKey, enterUrl, apiBaseUrl }),
+        [login, logout, setApiKey, enterUrl, apiBaseUrl],
+    );
+}
+
+/** Combined thin auth hook. Account data is available through opt-in hooks. */
+export function useAuth(): AuthContextValue {
+    return useRequiredAuth();
+}
+
+function accountUrl(
+    apiBaseUrl: string,
+    path: string,
+    params?: URLSearchParams,
+): string {
+    const qs = params?.toString();
+    return `${apiBaseUrl.replace(/\/+$/, "")}${path}${qs ? `?${qs}` : ""}`;
+}
+
+async function pollinationsErrorFromResponse(
+    response: Response,
+): Promise<PollinationsError> {
+    let payload: unknown;
+    try {
+        payload = await response.json();
+    } catch {
+        payload = null;
+    }
+
+    const record =
+        payload && typeof payload === "object"
+            ? (payload as Record<string, unknown>)
+            : {};
+    const nested =
+        record.error && typeof record.error === "object"
+            ? (record.error as Record<string, unknown>)
+            : record;
+
+    const message =
+        typeof nested.message === "string"
+            ? nested.message
+            : response.statusText || `Request failed with ${response.status}`;
+    const code =
+        typeof nested.code === "string"
+            ? nested.code
+            : response.status === 401
+              ? "UNAUTHORIZED"
+              : "HTTP_ERROR";
+    const details =
+        nested.details && typeof nested.details === "object"
+            ? (nested.details as Record<string, unknown>)
+            : undefined;
+    const requestId =
+        typeof nested.requestId === "string" ? nested.requestId : undefined;
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfter = retryAfterHeader
+        ? Number.parseInt(retryAfterHeader, 10)
+        : undefined;
+
+    return new PollinationsError(
+        message,
+        code,
+        response.status,
+        details,
+        requestId,
+        Number.isFinite(retryAfter) ? retryAfter : undefined,
+    );
+}
+
+async function fetchAccountJson<T>(
+    apiBaseUrl: string,
+    apiKey: string,
+    path: string,
+    params?: URLSearchParams,
+): Promise<T> {
+    const response = await fetch(accountUrl(apiBaseUrl, path, params), {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!response.ok) {
+        throw await pollinationsErrorFromResponse(response);
+    }
+
+    return response.json() as Promise<T>;
+}
+
+function useAccountResource<T>(
+    fetcher: AccountFetcher<T>,
+    enabled = true,
+): AccountResourceValue<T> {
+    const { apiKey, apiBaseUrl, logout } = useRequiredAuth();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -115,22 +161,23 @@ function useResource<T>(
 
     const refresh = useCallback(async () => {
         const reqId = ++reqIdRef.current;
-        if (!client) {
+        if (!enabled || !apiKey) {
             setData(null);
             setIsLoading(false);
             setError(null);
             return;
         }
+
         setIsLoading(true);
         setError(null);
         try {
-            const result = await fetcher(client);
+            const result = await fetcher(apiBaseUrl, apiKey);
             if (reqId !== reqIdRef.current) return;
             setData(result);
         } catch (err) {
             if (reqId !== reqIdRef.current) return;
             if (err instanceof PollinationsError && err.status === 401) {
-                onUnauthorized();
+                logout();
                 return;
             }
             setData(null);
@@ -138,24 +185,63 @@ function useResource<T>(
         } finally {
             if (reqId === reqIdRef.current) setIsLoading(false);
         }
-    }, [client, fetcher, onUnauthorized]);
+    }, [apiKey, apiBaseUrl, enabled, fetcher, logout]);
 
-    return { data, isLoading, error, refresh };
+    useEffect(() => {
+        void refresh();
+    }, [refresh]);
+
+    return useMemo(
+        () => ({ data, isLoading, error, refresh }),
+        [data, isLoading, error, refresh],
+    );
 }
 
-/**
- * Internal-but-exported: used by PolliProvider for its three resources, and
- * by `useKeyUsage` below. Exported so the same race-safe shape is reusable
- * across the package.
- */
-export { useResource };
+/** Current account profile for the delegated key. */
+export function useAccountProfile(options: { enabled?: boolean } = {}) {
+    const { enabled = true } = options;
+    const fetcher = useCallback(
+        (apiBaseUrl: string, apiKey: string) =>
+            fetchAccountJson<AccountProfile>(
+                apiBaseUrl,
+                apiKey,
+                "/account/profile",
+            ),
+        [],
+    );
+    return useAccountResource(fetcher, enabled);
+}
 
-/** Usage for the current delegated key only. Auto-refreshes when options change. */
-export function useKeyUsage(
-    options: UseKeyUsageOptions = {},
-): UseKeyUsageValue {
-    const client = useAuthClient();
-    const { logout } = useAuthActions();
+/** Current visible balance for the delegated key. */
+export function useAccountBalance(options: { enabled?: boolean } = {}) {
+    const { enabled = true } = options;
+    const fetcher = useCallback(
+        (apiBaseUrl: string, apiKey: string) =>
+            fetchAccountJson<AccountBalance>(
+                apiBaseUrl,
+                apiKey,
+                "/account/balance",
+            ),
+        [],
+    );
+    return useAccountResource(fetcher, enabled);
+}
+
+/** Current delegated key metadata. */
+export function useAccountKey(options: { enabled?: boolean } = {}) {
+    const { enabled = true } = options;
+    const fetcher = useCallback(
+        (apiBaseUrl: string, apiKey: string) =>
+            fetchAccountJson<KeyInfo>(apiBaseUrl, apiKey, "/account/key"),
+        [],
+    );
+    return useAccountResource(fetcher, enabled);
+}
+
+/** Usage for the current delegated key only. */
+export function useAccountKeyUsage(
+    options: UseAccountKeyUsageOptions = {},
+): UseAccountKeyUsageValue {
     const {
         enabled = true,
         days,
@@ -166,26 +252,21 @@ export function useKeyUsage(
     } = options;
 
     const fetcher = useCallback(
-        (c: Pollinations) =>
-            c.accountKeyUsage({ days, limit, before, granularity, period }),
+        (apiBaseUrl: string, apiKey: string) => {
+            const params = new URLSearchParams();
+            if (days) params.set("days", String(days));
+            if (limit) params.set("limit", String(limit));
+            if (before) params.set("before", before);
+            if (granularity) params.set("granularity", granularity);
+            if (period) params.set("period", period);
+            return fetchAccountJson<UsageResponse>(
+                apiBaseUrl,
+                apiKey,
+                "/account/key/usage",
+                params,
+            );
+        },
         [days, limit, before, granularity, period],
     );
-
-    // Treat a 401 on usage as session invalidation: the delegated key was
-    // revoked or expired, so clear the session — same effect as the provider's
-    // own resources' 401 handling.
-    const { data, isLoading, error, refresh } = useResource(
-        enabled ? client : null,
-        fetcher,
-        logout,
-    );
-
-    useEffect(() => {
-        if (enabled) void refresh();
-    }, [enabled, refresh]);
-
-    return useMemo(
-        () => ({ usage: data, isLoading, error, refresh }),
-        [data, isLoading, error, refresh],
-    );
+    return useAccountResource(fetcher, enabled);
 }

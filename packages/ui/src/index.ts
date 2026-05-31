@@ -1,4 +1,3 @@
-export * from "./auth/index.ts";
 export { cn } from "./lib/cn.ts";
 export { formatPollen } from "./lib/format-pollen.ts";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";

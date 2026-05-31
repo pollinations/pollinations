@@ -1,4 +1,4 @@
-import { useAuthProfile, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAccountProfile, useAuthState } from "@pollinations_ai/sdk/react";
 
 export type UserNameProps = { className?: string };
 
@@ -9,7 +9,7 @@ export type UserNameProps = { className?: string };
  */
 export function UserName({ className }: UserNameProps) {
     const { isLoggedIn } = useAuthState();
-    const { profile } = useAuthProfile();
+    const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
     if (!isLoggedIn || !profile) return null;
     const display = profile.name || profile.githubUsername;
     if (!display) return null;

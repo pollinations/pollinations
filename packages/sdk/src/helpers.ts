@@ -47,6 +47,7 @@ import type {
     ImageGenerateOptions,
     ImageGenerateV1Options,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     TextGenerateOptions,
@@ -611,7 +612,7 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
  * Get usage history for the currently configured API key only.
  */
 export async function getKeyUsage(
-    options?: UsageOptions,
+    options?: KeyUsageOptions,
 ): Promise<UsageResponse> {
     return getClient().accountKeyUsage(options);
 }

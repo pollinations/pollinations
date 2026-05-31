@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "predev": "npm run build --prefix ../../packages/ui",
+    "predev": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
     "build": "vite build",
-    "prebuild": "npm run build --prefix ../../packages/ui",
+    "prebuild": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
     "preview": "vite preview",
-    "pretypecheck": "npm run build --prefix ../../packages/ui",
+    "pretypecheck": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

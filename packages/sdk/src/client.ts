@@ -21,6 +21,7 @@ import type {
     ImageGenerateV1Options,
     ImageResponse,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     PollinationsConfig,
@@ -1694,6 +1695,7 @@ export class Pollinations {
         params.set("redirect_uri", options.redirectUrl);
 
         if (options.appKey) params.set("client_id", options.appKey);
+        if (options.state) params.set("state", options.state);
         if (options.models?.length)
             params.set("models", options.models.join(","));
         if (options.budget !== undefined)
@@ -1703,7 +1705,7 @@ export class Pollinations {
         if (options.permissions?.length)
             params.set("scope", options.permissions.join(" "));
 
-        return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+        return `${options.authBaseUrl ?? AUTH_BASE_URL}/authorize?${params.toString()}`;
     }
 
     authorizeUrl(options: AuthorizeOptions): string {
@@ -1978,9 +1980,10 @@ export class Pollinations {
      * usage.forEach(r => console.log(r.model, r.cost_usd));
      * ```
      */
-    async accountKeyUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountKeyUsage(
+        options: KeyUsageOptions = {},
+    ): Promise<UsageResponse> {
         const params = new URLSearchParams();
-        if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);

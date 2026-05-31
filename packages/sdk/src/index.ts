@@ -118,6 +118,7 @@ export type {
     JsonSchema,
     KeyAccountPermission,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     MessageContent,
     MessageContentPart,

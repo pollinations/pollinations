@@ -14,8 +14,8 @@ npm install @pollinations_ai/sdk @pollinations_ai/ui
 
 ```tsx
 import "@pollinations_ai/ui/styles.css";
-import { PolliProvider } from "@pollinations_ai/sdk/react";
-import { useKeyUsage } from "@pollinations_ai/sdk/react";
+import { PolliProvider, useAccountKeyUsage } from "@pollinations_ai/sdk/react";
+import { Surface } from "@pollinations_ai/ui";
 import {
     KeyBudget,
     KeyExpiry,
@@ -27,17 +27,17 @@ import {
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui";
+} from "@pollinations_ai/ui/auth";
 
 function RecentRequests() {
-    const { usage } = useKeyUsage({ days: 7, limit: 5 });
+    const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
     return <span>{usage?.usage.length ?? 0} recent requests</span>;
 }
 
 export function App() {
     return (
-        <PolliProvider appKey="pk_your_publishable_key">
-            <div data-theme="amber">
+        <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
+            <Surface data-theme="amber">
                 <WhenLoggedOut>
                     <LoginButton theme="amber">
                         Log in with Pollinations
@@ -53,7 +53,7 @@ export function App() {
                     <RecentRequests />
                     <LogoutButton theme="amber">Log out</LogoutButton>
                 </WhenLoggedIn>
-            </div>
+            </Surface>
         </PolliProvider>
     );
 }
@@ -61,7 +61,10 @@ export function App() {
 
 ## What's exported
 
-- **Auth-aware primitives** — all read from the surrounding `<PolliProvider>`:
+- `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
+  theme data. These can be used without Pollinations auth.
+- `@pollinations_ai/ui/auth` exports auth-aware components that read from the
+  surrounding `<PolliProvider>`:
   - **null when not logged in (or before data loads):** `Balance`,
     `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`, `LogoutButton`,
     `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
@@ -76,8 +79,9 @@ export function App() {
 - **Helpers** — `cn`, `formatPollen`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
-For per-request usage data and other dynamic queries, call the hooks from
-`@pollinations_ai/sdk/react` (`useKeyUsage`, `useAuthKey`, etc.) directly.
+For per-request usage data and other dynamic queries, call the opt-in hooks
+from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
+`useAccountBalance`, etc.) directly.
 
 ## Theming
 

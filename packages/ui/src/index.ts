@@ -14,6 +14,7 @@ export {
     periodToWindow,
     startOfUtcDay,
 } from "./lib/period.ts";
+export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
@@ -21,6 +22,12 @@ export {
     Collapsible,
     type CollapsibleProps,
 } from "./primitives/Collapsible.tsx";
+export {
+    Dialog,
+    DialogDescription,
+    type DialogProps,
+    DialogTitle,
+} from "./primitives/Dialog.tsx";
 export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,

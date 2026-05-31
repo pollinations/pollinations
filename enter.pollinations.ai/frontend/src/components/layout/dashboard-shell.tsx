@@ -11,6 +11,7 @@ import {
     MenuIcon,
     ScrollArea,
     TerminalIcon,
+    useScrollLock,
     WalletIcon,
     XIcon,
 } from "@pollinations_ai/ui";
@@ -25,7 +26,6 @@ import {
     useState,
 } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,

@@ -63,6 +63,7 @@
     }
   },
   "dependencies": {
+    "@ark-ui/react": "^5.29.1",
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0"
   },

@@ -5,6 +5,7 @@ import {
     cn,
     formatPollen,
     MailIcon,
+    useScrollLock,
 } from "@pollinations_ai/ui";
 import {
     CONSENT_PERMISSIONS,
@@ -17,7 +18,6 @@ import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";

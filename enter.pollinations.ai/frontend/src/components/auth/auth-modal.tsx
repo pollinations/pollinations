@@ -1,4 +1,4 @@
-import { ScrollArea } from "@pollinations_ai/ui";
+import { Dialog } from "@pollinations_ai/ui";
 import type { ReactNode } from "react";
 
 type AuthModalProps = {
@@ -18,32 +18,22 @@ export function AuthModal({
     dialog,
     tone = "default",
 }: AuthModalProps) {
-    const dialogProps = dialog
-        ? {
-              role: "dialog" as const,
-              "aria-modal": true,
-              ...(dialog.label && { "aria-label": dialog.label }),
-              ...(dialog.labelledBy && {
-                  "aria-labelledby": dialog.labelledBy,
-              }),
-          }
-        : {};
     const borderClass =
         tone === "error"
             ? "border-intent-danger-border"
             : "border-theme-border";
     return (
-        <ScrollArea
+        <Dialog
+            open
             theme="amber"
-            className="fixed inset-0 flex items-start justify-center bg-theme-bg-pale p-4"
+            showBackdrop={false}
+            ariaLabel={dialog?.label}
+            labelledBy={dialog?.labelledBy}
+            positionerClassName="items-start overflow-y-auto bg-theme-bg-pale"
+            contentClassName={`bg-surface-white border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
         >
-            <div
-                className={`bg-surface-white border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
-                {...dialogProps}
-            >
-                {children}
-            </div>
-        </ScrollArea>
+            {children}
+        </Dialog>
     );
 }
 

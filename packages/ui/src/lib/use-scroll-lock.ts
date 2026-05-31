@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 
 /**
- * Locks page scroll while the hook is mounted (or while `enabled` is true).
- * Restores the original overflow values on cleanup.
+ * Locks page scroll while enabled and restores the original overflow values on
+ * cleanup.
  */
 export function useScrollLock(enabled = true): void {
     useEffect(() => {

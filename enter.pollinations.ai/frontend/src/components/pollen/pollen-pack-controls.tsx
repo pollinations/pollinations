@@ -19,14 +19,14 @@ const sliderGradient = (percent: number): string =>
  */
 export type LocalizedPackPrices = {
     currency: string | null;
-    prices: Record<string, { amount: number; formatted: string }>;
+    prices: Record<string, string>;
 } | null;
 
 const packPriceLabel = (
     pack: PollenPack,
     localizedPrices: LocalizedPackPrices,
 ): string =>
-    localizedPrices?.prices[pack.packKey]?.formatted ??
+    localizedPrices?.prices[pack.packKey] ??
     formatPollenPackPriceUsd(pack.amountUsd);
 
 const formatPackAriaLabel = (

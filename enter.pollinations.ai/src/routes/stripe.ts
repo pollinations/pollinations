@@ -184,10 +184,11 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * GET /api/stripe/localized-prices
      * Best-effort local-currency estimate for the pack slider, derived from the
-     * buyer's CF-IPCountry via the Stripe FX Quotes API (fee-inclusive, hour
-     * lock, KV-cached). Checkout stays USD-native + Adaptive Pricing, so this is
-     * a labelled "≈" preview. Fails open to `{ currency: null }` (USD display)
-     * on any error or unmapped country — it must never break the dashboard.
+     * buyer's CF-IPCountry via the Stripe FX Quotes API (hour-locked,
+     * KV-cached mid-market rate + fixed 4% Adaptive Pricing fee estimate).
+     * Checkout stays USD-native + Adaptive Pricing, so this is a labelled "≈"
+     * preview. Fails open to `{ currency: null }` (USD display) on any error or
+     * unmapped country — it must never break the dashboard.
      */
     .get("/localized-prices", async (c) => {
         try {

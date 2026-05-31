@@ -15,10 +15,9 @@ import type { PollenPack, PollenPackKey } from "@shared/pollen-packs.ts";
  * variable, unpublished 2-4% markup ("determined by Stripe... to increase
  * conversion"); the FX Quote's own `fx_fee_rate` is a different, lower (2%)
  * settlement fee that does NOT match AP's buyer-facing markup. So we ignore the
- * quote's fee, take the mid-market reference_rate, and add our own estimate at
- * the 3% midpoint of Stripe's stated range — worst-case ~1% off the real charge
- * in either direction. Always labelled "≈"; the buyer sees Stripe's exact
- * number on the checkout page.
+ * quote's fee, take the mid-market reference_rate, and add a conservative fixed
+ * 4% estimate. Always labelled "≈"; the buyer sees Stripe's exact number on the
+ * checkout page.
  *
  * Rate semantics (verified against the live API): with
  * `to_currency=usd` + `from_currencies=[local]`,
@@ -83,29 +82,15 @@ export const SUPPORTED_PRESENTMENT_CURRENCIES: ReadonlyArray<string> = [
 // Currencies Stripe treats as zero-decimal (amount is whole units, no cents).
 const ZERO_DECIMAL_CURRENCIES = new Set(["jpy", "krw"]);
 
-// Cold-start Adaptive Pricing buyer markup, used until we've observed a real
-// purchase in a currency (see recordObservedMarkup). Stripe's real markup is a
-// variable, unpublished 2-4% (and some currencies, e.g. INR, run hotter). We
-// default to the top of the range so a never-seen currency errs slightly HIGH
-// (buyer pays no more than shown) rather than low (an unpleasant surprise).
+// Conservative Adaptive Pricing buyer markup estimate. Stripe's real markup is
+// variable and unpublished, so the UI always labels this value as approximate.
 export const AP_FEE_ESTIMATE = 0.04;
-
-// Smoothing factor for the per-currency markup EMA. Low enough to absorb the
-// per-transaction 2-4% jitter, high enough to track real drift over ~dozens of
-// sales. newEma = ALPHA * observed + (1 - ALPHA) * previous.
-export const AP_MARKUP_EMA_ALPHA = 0.25;
-
-export type LocalizedPackPrice = {
-    /** Amount in the buyer's local currency (minor-unit rounded). */
-    amount: number;
-    /** Display string, e.g. "€61.38" or "¥11,388". */
-    formatted: string;
-};
 
 export type LocalizedPrices = {
     /** Presentment currency (lowercase ISO), or null when not localizable. */
     currency: string | null;
-    prices: Partial<Record<PollenPackKey, LocalizedPackPrice>>;
+    /** Display strings keyed by pack, e.g. `{ p10: "€8.95" }`. */
+    prices: Partial<Record<PollenPackKey, string>>;
 };
 
 export function currencyForCountry(
@@ -121,54 +106,16 @@ export function isZeroDecimalCurrency(currency: string): boolean {
 
 /**
  * Estimate the buyer's local price. `midRate` is the mid-market USD value of 1
- * unit of the local currency (Stripe `rates[local].rate_details.reference_rate`);
- * `markup` is the Adaptive Pricing markup multiplier (e.g. 1.04), learned per
- * currency from real purchases or the cold-start default.
+ * unit of the local currency (Stripe `rates[local].rate_details.reference_rate`).
  */
 export function localizeUsdAmount(
     usdAmount: number,
     midRate: number,
     currency: string,
-    markup: number = 1 + AP_FEE_ESTIMATE,
 ): number {
-    const local = (usdAmount / midRate) * markup;
+    const local = (usdAmount / midRate) * (1 + AP_FEE_ESTIMATE);
     if (isZeroDecimalCurrency(currency)) return Math.round(local);
     return Math.round(local * 100) / 100;
-}
-
-/**
- * Recover the Adaptive Pricing markup multiplier from a completed purchase:
- * the buyer's effective rate (presentment ÷ settlement) over the mid-market
- * rate. Amounts are in Stripe minor units; USD settlement is always 2-decimal.
- */
-export function computeObservedMarkup(
-    presentmentAmountMinor: number,
-    usdAmountMinor: number,
-    referenceRate: number,
-    presentmentCurrency: string,
-): number | null {
-    if (
-        usdAmountMinor <= 0 ||
-        presentmentAmountMinor <= 0 ||
-        referenceRate <= 0
-    ) {
-        return null;
-    }
-    const localDecimals = isZeroDecimalCurrency(presentmentCurrency) ? 0 : 2;
-    const presentmentMajor = presentmentAmountMinor / 10 ** localDecimals;
-    const usdMajor = usdAmountMinor / 100;
-    // effective local-per-USD ÷ mid local-per-USD (= 1 / referenceRate).
-    return (presentmentMajor / usdMajor) * referenceRate;
-}
-
-/** EMA step; seeds to `observed` when there's no prior value. */
-export function nextMarkupEma(
-    previous: number | undefined,
-    observed: number,
-    alpha: number = AP_MARKUP_EMA_ALPHA,
-): number {
-    if (previous === undefined) return observed;
-    return alpha * observed + (1 - alpha) * previous;
 }
 
 export function formatLocalAmount(amount: number, currency: string): string {
@@ -185,20 +132,11 @@ export function buildLocalizedPrices(
     packs: ReadonlyArray<PollenPack>,
     currency: string,
     rate: number,
-    markup: number = 1 + AP_FEE_ESTIMATE,
-): Record<PollenPackKey, LocalizedPackPrice> {
-    const prices = {} as Record<PollenPackKey, LocalizedPackPrice>;
+): Record<PollenPackKey, string> {
+    const prices = {} as Record<PollenPackKey, string>;
     for (const pack of packs) {
-        const amount = localizeUsdAmount(
-            pack.amountUsd,
-            rate,
-            currency,
-            markup,
-        );
-        prices[pack.packKey] = {
-            amount,
-            formatted: formatLocalAmount(amount, currency),
-        };
+        const amount = localizeUsdAmount(pack.amountUsd, rate, currency);
+        prices[pack.packKey] = formatLocalAmount(amount, currency);
     }
     return prices;
 }
@@ -209,10 +147,6 @@ export const FX_RATES_KV_KEY = "fx-quote:usd-mid-rates:v2";
 // Refresh hourly to match the `hour` lock and keep the displayed estimate stable
 // for a buyer across a session without hammering Stripe (one quote per hour total).
 const FX_RATES_TTL_SECONDS = 3600;
-// Per-currency learned AP markups. Durable knowledge (markups drift slowly), so
-// a long TTL that self-heals if a currency stops selling.
-export const AP_MARKUPS_KV_KEY = "fx-quote:ap-markups:v1";
-const AP_MARKUPS_TTL_SECONDS = 60 * 60 * 24 * 180; // 180 days
 
 type RateMap = Record<string, number>;
 
@@ -274,60 +208,11 @@ export async function getUsdRateMap(env: CloudflareBindings): Promise<RateMap> {
 }
 
 /**
- * Read the cached rate map without ever fetching. Used on the webhook credit
- * path so markup recording never adds a Stripe round-trip; the slider endpoint
- * keeps the cache warm, so it's almost always present.
- */
-async function peekCachedUsdRateMap(
-    env: CloudflareBindings,
-): Promise<RateMap | null> {
-    return env.KV.get<RateMap>(FX_RATES_KV_KEY, "json");
-}
-
-/** Per-currency learned AP markup multipliers (e.g. `{ eur: 1.037 }`). */
-export async function getApMarkups(env: CloudflareBindings): Promise<RateMap> {
-    return (await env.KV.get<RateMap>(AP_MARKUPS_KV_KEY, "json")) ?? {};
-}
-
-/**
- * Learn the real AP markup for a currency from a completed purchase and fold it
- * into the per-currency EMA. Best-effort and side-effect-only: silently no-ops
- * for USD / unsupported currencies or when the mid-market rate isn't cached, so
- * it's safe to fire-and-forget via `waitUntil` off the credit path.
- */
-export async function recordObservedMarkup(
-    env: CloudflareBindings,
-    presentmentCurrency: string,
-    presentmentAmountMinor: number,
-    usdAmountMinor: number,
-): Promise<void> {
-    const currency = presentmentCurrency.toLowerCase();
-    if (!SUPPORTED_PRESENTMENT_CURRENCIES.includes(currency)) return;
-
-    const rates = await peekCachedUsdRateMap(env);
-    const referenceRate = rates?.[currency];
-    if (!referenceRate) return;
-
-    const observed = computeObservedMarkup(
-        presentmentAmountMinor,
-        usdAmountMinor,
-        referenceRate,
-        currency,
-    );
-    if (observed === null) return;
-
-    const markups = await getApMarkups(env);
-    markups[currency] = nextMarkupEma(markups[currency], observed);
-    await env.KV.put(AP_MARKUPS_KV_KEY, JSON.stringify(markups), {
-        expirationTtl: AP_MARKUPS_TTL_SECONDS,
-    });
-}
-
-/**
  * Resolve localized pack prices for a buyer country. Returns
  * `{ currency: null, prices: {} }` whenever localization is unavailable
  * (unmapped country, missing rate) so callers fail open to USD display.
- * Uses the learned per-currency markup when available, else the cold default.
+ * Uses a fixed 4% Adaptive Pricing fee estimate on top of Stripe's mid-market
+ * reference rate.
  */
 export async function getLocalizedPrices(
     env: CloudflareBindings,
@@ -337,16 +222,12 @@ export async function getLocalizedPrices(
     const currency = currencyForCountry(country);
     if (!currency) return { currency: null, prices: {} };
 
-    const [rates, markups] = await Promise.all([
-        getUsdRateMap(env),
-        getApMarkups(env),
-    ]);
+    const rates = await getUsdRateMap(env);
     const rate = rates[currency];
     if (!rate || rate <= 0) return { currency: null, prices: {} };
 
-    const markup = markups[currency] ?? 1 + AP_FEE_ESTIMATE;
     return {
         currency,
-        prices: buildLocalizedPrices(packs, currency, rate, markup),
+        prices: buildLocalizedPrices(packs, currency, rate),
     };
 }

@@ -367,8 +367,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         </div>
                         <Tooltip
                             content={`Buy ${formatPollenPackValue(selectedPack.pollenGrant)} pollen for ${
-                                localizedPrices?.prices[selectedPack.packKey]
-                                    ?.formatted ??
+                                localizedPrices?.prices[selectedPack.packKey] ??
                                 formatPollenPackPriceUsd(selectedPack.amountUsd)
                             }`}
                             displayContents

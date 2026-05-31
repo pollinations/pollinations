@@ -59,15 +59,15 @@ export function App() {
 }
 ```
 
-For Pollinations website apps that use unprefixed Tailwind utilities, import the
-package-owned website stylesheet instead:
+For Pollinations apps that use unprefixed Tailwind utilities, import the
+package-owned app stylesheet instead:
 
 ```css
-@import "@pollinations_ai/ui/website.css";
+@import "@pollinations_ai/ui/app.css";
 ```
 
-`website.css` includes `styles.css`, the Pollinations website Tailwind theme
-bridge, and generic root/body/app-shell classes.
+`app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
+and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 
 ## What's exported
 

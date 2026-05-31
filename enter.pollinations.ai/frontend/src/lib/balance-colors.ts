@@ -2,7 +2,7 @@
  * Color strings for chart libraries (Recharts) that can't read CSS vars
  * from a `fill` prop. For Tailwind className consumers, use the named
  * utilities (`bg-paid-soft`, `text-paid-deep`, `bg-tier-soft`, etc.) —
- * bridged from `@pollinations_ai/ui/website.css`.
+ * bridged from `@pollinations_ai/ui/app.css`.
  *
  * These values mirror the **soft** chip-background colors so chart bars
  * and paid/tier chips read as the same visual identity. Hover is handled

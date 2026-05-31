@@ -35,11 +35,11 @@ export const DesignShowcase: FC = () => {
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
 
     useEffect(() => {
-        document.documentElement.classList.add("polli-app-shell");
-        document.body.classList.add("polli-app-shell");
+        document.documentElement.classList.add("polli-ui-shell");
+        document.body.classList.add("polli-ui-shell");
         return () => {
-            document.documentElement.classList.remove("polli-app-shell");
-            document.body.classList.remove("polli-app-shell");
+            document.documentElement.classList.remove("polli-ui-shell");
+            document.body.classList.remove("polli-ui-shell");
         };
     }, []);
 

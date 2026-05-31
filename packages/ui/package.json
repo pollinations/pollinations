@@ -19,7 +19,7 @@
       "require": "./dist/auth/index.cjs"
     },
     "./styles.css": "./dist/styles.css",
-    "./website.css": "./dist/website.css",
+    "./app.css": "./dist/app.css",
     "./fonts/*": "./dist/fonts/*",
     "./package.json": "./package.json"
   },
@@ -34,7 +34,7 @@
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/website.css dist/website.css",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/app.css dist/app.css",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

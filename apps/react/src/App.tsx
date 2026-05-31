@@ -19,6 +19,7 @@ import {
     UserName,
 } from "@pollinations_ai/ui/auth";
 import {
+    Balance,
     KeyBudget,
     KeyExpiry,
     KeyModels,
@@ -33,6 +34,7 @@ const APP_KEY = "pk_kZRl8saq8s2h9ome";
 
 type ToggleKey =
     | "avatar"
+    | "balance"
     | "name"
     | "email"
     | "keyBudget"
@@ -41,12 +43,13 @@ type ToggleKey =
     | "permissions"
     | "keyPrefix";
 
-type ToggleGroup = "user" | "key";
+type ToggleGroup = "user" | "wallet" | "key";
 
 const TOGGLES: { key: ToggleKey; label: string; group: ToggleGroup }[] = [
     { key: "avatar", label: "Avatar", group: "user" },
     { key: "name", label: "Name", group: "user" },
     { key: "email", label: "Email", group: "user" },
+    { key: "balance", label: "Balance", group: "wallet" },
     { key: "keyPrefix", label: "Key prefix", group: "key" },
     { key: "keyExpiry", label: "Key expiry", group: "key" },
     { key: "keyBudget", label: "Key budget", group: "key" },
@@ -56,6 +59,7 @@ const TOGGLES: { key: ToggleKey; label: string; group: ToggleGroup }[] = [
 
 const TOGGLE_GROUPS: { id: ToggleGroup; label: string }[] = [
     { id: "user", label: "User" },
+    { id: "wallet", label: "Wallet" },
     { id: "key", label: "Key" },
 ];
 
@@ -193,6 +197,16 @@ function KeyCard({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     );
 }
 
+function BalanceCard() {
+    return (
+        <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
+            <Metric label="Balance">
+                <Balance />
+            </Metric>
+        </Surface>
+    );
+}
+
 function SessionActions() {
     return (
         <Surface
@@ -218,6 +232,7 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     }
 
     const showUserCard = enabled.avatar || enabled.name || enabled.email;
+    const showBalanceCard = enabled.balance;
     const showKeyCard =
         enabled.keyPrefix ||
         enabled.keyExpiry ||
@@ -228,14 +243,16 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
     return (
         <div className="flex flex-col gap-4">
             {showUserCard && <UserCard enabled={enabled} />}
+            {showBalanceCard && <BalanceCard />}
             {showKeyCard && <KeyCard enabled={enabled} />}
-            {!showUserCard && <SessionActions />}
+            {!showUserCard && !showBalanceCard && <SessionActions />}
         </div>
     );
 }
 
 function buildCode(enabled: Record<ToggleKey, boolean>) {
     const showUserCard = enabled.avatar || enabled.name || enabled.email;
+    const showBalanceCard = enabled.balance;
     const hasKeyMeta = enabled.keyPrefix || enabled.keyExpiry;
     const showKeyCard =
         hasKeyMeta ||
@@ -258,6 +275,7 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
     ].filter(Boolean) as string[];
 
     const walletImports = [
+        enabled.balance && "Balance",
         enabled.keyBudget && "KeyBudget",
         enabled.keyExpiry && "KeyExpiry",
         enabled.keyModels && "KeyModels",
@@ -303,6 +321,15 @@ ${identity}
                 </Surface>`
         : "";
 
+    const balanceCardJsx = showBalanceCard
+        ? `                <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-wide text-stone-500">Balance</span>
+                        <Balance />
+                    </div>
+                </Surface>`
+        : "";
+
     const row = (
         label: string,
         body: string,
@@ -337,15 +364,16 @@ ${body}
         .filter(Boolean)
         .join("\n");
 
-    const sessionStripJsx = !showUserCard
-        ? `                <Surface variant="panel" theme="amber" className="flex items-center justify-between gap-3">
+    const sessionStripJsx =
+        !showUserCard && !showBalanceCard
+            ? `                <Surface variant="panel" theme="amber" className="flex items-center justify-between gap-3">
                     <span className="text-sm text-stone-600">Signed in</span>
                     <div className="flex gap-2">
                         <ExternalLinkButton theme="amber" href={enterUrl}>Dashboard</ExternalLinkButton>
                         <LogoutButton intent="danger">Log out</LogoutButton>
                     </div>
                 </Surface>`
-        : "";
+            : "";
 
     const keyCardJsx = showKeyCard
         ? `                <Surface variant="panel" theme="amber" className="flex flex-col gap-3">
@@ -353,7 +381,12 @@ ${keyRows}
                 </Surface>`
         : "";
 
-    const walletBody = [userCardJsx, keyCardJsx, sessionStripJsx]
+    const walletBody = [
+        userCardJsx,
+        balanceCardJsx,
+        keyCardJsx,
+        sessionStripJsx,
+    ]
         .filter(Boolean)
         .join("\n");
 
@@ -423,6 +456,7 @@ const POLLI_TOKENS = [
     "useAccountKey",
     "useAuthState",
     "Surface",
+    "Balance",
     "Chip",
     "KeyBudget",
     "KeyExpiry",
@@ -496,6 +530,7 @@ function highlightCode(code: string): ReactNode[] {
 export default function App() {
     const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
         avatar: true,
+        balance: true,
         name: true,
         email: true,
         keyPrefix: true,

@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
+import { ChevronIcon } from "./ChevronIcon.tsx";
 import { ScrollArea } from "./ScrollArea.tsx";
 
 export type MultiSelectOption = {
@@ -140,25 +141,15 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 >
                     {displayText}
                 </span>
-                <svg
+                <ChevronIcon
+                    expanded={open}
                     className={cn(
                         "w-3 h-3 transition-transform",
                         open
-                            ? "rotate-180 text-theme-text-strong"
+                            ? "text-theme-text-strong"
                             : "text-theme-text-soft",
                     )}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                    />
-                </svg>
+                />
             </button>
             {disabled && (
                 <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs rounded-md shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">

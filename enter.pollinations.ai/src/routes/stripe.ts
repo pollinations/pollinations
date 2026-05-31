@@ -10,7 +10,6 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
-import { getLocalizedPrices } from "../utils/fx-quotes.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -96,7 +95,8 @@ export const stripeRoutes = new Hono<Env>()
                 packKey: pack.packKey,
                 packAmountUsd: String(pack.amountUsd),
                 packPollenGrant: String(pack.pollenGrant),
-                packBonusPollen: String(pack.bonusPollen),
+                packPriceUsd: String(pack.priceUsd),
+                packDiscountPercent: String(pack.discountPercent),
                 cohort: cohort.id,
             };
 
@@ -107,7 +107,7 @@ export const stripeRoutes = new Hono<Env>()
                     {
                         price_data: {
                             currency: "usd",
-                            unit_amount: pack.amountUsd * 100,
+                            unit_amount: pack.priceCents,
                             tax_behavior: "inclusive",
                             product_data: {
                                 name: pack.checkoutName,
@@ -167,49 +167,20 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * GET /api/stripe/products
      * List available packs. Returns packKey (canonical identifier for the
-     * /checkout/:packKey route) plus the USD amount for display.
+     * /checkout/:packKey route), the nominal USD amount, and the discounted
+     * price actually charged.
      */
     .get("/products", async (c) => {
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
-                bonusPollen: pack.bonusPollen,
+                priceUsd: pack.priceUsd,
+                discountPercent: pack.discountPercent,
                 pollenGrant: pack.pollenGrant,
                 description: describePollenPack(pack),
             })),
         });
-    })
-
-    /**
-     * GET /api/stripe/localized-prices
-     * Best-effort local-currency estimate for the pack slider, derived from the
-     * buyer's CF-IPCountry via the Stripe FX Quotes API (hour-locked,
-     * KV-cached mid-market rate + fixed 4% Adaptive Pricing fee estimate).
-     * Checkout stays USD-native + Adaptive Pricing, so this is a labelled "≈"
-     * preview. Fails open to `{ currency: null }` (USD display) on any error or
-     * unmapped country — it must never break the dashboard.
-     */
-    .get("/localized-prices", async (c) => {
-        try {
-            // CF-IPCountry is only set when the request passes through
-            // Cloudflare's edge — absent on localhost. Outside production, allow
-            // a ?country= override so the slider can be exercised in dev.
-            const override =
-                c.env.ENVIRONMENT !== "production"
-                    ? c.req.query("country")
-                    : undefined;
-            const country = override || c.req.header("cf-ipcountry");
-            const localized = await getLocalizedPrices(
-                c.env,
-                country,
-                POLLEN_PACKS,
-            );
-            return c.json(localized);
-        } catch (error) {
-            console.error("Localized pack price error:", error);
-            return c.json({ currency: null, prices: {} });
-        }
     })
 
     /**

@@ -92,10 +92,6 @@ export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
-        const localizedCountryOverride =
-            typeof window === "undefined"
-                ? null
-                : new URL(window.location.href).searchParams.get("country");
         // Parallelize independent API calls for faster loading
         const [
             tierData,
@@ -104,7 +100,6 @@ export const Route = createFileRoute("/")({
             profileResult,
             billingState,
             earningsTodayResult,
-            localizedPrices,
         ] = await Promise.all([
             apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
             apiClient["api-keys"]
@@ -121,15 +116,6 @@ export const Route = createFileRoute("/")({
                 .then((r) => (r.ok ? r.json() : null)),
             apiClient.customer.balance.today
                 .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.stripe["localized-prices"]
-                .$get({
-                    // Dev-only: forward ?country= so localhost (no CF-IPCountry)
-                    // can preview localized pricing. Ignored in production.
-                    query: localizedCountryOverride
-                        ? { country: localizedCountryOverride }
-                        : {},
-                })
                 .then((r) => (r.ok ? r.json() : null)),
         ]);
         const apiKeys = (apiKeysResult.data || []) as ApiKey[];
@@ -154,7 +140,6 @@ export const Route = createFileRoute("/")({
             billingState,
             paidWeek,
             tierWeek,
-            localizedPrices,
         };
     },
 });
@@ -171,7 +156,6 @@ function RouteComponent() {
         billingState,
         paidWeek,
         tierWeek,
-        localizedPrices,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -351,10 +335,7 @@ function RouteComponent() {
                         framed
                         id="buy-pollen"
                     >
-                        <BuyPollenPanel
-                            initialBillingState={billingState}
-                            localizedPrices={localizedPrices}
-                        />
+                        <BuyPollenPanel initialBillingState={billingState} />
                     </DashboardSection>
                     {tierData && (
                         <DashboardSection title="Tier" theme="amber" framed>

@@ -1,8 +1,8 @@
 import type { FC } from "react";
-import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 import { ChevronIcon } from "./ChevronIcon.tsx";
+import { Dropdown } from "./Dropdown.tsx";
 import { ScrollArea } from "./ScrollArea.tsx";
 
 export type MultiSelectOption = {
@@ -22,6 +22,15 @@ export type MultiSelectProps = {
     theme: ThemeName;
 };
 
+const TRIGGER_BASE =
+    "polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:border polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
+
+const ROW_BASE =
+    "polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
+
+const CHECK_BASE =
+    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-border polli:text-xs";
+
 export const MultiSelect: FC<MultiSelectProps> = ({
     options,
     selected,
@@ -33,61 +42,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     label,
     theme,
 }) => {
-    const [open, setOpen] = useState(false);
-    const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
-    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-    const ref = useRef<HTMLDivElement>(null);
     const isAllSelected = selected.length === 0;
-
-    const calculatePosition = () => {
-        if (!ref.current) return { direction: "up" as const, style: {} };
-        const rect = ref.current.getBoundingClientRect();
-        const dropdownHeight = 280;
-        const dropdownWidth = 320;
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const isMobile = window.innerWidth < 640; // sm breakpoint
-
-        const direction: "up" | "down" =
-            spaceAbove < dropdownHeight && spaceBelow > spaceAbove
-                ? "down"
-                : "up";
-
-        // On mobile with align=end, center the dropdown on screen
-        let style: React.CSSProperties = {};
-        if (isMobile && align === "end") {
-            const centeredLeft = (window.innerWidth - dropdownWidth) / 2;
-            style = {
-                position: "fixed",
-                left: centeredLeft,
-                top:
-                    direction === "down"
-                        ? rect.bottom + 4
-                        : rect.top - dropdownHeight - 4,
-            };
-        }
-
-        return { direction, style };
-    };
-
-    const handleToggle = () => {
-        if (disabled) return;
-        if (!open) {
-            const { direction, style } = calculatePosition();
-            setOpenDirection(direction);
-            setDropdownStyle(style);
-        }
-        setOpen(!open);
-    };
-
-    useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node))
-                setOpen(false);
-        };
-        document.addEventListener("mousedown", handleClick);
-        return () => document.removeEventListener("mousedown", handleClick);
-    }, []);
 
     const toggleItem = (itemId: string) => {
         if (selected.includes(itemId)) {
@@ -105,125 +60,137 @@ export const MultiSelect: FC<MultiSelectProps> = ({
           ? "All"
           : `${selected.length} selected`;
 
-    return (
-        <div
-            ref={ref}
-            data-theme={theme}
-            className="relative group flex items-center gap-2"
-        >
-            {label && (
-                <span className="text-xs font-medium text-theme-text-soft">
-                    {label}
-                </span>
-            )}
-            <button
-                type="button"
-                onClick={handleToggle}
-                disabled={disabled}
-                className={cn(
-                    "inline-flex min-h-8 min-w-[140px] items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
-                    disabled
-                        ? "cursor-not-allowed opacity-60 border-theme-border bg-theme-bg-subtle"
-                        : open
-                          ? "border-theme-border bg-theme-bg-active"
-                          : "border-theme-border bg-theme-bg-subtle hover:bg-theme-bg-pale",
-                )}
+    const labelNode = label ? (
+        <span className="polli:text-xs polli:font-medium polli:text-theme-text-soft">
+            {label}
+        </span>
+    ) : null;
+
+    if (disabled) {
+        return (
+            <div
+                data-theme={theme}
+                className="polli:group polli:relative polli:flex polli:items-center polli:gap-2"
             >
-                <span
+                {labelNode}
+                <button
+                    type="button"
+                    disabled
                     className={cn(
-                        "truncate flex-1 text-left",
-                        disabled
-                            ? "text-theme-text-soft/60"
-                            : open
-                              ? "text-theme-text-strong"
-                              : "text-theme-text-base",
+                        TRIGGER_BASE,
+                        "polli:cursor-not-allowed polli:border-theme-border polli:bg-theme-bg-subtle polli:opacity-60",
                     )}
                 >
-                    {displayText}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className={cn(
-                        "w-3 h-3 transition-transform",
-                        open
-                            ? "text-theme-text-strong"
-                            : "text-theme-text-soft",
-                    )}
-                />
-            </button>
-            {disabled && (
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs rounded-md shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                    <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
+                        {displayText}
+                    </span>
+                    <ChevronIcon
+                        expanded={false}
+                        className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
+                    />
+                </button>
+                <span className="polli:pointer-events-none polli:absolute polli:-top-8 polli:left-1/2 polli:z-[100] polli:-translate-x-1/2 polli:whitespace-nowrap polli:rounded-md polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:px-2 polli:py-1 polli:text-xs polli:text-theme-text-strong polli:opacity-0 polli:shadow-sm polli:transition-opacity polli:group-hover:opacity-100">
                     No items available
                 </span>
-            )}
-            {open && !disabled && (
-                <div
-                    className={cn(
-                        "min-w-[320px] overflow-hidden rounded-lg border bg-white shadow-lg z-50 border-theme-border",
-                        !dropdownStyle.position && "absolute",
-                        !dropdownStyle.position &&
-                            (openDirection === "up"
-                                ? "bottom-full mb-1"
-                                : "top-full mt-1"),
-                        !dropdownStyle.position &&
-                            (align === "end" ? "right-0" : "left-0"),
-                    )}
-                    style={dropdownStyle}
-                >
-                    <ScrollArea theme={theme} className="max-h-64">
-                        <button
-                            type="button"
-                            onClick={selectAll}
+            </div>
+        );
+    }
+
+    return (
+        <div
+            data-theme={theme}
+            className="polli:flex polli:items-center polli:gap-2"
+        >
+            {labelNode}
+            <Dropdown
+                theme={theme}
+                align={align}
+                className="polli:min-w-[320px]"
+                trigger={(open) => (
+                    <button
+                        type="button"
+                        className={cn(
+                            TRIGGER_BASE,
+                            open
+                                ? "polli:border-theme-border polli:bg-theme-bg-active"
+                                : "polli:border-theme-border polli:bg-theme-bg-subtle polli:hover:bg-theme-bg-pale",
+                        )}
+                    >
+                        <span
                             className={cn(
-                                "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
-                                isAllSelected
-                                    ? "bg-theme-bg-active text-theme-text-strong font-medium"
-                                    : "text-theme-text-base hover:bg-theme-bg-subtle",
+                                "polli:flex-1 polli:truncate polli:text-left",
+                                open
+                                    ? "polli:text-theme-text-strong"
+                                    : "polli:text-theme-text-base",
                             )}
                         >
-                            <span
+                            {displayText}
+                        </span>
+                        <ChevronIcon
+                            expanded={open}
+                            className={cn(
+                                "polli:h-3 polli:w-3 polli:transition-transform",
+                                open
+                                    ? "polli:text-theme-text-strong"
+                                    : "polli:text-theme-text-soft",
+                            )}
+                        />
+                    </button>
+                )}
+            >
+                <ScrollArea theme={theme} className="polli:max-h-64">
+                    <button
+                        type="button"
+                        onClick={selectAll}
+                        className={cn(
+                            ROW_BASE,
+                            isAllSelected
+                                ? "polli:bg-theme-bg-active polli:font-medium polli:text-theme-text-strong"
+                                : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
+                        )}
+                    >
+                        <span
+                            className={cn(
+                                CHECK_BASE,
+                                isAllSelected &&
+                                    "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                            )}
+                        >
+                            {isAllSelected && "✓"}
+                        </span>
+                        {placeholder}
+                    </button>
+                    {options.map((opt) => {
+                        const isChecked = selected.includes(opt.value);
+                        return (
+                            <button
+                                type="button"
+                                key={opt.value}
+                                onClick={() => toggleItem(opt.value)}
                                 className={cn(
-                                    "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0 border-theme-border",
-                                    isAllSelected &&
-                                        "bg-theme-bg-active text-theme-text-strong",
+                                    ROW_BASE,
+                                    isChecked
+                                        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                        : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
                                 )}
                             >
-                                {isAllSelected && "✓"}
-                            </span>
-                            {placeholder}
-                        </button>
-                        {options.map((opt) => {
-                            const isChecked = selected.includes(opt.value);
-                            return (
-                                <button
-                                    type="button"
-                                    key={opt.value}
-                                    onClick={() => toggleItem(opt.value)}
+                                <span
                                     className={cn(
-                                        "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
-                                        isChecked
-                                            ? "bg-theme-bg-active text-theme-text-strong"
-                                            : "text-theme-text-base hover:bg-theme-bg-subtle",
+                                        CHECK_BASE,
+                                        isChecked &&
+                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
                                     )}
                                 >
-                                    <span
-                                        className={cn(
-                                            "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0 border-theme-border",
-                                            isChecked &&
-                                                "bg-theme-bg-active text-theme-text-strong",
-                                        )}
-                                    >
-                                        {isChecked && "✓"}
-                                    </span>
-                                    <span className="whitespace-nowrap">
-                                        {opt.label}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </ScrollArea>
-                </div>
-            )}
+                                    {isChecked && "✓"}
+                                </span>
+                                <span className="polli:whitespace-nowrap">
+                                    {opt.label}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </ScrollArea>
+            </Dropdown>
         </div>
     );
 };

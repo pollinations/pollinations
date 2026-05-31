@@ -27,6 +27,7 @@ export {
     type DialogProps,
     DialogTitle,
 } from "./primitives/Dialog.tsx";
+export { Dropdown, type DropdownProps } from "./primitives/Dropdown.tsx";
 export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
@@ -44,12 +45,9 @@ export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./primitives/PeriodPicker.tsx";
-export {
-    RangeSlider,
-    type RangeSliderProps,
-} from "./primitives/RangeSlider.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Section, type SectionProps } from "./primitives/Section.tsx";
+export { Slider, type SliderProps } from "./primitives/Slider.tsx";
 export { Surface } from "./primitives/Surface.tsx";
 export {
     Switch,

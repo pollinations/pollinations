@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import {
     addUtcDays,
@@ -13,6 +13,7 @@ import {
 } from "../lib/period.ts";
 import type { ThemeName } from "../theme.ts";
 import { ChevronIcon } from "./ChevronIcon.tsx";
+import { Dropdown } from "./Dropdown.tsx";
 import { TabButton } from "./TabButton.tsx";
 
 export type PeriodPickerProps = {
@@ -38,6 +39,9 @@ const MONTH_LABELS = [
     "Nov",
     "Dec",
 ];
+
+const NAV_BUTTON =
+    "polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-subtle";
 
 function addUtcMonths(date: Date, months: number): Date {
     return new Date(
@@ -86,35 +90,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
-    const ref = useRef<HTMLDivElement>(null);
     const { granularity, period } = value;
 
     useEffect(() => {
         setViewDate(periodDate({ granularity, period }));
     }, [granularity, period]);
-
-    useEffect(() => {
-        const handleClick = (event: MouseEvent) => {
-            if (!ref.current?.contains(event.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClick);
-        return () => document.removeEventListener("mousedown", handleClick);
-    }, []);
-
-    useEffect(() => {
-        if (!open) return;
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [open]);
 
     const dates = useMemo(() => monthGridDates(viewDate), [viewDate]);
     const selectedWindow = periodToWindow(value);
@@ -152,11 +132,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
 
     return (
         <div
-            ref={ref}
             data-theme={theme}
-            className="relative flex flex-wrap items-center gap-2"
+            className="polli:flex polli:flex-wrap polli:items-center polli:gap-2"
         >
-            <div className="flex flex-wrap gap-1.5">
+            <div className="polli:flex polli:flex-wrap polli:gap-1.5">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
                         <TabButton
@@ -170,185 +149,177 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     ),
                 )}
             </div>
-            <button
-                type="button"
-                aria-expanded={open}
-                aria-haspopup="dialog"
-                aria-label={`Select period, current ${formatPeriodLabel(value)}`}
-                onClick={() => setOpen((isOpen) => !isOpen)}
-                className={cn(
-                    "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 pt-1.5 pb-2 text-left text-base font-medium leading-normal",
-                    "border-theme-border bg-theme-bg-subtle text-theme-text-base",
-                    "transition-all duration-200 ease-out hover:bg-theme-bg-pale",
-                    open &&
-                        "bg-theme-bg-active text-theme-text-strong shadow-sm",
+            <Dropdown
+                theme={theme}
+                open={open}
+                onOpenChange={setOpen}
+                className="polli:w-[304px] polli:rounded-xl polli:p-3"
+                trigger={(isOpen) => (
+                    <button
+                        type="button"
+                        aria-label={`Select period, current ${formatPeriodLabel(value)}`}
+                        className={cn(
+                            "polli:inline-flex polli:min-w-[150px] polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-4 polli:pt-1.5 polli:pb-2 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                            "polli:border-theme-border polli:bg-theme-bg-subtle polli:text-theme-text-base",
+                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-pale",
+                            isOpen &&
+                                "polli:bg-theme-bg-active polli:text-theme-text-strong polli:shadow-sm",
+                        )}
+                    >
+                        <span>{formatPeriodLabel(value)}</span>
+                        <ChevronIcon expanded={isOpen} />
+                    </button>
                 )}
             >
-                <span>{formatPeriodLabel(value)}</span>
-                <ChevronIcon expanded={open} />
-            </button>
-            {open && (
-                <div
-                    role="dialog"
-                    aria-label="Period picker"
-                    className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border bg-white p-3 shadow-lg transition-opacity duration-200 ease-out border-theme-border"
-                >
-                    <div className="mb-3 flex items-center justify-between">
-                        <button
-                            type="button"
-                            aria-label={
-                                value.granularity === "month"
-                                    ? "Previous year"
-                                    : "Previous month"
-                            }
-                            disabled={previousDisabled}
-                            onClick={() => setViewDate(previousViewDate)}
-                            className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-subtle",
-                                previousDisabled &&
-                                    "cursor-not-allowed opacity-30 hover:bg-transparent",
-                            )}
-                        >
-                            {"<"}
-                        </button>
-                        <div className="text-sm font-bold text-theme-text-base">
-                            {viewLabel}
-                        </div>
-                        <button
-                            type="button"
-                            aria-label={
-                                value.granularity === "month"
-                                    ? "Next year"
-                                    : "Next month"
-                            }
-                            disabled={nextDisabled}
-                            onClick={() => setViewDate(nextViewDate)}
-                            className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-subtle",
-                                nextDisabled &&
-                                    "cursor-not-allowed opacity-30 hover:bg-transparent",
-                            )}
-                        >
-                            {">"}
-                        </button>
+                <div className="polli:mb-3 polli:flex polli:items-center polli:justify-between">
+                    <button
+                        type="button"
+                        aria-label={
+                            value.granularity === "month"
+                                ? "Previous year"
+                                : "Previous month"
+                        }
+                        disabled={previousDisabled}
+                        onClick={() => setViewDate(previousViewDate)}
+                        className={cn(
+                            NAV_BUTTON,
+                            previousDisabled &&
+                                "polli:cursor-not-allowed polli:opacity-30 polli:hover:bg-transparent",
+                        )}
+                    >
+                        {"<"}
+                    </button>
+                    <div className="polli:text-sm polli:font-bold polli:text-theme-text-base">
+                        {viewLabel}
                     </div>
+                    <button
+                        type="button"
+                        aria-label={
+                            value.granularity === "month"
+                                ? "Next year"
+                                : "Next month"
+                        }
+                        disabled={nextDisabled}
+                        onClick={() => setViewDate(nextViewDate)}
+                        className={cn(
+                            NAV_BUTTON,
+                            nextDisabled &&
+                                "polli:cursor-not-allowed polli:opacity-30 polli:hover:bg-transparent",
+                        )}
+                    >
+                        {">"}
+                    </button>
+                </div>
 
-                    {value.granularity === "month" ? (
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {MONTH_LABELS.map((label, monthIndex) => {
-                                const date = new Date(
-                                    Date.UTC(
-                                        viewDate.getUTCFullYear(),
-                                        monthIndex,
-                                        1,
-                                    ),
-                                );
+                {value.granularity === "month" ? (
+                    <div className="polli:grid polli:grid-cols-3 polli:gap-1.5">
+                        {MONTH_LABELS.map((label, monthIndex) => {
+                            const date = new Date(
+                                Date.UTC(
+                                    viewDate.getUTCFullYear(),
+                                    monthIndex,
+                                    1,
+                                ),
+                            );
+                            const selectable = isPeriodSelectable(
+                                periodFromDate("month", date),
+                                minDate,
+                                today,
+                            );
+                            const ariaLabel = date.toLocaleDateString("en-US", {
+                                timeZone: "UTC",
+                                month: "long",
+                                year: "numeric",
+                            });
+                            const selected =
+                                date.getUTCFullYear() ===
+                                    selectedWindow.start.getUTCFullYear() &&
+                                date.getUTCMonth() ===
+                                    selectedWindow.start.getUTCMonth();
+                            return (
+                                <button
+                                    type="button"
+                                    key={label}
+                                    aria-label={ariaLabel}
+                                    disabled={!selectable}
+                                    onClick={() => selectDate(date)}
+                                    className={cn(
+                                        "polli:rounded-lg polli:px-3 polli:py-2 polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                        selected
+                                            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                            : "polli:text-gray-700 polli:hover:bg-theme-bg-subtle",
+                                        !selectable &&
+                                            "polli:cursor-not-allowed polli:text-gray-300 polli:hover:bg-transparent",
+                                    )}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <>
+                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-micro polli:font-bold polli:uppercase polli:text-gray-400">
+                            {WEEKDAY_LABELS.map((label) => (
+                                <div key={label}>{label}</div>
+                            ))}
+                        </div>
+                        <div className="polli:grid polli:grid-cols-7 polli:gap-1">
+                            {dates.map((date) => {
+                                const inCurrentMonth =
+                                    date.getUTCMonth() ===
+                                    viewDate.getUTCMonth();
                                 const selectable = isPeriodSelectable(
-                                    periodFromDate("month", date),
+                                    periodFromDate(value.granularity, date),
                                     minDate,
                                     today,
                                 );
-                                const ariaLabel = date.toLocaleDateString(
-                                    "en-US",
-                                    {
-                                        timeZone: "UTC",
-                                        month: "long",
-                                        year: "numeric",
-                                    },
-                                );
+                                const ariaLabel =
+                                    value.granularity === "week"
+                                        ? `Select week ${formatPeriodLabel(periodFromDate("week", date))}`
+                                        : `Select ${date.toLocaleDateString(
+                                              "en-US",
+                                              {
+                                                  timeZone: "UTC",
+                                                  weekday: "long",
+                                                  month: "long",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                              },
+                                          )}`;
                                 const selected =
-                                    date.getUTCFullYear() ===
-                                        selectedWindow.start.getUTCFullYear() &&
-                                    date.getUTCMonth() ===
-                                        selectedWindow.start.getUTCMonth();
+                                    value.granularity === "day"
+                                        ? sameUtcDay(date, selectedWindow.start)
+                                        : date >= selectedWindow.start &&
+                                          date < selectedWindow.end;
                                 return (
                                     <button
                                         type="button"
-                                        key={label}
+                                        key={date.toISOString()}
                                         aria-label={ariaLabel}
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(
-                                            "rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150",
+                                            "polli:aspect-square polli:rounded-lg polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                            !inCurrentMonth &&
+                                                "polli:text-gray-300",
+                                            sameUtcDay(date, today) &&
+                                                "polli:ring-1 polli:ring-theme-border",
                                             selected
-                                                ? "bg-theme-bg-active text-theme-text-strong"
-                                                : "text-gray-700 hover:bg-theme-bg-subtle",
+                                                ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                                : "polli:text-gray-700 polli:hover:bg-theme-bg-subtle",
                                             !selectable &&
-                                                "cursor-not-allowed text-gray-300 hover:bg-transparent",
+                                                "polli:cursor-not-allowed polli:text-gray-300 polli:hover:bg-transparent",
                                         )}
                                     >
-                                        {label}
+                                        {date.getUTCDate()}
                                     </button>
                                 );
                             })}
                         </div>
-                    ) : (
-                        <>
-                            <div className="mb-1 grid grid-cols-7 gap-1 text-center text-micro font-bold uppercase text-gray-400">
-                                {WEEKDAY_LABELS.map((label) => (
-                                    <div key={label}>{label}</div>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-7 gap-1">
-                                {dates.map((date) => {
-                                    const inCurrentMonth =
-                                        date.getUTCMonth() ===
-                                        viewDate.getUTCMonth();
-                                    const selectable = isPeriodSelectable(
-                                        periodFromDate(value.granularity, date),
-                                        minDate,
-                                        today,
-                                    );
-                                    const ariaLabel =
-                                        value.granularity === "week"
-                                            ? `Select week ${formatPeriodLabel(periodFromDate("week", date))}`
-                                            : `Select ${date.toLocaleDateString(
-                                                  "en-US",
-                                                  {
-                                                      timeZone: "UTC",
-                                                      weekday: "long",
-                                                      month: "long",
-                                                      day: "numeric",
-                                                      year: "numeric",
-                                                  },
-                                              )}`;
-                                    const selected =
-                                        value.granularity === "day"
-                                            ? sameUtcDay(
-                                                  date,
-                                                  selectedWindow.start,
-                                              )
-                                            : date >= selectedWindow.start &&
-                                              date < selectedWindow.end;
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={date.toISOString()}
-                                            aria-label={ariaLabel}
-                                            disabled={!selectable}
-                                            onClick={() => selectDate(date)}
-                                            className={cn(
-                                                "aspect-square rounded-lg text-xs font-medium transition-colors duration-150",
-                                                !inCurrentMonth &&
-                                                    "text-gray-300",
-                                                sameUtcDay(date, today) &&
-                                                    "ring-1 ring-theme-border",
-                                                selected
-                                                    ? "bg-theme-bg-active text-theme-text-strong"
-                                                    : "text-gray-700 hover:bg-theme-bg-subtle",
-                                                !selectable &&
-                                                    "cursor-not-allowed text-gray-300 hover:bg-transparent",
-                                            )}
-                                        >
-                                            {date.getUTCDate()}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
+                    </>
+                )}
+            </Dropdown>
         </div>
     );
 };

@@ -10,9 +10,9 @@ import { InfoTip } from "../primitives/InfoTip.tsx";
 import { Input } from "../primitives/Input.tsx";
 import { MultiSelect } from "../primitives/MultiSelect.tsx";
 import { PeriodPicker } from "../primitives/PeriodPicker.tsx";
-import { RangeSlider } from "../primitives/RangeSlider.tsx";
 import { ScrollArea } from "../primitives/ScrollArea.tsx";
 import { Section as PrimitiveSection } from "../primitives/Section.tsx";
+import { Slider } from "../primitives/Slider.tsx";
 import { Surface } from "../primitives/Surface.tsx";
 import { Switch, type SwitchStatus } from "../primitives/Switch.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
@@ -417,12 +417,12 @@ const InputsDemo: FC = () => {
                     <Input placeholder="Disabled" disabled />
                 </Field>
                 <div className="polli:col-span-full">
-                    <Field label={`Range ${sliderValue}`}>
-                        <RangeSlider
+                    <Field label={`Slider ${sliderValue}`}>
+                        <Slider
                             min={0}
                             max={100}
                             value={sliderValue}
-                            aria-label="Range slider"
+                            aria-label="Slider"
                             onChange={(event) =>
                                 setSliderValue(
                                     Number(event.currentTarget.value),

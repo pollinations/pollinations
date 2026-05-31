@@ -1,4 +1,4 @@
-import { Chip, cn, RangeSlider } from "@pollinations_ai/ui";
+import { Chip, cn, Slider } from "@pollinations_ai/ui";
 import {
     formatPollenPackValue,
     getPackBonusPercent,
@@ -8,10 +8,10 @@ import {
 import type { CSSProperties, FC } from "react";
 
 const pollenPackSliderStyle = {
-    "--polli-range-slider-fill": "var(--polli-color-paid-soft)",
-    "--polli-range-slider-track": "var(--polli-color-paid-pale)",
-    "--polli-range-slider-thumb-border": "var(--polli-color-paid-deep)",
-    "--polli-range-slider-thumb-shadow":
+    "--polli-slider-fill": "var(--polli-color-paid-soft)",
+    "--polli-slider-track": "var(--polli-color-paid-pale)",
+    "--polli-slider-thumb-border": "var(--polli-color-paid-deep)",
+    "--polli-slider-thumb-shadow":
         "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
 } as CSSProperties;
 
@@ -48,7 +48,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     return (
         <div className="relative">
             <div className="flex h-8 items-center">
-                <RangeSlider
+                <Slider
                     min={0}
                     max={lastIndex}
                     step={1}

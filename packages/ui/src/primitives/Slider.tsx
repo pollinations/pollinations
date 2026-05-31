@@ -40,7 +40,7 @@ const getProgressPercent = ({
     );
 };
 
-export type RangeSliderProps = Omit<
+export type SliderProps = Omit<
     React.ComponentPropsWithoutRef<"input">,
     "type"
 > & {
@@ -48,7 +48,7 @@ export type RangeSliderProps = Omit<
     progress?: number;
 };
 
-export const RangeSlider = forwardRef<HTMLInputElement, RangeSliderProps>(
+export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     (
         { className, defaultValue, max, min, progress, style, value, ...props },
         ref,
@@ -60,13 +60,23 @@ export const RangeSlider = forwardRef<HTMLInputElement, RangeSliderProps>(
             min,
             max,
         });
-        const sliderStyle =
-            progressPercent === undefined
-                ? style
-                : ({
-                      ...style,
+        const sliderStyle = {
+            "--polli-range-slider-fill":
+                "var(--polli-slider-fill, var(--polli-color-bg-active))",
+            "--polli-range-slider-track":
+                "var(--polli-slider-track, var(--polli-color-bg-pale))",
+            "--polli-range-slider-thumb-border":
+                "var(--polli-slider-thumb-border, var(--polli-color-text-strong))",
+            "--polli-range-slider-thumb-shadow":
+                "var(--polli-slider-thumb-shadow, color-mix(in oklab, var(--polli-color-text-strong) 35%, transparent))",
+            ...style,
+            ...(progressPercent === undefined
+                ? null
+                : {
+                      "--polli-slider-progress": `${progressPercent}%`,
                       "--polli-range-slider-progress": `${progressPercent}%`,
-                  } as CSSProperties);
+                  }),
+        } as CSSProperties;
 
         return (
             <input
@@ -77,7 +87,7 @@ export const RangeSlider = forwardRef<HTMLInputElement, RangeSliderProps>(
                 value={value}
                 defaultValue={defaultValue}
                 style={sliderStyle}
-                className={cn("polli-range-slider", className)}
+                className={cn("polli-slider polli-range-slider", className)}
                 {...props}
             />
         );

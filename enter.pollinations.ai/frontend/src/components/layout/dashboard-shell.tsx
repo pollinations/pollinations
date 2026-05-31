@@ -1,4 +1,3 @@
-import { Menu } from "@ark-ui/react/menu";
 import {
     BookIcon,
     CheckIcon,
@@ -6,6 +5,7 @@ import {
     ClipboardIcon,
     cn,
     DiscordIcon,
+    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -577,52 +577,56 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     onSignOut,
     links = [],
     className,
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-        <Menu.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
-            <Menu.Trigger asChild>
+}) => (
+    <Dropdown
+        theme="amber"
+        align="end"
+        panelClassName="w-[var(--reference-width)] min-w-0 rounded-lg bg-amber-200 p-1"
+        trigger={(open) => (
+            <button
+                type="button"
+                className={cn(
+                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-amber-200 p-1 pr-3 transition-colors hover:bg-amber-300",
+                    className,
+                )}
+            >
+                <img
+                    src={avatarUrl}
+                    alt={`${username} avatar`}
+                    className="h-8 shrink-0 rounded-full"
+                />
+                <span className="min-w-0 flex-1 truncate text-left font-medium text-amber-900">
+                    {username}
+                </span>
+                <ChevronIcon
+                    expanded={open}
+                    className="ml-auto h-4 w-4 shrink-0 text-amber-900 transition-transform duration-200 ease-out"
+                />
+            </button>
+        )}
+    >
+        {(close) => (
+            <>
+                {links.map((link) => (
+                    <AccountMenuLinkRow key={link.href} {...link} />
+                ))}
+                {links.length > 0 && (
+                    <div className="my-1 border-t border-amber-300" />
+                )}
                 <button
                     type="button"
-                    className={cn(
-                        "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-amber-200 p-1 pr-3 transition-colors hover:bg-amber-300",
-                        className,
-                    )}
+                    onClick={() => {
+                        close();
+                        onSignOut?.();
+                    }}
+                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
                 >
-                    <img
-                        src={avatarUrl}
-                        alt={`${username} avatar`}
-                        className="h-8 shrink-0 rounded-full"
-                    />
-                    <span className="min-w-0 flex-1 truncate text-left font-medium text-amber-900">
-                        {username}
-                    </span>
-                    <ChevronIcon
-                        expanded={isOpen}
-                        className="ml-auto h-4 w-4 shrink-0 text-amber-900 transition-transform duration-200 ease-out"
-                    />
+                    Sign Out
                 </button>
-            </Menu.Trigger>
-            <Menu.Positioner>
-                <Menu.Content className="z-50 w-[var(--reference-width)] min-w-0 rounded-lg bg-amber-200 p-1 focus:outline-none">
-                    {links.map((link) => (
-                        <AccountMenuLinkRow key={link.href} {...link} />
-                    ))}
-                    {links.length > 0 && (
-                        <div className="my-1 border-t border-amber-300" />
-                    )}
-                    <Menu.Item
-                        value="sign-out"
-                        className="flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm text-amber-900 hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
-                        onClick={onSignOut}
-                    >
-                        Sign Out
-                    </Menu.Item>
-                </Menu.Content>
-            </Menu.Positioner>
-        </Menu.Root>
-    );
-};
+            </>
+        )}
+    </Dropdown>
+);
 
 const AccountMenuLinkRow: FC<AccountMenuLink> = ({
     href,

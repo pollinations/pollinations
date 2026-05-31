@@ -13,4 +13,19 @@ describe("Dialog", () => {
         expect(html).toContain("Create key");
         expect(html).toContain("body");
     });
+
+    it("can use the provided trigger element as the dialog trigger", () => {
+        const html = renderToString(
+            <Dialog
+                open={false}
+                triggerAsChild
+                trigger={<button type="button">Open modal</button>}
+            >
+                <p>body</p>
+            </Dialog>,
+        );
+
+        expect(html).toContain("<button");
+        expect(html).toContain("Open modal");
+    });
 });

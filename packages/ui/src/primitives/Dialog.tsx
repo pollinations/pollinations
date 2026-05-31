@@ -1,4 +1,5 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
+import { Portal } from "@ark-ui/react/portal";
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
@@ -13,6 +14,7 @@ export type DialogProps = {
     open: boolean;
     onOpenChange?: (open: boolean) => void;
     trigger?: ReactNode;
+    triggerAsChild?: boolean;
     triggerClassName?: string;
     title?: ReactNode;
     titleClassName?: string;
@@ -31,6 +33,7 @@ export const Dialog: FC<DialogProps> = ({
     open,
     onOpenChange,
     trigger,
+    triggerAsChild = false,
     triggerClassName,
     title,
     titleClassName,
@@ -49,47 +52,52 @@ export const Dialog: FC<DialogProps> = ({
         onOpenChange={(details) => onOpenChange?.(details.open)}
     >
         {trigger && (
-            <ArkDialog.Trigger className={triggerClassName}>
+            <ArkDialog.Trigger
+                asChild={triggerAsChild}
+                className={triggerClassName}
+            >
                 {trigger}
             </ArkDialog.Trigger>
         )}
-        {showBackdrop && (
-            <ArkDialog.Backdrop
-                className={cn(
-                    "polli:fixed polli:inset-0 polli:z-[100] polli:bg-gray-950/50",
-                    backdropClassName,
-                )}
-            />
-        )}
-        <ArkDialog.Positioner
-            className={cn(
-                "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
-                positionerClassName,
+        <Portal>
+            {showBackdrop && (
+                <ArkDialog.Backdrop
+                    className={cn(
+                        "polli:fixed polli:inset-0 polli:z-[100] polli:bg-gray-950/50",
+                        backdropClassName,
+                    )}
+                />
             )}
-        >
-            <ArkDialog.Content
-                data-theme={theme}
-                aria-label={ariaLabel}
-                aria-labelledby={labelledBy}
+            <ArkDialog.Positioner
                 className={cn(
-                    "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-white polli:shadow-lg",
-                    sizeClasses[size],
-                    contentClassName,
+                    "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
+                    positionerClassName,
                 )}
             >
-                {title && (
-                    <DialogTitle
-                        className={cn(
-                            "polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong",
-                            titleClassName,
-                        )}
-                    >
-                        {title}
-                    </DialogTitle>
-                )}
-                {children}
-            </ArkDialog.Content>
-        </ArkDialog.Positioner>
+                <ArkDialog.Content
+                    data-theme={theme}
+                    aria-label={ariaLabel}
+                    aria-labelledby={labelledBy}
+                    className={cn(
+                        "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-white polli:shadow-lg",
+                        sizeClasses[size],
+                        contentClassName,
+                    )}
+                >
+                    {title && (
+                        <DialogTitle
+                            className={cn(
+                                "polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong",
+                                titleClassName,
+                            )}
+                        >
+                            {title}
+                        </DialogTitle>
+                    )}
+                    {children}
+                </ArkDialog.Content>
+            </ArkDialog.Positioner>
+        </Portal>
     </ArkDialog.Root>
 );
 

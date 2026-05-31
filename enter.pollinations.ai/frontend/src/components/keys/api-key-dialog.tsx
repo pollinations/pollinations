@@ -174,14 +174,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             }}
             size="lg"
             trigger={
-                <Button as="div" className="shrink-0 whitespace-nowrap">
+                <Button
+                    type="button"
+                    className={cn(
+                        "inline-flex shrink-0 self-start whitespace-nowrap",
+                        triggerClassName,
+                    )}
+                >
                     {triggerLabel}
                 </Button>
             }
-            triggerClassName={cn(
-                "inline-flex shrink-0 self-start whitespace-nowrap",
-                triggerClassName,
-            )}
+            triggerAsChild
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">

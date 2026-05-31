@@ -4,18 +4,26 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations_ai/sdk/react";
-import { Button, Chip, LinkButton, Surface, Switch } from "@pollinations_ai/ui";
 import {
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
+    Button,
+    Chip,
+    ExternalLinkButton,
+    Surface,
+    Switch,
+} from "@pollinations_ai/ui";
+import {
     LoginButton,
     LogoutButton,
     UserAvatar,
     UserEmail,
     UserName,
 } from "@pollinations_ai/ui/auth";
+import {
+    KeyBudget,
+    KeyExpiry,
+    KeyModels,
+    KeyPrefix,
+} from "@pollinations_ai/ui/wallet";
 import { type ReactNode, useEffect, useState } from "react";
 
 // Publishable key for this showcase (pk_… is safe to commit).
@@ -96,9 +104,9 @@ function CopyButton({ text }: { text: string }) {
 function DashboardLink() {
     const { enterUrl } = useAuthActions();
     return (
-        <LinkButton theme="amber" href={enterUrl}>
+        <ExternalLinkButton theme="amber" href={enterUrl}>
             Dashboard
-        </LinkButton>
+        </ExternalLinkButton>
     );
 }
 
@@ -236,7 +244,7 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
         enabled.keyModels;
 
     const primitiveImports = [
-        "LinkButton",
+        "ExternalLinkButton",
         "Surface",
         enabled.permissions && "Chip",
     ].filter(Boolean) as string[];
@@ -244,13 +252,16 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
     const authImports = [
         "LoginButton",
         "LogoutButton",
+        enabled.avatar && "UserAvatar",
+        enabled.email && "UserEmail",
+        enabled.name && "UserName",
+    ].filter(Boolean) as string[];
+
+    const walletImports = [
         enabled.keyBudget && "KeyBudget",
         enabled.keyExpiry && "KeyExpiry",
         enabled.keyModels && "KeyModels",
         enabled.keyPrefix && "KeyPrefix",
-        enabled.avatar && "UserAvatar",
-        enabled.email && "UserEmail",
-        enabled.name && "UserName",
     ].filter(Boolean) as string[];
 
     const sdkHooks = ["PolliProvider", "useAuthActions", "useAuthState"];
@@ -285,7 +296,7 @@ ${[
 ${identity}
                         </div>
                         <div className="flex gap-2">
-                            <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
+                            <ExternalLinkButton theme="amber" href={enterUrl}>Dashboard</ExternalLinkButton>
                             <LogoutButton intent="danger">Log out</LogoutButton>
                         </div>
                     </div>
@@ -330,7 +341,7 @@ ${body}
         ? `                <Surface variant="panel" theme="amber" className="flex items-center justify-between gap-3">
                     <span className="text-sm text-stone-600">Signed in</span>
                     <div className="flex gap-2">
-                        <LinkButton theme="amber" href={enterUrl}>Dashboard</LinkButton>
+                        <ExternalLinkButton theme="amber" href={enterUrl}>Dashboard</ExternalLinkButton>
                         <LogoutButton intent="danger">Log out</LogoutButton>
                     </div>
                 </Surface>`
@@ -362,6 +373,13 @@ ${primitiveImports.map((c) => `    ${c},`).join("\n")}
 ${authImports.map((c) => `    ${c},`).join("\n")}
 } from "@pollinations_ai/ui/auth";\n`;
 
+    const walletImportBlock =
+        walletImports.length > 0
+            ? `import {
+${walletImports.map((c) => `    ${c},`).join("\n")}
+} from "@pollinations_ai/ui/wallet";\n`
+            : "";
+
     const sdkImportBlock = `import {
 ${sdkHooks.map((h) => `    ${h},`).join("\n")}
 } from "@pollinations_ai/sdk/react";`;
@@ -376,6 +394,7 @@ import "@pollinations_ai/ui/styles.css";
 ${sdkImportBlock}
 ${uiImportBlock}
 ${authImportBlock}
+${walletImportBlock}
 const APP_KEY = "pk_your_key_here";
 ${permissionLabelsBlock}
 function Wallet() {
@@ -409,7 +428,7 @@ const POLLI_TOKENS = [
     "KeyExpiry",
     "KeyModels",
     "KeyPrefix",
-    "LinkButton",
+    "ExternalLinkButton",
     "LoginButton",
     "LogoutButton",
     "UserAvatar",

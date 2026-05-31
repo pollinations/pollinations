@@ -17,6 +17,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations_ai/ui";
+import logoTextBlackUrl from "@pollinations_ai/ui/assets/logo_text_black.svg";
 import type {
     CSSProperties,
     FC,
@@ -459,7 +460,7 @@ const BrandMark: FC<{ size: "desktop" | "mobile" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <img
-            src="/logo_text_black.svg"
+            src={logoTextBlackUrl}
             alt="pollinations.ai"
             className={cn(
                 "w-auto",

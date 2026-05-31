@@ -73,6 +73,15 @@ package-owned app stylesheet instead:
 `app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
 and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 
+Canonical Pollinations brand assets are exported from the package:
+
+```ts
+import logoUrl from "@pollinations_ai/ui/assets/logo.svg";
+```
+
+Apps that need root-level favicon or PWA icon URLs should copy files from
+`@pollinations_ai/ui/assets/*` into their public root during their build.
+
 Wallet-specific colors and utilities live in a separate stylesheet:
 
 ```css
@@ -102,6 +111,8 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations_ai/ui/modality` exports model-modality color recipes and
   `ModalityButton`.
+- `@pollinations_ai/ui/assets/*` exports canonical Pollinations brand assets
+  such as the logo, favicons, Apple touch icons, and PWA icons.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,

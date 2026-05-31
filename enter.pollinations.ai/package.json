@@ -7,8 +7,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "pretypecheck": "npm run build:ui",
-        "build:ui": "npm run build --prefix ../packages/sdk && npm run build --prefix ../packages/ui && npm run sync:ui-assets",
-        "sync:ui-assets": "mkdir -p frontend/public && cp ../packages/ui/dist/assets/* frontend/public/",
+        "build:ui": "npm run build --prefix ../packages/sdk && npm run build --prefix ../packages/ui",
         "decrypt-vars": "node scripts/decrypt-dev-vars.mjs",
         "dev": "npm run decrypt-vars && CLOUDFLARE_ENV=local vite dev",
         "predev": "npm run build:ui",

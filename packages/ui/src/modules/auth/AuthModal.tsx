@@ -1,5 +1,11 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import logoUrl from "../../assets/logo.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
+
+const authLogoMask: CSSProperties = {
+    WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
+    mask: `url(${logoUrl}) center / contain no-repeat`,
+};
 
 export type AuthModalProps = {
     children: ReactNode;
@@ -44,12 +50,14 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:shrink-0"
+            className="polli:block polli:shrink-0 polli:text-theme-text-strong"
+            aria-label="pollinations.ai"
         >
-            <img
-                src="/logo.svg"
-                alt="pollinations.ai"
-                className="polli:h-8 polli:w-8 polli:object-contain polli:invert"
+            <span className="polli:sr-only">pollinations.ai</span>
+            <span
+                aria-hidden="true"
+                className="polli:block polli:h-8 polli:w-8 polli:bg-current"
+                style={authLogoMask}
             />
         </a>
     );

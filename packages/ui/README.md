@@ -73,14 +73,16 @@ package-owned app stylesheet instead:
 `app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
 and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 
-Canonical Pollinations brand assets are exported from the package:
+Canonical Pollinations source SVGs are exported from the package:
 
 ```ts
 import logoUrl from "@pollinations_ai/ui/assets/logo.svg";
+import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
 ```
 
-Apps that need root-level favicon or PWA icon URLs should copy files from
-`@pollinations_ai/ui/assets/*` into their public root during their build.
+The SVG sources use `currentColor`. Apps control the rendered color by inlining
+them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
+app-owned.
 
 Wallet-specific colors and utilities live in a separate stylesheet:
 
@@ -111,13 +113,13 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations_ai/ui/modality` exports model-modality color recipes and
   `ModalityButton`.
-- `@pollinations_ai/ui/assets/*` exports canonical Pollinations brand assets
-  such as the logo, favicons, Apple touch icons, and PWA icons.
-- **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
-  `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
-  `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
-  `Tooltip`, `ChevronIcon`.
-- **Helpers** — `cn`, `currentPeriod`,
+- `@pollinations_ai/ui/assets/*` exports canonical Pollinations source SVGs:
+  `logo.svg` and `logo-wordmark.svg`.
+- **Design primitives** — `Button`, `Chip`, `ChevronIcon`, `Collapsible`,
+  `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`, `InfoTip`,
+  `Input`, `MultiSelect`, `PeriodPicker`, `ScrollArea`, `Section`, `Slider`,
+  `Surface`, `Switch`, `TabButton`, `Tooltip`.
+- **Helpers** — `cn`, `useScrollLock`, `addUtcDays`, `currentPeriod`,
   `formatPeriodLabel`, `getPeriodBucketKeys`, `isPeriodSelectable`,
   `periodBucketKeyToDate`, `periodFromDate`, `periodToWindow`,
   `startOfUtcDay`.

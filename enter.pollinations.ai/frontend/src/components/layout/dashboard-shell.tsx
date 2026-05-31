@@ -17,7 +17,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations_ai/ui";
-import logoTextBlackUrl from "@pollinations_ai/ui/assets/logo_text_black.svg";
+import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
 import type {
     CSSProperties,
     FC,
@@ -39,6 +39,11 @@ type DashboardNavItem = {
     id: DashboardPage;
     label: string;
     theme: ThemeName;
+};
+
+const brandWordmarkMask: CSSProperties = {
+    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
 type DashboardShellProps = PropsWithChildren<{
@@ -456,16 +461,19 @@ const BrandMark: FC<{ size: "desktop" | "mobile" }> = ({ size }) => (
         href="https://pollinations.ai"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center"
+        className="inline-flex items-center text-current"
         aria-label="Pollinations"
     >
-        <img
-            src={logoTextBlackUrl}
-            alt="pollinations.ai"
+        <span className="sr-only">Pollinations</span>
+        <span
+            aria-hidden="true"
             className={cn(
-                "w-auto",
-                size === "desktop" ? "h-6" : "h-6 min-[390px]:h-7 sm:h-8",
+                "block shrink-0 bg-current",
+                size === "desktop"
+                    ? "h-6 w-[195px]"
+                    : "h-6 w-[195px] min-[390px]:h-7 min-[390px]:w-[228px] sm:h-8 sm:w-[260px]",
             )}
+            style={brandWordmarkMask}
         />
     </a>
 );

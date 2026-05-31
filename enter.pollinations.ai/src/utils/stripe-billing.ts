@@ -4,7 +4,7 @@ import {
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPack, type PollenPack } from "@shared/pollen-packs.ts";
+import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -327,7 +327,10 @@ export async function updateAutoTopUpSettings(
         return { ok: true, overview: await getBillingOverview(env, userId) };
     }
 
-    const pack = getPollenPack(String(input.packAmountUsd));
+    const pack =
+        typeof input.packAmountUsd === "number"
+            ? getPollenPackByAmount(input.packAmountUsd)
+            : undefined;
     if (
         !pack ||
         pack.amountUsd < AUTO_TOP_UP_PACK_MIN_USD ||
@@ -397,7 +400,13 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
-    const pack = getPollenPack(String(user.autoTopUpAmountUsd)) as PollenPack;
+    const pack =
+        user.autoTopUpAmountUsd == null
+            ? undefined
+            : getPollenPackByAmount(user.autoTopUpAmountUsd);
+    if (!pack) {
+        return { status: "skipped", reason: "auto top-up pack invalid" };
+    }
 
     await expireStaleClaimedAttempts(env.DB, userId);
 
@@ -481,7 +490,6 @@ export async function processAutoTopUpForUser(
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
             autoTopUpAttemptId: attemptId,
-            packAmount: String(pack.amountUsd),
         };
 
         // auto_advance: false keeps collection explicit: one manual pay()

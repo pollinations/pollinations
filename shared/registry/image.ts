@@ -274,7 +274,7 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.18,
         },
         description:
-            "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
+            "Seedance 2.0 - ByteDance multimodal video gen (720p, native audio)",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -294,7 +294,7 @@ export const IMAGE_SERVICES = {
             completionAudioSeconds: 0.05, // per sec
         },
         description:
-            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
+            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -312,11 +312,32 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.01, // per sec
             completionAudioSeconds: 0.01, // per sec
         },
-        description:
-            "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P) via DashScope",
+        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
+    },
+    "wan-pro": {
+        aliases: ["wan2.7", "wan-2.7"],
+        modelId: "wan-pro",
+        provider: "alibaba",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1.5,
+        paidOnly: true,
+        // DashScope `wan2.7-i2v` / `wan2.7-t2v` bill bundled video+audio at
+        // $0.10/s (720P) or $0.15/s (1080P). Handler currently locked to 720P
+        // (see prepareVideoParameters); revisit if registry supports tiered
+        // pricing. Audio bundled into the video duration per upstream invoice.
+        cost: {
+            completionVideoSeconds: 0.1, // per sec (720P, includes audio)
+        },
+        description:
+            "Wan 2.7 - Alibaba text/image-to-video with bundled audio (720P / 1080P)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -368,7 +389,7 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.03, // per image
         },
         description:
-            "Qwen Image Plus - Alibaba text-to-image and image editing via DashScope",
+            "Qwen Image Plus - Alibaba text-to-image and image editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -515,7 +536,6 @@ export const IMAGE_SERVICES = {
         brand: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.04, // per image

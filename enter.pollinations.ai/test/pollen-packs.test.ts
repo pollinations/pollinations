@@ -1,7 +1,8 @@
 import {
     describePollenPack,
-    getPollenPack,
-    isPollenPackAmount,
+    getPollenPackByAmount,
+    getPollenPackByKey,
+    isPollenPackKey,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
 import { expect, test } from "vitest";
@@ -13,13 +14,29 @@ test("pollen pack catalog includes the stepped beta bonus ladder", () => {
     expect(POLLEN_PACKS.map((pack) => pack.pollenGrant)).toEqual([
         2, 6, 13, 28, 75, 160,
     ]);
+    expect(POLLEN_PACKS.map((pack) => pack.packKey)).toEqual([
+        "p2",
+        "p5",
+        "p10",
+        "p20",
+        "p50",
+        "p100",
+    ]);
 });
 
-test("pack lookup validates supported checkout amounts", () => {
-    expect(isPollenPackAmount("2")).toBe(true);
-    expect(isPollenPackAmount("3")).toBe(false);
-    expect(getPollenPack("20")?.bonusPollen).toBe(8);
-    expect(getPollenPack(100)?.pollenGrant).toBe(160);
+test("pack lookup validates supported USD amounts", () => {
+    expect(getPollenPackByAmount(20)?.bonusPollen).toBe(8);
+    expect(getPollenPackByAmount(100)?.pollenGrant).toBe(160);
+    expect(getPollenPackByAmount(3)).toBeUndefined();
+});
+
+test("pack lookup validates pack keys", () => {
+    expect(isPollenPackKey("p20")).toBe(true);
+    expect(isPollenPackKey("p3")).toBe(false);
+    expect(getPollenPackByKey("p20")?.bonusPollen).toBe(8);
+    expect(getPollenPackByKey("p100")?.pollenGrant).toBe(160);
+    expect(getPollenPackByKey("20")).toBeUndefined();
+    expect(getPollenPackByKey("nope")).toBeUndefined();
 });
 
 test("pack descriptions stay aligned with the shared catalog", () => {

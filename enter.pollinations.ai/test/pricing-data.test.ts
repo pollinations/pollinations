@@ -68,7 +68,7 @@ test("AssemblyAI STT pricing is exposed per input audio second", () => {
         type: "audio",
         perSecondPrice: "0.00006",
     });
-    expect(getModelDefinition("universal-3-pro").paidOnly).toBe(true);
+    expect(getModelDefinition("universal-3-pro").paidOnly).toBeUndefined();
 
     expect(
         calculateCost("universal-2", { promptAudioSeconds: 3600 }).totalCost,

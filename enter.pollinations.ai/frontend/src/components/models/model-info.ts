@@ -16,6 +16,7 @@ const BRAND_LOGOS: Record<string, string> = {
     AssemblyAI: "assemblyai",
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
+    Cohere: "cohere",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
     Google: "google",
@@ -29,6 +30,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Pollinations: "pollinations",
     Pruna: "pruna",
     Qwen: "qwen",
+    StepFun: "stepfun",
     "Z.ai": "zai",
     xAI: "xai",
 };

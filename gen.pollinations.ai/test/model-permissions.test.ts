@@ -61,6 +61,6 @@ test("filters paid-only audio models by paid balance", async ({
     ).map((model) => model.name);
 
     expect(freeModelNames).toContain("universal-2");
-    expect(freeModelNames).not.toContain("universal-3-pro");
-    expect(paidModelNames).toContain("universal-3-pro");
+    expect(freeModelNames).not.toContain("scribe");
+    expect(paidModelNames).toContain("scribe");
 });

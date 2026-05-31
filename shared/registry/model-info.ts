@@ -5,14 +5,16 @@ import {
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleRealtimeModels,
     getVisibleTextModels,
     type ModelName,
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
-// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
-//         promptImageTokens, completionTextTokens, completionReasoningTokens,
-//         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
+// Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
+//         promptAudioTokens, promptAudioSeconds, promptImageTokens,
+//         completionTextTokens, completionReasoningTokens, completionAudioTokens,
+//         completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -104,4 +106,11 @@ export function getAudioModelsInfo(): ModelInfo[] {
  */
 export function getEmbeddingModelsInfo(): ModelInfo[] {
     return getVisibleEmbeddingModels().map(getModelInfo);
+}
+
+/**
+ * Get all realtime models with enriched information
+ */
+export function getRealtimeModelsInfo(): ModelInfo[] {
+    return getVisibleRealtimeModels().map(getModelInfo);
 }

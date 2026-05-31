@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🌸 PetalGen](https://petalgen.tools4all.ai) | PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot | [@danielw-sudo](https://github.com/danielw-sudo) |
+| [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |
+| [🧵 SceneWeave](https://scene-weave.vercel.app) | Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing. | [@an3vilmonk3y](https://github.com/an3vilmonk3y) |
+| [🖼️ RagmyAI](https://ragmyai.com) | Use RagmyAI to generate images like ChatGPT. RagmyAI uses pollinations.ai for image generation. | [@koolong](https://github.com/koolong) |
+| [🌐 Ai Web Translator](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/) | Enable AI Web Translation with BYOK support. | [@nekohacker591](https://github.com/nekohacker591) |
+| [🤖 The Mork Stack](https://github.com/Mork-Zuckerbarge/mork-stack) | Manage social media with agentic workflows and run autonomous trading on Solana in The Mork Stack. | [@Mork-Zuckerbarge](https://github.com/Mork-Zuckerbarge) |
+| [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |
 | [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
 | [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
-| [🖼️ ZhenxiJS AI Image Editor (朕喜AI图片编辑器)](https://imgedit.zhenxijs.com/) | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | [@TargetCenter](https://github.com/TargetCenter) |
-| [🧚‍♀️ Universidade Fada Madrinha](https://app.comunidadefadamadrinha.com) | Plataforma educacional de dropshipping com inteligência artificial, que inclui 13 assistentes virtuais, geração de imagens/vídeos, clonagem de voz e mais de 30 ferramentas para empreendedores brasilei | [@DanieleMorais](https://github.com/DanieleMorais) |
-| [🤖 AGI Desktop Personal Assistant (AGI-DPA)](https://github.com/ydsgangge-ux/AGI-DPA) | Provides an AI-powered desktop assistant with a dual-personality system, AGI Desktop Personal Assistant (AGI-DPA). | [@ydsgangge-ux](https://github.com/ydsgangge-ux) |
-| [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |
-| [💼 GigScale](https://gigscale.app) | Audit Upwork and Fiverr profiles for SEO gaps, conversion roadblocks, and readability issues, and generate a Profile Strength Index with GigScale. | [@JealousGx](https://github.com/JealousGx) |
-| [🖼️ AI-Image-Generator-Pollinations.ai](https://github.com/Vitalii-in-IT/AI-Image-Generator-Pollinations.ai-) | Explains API integration between AI-Image-Generator-Pollinations.ai and Pollinations.ai. | [@Vitalii-in-IT](https://github.com/Vitalii-in-IT) |
-| [🖼️ SillyTavern-Localyze](https://github.com/ZapoVerde/SillyTavern-Localyze) | Detects new locations in roleplay and autogenerates environment visuals via the Pollinations.ai API; SillyTavern-Localyze lets users refine prompts, regenerate images, or toggle automation. | [@ZapoVerde](https://github.com/ZapoVerde) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-29** – **🎙️ Realtime Voice API** The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)
+- **2026-05-29** – **🧠 Model Roster Expansion** Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models).
+- **2026-05-29** – **💾 Persistent Cache** The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive.
+- **2026-05-28** – **🌍 Local Currency Support** Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)
+- **2026-05-27** – **🚀 Six new brains for the hive** Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models).
+- **2026-05-26** – **🤖 LLM-Ready Docs** We added "Copy for LLMs" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.
+- **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
+- **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
 - **2026-05-21** – **🔌 MCP Server** The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.
 - **2026-05-20** – **🤖 Polly Upgrades** We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.
-- **2026-05-19** – **🚀 Gemini 3.5 Flash** Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.
-- **2026-05-19** – **🌸 Duwit joins the showcase** Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/) <!-- app -->
-- **2026-05-18** – **✨ Uncapped Generations** We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).
-- **2026-05-17** – **🎬 Keyframe your videos** You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).
-- **2026-05-17** – **🗣️ Speaker diarization** The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.
-- **2026-05-17** – **🎲 Dynamic roleplay backgrounds** A clever new community integration detects location changes in your SillyTavern chats and automatically generates the environment visuals in the background. [View repo](https://github.com/ZapoVerde/SillyTavern-Localyze) <!-- app -->
-- **2026-05-17** – **✨ Prompt Evolution Engine** Stop guessing what the image model wants. This community tool runs your basic ideas through a 5-step interactive refinement process to spit out highly detailed, cinematic prompts. [Try it](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/) <!-- app -->
-- **2026-05-15** – **🤖 GPT-5.4-Mini added** OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.
 ---
 
 ## 🌱 Introduction

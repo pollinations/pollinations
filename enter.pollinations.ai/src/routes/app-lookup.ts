@@ -65,7 +65,7 @@ const AppLookupQuerySchema = z.object({
 export const appLookupRoutes = new Hono<Env>().get(
     "/",
     describeRoute({
-        tags: ["Account"],
+        tags: ["👤 Account"],
         description:
             "Look up app attribution by client_id. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen. Without a client_id the consent screen falls back to a hostname-only display.",
         hide: ({ c }) => c?.env.ENVIRONMENT !== "development",

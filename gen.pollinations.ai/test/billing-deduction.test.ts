@@ -99,7 +99,7 @@ describe("billing deduction", () => {
     });
 
     it("deducts an Azure paid-only model only from pack balance", async () => {
-        const modelResolved = "gpt-5.5";
+        const modelResolved = "llama-maverick";
         const model = getModelDefinition(modelResolved);
         expect(model.provider).toBe("azure");
         expect(model.paidOnly).toBe(true);

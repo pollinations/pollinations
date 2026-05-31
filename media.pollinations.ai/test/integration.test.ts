@@ -1,5 +1,12 @@
-import { fetchMock, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    fetchMock,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import app from "../src/index";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -20,6 +27,13 @@ interface UploadResponse {
 }
 
 const VALID_KEY = "pk_test_key_123";
+
+function createMediaEnv(bucket = createTestR2Bucket()) {
+    return {
+        MEDIA_BUCKET: bucket,
+        MAX_FILE_SIZE: "52428800",
+    };
+}
 
 function mockAuth() {
     fetchMock.activate();
@@ -124,6 +138,43 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("refreshes uploaded media TTL on aged GET", async () => {
+        const bucket = createTestR2Bucket();
+        const env = createMediaEnv(bucket);
+        const uploadCtx = createExecutionContext();
+
+        const uploadRes = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/png",
+                },
+            }),
+            env,
+            uploadCtx,
+        );
+        await waitOnExecutionContext(uploadCtx);
+
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(bucket.putCount).toBe(1);
+
+        const getCtx = createExecutionContext();
+        const getRes = await app.fetch(
+            new Request(`https://media.pollinations.ai/${upload.id}`),
+            env,
+            getCtx,
+        );
+        const body = new Uint8Array(await getRes.arrayBuffer());
+        await waitOnExecutionContext(getCtx);
+
+        expect(getRes.status).toBe(200);
+        expect(body.length).toBe(TINY_PNG.length);
+        expect(bucket.putCount).toBe(2);
     });
 
     it("same content with different filename produces different hash", async () => {

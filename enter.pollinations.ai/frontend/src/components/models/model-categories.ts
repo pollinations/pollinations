@@ -1,6 +1,7 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { REALTIME_SERVICES } from "@shared/registry/realtime.ts";
 import type { Category } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { getModelDisplayName } from "./model-utils.ts";
@@ -10,12 +11,13 @@ export type ModelCategoryLabel =
     | "Image"
     | "Video"
     | "Audio"
+    | "Realtime"
     | "Embedding";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: Category;
     label: ModelCategoryLabel;
-    modality: "text" | "images" | "video" | "audio" | "embeddings";
+    modality: "text" | "images" | "video" | "audio" | "realtime" | "embeddings";
     models: ModelCategoryModel[];
 };
 
@@ -24,6 +26,7 @@ const CATEGORY_ORDER: Category[] = [
     "image",
     "video",
     "audio",
+    "realtime",
     "embedding",
 ];
 
@@ -32,6 +35,7 @@ const CATEGORY_LABELS: Record<Category, ModelCategoryLabel> = {
     image: "Image",
     video: "Video",
     audio: "Audio",
+    realtime: "Realtime",
     embedding: "Embedding",
 };
 
@@ -43,6 +47,7 @@ const CATEGORY_MODALITIES: Record<
     Image: "images",
     Video: "video",
     Audio: "audio",
+    Realtime: "realtime",
     Embedding: "embeddings",
 };
 
@@ -50,6 +55,7 @@ const allRegistryEntries = [
     ...Object.entries(TEXT_SERVICES),
     ...Object.entries(IMAGE_SERVICES),
     ...Object.entries(AUDIO_SERVICES),
+    ...Object.entries(REALTIME_SERVICES),
     ...Object.entries(EMBEDDING_SERVICES),
 ] as Array<[string, { category: Category }]>;
 
@@ -86,6 +92,8 @@ export const imageModelIds = getCategoryModelIds("image");
 export const videoModelIds = getCategoryModelIds("video");
 
 export const audioModelIds = getCategoryModelIds("audio");
+
+export const realtimeModelIds = getCategoryModelIds("realtime");
 
 export const embeddingModelIds = getCategoryModelIds("embedding");
 

@@ -40,17 +40,6 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("cost lookup uses the public model name instead of collapsing shared provider ids", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage);
-
-    expect(geminiFastCost.totalCost).not.toBe(geminiSearchCost.totalCost);
-});
-
 test("gemini-fast can expose a higher public price than provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
@@ -101,10 +90,10 @@ test("model without explicit price falls back to cost for both values", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
 });
 
-test("GPT-5.5 requires paid balance", () => {
+test("GPT-5.5 is available on the free tier", () => {
     const definition = getModelDefinition("gpt-5.5");
 
-    expect(definition.paidOnly).toBe(true);
+    expect(definition.paidOnly).toBeUndefined();
 });
 
 test("DeepSeek V4 models are billed at provider cost", () => {
@@ -115,16 +104,17 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedCosts = {
-        deepseek: 0.4032,
+        // biome-ignore lint/suspicious/noApproximativeNumericConstant: expected DeepSeek price for the fixed usage vector.
+        deepseek: 0.434,
         "deepseek-pro": 5.36,
     } as const;
     const expectedProviders = {
-        deepseek: "openrouter",
+        deepseek: "fireworks",
         "deepseek-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
         deepseek: undefined,
-        "deepseek-pro": true,
+        "deepseek-pro": undefined,
     } as const;
 
     for (const model of ["deepseek", "deepseek-pro"] as const) {

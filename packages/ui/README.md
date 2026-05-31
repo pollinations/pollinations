@@ -83,8 +83,8 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
-- **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
-  `InfoTip`, `Input`, `LinkButton`, `MultiSelect`, `PeriodPicker`,
+- **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
+  `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
   `Tooltip`, `ChevronIcon`.
 - **Helpers** — `cn`, `formatPollen`, `currentPeriod`,

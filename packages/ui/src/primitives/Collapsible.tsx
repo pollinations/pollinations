@@ -2,7 +2,7 @@ import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "./ChevronIcon.tsx";
 
-type DisclosureProps = {
+export type CollapsibleProps = {
     /** Header content (label, hint, etc). */
     label: ReactNode;
     expanded: boolean;
@@ -23,13 +23,13 @@ type DisclosureProps = {
 
 /**
  * Collapsible row primitive. One chevron, one hover/rounded behaviour for
- * every disclosure in the app. Use this for any "click to reveal nested
- * content" UI — permission groups, model selectors, advanced settings.
+ * every collapsible in the UI. Use this for any "click to reveal nested
+ * content" UI — nested settings, grouped controls, optional details.
  *
  * For dropdown/popover triggers (date pickers, menus) use a button with
  * <ChevronIcon /> directly — that's a different interaction.
  */
-export const Disclosure: FC<DisclosureProps> = ({
+export const Collapsible: FC<CollapsibleProps> = ({
     label,
     expanded,
     onToggle,

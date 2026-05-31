@@ -2,7 +2,7 @@ import { cn } from "@frontend/lib/cn.ts";
 import {
     Button,
     Chip,
-    Disclosure,
+    Collapsible,
     IconButton,
     InfoTip,
     Input,
@@ -59,8 +59,8 @@ export const DesignShowcase: FC = () => {
                 <SwitchesDemo />
                 <SurfacesDemo />
                 <ScrollAreaDemo />
-                <TabsDemo />
-                <DisclosureDemo />
+                <TabButtonsDemo />
+                <CollapsibleDemo />
                 <InputsDemo />
                 <IconButtonsDemo />
                 <TooltipsDemo />
@@ -467,18 +467,22 @@ const ButtonsDemo: FC = () => (
 
 // ─── Switch ─────────────────────────────────────────────────
 
-const switchStatuses: readonly SwitchStatus[] = ["off", "on", "draft"] as const;
+const switchStatuses: readonly SwitchStatus[] = [
+    "off",
+    "on",
+    "invalid",
+] as const;
 
 const SwitchesDemo: FC = () => {
     const [checked, setChecked] = useState<Record<SwitchStatus, boolean>>({
         off: false,
         on: true,
-        draft: true,
+        invalid: true,
     });
     return (
         <Section
             title="Switch"
-            caption="Theme-independent. White-ish off, green on, red draft (for incomplete or failing state)."
+            caption="Theme-independent. White-ish off, green on, red invalid (for incomplete or failing state)."
         >
             <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 {switchStatuses.map((status) => (
@@ -650,16 +654,16 @@ const ScrollAreaDemo: FC = () => (
     </Section>
 );
 
-// ─── Tabs ───────────────────────────────────────────────────
+// ─── Tab Buttons ────────────────────────────────────────────
 
 const modelOptions = ["image", "video", "audio", "text", "embedding"];
 
-const TabsDemo: FC = () => {
+const TabButtonsDemo: FC = () => {
     const [pill, setPill] = useState("image");
     return (
         <Section
-            title="Tabs"
-            caption="Pill tabs. Each button is independent, wraps naturally when the row runs out of room."
+            title="TabButton"
+            caption="Pill tab-style button for compact option groups. Each button is independent and wraps naturally when the row runs out of room."
         >
             <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 <Field label="pills · model selector">
@@ -684,17 +688,17 @@ const TabsDemo: FC = () => {
 
 // ─── Inputs ─────────────────────────────────────────────────
 
-const DisclosureDemo: FC = () => {
+const CollapsibleDemo: FC = () => {
     const [openA, setOpenA] = useState(false);
     const [openB, setOpenB] = useState(true);
     return (
         <Section
-            title="Disclosure"
-            caption="One collapsible row primitive for the whole app — used for permission groups, model selectors, advanced settings. Shared ChevronIcon also drives dropdown pills (date picker, OAuth Permissions toggle), so every up/down triangle in the app is the same SVG."
+            title="Collapsible"
+            caption="One collapsible row primitive for nested settings, grouped controls, and optional details. Shared ChevronIcon also drives dropdown pills, so every up/down triangle uses the same SVG."
         >
             <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-2">
                 <Field label="collapsed">
-                    <Disclosure
+                    <Collapsible
                         expanded={openA}
                         onToggle={() => setOpenA((v) => !v)}
                         wrapperClassName="bg-theme-bg-pale"
@@ -708,10 +712,10 @@ const DisclosureDemo: FC = () => {
                             Body content goes here. The panel is whatever
                             children you pass.
                         </p>
-                    </Disclosure>
+                    </Collapsible>
                 </Field>
                 <Field label="expanded">
-                    <Disclosure
+                    <Collapsible
                         expanded={openB}
                         onToggle={() => setOpenB((v) => !v)}
                         wrapperClassName="bg-theme-bg-pale"
@@ -729,7 +733,7 @@ const DisclosureDemo: FC = () => {
                         <p className="text-sm text-theme-text-base">
                             Nested content rendered inside the panel.
                         </p>
-                    </Disclosure>
+                    </Collapsible>
                 </Field>
             </div>
         </Section>

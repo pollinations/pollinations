@@ -264,7 +264,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         toggleStatus,
         lastIssue,
     );
-    const alertTone = switchStatus === "draft";
+    const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
     return (
@@ -396,10 +396,10 @@ function mapToggleStatusToSwitchStatus(
     issue: AutoTopUpIssue | null,
 ): SwitchStatus {
     if (status === "off") return "off";
-    if (status === "draft") return "draft";
-    // status === "on": red (draft) when there's an unresolved issue,
+    if (status === "draft") return "invalid";
+    // status === "on": red (invalid) when there's an unresolved issue,
     // green (on) when fully configured.
-    return issue !== null ? "draft" : "on";
+    return issue !== null ? "invalid" : "on";
 }
 
 type AutoTopUpSaveButtonProps = {

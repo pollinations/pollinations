@@ -3,7 +3,7 @@ import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 import { Button } from "./Button.tsx";
 
-type LinkButtonProps = {
+export type ExternalLinkButtonProps = {
     theme: ThemeName;
     href: string;
     size?: "small" | "medium" | "large";
@@ -11,7 +11,7 @@ type LinkButtonProps = {
     children: ReactNode;
 };
 
-export const LinkButton: FC<LinkButtonProps> = ({
+export const ExternalLinkButton: FC<ExternalLinkButtonProps> = ({
     theme,
     href,
     size = "medium",

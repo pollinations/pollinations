@@ -1,5 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
-import { Disclosure } from "@pollinations_ai/ui";
+import { Collapsible } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { getModalityColors } from "../models/modality-ui.ts";
@@ -220,7 +220,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 })}
 
                 {/* Models */}
-                <Disclosure
+                <Collapsible
                     expanded={modelsExpanded}
                     onToggle={() => setModelsExpanded((v) => !v)}
                     disabled={disabled}
@@ -255,7 +255,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             theme={theme}
                         />
                     ))}
-                </Disclosure>
+                </Collapsible>
             </div>
         </div>
     );

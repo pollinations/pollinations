@@ -2,7 +2,7 @@ import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
-type TabButtonProps = {
+export type TabButtonProps = {
     active: boolean;
     onClick: () => void;
     children: ReactNode;

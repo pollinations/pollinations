@@ -1,4 +1,4 @@
-import { LinkButton, Section, TabButton } from "@pollinations_ai/ui";
+import { ExternalLinkButton, Section, TabButton } from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
 import {
@@ -42,20 +42,20 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                        <LinkButton
+                        <ExternalLinkButton
                             theme="teal"
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
                             📊 Model Health
-                        </LinkButton>
-                        <LinkButton
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
                             theme="teal"
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >
                             🗳️ Vote for next model
-                        </LinkButton>
+                        </ExternalLinkButton>
                     </div>
                 }
             >

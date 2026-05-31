@@ -2,9 +2,7 @@ import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
-/**
- * Semantic chip labels for status, wallet, and neutral metadata badges.
- */
+/** Semantic chip labels for status and metadata badges. */
 type ChipIntent = "news" | "alpha" | "paid" | "tier" | "neutral";
 
 const chipSizes = {

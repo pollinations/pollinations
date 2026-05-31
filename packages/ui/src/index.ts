@@ -6,8 +6,12 @@ export { Chip } from "./primitives/Chip.tsx";
 export { Disclosure } from "./primitives/Disclosure.tsx";
 export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
-export { Input } from "./primitives/Input.tsx";
+export { Input, type InputProps } from "./primitives/Input.tsx";
 export { LinkButton } from "./primitives/LinkButton.tsx";
+export {
+    RangeSlider,
+    type RangeSliderProps,
+} from "./primitives/RangeSlider.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Surface } from "./primitives/Surface.tsx";
 export { Switch, type SwitchStatus } from "./primitives/Switch.tsx";

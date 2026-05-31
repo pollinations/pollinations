@@ -59,6 +59,15 @@ export function App() {
 }
 ```
 
+For the Enter dashboard app, import the package-owned app stylesheet instead:
+
+```css
+@import "@pollinations_ai/ui/enter.css";
+```
+
+`enter.css` includes `styles.css`, the Enter Tailwind theme bridge, and the
+root/body shell classes used by `enter.pollinations.ai`.
+
 ## What's exported
 
 - `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
@@ -74,8 +83,8 @@ export function App() {
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
-  `InfoTip`, `Input`, `LinkButton`, `ScrollArea`, `Surface`, `Switch`,
-  `TabButton`, `Tooltip`, `ChevronIcon`.
+  `InfoTip`, `Input`, `LinkButton`, `RangeSlider`, `ScrollArea`, `Surface`,
+  `Switch`, `TabButton`, `Tooltip`, `ChevronIcon`.
 - **Helpers** — `cn`, `formatPollen`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 

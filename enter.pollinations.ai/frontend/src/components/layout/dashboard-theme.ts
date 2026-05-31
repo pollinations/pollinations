@@ -46,7 +46,7 @@ export const dashboardThemeByPage = Object.fromEntries(
 
 // Page chrome colors are driven by @pollinations_ai/ui CSS variables.
 // Components scope their subtree with `data-theme="..."` and read the
-// Enter Tailwind bridge utilities in `style.css`.
+// Tailwind bridge utilities from @pollinations_ai/ui/enter.css.
 
 export function isDashboardPage(page: string): page is DashboardPage {
     return DASHBOARD_PAGES.includes(page as DashboardPage);

@@ -6,6 +6,7 @@ import {
     IconButton,
     InfoTip,
     Input,
+    RangeSlider,
     ScrollArea,
     Surface,
     Switch,
@@ -34,11 +35,11 @@ export const DesignShowcase: FC = () => {
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
 
     useEffect(() => {
-        document.documentElement.classList.add("dashboard-shell");
-        document.body.classList.add("dashboard-shell");
+        document.documentElement.classList.add("polli-dashboard-shell");
+        document.body.classList.add("polli-dashboard-shell");
         return () => {
-            document.documentElement.classList.remove("dashboard-shell");
-            document.body.classList.remove("dashboard-shell");
+            document.documentElement.classList.remove("polli-dashboard-shell");
+            document.body.classList.remove("polli-dashboard-shell");
         };
     }, []);
 
@@ -735,24 +736,46 @@ const DisclosureDemo: FC = () => {
     );
 };
 
-const InputsDemo: FC = () => (
-    <Section
-        title="Input"
-        caption="Three states: default (gray border), error (red border), disabled (lower opacity). No theme focus ring — the ring was deliberately removed; the browser's default focus outline takes over for keyboard a11y."
-    >
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-3">
-            <Field label="default">
-                <Input placeholder="Default" />
-            </Field>
-            <Field label="error">
-                <Input placeholder="Error" error />
-            </Field>
-            <Field label="disabled">
-                <Input placeholder="Disabled" disabled />
-            </Field>
-        </div>
-    </Section>
-);
+const InputsDemo: FC = () => {
+    const [sliderValue, setSliderValue] = useState(50);
+
+    return (
+        <Section
+            title="Input"
+            caption="Text inputs, clean numeric inputs, and the range slider primitive used by pollen pack selection."
+        >
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-4">
+                <Field label="default">
+                    <Input placeholder="Default" />
+                </Field>
+                <Field label="number">
+                    <Input type="number" placeholder="100" hideNumberSteppers />
+                </Field>
+                <Field label="error">
+                    <Input placeholder="Error" error />
+                </Field>
+                <Field label="disabled">
+                    <Input placeholder="Disabled" disabled />
+                </Field>
+                <div className="sm:col-span-4">
+                    <Field label={`range ${sliderValue}`}>
+                        <RangeSlider
+                            min={0}
+                            max={100}
+                            value={sliderValue}
+                            aria-label="Range slider"
+                            onChange={(event) =>
+                                setSliderValue(
+                                    Number(event.currentTarget.value),
+                                )
+                            }
+                        />
+                    </Field>
+                </div>
+            </div>
+        </Section>
+    );
+};
 
 const Field: FC<{ label: string; children: ReactNode }> = ({
     label,

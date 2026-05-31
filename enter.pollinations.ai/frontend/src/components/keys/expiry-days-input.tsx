@@ -54,7 +54,8 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("input-number-clean w-[90px]", inputClasses)}
+                    className={cn("w-[90px]", inputClasses)}
+                    hideNumberSteppers
                     placeholder="Never"
                     disabled={disabled}
                 />

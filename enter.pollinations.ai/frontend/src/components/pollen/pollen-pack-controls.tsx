@@ -1,5 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
-import { Chip } from "@pollinations_ai/ui";
+import { Chip, RangeSlider } from "@pollinations_ai/ui";
 import {
     formatPollenPackValue,
     getPackBonusPercent,
@@ -7,9 +7,6 @@ import {
     type PollenPack,
 } from "@shared/pollen-packs.ts";
 import type { FC } from "react";
-
-const sliderGradient = (percent: number): string =>
-    `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
 
 const formatPackAriaLabel = (pack: PollenPack): string => {
     const bonusPercent = getPackBonusPercent(pack);
@@ -44,8 +41,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     return (
         <div className="relative">
             <div className="flex h-8 items-center">
-                <input
-                    type="range"
+                <RangeSlider
                     min={0}
                     max={lastIndex}
                     step={1}
@@ -61,8 +57,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             ? formatPackAriaLabel(selectedPack)
                             : undefined
                     }
-                    style={{ background: sliderGradient(progressPercent) }}
-                    className="pollen-pack-slider"
+                    progress={progressPercent}
                 />
             </div>
             <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-amber-700/80 tabular-nums">

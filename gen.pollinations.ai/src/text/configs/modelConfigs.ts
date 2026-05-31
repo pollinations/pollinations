@@ -171,6 +171,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "claude-opus-4-8": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-8",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -204,6 +209,7 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
+    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
@@ -255,6 +261,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3-vl-235b-a22b-thinking": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-235b-a22b-thinking",
+        }),
+
+    // -- OpenRouter (StepFun) -------------------------------------------------
+    "stepfun/step-3.5-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.7-flash",
         }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------

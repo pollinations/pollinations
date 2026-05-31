@@ -1,0 +1,35 @@
+{
+  "pr_number": 11427,
+  "title": "chore: update app metrics 2026-05-31",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11427",
+  "merged_at": "2026-05-31T05:41:58Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Polly did her daily rounds, watering the apps and updating the community metrics.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status in the APPS.md and GREENHOUSE.md files.",
+    "impact": "Ensures the community app directory reflects the latest health and usage data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, checking on pixelated code-plants in a greenhouse. She has a tiny clipboard to represent the metrics update.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, holding a small clipboard while inspecting glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-31/PR-11427.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, holding a small clipboard while inspecting glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-31T05:42:53.193027+00:00"
+}

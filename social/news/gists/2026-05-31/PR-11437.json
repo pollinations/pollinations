@@ -1,0 +1,35 @@
+{
+  "pr_number": 11437,
+  "title": "fix: publish UI package",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11437",
+  "merged_at": "2026-05-31T16:49:28Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds `packages/ui/**` to the package publish workflow trigger and change detection.\n- Adds a `publish-ui` job that builds the SDK + UI package before publishing `@pollinations_ai/ui`.\n- Adds repository metadata to the SDK/UI package manifests so dry-run publish no longer needs npm autocorrection.\n\nValidation:\n- `actionlint .github/workflows/publish-packages.yml`\n- `npm publish --dry-run --access public --workspace @pollinations_ai/ui`\n- `npm publish --dry-run --access public --workspace @pollinations_ai/sdk`\n\nNote: the merged SDK publish run for #11217 failed with npm 404 on `@pollinations_ai/sdk@4.4.0`, which points to npm token/package access rather than a build/package-shape issue. This PR fixes the missing UI publish path; the npm secret may still need permission correction or rerun after update.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Shipping the UI package",
+    "blurb": "Taught our CI/CD pipelines how to properly build and publish the new UI package to npm.",
+    "summary": "Added the @pollinations_ai/ui package to the automated GitHub Actions publish workflow and updated repository metadata in the package manifests.",
+    "impact": "The UI package will now automatically build and publish to npm alongside the SDK when changes are merged.",
+    "keywords": [
+      "ci/cd",
+      "npm",
+      "packages",
+      "ui",
+      "github-actions"
+    ],
+    "visual_concept": "A factory or shipping scene representing CI/CD pipelines. The bee and robot packing boxes (npm packages) labeled 'UI' onto a conveyor belt.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together at a wooden conveyor belt, packing glowing lime green (#ecf874) boxes labeled 'UI' in pixel font. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-31/PR-11437.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together at a wooden conveyor belt, packing glowing lime green (#ecf874) boxes labeled 'UI' in pixel font. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-31T16:50:25.626530+00:00"
+}

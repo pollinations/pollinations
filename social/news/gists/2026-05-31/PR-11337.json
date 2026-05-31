@@ -1,0 +1,35 @@
+{
+  "pr_number": 11337,
+  "title": "centralize pollen ledger precision at 1e-8",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11337",
+  "merged_at": "2026-05-31T17:15:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Pins 1e-8 as the official smallest billable Pollen unit and centralizes rounding at the points where amounts actually hit the user balance ledger. Both halves of a BYOP-billed request — the payer debit and the dev credit — now go through the same boundary, and the Tinybird event reads the rounded amount that was charged instead of recomputing `totalPrice + devCredit` separately.\n\n**Changes**\n- New [shared/billing/precision.ts](shared/billing/precision.ts) exports `POLLEN_BILLING_PRECISION = 8` and `roundPollenLedgerAmount`. The constant was previously a private `8` in [registry.ts:20](shared/registry/registry.ts#L20); the helper replaces the generic `safeRound` call there and rejects non-finite ledger amounts.\n- [handleBalanceDeduction](shared/billing/track-helpers.ts) rounds at both ledger writes — the payer deduction and the dev credit before `atomicCreditUserBalance` — and returns the rounded `billedPrice` so callers don't have to recompute.\n- [track.ts](gen.pollinations.ai/src/middleware/track.ts) uses `deduction.billedPrice` for the Tinybird event `totalPrice`, replacing the recompute. Analytics and ledger agree structurally, not by parallel arithmetic.\n- `safeRound` is left untouched — still useful for non-billing rounding (e.g., `Retry-After` seconds). Dedup of the three `safeRound` copies across `shared/`, `enter/`, `gen/` is intentionally not in this PR.\n\n**Tests**\n- 5 unit tests for `roundPollenLedgerAmount` ([gen.pollinations.ai/test/pollen-precision.test.ts](gen.pollinations.ai/test/pollen-precision.test.ts)) covering precision snapping, sub-precision drop to zero, float-cruft removal, finite-input rejection, and precision-boundary preservation.\n- New integration assertion in [byop-markup.test.ts](gen.pollinations.ai/src/byop-markup.test.ts) — `handleBalanceDeduction` returns `billedPrice` equal to `roundPollenLedgerAmount(totalPrice + devCredit)`, and the dev credit lands on the ledger at that precision.\n\nFixes #11098",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the books",
+    "blurb": "We've centralized our Pollen ledger precision to exactly eight decimal places. Just making sure the hive's accounting is perfectly balanced!",
+    "summary": "Centralized Pollen billing precision at 1e-8 across the ledger and Tinybird analytics by introducing a shared roundPollenLedgerAmount helper.",
+    "impact": "Ensures that user balance deductions and developer credits are perfectly aligned with analytics events without floating-point discrepancies.",
+    "keywords": [
+      "billing",
+      "ledger",
+      "precision",
+      "refactor",
+      "analytics"
+    ],
+    "visual_concept": "Polly the bee as an accountant, weighing pollen on a precise scale, with the monitor robot printing a receipt.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant's visor, carefully weighing glowing golden pollen grains on a precise digital scale. A chunky monitor robot stands nearby, happily printing a long receipt. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-31/PR-11337.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant's visor, carefully weighing glowing golden pollen grains on a precise digital scale. A chunky monitor robot stands nearby, happily printing a long receipt. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-31T17:16:13.030358+00:00"
+}

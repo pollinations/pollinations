@@ -8,6 +8,7 @@ Classify this GitHub issue/PR. Return JSON only.
   "project": "dev" | "support",
   "priority": "High" | "Low" | null,
   "labels": ["LABEL"],
+  "tracking_issue": 1234 | null,
   "reasoning": "brief explanation"
 }
 ```
@@ -27,6 +28,8 @@ Classify this GitHub issue/PR. Return JSON only.
 - `DEV-DOCS`: Documentation work - dev docs, API docs, READMEs, guides
 - `DEV-INFRA`: Infrastructure - CI/CD, deployments, DevOps, monitoring, secrets
 - `DEV-CHORE`: Maintenance tasks - dependency updates, cleanup, migrations
+- `DEV-APP`: Building/developing an app, agent, or bot (internal or hosted)
+- `DEV-UI-UX`: UI / UX work - frontend design, layout, user experience
 
 ### support
 
@@ -50,7 +53,7 @@ Classify this GitHub issue/PR. Return JSON only.
 - `CREDITS`: Pollen credits, usage, quotas
 - `BILLING`: Payments, invoices, pricing
 - `ACCOUNT`: Account access, API keys, login issues
-- `TIER`: User tiers (spore/seed/flower/nectar) — what tier they're on, tier limits, how to upgrade, how tiers work
+- `TIER`: User tiers (microbe/spore/seed/flower/router; nectar is legacy) — what tier they're on, tier limits, how to upgrade, how tiers work
 
 ## Priority (support only)
 
@@ -62,6 +65,10 @@ Pick exactly one of `High` or `Low`. Do **not** return `Urgent` or `Medium`:
 `Urgent` is reserved for paid customers and is applied automatically downstream — never return it.
 
 **Note for dev:** Always return `null` for priority. Dev priority is set manually.
+
+## Tracking issue (dev only)
+
+If `project` is `dev`, set `tracking_issue` to the issue number of the single best-fit parent from the **Dev Tracking Issues** list provided below this prompt. Choose the tracking issue whose scope most directly contains this issue. If none fits, or `project` is `support`, set `tracking_issue` to `null`. Never invent a number — only pick from the provided list.
 
 ## Rules
 

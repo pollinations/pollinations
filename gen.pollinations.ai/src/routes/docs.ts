@@ -2,6 +2,7 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -104,6 +105,9 @@ const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
+const realtimeModelDisplayNames = getRealtimeModelsInfo()
+    .map((model) => model.name)
+    .join(", ");
 
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
@@ -124,6 +128,7 @@ const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
     IMAGE_MODELS: imageModelDisplayNames,
     VIDEO_MODELS: videoModelDisplayNames,
+    REALTIME_MODELS: realtimeModelDisplayNames,
     AUDIO_MODELS: audioModelDisplayNames,
     EMBEDDING_MODELS: embeddingModelDisplayNames,
     ELEVENLABS_VOICES: ELEVENLABS_VOICES.join(", "),
@@ -142,6 +147,42 @@ const AUDIO_GENERATION_DOCS = interpolate(
     AUDIO_GENERATION_MD.trim(),
     MODEL_VARS,
 );
+const REALTIME_DOCS = [
+    "## Realtime Voice",
+    "",
+    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+    "",
+    "| Endpoint | Description |",
+    "|----------|-------------|",
+    "| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2`) |",
+    "",
+    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
+    "",
+    "The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes. Input transcription sessions are not supported yet.",
+    "",
+    "Events sent and received over the socket use the OpenAI Realtime protocol unchanged. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "",
+    "```js",
+    'import WebSocket from "ws";',
+    "",
+    "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
+    "const ws = new WebSocket(",
+    '    "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2",',
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
+    "    { headers: { Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}` } },",
+    ");",
+    "",
+    'ws.on("open", () => ws.send(JSON.stringify({',
+    '    type: "session.update",',
+    '    session: { type: "realtime", instructions: "Be concise." },',
+    "})));",
+    'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
+    "```",
+    "",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "",
+    `**Realtime models:** ${realtimeModelDisplayNames}`,
+].join("\n");
 const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
@@ -154,6 +195,7 @@ const GEN_API_DOCS = [
     TEXT_GENERATION_DOCS,
     IMAGE_GENERATION_DOCS,
     VIDEO_GENERATION_DOCS,
+    REALTIME_DOCS,
     AUDIO_GENERATION_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
@@ -425,6 +467,7 @@ function generationDocumentation(): OpenApiSchema {
                     "✍️ Text",
                     "🖼️ Image",
                     "🎬 Video",
+                    "🎙️ Realtime",
                     "🔊 Audio",
                     "🔢 Embeddings",
                 ],
@@ -480,6 +523,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🎬 Video",
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
+            },
+            {
+                name: "🎙️ Realtime",
+                description: stripLeadingHeading(REALTIME_DOCS),
             },
             {
                 name: "🔊 Audio",

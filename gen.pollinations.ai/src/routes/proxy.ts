@@ -25,6 +25,7 @@ import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
+    getRealtimeModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
@@ -54,6 +55,7 @@ import {
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
@@ -63,6 +65,7 @@ import {
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import { handleSimpleAudio } from "./audio.ts";
+import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -209,7 +212,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -245,10 +248,17 @@ export const proxyRoutes = new Hono<Env>()
                 allowedModels,
                 paidBalance,
             );
+            const realtimeModels = filterModelsByPermissions(
+                getRealtimeModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
             const now = Date.now();
 
             const toModelEntry = (
-                m: (typeof textModels)[number],
+                m:
+                    | (typeof textModels)[number]
+                    | (typeof realtimeModels)[number],
                 supportedEndpoints: string[],
             ) => ({
                 id: m.name,
@@ -287,6 +297,9 @@ export const proxyRoutes = new Hono<Env>()
                     ...embeddingModels.map((m) =>
                         toModelEntry(m, ["/v1/embeddings"]),
                     ),
+                    ...realtimeModels.map((m) =>
+                        toModelEntry(m, ["/v1/realtime"]),
+                    ),
                 ],
             });
         },
@@ -297,7 +310,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, image, video, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -322,6 +335,7 @@ export const proxyRoutes = new Hono<Env>()
                 [
                     ...getTextModelsInfo(),
                     ...getImageModelsInfo(),
+                    ...getRealtimeModelsInfo(),
                     ...getAudioModelsInfo(),
                     ...getEmbeddingModelsInfo(),
                 ],
@@ -484,6 +498,40 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
+    .get(
+        "/v1/realtime",
+        describeRoute({
+            tags: ["🎙️ Realtime"],
+            summary: "Realtime WebSocket",
+            description: [
+                "OpenAI-compatible Realtime WebSocket proxy.",
+                "",
+                "Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2` and send/receive Realtime JSON events over the socket.",
+                "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+                "",
+                "**Model:** `gpt-realtime-2`.",
+                "",
+                "**Billing:** requires a positive balance. Gen proxies the WebSocket, aggregates observed `response.done` usage, and deducts one session total when the socket closes. Input transcription sessions are not supported yet.",
+            ].join("\n"),
+            responses: {
+                101: {
+                    description: "WebSocket connection established",
+                },
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    426,
+                    429,
+                    500,
+                    503,
+                ),
+            },
+        }),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        handleRealtimeWebSocket,
+    )
     .post(
         "/v1/chat/completions",
         describeRoute({

@@ -53,6 +53,7 @@ SCHEMA >
 -- Pricing
 `token_price_prompt_text`          Float64  `json:$.tokenPricePromptText` DEFAULT 0,
 `token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
+`token_price_prompt_cache_write`   Float64  `json:$.tokenPricePromptCacheWrite` DEFAULT 0,
 `token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
 `token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
 `token_price_prompt_video`         Float64  `json:$.tokenPricePromptVideo` DEFAULT 0,
@@ -67,6 +68,7 @@ SCHEMA >
 `token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
 `token_count_prompt_audio`         UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
 `token_count_prompt_cached`        UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,
+`token_count_prompt_cache_write`   UInt32   `json:$.tokenCountPromptCacheWrite` DEFAULT 0,
 `token_count_prompt_image`         UInt32   `json:$.tokenCountPromptImage` DEFAULT 0,
 `token_count_prompt_video`         UInt32   `json:$.tokenCountPromptVideo` DEFAULT 0,
 `token_count_completion_text`      UInt32   `json:$.tokenCountCompletionText` DEFAULT 0,

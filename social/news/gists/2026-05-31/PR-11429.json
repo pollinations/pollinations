@@ -1,0 +1,34 @@
+{
+  "pr_number": 11429,
+  "title": "[PATCH]: Correct language and misspelled \"badge\" for the contributing",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/11429",
+  "merged_at": "2026-05-31T06:41:23Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "## Changes Made:- \r\n\r\n- We don't offer a badge after we are done with hacktoberfest for any means of recognition, the `CONTRIBUTING.md` was mentioning it wrong `L:57`. Shipped a fix for that",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Hacktoberfest cleanup",
+    "blurb": "Tidied up our contributing guide to remove some outdated Hacktoberfest language.",
+    "summary": "Removed an outdated reference to Hacktoberfest badges in the CONTRIBUTING.md file.",
+    "impact": "Contributors will no longer be confused by mentions of legacy Hacktoberfest rewards.",
+    "keywords": [
+      "docs",
+      "contributing",
+      "hacktoberfest",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee organizing papers or erasing a chalkboard in a cozy library/study room, representing documentation cleanup.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, erasing a small chalkboard in a warm, wood-paneled library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-31/PR-11429.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, erasing a small chalkboard in a warm, wood-paneled library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-31T06:42:13.001130+00:00"
+}

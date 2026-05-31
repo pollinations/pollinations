@@ -1,0 +1,21 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+/*
+ * Tailwind v4 — skip preflight so host apps that import
+ * `@pollinations_ai/ui/styles.css` don't get their global `margin`,
+ * `list-style`, heading sizes, etc. reset. We only need the theme machinery
+ * (so `@theme inline` in tokens.css resolves) and the utility classes.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(polli);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
+@import "./fonts.css";
+@import "./tokens.css";
+
+/*
+ * No `@source inline(...)` allowlist needed: Tailwind v4 content-scans
+ * the package source by default, so every `polli:*` class literal in
+ * the `.ts` / `.tsx` files is picked up. Add `@source inline(...)` here
+ * only if you introduce a class constructed dynamically (template
+ * literal, runtime concatenation) that can't be detected statically.
+ */

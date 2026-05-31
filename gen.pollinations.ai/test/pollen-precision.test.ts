@@ -27,14 +27,13 @@ describe("roundPollenLedgerAmount", () => {
         expect(roundPollenLedgerAmount(1.23456789)).toBe(1.23456789);
     });
 
-    it("treats non-finite inputs as zero", () => {
-        expect(roundPollenLedgerAmount(Number.NaN)).toBe(0);
-        expect(roundPollenLedgerAmount(Number.POSITIVE_INFINITY)).toBe(0);
-        expect(roundPollenLedgerAmount(Number.NEGATIVE_INFINITY)).toBe(0);
-    });
-
-    it("is idempotent", () => {
-        const once = roundPollenLedgerAmount(0.1 + 0.2);
-        expect(roundPollenLedgerAmount(once)).toBe(once);
+    it("rejects non-finite inputs", () => {
+        for (const amount of [
+            Number.NaN,
+            Number.POSITIVE_INFINITY,
+            Number.NEGATIVE_INFINITY,
+        ]) {
+            expect(() => roundPollenLedgerAmount(amount)).toThrow(RangeError);
+        }
     });
 });

@@ -108,7 +108,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         modelResolved,
     } = params;
 
-    if (!isBilledUsage || !totalPrice) {
+    if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
         return {
             markup: null,
             payerBucket: null,

@@ -1,4 +1,10 @@
 import { Buffer } from "node:buffer";
+import {
+    assertAllowedRemoteMediaUrl,
+    assertNoRemoteMediaRedirect,
+    assertRemoteMediaContentLength,
+    readRemoteMediaBytes,
+} from "@/utils/remoteMedia.ts";
 import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
@@ -73,9 +79,26 @@ export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
+    let validatedUrl: URL;
+    try {
+        validatedUrl = assertAllowedRemoteMediaUrl(imageUrl);
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                `Failed to fetch image ${imageUrl}: ${error.message}`,
+                400,
+                { validation: true },
+            );
+        }
+        throw error;
+    }
+
     let imageResponse: Response;
     try {
-        imageResponse = await fetch(imageUrl, { signal });
+        imageResponse = await fetch(validatedUrl, {
+            signal,
+            redirect: "manual",
+        });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new HttpError(
@@ -83,6 +106,16 @@ export async function downloadUserImage(
             400,
             { validation: true },
         );
+    }
+
+    try {
+        assertNoRemoteMediaRedirect(imageUrl, imageResponse);
+        assertRemoteMediaContentLength(imageUrl, imageResponse);
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(error.message, 400, { validation: true });
+        }
+        throw error;
     }
 
     if (!imageResponse.ok) {
@@ -93,7 +126,20 @@ export async function downloadUserImage(
         );
     }
 
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
+    const contentType = imageResponse.headers.get("content-type");
+    if (
+        contentType &&
+        !contentType.startsWith("image/") &&
+        contentType !== "application/octet-stream"
+    ) {
+        throw new HttpError(
+            `Invalid content type for ${imageUrl}: received ${contentType}, expected image/*.`,
+            400,
+            { validation: true },
+        );
+    }
+
+    const buffer = Buffer.from(await readRemoteMediaBytes(imageResponse));
     return { buffer, mimeType: detectMimeType(buffer) };
 }
 

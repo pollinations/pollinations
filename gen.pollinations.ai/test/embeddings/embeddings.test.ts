@@ -825,6 +825,67 @@ describe("POST /v1/embeddings", () => {
         expect(body).toContain("Failed to fetch image");
     });
 
+    test("rejects private image URLs before provider calls", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "http://169.254.169.254/latest/meta-data/",
+                        },
+                    },
+                ],
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("private or credentialed media URLs");
+        expect(mocks.vertex.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects private video URLs before provider calls", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: [
+                    {
+                        type: "video_url",
+                        video_url: {
+                            url: "http://127.0.0.1:8787/internal",
+                            mime_type: "video/mp4",
+                        },
+                    },
+                ],
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("private or credentialed media URLs");
+        expect(mocks.vertex.state.requests).toHaveLength(0);
+        await wait();
+    });
+
     test("rejects unauthenticated requests", async ({ mocks }) => {
         await mocks.enable("tinybird");
         const { response, wait } = await fetchWorker("/v1/embeddings", {

@@ -25,12 +25,19 @@ interface ReplicateRequest {
 }
 
 const REPLICATE_IMAGE_URL = "https://replicate.delivery/x/seedream-output.png";
+const REFERENCE_IMAGE_URL = "https://example.com/ref.jpg";
 
 function mockReplicateFetch(requests: ReplicateRequest[]) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (href === REFERENCE_IMAGE_URL) {
+                return new Response(new Uint8Array([0xff, 0xd8, 0xff]), {
+                    status: 200,
+                    headers: { "content-type": "image/jpeg" },
+                });
+            }
             if (href === REPLICATE_IMAGE_URL) {
                 return new Response(
                     new TextEncoder().encode("png-bytes").buffer,
@@ -188,7 +195,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
         const params: ImageParams = {
             ...baseParams,
             model: "seedream-pro",
-            image: ["https://example.com/ref.jpg"],
+            image: [REFERENCE_IMAGE_URL],
         };
         await callSeedreamProAPI(
             "test prompt",
@@ -376,7 +383,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             width: 1792,
             height: 1024,
             dimensionsExplicit: true,
-            image: ["https://example.com/ref.jpg"],
+            image: [REFERENCE_IMAGE_URL],
         };
         await callSeedreamAPI(
             "test",
@@ -401,7 +408,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
 
         const params: ImageParams = {
             ...baseParams,
-            image: ["https://example.com/ref.jpg"],
+            image: [REFERENCE_IMAGE_URL],
             // dimensionsExplicit defaults to false in baseParams
         };
         await callSeedreamAPI(

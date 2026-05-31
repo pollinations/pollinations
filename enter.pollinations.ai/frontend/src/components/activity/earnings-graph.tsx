@@ -1,10 +1,15 @@
-import { Button, Chip, formatPollen, Tooltip } from "@pollinations_ai/ui";
+import {
+    Button,
+    Chip,
+    formatPollen,
+    MultiSelect,
+    Section,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chart } from "./chart";
-import { MultiSelect } from "./multi-select";
 import type { UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
@@ -55,7 +60,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     }
 
     return (
-        <DashboardSection
+        <Section
             title="Earnings"
             theme={theme}
             framed
@@ -263,7 +268,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                 </div>
             </div>
-        </DashboardSection>
+        </Section>
     );
 };
 

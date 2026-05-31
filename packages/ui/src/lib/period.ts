@@ -1,9 +1,13 @@
-import type { PeriodGranularity, UsagePeriodSelection } from "./types.ts";
-
 const MS_PER_DAY = 86400000;
-export const USAGE_MIN_DATE = "2026-01-01";
 
-export type UsagePeriodWindow = {
+export type PeriodGranularity = "day" | "week" | "month";
+
+export type PeriodSelection = {
+    granularity: PeriodGranularity;
+    period: string;
+};
+
+export type PeriodWindow = {
     start: Date;
     end: Date;
 };
@@ -61,7 +65,7 @@ function formatUtcMonthPeriod(date: Date): string {
 export function periodFromDate(
     granularity: PeriodGranularity,
     date = new Date(),
-): UsagePeriodSelection {
+): PeriodSelection {
     if (granularity === "day") {
         return {
             granularity,
@@ -74,17 +78,11 @@ export function periodFromDate(
     return { granularity, period: formatUtcMonthPeriod(startOfUtcMonth(date)) };
 }
 
-export function currentUsagePeriod(): UsagePeriodSelection {
+export function currentPeriod(): PeriodSelection {
     return periodFromDate("day");
 }
 
-export function usageMinDate(): Date {
-    return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
-}
-
-export function periodToWindow(
-    selection: UsagePeriodSelection,
-): UsagePeriodWindow {
+export function periodToWindow(selection: PeriodSelection): PeriodWindow {
     if (selection.granularity === "day") {
         const start = new Date(`${selection.period}T00:00:00.000Z`);
         return { start, end: addUtcDays(start, 1) };
@@ -106,7 +104,7 @@ export function periodToWindow(
     return { start, end: addUtcMonths(start, 1) };
 }
 
-export function formatPeriodLabel(selection: UsagePeriodSelection): string {
+export function formatPeriodLabel(selection: PeriodSelection): string {
     const { start, end } = periodToWindow(selection);
 
     if (selection.granularity === "day") {
@@ -143,7 +141,7 @@ export function formatPeriodLabel(selection: UsagePeriodSelection): string {
     });
 }
 
-export function getPeriodBucketKeys(selection: UsagePeriodSelection): string[] {
+export function getPeriodBucketKeys(selection: PeriodSelection): string[] {
     const { start, end } = periodToWindow(selection);
     const bucketKeys: string[] = [];
     const cursor = new Date(start);
@@ -172,10 +170,11 @@ export function periodBucketKeyToDate(
     return new Date(`${bucketKey}T00:00:00.000Z`);
 }
 
-export function isUsagePeriodSelectable(
-    selection: UsagePeriodSelection,
+export function isPeriodSelectable(
+    selection: PeriodSelection,
+    minDate = new Date(0),
+    maxDate = startOfUtcDay(),
 ): boolean {
     const { start, end } = periodToWindow(selection);
-    const today = startOfUtcDay();
-    return end > usageMinDate() && start <= today;
+    return end > minDate && start <= maxDate;
 }

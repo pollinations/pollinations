@@ -1,6 +1,5 @@
-import { LinkButton, TabButton } from "@pollinations_ai/ui";
+import { LinkButton, Section, TabButton } from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,
@@ -36,7 +35,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection
+            <Section
                 title="Models"
                 theme="teal"
                 framed
@@ -107,7 +106,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         </span>
                     </p>
                 </div>
-            </DashboardSection>
+            </Section>
         </div>
     );
 };

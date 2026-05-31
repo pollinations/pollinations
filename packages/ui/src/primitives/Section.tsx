@@ -1,9 +1,9 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Surface } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
-import type { ThemeName } from "./dashboard-theme.ts";
+import { cn } from "../lib/cn.ts";
+import type { ThemeName } from "../theme.ts";
+import { Surface } from "./Surface.tsx";
 
-type DashboardSectionProps = {
+export type SectionProps = {
     title: string;
     theme: ThemeName;
     id?: string;
@@ -14,7 +14,7 @@ type DashboardSectionProps = {
     className?: string;
 };
 
-export const DashboardSection: FC<DashboardSectionProps> = ({
+export const Section: FC<SectionProps> = ({
     title,
     theme,
     id,

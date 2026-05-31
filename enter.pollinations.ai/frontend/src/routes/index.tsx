@@ -1,4 +1,4 @@
-import { Button } from "@pollinations_ai/ui";
+import { Button, Section } from "@pollinations_ai/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -17,7 +17,6 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
-import { DashboardSection } from "../components/layout/dashboard-section.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -38,6 +37,7 @@ import {
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
+const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
 
 function DownloadCsvButton({
     theme,
@@ -320,7 +320,7 @@ function RouteComponent() {
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
-                    <DashboardSection title="Wallet" theme="amber" framed>
+                    <Section title="Wallet" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
@@ -328,19 +328,19 @@ function RouteComponent() {
                             paidWeek={paidWeek}
                             tierWeek={tierWeek}
                         />
-                    </DashboardSection>
-                    <DashboardSection
+                    </Section>
+                    <Section
                         title="Top-up"
                         theme="amber"
                         framed
                         id="buy-pollen"
                     >
                         <BuyPollenPanel initialBillingState={billingState} />
-                    </DashboardSection>
+                    </Section>
                     {tierData && (
-                        <DashboardSection title="Tier" theme="amber" framed>
+                        <Section title="Tier" theme="amber" framed>
                             <TierPanel {...tierData} />
-                        </DashboardSection>
+                        </Section>
                     )}
                 </div>
             )}
@@ -351,6 +351,7 @@ function RouteComponent() {
                             value={activityPeriod}
                             onChange={setActivityPeriod}
                             theme={dashboardThemeByPage.activity}
+                            minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-gray-400">
                             Data refreshes every hour. Times shown in UTC.

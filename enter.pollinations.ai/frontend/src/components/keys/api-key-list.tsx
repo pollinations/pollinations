@@ -1,9 +1,14 @@
-import { Chip, IconButton, Surface, Tooltip } from "@pollinations_ai/ui";
+import {
+    Chip,
+    IconButton,
+    Section,
+    Surface,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
@@ -205,7 +210,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <DashboardSection
+                <Section
                     title="API"
                     theme="blue"
                     framed
@@ -239,8 +244,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             your account.
                         </span>
                     </p>
-                </DashboardSection>
-                <DashboardSection
+                </Section>
+                <Section
                     title="App"
                     theme="blue"
                     framed
@@ -301,7 +306,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             Pollinations account and spend their own Pollen.
                         </span>
                     </p>
-                </DashboardSection>
+                </Section>
             </div>
             <DeleteConfirmation
                 deleteId={deleteId}

@@ -3,13 +3,7 @@ import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
 /**
- * Five semantic chip labels — each maps to a dashboard concept:
- *  - news    : newly-added model (green)
- *  - alpha   : experimental model (warning yellow)
- *  - paid    : paid pollen / paid-only model (orange, matches wallet)
- *  - tier    : tier pollen (yellow, matches wallet)
- *  - neutral : bordered gray container for emoji icons
- *              (modalities + capabilities on the pricing rows).
+ * Semantic chip labels for status, wallet, and neutral metadata badges.
  */
 type ChipIntent = "news" | "alpha" | "paid" | "tier" | "neutral";
 

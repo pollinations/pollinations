@@ -18,8 +18,8 @@
       "import": "./dist/auth/index.js",
       "require": "./dist/auth/index.cjs"
     },
-    "./enter.css": "./dist/enter.css",
     "./styles.css": "./dist/styles.css",
+    "./website.css": "./dist/website.css",
     "./fonts/*": "./dist/fonts/*",
     "./package.json": "./package.json"
   },
@@ -34,7 +34,7 @@
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/enter.css dist/enter.css",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/website.css dist/website.css",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

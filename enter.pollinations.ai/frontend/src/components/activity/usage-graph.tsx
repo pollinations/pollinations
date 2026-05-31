@@ -1,12 +1,17 @@
 import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
-import { Chip, formatPollen, TabButton, Tooltip } from "@pollinations_ai/ui";
+import {
+    Chip,
+    formatPollen,
+    MultiSelect,
+    Section,
+    TabButton,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
-import { MultiSelect } from "./multi-select";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -57,7 +62,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         filters.selectedModels.length > 1;
 
     return (
-        <DashboardSection title="Usage" theme={theme} framed action={action}>
+        <Section title="Usage" theme={theme} framed action={action}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-1.5">
@@ -247,7 +252,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
                 )}
             </div>
-        </DashboardSection>
+        </Section>
     );
 };
 

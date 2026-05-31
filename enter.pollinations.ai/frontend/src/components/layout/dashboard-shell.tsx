@@ -201,11 +201,11 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
 function useDashboardBodyClass(): void {
     useEffect(() => {
-        document.documentElement.classList.add("polli-dashboard-shell");
-        document.body.classList.add("polli-dashboard-shell");
+        document.documentElement.classList.add("polli-app-shell");
+        document.body.classList.add("polli-app-shell");
         return () => {
-            document.documentElement.classList.remove("polli-dashboard-shell");
-            document.body.classList.remove("polli-dashboard-shell");
+            document.documentElement.classList.remove("polli-app-shell");
+            document.body.classList.remove("polli-app-shell");
         };
     }, []);
 }

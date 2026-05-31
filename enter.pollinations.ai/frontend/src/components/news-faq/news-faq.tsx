@@ -1,12 +1,11 @@
-import { LinkButton } from "@pollinations_ai/ui";
+import { LinkButton, Section } from "@pollinations_ai/ui";
 import type { FC } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { FAQ, FAQ_GITHUB_URL } from "./faq.tsx";
 import { HIGHLIGHTS_GITHUB_URL, NewsBanner } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <div className="flex flex-col gap-6">
-        <DashboardSection
+        <Section
             title="News"
             theme="violet"
             framed
@@ -17,8 +16,8 @@ export const NewsFaq: FC = () => (
             }
         >
             <NewsBanner />
-        </DashboardSection>
-        <DashboardSection
+        </Section>
+        <Section
             title="FAQ"
             theme="violet"
             framed
@@ -29,6 +28,6 @@ export const NewsFaq: FC = () => (
             }
         >
             <FAQ showTitle={false} />
-        </DashboardSection>
+        </Section>
     </div>
 );

@@ -59,14 +59,15 @@ export function App() {
 }
 ```
 
-For the Enter dashboard app, import the package-owned app stylesheet instead:
+For Pollinations website apps that use unprefixed Tailwind utilities, import the
+package-owned website stylesheet instead:
 
 ```css
-@import "@pollinations_ai/ui/enter.css";
+@import "@pollinations_ai/ui/website.css";
 ```
 
-`enter.css` includes `styles.css`, the Enter Tailwind theme bridge, and the
-root/body shell classes used by `enter.pollinations.ai`.
+`website.css` includes `styles.css`, the Pollinations website Tailwind theme
+bridge, and generic root/body/app-shell classes.
 
 ## What's exported
 
@@ -83,9 +84,13 @@ root/body shell classes used by `enter.pollinations.ai`.
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
-  `InfoTip`, `Input`, `LinkButton`, `RangeSlider`, `ScrollArea`, `Surface`,
-  `Switch`, `TabButton`, `Tooltip`, `ChevronIcon`.
-- **Helpers** — `cn`, `formatPollen`.
+  `InfoTip`, `Input`, `LinkButton`, `MultiSelect`, `PeriodPicker`,
+  `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
+  `Tooltip`, `ChevronIcon`.
+- **Helpers** — `cn`, `formatPollen`, `currentPeriod`,
+  `formatPeriodLabel`, `getPeriodBucketKeys`, `isPeriodSelectable`,
+  `periodBucketKeyToDate`, `periodFromDate`, `periodToWindow`,
+  `startOfUtcDay`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 For per-request usage data and other dynamic queries, call the opt-in hooks

@@ -6,6 +6,7 @@ import {
     IconButton,
     InfoTip,
     Input,
+    MultiSelect,
     RangeSlider,
     ScrollArea,
     Surface,
@@ -16,7 +17,6 @@ import {
 } from "@pollinations_ai/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Chart } from "../activity/chart.tsx";
-import { MultiSelect } from "../activity/multi-select.tsx";
 import type { DataPoint } from "../activity/types.ts";
 import { ModalityButton } from "../keys/modality-button.tsx";
 import { type ThemeName, themes } from "../layout/dashboard-theme.ts";
@@ -35,11 +35,11 @@ export const DesignShowcase: FC = () => {
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
 
     useEffect(() => {
-        document.documentElement.classList.add("polli-dashboard-shell");
-        document.body.classList.add("polli-dashboard-shell");
+        document.documentElement.classList.add("polli-app-shell");
+        document.body.classList.add("polli-app-shell");
         return () => {
-            document.documentElement.classList.remove("polli-dashboard-shell");
-            document.body.classList.remove("polli-dashboard-shell");
+            document.documentElement.classList.remove("polli-app-shell");
+            document.body.classList.remove("polli-app-shell");
         };
     }, []);
 

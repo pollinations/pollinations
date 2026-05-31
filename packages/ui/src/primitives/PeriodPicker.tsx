@@ -1,23 +1,26 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { ChevronIcon, TabButton } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
+import { cn } from "../lib/cn.ts";
 import {
     addUtcDays,
     formatPeriodLabel,
-    isUsagePeriodSelectable,
+    isPeriodSelectable,
+    type PeriodGranularity,
+    type PeriodSelection,
     periodFromDate,
     periodToWindow,
     startOfUtcDay,
-    usageMinDate,
-} from "./period-utils.ts";
-import type { PeriodGranularity, UsagePeriodSelection } from "./types.ts";
+} from "../lib/period.ts";
+import type { ThemeName } from "../theme.ts";
+import { ChevronIcon } from "./ChevronIcon.tsx";
+import { TabButton } from "./TabButton.tsx";
 
-type PeriodPickerProps = {
-    value: UsagePeriodSelection;
-    onChange: (value: UsagePeriodSelection) => void;
+export type PeriodPickerProps = {
+    value: PeriodSelection;
+    onChange: (value: PeriodSelection) => void;
     theme: ThemeName;
+    minDate?: Date;
+    maxDate?: Date;
 };
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -55,7 +58,7 @@ function sameUtcDay(left: Date, right: Date): boolean {
     return left.getTime() === right.getTime();
 }
 
-function periodDate(value: UsagePeriodSelection): Date {
+function periodDate(value: PeriodSelection): Date {
     return periodToWindow(value).start;
 }
 
@@ -78,6 +81,8 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
     value,
     onChange,
     theme,
+    minDate = new Date(0),
+    maxDate,
 }) => {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
@@ -113,8 +118,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
 
     const dates = useMemo(() => monthGridDates(viewDate), [viewDate]);
     const selectedWindow = periodToWindow(value);
-    const today = startOfUtcDay();
-    const minDate = usageMinDate();
+    const today = startOfUtcDay(maxDate);
     const previousViewDate =
         value.granularity === "month"
             ? addUtcMonths(viewDate, -12)
@@ -170,7 +174,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 type="button"
                 aria-expanded={open}
                 aria-haspopup="dialog"
-                aria-label={`Select usage period, current ${formatPeriodLabel(value)}`}
+                aria-label={`Select period, current ${formatPeriodLabel(value)}`}
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
                     "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 pt-1.5 pb-2 text-left text-base font-medium leading-normal",
@@ -186,7 +190,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             {open && (
                 <div
                     role="dialog"
-                    aria-label="Usage period picker"
+                    aria-label="Period picker"
                     className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border bg-white p-3 shadow-lg transition-opacity duration-200 ease-out border-theme-border"
                 >
                     <div className="mb-3 flex items-center justify-between">
@@ -239,8 +243,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         1,
                                     ),
                                 );
-                                const selectable = isUsagePeriodSelectable(
+                                const selectable = isPeriodSelectable(
                                     periodFromDate("month", date),
+                                    minDate,
+                                    today,
                                 );
                                 const ariaLabel = date.toLocaleDateString(
                                     "en-US",
@@ -288,8 +294,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     const inCurrentMonth =
                                         date.getUTCMonth() ===
                                         viewDate.getUTCMonth();
-                                    const selectable = isUsagePeriodSelectable(
+                                    const selectable = isPeriodSelectable(
                                         periodFromDate(value.granularity, date),
+                                        minDate,
+                                        today,
                                     );
                                     const ariaLabel =
                                         value.granularity === "week"

@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { command, number, run, string } from "@drizzle-team/brocli";
-import { buildQuestPayoutKey } from "./quest-payout-key.ts";
 
 type Environment = "staging" | "production";
 
@@ -90,7 +89,7 @@ const grantCommand = command({
         }
 
         // Idempotency key is quest-scoped and uses the immutable github_id.
-        const payoutKey = buildQuestPayoutKey(questIssue, githubId, "assignee");
+        const payoutKey = `quest:${questIssue}:gh:${githubId}:role:assignee`;
         const sql = `
             INSERT OR IGNORE INTO quest_payout_credits (
                 payout_key,

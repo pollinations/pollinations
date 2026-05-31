@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { command, number, run, string } from "@drizzle-team/brocli";
+import { buildQuestPayoutKey } from "./quest-payout-key.ts";
 
 type Environment = "staging" | "production";
 
@@ -87,8 +89,8 @@ const grantCommand = command({
             process.exit(2);
         }
 
-        // Idempotency key uses the immutable github_id, not the mutable username.
-        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:assignee`;
+        // Idempotency key is quest-scoped and uses the immutable github_id.
+        const payoutKey = buildQuestPayoutKey(questIssue, githubId, "assignee");
         const sql = `
             INSERT OR IGNORE INTO quest_payout_credits (
                 payout_key,
@@ -135,4 +137,9 @@ const grantCommand = command({
     },
 });
 
-run([grantCommand]);
+if (
+    process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+    run([grantCommand]);
+}

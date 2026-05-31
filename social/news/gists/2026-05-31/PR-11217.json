@@ -1,0 +1,35 @@
+{
+  "pr_number": 11217,
+  "title": "feat(packages): add React auth provider and UI package",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11217",
+  "merged_at": "2026-05-31T16:40:31Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds two packages and a live showcase so React apps can drop in Pollinations auth + wallet UI with two imports.\n\n## `@pollinations_ai/sdk/react` — new subpath\n\n`PolliProvider` + the narrow auth hooks (`useAuthState`, `useAuthProfile`, `useAuthKey`, `useAuthActions`, `useAuthClient`, `useKeyUsage`).\n\n- Five split contexts (state / profile / key / actions / client) so consumers re-render only on what they read.\n- OAuth login redirect with a `state` param for CSRF. Callback parsing is a pure module (`consumeOAuthCallback`) — validate-then-clear on both `api_key` and `error` branches, hash-router-safe URL cleanup, no DoS via planted callback URLs. Covered by 10 unit tests.\n- BYOP options on `<PolliProvider>` (`models`, `budget`, `expiry`) — defaults applied to every `login()` call; per-call `login({ models, budget, expiry, permissions })` overrides them.\n- Race-safe fetcher (`useResource`) used internally for profile / balance / key, and by `useKeyUsage` — monotonic request id discards stale responses, treats 401 as session-invalid (clears the key for both provider fetches and `useKeyUsage`).\n- `apiKey`-gated value memos so consumers see `null` data in the same render cycle `isLoggedIn` flips, no stale-data window after logout.\n- Pluggable sync `StorageAdapter` (defaults to `localStorage`; `\"sessionStorage\"` or custom).\n- SSR-safe — state starts `null` on server + client first paint, hydration runs in `useEffect`.\n\n## `@pollinations_ai/ui` — new package\n\nTwo layers on top of the provider.\n\n**Layer 1 — design primitives** (`src/primitives/`): `Button`, `Chip`, `Disclosure`, `IconButton`, `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`, `Tooltip`, `ChevronIcon`. Plus `cn`, `formatPollen`, `themes`, `ThemeName`.\n\n**Layer 2 — auth-aware primitives** (`src/auth/`):\n- gated on auth: `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`, `LogoutButton`, `UserAvatar`, `UserEmail`, `UserName` (falls back to `githubUsername` when `profile` scope isn't g",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "React to the hive",
+    "blurb": "Building AI apps just got a whole lot cozier. We've shipped a brand new React SDK and UI package so you can drop Pollinations auth and wallet features straight into your projects.",
+    "summary": "Added the @pollinations_ai/sdk/react and @pollinations_ai/ui packages, providing a drop-in PolliProvider, SSR-safe auth hooks, and pre-built wallet UI components.",
+    "impact": "Developers can now integrate OAuth login, API key management, and user balance displays into their React apps with just two imports.",
+    "keywords": [
+      "react",
+      "sdk",
+      "ui",
+      "auth",
+      "components"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot acting as developers/builders, assembling UI building blocks (buttons, avatars, switches) on a cozy workbench.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, working alongside a chunky monitor-head robot to assemble glowing UI components like buttons and user avatars on a wooden workbench. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-31/PR-11217.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, working alongside a chunky monitor-head robot to assemble glowing UI components like buttons and user avatars on a wooden workbench. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-31T16:41:28.440111+00:00"
+}

@@ -7,12 +7,12 @@ describe("downloadUserImage", () => {
         vi.unstubAllGlobals();
     });
 
-    test("rejects private image URLs before fetching", async () => {
+    test("rejects localhost image URLs before fetching", async () => {
         const fetch = vi.fn();
         vi.stubGlobal("fetch", fetch);
 
         await expect(
-            downloadUserImage("http://169.254.169.254/latest/meta-data/"),
+            downloadUserImage("http://localhost:8787/internal.png"),
         ).rejects.toMatchObject({
             status: 400,
             details: { validation: true },

@@ -1,12 +1,20 @@
 import { HTTPException } from "hono/http-exception";
 
-const BLOCKED_HOSTNAMES = /^localhost$/i;
-export const MAX_REMOTE_MEDIA_BYTES = 20 * 1024 * 1024;
+// Cap remote media so a user-supplied URL can't make the worker buffer an
+// unbounded download (DoS / amplification).
+export const MAX_REMOTE_MEDIA_BYTES = 50 * 1024 * 1024;
 
 export function badRemoteMediaRequest(message: string): never {
     throw new HTTPException(400, { message });
 }
 
+// Basic hygiene for user-supplied media URLs. We run on Cloudflare Workers,
+// where loopback/localhost and the cloud metadata endpoint aren't reachable
+// via fetch, and there's no connect-time DNS re-resolution to pin against — so
+// an exhaustive private-IP blocklist buys little and is bypassable anyway
+// (decimal/hex/short-form literals). Reject the obvious footguns — non-HTTP(S)
+// schemes, credentialed URLs, localhost — and rely on the redirect block +
+// size cap below for the rest.
 export function assertAllowedRemoteMediaUrl(value: string): URL {
     let url: URL;
     try {
@@ -23,42 +31,19 @@ export function assertAllowedRemoteMediaUrl(value: string): URL {
         );
     }
 
+    const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
     if (
         url.username ||
         url.password ||
-        isBlockedRemoteMediaHost(url.hostname)
+        host === "localhost" ||
+        host.endsWith(".localhost")
     ) {
         badRemoteMediaRequest(
-            `Invalid media URL ${value}: private or credentialed media URLs are not allowed.`,
+            `Invalid media URL ${value}: credentialed or localhost media URLs are not allowed.`,
         );
     }
 
     return url;
-}
-
-function isBlockedRemoteMediaHost(hostname: string): boolean {
-    const host = hostname.replace(/^\[|\]$/g, "");
-    const normalized = host.toLowerCase();
-    if (
-        BLOCKED_HOSTNAMES.test(normalized) ||
-        normalized.endsWith(".localhost")
-    ) {
-        return true;
-    }
-
-    if (normalized.includes(":")) {
-        return true;
-    }
-
-    const parts = normalized.split(".").map(Number);
-    if (
-        parts.length !== 4 ||
-        parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
-    ) {
-        return false;
-    }
-
-    return true;
 }
 
 export function assertNoRemoteMediaRedirect(url: string, response: Response) {

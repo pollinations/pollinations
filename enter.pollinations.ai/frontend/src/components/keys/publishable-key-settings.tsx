@@ -1,5 +1,4 @@
-import { Field } from "@ark-ui/react/field";
-import { Button, Switch } from "@pollinations_ai/ui";
+import { Button, Field, Switch } from "@pollinations_ai/ui";
 import type { FC } from "react";
 
 type PublishableKeySettingsProps = {

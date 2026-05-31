@@ -1,4 +1,3 @@
-import { Field } from "@ark-ui/react/field";
 import { apiClient } from "@frontend/api.ts";
 import {
     Button,
@@ -6,6 +5,7 @@ import {
     cn,
     Dialog,
     DialogTitle,
+    Field,
     Input,
     ScrollArea,
     Tooltip,

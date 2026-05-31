@@ -33,6 +33,11 @@
       "import": "./dist/permissions/index.js",
       "require": "./dist/permissions/index.cjs"
     },
+    "./shell": {
+      "types": "./dist/shell/index.d.ts",
+      "import": "./dist/shell/index.js",
+      "require": "./dist/shell/index.cjs"
+    },
     "./wallet": {
       "types": "./dist/wallet/index.d.ts",
       "import": "./dist/wallet/index.js",

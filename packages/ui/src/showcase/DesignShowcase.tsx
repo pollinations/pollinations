@@ -1,5 +1,6 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { currentPeriod, type PeriodSelection } from "../lib/period.ts";
+import { formatPollen, PaidChip, TierChip } from "../modules/wallet/index.ts";
 import { Button } from "../primitives/Button.tsx";
 import { Chip } from "../primitives/Chip.tsx";
 import { Collapsible } from "../primitives/Collapsible.tsx";
@@ -17,7 +18,6 @@ import { Switch, type SwitchStatus } from "../primitives/Switch.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 import { type ThemeName, themes } from "../theme.ts";
-import { formatPollen, PaidChip, TierChip } from "../wallet/index.ts";
 
 /**
  * Package-owned design primitive showcase.

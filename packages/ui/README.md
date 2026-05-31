@@ -98,6 +98,8 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   `ModalityButton`.
 - `@pollinations_ai/ui/permissions` exports permission-row styling recipes
   shared by key and OAuth forms.
+- `@pollinations_ai/ui/shell` exports the responsive app shell and account
+  menu recipes used by Pollinations product frontends.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
@@ -118,7 +120,7 @@ from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 - `src/modules/*` contains package-owned recipes with domain assumptions
   such as auth, wallet, modality, and permissions.
 - Public subpath exports (`@pollinations_ai/ui/auth`,
-  `@pollinations_ai/ui/wallet`, etc.) are stable facades over those modules.
+  `@pollinations_ai/ui/wallet`, etc.) are built directly from those modules.
 
 ## Theming
 

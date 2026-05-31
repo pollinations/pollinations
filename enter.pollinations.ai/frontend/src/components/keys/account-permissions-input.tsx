@@ -3,10 +3,6 @@ import {
     getModalityColors,
     ModalityButton,
 } from "@pollinations_ai/ui/modality";
-import {
-    getPermissionUiTheme,
-    type PermissionUiTheme,
-} from "@pollinations_ai/ui/permissions";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -14,6 +10,10 @@ import {
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
+import {
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "./permission-ui.ts";
 
 type AccountPermissionOption = {
     id: "profile" | "usage" | "keys";

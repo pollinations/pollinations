@@ -8,11 +8,6 @@ export {
     type AuthModalProps,
     ErrorBanner,
 } from "./AuthModal.tsx";
-export { Balance, type BalanceProps } from "./Balance.tsx";
-export { KeyBudget, type KeyBudgetProps } from "./KeyBudget.tsx";
-export { KeyExpiry, type KeyExpiryProps } from "./KeyExpiry.tsx";
-export { KeyModels, type KeyModelsProps } from "./KeyModels.tsx";
-export { KeyPrefix, type KeyPrefixProps } from "./KeyPrefix.tsx";
 export { LoginButton, type LoginButtonProps } from "./LoginButton.tsx";
 export { LogoutButton, type LogoutButtonProps } from "./LogoutButton.tsx";
 export { UserAvatar, type UserAvatarProps } from "./UserAvatar.tsx";

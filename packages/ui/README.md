@@ -17,10 +17,6 @@ import "@pollinations_ai/ui/styles.css";
 import { PolliProvider, useAccountKeyUsage } from "@pollinations_ai/sdk/react";
 import { Surface } from "@pollinations_ai/ui";
 import {
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
     LoginButton,
     LogoutButton,
     UserAvatar,
@@ -28,6 +24,13 @@ import {
     WhenLoggedIn,
     WhenLoggedOut,
 } from "@pollinations_ai/ui/auth";
+import {
+    Balance,
+    KeyBudget,
+    KeyExpiry,
+    KeyModels,
+    KeyPrefix,
+} from "@pollinations_ai/ui/wallet";
 
 function RecentRequests() {
     const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
@@ -46,6 +49,7 @@ export function App() {
                 <WhenLoggedIn>
                     <UserAvatar size="md" />
                     <UserName />
+                    <Balance />
                     <KeyPrefix />
                     <KeyBudget />
                     <KeyExpiry />
@@ -79,12 +83,13 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 
 - `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
   theme data. These can be used without Pollinations auth.
-- `@pollinations_ai/ui/auth` exports auth-aware components that read from the
-  surrounding `<PolliProvider>`:
-  - **null when not logged in (or before data loads):** `Balance`,
-    `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`, `LogoutButton`,
+- `@pollinations_ai/ui/auth` exports identity/session components and auth
+  modal pieces that read from the surrounding `<PolliProvider>`:
+  - **null when not logged in (or before data loads):** `LogoutButton`,
     `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
   - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
+  - **auth modal shell:** `AuthModal`, `AuthModalHeader`,
+    `AuthModalLoading`, `AuthInfoCard`, `ErrorBanner`.
 
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
@@ -92,14 +97,11 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 - `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
   internal preview surface for rendering primitives and tokens together.
 - `@pollinations_ai/ui/wallet` exports wallet-specific display helpers and
-  recipes: `formatPollen`, `PaidChip`, `TierChip`,
-  `PAID_BALANCE_CHART_COLOR`, and `TIER_BALANCE_CHART_COLOR`.
+  recipes: `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`,
+  `formatPollen`, `PaidChip`, `TierChip`, `PAID_BALANCE_CHART_COLOR`, and
+  `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations_ai/ui/modality` exports model-modality color recipes and
   `ModalityButton`.
-- `@pollinations_ai/ui/permissions` exports permission-row styling recipes
-  shared by key and OAuth forms.
-- `@pollinations_ai/ui/shell` exports the responsive app shell and account
-  menu recipes used by Pollinations product frontends.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
@@ -118,9 +120,10 @@ from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 
 - `src/primitives/*` contains generic, SDK-free building blocks.
 - `src/modules/*` contains package-owned recipes with domain assumptions
-  such as auth, wallet, modality, and permissions.
+  such as auth, wallet, and modality.
 - Public subpath exports (`@pollinations_ai/ui/auth`,
-  `@pollinations_ai/ui/wallet`, etc.) are built directly from those modules.
+  `@pollinations_ai/ui/wallet`, `@pollinations_ai/ui/modality`,
+  `@pollinations_ai/ui/showcase`) are built directly from those modules.
 
 ## Theming
 

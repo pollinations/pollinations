@@ -851,8 +851,6 @@ curl "https://gen.pollinations.ai/audio/models" \
 
 Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs.
 
-Storage is billed upfront in Pollen: `cost_pollen = size_GB × days × 0.000767` (anchored to S3 Standard ~$0.023/GB-month).
-
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
@@ -870,11 +868,8 @@ Storage is billed upfront in Pollen: `cost_pollen = size_GB × days × 0.000767`
 | `duplicate` * | `boolean` | `true` if file already existed |
 | `expiresAt` * | `string` | ISO-8601 expiry timestamp |
 | `retentionDays` * | `number` | Retention period in days |
-| `costPollen` * | `number` | Pollen charged for storage |
 
 <sub>`*` = required field</sub>
-
-📤 **Response** · `402` — Insufficient Pollen balance
 
 💻 **Example**
 

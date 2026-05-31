@@ -13,7 +13,6 @@ name = "pollinations-media-dev"
 
 [env.development.vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
-BILLING_URL = "http://localhost:8788"
 
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
@@ -25,7 +24,6 @@ name = "pollinations-media-prod"
 
 [env.production.vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
-BILLING_URL = "https://gen.pollinations.ai"
 
 [[env.production.routes]]
 pattern = "media.myceli.ai"
@@ -38,7 +36,6 @@ bucket_name = "pollinations-media"
 
 [vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
-BILLING_URL = "https://gen.pollinations.ai"
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"

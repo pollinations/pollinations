@@ -1,9 +1,4 @@
-import {
-    createExecutionContext,
-    fetchMock,
-    SELF,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { createExecutionContext, fetchMock, SELF } from "cloudflare:test";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
@@ -26,7 +21,6 @@ interface UploadResponse {
     duplicate: boolean;
     expiresAt: string;
     retentionDays: number;
-    costPollen: number;
 }
 
 const VALID_KEY = "pk_test_key_123";
@@ -35,7 +29,6 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "52428800",
-        BILLING_URL: "https://gen.pollinations.ai",
     };
 }
 
@@ -55,28 +48,11 @@ function mockAuth() {
         .persist();
 }
 
-function mockBilling(ok = true, costPollen = 0.00001) {
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/storage-charge", method: "POST" })
-        .reply(
-            ok ? 200 : 402,
-            JSON.stringify(
-                ok
-                    ? { ok: true, costPollen, bucket: "tier" }
-                    : { ok: false, error: "Insufficient balance", costPollen },
-            ),
-            { headers: { "content-type": "application/json" } },
-        )
-        .persist();
-}
-
 describe("media.pollinations.ai", () => {
     beforeEach(() => {
         fetchMock.activate();
         fetchMock.disableNetConnect();
         mockAuth();
-        mockBilling();
     });
 
     afterEach(() => {
@@ -122,7 +98,6 @@ describe("media.pollinations.ai", () => {
         expect(upload.size).toBe(TINY_PNG.length);
         expect(upload.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         expect(upload.retentionDays).toBe(30);
-        expect(typeof upload.costPollen).toBe("number");
 
         // Retrieve — check Content-Disposition
         const getRes = await SELF.fetch(
@@ -164,7 +139,7 @@ describe("media.pollinations.ai", () => {
         expect(dup.duplicate).toBe(true);
     });
 
-    it("refreshes uploaded media TTL on aged GET", async () => {
+    it("does not rewrite uploaded media on GET", async () => {
         const bucket = createTestR2Bucket();
         const env = createMediaEnv(bucket);
         const uploadCtx = createExecutionContext();
@@ -181,8 +156,6 @@ describe("media.pollinations.ai", () => {
             env,
             uploadCtx,
         );
-        await waitOnExecutionContext(uploadCtx);
-
         expect(uploadRes.status).toBe(200);
         const upload = (await uploadRes.json()) as UploadResponse;
         expect(bucket.putCount).toBe(1);
@@ -194,11 +167,9 @@ describe("media.pollinations.ai", () => {
             getCtx,
         );
         const body = new Uint8Array(await getRes.arrayBuffer());
-        await waitOnExecutionContext(getCtx);
-
         expect(getRes.status).toBe(200);
         expect(body.length).toBe(TINY_PNG.length);
-        expect(bucket.putCount).toBe(2);
+        expect(bucket.putCount).toBe(1);
     });
 
     it("same content with different filename produces different hash", async () => {
@@ -339,77 +310,26 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(400);
     });
 
-    it("billing failure returns 402", async () => {
-        // Override billing mock to return failure for this test
-        fetchMock.deactivate();
-        fetchMock.activate();
-        fetchMock.disableNetConnect();
-        mockAuth();
-
-        fetchMock
-            .get("https://gen.pollinations.ai")
-            .intercept({ path: "/account/storage-charge", method: "POST" })
-            .reply(
-                402,
-                JSON.stringify({
-                    ok: false,
-                    error: "Insufficient balance",
-                    costPollen: 0.001,
-                }),
-                { headers: { "content-type": "application/json" } },
-            );
-
-        const form = new FormData();
-        form.append(
-            "file",
-            new File([TINY_PNG], "broke.png", { type: "image/png" }),
-        );
-        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
-            method: "POST",
-            body: form,
-            headers: { Authorization: `Bearer ${VALID_KEY}` },
-        });
-        expect(res.status).toBe(402);
-        const body = (await res.json()) as { error: string };
-        expect(body.error).toContain("balance");
-    });
-
     it("GET expired object returns 410", async () => {
-        // Upload a file first
-        const form = new FormData();
-        form.append(
-            "file",
-            new File([TINY_PNG], "expiry-test.png", { type: "image/png" }),
-        );
-        const uploadRes = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
-                method: "POST",
-                body: form,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+        const bucket = createTestR2Bucket();
+        const env = createMediaEnv(bucket);
+        const hash = "aaaaaaaaaaaaaaaa";
+        await bucket.put(hash, TINY_PNG, {
+            httpMetadata: {
+                contentType: "image/png",
+                cacheControl: "public, max-age=31536000, immutable",
             },
-        );
-        expect(uploadRes.status).toBe(200);
-        const upload = (await uploadRes.json()) as UploadResponse;
+            customMetadata: {
+                expiresAt: new Date(Date.now() - 1000).toISOString(),
+            },
+        });
 
-        // Directly overwrite with an expired expiresAt via the R2 binding
-        // by using a raw fetch to internal metadata — not possible through the
-        // public API. Instead, verify the 410 logic by uploading with a past
-        // expiresAt. Since we can't set metadata directly via the HTTP API,
-        // we check that the metadata endpoint returns the expiresAt field and
-        // it is a valid ISO date after the upload time.
-        const metaRes = await SELF.fetch(
-            `https://media.pollinations.ai/${upload.id}/metadata`,
+        const res = await app.fetch(
+            new Request(`https://media.pollinations.ai/${hash}`),
+            env,
+            createExecutionContext(),
         );
-        expect(metaRes.status).toBe(200);
-        const meta = (await metaRes.json()) as {
-            expiresAt?: string;
-            retentionDays?: number;
-        };
-        expect(meta.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-        expect(meta.retentionDays).toBe(30);
-        // expiresAt should be in the future
-        expect(new Date(meta.expiresAt!).getTime()).toBeGreaterThan(Date.now());
+        expect(res.status).toBe(410);
     });
 
     it("upload response includes expiresAt header on GET", async () => {
@@ -432,8 +352,11 @@ describe("media.pollinations.ai", () => {
             `https://media.pollinations.ai/${upload.id}`,
         );
         expect(getRes.status).toBe(200);
+        await getRes.arrayBuffer();
         const xExpiresAt = getRes.headers.get("x-expires-at");
         expect(xExpiresAt).not.toBeNull();
-        expect(new Date(xExpiresAt!).getTime()).toBeGreaterThan(Date.now());
+        expect(new Date(xExpiresAt ?? "").getTime()).toBeGreaterThan(
+            Date.now(),
+        );
     });
 });

@@ -9,8 +9,7 @@ Upload files and get back a content-addressed URL to use with Pollinations model
 - **Upload** media files via `POST /upload`
 - **Retrieve** media by hash via `GET /:hash`
 - **Deduplicate** - identical files return the same URL (SHA-256 content hashing)
-- **Configurable retention** - choose how long your file is stored (0.5–365 days)
-- **Pollen billing** - charged upfront based on file size and retention period
+- **Configurable retention** - choose how long your file is stored (0.01–730 days)
 - **CORS enabled** for browser uploads
 
 ## 🚀 Quick Start
@@ -20,7 +19,7 @@ Upload files and get back a content-addressed URL to use with Pollinations model
 Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 ```bash
-# Multipart form-data (default 14-day retention)
+# Multipart form-data (default 30-day retention)
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
@@ -54,8 +53,7 @@ curl -X POST https://media.pollinations.ai/upload \
 #   "size": 123456,
 #   "duplicate": false,
 #   "expiresAt": "2026-06-10T04:00:00.000Z",
-#   "retentionDays": 14,
-#   "costPollen": 0.00115
+#   "retentionDays": 30
 # }
 ```
 
@@ -104,15 +102,13 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
   "size": 123456,
   "duplicate": false,
   "expiresAt": "2026-06-26T04:00:00.000Z",
-  "retentionDays": 30,
-  "costPollen": 0.00115
+  "retentionDays": 30
 }
 ```
 
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or `days` out of range
 - `401` - Missing or invalid API key
-- `402` - Insufficient Pollen balance
 - `413` - File too large (max 50MB)
 
 ### `GET /:hash`
@@ -156,37 +152,14 @@ Returns file metadata as JSON without downloading the file body.
   "contentType": "image/jpeg",
   "size": 123456,
   "uploadedAt": "2026-05-27T10:00:00.000Z",
-  "expiresAt": "2026-06-10T04:00:00.000Z",
-  "retentionDays": 14
+  "expiresAt": "2026-06-26T10:00:00.000Z",
+  "retentionDays": 30
 }
 ```
 
 ### `GET /`
 
 Service info and health check.
-
-## 💰 Pricing
-
-Storage is billed upfront at upload time in Pollen (1 Pollen ≈ $1 USD):
-
-```
-cost_pollen = size_GB × days × 0.000767
-```
-
-This is anchored to S3 Standard pricing ($0.023/GB-month ÷ 30 days/month).
-
-**Examples:**
-
-| File size | Retention | Cost |
-|-----------|-----------|------|
-| 1 MB      | 0.04d (~1h)| ~0.00000003 🪷 |
-| 1 MB      | 30 days   | ~0.000023 🪷  |
-| 10 MB     | 30 days   | ~0.00023 🪷   |
-| 50 MB     | 30 days   | ~0.00115 🪷   |
-| 50 MB     | 365 days  | ~0.014 🪷     |
-| 50 MB     | 730 days  | ~0.028 🪷     |
-
-Uploading the same file again charges the full new retention period and resets the expiry timer.
 
 ## 💡 Use Cases
 
@@ -247,7 +220,7 @@ Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as
 
 - **Configurable retention:** Set `?expires` at upload time (float days, default 30, range 0.01–730).
 - **Expiry:** Files return `410 Gone` after their `expiresAt` timestamp. A daily cleanup job removes expired objects from storage.
-- **Re-upload resets expiry:** Re-uploading the same file charges the full new retention period and updates `expiresAt`.
+- **Re-upload resets expiry:** Re-uploading the same file updates `expiresAt`.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be manually deleted via the API.
 - **No user file listing:** There is no endpoint to list or manage your uploaded files.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

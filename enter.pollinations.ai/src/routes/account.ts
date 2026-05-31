@@ -1,5 +1,4 @@
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
-import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -1664,64 +1663,5 @@ export const accountRoutes = new Hono<Env>()
             }
         },
     );
-
-// S3 Standard ~$0.023/GB-month → $0.023/(GB×30days) per-day rate.
-// Since 1 Pollen ≈ $1 USD (base $2 pack gives 2 Pollen), this maps 1:1.
-const STORAGE_PER_GB_DAY_RATE = 0.023 / 30;
-const BILLING_PRECISION = 1e8; // 8 decimal places
-
-const StorageChargeSchema = z.object({
-    sizeBytes: z.number().int().positive().describe("File size in bytes"),
-    days: z.number().positive().max(730).describe("Retention period in days"),
-    hash: z
-        .string()
-        .regex(/^[a-f0-9]{16}$/i)
-        .describe("Content hash (16 hex chars)"),
-});
-
-accountRoutes.post(
-    "/storage-charge",
-    describeRoute({
-        tags: ["👤 Account"],
-        summary: "Charge Storage",
-        description:
-            "Debit Pollen for media storage. Called by media.pollinations.ai at upload time. Cost = size_GB × days × 0.000767. Requires a valid API key.",
-        responses: {
-            200: { description: "Charge successful" },
-            401: { description: "Unauthorized" },
-            402: { description: "Insufficient balance" },
-        },
-    }),
-    validator("json", StorageChargeSchema),
-    async (c) => {
-        await c.var.auth.requireAuthorization();
-        const user = c.var.auth.requireUser();
-        const { sizeBytes, days } = c.req.valid("json");
-
-        const rawCost = (sizeBytes / 1e9) * days * STORAGE_PER_GB_DAY_RATE;
-        const costPollen =
-            Math.round(rawCost * BILLING_PRECISION) / BILLING_PRECISION;
-
-        if (costPollen <= 0) {
-            return c.json({ ok: true, costPollen: 0, bucket: null });
-        }
-
-        const db = drizzle(c.env.DB);
-        const result = await atomicDeductUserBalance(db, user.id, costPollen);
-
-        if (!result.ok) {
-            return c.json(
-                {
-                    ok: false,
-                    error: "Insufficient balance",
-                    costPollen,
-                },
-                402,
-            );
-        }
-
-        return c.json({ ok: true, costPollen, bucket: result.bucket });
-    },
-);
 
 export default accountRoutes;

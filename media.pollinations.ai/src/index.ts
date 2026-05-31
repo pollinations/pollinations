@@ -1,4 +1,3 @@
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
@@ -7,8 +6,7 @@ import { z } from "zod";
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_PATH = "/account/key";
-const STORAGE_CHARGE_PATH = "/account/storage-charge";
+const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
 // Content-addressed storage means the URL → bytes mapping is fixed forever:
 // re-uploading the same content reproduces the same URL, and there is no
@@ -25,7 +23,6 @@ const MAX_RETENTION_DAYS = 730; // ~2 years
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
-    BILLING_URL: string;
 }
 
 interface AuthResult {
@@ -34,12 +31,9 @@ interface AuthResult {
     name: string | null;
 }
 
-async function verifyApiKey(
-    billingUrl: string,
-    apiKey: string,
-): Promise<AuthResult | null> {
+async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
-        const res = await fetch(`${billingUrl}${KEY_VERIFY_PATH}`, {
+        const res = await fetch(KEY_VERIFY_URL, {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
@@ -47,41 +41,6 @@ async function verifyApiKey(
         return data.valid ? data : null;
     } catch {
         return null;
-    }
-}
-
-async function chargeStorage(
-    billingUrl: string,
-    apiKey: string,
-    sizeBytes: number,
-    days: number,
-    hash: string,
-): Promise<{ ok: boolean; costPollen: number; error?: string }> {
-    try {
-        const res = await fetch(`${billingUrl}${STORAGE_CHARGE_PATH}`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ sizeBytes, days, hash }),
-        });
-        const data = await res.json<{
-            ok: boolean;
-            costPollen: number;
-            error?: string;
-        }>();
-        return {
-            ok: res.ok && data.ok,
-            costPollen: data.costPollen ?? 0,
-            error: data.error,
-        };
-    } catch {
-        return {
-            ok: false,
-            costPollen: 0,
-            error: "Billing service unavailable",
-        };
     }
 }
 
@@ -109,7 +68,6 @@ const UploadResponseSchema = z.object({
     duplicate: z.boolean().describe("true if file already existed"),
     expiresAt: z.string().describe("ISO-8601 expiry timestamp"),
     retentionDays: z.number().describe("Retention period in days"),
-    costPollen: z.number().describe("Pollen charged for storage"),
 });
 
 const ErrorSchema = z.object({
@@ -136,7 +94,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Use `?expires` (float days, default 30, range 0.01–730) to set the retention period. Storage is billed upfront: `cost_pollen = size_GB × days × 0.000767`.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Use `?expires` (float days, default 30, range 0.01–730) to set the retention period.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -154,12 +112,6 @@ api.post(
             },
             401: {
                 description: "Missing or invalid API key",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            402: {
-                description: "Insufficient Pollen balance",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -183,8 +135,7 @@ api.post(
             );
         }
 
-        const billingUrl = c.env.BILLING_URL;
-        const authResult = await verifyApiKey(billingUrl, apiKey);
+        const authResult = await verifyApiKey(apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
@@ -296,29 +247,11 @@ api.post(
             const hash = await generateHash(fileBuffer, fileName);
             const existing = await c.env.MEDIA_BUCKET.head(hash);
 
-            // Debit pollen before writing to R2 — on failure nothing was stored.
-            const charge = await chargeStorage(
-                billingUrl,
-                apiKey,
-                fileBuffer.byteLength,
-                retentionDays,
-                hash,
-            );
-            if (!charge.ok) {
-                return c.json(
-                    {
-                        error: charge.error ?? "Insufficient Pollen balance",
-                        costPollen: charge.costPollen,
-                    },
-                    402,
-                );
-            }
-
             const expiresAt = new Date(
                 Date.now() + retentionDays * 24 * 60 * 60 * 1000,
             ).toISOString();
 
-            // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
+            // Always re-PUT so re-uploading the same file resets the explicit expiry.
             await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
                 httpMetadata: {
                     contentType,
@@ -345,7 +278,6 @@ api.post(
                     duplicate: !!existing,
                     retentionDays,
                     expiresAt,
-                    costPollen: charge.costPollen,
                 }),
             );
 
@@ -357,7 +289,6 @@ api.post(
                 duplicate: !!existing,
                 expiresAt,
                 retentionDays,
-                costPollen: charge.costPollen,
             });
         } catch (error) {
             console.error("Upload error:", error);
@@ -372,7 +303,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. No authentication required. Responses are cached immutably. Returns 410 if the file has expired. Access resets the TTL for recently-uploaded files.",
+            "Get a file by its content hash. No authentication required. Responses are cached immutably. Returns 410 if the file has expired.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
@@ -438,17 +369,7 @@ api.get(
                 );
             }
 
-            const responseBody = refreshR2ObjectTtl(
-                c.env.MEDIA_BUCKET,
-                hash,
-                object,
-                (promise) => c.executionCtx.waitUntil(promise),
-                (error) => {
-                    console.error("TTL refresh error:", error);
-                },
-            );
-
-            return new Response(responseBody, { headers });
+            return new Response(object.body, { headers });
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
@@ -617,10 +538,6 @@ app.get("/", (c) => {
                 unit: "days",
             },
         },
-        pricing: {
-            formula: "cost_pollen = size_GB × days × 0.000767",
-            ratePerGBDay: 0.023 / 30,
-        },
     });
 });
 
@@ -631,7 +548,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Storage is billed upfront in Pollen: `cost = size_GB × days × 0.000767`.",
+                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

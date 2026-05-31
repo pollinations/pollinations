@@ -6,6 +6,13 @@ import {
     MailIcon,
     useScrollLock,
 } from "@pollinations_ai/ui";
+import {
+    AuthInfoCard,
+    AuthModal,
+    AuthModalHeader,
+    AuthModalLoading,
+    ErrorBanner,
+} from "@pollinations_ai/ui/auth";
 import { getModalityColors } from "@pollinations_ai/ui/modality";
 import { formatPollen } from "@pollinations_ai/ui/wallet";
 import {
@@ -26,13 +33,6 @@ import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
-import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-} from "./auth-modal.tsx";
 
 type Attribution = {
     found: boolean;

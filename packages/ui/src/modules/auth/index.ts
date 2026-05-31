@@ -1,3 +1,13 @@
+export {
+    AuthInfoCard,
+    type AuthInfoCardProps,
+    AuthModal,
+    AuthModalHeader,
+    type AuthModalHeaderProps,
+    AuthModalLoading,
+    type AuthModalProps,
+    ErrorBanner,
+} from "./AuthModal.tsx";
 export { Balance, type BalanceProps } from "./Balance.tsx";
 export { KeyBudget, type KeyBudgetProps } from "./KeyBudget.tsx";
 export { KeyExpiry, type KeyExpiryProps } from "./KeyExpiry.tsx";

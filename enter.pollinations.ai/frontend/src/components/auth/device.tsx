@@ -1,16 +1,16 @@
 import { Button } from "@pollinations_ai/ui";
-import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
-import { authClient } from "../../auth.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import {
     AuthInfoCard,
     AuthModal,
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
-} from "./auth-modal.tsx";
+} from "@pollinations_ai/ui/auth";
+import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
+import { authClient } from "../../auth.ts";
+import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 
 type DeviceProps = {
     prefilledCode: string;

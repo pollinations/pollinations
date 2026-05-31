@@ -570,7 +570,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage";
+export type AccountPermission = "profile" | "usage" | "keys";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -578,6 +578,10 @@ export interface AuthorizeOptions {
     redirectUrl: string;
     /** Your app's publishable key (shows app name to user) */
     appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
     /** Restrict to specific models */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
@@ -650,7 +654,14 @@ export interface UsageOptions {
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
 }
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
 
 /** Options for fetching daily usage */
 export interface DailyUsageOptions {
@@ -658,6 +669,10 @@ export interface DailyUsageOptions {
     format?: "json" | "csv";
     /** Number of days to include, max 90 (default: 90) */
     days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
     /** Filter to one or more API keys by id */
     api_key_ids?: string[];
 }
@@ -681,14 +696,14 @@ export interface DailyUsageResponse {
 export interface KeyInfo {
     valid: boolean;
     type: string;
-    name?: string;
-    expiresAt?: string;
-    expiresIn?: number;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
     permissions?: {
-        models?: string[];
-        account?: string[];
+        models?: string[] | null;
+        account?: string[] | null;
     };
-    pollenBudget?: number;
+    pollenBudget?: number | null;
     rateLimitEnabled?: boolean;
 }
 
@@ -735,6 +750,18 @@ export interface CreateKeyOptions {
      * `"keys"` is auto-stripped server-side on the BYOP flow.
      */
     accountPermissions?: KeyAccountPermission[];
+    /**
+     * Allowed OAuth redirect URIs for publishable app keys. Required when
+     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * Matching pins scheme, host, port, and path; one trailing slash is
+     * ignored; loopback ports are matched port-agnostically.
+     */
+    redirectUris?: string[];
+    /**
+     * Opt the publishable app key into developer earnings. Defaults to
+     * `false` server-side; only meaningful on `type: "publishable"` keys.
+     */
+    earningsEnabled?: boolean;
 }
 
 /**

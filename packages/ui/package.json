@@ -1,0 +1,70 @@
+{
+  "name": "@pollinations_ai/ui",
+  "version": "0.0.1",
+  "description": "Design and wallet UI primitives for Pollinations apps.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./fonts/*": "./dist/fonts/*",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:css && npm run build:fonts && npm run build:licenses",
+    "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
+    "build:js": "tsup",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@pollinations_ai/sdk": "^4.4.0",
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@pollinations_ai/sdk": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@pollinations_ai/sdk": "*",
+    "@tailwindcss/cli": "^4.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}

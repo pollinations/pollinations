@@ -44,7 +44,9 @@
             "!**/*.css",
             // exclude YAML and Markdown - not natively formatted by Biome
             "!**/*.yml",
-            "!**/*.md"
+            "!**/*.md",
+            // exclude vendored font OFL license texts (must be distributed verbatim)
+            "!packages/ui/src/licenses/**"
         ]
     },
     "overrides": [

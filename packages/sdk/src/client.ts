@@ -21,6 +21,7 @@ import type {
     ImageGenerateV1Options,
     ImageResponse,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     PollinationsConfig,
@@ -41,7 +42,7 @@ import type {
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
-const AUTH_BASE_URL = "https://enter.pollinations.ai";
+export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
@@ -1689,11 +1690,12 @@ export class Pollinations {
      *
      * Omit `budget` for the default cap.
      */
-    authorizeUrl(options: AuthorizeOptions): string {
+    static authorizeUrl(options: AuthorizeOptions): string {
         const params = new URLSearchParams();
-        params.set("redirect_url", options.redirectUrl);
+        params.set("redirect_uri", options.redirectUrl);
 
-        if (options.appKey) params.set("app_key", options.appKey);
+        if (options.appKey) params.set("client_id", options.appKey);
+        if (options.state) params.set("state", options.state);
         if (options.models?.length)
             params.set("models", options.models.join(","));
         if (options.budget !== undefined)
@@ -1701,9 +1703,13 @@ export class Pollinations {
         if (options.expiry !== undefined)
             params.set("expiry", String(options.expiry));
         if (options.permissions?.length)
-            params.set("permissions", options.permissions.join(","));
+            params.set("scope", options.permissions.join(" "));
 
-        return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+        return `${options.authBaseUrl ?? AUTH_BASE_URL}/authorize?${params.toString()}`;
+    }
+
+    authorizeUrl(options: AuthorizeOptions): string {
+        return Pollinations.authorizeUrl(options);
     }
 
     // ============================================================================
@@ -1896,6 +1902,8 @@ export class Pollinations {
         if (options.days) params.set("days", String(options.days));
         if (options.limit) params.set("limit", String(options.limit));
         if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
@@ -1925,6 +1933,8 @@ export class Pollinations {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
         if (options.api_key_ids && options.api_key_ids.length > 0)
             params.set("api_key_ids", options.api_key_ids.join(","));
 
@@ -1959,6 +1969,38 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<KeyInfo>;
+    }
+
+    /**
+     * Get usage history for the API key used by this client.
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountKeyUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountKeyUsage(
+        options: KeyUsageOptions = {},
+    ): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
     }
 
     // ============================================================================
@@ -2023,6 +2065,9 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.redirectUris) body.redirectUris = options.redirectUris;
+        if (options.earningsEnabled !== undefined)
+            body.earningsEnabled = options.earningsEnabled;
 
         const response = await fetchWithTimeout(
             `${this.baseUrl}/account/keys`,

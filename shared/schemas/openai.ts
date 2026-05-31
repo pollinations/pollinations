@@ -272,6 +272,20 @@ const ThinkingSchema = z
     .nullable()
     .optional();
 
+const ReasoningConfigSchema = z
+    .object({
+        effort: z
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .optional(),
+        max_tokens: z.number().int().min(0).optional(),
+        exclude: z.boolean().optional(),
+        enabled: z.boolean().optional(),
+        summary: z.enum(["auto", "concise", "detailed"]).optional(),
+        // Deprecated by OpenAI, still accepted by Portkey docs.
+        generate_summary: z.enum(["auto", "concise", "detailed"]).optional(),
+    })
+    .passthrough();
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -324,6 +338,7 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         thinking: ThinkingSchema,
+        reasoning: ReasoningConfigSchema.optional(),
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .optional(),
@@ -352,23 +367,12 @@ export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
 >;
 
-const ResponseReasoningSchema = z
-    .object({
-        effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
-            .optional(),
-        summary: z.enum(["auto", "concise", "detailed"]).optional(),
-        // Deprecated by OpenAI, still accepted by Portkey docs.
-        generate_summary: z.enum(["auto", "concise", "detailed"]).optional(),
-    })
-    .passthrough();
-
 export const CreateResponseRequestSchema = z
     .object({
         model: z.string().optional(),
         input: z.union([z.string(), z.array(z.unknown())]),
         instructions: z.string().optional(),
-        reasoning: ResponseReasoningSchema.optional(),
+        reasoning: ReasoningConfigSchema.optional(),
         max_output_tokens: z.number().int().min(0).optional(),
         stream: z.literal(false).optional(),
         store: z.boolean().optional(),
@@ -395,6 +399,18 @@ const ChatCompletionMessageContentBlockSchema = z.union([
         .passthrough(),
 ]);
 
+const ChatCompletionReasoningDetailSchema = z
+    .object({
+        type: z.string(),
+        text: z.string().optional(),
+        summary: z.string().optional(),
+        signature: z.string().nullish(),
+        id: z.string().nullish(),
+        format: z.string().optional(),
+        index: z.number().int().nonnegative().optional(),
+    })
+    .passthrough();
+
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
@@ -416,6 +432,9 @@ const ChatCompletionResponseMessageSchema = z.object({
         .nullish(),
     // DeepSeek reasoning format
     reasoning_content: z.string().nullish(),
+    // OpenRouter reasoning format
+    reasoning: z.string().nullish(),
+    reasoning_details: z.array(ChatCompletionReasoningDetailSchema).nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({
@@ -619,6 +638,8 @@ const ChatCompletionStreamResponseDeltaSchema = z.object({
     role: z.enum(["system", "user", "assistant", "tool"]).optional(),
     // Reasoning/thinking fields for streaming
     reasoning_content: z.string().optional(),
+    reasoning: z.string().optional(),
+    reasoning_details: z.array(ChatCompletionReasoningDetailSchema).optional(),
     content_blocks: z.array(ChatCompletionMessageContentBlockSchema).optional(),
 });
 

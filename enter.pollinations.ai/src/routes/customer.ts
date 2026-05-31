@@ -10,8 +10,8 @@ import { balance } from "../middleware/balance.ts";
 import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
-    paid_week: number;
-    tier_week: number;
+    earned_paid_pollen: number;
+    earned_reward_pollen: number;
 };
 
 /**
@@ -26,14 +26,13 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack).",
+                "Get detailed balance breakdown for the current user (reward, paid).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { tierBalance, packBalance } = await c.var.balance.getBalance(
-                user.id,
-            );
+            const { rewardBalance, paidBalance } =
+                await c.var.balance.getBalance(user.id);
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
@@ -45,8 +44,8 @@ export const customerRoutes = new Hono<Env>()
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
 
             return c.json({
-                tierBalance,
-                packBalance,
+                rewardBalance,
+                paidBalance,
                 lastTierGrant,
             });
         },
@@ -92,8 +91,8 @@ export const customerRoutes = new Hono<Env>()
             };
             const row = body.data[0];
             return c.json({
-                paidWeek: row?.paid_week ?? 0,
-                tierWeek: row?.tier_week ?? 0,
+                paidWeek: row?.earned_paid_pollen ?? 0,
+                rewardWeek: row?.earned_reward_pollen ?? 0,
             });
         },
     );

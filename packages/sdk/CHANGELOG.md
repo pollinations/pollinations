@@ -2,6 +2,11 @@
 
 All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
+## [4.4.0] - 2026-05-27
+
+### Changed
+- **BREAKING**: `UsageRecord.cost_usd` and `DailyUsageRecord.cost_usd` renamed to `spent_pollen`. Same value. The field always carried pollen (not USD) — the old name was a misnomer.
+
 ## [4.1.0] - 2026-03-05
 
 ### Added

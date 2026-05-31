@@ -40,8 +40,8 @@ function createTestApp(
             requirePositiveBalance: async () => {},
             requirePaidBalance: async () => {},
             getBalance: async () => ({
-                tierBalance: 1,
-                packBalance: 0,
+                rewardBalance: 1,
+                paidBalance: 0,
             }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
@@ -151,7 +151,7 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
-    it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {
+    it("does not trigger auto top-up while post-deduction paid balance is above threshold", async () => {
         const db = drizzle(env.DB);
         const userId = `track-auto-top-up-${crypto.randomUUID()}`;
         await db.insert(userTable).values({

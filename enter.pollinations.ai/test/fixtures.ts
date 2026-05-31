@@ -39,7 +39,7 @@ type Fixtures = {
     auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
     apiKey: string;
-    /** API key for a user with pack balance (can use paidOnly models) */
+    /** API key for a user with paid balance (can use paidOnly models) */
     paidApiKey: string;
     pubApiKey: string;
     /** API key restricted to only ["openai-fast", "flux"] models */
@@ -146,8 +146,8 @@ export const test = base.extend<Fixtures>({
         await use(apiKey);
     },
     /**
-     * API key for a user with pack balance, enabling paidOnly model access.
-     * Grants 100 pollen pack balance via direct DB update.
+     * API key for a user with paid balance, enabling paidOnly model access.
+     * Grants 100 paid pollen via direct DB update.
      */
     paidApiKey: async ({ auth, sessionToken }, use) => {
         // Each test has an isolated DB with exactly one user — update all users

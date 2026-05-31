@@ -30,7 +30,7 @@ describe("GET /api/account/key/usage", () => {
                 api_key_id: myKeyId,
                 api_key: "my-key",
                 api_key_type: "secret",
-                meter_source: "tier",
+                pollen_meter: "reward",
                 input_text_tokens: 10,
                 input_cached_tokens: 0,
                 input_audio_tokens: 0,
@@ -42,7 +42,7 @@ describe("GET /api/account/key/usage", () => {
                 output_audio_seconds: 0,
                 output_image_tokens: 0,
                 output_video_seconds: 0,
-                cost_usd: 0.001,
+                spent_pollen: 0.001,
                 response_time_ms: 100,
             },
         ];

@@ -266,8 +266,8 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     if (modelStats) {
         for (const price of prices) {
             const stats = modelStats[price.name];
-            if (stats?.avgCost) {
-                price.realAvgCost = stats.avgCost;
+            if (stats?.avgBasePrice) {
+                price.realAvgBasePrice = stats.avgBasePrice;
             }
         }
     }

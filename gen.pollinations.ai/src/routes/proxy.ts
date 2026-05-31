@@ -186,7 +186,7 @@ function filterModelsByPermissions<
     });
 }
 
-// Check if authenticated user has paid balance (pack > 0)
+// Check if authenticated user has paid balance (stored in pack_balance)
 // Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
 // Returns undefined if no user (unauthenticated), true/false otherwise.
 // biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *

@@ -12,7 +12,7 @@ import { getModelStats } from "../utils/model-stats.ts";
 export const modelStatsRoutes = new Hono<Env>().get("/", async (c) => {
     const log = getLogger(["enter", "model-stats"]);
 
-    // Returns raw Tinybird format: { data: [{ model, avg_cost_usd, request_count }] }
+    // Returns raw Tinybird format: { data: [{ model, avg_base_price_pollen, request_count }] }
     const stats = await getModelStats(c.env.KV, log);
     return c.json(stats);
 });

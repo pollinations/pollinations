@@ -89,7 +89,7 @@ export async function resolveDevMarkup(
 export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     markup: MarkupResolution | null;
     payerBucket: Bucket | null;
-    postDeductionPackBalance: number | null;
+    postDeductionPaidBalance: number | null;
 }> {
     const {
         db,
@@ -106,7 +106,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         return {
             markup: null,
             payerBucket: null,
-            postDeductionPackBalance: null,
+            postDeductionPaidBalance: null,
         };
     }
 
@@ -119,7 +119,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     const markup: MarkupResolution | null = resolved;
     const billedPrice = totalPrice + (markup?.devCredit ?? 0);
     let payerBucket: Bucket | null = null;
-    let postDeductionPackBalance: number | null = null;
+    let postDeductionPaidBalance: number | null = null;
 
     try {
         if (userId) {
@@ -130,7 +130,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 modelResolved,
             );
             payerBucket = deduction.bucket;
-            postDeductionPackBalance = deduction.postDeductionPackBalance;
+            postDeductionPaidBalance = deduction.postDeductionPaidBalance;
         }
 
         // API key budgets are decremented by the amount the user authorized the
@@ -191,7 +191,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         throw error;
     }
 
-    return { markup, payerBucket, postDeductionPackBalance };
+    return { markup, payerBucket, postDeductionPaidBalance };
 }
 
 function hasApiKeyBudget(
@@ -232,14 +232,14 @@ async function deductUserBalance(
     modelResolved?: string,
 ): Promise<{
     bucket: Bucket | null;
-    postDeductionPackBalance: number | null;
+    postDeductionPaidBalance: number | null;
 }> {
     try {
         const isPaidOnly = modelResolved
             ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
             : false;
 
-        const { ok, bucket, packBalance } = await atomicDeductUserBalance(
+        const { ok, bucket, paidBalance } = await atomicDeductUserBalance(
             db,
             userId,
             amount,
@@ -251,12 +251,12 @@ async function deductUserBalance(
             );
         }
         const deductionSource = {
-            fromTier: bucket === "tier" ? amount : 0,
-            fromPack: bucket === "pack" ? amount : 0,
+            fromReward: bucket === "reward" ? amount : 0,
+            fromPaid: bucket === "paid" ? amount : 0,
         };
 
         log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+            "Decremented {price} pollen from user {userId} (reward: -{fromReward}, paid: -{fromPaid})",
             {
                 price: amount,
                 userId,
@@ -265,7 +265,7 @@ async function deductUserBalance(
         );
         return {
             bucket,
-            postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+            postDeductionPaidBalance: bucket === "paid" ? paidBalance : null,
         };
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {

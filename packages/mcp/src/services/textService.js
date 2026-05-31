@@ -459,7 +459,7 @@ async function getPricing(params) {
         }
 
         results.currency = "pollen";
-        results.note = "Prices are in pollen. 1 pollen = $0.001 USD";
+        results.note = "Prices are in pollen. 1 pollen ≈ $1 USD.";
 
         return createMCPResponse([createTextContent(results, true)]);
     } catch (error) {

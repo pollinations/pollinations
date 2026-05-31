@@ -13,8 +13,8 @@ export type CreateTestUserOptions = {
     name?: string;
     email?: string;
     tier?: string;
-    tierBalance?: number | null;
-    packBalance?: number | null;
+    rewardBalance?: number | null;
+    paidBalance?: number | null;
     githubId?: number | null;
     githubUsername?: string | null;
 };
@@ -42,8 +42,8 @@ export async function createTestUser(opts: CreateTestUserOptions = {}) {
         emailVerified: true,
         image: null,
         tier: opts.tier ?? "flower",
-        tierBalance: opts.tierBalance ?? 1000,
-        packBalance: opts.packBalance ?? 0,
+        tierBalance: opts.rewardBalance ?? 1000,
+        packBalance: opts.paidBalance ?? 0,
         githubId: opts.githubId ?? null,
         githubUsername: opts.githubUsername ?? null,
         createdAt: new Date(),

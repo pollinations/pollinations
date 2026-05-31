@@ -119,10 +119,10 @@ export const Route = createFileRoute("/")({
                 .then((r) => (r.ok ? r.json() : null)),
         ]);
         const apiKeys = (apiKeysResult.data || []) as ApiKey[];
-        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
-        const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const rewardBalance = d1BalanceResult?.rewardBalance ?? 0;
+        const paidBalance = d1BalanceResult?.paidBalance ?? 0;
         const paidWeek = earningsTodayResult?.paidWeek ?? 0;
-        const tierWeek = earningsTodayResult?.tierWeek ?? 0;
+        const rewardWeek = earningsTodayResult?.rewardWeek ?? 0;
         // Prefer D1; session (KV-cached) may hold a stale username after relog.
         const sessionUser = context.user as
             | (typeof context.user & { githubUsername?: string | null })
@@ -135,11 +135,11 @@ export const Route = createFileRoute("/")({
             githubUsername,
             apiKeys,
             tierData,
-            tierBalance,
-            packBalance,
+            rewardBalance,
+            paidBalance,
             billingState,
             paidWeek,
-            tierWeek,
+            rewardWeek,
         };
     },
 });
@@ -151,11 +151,11 @@ function RouteComponent() {
         githubUsername,
         apiKeys,
         tierData,
-        tierBalance,
-        packBalance,
+        rewardBalance,
+        paidBalance,
         billingState,
         paidWeek,
-        tierWeek,
+        rewardWeek,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -309,11 +309,11 @@ function RouteComponent() {
             onSignOut={handleSignOut}
             walletArea={
                 <SidebarWallet
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
+                    rewardBalance={rewardBalance}
+                    paidBalance={paidBalance}
                     tier={tierData?.active?.tier}
                     paidWeek={paidWeek}
-                    tierWeek={tierWeek}
+                    rewardWeek={rewardWeek}
                 />
             }
         >
@@ -322,11 +322,11 @@ function RouteComponent() {
                 <div className="flex flex-col gap-6">
                     <DashboardSection title="Wallet" theme="amber" framed>
                         <PollenBalance
-                            tierBalance={tierBalance}
-                            packBalance={packBalance}
+                            rewardBalance={rewardBalance}
+                            paidBalance={paidBalance}
                             tier={tierData?.active?.tier}
                             paidWeek={paidWeek}
-                            tierWeek={tierWeek}
+                            rewardWeek={rewardWeek}
                         />
                     </DashboardSection>
                     <DashboardSection
@@ -385,7 +385,10 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Models tierBalance={tierBalance} packBalance={packBalance} />
+                <Models
+                    rewardBalance={rewardBalance}
+                    paidBalance={paidBalance}
+                />
             )}
         </DashboardShell>
     );

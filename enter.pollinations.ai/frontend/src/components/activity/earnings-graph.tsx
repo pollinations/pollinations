@@ -17,7 +17,7 @@ type EarningsGraphProps = {
     theme: ThemeName;
 };
 
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
+import { PAID_COLOR, REWARD_COLOR } from "@frontend/lib/balance-colors.ts";
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
@@ -136,7 +136,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             metric="pollen"
                             showModelBreakdown={showAppBreakdown}
                             paidBarColor={PAID_COLOR}
-                            tierBarColor={TIER_COLOR}
+                            rewardBarColor={REWARD_COLOR}
                         />
                     )}
                 </div>
@@ -168,18 +168,18 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             </Chip>
                                         </Tooltip>
                                         <Tooltip
-                                            content={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
+                                            content={`${formatPollen(stats.totalReward)} pollen from reward-balance spend`}
                                             displayContents
                                         >
                                             <Chip
-                                                intent="tier"
+                                                intent="reward"
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 🌱{" "}
                                                 <span className="tabular-nums">
                                                     {formatPollen(
-                                                        stats.totalTier,
+                                                        stats.totalReward,
                                                     )}
                                                 </span>
                                             </Chip>

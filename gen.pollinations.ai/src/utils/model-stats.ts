@@ -3,16 +3,20 @@ import { cached } from "@/cache";
 
 const TINYBIRD_MODEL_STATS_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=200";
-const CACHE_KEY = "model-stats";
+// v3: pipe now returns base model price (`dev_price`) instead of charged payer
+// price (`total_price`), so old cached charged averages must be dropped.
+const CACHE_KEY = "model-stats:v3";
 const CACHE_TTL = 3600;
 
+export type ModelStatsRow = {
+    model: string;
+    avg_base_price_pollen: number;
+    request_count?: number;
+    base_price_request_count?: number;
+};
+
 export type TinybirdModelStats = {
-    data: Array<{
-        model: string;
-        avg_cost_usd: number;
-        request_count?: number;
-        priced_success_count?: number;
-    }>;
+    data: ModelStatsRow[];
 };
 
 export async function getModelStats(
@@ -27,13 +31,13 @@ export async function getModelStats(
     })(log);
 }
 
-export function getEstimatedPrice(
+export function getEstimatedBasePrice(
     stats: TinybirdModelStats,
     model: string | undefined,
 ): number {
     if (!model) return 0;
     const row = stats.data?.find((r) => r.model === model);
-    return row?.avg_cost_usd || 0;
+    return row?.avg_base_price_pollen ?? 0;
 }
 
 async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {

@@ -20,8 +20,8 @@ export type ModelPrice = {
     perSecondPrice?: string;
     perAudioSecondPrice?: string; // For video models with audio (e.g., wan)
     perTokenPrice?: string; // For token-based video models like seedance
-    // Real usage data from Tinybird (rolling 7-day average)
-    realAvgCost?: number;
+    // Real base-price data from Tinybird (rolling 7-day average)
+    realAvgBasePrice?: number;
 };
 
 export type Modalities = {

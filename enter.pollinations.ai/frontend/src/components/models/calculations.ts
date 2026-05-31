@@ -22,12 +22,12 @@ function formatCount(num: number): string {
 
 /**
  * Calculate "Per Pollen" value for a model.
- * Uses real average cost from Tinybird when available (rolling 7-day average).
+ * Uses real average base price from Tinybird when available (rolling 7-day average).
  * Returns "—" when no data is available.
  */
 export function calculatePerPollen(model: ModelPrice): string {
-    if (model.realAvgCost && model.realAvgCost > 0) {
-        const unitsPerPollen = 1 / model.realAvgCost;
+    if (model.realAvgBasePrice && model.realAvgBasePrice > 0) {
+        const unitsPerPollen = 1 / model.realAvgBasePrice;
         return formatCount(unitsPerPollen);
     }
 
@@ -36,13 +36,13 @@ export function calculatePerPollen(model: ModelPrice): string {
 
 export function canAffordModel(
     model: ModelPrice,
-    tierBalance: number,
-    packBalance: number,
+    rewardBalance: number,
+    paidBalance: number,
     isPaidOnly: boolean,
 ): boolean {
-    const cost = model.realAvgCost ?? 0;
+    const cost = model.realAvgBasePrice ?? 0;
     return canCoverEstimatedCharge(
-        { tierBalance, packBalance },
+        { rewardBalance, paidBalance },
         cost,
         isPaidOnly,
     );

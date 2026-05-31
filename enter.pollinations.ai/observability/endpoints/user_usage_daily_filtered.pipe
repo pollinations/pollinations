@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Get aggregated billed usage for a user, grouped by date/hour, model, and meter source.
+    Get aggregated charged usage for a user, grouped by date/hour, model, and balance bucket.
     Use 'since' and 'until' for date range filtering.
     Use 'api_key_ids' (comma-separated) to filter to one or more API keys.
     Use 'grain=hour' to group by hour; defaults to daily buckets.
@@ -16,9 +16,15 @@ SQL >
             formatDateTime(toStartOfDay(start_time), '%F')
         ) as date,
         resolved_model_requested as model,
-        splitByChar(':', selected_meter_slug)[-1] as meter_source,
-        count() as requests,
-        sum(total_price) as cost_usd
+        multiIf(
+            selected_meter_slug = 'v1:meter:pack', 'paid',
+            selected_meter_slug = 'local:pack', 'paid',
+            selected_meter_slug = 'v1:meter:tier', 'reward',
+            selected_meter_slug = 'local:tier', 'reward',
+            splitByChar(':', selected_meter_slug)[-1]
+        ) as pollen_meter,
+        count() as request_count,
+        sum(total_price) as spent_pollen
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}
     AND total_price > 0
@@ -31,7 +37,7 @@ SQL >
     {% if defined(api_key_ids) %}
     AND api_key_id IN {{Array(api_key_ids, 'String')}}
     {% end %}
-    GROUP BY date, model, meter_source
-    ORDER BY date DESC, requests DESC
+    GROUP BY date, model, pollen_meter
+    ORDER BY date DESC, request_count DESC
 
 TYPE endpoint

@@ -20,7 +20,7 @@ export const test = base.extend<SharedFixtures>({
     paidApiKey: async ({}, use) => {
         const { key } = await createTestApiKey({
             name: "paid-test-api-key",
-            user: { packBalance: 100 },
+            user: { paidBalance: 100 },
         });
         await use(key);
     },

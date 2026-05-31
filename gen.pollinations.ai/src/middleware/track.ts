@@ -1,6 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
+    BALANCE_BUCKET_TO_RAW_LOCAL_METER_ID,
+    BALANCE_BUCKET_TO_RAW_METER_SLUG,
+} from "@shared/billing/balance.ts";
+import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
@@ -220,9 +224,9 @@ export const track = (eventType: EventType) =>
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
                         totalPrice > 0 &&
-                        payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
+                        payerBucket === "paid" &&
+                        deduction.postDeductionPaidBalance != null &&
+                        deduction.postDeductionPaidBalance <=
                             AUTO_TOP_UP_THRESHOLD_POLLEN &&
                         userTracking.userId &&
                         (await isAutoTopUpConfigured(db, userTracking.userId))
@@ -243,11 +247,10 @@ export const track = (eventType: EventType) =>
                 const committedBalanceTracking = payerBucket
                     ? {
                           ...balanceTracking,
-                          selectedMeterId: `local:${payerBucket}`,
+                          selectedMeterId:
+                              BALANCE_BUCKET_TO_RAW_LOCAL_METER_ID[payerBucket],
                           selectedMeterSlug:
-                              payerBucket === "tier"
-                                  ? "v1:meter:tier"
-                                  : "v1:meter:pack",
+                              BALANCE_BUCKET_TO_RAW_METER_SLUG[payerBucket],
                       }
                     : balanceTracking;
 

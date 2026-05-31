@@ -41,8 +41,8 @@ type UnifiedModelTableProps = {
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-    tierBalance?: number;
-    packBalance?: number;
+    rewardBalance?: number;
+    paidBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -146,8 +146,8 @@ type TabContentProps = {
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
-    tierBalance?: number;
-    packBalance?: number;
+    rewardBalance?: number;
+    paidBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({
@@ -155,8 +155,8 @@ const TabContent: FC<TabContentProps> = ({
     models,
     sortKey,
     sortDir,
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
@@ -172,8 +172,8 @@ const TabContent: FC<TabContentProps> = ({
                     <ModelRow
                         key={model.name}
                         model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
+                        rewardBalance={rewardBalance}
+                        paidBalance={paidBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -187,8 +187,8 @@ const TabContent: FC<TabContentProps> = ({
                             <ModelRow
                                 key={model.name}
                                 model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
+                                rewardBalance={rewardBalance}
+                                paidBalance={paidBalance}
                             />
                         ))}
                     </>
@@ -201,8 +201,8 @@ const TabContent: FC<TabContentProps> = ({
                     <MobileModelRow
                         key={model.name}
                         model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
+                        rewardBalance={rewardBalance}
+                        paidBalance={paidBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -216,8 +216,8 @@ const TabContent: FC<TabContentProps> = ({
                             <MobileModelRow
                                 key={model.name}
                                 model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
+                                rewardBalance={rewardBalance}
+                                paidBalance={paidBalance}
                             />
                         ))}
                     </>
@@ -231,14 +231,14 @@ const TabContent: FC<TabContentProps> = ({
 
 type MobileModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
+    rewardBalance?: number;
+    paidBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -251,14 +251,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
 
-    const isSignedIn = packBalance !== undefined;
+    const isSignedIn = paidBalance !== undefined;
     const perPollen = calculatePerPollen(model);
     const isDisabled =
         isSignedIn &&
         !canAffordModel(
             model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
+            rewardBalance ?? 0,
+            paidBalance ?? 0,
             showPaidOnly,
         );
 
@@ -564,8 +564,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     realtimeModels,
     embeddingModels,
     activeTab,
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -669,8 +669,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     models={activeSection.models}
                     sortKey={sortKey}
                     sortDir={sortDir}
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
+                    rewardBalance={rewardBalance}
+                    paidBalance={paidBalance}
                 />
             )}
         </div>

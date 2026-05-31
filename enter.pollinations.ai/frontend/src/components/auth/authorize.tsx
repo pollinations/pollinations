@@ -239,7 +239,7 @@ export function Authorize() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
+                    (data.rewardBalance ?? 0) + (data.paidBalance ?? 0),
                 );
             })
             .catch(() => {});

@@ -618,7 +618,7 @@ export interface UsageRecord {
     model: string;
     api_key: string;
     api_key_type: string;
-    meter_source: string;
+    pollen_meter: string;
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
@@ -630,7 +630,8 @@ export interface UsageRecord {
     output_audio_seconds: number;
     output_image_tokens: number;
     output_video_seconds: number;
-    cost_usd: number;
+    /** Pollen spent for this request (debited from the user's wallet). */
+    spent_pollen: number;
     response_time_ms: number;
 }
 
@@ -666,9 +667,10 @@ export interface DailyUsageOptions {
 export interface DailyUsageRecord {
     date: string;
     model: string;
-    meter_source: string;
-    requests: number;
-    cost_usd: number;
+    pollen_meter: string;
+    request_count: number;
+    /** Total pollen spent from the user's wallet for the bucket. */
+    spent_pollen: number;
 }
 
 /** Daily usage response */

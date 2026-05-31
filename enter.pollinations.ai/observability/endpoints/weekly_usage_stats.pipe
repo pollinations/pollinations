@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Weekly usage statistics - tokens, requests, revenue breakdown by week.
+    Weekly usage statistics - tokens, requests, charged pollen, and upstream cost by week.
     Includes per-user averages for depth metrics.
     Optimized: single-pass query with uniq() instead of uniqExact() for ~10x speed.
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
@@ -11,17 +11,17 @@ SQL >
     %
     SELECT
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
-        count() AS total_requests,
+        count() AS request_count,
         countIf(event_type = 'text') AS text_requests,
         countIf(event_type = 'image') AS image_requests,
         sum(token_count_prompt_text) AS prompt_tokens,
         sum(token_count_completion_text) AS completion_tokens,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
-        sum(total_price) AS revenue_usd,
+        sum(total_price) AS charged_pollen,
         sum(total_cost) AS cost_usd,
-        uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_users,
-        if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
-        if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
+        uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_user_count,
+        if(active_user_count > 0, total_tokens / active_user_count, 0) AS tokens_per_user,
+        if(active_user_count > 0, request_count / active_user_count, 0) AS requests_per_user
     FROM generation_event
     WHERE
         {% if defined(start_date) %}

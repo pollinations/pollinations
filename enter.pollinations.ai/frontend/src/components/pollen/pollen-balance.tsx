@@ -9,11 +9,11 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
-    tierBalance: number;
-    packBalance: number;
+    rewardBalance: number;
+    paidBalance: number;
     tier?: string;
     paidWeek?: number;
-    tierWeek?: number;
+    rewardWeek?: number;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
@@ -102,26 +102,26 @@ const TooltipList: FC<{
 );
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
     tier = "spore",
     paidWeek = 0,
-    tierWeek = 0,
+    rewardWeek = 0,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
+    const displayRewardBalance = normalizeDisplayBalance(rewardBalance);
+    const displayPaidBalance = normalizeDisplayBalance(paidBalance);
     const totalPollen = normalizeDisplayBalance(
-        displayTierBalance + displayPaidBalance,
+        displayRewardBalance + displayPaidBalance,
     );
-    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
-    const hideTierColumn = tier === "microbe" && displayTierBalance === 0;
+    const totalWeek = normalizeDisplayBalance(paidWeek + rewardWeek);
+    const hideRewardColumn = tier === "microbe" && displayRewardBalance === 0;
 
     return (
         <div className="flex flex-col gap-3">
-            {/* Twin headline numbers: Paid + Tier as tinted cards */}
+            {/* Twin headline numbers: Paid + Reward as tinted cards */}
             <div
                 className={
-                    hideTierColumn
+                    hideRewardColumn
                         ? "grid grid-cols-1 gap-3"
                         : "grid grid-cols-2 gap-3"
                 }
@@ -144,7 +144,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     items={[
                                         "Pollen you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Tier can't cover",
+                                        "Used for paid-only models, or when Reward can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -163,7 +163,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         </div>
                     )}
                 </div>
-                {!hideTierColumn && (
+                {!hideRewardColumn && (
                     <div className="rounded-xl bg-tier-pale/60 p-4">
                         <span className="flex items-center gap-2">
                             <span
@@ -171,30 +171,30 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 aria-hidden="true"
                             />
                             <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
-                                Tier
+                                Reward
                             </span>
                             <InfoTip
-                                label="About tier balance"
+                                label="About reward balance"
                                 text={
                                     <TooltipList
-                                        title="Tier balance"
+                                        title="Reward balance"
                                         emoji="🌱"
                                         items={[
-                                            "Free Pollen that refills hourly",
-                                            "Earnings from tier-side spend in your apps",
+                                            "Bonuses, quest rewards, and tier drops",
+                                            "Earnings from reward-balance spend in your apps",
                                             "Used first for regular models, when it can cover",
                                         ]}
-                                        earned={tierWeek}
+                                        earned={rewardWeek}
                                     />
                                 }
                             />
                         </span>
                         <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-tier-deep">
-                            {formatPollen(displayTierBalance)}
+                            {formatPollen(displayRewardBalance)}
                         </div>
-                        {tierWeek > 0 && (
+                        {rewardWeek > 0 && (
                             <div className="mt-1.5 text-sm font-bold tabular-nums text-green-700">
-                                +{formatPollen(tierWeek)}{" "}
+                                +{formatPollen(rewardWeek)}{" "}
                                 <span className="font-medium text-amber-800/70">
                                     / 7d
                                 </span>
@@ -254,24 +254,24 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 };
 
 type SidebarWalletProps = {
-    tierBalance: number;
-    packBalance: number;
+    rewardBalance: number;
+    paidBalance: number;
     tier?: string;
     paidWeek?: number;
-    tierWeek?: number;
+    rewardWeek?: number;
     onClick?: () => void;
 };
 
 export const SidebarWallet: FC<SidebarWalletProps> = ({
-    tierBalance,
-    packBalance,
+    rewardBalance,
+    paidBalance,
     tier = "spore",
     paidWeek = 0,
-    tierWeek = 0,
+    rewardWeek = 0,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
-    const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
+    const displayRewardBalance = normalizeDisplayBalance(rewardBalance);
+    const displayPaidBalance = normalizeDisplayBalance(paidBalance);
+    const hideRewardSegment = tier === "microbe" && displayRewardBalance === 0;
 
     return (
         <div className="px-3 py-1 flex flex-col gap-1">
@@ -294,22 +294,22 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     )}
                 </span>
             </div>
-            {!hideTierSegment && (
+            {!hideRewardSegment && (
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                         <span
                             className="h-2 w-2 rounded-full bg-tier-soft"
                             aria-hidden="true"
                         />
-                        Tier
+                        Reward
                     </span>
                     <span className="flex items-baseline gap-1.5">
                         <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
-                            {formatPollen(displayTierBalance)}
+                            {formatPollen(displayRewardBalance)}
                         </span>
-                        {tierWeek > 0 && (
+                        {rewardWeek > 0 && (
                             <span className="text-micro font-bold tabular-nums text-green-700">
-                                +{formatPollen(tierWeek)}
+                                +{formatPollen(rewardWeek)}
                             </span>
                         )}
                     </span>

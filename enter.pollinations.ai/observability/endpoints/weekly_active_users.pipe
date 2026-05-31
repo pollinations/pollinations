@@ -11,11 +11,11 @@ SQL >
     SELECT
         toStartOfWeek(start_time, 1) AS week_start,
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
-        uniqExact(user_id) AS active_users,
-        uniqExactIf(user_id, total_price > 0) AS paying_users,
-        count() AS total_requests,
+        uniqExact(user_id) AS active_user_count,
+        uniqExactIf(user_id, total_price > 0) AS charged_user_count,
+        count() AS request_count,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
-        sum(total_price) AS total_revenue
+        sum(total_price) AS charged_pollen
     FROM generation_event
     WHERE
         {% if defined(start_date) %}

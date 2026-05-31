@@ -136,15 +136,15 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Revenue",
             format: "currency",
             tooltip:
-                "Gross revenue in USD from pollen pack purchases. Source: Polar API (order amounts)",
+                "Gross revenue in USD from paid pollen purchases. Source: Stripe + Polar legacy.",
         },
         {
-            key: "packPurchases",
-            name: "Pack Purchases",
+            key: "paidPurchases",
+            name: "Paid Purchases",
             category: "Revenue",
             format: "number",
             tooltip:
-                "Count of completed pollen pack purchases this week. Source: Polar API (successful orders)",
+                "Count of completed paid pollen purchases this week. Source: Stripe + Polar legacy.",
         },
         {
             key: "arpa",
@@ -181,9 +181,9 @@ export function KPITrendTable({ weeklyData, title }) {
             name: "Purchase Rate",
             category: "Efficiency",
             format: "percent",
-            calc: (w) => (w.packPurchases / w.wau) * 100,
+            calc: (w) => (w.paidPurchases / w.wau) * 100,
             tooltip:
-                "Formula: (Pack Purchases / WAU) × 100. What % of active users bought a pollen pack this week.",
+                "Formula: (Paid Purchases / WAU) × 100. What % of active users bought paid pollen this week.",
         },
         {
             key: "availability",

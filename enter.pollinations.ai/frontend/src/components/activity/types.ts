@@ -1,9 +1,9 @@
 export type DailyUsageRecord = {
     date: string;
     model: string | null;
-    meter_source: string | null;
-    requests: number;
-    cost_usd: number;
+    pollen_meter: string | null;
+    request_count: number;
+    spent_pollen: number;
 };
 
 export type PeriodGranularity = "day" | "week" | "month";
@@ -32,7 +32,7 @@ export type ModelBreakdown = {
 export type DataPoint = {
     label: string;
     value: number;
-    tierValue: number;
+    rewardValue: number;
     paidValue: number;
     timestamp: Date;
     fullDate: string;

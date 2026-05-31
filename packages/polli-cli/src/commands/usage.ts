@@ -12,8 +12,8 @@ interface UsageRecord {
     timestamp: string;
     type: string;
     model: string;
-    cost_usd: number;
-    meter_source: string;
+    spent_pollen: number;
+    pollen_meter: string;
 }
 
 interface UsageResponse {
@@ -24,15 +24,21 @@ interface UsageResponse {
 interface DailyUsageRecord {
     date: string;
     model: string;
-    meter_source: string;
-    requests: number;
-    cost_usd: number;
+    pollen_meter: string;
+    request_count: number;
+    spent_pollen: number;
 }
 
 interface DailyUsageResponse {
     usage: DailyUsageRecord[];
     count: number;
 }
+
+const pollen = (row: { spent_pollen?: number }): string => {
+    return row.spent_pollen != null
+        ? `${row.spent_pollen.toFixed(4)} pollen`
+        : "-";
+};
 
 interface BalanceResponse {
     balance: number;
@@ -66,21 +72,27 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
+            // In JSON mode, pass the raw API rows through (they carry numeric
+            // `spent_pollen`). In human mode, collapse to a single `pollen`
+            // column for display.
+            const json = getOutputMode() === "json";
+
             if (opts.daily) {
                 const data = await gen<DailyUsageResponse>(
                     "/account/usage/daily",
                     { apiKey: key },
                 );
+                if (json) {
+                    printResult(data.usage);
+                    return;
+                }
                 printTable(
                     data.usage.map((r) => ({
                         date: r.date,
                         model: r.model,
-                        requests: r.requests,
-                        cost:
-                            r.cost_usd != null
-                                ? `$${r.cost_usd.toFixed(4)}`
-                                : "-",
-                        source: r.meter_source,
+                        requests: r.request_count,
+                        pollen: pollen(r),
+                        source: r.pollen_meter,
                     })),
                 );
                 return;
@@ -95,14 +107,17 @@ export const usageCommand = new Command("usage")
                 `/account/usage?limit=${limit}`,
                 { apiKey: key },
             );
+            if (json) {
+                printResult(data.usage);
+                return;
+            }
             printTable(
                 data.usage.map((r) => ({
                     time: r.timestamp,
                     type: r.type,
                     model: r.model,
-                    cost:
-                        r.cost_usd != null ? `$${r.cost_usd.toFixed(4)}` : "-",
-                    source: r.meter_source,
+                    pollen: pollen(r),
+                    source: r.pollen_meter,
                 })),
             );
         } catch (err) {

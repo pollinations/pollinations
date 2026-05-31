@@ -25,7 +25,7 @@ function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
         KV: {
             get: async () => ({
                 value: {
-                    data: [{ model, avg_cost_usd: price }],
+                    data: [{ model, avg_base_price_pollen: price }],
                 },
                 ttl: 3600,
             }),
@@ -129,7 +129,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("credits creator tier balance when payer spends tier balance", async () => {
+    it("credits creator reward balance when payer spends reward balance", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
@@ -143,16 +143,16 @@ describe("BYOP markup", () => {
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalances(db, payerId)).rewardBalance).toBeCloseTo(
             2 - 1 - MARKUP_PCT,
             10,
         );
         const creatorBalances = await getUserBalances(db, devId);
-        expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
-        expect(creatorBalances.packBalance).toBe(0);
+        expect(creatorBalances.rewardBalance).toBeCloseTo(MARKUP_PCT, 10);
+        expect(creatorBalances.paidBalance).toBe(0);
     });
 
-    it("credits creator pack balance when payer spends pack balance", async () => {
+    it("credits creator paid balance when payer spends paid balance", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
         await db
             .update(userTable)
@@ -171,12 +171,12 @@ describe("BYOP markup", () => {
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
         const payerBalances = await getUserBalances(db, payerId);
-        expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
-        expect(payerBalances.packBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
+        expect(payerBalances.rewardBalance).toBeCloseTo(0.5, 10);
+        expect(payerBalances.paidBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
 
         const creatorBalances = await getUserBalances(db, devId);
-        expect(creatorBalances.tierBalance).toBe(0);
-        expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
+        expect(creatorBalances.rewardBalance).toBe(0);
+        expect(creatorBalances.paidBalance).toBeCloseTo(MARKUP_PCT, 10);
     });
 
     it("bills baseline plus markup without a payer-tier gate", async () => {
@@ -194,11 +194,11 @@ describe("BYOP markup", () => {
 
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalances(db, payerId)).rewardBalance).toBeCloseTo(
             1 - MARKUP_PCT,
             10,
         );
-        expect((await getUserBalances(db, devId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalances(db, devId)).rewardBalance).toBeCloseTo(
             MARKUP_PCT,
             10,
         );
@@ -215,8 +215,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 1,
-                    packBalance: 2,
+                    rewardBalance: 1,
+                    paidBalance: 2,
                 }),
                 requirePositiveBalance: async () => undefined,
                 requirePaidBalance: async () => undefined,
@@ -251,8 +251,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 1,
-                    packBalance: 1,
+                    rewardBalance: 1,
+                    paidBalance: 1,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },
@@ -274,8 +274,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 0,
-                    packBalance: 0.01,
+                    rewardBalance: 0,
+                    paidBalance: 0.01,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },
@@ -290,7 +290,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("requires paid-only preflight to have pack balance above the model estimate", async () => {
+    it("requires paid-only preflight to have paid balance above the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
@@ -298,8 +298,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 1,
+                    rewardBalance: 10,
+                    paidBalance: 1,
                 }),
             },
             model: { requested: "llama-maverick", resolved: "llama-maverick" },
@@ -321,8 +321,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
+                    rewardBalance: 10,
+                    paidBalance: 10,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },
@@ -348,8 +348,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
+                    rewardBalance: 10,
+                    paidBalance: 10,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },
@@ -378,8 +378,8 @@ describe("BYOP markup", () => {
             },
             balance: {
                 getBalance: async () => ({
-                    tierBalance: 1.1,
-                    packBalance: 0,
+                    rewardBalance: 1.1,
+                    paidBalance: 0,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },
@@ -396,7 +396,7 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("does not credit or deduct for unbilled requests", async () => {
+    it("does not credit or deduct for uncharged requests", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
@@ -408,8 +408,8 @@ describe("BYOP markup", () => {
         });
 
         expect(markup).toBeNull();
-        expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalances(db, payerId)).rewardBalance).toBe(2);
+        expect((await getUserBalances(db, devId)).rewardBalance).toBe(0);
     });
 
     it("reverts dev credit when payer deduction fails", async () => {
@@ -425,14 +425,14 @@ describe("BYOP markup", () => {
             }),
         ).rejects.toThrow(/affected 0 rows/);
 
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalances(db, devId)).rewardBalance).toBe(0);
     });
 
     it("returns ok=false when crediting a missing user", async () => {
         const { ok, newBalance } = await atomicCreditUserBalance(
             db,
             "missing-credit-user",
-            "tier",
+            "reward",
             1,
         );
 

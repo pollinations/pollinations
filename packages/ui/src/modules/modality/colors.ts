@@ -20,7 +20,7 @@ export type Modality =
     | "realtime"
     | "embedding";
 
-type ModalityColorSet = {
+export type ModalityColorSet = {
     /** Selected/filled state: `bg + text + border` classes. */
     filled: string;
     /** Hover hint shown on the unselected button (subtle tint). */
@@ -32,34 +32,34 @@ type ModalityColorSet = {
 // No borders — chips and buttons in this system are borderless.
 export const MODALITY_COLORS: Record<Modality, ModalityColorSet> = {
     text: {
-        filled: "bg-blue-200 text-blue-900",
-        hover: "hover:bg-blue-100 hover:text-blue-900",
-        text: "text-blue-800",
+        filled: "polli:bg-blue-200 polli:text-blue-900",
+        hover: "polli:hover:bg-blue-100 polli:hover:text-blue-900",
+        text: "polli:text-blue-800",
     },
     image: {
-        filled: "bg-pink-200 text-pink-900",
-        hover: "hover:bg-pink-100 hover:text-pink-900",
-        text: "text-pink-800",
+        filled: "polli:bg-pink-200 polli:text-pink-900",
+        hover: "polli:hover:bg-pink-100 polli:hover:text-pink-900",
+        text: "polli:text-pink-800",
     },
     video: {
-        filled: "bg-teal-200 text-teal-900",
-        hover: "hover:bg-teal-100 hover:text-teal-900",
-        text: "text-teal-800",
+        filled: "polli:bg-teal-200 polli:text-teal-900",
+        hover: "polli:hover:bg-teal-100 polli:hover:text-teal-900",
+        text: "polli:text-teal-800",
     },
     audio: {
-        filled: "bg-violet-200 text-violet-900",
-        hover: "hover:bg-violet-100 hover:text-violet-900",
-        text: "text-violet-800",
+        filled: "polli:bg-violet-200 polli:text-violet-900",
+        hover: "polli:hover:bg-violet-100 polli:hover:text-violet-900",
+        text: "polli:text-violet-800",
     },
     realtime: {
-        filled: "bg-green-200 text-green-900",
-        hover: "hover:bg-green-100 hover:text-green-900",
-        text: "text-green-800",
+        filled: "polli:bg-green-200 polli:text-green-900",
+        hover: "polli:hover:bg-green-100 polli:hover:text-green-900",
+        text: "polli:text-green-800",
     },
     embedding: {
-        filled: "bg-amber-200 text-amber-900",
-        hover: "hover:bg-amber-100 hover:text-amber-900",
-        text: "text-amber-800",
+        filled: "polli:bg-amber-200 polli:text-amber-900",
+        hover: "polli:hover:bg-amber-100 polli:hover:text-amber-900",
+        text: "polli:text-amber-800",
     },
 };
 

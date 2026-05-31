@@ -1,6 +1,6 @@
 import { useAuthActions, useAuthState } from "@pollinations_ai/sdk/react";
 import type { ReactNode } from "react";
-import { Button, type ButtonProps } from "../primitives/Button.tsx";
+import { Button, type ButtonProps } from "../../primitives/Button.tsx";
 
 export type LoginButtonProps = Omit<
     ButtonProps<"button">,

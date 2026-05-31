@@ -1,8 +1,8 @@
-import { cn } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
-import { getModalityColors } from "../models/modality-ui.ts";
+import { cn } from "../../lib/cn.ts";
+import { getModalityColors } from "./colors.ts";
 
-type ModalityButtonProps = {
+export type ModalityButtonProps = {
     /** Modality key or category string ("Text", "Images", etc). */
     category?: string;
     /** Filled (modality hue) when true, muted gray when false. */
@@ -33,12 +33,15 @@ export const ModalityButton: FC<ModalityButtonProps> = ({
             disabled={disabled}
             aria-pressed={selected}
             className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-medium leading-normal transition-colors text-left",
+                "polli:inline-flex polli:shrink-0 polli:items-center polli:gap-1 polli:rounded-full polli:px-3 polli:py-1 polli:text-left polli:text-sm polli:font-medium polli:leading-normal polli:transition-colors",
                 selected
-                    ? (colors?.filled ?? "bg-gray-200 text-gray-900")
-                    : "bg-gray-100 text-gray-600",
+                    ? (colors?.filled ??
+                          "polli:bg-gray-200 polli:text-gray-900")
+                    : "polli:bg-gray-100 polli:text-gray-600",
                 !disabled && !selected && colors?.hover,
-                disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+                disabled
+                    ? "polli:cursor-not-allowed polli:opacity-50"
+                    : "polli:cursor-pointer",
             )}
         >
             {children}

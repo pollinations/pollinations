@@ -94,6 +94,10 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 - `@pollinations_ai/ui/wallet` exports wallet-specific display helpers and
   recipes: `formatPollen`, `PaidChip`, `TierChip`,
   `PAID_BALANCE_CHART_COLOR`, and `TIER_BALANCE_CHART_COLOR`.
+- `@pollinations_ai/ui/modality` exports model-modality color recipes and
+  `ModalityButton`.
+- `@pollinations_ai/ui/permissions` exports permission-row styling recipes
+  shared by key and OAuth forms.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,
@@ -107,6 +111,14 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 For per-request usage data and other dynamic queries, call the opt-in hooks
 from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 `useAccountBalance`, etc.) directly.
+
+## Source Layout
+
+- `src/primitives/*` contains generic, SDK-free building blocks.
+- `src/modules/*` contains package-owned recipes with domain assumptions
+  such as auth, wallet, modality, and permissions.
+- Public subpath exports (`@pollinations_ai/ui/auth`,
+  `@pollinations_ai/ui/wallet`, etc.) are stable facades over those modules.
 
 ## Theming
 

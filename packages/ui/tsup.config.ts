@@ -4,6 +4,8 @@ export default defineConfig({
     entry: [
         "src/index.ts",
         "src/auth/index.ts",
+        "src/modality/index.ts",
+        "src/permissions/index.ts",
         "src/showcase/index.ts",
         "src/wallet/index.ts",
     ],

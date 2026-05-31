@@ -6,6 +6,7 @@ import {
     MailIcon,
     useScrollLock,
 } from "@pollinations_ai/ui";
+import { getModalityColors } from "@pollinations_ai/ui/modality";
 import { formatPollen } from "@pollinations_ai/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
@@ -23,7 +24,6 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { getModalityColors } from "../models/modality-ui.ts";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 import {

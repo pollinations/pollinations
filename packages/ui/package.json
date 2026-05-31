@@ -1,7 +1,7 @@
 {
   "name": "@pollinations_ai/ui",
   "version": "0.0.1",
-  "description": "Design and wallet UI primitives for Pollinations apps.",
+  "description": "Design primitives and UI modules for Pollinations apps.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -22,6 +22,16 @@
       "types": "./dist/showcase/index.d.ts",
       "import": "./dist/showcase/index.js",
       "require": "./dist/showcase/index.cjs"
+    },
+    "./modality": {
+      "types": "./dist/modality/index.d.ts",
+      "import": "./dist/modality/index.js",
+      "require": "./dist/modality/index.cjs"
+    },
+    "./permissions": {
+      "types": "./dist/permissions/index.d.ts",
+      "import": "./dist/permissions/index.js",
+      "require": "./dist/permissions/index.cjs"
     },
     "./wallet": {
       "types": "./dist/wallet/index.d.ts",
@@ -45,7 +55,7 @@
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/app.css dist/app.css && cp src/wallet/styles.css dist/wallet.css",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/app.css dist/app.css && cp src/modules/wallet/styles.css dist/wallet.css",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1,17 +1,19 @@
 import { Collapsible, cn } from "@pollinations_ai/ui";
+import {
+    getModalityColors,
+    ModalityButton,
+} from "@pollinations_ai/ui/modality";
+import {
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "@pollinations_ai/ui/permissions";
 import type { FC } from "react";
 import { useState } from "react";
-import { getModalityColors } from "../models/modality-ui.ts";
 import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
-import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
-import {
-    getPermissionUiTheme,
-    type PermissionUiTheme,
-} from "./permission-ui.ts";
 
 type AccountPermissionOption = {
     id: "profile" | "usage" | "keys";

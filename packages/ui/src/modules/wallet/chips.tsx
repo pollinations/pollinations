@@ -1,6 +1,6 @@
 import type { FC } from "react";
-import { cn } from "../lib/cn.ts";
-import { Chip, type ChipProps } from "../primitives/Chip.tsx";
+import { cn } from "../../lib/cn.ts";
+import { Chip, type ChipProps } from "../../primitives/Chip.tsx";
 
 export type WalletChipProps = Omit<ChipProps, "intent">;
 

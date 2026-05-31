@@ -1,5 +1,5 @@
 import { useAccountProfile, useAuthState } from "@pollinations_ai/sdk/react";
-import { cn } from "../lib/cn.ts";
+import { cn } from "../../lib/cn.ts";
 
 export type UserAvatarProps = {
     size?: "sm" | "md" | "lg";

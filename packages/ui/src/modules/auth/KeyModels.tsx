@@ -1,5 +1,5 @@
 import { useAccountKey, useAuthState } from "@pollinations_ai/sdk/react";
-import { Chip } from "../primitives/Chip.tsx";
+import { Chip } from "../../primitives/Chip.tsx";
 
 export type KeyModelsProps = { className?: string };
 

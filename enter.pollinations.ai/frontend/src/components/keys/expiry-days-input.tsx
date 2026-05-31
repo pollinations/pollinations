@@ -1,10 +1,10 @@
 import { Field } from "@ark-ui/react";
 import { cn, InfoTip, Input } from "@pollinations_ai/ui";
-import type { FC } from "react";
 import {
     getPermissionUiTheme,
     type PermissionUiTheme,
-} from "./permission-ui.ts";
+} from "@pollinations_ai/ui/permissions";
+import type { FC } from "react";
 
 type ExpiryDaysInputProps = {
     value: number | null;

@@ -1,6 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { cn } from "@frontend/lib/cn.ts";
+import { Button, ScrollArea, Tooltip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -9,9 +10,6 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { genDocsUrl } from "../../config.ts";
-import { Button } from "../ui/button.tsx";
-import { ScrollArea } from "../ui/scroll-area.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";

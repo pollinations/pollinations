@@ -1,12 +1,9 @@
 import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
-import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import { Chip, formatPollen, TabButton, Tooltip } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { Chip } from "../ui/chip.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";

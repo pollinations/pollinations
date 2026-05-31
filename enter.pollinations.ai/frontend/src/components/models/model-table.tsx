@@ -1,11 +1,10 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Chip, Tooltip } from "@pollinations_ai/ui";
 import {
     getPriceDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
-import { Chip } from "../ui/chip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,

@@ -1,3 +1,4 @@
+import { Button } from "@pollinations_ai/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -34,7 +35,6 @@ import {
     SidebarWallet,
     TierPanel,
 } from "../components/pollen";
-import { Button } from "../components/ui/button.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;

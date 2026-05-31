@@ -1,4 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Disclosure } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { getModalityColors } from "../models/modality-ui.ts";
@@ -6,7 +7,6 @@ import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
-import { Disclosure } from "../ui/disclosure.tsx";
 import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {

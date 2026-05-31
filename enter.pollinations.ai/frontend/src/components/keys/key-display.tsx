@@ -1,7 +1,7 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Tooltip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
-import { Tooltip } from "../ui/tooltip.tsx";
 
 export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     fullKey,

@@ -1,6 +1,13 @@
 import { apiClient } from "@frontend/api.ts";
 import { cn } from "@frontend/lib/cn.ts";
 import {
+    Button,
+    InfoTip,
+    Switch,
+    type SwitchStatus,
+    Tooltip,
+} from "@pollinations_ai/ui";
+import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
@@ -12,10 +19,6 @@ import {
     useEffect,
     useState,
 } from "react";
-import { Button } from "../ui/button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Switch, type SwitchStatus } from "../ui/switch.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =

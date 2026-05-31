@@ -1,9 +1,8 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { ChevronIcon, TabButton } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { ChevronIcon } from "../ui/chevron-icon.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
 import {
     addUtcDays,
     formatPeriodLabel,

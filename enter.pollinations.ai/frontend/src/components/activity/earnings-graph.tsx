@@ -1,11 +1,8 @@
-import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import { Button, Chip, formatPollen, Tooltip } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { Button } from "../ui/button.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
 import type { UsagePeriodSelection } from "./types";

@@ -1,4 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Button, ChevronIcon, Chip, formatPollen } from "@pollinations_ai/ui";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -12,16 +13,12 @@ import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { formatPollen } from "../../lib/format-pollen.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import { getModalityColors } from "../models/modality-ui.ts";
 import { computeCategoryModalities } from "../models/model-categories.ts";
-import { Button } from "../ui/button.tsx";
-import { ChevronIcon } from "../ui/chevron-icon.tsx";
-import { Chip } from "../ui/chip.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
 import {
     AuthInfoCard,

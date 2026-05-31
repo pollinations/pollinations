@@ -1,6 +1,6 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Tooltip } from "@pollinations_ai/ui";
 import type { FC } from "react";
-import { Tooltip } from "../ui/tooltip.tsx";
 
 const priceBadgeColors = {
     gray: "text-gray-700",

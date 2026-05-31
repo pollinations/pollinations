@@ -1,7 +1,6 @@
 import { Field } from "@ark-ui/react/field";
+import { Button, Switch } from "@pollinations_ai/ui";
 import type { FC } from "react";
-import { Button } from "../ui/button.tsx";
-import { Switch } from "../ui/switch.tsx";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];

@@ -1,32 +1,7 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+@import "@pollinations_ai/ui/styles.css";
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-
-@font-face {
-    font-family: "LCT Mogi";
-    src: url("./fonts/lct-mogi-a.woff2") format("woff2"),
-         url("./fonts/lct-mogi-a.woff") format("woff");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Fraunces";
-    src: url("./fonts/fraunces-soft-bold.woff2") format("woff2"),
-         url("./fonts/fraunces-soft-bold.woff") format("woff");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Uncut Sans";
-    src: url("./fonts/uncut-sans-variable.woff2") format("woff2-variations");
-    font-weight: 300 700;
-    font-style: normal;
-    font-display: swap;
-}
 
 *,
 ::before,
@@ -34,177 +9,36 @@
     box-sizing: border-box;
 }
 
-@theme {
-    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
-    --font-subheading: "Fraunces", ui-serif, serif;
-    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
-    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
-    --text-micro: 10px;
-    --text-base: 16px;
-
-    /* ─── Layer 1: hue ramp constants ────────────────────────── */
-    /* Paid + Tier — 3 values per concept. Used everywhere paid or tier
-       identity appears: wallet, chart bars, chips, page backgrounds.
-       pale = large + repeated surfaces (wallet cards, chips,
-              chart bars) — light wash that pairs with deep text;
-       soft = small identity markers (drawer dots, tier-explanation
-              segments) — mid-tone with enough chroma that paid vs
-              tier read as distinct hues even at 8px;
-       deep = text + bold headline numbers.
-
-       Paid uses amber so it unifies with the Pollen page chrome (top-up
-       buttons, page theme), reinforcing "this is where you buy paid".
-       Tier uses the warm orange family. */
-    --color-paid-pale: oklch(0.93 0.09 95.746);
-    --color-paid-soft: oklch(0.85 0.16 95.746);
-    --color-paid-deep: #78350f;
-    --color-tier-pale: oklch(0.93 0.06 55);
-    --color-tier-soft: oklch(0.83 0.13 55);
-    --color-tier-deep: #7C3F1E;
-}
-
-/* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
-[data-theme="amber"] {
-    --theme-text-base:    var(--color-amber-900);
-    --theme-text-strong:  var(--color-amber-950);
-    --theme-text-soft:    var(--color-amber-700);
-
-    --theme-border-idle:    var(--color-amber-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-amber-200);
-    --theme-bg-hover:       var(--color-amber-300);
-
-    --theme-bg-pale:    var(--color-amber-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-amber-400) l c h / 0.7);
-}
-
-[data-theme="blue"] {
-    --theme-text-base:    var(--color-blue-900);
-    --theme-text-strong:  var(--color-blue-950);
-    --theme-text-soft:    var(--color-blue-700);
-
-    --theme-border-idle:    var(--color-blue-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-blue-200);
-    --theme-bg-hover:       var(--color-blue-300);
-
-    --theme-bg-pale:    var(--color-blue-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-blue-400) l c h / 0.7);
-}
-
-[data-theme="pink"] {
-    --theme-text-base:    var(--color-pink-900);
-    --theme-text-strong:  var(--color-pink-950);
-    --theme-text-soft:    var(--color-pink-700);
-
-    --theme-border-idle:    var(--color-pink-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-pink-200);
-    --theme-bg-hover:       var(--color-pink-300);
-
-    --theme-bg-pale:    var(--color-pink-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-pink-400) l c h / 0.7);
-}
-
-[data-theme="teal"] {
-    --theme-text-base:    var(--color-teal-900);
-    --theme-text-strong:  var(--color-teal-950);
-    --theme-text-soft:    var(--color-teal-700);
-
-    --theme-border-idle:    var(--color-teal-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-teal-200);
-    --theme-bg-hover:       var(--color-teal-300);
-
-    --theme-bg-pale:    var(--color-teal-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-teal-400) l c h / 0.7);
-}
-
-[data-theme="violet"] {
-    --theme-text-base:    var(--color-violet-900);
-    --theme-text-strong:  var(--color-violet-950);
-    --theme-text-soft:    var(--color-violet-700);
-
-    --theme-border-idle:    var(--color-violet-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-violet-200);
-    --theme-bg-hover:       var(--color-violet-300);
-
-    --theme-bg-pale:    var(--color-violet-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-violet-400) l c h / 0.7);
-}
-
-/* Green is also the chrome default — :root fallback so unwrapped routes
-   (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
-:root,
-[data-theme="green"] {
-    --theme-text-base:    var(--color-green-900);
-    --theme-text-strong:  var(--color-green-950);
-    --theme-text-soft:    var(--color-green-700);
-
-    --theme-border-idle:    var(--color-green-300);
-
-    --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
-    --theme-bg-active:      var(--color-green-200);
-    --theme-bg-hover:       var(--color-green-300);
-
-    --theme-bg-pale:    var(--color-green-100);
-
-    --theme-scrollbar-thumb: oklch(from var(--color-green-400) l c h / 0.7);
-}
-
-/* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
-:root {
-    /* Danger — deeper than red-600 with reduced chroma so it reads as
-       alert, not neon. Light variant has warmth so error surfaces feel
-       intentional, not washed-out. */
-    --intent-danger-bg-light:    oklch(0.935 0.045 25);
-    --intent-danger-text:        oklch(0.48 0.18 25);
-    --intent-danger-border:      oklch(0.78 0.115 25);
-
-    /* News — Chip only. Soft green label for newly-added models. */
-
-    /* Alpha — Chip only. Saturated "warning sign" yellow + deep amber text. */
-
-    /* Paid + Tier intents reuse the canonical money colors above —
-       Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
-       No duplicate intent vars; one source of truth lives in Layer 1. */
-}
-
-/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
+/* Compatibility layer for Enter's existing unprefixed Tailwind utilities.
+   The actual values live in @pollinations_ai/ui/styles.css. */
 @theme inline {
-    --color-theme-text-base:         var(--theme-text-base);
-    --color-theme-text-strong:       var(--theme-text-strong);
-    --color-theme-text-soft:         var(--theme-text-soft);
+    --font-heading:                 var(--polli-font-heading);
+    --font-subheading:              var(--polli-font-subheading);
+    --font-body:                    var(--polli-font-body);
+    --font-pixel:                   var(--polli-font-pixel);
+    --text-micro:                   var(--polli-text-micro);
+    --text-base:                    var(--polli-text-base);
 
-    --color-theme-border:            var(--theme-border-idle);
+    --color-paid-pale:              var(--polli-color-paid-pale);
+    --color-paid-soft:              var(--polli-color-paid-soft);
+    --color-paid-deep:              var(--polli-color-paid-deep);
+    --color-tier-pale:              var(--polli-color-tier-pale);
+    --color-tier-soft:              var(--polli-color-tier-soft);
+    --color-tier-deep:              var(--polli-color-tier-deep);
 
-    --color-theme-bg-subtle:         var(--theme-bg-subtle);
-    --color-theme-bg-active:         var(--theme-bg-active);
-    --color-theme-bg-hover:          var(--theme-bg-hover);
+    --color-theme-text-base:        var(--polli-color-text-base);
+    --color-theme-text-strong:      var(--polli-color-text-strong);
+    --color-theme-text-soft:        var(--polli-color-text-soft);
+    --color-theme-border:           var(--polli-color-border);
+    --color-theme-bg-subtle:        var(--polli-color-bg-subtle);
+    --color-theme-bg-active:        var(--polli-color-bg-active);
+    --color-theme-bg-hover:         var(--polli-color-bg-hover);
+    --color-theme-bg-pale:          var(--polli-color-bg-pale);
 
-
-    --color-theme-bg-pale:           var(--theme-bg-pale);
-
-
-
-    --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
-    --color-intent-danger-text:        var(--intent-danger-text);
-    --color-intent-danger-border:      var(--intent-danger-border);
-
-
-
-    --color-surface-white:             oklch(1 0 0 / 0.8);
+    --color-intent-danger-bg-light: var(--polli-color-danger-bg-light);
+    --color-intent-danger-text:     var(--polli-color-danger-text);
+    --color-intent-danger-border:   var(--polli-color-danger-border);
+    --color-surface-white:          var(--polli-color-surface-white);
 }
 
 @layer base {
@@ -272,40 +106,6 @@
 
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
-    }
-
-    /* Themed auto-hide scrollbar.
-       Thumb color comes from --theme-scrollbar-thumb on the nearest
-       [data-theme="…"] ancestor — same cascade as bg-theme-*. The
-       <ScrollArea> primitive flips data-scrollbar-active on interaction. */
-    .scrollbar-subtle {
-        scrollbar-width: thin;
-        scrollbar-color: transparent transparent;
-    }
-
-    .scrollbar-subtle::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-    }
-
-    .scrollbar-subtle::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .scrollbar-subtle::-webkit-scrollbar-thumb {
-        background-color: transparent;
-        background-clip: content-box;
-        border: 3px solid transparent;
-        border-radius: 9999px;
-        transition: background-color 160ms ease;
-    }
-
-    .scrollbar-subtle[data-scrollbar-active="true"] {
-        scrollbar-color: var(--theme-scrollbar-thumb) transparent;
-    }
-
-    .scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
-        background-color: var(--theme-scrollbar-thumb);
     }
 
     .input-number-clean::-webkit-inner-spin-button,

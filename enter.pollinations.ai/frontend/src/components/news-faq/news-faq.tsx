@@ -1,6 +1,6 @@
+import { LinkButton } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { LinkButton } from "../ui/link-button.tsx";
 import { FAQ, FAQ_GITHUB_URL } from "./faq.tsx";
 import { HIGHLIGHTS_GITHUB_URL, NewsBanner } from "./news-banner.tsx";
 

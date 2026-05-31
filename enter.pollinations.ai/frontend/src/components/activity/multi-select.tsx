@@ -1,8 +1,8 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { ScrollArea } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { ScrollArea } from "../ui/scroll-area.tsx";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];

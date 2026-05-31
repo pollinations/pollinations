@@ -1,15 +1,7 @@
-// ─── Phase 0: slim cascade-aligned exports ───────────────────
-// The 6 chrome themes the new CSS-var cascade exposes via [data-theme="…"].
-// Keep in sync with the [data-theme="*"] blocks in style.css.
-export const themes = [
-    "amber",
-    "blue",
-    "pink",
-    "teal",
-    "violet",
-    "green",
-] as const;
-export type ThemeName = (typeof themes)[number];
+import { type ThemeName, themes } from "@pollinations_ai/ui";
+
+export { themes };
+export type { ThemeName };
 
 // Intent maps live per-primitive now: Button/Surface/IconButton support
 // `danger`; Chip supports the four label intents (news/alpha/paid/tier).
@@ -52,11 +44,9 @@ export const dashboardThemeByPage = Object.fromEntries(
     DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
 ) as Record<DashboardPage, ThemeName>;
 
-// Page chrome colors are now driven entirely by the CSS-var cascade in
-// `style.css`. Components scope their subtree with `data-theme="…"` and
-// read `text-theme-*` / `bg-theme-*` / `border-theme-*` utilities. Phase 5
-// removed the legacy `themeTokens` and `dashboardThemeClasses` literal-class
-// bundles (see PR description for migration notes).
+// Page chrome colors are driven by @pollinations_ai/ui CSS variables.
+// Components scope their subtree with `data-theme="..."` and read the
+// Enter Tailwind bridge utilities in `style.css`.
 
 export function isDashboardPage(page: string): page is DashboardPage {
     return DASHBOARD_PAGES.includes(page as DashboardPage);

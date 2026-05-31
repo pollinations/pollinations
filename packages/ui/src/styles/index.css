@@ -12,6 +12,36 @@
 @import "./fonts.css";
 @import "./tokens.css";
 
+.polli-scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 160ms ease;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"] {
+    scrollbar-color: var(--polli-color-scrollbar-thumb) transparent;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+    background-color: var(--polli-color-scrollbar-thumb);
+}
+
 /*
  * No `@source inline(...)` allowlist needed: Tailwind v4 content-scans
  * the package source by default, so every `polli:*` class literal in

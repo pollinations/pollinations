@@ -1,12 +1,11 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Surface, Tooltip } from "@pollinations_ai/ui";
 import {
     TIER_EMOJIS,
     TIER_POLLEN,
     type TierStatus,
 } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
-import { Surface } from "../ui/surface.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 
 const SeedTooltipContent = () => (
     <div className="w-72">

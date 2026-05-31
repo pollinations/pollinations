@@ -1,5 +1,5 @@
+import { ScrollArea } from "@pollinations_ai/ui";
 import type { ReactNode } from "react";
-import { ScrollArea } from "../ui/scroll-area.tsx";
 
 type AuthModalProps = {
     children: ReactNode;

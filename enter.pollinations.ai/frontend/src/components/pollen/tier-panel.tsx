@@ -1,6 +1,6 @@
+import { InfoTip } from "@pollinations_ai/ui";
 import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
-import { InfoTip } from "../ui/info-tip.tsx";
 import { TierExplanation } from "./tier-explanation";
 
 const APPEAL_URL =

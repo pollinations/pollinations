@@ -1,12 +1,9 @@
+import { Chip, IconButton, Surface, Tooltip } from "@pollinations_ai/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { IconButton } from "../ui/icon-button.tsx";
-import { Surface } from "../ui/surface.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";

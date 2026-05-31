@@ -74,8 +74,8 @@ export function App() {
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
 - **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
-  `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`,
-  `Tooltip`, `ChevronIcon`.
+  `InfoTip`, `Input`, `LinkButton`, `ScrollArea`, `Surface`, `Switch`,
+  `TabButton`, `Tooltip`, `ChevronIcon`.
 - **Helpers** — `cn`, `formatPollen`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
@@ -96,10 +96,8 @@ These CSS variables are part of the public contract. You may reference
 them in your own CSS / inline styles. Renames between minor versions
 count as breaking.
 
-All public tokens sit under the `--polli-color-*` namespace so they can't
-collide with Tailwind v4's prefixed namespaces (`--polli-text-*`,
-`--polli-font-*`, `--polli-spacing-*`, etc. — all reserved by the
-internal Tailwind theme).
+Public tokens sit under the `--polli-*` namespace so they do not collide
+with host app tokens.
 
 **Theme-aware (resolve against the active `data-theme`):**
 
@@ -114,6 +112,25 @@ internal Tailwind theme).
 | `--polli-color-bg-active`     | Selected / active state background.           |
 | `--polli-color-bg-hover`      | Hover state background.                       |
 | `--polli-color-bg-pale`       | Light wash (cards, chips, large blocks).      |
+| `--polli-color-scrollbar-thumb` | Active themed scrollbar thumb color.        |
+
+**Static app tokens:**
+
+| Token                         | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `--polli-font-heading`        | Heading display face.                         |
+| `--polli-font-subheading`     | Secondary display face.                       |
+| `--polli-font-body`           | Body text face.                               |
+| `--polli-font-pixel`          | Pixel/monospace fallback stack.               |
+| `--polli-text-micro`          | Micro label size.                             |
+| `--polli-text-base`           | Base text size.                               |
+| `--polli-color-paid-pale`     | Paid-balance wash.                            |
+| `--polli-color-paid-soft`     | Paid-balance marker.                          |
+| `--polli-color-paid-deep`     | Paid-balance text.                            |
+| `--polli-color-tier-pale`     | Tier-balance wash.                            |
+| `--polli-color-tier-soft`     | Tier-balance marker.                          |
+| `--polli-color-tier-deep`     | Tier-balance text.                            |
+| `--polli-color-surface-white` | Translucent white surface.                    |
 
 **Intent (theme-independent):**
 
@@ -133,6 +150,5 @@ internal Tailwind theme).
 }
 ```
 
-Anything not listed above (including the `polli:*` Tailwind utility
-class names and the `--color-paid-*` / `--color-tier-*` hue ramps) is
-library-internal and may change without notice.
+Anything not listed above, including the `polli:*` Tailwind utility class
+names, is library-internal and may change without notice.

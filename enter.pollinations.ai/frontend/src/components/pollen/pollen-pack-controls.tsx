@@ -1,4 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Chip } from "@pollinations_ai/ui";
 import {
     formatPollenPackValue,
     getPackBonusPercent,
@@ -6,7 +7,6 @@ import {
     type PollenPack,
 } from "@shared/pollen-packs.ts";
 import type { FC } from "react";
-import { Chip } from "../ui/chip.tsx";
 
 const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;

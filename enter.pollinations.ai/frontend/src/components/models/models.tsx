@@ -1,7 +1,6 @@
+import { LinkButton, TabButton } from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { LinkButton } from "../ui/link-button.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,

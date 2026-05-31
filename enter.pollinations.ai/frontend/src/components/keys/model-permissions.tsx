@@ -1,8 +1,7 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Chip, InfoTip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { MODEL_CATEGORIES } from "../models/model-categories.ts";
-import { Chip } from "../ui/chip.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
 
 type ModelPermissionsProps = {
     /** Selected model IDs. null = all models allowed, [] = restricted but none selected */

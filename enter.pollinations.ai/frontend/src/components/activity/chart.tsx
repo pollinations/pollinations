@@ -1,5 +1,5 @@
 import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
-import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import { formatPollen } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";

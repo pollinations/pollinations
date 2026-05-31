@@ -1,8 +1,6 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Chip, InfoTip, Tooltip } from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
-import { Chip } from "../ui/chip.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import {
     calculatePerPollen,
     canAffordModel,

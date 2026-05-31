@@ -1,4 +1,5 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { ScrollArea } from "@pollinations_ai/ui";
 import {
     type FC,
     type PropsWithChildren,
@@ -11,7 +12,6 @@ import {
 } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
-import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
@@ -252,7 +252,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 className="-mr-2 min-h-0 flex-1 pt-3"
                 style={
                     {
-                        "--theme-scrollbar-thumb":
+                        "--polli-color-scrollbar-thumb":
                             "oklch(from var(--color-gray-400) l c h / 0.65)",
                     } as React.CSSProperties
                 }

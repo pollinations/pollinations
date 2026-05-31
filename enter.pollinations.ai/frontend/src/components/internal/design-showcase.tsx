@@ -1,4 +1,18 @@
 import { cn } from "@frontend/lib/cn.ts";
+import {
+    Button,
+    Chip,
+    Disclosure,
+    IconButton,
+    InfoTip,
+    Input,
+    ScrollArea,
+    Surface,
+    Switch,
+    type SwitchStatus,
+    TabButton,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Chart } from "../activity/chart.tsx";
 import { MultiSelect } from "../activity/multi-select.tsx";
@@ -6,17 +20,6 @@ import type { DataPoint } from "../activity/types.ts";
 import { ModalityButton } from "../keys/modality-button.tsx";
 import { type ThemeName, themes } from "../layout/dashboard-theme.ts";
 import { MODALITY_COLORS, type Modality } from "../models/modality-ui.ts";
-import { Button } from "../ui/button.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { Disclosure } from "../ui/disclosure.tsx";
-import { IconButton } from "../ui/icon-button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Input } from "../ui/input.tsx";
-import { ScrollArea } from "../ui/scroll-area.tsx";
-import { Surface } from "../ui/surface.tsx";
-import { Switch, type SwitchStatus } from "../ui/switch.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 
 /**
  * /internal/design — dev-only design system showcase.

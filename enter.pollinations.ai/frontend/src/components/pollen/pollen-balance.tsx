@@ -1,9 +1,6 @@
-import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import { Button, formatPollen, InfoTip, Tooltip } from "@pollinations_ai/ui";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
-import { Button } from "../ui/button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";

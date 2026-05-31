@@ -1,6 +1,6 @@
 import { cn } from "@frontend/lib/cn.ts";
+import { Surface } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
-import { Surface } from "../ui/surface.tsx";
 import type { ThemeName } from "./dashboard-theme.ts";
 
 type DashboardSectionProps = {

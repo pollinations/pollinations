@@ -1,7 +1,8 @@
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
 import {
     Button,
+    cn,
+    ExternalLinkIcon,
     InfoTip,
     Switch,
     type SwitchStatus,
@@ -387,7 +388,9 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
         <span>{loading ? "Opening..." : "Manage billing"}</span>
-        {!loading && <ExternalLinkIcon />}
+        {!loading && (
+            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-amber-700/70" />
+        )}
     </Button>
 );
 
@@ -521,23 +524,6 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     >
         {children}
     </div>
-);
-
-const ExternalLinkIcon: FC = () => (
-    <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0 text-amber-700/70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );
 
 function formatPaymentMethod(billingState: BillingState | null): string {

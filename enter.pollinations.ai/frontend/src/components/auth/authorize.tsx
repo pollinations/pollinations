@@ -1,5 +1,11 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Button, ChevronIcon, Chip, formatPollen } from "@pollinations_ai/ui";
+import {
+    Button,
+    ChevronIcon,
+    Chip,
+    cn,
+    formatPollen,
+    MailIcon,
+} from "@pollinations_ai/ui";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -504,25 +510,7 @@ export function Authorize() {
                                             className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
                                             aria-hidden="true"
                                         >
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth={2.2}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                className="h-4 w-4"
-                                            >
-                                                <title>Email</title>
-                                                <rect
-                                                    width="18"
-                                                    height="14"
-                                                    x="3"
-                                                    y="5"
-                                                    rx="2"
-                                                />
-                                                <path d="m3 7 9 6 9-6" />
-                                            </svg>
+                                            <MailIcon className="h-4 w-4" />
                                         </span>
                                         <span>See your name and email.</span>
                                     </li>

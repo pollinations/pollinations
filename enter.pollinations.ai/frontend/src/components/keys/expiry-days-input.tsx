@@ -1,6 +1,5 @@
 import { Field } from "@ark-ui/react";
-import { cn } from "@frontend/lib/cn.ts";
-import { InfoTip, Input } from "@pollinations_ai/ui";
+import { cn, InfoTip, Input } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import {
     getPermissionUiTheme,

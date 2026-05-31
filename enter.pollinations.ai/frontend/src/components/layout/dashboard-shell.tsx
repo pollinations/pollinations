@@ -1,5 +1,19 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { ScrollArea } from "@pollinations_ai/ui";
+import {
+    BookIcon,
+    CheckIcon,
+    ClipboardIcon,
+    cn,
+    DiscordIcon,
+    ExternalLinkIcon,
+    GenApiIcon,
+    GitHubIcon,
+    McpIcon,
+    MenuIcon,
+    ScrollArea,
+    TerminalIcon,
+    WalletIcon,
+    XIcon,
+} from "@pollinations_ai/ui";
 import {
     type FC,
     type PropsWithChildren,
@@ -155,20 +169,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                                 onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M18 6 6 18M6 6l12 12"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
+                                <XIcon className="h-5 w-5" />
                             </button>
                         </div>
                         <BrandSocialChips />
@@ -404,20 +405,7 @@ const MobileHeader: FC<{
                 onClick={onOpen}
                 aria-label="Open navigation"
             >
-                <svg
-                    viewBox="0 0 24 24"
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M4 7h16M4 12h16M4 17h16"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
+                <MenuIcon className="h-5 w-5" />
             </button>
             <Brand imageClassName="h-6 min-[390px]:h-7 sm:h-8" />
             <span className="h-9 w-9" aria-hidden="true" />
@@ -445,14 +433,14 @@ const BrandSocialChips: FC = () => (
         <BrandChip
             href="https://github.com/pollinations/pollinations"
             label="Pollinations on GitHub"
-            icon={<GitHubIcon />}
+            icon={<GitHubIcon className="h-full w-full" />}
             text="github"
             count="4.4k"
         />
         <BrandChip
             href="https://discord.gg/pollinations-ai-885844321461485618"
             label="Discord community"
-            icon={<DiscordIcon />}
+            icon={<DiscordIcon className="h-full w-full" />}
             text="discord"
             count="18k"
         />
@@ -488,13 +476,13 @@ const AccountMenuLinks: FC = () => (
         <AccountIconLink
             href="https://discord.com/channels/885844321461485618/1432378056126894343"
             label="#pollen-beta"
-            icon={<DiscordIcon />}
+            icon={<DiscordIcon className="h-full w-full" />}
             ariaLabel="#pollen-beta Discord channel"
         />
         <AccountIconLink
             href="https://github.com/pollinations/pollinations/issues"
             label="Report an issue"
-            icon={<GitHubIcon />}
+            icon={<GitHubIcon className="h-full w-full" />}
             ariaLabel="Report an issue on GitHub"
         />
     </div>
@@ -520,137 +508,6 @@ const AccountIconLink: FC<{
     </a>
 );
 
-const DiscordIcon: FC = () => (
-    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
-        <path
-            fill="currentColor"
-            d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z"
-        />
-    </svg>
-);
-
-const GitHubIcon: FC = () => (
-    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
-        <path
-            fill="currentColor"
-            d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.16c-3.21.7-3.89-1.38-3.89-1.38-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.76 2.71 1.25 3.37.96.11-.75.4-1.25.74-1.54-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.06 0 0 .97-.31 3.16 1.18a10.88 10.88 0 0 1 5.76 0c2.19-1.49 3.15-1.18 3.15-1.18.63 1.6.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.19c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"
-        />
-    </svg>
-);
-
-const BookIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
-        <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
-    </svg>
-);
-
-const WalletIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
-        <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
-        <circle cx="17" cy="14" r="1.25" fill="currentColor" />
-    </svg>
-);
-
-const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="4 8 8 12 4 16" />
-        <line x1="12" y1="20" x2="20" y2="20" />
-    </svg>
-);
-
-const McpIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="2" y="7" width="8" height="10" rx="1.5" />
-        <rect x="14" y="7" width="8" height="10" rx="1.5" />
-        <path d="M10 12h4" />
-    </svg>
-);
-
-const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-);
-
-const CheckIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="20 6 9 17 4 12" />
-    </svg>
-);
-
-const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="m8 3 4 1.5L16 3v18l-4-1.5L8 21z" />
-        <path d="M8 3v18M16 3v18" />
-    </svg>
-);
-
 type DocLinkRowProps = {
     label: string;
     href: string;
@@ -668,23 +525,6 @@ const DocLinkRow: FC<DocLinkRowProps> = ({ label, href, icon }) => (
             {icon}
             {label}
         </span>
-        <ExternalLinkArrow className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
     </a>
-);
-
-const ExternalLinkArrow: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );

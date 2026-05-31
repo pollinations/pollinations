@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Tooltip } from "@pollinations_ai/ui";
+import { cn, Tooltip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 
 const priceBadgeColors = {

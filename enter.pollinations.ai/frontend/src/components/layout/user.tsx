@@ -1,5 +1,5 @@
 import { Menu } from "@ark-ui/react/menu";
-import { cn } from "@frontend/lib/cn.ts";
+import { ChevronIcon, cn } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 
@@ -38,23 +38,12 @@ export const User: FC<UserProps> = ({
                     <span className="min-w-0 flex-1 truncate text-left font-medium text-amber-900">
                         {githubUsername}
                     </span>
-                    <svg
+                    <ChevronIcon
+                        expanded={isOpen}
                         className={cn(
                             "ml-auto h-4 w-4 shrink-0 text-amber-900 transition-transform duration-200 ease-out",
-                            isOpen ? "rotate-180" : "rotate-0",
                         )}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M19 9l-7 7-7-7"
-                        />
-                    </svg>
+                    />
                 </button>
             </Menu.Trigger>
             <Menu.Positioner>

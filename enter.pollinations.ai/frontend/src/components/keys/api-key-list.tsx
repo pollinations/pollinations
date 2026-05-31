@@ -1,8 +1,10 @@
 import {
+    AppIcon,
     Chip,
     IconButton,
     Section,
     Surface,
+    TerminalIcon,
     Tooltip,
 } from "@pollinations_ai/ui";
 import { formatDistanceToNowStrict } from "date-fns";
@@ -323,35 +325,3 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </>
     );
 };
-
-const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="4 8 8 12 4 16" />
-        <line x1="12" y1="20" x2="20" y2="20" />
-    </svg>
-);
-
-const AppIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="2" y="4" width="20" height="14" rx="2" />
-        <path d="M2 20h20" />
-    </svg>
-);

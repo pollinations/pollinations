@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Surface, Tooltip } from "@pollinations_ai/ui";
+import { cn, Surface, Tooltip } from "@pollinations_ai/ui";
 import {
     TIER_EMOJIS,
     TIER_POLLEN,

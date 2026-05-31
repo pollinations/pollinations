@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Chip, Tooltip } from "@pollinations_ai/ui";
+import { ChevronIcon, Chip, cn, Tooltip } from "@pollinations_ai/ui";
 import {
     getPriceDefinition,
     type ModelName,
@@ -294,23 +293,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                 />
                 <div className="relative z-10 pointer-events-none grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 p-4">
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <svg
-                            className={cn(
-                                "mt-1 w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
-                                expanded && "rotate-180",
-                            )}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
+                        <ChevronIcon
+                            expanded={expanded}
+                            className="mt-1 h-3.5 w-3.5 shrink-0 text-gray-300"
+                        />
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2.5">
                                 {brandLogoPath && (

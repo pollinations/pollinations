@@ -1,7 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { cn } from "@frontend/lib/cn.ts";
-import { Button, ScrollArea, Tooltip } from "@pollinations_ai/ui";
+import { Button, cn, ScrollArea, Tooltip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import {

@@ -1,8 +1,14 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
-import { Button, Chip, Input, ScrollArea, Tooltip } from "@pollinations_ai/ui";
+import {
+    Button,
+    Chip,
+    cn,
+    Input,
+    ScrollArea,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";

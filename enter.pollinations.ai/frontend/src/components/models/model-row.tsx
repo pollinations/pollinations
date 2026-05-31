@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Chip, InfoTip, Tooltip } from "@pollinations_ai/ui";
+import { Chip, cn, InfoTip, Tooltip } from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
 import {
     calculatePerPollen,

@@ -1,4 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { cn } from "@pollinations_ai/ui";
 import type { FC, ReactNode } from "react";
 import { getModalityColors } from "../models/modality-ui.ts";
 

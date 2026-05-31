@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Collapsible } from "@pollinations_ai/ui";
+import { Collapsible, cn } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { getModalityColors } from "../models/modality-ui.ts";

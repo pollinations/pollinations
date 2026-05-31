@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Chip, RangeSlider } from "@pollinations_ai/ui";
+import { Chip, cn, RangeSlider } from "@pollinations_ai/ui";
 import {
     formatPollenPackValue,
     getPackBonusPercent,

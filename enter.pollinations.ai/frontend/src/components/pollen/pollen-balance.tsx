@@ -1,4 +1,12 @@
-import { Button, formatPollen, InfoTip, Tooltip } from "@pollinations_ai/ui";
+import {
+    Button,
+    ClockIcon,
+    formatPollen,
+    InfoTip,
+    MailIcon,
+    Tooltip,
+    WalletIcon,
+} from "@pollinations_ai/ui";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
@@ -19,55 +27,6 @@ const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
-
-const ClockIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-    </svg>
-);
-
-const MailIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m3 7 9 7 9-7" />
-    </svg>
-);
-
-const WalletIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
-        <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
-        <circle cx="17" cy="14" r="1.25" fill="currentColor" />
-    </svg>
-);
 
 const TooltipList: FC<{
     title: string;

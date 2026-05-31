@@ -1,5 +1,4 @@
-import { cn } from "@frontend/lib/cn.ts";
-import { Chip, InfoTip } from "@pollinations_ai/ui";
+import { Chip, cn, InfoTip } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { MODEL_CATEGORIES } from "../models/model-categories.ts";
 

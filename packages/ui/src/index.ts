@@ -1,4 +1,4 @@
-export { cn } from "./lib/cn.ts";
+export { cn } from "./lib/cn-app.ts";
 export { formatPollen } from "./lib/format-pollen.ts";
 export {
     addUtcDays,
@@ -28,6 +28,7 @@ export {
 export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
+export * from "./primitives/icons/index.tsx";
 export {
     MultiSelect,
     type MultiSelectOption,

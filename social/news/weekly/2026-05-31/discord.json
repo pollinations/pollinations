@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "generated_at": "2026-05-31T07:15:39.740007+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, here's the damage for the week.\n\n## Weekly Update - 2026-05-31\n\n🎙️ **Real-time Voice & Model Avalanche**\n- The `gpt-realtime-2` voice/audio API is live. You can talk to it now.\n- We dropped a bunch of new models into chat: Helix AI, Claude Opus 4.8, StepFun Step 3.5 Flash, step-flash, and the Perplexity Sonar lineup.\n- 5 existing models just opened up to the free tier.\n- Switched Midijourney to Azure and Deepseek to Fireworks. Embeddings are also cheaper now.\n- Fixed a bug stripping `temperature`/`top_p`/`top_k` for `claude-opus-4-7`.\n\n🛠️ **Docs & Plumbing**\n- Rewrote the API docs generator with a custom markdown builder. Scalar markdown sources and dashboard rail copy buttons are in. It's much easier for AI (and you) to parse.\n- Smarter caching: R2 storage TTL now refreshes automatically on access.\n- Developer earnings exports now expose `baseline_price` and `cost_usd`.\n- Phase 1 of country-routed checkout backend is merged.\n\n🌱 **The Greenhouse is Crowded**\nSix new apps built by the community just hit the showcase:\n- **Image:** RagmyAI\n- **Writing:** SceneWeave\n- **Build/Learn:** PetalGen, Ai Web Translator\n- **Business:** The Mork Stack, GrowthKit Studio\n\nGo build something weird."
+}

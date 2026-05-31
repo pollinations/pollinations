@@ -9,11 +9,11 @@
       }
     },
     {
-      "id": "cleanup-800days",
+      "id": "cleanup-backstop-731days",
       "enabled": true,
       "conditions": { "prefix": "" },
       "deleteObjectsTransition": {
-        "condition": { "type": "Age", "maxAge": 69120000 }
+        "condition": { "type": "Age", "maxAge": 63158400 }
       }
     }
   ]

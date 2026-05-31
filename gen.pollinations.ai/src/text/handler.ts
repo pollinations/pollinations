@@ -69,27 +69,41 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
+export function prepareRequestParameters(
+    requestParams: RequestData,
+): RequestData {
     let isAudioModel = false;
+    let supportsReasoning = false;
     try {
         const serviceDef = getModelDefinition(requestParams.model as ModelName);
         isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
+        supportsReasoning = serviceDef?.reasoning === true;
     } catch {
         // Model not in registry.
     }
 
-    if (!isAudioModel) return requestParams;
+    let params = requestParams;
 
-    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
+    // Drop reasoning_effort for models that don't support reasoning. Some
+    // upstreams (e.g. the non-reasoning Grok deployment) return an opaque 500
+    // instead of ignoring the unsupported param.
+    if (!supportsReasoning && params.reasoning_effort !== undefined) {
+        const { reasoning_effort: _dropped, ...rest } = params;
+        params = rest;
+    }
+
+    if (!isAudioModel) return params;
+
+    const voice = params.voice || params.audio?.voice || "amuch";
+    const audioFormat = params.stream ? "pcm16" : "mp3";
 
     return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
+        ...params,
+        modalities: params.modalities || ["text", "audio"],
+        audio: params.audio
             ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
+                  ...params.audio,
+                  format: params.audio.format || audioFormat,
               }
             : { voice, format: audioFormat },
     };

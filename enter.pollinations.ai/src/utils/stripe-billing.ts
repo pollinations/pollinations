@@ -515,7 +515,7 @@ export async function processAutoTopUpForUser(
             {
                 customer: customerId,
                 invoice: invoice.id,
-                amount: pack.amountUsd * 100,
+                amount: pack.priceCents,
                 currency: "usd",
                 description: pack.checkoutName,
                 tax_behavior: "inclusive",
@@ -589,7 +589,9 @@ export async function creditAutoTopUpInvoice(
             invoiceStatus: invoice.status,
             amountPaid: invoice.amount_paid,
             currency: invoice.currency,
-            expectedAmountCents: attempt.amountUsd * 100,
+            expectedAmountCents: expectedAutoTopUpChargeCents(
+                attempt.amountUsd,
+            ),
             expectedCurrency: "usd",
         });
         await markAttemptFailedByInvoice(
@@ -1075,6 +1077,13 @@ async function markAttemptFailedByInvoice(
     );
 }
 
+// The charged amount is the pack's discounted price (priceCents), not the
+// nominal amountUsd. Derive it from the stored nominal amount so verification
+// matches what was actually billed.
+function expectedAutoTopUpChargeCents(amountUsd: number): number {
+    return getPollenPackByAmount(amountUsd)?.priceCents ?? amountUsd * 100;
+}
+
 function verifyAutoTopUpInvoicePayment(
     invoice: Stripe.Invoice,
     attempt: AutoTopUpAttemptRow,
@@ -1083,7 +1092,9 @@ function verifyAutoTopUpInvoicePayment(
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    if (invoice.amount_paid !== attempt.amountUsd * 100) {
+    if (
+        invoice.amount_paid !== expectedAutoTopUpChargeCents(attempt.amountUsd)
+    ) {
         return { ok: false, reason: "amount mismatch" };
     }
 

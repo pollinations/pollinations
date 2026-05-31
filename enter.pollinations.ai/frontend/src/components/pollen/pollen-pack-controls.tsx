@@ -2,7 +2,7 @@ import { cn } from "@frontend/lib/cn.ts";
 import {
     formatPollenPackPriceUsd,
     formatPollenPackValue,
-    getPackBonusPercent,
+    getPackDiscountPercent,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -13,9 +13,10 @@ const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
 
 const formatPackAriaLabel = (pack: PollenPack): string => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-    return `${formatPollenPackValue(pack.pollenGrant)} pollen, ${formatPollenPackPriceUsd(pack.amountUsd)}${bonusLabel}`;
+    const discountPercent = getPackDiscountPercent(pack);
+    const discountLabel =
+        discountPercent > 0 ? `, ${discountPercent}% off` : "";
+    return `${formatPollenPackValue(pack.pollenGrant)} pollen, ${formatPollenPackPriceUsd(pack.priceUsd)}${discountLabel}`;
 };
 
 type PollenPackSliderProps = {
@@ -73,8 +74,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             pack.amountUsd === selectedPack?.amountUsd;
                         const isFirst = index === 0;
                         const isLast = lastIndex > 0 && index === lastIndex;
-                        const bonusPercent = getPackBonusPercent(pack);
-                        const hasBonus = bonusPercent > 0;
+                        const discountPercent = getPackDiscountPercent(pack);
+                        const hasDiscount = discountPercent > 0;
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -147,13 +148,13 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             >
                                                 <span className="text-sm font-semibold leading-none text-paid-deep">
                                                     {formatPollenPackPriceUsd(
-                                                        pack.amountUsd,
+                                                        pack.priceUsd,
                                                     )}
                                                 </span>
                                             </Chip>
-                                            {hasBonus && (
+                                            {hasDiscount && (
                                                 <span className="text-[11px] font-semibold leading-none text-amber-700">
-                                                    +{bonusPercent}% bonus
+                                                    {discountPercent}% off
                                                 </span>
                                             )}
                                         </span>

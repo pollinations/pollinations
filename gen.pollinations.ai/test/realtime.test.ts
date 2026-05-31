@@ -3,7 +3,10 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -115,6 +118,15 @@ async function getUserBalances(userId: string) {
     return user;
 }
 
+async function getApiKeyBudget(apiKeyId: string) {
+    const db = drizzle(env.DB);
+    const [apiKey] = await db
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return apiKey?.pollenBalance ?? null;
+}
+
 async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const user = await getUserBalances(userId);
@@ -159,7 +171,15 @@ async function expectClientEventRejected(
     upstream.server.accept();
 
     let upstreamReceived = false;
-    upstream.server.addEventListener("message", () => {
+    upstream.server.addEventListener("message", (event) => {
+        const data = JSON.parse(String(event.data)) as Record<string, unknown>;
+        if (
+            data.type === "session.update" &&
+            JSON.stringify(data.session) ===
+                JSON.stringify({ max_output_tokens: 4096 })
+        ) {
+            return;
+        }
         upstreamReceived = true;
     });
 
@@ -208,13 +228,28 @@ test("proxies an OpenAI-compatible realtime WebSocket with a paid key", async ({
     client.accept();
     upstream.server.accept();
 
+    await expect(nextMessage(upstream.server)).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: { max_output_tokens: 4096 },
+        }),
+    );
+
     const upstreamMessage = nextMessage(upstream.server);
     const clientEvent = JSON.stringify({
         type: "session.update",
         session: { instructions: "test" },
     });
     client.send(clientEvent);
-    await expect(upstreamMessage).resolves.toBe(clientEvent);
+    await expect(upstreamMessage).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                instructions: "test",
+                max_output_tokens: 4096,
+            },
+        }),
+    );
 
     const downstreamMessage = nextMessage(client);
     const serverEvent = JSON.stringify({
@@ -495,6 +530,66 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("caps low-budget realtime sessions before they can overdraw balance and key budget", async () => {
+    const { key, id, userId } = await createTestApiKey({
+        name: "capped-low-budget-realtime-key",
+        pollenBudget: 0.04,
+        user: { tierBalance: 0, packBalance: 0.04 },
+    });
+    const upstream = mockOpenAIRealtime();
+
+    const { response, ctx } = await fetchWorkerWithContext(
+        "/v1/realtime?model=gpt-realtime-2",
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
+    upstream.server.accept();
+
+    await expect(nextMessage(upstream.server)).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: { max_output_tokens: 625 },
+        }),
+    );
+
+    const closeEvent = nextClose(client);
+    upstream.server.send(
+        JSON.stringify({
+            type: "response.done",
+            response: {
+                usage: {
+                    input_tokens: 0,
+                    output_tokens: 2000,
+                    output_token_details: {
+                        audio_tokens: 2000,
+                    },
+                },
+            },
+        }),
+    );
+
+    await expect(closeEvent).resolves.toMatchObject({
+        code: 1008,
+        reason: "Realtime session spend limit reached.",
+    });
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+
+    const user = await waitForPackBalanceBelow(userId, 0.04);
+    expect(user?.packBalance).toBeCloseTo(0, 8);
+    await expect(getApiKeyBudget(id)).resolves.toBeCloseTo(0, 8);
+    expect(upstream.tinybirdRequests).toHaveLength(1);
 });
 
 test("falls back to aggregate realtime token totals when details are absent", async () => {

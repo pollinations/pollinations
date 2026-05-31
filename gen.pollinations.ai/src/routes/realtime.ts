@@ -1,4 +1,5 @@
-import { getUserBalance } from "@shared/billing/balance.ts";
+import { getUserBalance, type UserBalance } from "@shared/billing/balance.ts";
+import { MARKUP_PCT } from "@shared/billing/markup.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
@@ -49,6 +50,8 @@ const CREDENTIAL_QUERY_PARAMS = new Set([
 ]);
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
+const REALTIME_SPEND_LIMIT_MESSAGE = "Realtime session spend limit reached.";
+const REALTIME_MAX_RESPONSE_OUTPUT_TOKENS = 4096;
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
@@ -80,6 +83,9 @@ type RealtimeBillingContext = {
     settled: boolean;
     deduction?: RealtimeDeduction;
     rateLimitConsumed: boolean;
+    sessionPriceLimit: number;
+    maxResponseOutputTokens: number;
+    spendLimitReached: boolean;
 };
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
@@ -177,6 +183,7 @@ function forwardMessage(
     target: WebSocket,
     validate?: (data: unknown) => string | null,
     onReject?: () => void,
+    transform?: (data: unknown) => unknown,
 ): void {
     source.addEventListener("message", (event) => {
         const error = validate?.(event.data);
@@ -186,7 +193,7 @@ function forwardMessage(
             onReject?.();
             return;
         }
-        if (isOpen(target)) target.send(event.data);
+        if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
     });
 }
 
@@ -218,6 +225,56 @@ function addUsage(target: Usage, delta: Usage): void {
         if (!amount || amount <= 0) continue;
         target[usageType] = (target[usageType] ?? 0) + amount;
     }
+}
+
+function getRealtimeMaxOutputTokenPrice(): number {
+    const priceDefinition = getPriceDefinition(DEFAULT_REALTIME_MODEL) ?? {};
+    return Math.max(
+        priceDefinition.completionTextTokens ?? 0,
+        priceDefinition.completionAudioTokens ?? 0,
+    );
+}
+
+function getRealtimeUserSpendLimit(balances: UserBalance): number {
+    return Math.max(0, balances.tierBalance ?? 0, balances.packBalance ?? 0);
+}
+
+function getRealtimeSessionPriceLimit(args: {
+    balances: UserBalance;
+    apiKeyPollenBalance?: number | null;
+    byopClientKeyId?: string | null;
+}): number {
+    const userLimit = getRealtimeUserSpendLimit(args.balances);
+    const apiKeyLimit =
+        typeof args.apiKeyPollenBalance === "number"
+            ? Math.max(0, args.apiKeyPollenBalance)
+            : Number.POSITIVE_INFINITY;
+    const rawLimit = Math.min(userLimit, apiKeyLimit);
+    const markupMultiplier = args.byopClientKeyId ? 1 + MARKUP_PCT : 1;
+    return rawLimit / markupMultiplier;
+}
+
+function getRealtimeMaxResponseOutputTokens(sessionPriceLimit: number): number {
+    const maxOutputTokenPrice = getRealtimeMaxOutputTokenPrice();
+    if (maxOutputTokenPrice <= 0) return REALTIME_MAX_RESPONSE_OUTPUT_TOKENS;
+    const affordableTokens = Math.floor(
+        sessionPriceLimit / maxOutputTokenPrice,
+    );
+    return Math.max(
+        1,
+        Math.min(REALTIME_MAX_RESPONSE_OUTPUT_TOKENS, affordableTokens),
+    );
+}
+
+function capRealtimePrice(
+    price: UsagePrice,
+    sessionPriceLimit: number,
+): UsagePrice {
+    if (price.totalPrice <= sessionPriceLimit) return price;
+    return {
+        ...price,
+        totalPrice: sessionPriceLimit,
+    };
 }
 
 function realtimeUsageToUsage(rawUsage: unknown): Usage {
@@ -319,6 +376,59 @@ function validateClientRealtimeEvent(data: unknown): string | null {
     }
 
     return null;
+}
+
+function getClampedOutputTokenLimit(
+    value: unknown,
+    maxOutputTokens: number,
+): number {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+        return maxOutputTokens;
+    }
+    return Math.max(1, Math.min(maxOutputTokens, Math.floor(value)));
+}
+
+function clampRealtimeOutputTokens(
+    payload: Record<string, unknown>,
+    maxOutputTokens: number,
+): Record<string, unknown> {
+    const clamped = {
+        ...payload,
+        max_output_tokens: getClampedOutputTokenLimit(
+            payload.max_output_tokens,
+            maxOutputTokens,
+        ),
+    };
+
+    if ("max_response_output_tokens" in clamped) {
+        clamped.max_response_output_tokens = getClampedOutputTokenLimit(
+            clamped.max_response_output_tokens,
+            maxOutputTokens,
+        );
+    }
+
+    return clamped;
+}
+
+function limitClientRealtimeEvent(
+    data: unknown,
+    maxOutputTokens: number,
+): unknown {
+    const parsed = parseEventData(data);
+    const event = asRecord(parsed);
+    const type = event.type;
+    if (type !== "session.update" && type !== "response.create") return data;
+
+    const payloadKey = type === "session.update" ? "session" : "response";
+    const payload = clampRealtimeOutputTokens(
+        asRecord(event[payloadKey]),
+        maxOutputTokens,
+    );
+
+    return JSON.stringify({
+        ...event,
+        [payloadKey]: payload,
+    });
 }
 
 function isInputAudioTranscriptionEventType(type: unknown): type is string {
@@ -490,7 +600,8 @@ async function settleRealtimeSession(
     }
 
     const cost = calculateCost(DEFAULT_REALTIME_MODEL, usage);
-    const price = calculatePrice(DEFAULT_REALTIME_MODEL, usage);
+    const rawPrice = calculatePrice(DEFAULT_REALTIME_MODEL, usage);
+    const price = capRealtimePrice(rawPrice, tracking.sessionPriceLimit);
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;
@@ -540,6 +651,7 @@ async function settleRealtimeSession(
 function collectBillingEvents(
     upstream: WebSocket,
     billing: RealtimeBillingContext,
+    onSpendLimitReached?: () => void,
 ): void {
     upstream.addEventListener("message", (event) => {
         const eventData = parseEventData(event.data);
@@ -548,6 +660,15 @@ function collectBillingEvents(
             extractUnsupportedInputTranscriptionUsage(eventData);
         if (!usage) return;
         addUsage(billing.usage, usage);
+
+        const price = calculatePrice(DEFAULT_REALTIME_MODEL, billing.usage);
+        if (
+            price.totalPrice >= billing.sessionPriceLimit &&
+            !billing.spendLimitReached
+        ) {
+            billing.spendLimitReached = true;
+            onSpendLimitReached?.();
+        }
     });
 }
 
@@ -625,9 +746,31 @@ function proxyRealtimeWebSockets(
     downstream.binaryType = "arraybuffer";
     downstream.accept({ allowHalfOpen: true });
 
-    collectBillingEvents(upstream, tracking);
-    forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
-        scheduleRealtimeSettlement(c, tracking),
+    if (isOpen(upstream)) {
+        upstream.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    max_output_tokens: tracking.maxResponseOutputTokens,
+                },
+            }),
+        );
+    }
+
+    const closeForSpendLimit = () => {
+        closeSocket(downstream, 1008, REALTIME_SPEND_LIMIT_MESSAGE);
+        closeSocket(upstream, 1008, REALTIME_SPEND_LIMIT_MESSAGE);
+        scheduleRealtimeSettlement(c, tracking);
+    };
+
+    collectBillingEvents(upstream, tracking, closeForSpendLimit);
+    forwardMessage(
+        downstream,
+        upstream,
+        validateClientRealtimeEvent,
+        () => scheduleRealtimeSettlement(c, tracking),
+        (data) =>
+            limitClientRealtimeEvent(data, tracking.maxResponseOutputTokens),
     );
     forwardMessage(upstream, downstream, validateUpstreamRealtimeEvent, () =>
         scheduleRealtimeSettlement(c, tracking),
@@ -645,6 +788,24 @@ async function createRealtimeBillingContext(
     c: Context<Env>,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
+    const apiKeyPollenBalance = c.var.auth.apiKey?.pollenBalance;
+    const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
+    const balances = await c.var.balance.getBalance(user.id);
+    const sessionPriceLimit = getRealtimeSessionPriceLimit({
+        balances,
+        apiKeyPollenBalance,
+        byopClientKeyId,
+    });
+    const maxResponseOutputTokens =
+        getRealtimeMaxResponseOutputTokens(sessionPriceLimit);
+
+    if (!Number.isFinite(sessionPriceLimit) || sessionPriceLimit <= 0) {
+        throw new HTTPException(402, {
+            message:
+                "Realtime sessions require positive user balance and API key budget.",
+        });
+    }
+
     const apiKeyMetadata = c.var.auth.apiKey?.metadata as
         | Record<string, unknown>
         | undefined;
@@ -666,8 +827,8 @@ async function createRealtimeBillingContext(
         apiKeyCreatedForUserId:
             c.var.auth.apiKey?.byopClientUserId ?? undefined,
         apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        apiKeyPollenBalance,
+        byopClientKeyId,
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,
@@ -680,6 +841,9 @@ async function createRealtimeBillingContext(
         settlementAttempts: 0,
         settled: false,
         rateLimitConsumed: false,
+        sessionPriceLimit,
+        maxResponseOutputTokens,
+        spendLimitReached: false,
     };
 }
 

@@ -1,6 +1,7 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
+    type ModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import {
@@ -69,28 +70,41 @@ function createExpressLikeRequest(
     };
 }
 
-export function prepareRequestParameters(
+function getRequestModelDefinition(
     requestParams: RequestData,
-): RequestData {
-    let isAudioModel = false;
-    let supportsReasoning = false;
+): ModelDefinition | undefined {
     try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-        supportsReasoning = serviceDef?.reasoning === true;
+        return getModelDefinition(requestParams.model as ModelName);
     } catch {
-        // Model not in registry.
+        return undefined;
     }
+}
 
-    let params = requestParams;
-
+function stripUnsupportedReasoningEffort(
+    requestParams: RequestData,
+    serviceDef = getRequestModelDefinition(requestParams),
+): RequestData {
     // Drop reasoning_effort for models that don't support reasoning. Some
     // upstreams (e.g. the non-reasoning Grok deployment) return an opaque 500
     // instead of ignoring the unsupported param.
-    if (!supportsReasoning && params.reasoning_effort !== undefined) {
-        const { reasoning_effort: _dropped, ...rest } = params;
-        params = rest;
+    if (
+        serviceDef?.reasoning === true ||
+        requestParams.reasoning_effort === undefined
+    ) {
+        return requestParams;
     }
+
+    const { reasoning_effort: _dropped, ...rest } = requestParams;
+    return rest;
+}
+
+export function prepareRequestParameters(
+    requestParams: RequestData,
+): RequestData {
+    const serviceDef = getRequestModelDefinition(requestParams);
+    const params = stripUnsupportedReasoningEffort(requestParams, serviceDef);
+    const isAudioModel =
+        serviceDef?.outputModalities?.includes("audio") ?? false;
 
     if (!isAudioModel) return params;
 
@@ -342,7 +356,7 @@ export async function handleChatCompletionLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, "/openai");
-    const requestData = getRequestData(req);
+    const requestData = stripUnsupportedReasoningEffort(getRequestData(req));
     return generateTextResponse(c, requestData, false);
 }
 

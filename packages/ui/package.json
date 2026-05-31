@@ -18,6 +18,11 @@
       "import": "./dist/auth/index.js",
       "require": "./dist/auth/index.cjs"
     },
+    "./showcase": {
+      "types": "./dist/showcase/index.d.ts",
+      "import": "./dist/showcase/index.js",
+      "require": "./dist/showcase/index.cjs"
+    },
     "./styles.css": "./dist/styles.css",
     "./app.css": "./dist/app.css",
     "./fonts/*": "./dist/fonts/*",

@@ -83,6 +83,8 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
+- `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
+  internal preview surface for rendering primitives and tokens together.
 - **Design primitives** — `Button`, `Chip`, `Collapsible`, `IconButton`,
   `InfoTip`, `Input`, `ExternalLinkButton`, `MultiSelect`, `PeriodPicker`,
   `RangeSlider`, `ScrollArea`, `Section`, `Surface`, `Switch`, `TabButton`,

@@ -2,7 +2,6 @@ import {
     PolliProvider,
     useAccountKey,
     useAuthActions,
-    useAuthState,
 } from "@pollinations_ai/sdk/react";
 import {
     Button,
@@ -17,6 +16,8 @@ import {
     UserAvatar,
     UserEmail,
     UserName,
+    WhenLoggedIn,
+    WhenLoggedOut,
 } from "@pollinations_ai/ui/auth";
 import {
     Balance,
@@ -224,13 +225,6 @@ function SessionActions() {
 }
 
 function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
-    const { isLoggedIn } = useAuthState();
-    if (!isLoggedIn) {
-        return (
-            <LoginButton theme="amber">Log in with Pollinations</LoginButton>
-        );
-    }
-
     const showUserCard = enabled.avatar || enabled.name || enabled.email;
     const showBalanceCard = enabled.balance;
     const showKeyCard =
@@ -241,12 +235,21 @@ function Wallet({ enabled }: { enabled: Record<ToggleKey, boolean> }) {
         enabled.permissions;
 
     return (
-        <div className="flex flex-col gap-4">
-            {showUserCard && <UserCard enabled={enabled} />}
-            {showBalanceCard && <BalanceCard />}
-            {showKeyCard && <KeyCard enabled={enabled} />}
-            {!showUserCard && !showBalanceCard && <SessionActions />}
-        </div>
+        <>
+            <WhenLoggedOut>
+                <LoginButton theme="amber">
+                    Log in with Pollinations
+                </LoginButton>
+            </WhenLoggedOut>
+            <WhenLoggedIn>
+                <div className="flex flex-col gap-4">
+                    {showUserCard && <UserCard enabled={enabled} />}
+                    {showBalanceCard && <BalanceCard />}
+                    {showKeyCard && <KeyCard enabled={enabled} />}
+                    {!showUserCard && !showBalanceCard && <SessionActions />}
+                </div>
+            </WhenLoggedIn>
+        </>
     );
 }
 
@@ -269,6 +272,8 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
     const authImports = [
         "LoginButton",
         "LogoutButton",
+        "WhenLoggedIn",
+        "WhenLoggedOut",
         enabled.avatar && "UserAvatar",
         enabled.email && "UserEmail",
         enabled.name && "UserName",
@@ -282,11 +287,10 @@ function buildCode(enabled: Record<ToggleKey, boolean>) {
         enabled.keyPrefix && "KeyPrefix",
     ].filter(Boolean) as string[];
 
-    const sdkHooks = ["PolliProvider", "useAuthActions", "useAuthState"];
+    const sdkHooks = ["PolliProvider", "useAuthActions"];
     if (enabled.permissions) sdkHooks.push("useAccountKey");
 
     const hookLines = [
-        "    const { isLoggedIn } = useAuthState();",
         "    const { enterUrl } = useAuthActions();",
         enabled.permissions &&
             "    const { data: key } = useAccountKey();\n    const permissions = key?.permissions?.account ?? [];",
@@ -431,13 +435,17 @@ ${walletImportBlock}
 const APP_KEY = "pk_your_key_here";
 ${permissionLabelsBlock}
 function Wallet() {
-${hookBlock}    if (!isLoggedIn) {
-        return <LoginButton theme="amber">Log in with Pollinations</LoginButton>;
-    }
-    return (
-        <div className="flex flex-col gap-4">
+${hookBlock}    return (
+        <>
+            <WhenLoggedOut>
+                <LoginButton theme="amber">Log in with Pollinations</LoginButton>
+            </WhenLoggedOut>
+            <WhenLoggedIn>
+                <div className="flex flex-col gap-4">
 ${walletBody}
-        </div>
+                </div>
+            </WhenLoggedIn>
+        </>
     );
 }
 
@@ -468,6 +476,8 @@ const POLLI_TOKENS = [
     "UserAvatar",
     "UserEmail",
     "UserName",
+    "WhenLoggedIn",
+    "WhenLoggedOut",
 ];
 
 const KEYWORDS = [

@@ -352,6 +352,38 @@ export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
 >;
 
+const ResponseReasoningSchema = z
+    .object({
+        effort: z
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .optional(),
+        summary: z.enum(["auto", "concise", "detailed"]).optional(),
+        // Deprecated by OpenAI, still accepted by Portkey docs.
+        generate_summary: z.enum(["auto", "concise", "detailed"]).optional(),
+    })
+    .passthrough();
+
+export const CreateResponseRequestSchema = z
+    .object({
+        model: z.string().optional(),
+        input: z.union([z.string(), z.array(z.unknown())]),
+        instructions: z.string().optional(),
+        reasoning: ResponseReasoningSchema.optional(),
+        max_output_tokens: z.number().int().min(0).optional(),
+        stream: z.literal(false).optional(),
+        store: z.boolean().optional(),
+        text: z.record(z.string(), z.any()).optional(),
+        tools: z.array(z.record(z.string(), z.any())).optional(),
+        tool_choice: z.any().optional(),
+        parallel_tool_calls: z.boolean().optional(),
+        metadata: z.record(z.string(), z.any()).optional(),
+        user: z.string().optional(),
+        safe: SafeSchema,
+    })
+    .passthrough();
+
+export type CreateResponseRequest = z.infer<typeof CreateResponseRequestSchema>;
+
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
     ChatCompletionRequestMessageContentPartImageSchema,
@@ -439,6 +471,51 @@ export const CompletionUsageSchema = z
     .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
+
+export const ResponseUsageSchema = z
+    .object({
+        input_tokens: z.number().int().nonnegative(),
+        input_tokens_details: z
+            .object({
+                cached_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .nullish(),
+        output_tokens: z.number().int().nonnegative(),
+        output_tokens_details: z
+            .object({
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .passthrough();
+
+export type ResponseUsage = z.infer<typeof ResponseUsageSchema>;
+
+const ResponseOutputItemSchema = z
+    .object({
+        type: z.string(),
+    })
+    .passthrough();
+
+export const CreateResponseResponseSchema = z
+    .object({
+        id: z.string(),
+        object: z.literal("response"),
+        created_at: z.number().optional(),
+        model: z.string(),
+        output: z.array(ResponseOutputItemSchema),
+        output_text: z.string().optional(),
+        status: z.string().optional(),
+        error: z.any().nullish(),
+        usage: ResponseUsageSchema.optional(),
+    })
+    .passthrough()
+    .meta({ $id: "CreateResponseResponse" });
+
+export type CreateResponseResponse = z.infer<
+    typeof CreateResponseResponseSchema
+>;
 
 export const ContentFilterSeveritySchema = z
     .enum(["safe", "low", "medium", "high"])
@@ -579,6 +656,10 @@ const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        responses: z.boolean().optional(),
+        responses_reasoning_summary: z.boolean().optional(),
+        responses_reasoning_text: z.boolean().optional(),
+        responses_reasoning_effort: z.boolean().optional(),
         context_length: z.number().optional(),
     })
     .meta({

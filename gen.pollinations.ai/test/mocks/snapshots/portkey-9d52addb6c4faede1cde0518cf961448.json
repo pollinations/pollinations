@@ -1,0 +1,70 @@
+{
+  "request": {
+    "url": "https://portkey.test/v1/responses",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "store": false,
+        "model": "gpt-5.4",
+        "input": "vcr responses summary",
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        },
+        "max_output_tokens": 400
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "resp_vcr",
+        "object": "response",
+        "created_at": 1,
+        "model": "gpt-5.4",
+        "status": "completed",
+        "output": [
+          {
+            "type": "reasoning",
+            "summary": [
+              {
+                "type": "summary_text",
+                "text": "snapshot reasoning summary"
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "snapshot final answer"
+              }
+            ]
+          }
+        ],
+        "output_text": "snapshot final answer",
+        "usage": {
+          "input_tokens": 54,
+          "input_tokens_details": {
+            "cached_tokens": 10
+          },
+          "output_tokens": 96,
+          "output_tokens_details": {
+            "reasoning_tokens": 89
+          },
+          "total_tokens": 150
+        }
+      }
+    }
+  }
+}

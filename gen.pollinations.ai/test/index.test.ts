@@ -206,12 +206,20 @@ describe("gen worker routing", () => {
                 supported_endpoints?: string[];
                 input_modalities?: string[];
                 output_modalities?: string[];
+                reasoning?: boolean;
+                responses?: boolean;
+                responses_reasoning_summary?: boolean;
             }[];
         };
         expect(models.object).toBe("list");
         const textModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/v1/chat/completions"),
         );
+        const responsesModel = models.data.find((model) =>
+            model.supported_endpoints?.includes("/v1/responses"),
+        );
+        const gemmaModel = models.data.find((model) => model.id === "gemma");
+        const grokModel = models.data.find((model) => model.id === "grok-4.3");
         const imageModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/v1/images/generations"),
         );
@@ -228,6 +236,16 @@ describe("gen worker routing", () => {
             output_modalities: expect.any(Array),
             supported_endpoints: expect.arrayContaining(["/text/{prompt}"]),
         });
+        expect(responsesModel).toMatchObject({
+            reasoning: true,
+            responses: true,
+            supported_endpoints: expect.arrayContaining(["/v1/responses"]),
+        });
+        expect(responsesModel?.responses_reasoning_summary).toBe(true);
+        expect(gemmaModel?.reasoning).toBe(true);
+        expect(gemmaModel?.supported_endpoints).not.toContain("/v1/responses");
+        expect(grokModel?.reasoning).toBe(true);
+        expect(grokModel?.supported_endpoints).not.toContain("/v1/responses");
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
         expect(embeddingModel).toBeDefined();

@@ -6,11 +6,18 @@ import {
 import {
     buildUsageHeaders,
     openaiUsageToUsage,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import type {
+    CreateResponseRequest,
+    CreateResponseResponse,
+    ResponseUsage,
+} from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
+import { generateResponsePortkey } from "./generateResponsePortkey.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -129,6 +136,19 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
+function responseUsageHeaders(response: CreateResponseResponse): Headers {
+    const headers = new Headers();
+    if (response.usage && response.model) {
+        const usage = responsesUsageToUsage(response.usage as ResponseUsage);
+        for (const [key, value] of Object.entries(
+            buildUsageHeaders(response.model, usage),
+        )) {
+            headers.set(key, String(value));
+        }
+    }
+    return headers;
+}
+
 function sendOpenAIResponse(completion: ChatCompletion): Response {
     const headers = usageHeaders(completion);
     headers.set("Content-Type", "application/json; charset=utf-8");
@@ -142,6 +162,15 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
         }),
         { headers },
     );
+}
+
+function sendResponsesApiResponse(
+    responseBody: CreateResponseResponse,
+): Response {
+    const headers = responseUsageHeaders(responseBody);
+    headers.set("Content-Type", "application/json; charset=utf-8");
+
+    return new Response(JSON.stringify(responseBody), { headers });
 }
 
 function sendTextContentResponse(completion: ChatCompletion): Response {
@@ -330,6 +359,23 @@ export async function handleChatCompletionLocal(
     const req = createExpressLikeRequest(c, body, "/openai");
     const requestData = getRequestData(req);
     return generateTextResponse(c, requestData, false);
+}
+
+export async function handleCreateResponseLocal(
+    c: TextContext,
+    body: CreateResponseRequest & Record<string, unknown>,
+): Promise<Response> {
+    syncTextEnvironment(c.env);
+
+    try {
+        const responseBody = (await generateResponsePortkey(body, {
+            userApiKey: c.var.auth?.apiKey?.rawKey || "",
+            portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        })) as CreateResponseResponse;
+        return sendResponsesApiResponse(responseBody);
+    } catch (thrown: unknown) {
+        throwTextError(thrown as ServiceError, c);
+    }
 }
 
 export async function handleTextContentLocal(

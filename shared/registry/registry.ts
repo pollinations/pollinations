@@ -104,6 +104,10 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
+    responses?: boolean;
+    responsesReasoningSummary?: boolean;
+    responsesReasoningText?: boolean;
+    responsesReasoningEffort?: boolean;
     search?: boolean;
     codeExecution?: boolean;
     contextLength?: number;

@@ -3,6 +3,7 @@ import {
     buildUsageHeaders,
     openaiUsageToUsage,
     parseUsageHeaders,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 
@@ -341,6 +342,25 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionTextTokens).toBeGreaterThanOrEqual(0);
         expect(usage.promptCachedTokens).toBe(50);
         expect(usage.completionReasoningTokens).toBe(100);
+    });
+});
+
+describe("responsesUsageToUsage", () => {
+    it("splits Responses API output tokens into text and reasoning", () => {
+        const usage = responsesUsageToUsage({
+            input_tokens: 54,
+            input_tokens_details: { cached_tokens: 10 },
+            output_tokens: 96,
+            output_tokens_details: { reasoning_tokens: 89 },
+            total_tokens: 150,
+        });
+
+        expect(usage).toMatchObject({
+            promptTextTokens: 44,
+            promptCachedTokens: 10,
+            completionTextTokens: 7,
+            completionReasoningTokens: 89,
+        });
     });
 });
 

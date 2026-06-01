@@ -1,0 +1,34 @@
+{
+  "pr_number": 11478,
+  "title": "refactor(packages-sdk): dedupe retry loop, body cleanup, and imageEdit in client",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11478",
+  "merged_at": "2026-06-01T13:08:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "De-duplicate copy-pasted logic in the published SDK client (`packages/sdk/src/client.ts`):\n\n- Extract `withRetries(fn, msg)` and `stripUndefined(body)` — collapses the retry loop + undefined-strip duplicated across 8 methods. `attempt` is threaded through so per-attempt seed recomputation is preserved\n- Extract `buildChatBody(...)` shared by `chat()`/`chatStream()` (seed handling kept distinct: chat resolves, chatStream keeps raw -1)\n- `imageEdit()` reuses `resolveImageItem()` instead of re-implementing the url-fetch/b64-decode tail\n\nSafety: `client.ts` had **zero** test coverage, so this adds 12 characterization tests FIRST (retry counting, per-attempt random seed on retry, chat-vs-stream seed, imageEdit paths) — green on the unrefactored code, then green after. Full SDK suite 24/24. Net −190 source lines (behavior unchanged).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning the SDK",
+    "blurb": "We've swept through the SDK client, clearing out duplicate code and adding a fresh suite of tests to keep things running smoothly.",
+    "summary": "Refactored the SDK client to deduplicate retry loops and body cleanup logic, reducing the file size by 190 lines while adding 12 new characterization tests.",
+    "impact": "Developers contributing to the SDK will find a cleaner, fully-tested codebase, while end-users experience the exact same reliable behavior.",
+    "keywords": [
+      "sdk",
+      "refactor",
+      "testing",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a messy room of code. Nomnom eats the duplicate code blocks while Polly sweeps.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up messy duplicate code blocks with a small broom. The round tan nomnom creature happily eats the swept-up duplicate code. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11478.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up messy duplicate code blocks with a small broom. The round tan nomnom creature happily eats the swept-up duplicate code. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T13:09:52.635032+00:00"
+}

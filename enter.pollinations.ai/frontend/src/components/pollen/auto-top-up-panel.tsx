@@ -472,20 +472,17 @@ function canEnable(setup: SetupReadiness): boolean {
     );
 }
 
-function getDisabledReason(
-    setup: SetupReadiness,
-    action: string,
-): string | null {
+function getDisabledReason(setup: SetupReadiness): string | null {
     if (setup.isSaving) return "Saving auto top-up...";
     if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
     if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
-        return `Add a default payment method and billing details in Stripe before ${action}.`;
+        return "Add a default payment method and billing details in Stripe before saving changes.";
     }
     if (!setup.paymentMethodReady) {
-        return `Add a default payment method in Stripe before ${action}.`;
+        return "Add a default payment method in Stripe before saving changes.";
     }
     if (!setup.billingDetailsReady) {
-        return `Add billing details in Stripe before ${action}.`;
+        return "Add billing details in Stripe before saving changes.";
     }
     return null;
 }
@@ -496,7 +493,7 @@ function getSaveDisabledReason(
         hasUnsavedChanges: boolean;
     },
 ): string | null {
-    const setupReason = getDisabledReason(state, "saving changes");
+    const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
     if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
@@ -565,7 +562,6 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
 
 function isStripeBillingReturn(): boolean {
     return (
-        typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get(
             "stripe_billing_return",
         ) === "true"
@@ -573,7 +569,6 @@ function isStripeBillingReturn(): boolean {
 }
 
 function readAutoTopUpDraftPackAmount(): number | null {
-    if (typeof window === "undefined") return null;
     try {
         const raw = window.sessionStorage.getItem(
             AUTO_TOP_UP_DRAFT_STORAGE_KEY,

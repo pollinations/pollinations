@@ -1,0 +1,35 @@
+{
+  "pr_number": 11452,
+  "title": "chore: remove unused old-polly legacy folder",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11452",
+  "merged_at": "2026-06-01T08:39:12Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes `apps/polly/old-polly` (35 files), a legacy duplicate of `apps/polly`\n- No references to `old-polly` exist anywhere else in the repo\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Shedding the old exoskeleton",
+    "blurb": "We've swept away the legacy old-polly folder to keep the codebase tidy. Less clutter, more room for new ideas!",
+    "summary": "Removed the unused apps/polly/old-polly legacy directory, deleting 35 redundant files from the repository.",
+    "impact": "Developers will enjoy a cleaner, lighter codebase with no duplicate legacy files to navigate around.",
+    "keywords": [
+      "cleanup",
+      "legacy",
+      "polly",
+      "refactor",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee cleaning up old dusty boxes or sweeping away cobwebs in a cozy attic/storage room. Nomnom creature eating the old files.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up dusty old floppy disks and folders in a cozy wooden attic. The round tan Nomnom creature happily eats a stack of old papers labeled 'LEGACY'. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11452.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up dusty old floppy disks and folders in a cozy wooden attic. The round tan Nomnom creature happily eats a stack of old papers labeled 'LEGACY'. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-06-01T08:40:09.506594+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 11461,
+  "title": "refactor(gen-image): remove dead code and dedupe image model handlers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11461",
+  "merged_at": "2026-06-01T12:08:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete never-imported dead modules: `matureWords.ts` (581 lines), `utils/mature.ts`, `promptEnhancer.ts` (identity no-op) + the dead enhance/translation/`pimpPrompt` path\n- Drop dead `wasPimped`/`timingInfo`/`TimingStep` plumbing, unused `logError` consts, and the two no-op `ProgressManager` methods\n- Collapse 12 redundant log-and-rethrow `catch` blocks in the `generateImage` switch — errors are already mapped centrally in handler.ts (kept the 3 gpt-image error logs)\n- Remove speculative `concurrentRequests`/`countFluxJobs` plumbing (logged, never used)\n- Factor duplicated DashScope multimodal call and xAI aspect-ratio table into two small shared helpers\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −915 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the digital hedges",
+    "blurb": "We just swept away nearly a thousand lines of unused code from our image generation backend. A lighter, cleaner codebase means faster development and fewer bugs hiding in the weeds.",
+    "summary": "Removed 915 lines of dead code and duplicated logic from the image generation backend, including unused prompt enhancement paths and redundant error handlers.",
+    "impact": "Developers benefit from a cleaner, more maintainable codebase with centralized error mapping and shared helpers for DashScope and xAI models.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "image-generation",
+      "tech-debt"
+    ],
+    "visual_concept": "The Nomnom creature eating old code/documents, or Polly the bee sweeping up dead leaves/code snippets. Since it's dead code removal, Nomnom eating deprecated code snippets fits perfectly.",
+    "image_prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a pile of dusty, deprecated code printouts while the bee mascot sweeps up with a tiny broom. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11461.jpg",
+    "prompt": "Cozy pixel art scene of the round tan nomnom creature happily eating a pile of dusty, deprecated code printouts while the bee mascot sweeps up with a tiny broom. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-06-01T12:09:14.735484+00:00"
+}

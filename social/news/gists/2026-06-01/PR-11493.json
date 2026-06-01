@@ -1,0 +1,35 @@
+{
+  "pr_number": 11493,
+  "title": "refactor(social): delete completed migration scripts and dead helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11493",
+  "merged_at": "2026-06-01T15:22:26Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete completed one-shot migrate_social_history.py + validate_social_history.py (date-locked to 2026-03, zero workflow/doc/script callers)\n- Remove 6 unused buffer_utils helpers/aliases (get_buffer_profiles, get_profile_by_service, create_buffer_update, publish_to_buffer, format_linkedin_post, format_twitter_post) + their orphaned section comments\n- Remove dead PR-creation cluster in common.py (create_branch_from_main, create_or_update_pr, _apply_pr_labels) — pipeline commits to news branch, never opens PRs\n- Drop speculative call_pollinations_api params (verbose, exit_on_failure, model, max_retries) and strip exit_on_failure=False from all 8 call sites; inline MODEL/MAX_RETRIES constants\n- Delete dead WEBSEARCH_MODEL constant and unused get_date_range helper (+ now-dead datetime/timedelta/timezone import)\n\nRisks: none — pure dead-code removal. All deleted symbols had zero callers (verified by repo-wide grep); call_pollinations_api behavior is identical for every remaining caller (same model, retry count, None-on-failure); all 8 call sites updated atomically in this commit so no TypeError. The separate .github/scripts/pr_comment_review.py copy of call_pollinations_api is untouched.\n\n_~1195 net lines removed · biome ✓ · No Python test suite exists. Ran `python3 -m py_compile` on all 7 edited .py files (common ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the dead leaves",
+    "blurb": "We swept through the social media pipeline and cleared out over a thousand lines of dead code, unused helpers, and completed migration scripts. A lighter codebase makes for a happier hive.",
+    "summary": "Removed ~1,195 lines of dead code from the social pipeline, including completed migration scripts, unused Buffer helpers, and dead PR-creation functions.",
+    "impact": "This internal cleanup simplifies the social media automation scripts and reduces maintenance overhead without affecting any user-facing features.",
+    "keywords": [
+      "refactor",
+      "social",
+      "dead code",
+      "cleanup",
+      "python"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a digital garden. Nomnom eating old code documents, Polly sweeping up dead leaves.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sweeping up fallen brown leaves and old crumpled paper code snippets in a digital garden. The round tan nomnom creature happily eats a stack of old documents. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11493.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sweeping up fallen brown leaves and old crumpled paper code snippets in a digital garden. The round tan nomnom creature happily eats a stack of old documents. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:23:35.971835+00:00"
+}

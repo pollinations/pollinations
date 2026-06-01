@@ -44,7 +44,7 @@ export function stripIPv4MappedPrefix(ip: string): string {
 }
 
 /** Expand IPv6 `::` shorthand to full 8-group form. */
-export function expandIPv6(ip: string): string {
+function expandIPv6(ip: string): string {
     if (!ip.includes("::")) {
         return ip
             .split(":")

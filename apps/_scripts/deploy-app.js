@@ -1,173 +1,85 @@
 #!/usr/bin/env node
 
 /**
- * Deploy app to Cloudflare Pages + custom subdomain
+ * Provision Cloudflare routing for an app in two phases:
  *
- * Usage: node deploy-app.js <appName>
+ *   --phase=origin   Create the Myceli Pages project, add <sub>.myceli.ai,
+ *                    and upsert the myceli.ai DNS CNAME.
+ *   --phase=cutover  After upload and origin verification, reclaim
+ *                    <sub>.pollinations.ai and attach it to pollinations-proxy.
+ *
+ * Usage: node deploy-app.js <appName> --phase=origin|cutover
  */
 
 const fs = require("node:fs");
 const path = require("node:path");
 
-/**
- * Load credentials from .env file or environment
- */
-function loadCredentials() {
-    let apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    let accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    let turnstileId = process.env.TURNSTILE_SITE_ID;
-
-    // Try to load from apps .env file if not in environment
-    if (!apiToken || !accountId || !turnstileId) {
-        const envPath = path.join(__dirname, "../.env");
-
-        if (fs.existsSync(envPath)) {
-            const envContent = fs.readFileSync(envPath, "utf8");
-
-            if (!apiToken) {
-                const tokenMatch = envContent.match(
-                    /CLOUDFLARE_API_TOKEN=(.+)/,
-                );
-                if (tokenMatch) {
-                    apiToken = tokenMatch[1].trim();
-                    console.log("✅ Loaded CLOUDFLARE_API_TOKEN from .env");
-                }
-            }
-
-            if (!accountId) {
-                const accountMatch = envContent.match(
-                    /CLOUDFLARE_ACCOUNT_ID=(.+)/,
-                );
-                if (accountMatch) {
-                    accountId = accountMatch[1].trim();
-                    console.log("✅ Loaded CLOUDFLARE_ACCOUNT_ID from .env");
-                }
-            }
-
-            if (!turnstileId) {
-                const turnstileMatch = envContent.match(
-                    /TURNSTILE_SITE_ID=(.+)/,
-                );
-                if (turnstileMatch) {
-                    turnstileId = turnstileMatch[1].trim();
-                    console.log("✅ Loaded TURNSTILE_SITE_ID from .env");
-                }
-            }
-        }
-    }
-
-    return { apiToken, accountId, turnstileId };
-}
-
-const {
-    apiToken: CLOUDFLARE_API_TOKEN,
-    accountId: CLOUDFLARE_ACCOUNT_ID,
-    turnstileId: TURNSTILE_SITE_ID,
-} = loadCredentials();
-
-// Cloudflare Zone ID for pollinations.ai
-const CLOUDFLARE_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3";
-
 const CF_API = "https://api.cloudflare.com/client/v4";
-const cfHeaders = {
-    "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-    "Content-Type": "application/json",
-};
+const OLD_POLLINATIONS_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3";
+const PROXY_WORKER = "pollinations-proxy";
+const PUBLIC_ZONE = "pollinations.ai";
+const UPSTREAM_ZONE = "myceli.ai";
 
-/**
- * Find which Pages project holds a custom domain and move it to the target project.
- * Lists all projects, checks their domains, removes from the old, adds to the new.
- */
-async function reclaimDomain(customDomain, targetProject) {
-    // List all Pages projects
-    const res = await fetch(
-        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects?per_page=50`,
-        { headers: cfHeaders },
-    );
-    const { result: projects } = await res.json();
+function loadEnvFile() {
+    const envPath = path.join(__dirname, "../.env");
+    if (!fs.existsSync(envPath)) return;
 
-    for (const project of projects || []) {
-        if (project.name === targetProject) continue;
-
-        // Check if this project holds the domain
-        const domainsRes = await fetch(
-            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project.name}/domains`,
-            { headers: cfHeaders },
-        );
-        const { result: domains } = await domainsRes.json();
-        const hasDomain = domains?.some((d) => d.name === customDomain);
-        if (!hasDomain) continue;
-
-        console.log(
-            `   Found domain on old project: ${project.name} — removing...`,
-        );
-        const deleteRes = await fetch(
-            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${project.name}/domains/${customDomain}`,
-            { method: "DELETE", headers: cfHeaders },
-        );
-
-        if (!deleteRes.ok) {
-            const err = await deleteRes.json();
-            console.warn(
-                `   Failed to remove from ${project.name}: ${JSON.stringify(err)}`,
-            );
-            return false;
+    for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+        const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
+        if (match && !process.env[match[1]]) {
+            process.env[match[1]] = match[2].trim();
         }
-        console.log(`   Removed from ${project.name}`);
-
-        // Now add to target project
-        const addRes = await fetch(
-            `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${targetProject}/domains`,
-            {
-                method: "POST",
-                headers: cfHeaders,
-                body: JSON.stringify({ name: customDomain }),
-            },
-        );
-
-        if (!addRes.ok) {
-            const err = await addRes.json();
-            console.warn(
-                `   Failed to add to ${targetProject}: ${JSON.stringify(err)}`,
-            );
-            return false;
-        }
-        console.log(`   ✅ Domain reclaimed and added to ${targetProject}`);
-        return true;
     }
-
-    console.warn(`   Could not find domain ${customDomain} on any project`);
-    return false;
 }
 
-async function deployApp(appName) {
-    console.log(`🚀 Deploying ${appName}...`);
+function loadCredentials() {
+    loadEnvFile();
+    return {
+        mycToken:
+            process.env.CLOUDFLARE_API_TOKEN_MYCELI ||
+            process.env.CLOUDFLARE_API_TOKEN,
+        mycAccount:
+            process.env.CLOUDFLARE_ACCOUNT_ID_MYCELI ||
+            process.env.CLOUDFLARE_ACCOUNT_ID,
+        oldToken: process.env.CLOUDFLARE_API_TOKEN_OLD,
+        oldAccount: process.env.CLOUDFLARE_ACCOUNT_ID_OLD,
+    };
+}
 
-    // Load config
-    const configPath = path.join(__dirname, "../apps.json");
-    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-    const appConfig = config[appName];
+const headersFor = (token) => ({
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+});
 
-    if (!appConfig) {
-        throw new Error(`App ${appName} not found in apps.json`);
+async function cf(url, headers, init = {}) {
+    const res = await fetch(url, { headers, ...init });
+    let json = {};
+    try {
+        json = await res.json();
+    } catch {
+        // Some DELETE responses are empty.
     }
+    return { ok: res.ok && json.success !== false, json };
+}
 
-    const subdomain = appConfig.subdomain || appName;
-    const projectName = `apps-${subdomain}`;
-    const customDomain = `${subdomain}.pollinations.ai`;
+const hasCode = (json, ...codes) =>
+    json.errors?.some((error) => codes.includes(error.code));
 
-    console.log(`📦 Project: ${projectName}`);
-    console.log(`🌐 Domain: ${customDomain}`);
+async function resolveZoneId(zoneName, headers) {
+    const { json } = await cf(`${CF_API}/zones?name=${zoneName}`, headers);
+    const zone = json.result?.[0];
+    if (!zone) throw new Error(`Zone not found: ${zoneName}`);
+    return zone.id;
+}
 
-    // Step 1: Create Pages project
-    console.log("\n1️⃣ Creating Cloudflare Pages project...");
-    const createResponse = await fetch(
-        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects`,
+async function createPagesProject(account, headers, project, appConfig) {
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects`,
+        headers,
         {
             method: "POST",
-            headers: cfHeaders,
             body: JSON.stringify({
-                name: projectName,
+                name: project,
                 production_branch: "production",
                 build_config: {
                     build_command: appConfig.buildCommand || "",
@@ -177,142 +89,279 @@ async function deployApp(appName) {
         },
     );
 
-    const createResult = await createResponse.json();
-
-    if (
-        !createResponse.ok &&
-        !createResult.errors?.some((e) => e.code === 8000002)
-    ) {
-        // 8000002 = project already exists
-        throw new Error(
-            `Failed to create project: ${JSON.stringify(createResult)}`,
-        );
+    if (ok || hasCode(json, 8000002)) {
+        console.log(`Pages project ready: ${project}`);
+        return;
     }
 
-    console.log("✅ Project created/exists");
-
-    // Step 2: Add custom domain (remove from old projects first if needed)
-    console.log("\n2️⃣ Adding custom domain...");
-    const domainResponse = await fetch(
-        `${CF_API}/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${projectName}/domains`,
-        {
-            method: "POST",
-            headers: cfHeaders,
-            body: JSON.stringify({
-                name: customDomain,
-            }),
-        },
+    throw new Error(
+        `Create project ${project} failed: ${JSON.stringify(json)}`,
     );
+}
 
-    const domainResult = await domainResponse.json();
+async function detachPagesDomain(account, headers, customDomain) {
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects?per_page=100`,
+        headers,
+    );
+    if (!ok) {
+        throw new Error(`List Pages projects failed: ${JSON.stringify(json)}`);
+    }
 
-    if (
-        domainResponse.ok ||
-        domainResult.errors?.some((e) => e.code === 8000007)
-    ) {
-        console.log("✅ Custom domain added");
-    } else if (domainResult.errors?.some((e) => e.code === 8000018)) {
-        // 8000018 = domain already added to another project — find and remove it
-        console.log(
-            "⚠️  Domain claimed by another project, attempting to reclaim...",
+    for (const project of json.result || []) {
+        const { ok: listOk, json: domains } = await cf(
+            `${CF_API}/accounts/${account}/pages/projects/${project.name}/domains`,
+            headers,
         );
-        const reclaimed = await reclaimDomain(customDomain, projectName);
-        if (!reclaimed) {
-            console.warn(
-                `⚠️  Could not reclaim domain: ${JSON.stringify(domainResult)}`,
+        if (!listOk) {
+            throw new Error(
+                `List domains for ${project.name} failed: ${JSON.stringify(domains)}`,
             );
         }
-    } else {
-        console.warn(`⚠️  Domain setup: ${JSON.stringify(domainResult)}`);
+
+        if (!domains.result?.some((domain) => domain.name === customDomain)) {
+            continue;
+        }
+
+        const { ok: deleteOk, json: deleted } = await cf(
+            `${CF_API}/accounts/${account}/pages/projects/${project.name}/domains/${customDomain}`,
+            headers,
+            { method: "DELETE" },
+        );
+        if (!deleteOk) {
+            throw new Error(
+                `Detach ${customDomain} from ${project.name} failed: ${JSON.stringify(deleted)}`,
+            );
+        }
+
+        console.log(`Detached ${customDomain} from ${project.name}`);
+        return;
+    }
+}
+
+async function addPagesDomain(account, headers, project, customDomain) {
+    const postDomain = () =>
+        cf(
+            `${CF_API}/accounts/${account}/pages/projects/${project}/domains`,
+            headers,
+            {
+                method: "POST",
+                body: JSON.stringify({ name: customDomain }),
+            },
+        );
+
+    let { ok, json } = await postDomain();
+    if (ok || hasCode(json, 8000007)) {
+        console.log(`Pages custom domain ready: ${customDomain}`);
+        return;
     }
 
-    // Step 3: Create or update DNS CNAME record
-    console.log("\n3️⃣ Setting up DNS CNAME record...");
-    const cnamTarget = `${projectName}.pages.dev`;
-    const dnsResponse = await fetch(
-        `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records`,
+    if (hasCode(json, 8000018)) {
+        console.log(`${customDomain} claimed elsewhere; reclaiming`);
+        await detachPagesDomain(account, headers, customDomain);
+        ({ ok, json } = await postDomain());
+        if (ok || hasCode(json, 8000007)) {
+            console.log(`Pages custom domain reclaimed: ${customDomain}`);
+            return;
+        }
+    }
+
+    throw new Error(
+        `Add Pages domain ${customDomain} failed: ${JSON.stringify(json)}`,
+    );
+}
+
+async function upsertCname(zoneId, headers, name, target) {
+    const { ok, json } = await cf(
+        `${CF_API}/zones/${zoneId}/dns_records`,
+        headers,
         {
             method: "POST",
-            headers: cfHeaders,
             body: JSON.stringify({
                 type: "CNAME",
-                name: subdomain,
-                content: cnamTarget,
+                name,
+                content: target,
                 ttl: 1,
                 proxied: true,
             }),
         },
     );
 
-    const dnsResult = await dnsResponse.json();
-
-    if (dnsResponse.ok) {
-        console.log("✅ DNS CNAME record created");
-    } else if (
-        dnsResult.errors?.some((e) => e.code === 81053 || e.code === 81057)
-    ) {
-        // Record already exists — find it and update to point to the correct project
-        console.log("   DNS record exists, updating target...");
-        const listRes = await fetch(
-            `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${customDomain}`,
-            { headers: cfHeaders },
-        );
-        const { result: records } = await listRes.json();
-        const record = records?.[0];
-        if (record && record.content !== cnamTarget) {
-            const updateRes = await fetch(
-                `${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${record.id}`,
-                {
-                    method: "PATCH",
-                    headers: cfHeaders,
-                    body: JSON.stringify({ content: cnamTarget }),
-                },
-            );
-            if (updateRes.ok) {
-                console.log(
-                    `   ✅ Updated CNAME: ${record.content} → ${cnamTarget}`,
-                );
-            } else {
-                console.warn(
-                    `   ⚠️  Failed to update DNS: ${JSON.stringify(await updateRes.json())}`,
-                );
-            }
-        } else {
-            console.log("✅ DNS CNAME already correct");
-        }
-    } else {
-        console.warn(`⚠️  DNS setup: ${JSON.stringify(dnsResult)}`);
+    if (ok) {
+        console.log(`DNS CNAME ready: ${name} -> ${target}`);
+        return;
     }
 
-    // Step 4: Update Turnstile (placeholder - needs actual API)
-    console.log("\n4️⃣ Updating Turnstile allowlist...");
-    console.log(
-        `⚠️  Manual step: Add ${customDomain} to Turnstile widget ${TURNSTILE_SITE_ID}`,
-    );
-    console.log("   https://dash.cloudflare.com/?to=/:account/turnstile");
+    if (hasCode(json, 81053, 81057)) {
+        const { ok: listOk, json: list } = await cf(
+            `${CF_API}/zones/${zoneId}/dns_records?type=CNAME&name=${name}`,
+            headers,
+        );
+        if (!listOk) {
+            throw new Error(`DNS list ${name} failed: ${JSON.stringify(list)}`);
+        }
 
-    console.log(`\n✨ Deployment complete!`);
-    console.log(`🔗 App will be available at: https://${customDomain}`);
-    console.log(
-        `📝 Next: Upload files to project via Wrangler or Direct Upload API`,
-    );
+        const record = list.result?.[0];
+        if (!record) {
+            throw new Error(
+                `DNS conflict for ${name}, but no CNAME was found: ${JSON.stringify(json)}`,
+            );
+        }
+
+        if (record.content === target) {
+            console.log(`DNS CNAME already correct: ${name}`);
+            return;
+        }
+
+        const { ok: updateOk, json: updated } = await cf(
+            `${CF_API}/zones/${zoneId}/dns_records/${record.id}`,
+            headers,
+            { method: "PATCH", body: JSON.stringify({ content: target }) },
+        );
+        if (!updateOk) {
+            throw new Error(
+                `DNS update ${name} failed: ${JSON.stringify(updated)}`,
+            );
+        }
+        console.log(`DNS CNAME updated: ${name} -> ${target}`);
+        return;
+    }
+
+    throw new Error(`DNS upsert ${name} failed: ${JSON.stringify(json)}`);
 }
 
-// CLI
+async function deleteCname(zoneId, headers, name) {
+    const { ok, json } = await cf(
+        `${CF_API}/zones/${zoneId}/dns_records?type=CNAME&name=${name}`,
+        headers,
+    );
+    if (!ok)
+        throw new Error(`DNS list ${name} failed: ${JSON.stringify(json)}`);
+
+    const record = json.result?.[0];
+    if (!record) return;
+
+    const { ok: deleteOk, json: deleted } = await cf(
+        `${CF_API}/zones/${zoneId}/dns_records/${record.id}`,
+        headers,
+        { method: "DELETE" },
+    );
+    if (!deleteOk) {
+        throw new Error(
+            `Delete CNAME ${name} failed: ${JSON.stringify(deleted)}`,
+        );
+    }
+    console.log(`Removed old CNAME ${name}`);
+}
+
+async function attachWorkerDomain(account, headers, hostname, zoneId) {
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/workers/domains`,
+        headers,
+        {
+            method: "PUT",
+            body: JSON.stringify({
+                hostname,
+                service: PROXY_WORKER,
+                environment: "production",
+                zone_id: zoneId,
+            }),
+        },
+    );
+
+    if (!ok) {
+        throw new Error(
+            `Attach proxy domain ${hostname} failed: ${JSON.stringify(json)}`,
+        );
+    }
+
+    console.log(`Proxy custom domain ready: ${hostname} -> ${PROXY_WORKER}`);
+}
+
+function appContext(appName) {
+    const config = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "../apps.json"), "utf8"),
+    );
+    const appConfig = config[appName];
+    if (!appConfig) throw new Error(`App ${appName} not found in apps.json`);
+
+    const subdomain = appConfig.subdomain || appName;
+    return {
+        appConfig,
+        subdomain,
+        project: `apps-${subdomain}`,
+        originDomain: `${subdomain}.${UPSTREAM_ZONE}`,
+        publicDomain: `${subdomain}.${PUBLIC_ZONE}`,
+    };
+}
+
+async function runOrigin(appName) {
+    const { appConfig, subdomain, project, originDomain } = appContext(appName);
+    console.log(`Myceli origin: ${originDomain}`);
+
+    const myceliHeaders = headersFor(MYC_TOKEN);
+    const myceliZoneId = await resolveZoneId(UPSTREAM_ZONE, myceliHeaders);
+    await createPagesProject(MYC_ACCOUNT, myceliHeaders, project, appConfig);
+    await addPagesDomain(MYC_ACCOUNT, myceliHeaders, project, originDomain);
+    await upsertCname(
+        myceliZoneId,
+        myceliHeaders,
+        subdomain,
+        `${project}.pages.dev`,
+    );
+
+    console.log(`Origin provisioned: https://${originDomain}`);
+}
+
+async function runCutover(appName) {
+    const { publicDomain, originDomain } = appContext(appName);
+    console.log(`Public cutover: ${publicDomain} -> ${originDomain}`);
+
+    const oldHeaders = headersFor(OLD_TOKEN);
+    await detachPagesDomain(OLD_ACCOUNT, oldHeaders, publicDomain);
+    await deleteCname(OLD_POLLINATIONS_ZONE_ID, oldHeaders, publicDomain);
+    await attachWorkerDomain(
+        OLD_ACCOUNT,
+        oldHeaders,
+        publicDomain,
+        OLD_POLLINATIONS_ZONE_ID,
+    );
+
+    console.log(`Public routing ready: https://${publicDomain}`);
+}
+
+const {
+    mycToken: MYC_TOKEN,
+    mycAccount: MYC_ACCOUNT,
+    oldToken: OLD_TOKEN,
+    oldAccount: OLD_ACCOUNT,
+} = loadCredentials();
+
 const appName = process.argv[2];
-if (!appName) {
-    console.error("Usage: node deploy-app.js <appName>");
+const phaseArg = process.argv.find((arg) => arg.startsWith("--phase="));
+const phase = phaseArg ? phaseArg.split("=")[1] : "";
+
+if (!appName || (phase !== "origin" && phase !== "cutover")) {
+    console.error("Usage: node deploy-app.js <appName> --phase=origin|cutover");
     process.exit(1);
 }
 
-if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID) {
+if (!MYC_TOKEN || !MYC_ACCOUNT) {
     console.error(
-        "❌ Missing required env vars: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID",
+        "Missing Myceli creds (CLOUDFLARE_API_TOKEN_MYCELI / CLOUDFLARE_ACCOUNT_ID_MYCELI)",
     );
     process.exit(1);
 }
 
-deployApp(appName).catch((err) => {
-    console.error("❌ Deployment failed:", err.message);
+if (phase === "cutover" && (!OLD_TOKEN || !OLD_ACCOUNT)) {
+    console.error(
+        "Missing old-account creds (CLOUDFLARE_API_TOKEN_OLD / CLOUDFLARE_ACCOUNT_ID_OLD)",
+    );
+    process.exit(1);
+}
+
+const run = phase === "origin" ? runOrigin : runCutover;
+run(appName).catch((error) => {
+    console.error(`${phase} failed:`, error.message);
     process.exit(1);
 });

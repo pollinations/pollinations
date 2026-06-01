@@ -8,6 +8,7 @@ routes = [
   { pattern = "enter.pollinations.ai", custom_domain = true },
   { pattern = "gen.pollinations.ai", custom_domain = true },
   { pattern = "media.pollinations.ai", custom_domain = true },
+  # GENERATED-PROXY-ROUTES (apps + ops; injected by scripts/gen-routes.mjs)
 ]
 
 # Host-to-upstream map is in [vars]; staging deploys with [env.staging]

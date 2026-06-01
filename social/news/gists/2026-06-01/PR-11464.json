@@ -1,0 +1,35 @@
+{
+  "pr_number": 11464,
+  "title": "refactor(gen-middleware): dedupe IP helpers, drop dead BYOP re-fetch, dedupe meter-slug mapping",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11464",
+  "merged_at": "2026-06-01T12:17:43Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Move the duplicated IP hash/subnet helpers (`hashIp`, `truncateIpToSubnet`, …) into `shared/client-ip.ts`, consumed by both track.ts and realtime.ts\n- Delete `resolveByopClientTracking` — a redundant D1 re-fetch of already-known BYOP fields\n- Add `payerBucketToMeter` in shared/billing to replace the meter-slug mapping triplicated across track/realtime\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −65 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the middleware",
+    "blurb": "We did some internal spring cleaning in our generation middleware, deduplicating IP helpers and dropping redundant database fetches to keep the codebase tidy.",
+    "summary": "Refactored the generation middleware to deduplicate IP hashing helpers into a shared module and removed a redundant D1 database fetch for BYOP fields.",
+    "impact": "This internal cleanup reduces codebase size by 65 lines and slightly optimizes tracking overhead by eliminating unnecessary database queries.",
+    "keywords": [
+      "refactor",
+      "middleware",
+      "tracking",
+      "optimization",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee organizing code blocks and sweeping away dead code. The scene represents deduplication and cleanup, using glowing blocks for the shared helpers and small leaves for the removed redundant code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small brown pixelated leaves next to a neat, organized stack of glowing lime green (#ecf874) blocks. A chunky retro monitor in the background shows a clean file directory. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11464.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small brown pixelated leaves next to a neat, organized stack of glowing lime green (#ecf874) blocks. A chunky retro monitor in the background shows a clean file directory. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-01T12:18:48.020389+00:00"
+}

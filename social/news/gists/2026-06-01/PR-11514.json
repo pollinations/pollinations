@@ -1,0 +1,35 @@
+{
+  "pr_number": 11514,
+  "title": "fix(gen-image): honor aspectRatio for grok-video when width/height omitted",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11514",
+  "merged_at": "2026-06-01T19:07:17Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- `params.ts` fills width/height with a square default (1024) when dims are omitted, so `xaiVideoModel` collapsed every request to 1:1 and ignored the explicit `aspectRatio` param.\n- Now gate on `dimensionsExplicit`: derive from width/height only when the caller passed them; otherwise pass the explicit `aspectRatio` label through (validated against supported `ASPECT_RATIOS`).\n- Adds `test/image/xaiVideoModel.test.ts` (explicit-aspectRatio, explicit-dims, square-default fallback) — 4 pass, existing wan tests unchanged.\n\nRisks: low — behavior unchanged when width/height are provided; only the no-dims path changes, and unsupported labels (21:9/9:21/adaptive) fall back to the previous square-default ratio.\n\nFixes #9099",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more forced squares",
+    "blurb": "Grok video generation now properly respects your requested aspect ratio when you don't specify exact dimensions. No more accidental squares when you wanted widescreen!",
+    "summary": "The grok-video model now correctly honors the aspectRatio parameter when explicit width and height dimensions are omitted, rather than defaulting to a 1024x1024 square.",
+    "impact": "Users generating videos with Grok without specifying exact dimensions will now receive their requested aspect ratio instead of everything defaulting to 1:1.",
+    "keywords": [
+      "grok",
+      "video",
+      "aspect-ratio",
+      "bug-fix",
+      "api"
+    ],
+    "visual_concept": "The bee mascot acting as a film director, stretching a square video frame into a widescreen rectangle. The monitor robot assisting with a clapperboard.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, pulling and stretching a glowing lime green (#ecf874) video frame from a square into a wide rectangle. A chunky retro monitor robot watches happily, holding a clapperboard. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11514.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, pulling and stretching a glowing lime green (#ecf874) video frame from a square into a wide rectangle. A chunky retro monitor robot watches happily, holding a clapperboard. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T19:08:15.692571+00:00"
+}

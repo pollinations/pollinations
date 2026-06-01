@@ -1,0 +1,36 @@
+{
+  "pr_number": 11457,
+  "title": "fix(audio): repair WAV RIFF header sizes in TTS responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11457",
+  "merged_at": "2026-06-01T10:20:58Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- ElevenLabs streams WAV with a placeholder length (`0x7FFFFFFF`) in the data-chunk and RIFF size fields, never back-patched — Python `wave`/ffmpeg then crash or truncate.\n- Buffer the WAV body and rewrite both size fields to real byte counts; other formats keep streaming. Input is capped at 4096 chars so buffering is cheap; billing (from `text.length`) is unaffected.\n- Adds `fixWavHeader` unit tests (gen's first audio test).\n\nSupersedes #8930. Fixes #8929.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "WAVing goodbye to header bugs",
+    "blurb": "We've patched up a pesky bug where WAV audio files from our TTS endpoint were causing crashes in standard audio tools. Your generated voice files now come with perfectly formed headers, ready for any pipeline you throw them at.",
+    "summary": "Fixed an issue where ElevenLabs TTS WAV streams returned placeholder RIFF header sizes (0x7FFFFFFF), causing crashes in Python wave and ffmpeg, by buffering the response and rewriting the size fields with the actual byte counts.",
+    "impact": "Developers can now directly process generated WAV files in standard audio tools without encountering truncation or header parsing errors.",
+    "keywords": [
+      "audio",
+      "tts",
+      "wav",
+      "bug_fix",
+      "elevenlabs",
+      "ffmpeg"
+    ],
+    "visual_concept": "Polly the bee acting as an audio engineer, fixing a broken sound wave or retro audio equipment. Represents repairing the WAV headers. Nomnom creature enjoying the fixed audio.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny headphones and using a small wrench to fix a glowing blue sound wave coming from a chunky retro boombox. The round tan Nomnom creature sits nearby, happily listening. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11457.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny headphones and using a small wrench to fix a glowing blue sound wave coming from a chunky retro boombox. The round tan Nomnom creature sits nearby, happily listening. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T10:21:57.919423+00:00"
+}

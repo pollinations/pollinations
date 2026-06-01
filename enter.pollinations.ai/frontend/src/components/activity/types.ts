@@ -1,3 +1,5 @@
+import type { PeriodSelection } from "@pollinations/ui";
+
 export type DailyUsageRecord = {
     date: string;
     model: string | null;
@@ -6,12 +8,9 @@ export type DailyUsageRecord = {
     cost_usd: number;
 };
 
-export type PeriodGranularity = "day" | "week" | "month";
+export type { PeriodGranularity } from "@pollinations/ui";
 
-export type UsagePeriodSelection = {
-    granularity: PeriodGranularity;
-    period: string;
-};
+export type UsagePeriodSelection = PeriodSelection;
 
 export type Metric = "requests" | "pollen";
 

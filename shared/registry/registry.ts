@@ -1,4 +1,4 @@
-import { safeRound } from "../utils";
+import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import {
     AUDIO_SERVICES,
     type AudioModelId,
@@ -20,9 +20,6 @@ import {
     type RealtimeModelName,
 } from "./realtime";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
-
-// Current Pollen ledger precision for the final customer charge.
-const POLLEN_BILLING_PRECISION = 8;
 
 export type Category =
     | "text"
@@ -184,13 +181,6 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Check if a public model name exists in the registry
- */
-export function isValidModel(model: ModelName | string): model is ModelName {
-    return !!MODEL_REGISTRY[model as ModelName];
-}
-
-/**
  * Get all public model names
  */
 export function getModels(): ModelName[] {
@@ -200,36 +190,22 @@ export function getModels(): ModelName[] {
 /**
  * Get text model names
  */
-export function getTextModels(): TextModelName[] {
+function getTextModels(): TextModelName[] {
     return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**
  * Get image model names
  */
-export function getImageModels(): ImageModelName[] {
+function getImageModels(): ImageModelName[] {
     return Object.keys(IMAGE_SERVICES) as ImageModelName[];
 }
 
 /**
  * Get audio model names
  */
-export function getAudioModels(): AudioModelName[] {
+function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
-}
-
-/**
- * Get embedding model names (service IDs)
- */
-export function getEmbeddingModels(): EmbeddingServiceId[] {
-    return Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[];
-}
-
-/**
- * Get realtime model names
- */
-export function getRealtimeModels(): RealtimeModelName[] {
-    return Object.keys(REALTIME_SERVICES) as RealtimeModelName[];
 }
 
 function filterVisible<TModelName extends ModelName>(
@@ -242,9 +218,9 @@ export const getVisibleTextModels = () => filterVisible(getTextModels());
 export const getVisibleImageModels = () => filterVisible(getImageModels());
 export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>
-    filterVisible(getEmbeddingModels());
+    filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
-    filterVisible(getRealtimeModels());
+    filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
 
 /**
  * Get a model definition by public model name
@@ -255,14 +231,6 @@ export function getModelDefinition(model: ModelName): ModelDefinition {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
-}
-
-/**
- * Get aliases for a model
- */
-export function getModelAliases(model: ModelName): readonly string[] {
-    const service = MODEL_REGISTRY[model];
-    return service?.aliases || [];
 }
 
 /**
@@ -311,9 +279,8 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
             `Failed to get current price for model: ${model.toString()}`,
         );
     const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = safeRound(
+    const totalPrice = roundPollenLedgerAmount(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),
-        POLLEN_BILLING_PRECISION,
     );
     return {
         ...usagePrice,

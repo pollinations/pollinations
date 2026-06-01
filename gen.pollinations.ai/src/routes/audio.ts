@@ -32,6 +32,7 @@ import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
+import { buildTranscriptionResponse } from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -57,11 +58,6 @@ const CreateSpeechRequestSchema = z
                     "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
                 example: "mp3",
             }),
-        speed: z.number().min(0.25).max(4.0).default(1.0).meta({
-            description:
-                "The speed of the generated audio. 0.25 to 4.0, default 1.0.",
-            example: 1.0,
-        }),
         duration: z.number().min(3).max(300).optional().meta({
             description:
                 "Music duration in seconds, 3-300 (elevenmusic/acestep)",
@@ -113,6 +109,45 @@ function mapOutputFormat(format: string): string {
         pcm: "pcm_44100",
     };
     return formatMap[format] || "mp3_44100_128";
+}
+
+/**
+ * ElevenLabs streams WAV with a placeholder length in the RIFF header (the
+ * data-chunk size and the overall RIFF size are written as 0x7FFFFFFF and never
+ * back-patched once the real length is known). Tools that trust the header
+ * (Python `wave`, ffmpeg) then crash or truncate. Rewrite both size fields to
+ * the real byte counts. No-op if the header is already correct or not RIFF/WAVE.
+ */
+export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length < 44) return buffer; // too short to be a valid WAV header
+    const view = new DataView(buffer);
+    const tag = (offset: number) =>
+        String.fromCharCode(
+            bytes[offset],
+            bytes[offset + 1],
+            bytes[offset + 2],
+            bytes[offset + 3],
+        );
+    if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return buffer;
+
+    // Walk the chunk list (offset 12 onward) to find the `data` sub-chunk,
+    // honouring declared sizes rather than scanning bytes (which could match
+    // "data" inside the PCM payload).
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+        const chunkId = tag(offset);
+        const chunkSize = view.getUint32(offset + 4, true);
+        if (chunkId === "data") {
+            const actualDataSize = bytes.length - (offset + 8);
+            if (chunkSize === actualDataSize) return buffer; // already correct
+            view.setUint32(offset + 4, actualDataSize, true); // data chunk size
+            view.setUint32(4, bytes.length - 8, true); // RIFF chunk size
+            return buffer;
+        }
+        offset += 8 + chunkSize;
+    }
+    return buffer; // no data chunk found
 }
 
 export async function generateSpeech(opts: {
@@ -196,6 +231,21 @@ export async function generateSpeech(opts: {
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
+
+    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
+    // which requires buffering the body. Audio is small (input capped at 4096
+    // chars) so this is cheap; all other formats keep streaming.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
 
     return new Response(response.body, {
         status: 200,
@@ -309,22 +359,12 @@ export async function transcribeWithElevenLabs(opts: {
         duration: Math.round(duration * 10) / 10,
     });
 
-    // Return response based on format
-    if (responseFormat === "text") {
-        return new Response(elevenLabsData.text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse: Record<string, unknown> = {
+    // Scribe word/utterance values are already in seconds — normalize and
+    // hand off to the shared OpenAI-compatible response formatter.
+    return buildTranscriptionResponse({
+        normalized: {
             text: elevenLabsData.text,
-            task: "transcribe",
-            language: elevenLabsData.language_code || "unknown",
+            language: elevenLabsData.language_code,
             duration,
             words:
                 elevenLabsData.words?.map((w) => ({
@@ -332,40 +372,11 @@ export async function transcribeWithElevenLabs(opts: {
                     start: w.start,
                     end: w.end,
                 })) ?? [],
-            segments: [
-                {
-                    id: 0,
-                    start: 0,
-                    end: duration,
-                    text: elevenLabsData.text,
-                },
-            ],
-        };
-        return Response.json(verboseResponse, { headers: usageHeaders });
-    }
-
-    if (responseFormat === "diarized_json") {
-        const utterances = groupScribeUtterances(elevenLabsData.words);
-        return Response.json(
-            {
-                task: "transcribe",
-                duration,
-                text: elevenLabsData.text,
-                segments: toOpenAiDiarizedSegments(utterances),
-                usage: {
-                    type: "duration",
-                    seconds: duration,
-                },
-            },
-            { headers: usageHeaders },
-        );
-    }
-
-    // Default: json format
-    return Response.json(
-        { text: elevenLabsData.text },
-        { headers: usageHeaders },
-    );
+            diarizedSegments: groupScribeUtterances(elevenLabsData.words),
+        },
+        responseFormat,
+        usageHeaders,
+    });
 }
 
 function groupScribeUtterances(
@@ -432,26 +443,6 @@ function finalizeScribeUtterance(group: {
     };
 }
 
-function toOpenAiDiarizedSegments(
-    utterances: ReturnType<typeof groupScribeUtterances>,
-): {
-    type: "transcript.text.segment";
-    id: string;
-    start: number;
-    end: number;
-    text: string;
-    speaker: string;
-}[] {
-    return utterances.map((utterance, index) => ({
-        type: "transcript.text.segment",
-        id: `seg_${String(index + 1).padStart(3, "0")}`,
-        start: utterance.start,
-        end: utterance.end,
-        text: utterance.text,
-        speaker: utterance.speaker ?? "unknown",
-    }));
-}
-
 export async function generateMusic(opts: {
     prompt: string;
     durationSeconds?: number;
@@ -514,7 +505,7 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // MP3 only — parseMp4Duration falsely matches random bytes in compressed audio
+    // ElevenLabs returns MP3; estimate duration from byte size (~16 kB/s) rather than parsing the container.
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
@@ -802,6 +793,101 @@ export async function generateAceStepMusic(opts: {
     });
 }
 
+/**
+ * Runs the 4-way text-to-audio model cascade (acestep -> elevenmusic ->
+ * qwen-tts -> elevenlabs speech) for the resolved model and wraps the result in
+ * safety headers. Shared by the GET /audio/:text and POST /v1/audio/speech
+ * handlers. Callers normalize their inputs first (GET maps seed=-1 -> undefined
+ * since only its schema permits the sentinel).
+ */
+async function dispatchAudioGeneration(
+    c: AudioContext,
+    opts: {
+        text: string;
+        voice: string;
+        responseFormat: string;
+        seed?: number;
+        duration?: number;
+        style?: string;
+        instrumental?: boolean;
+        instruct?: string;
+        apiKey: string;
+        dashScopeApiKey: string;
+        env: Env["Bindings"];
+        log: Logger;
+    },
+): Promise<Response> {
+    const {
+        text,
+        voice,
+        responseFormat,
+        seed,
+        duration,
+        style,
+        instrumental,
+        instruct,
+        apiKey,
+        dashScopeApiKey,
+        env,
+        log,
+    } = opts;
+
+    if (c.var.model.resolved === "acestep") {
+        return withSafetyHeaders(
+            c,
+            await generateAceStepMusic({
+                prompt: text,
+                style,
+                durationSeconds: duration,
+                serviceUrl: env.MUSIC_SERVICE_URL,
+                serviceToken: env.PLN_GPU_TOKEN,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "elevenmusic") {
+        return withSafetyHeaders(
+            c,
+            await generateMusic({
+                prompt: text,
+                durationSeconds: duration,
+                forceInstrumental: instrumental,
+                seed,
+                apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (isQwenTtsModel(c.var.model.resolved)) {
+        return withSafetyHeaders(
+            c,
+            await generateQwenTts({
+                modelName: c.var.model.resolved,
+                text,
+                voice,
+                instruct,
+                apiKey: dashScopeApiKey,
+                log,
+            }),
+        );
+    }
+
+    return withSafetyHeaders(
+        c,
+        await generateSpeech({
+            modelName: c.var.model.resolved as AudioModelName,
+            text,
+            voice,
+            responseFormat,
+            seed,
+            apiKey,
+            log,
+        }),
+    );
+}
+
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
@@ -823,60 +909,22 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
-    if (c.var.model.resolved === "acestep") {
-        return withSafetyHeaders(
-            c,
-            await generateAceStepMusic({
-                prompt: text,
-                style: query.style,
-                durationSeconds: query.duration,
-                serviceUrl: c.env.MUSIC_SERVICE_URL,
-                serviceToken: c.env.PLN_GPU_TOKEN,
-                log,
-            }),
-        );
-    }
-
-    if (c.var.model.resolved === "elevenmusic") {
-        return withSafetyHeaders(
-            c,
-            await generateMusic({
-                prompt: text,
-                durationSeconds: query.duration,
-                forceInstrumental: query.instrumental,
-                seed: query.seed === -1 ? undefined : query.seed,
-                apiKey,
-                log,
-            }),
-        );
-    }
-
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved,
-                text,
-                voice: query.voice || "alloy",
-                instruct: query.instruct,
-                apiKey: c.env.DASHSCOPE_API_KEY,
-                log,
-            }),
-        );
-    }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved as AudioModelName,
-            text,
-            voice: query.voice || "alloy",
-            responseFormat: query.response_format || "mp3",
-            seed: query.seed === -1 ? undefined : query.seed,
-            apiKey,
-            log,
-        }),
-    );
+    // Only the GET query schema permits the -1 "random seed" sentinel; map it to
+    // undefined here so the generators only ever see a real seed or none.
+    return dispatchAudioGeneration(c, {
+        text,
+        voice: query.voice,
+        responseFormat: query.response_format,
+        seed: query.seed === -1 ? undefined : query.seed,
+        duration: query.duration,
+        style: query.style,
+        instrumental: query.instrumental,
+        instruct: query.instruct,
+        apiKey,
+        dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        env: c.env,
+        log,
+    });
 }
 
 export const audioRoutes = new Hono<Env>()
@@ -927,81 +975,38 @@ export const audioRoutes = new Hono<Env>()
             const log = c.get("log").getChild("tts");
             await requireGenerationAccess(c.var, c.env);
 
-            const { input, safe, voice, response_format } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
+            const {
+                input,
+                safe,
+                voice,
+                response_format,
+                duration,
+                instrumental,
+                seed,
+                style,
+                instruct,
+            } = c.req.valid("json" as never) as CreateSpeechRequest;
             requireTextToAudioModel(c.var.model.resolved);
             const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "acestep") {
-                const { duration, style } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateAceStepMusic({
-                        prompt: safeInput,
-                        style,
-                        durationSeconds: duration,
-                        serviceUrl: c.env.MUSIC_SERVICE_URL,
-                        serviceToken: c.env.PLN_GPU_TOKEN,
-                        log,
-                    }),
-                );
-            }
-
-            if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental, seed } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateMusic({
-                        prompt: safeInput,
-                        durationSeconds: duration,
-                        forceInstrumental: instrumental,
-                        seed,
-                        apiKey,
-                        log,
-                    }),
-                );
-            }
-
-            const { seed } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
-            if (isQwenTtsModel(c.var.model.resolved)) {
-                const { instruct } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateQwenTts({
-                        modelName: c.var.model.resolved,
-                        text: safeInput,
-                        voice,
-                        instruct,
-                        apiKey: c.env.DASHSCOPE_API_KEY,
-                        log,
-                    }),
-                );
-            }
-
-            return withSafetyHeaders(
-                c,
-                await generateSpeech({
-                    modelName: c.var.model.resolved as AudioModelName,
-                    text: safeInput,
-                    voice,
-                    responseFormat: response_format,
-                    seed,
-                    apiKey,
-                    log,
-                }),
-            );
+            // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
+            return dispatchAudioGeneration(c, {
+                text: safeInput,
+                voice,
+                responseFormat: response_format,
+                seed,
+                duration,
+                style,
+                instrumental,
+                instruct,
+                apiKey,
+                dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                env: c.env,
+                log,
+            });
         },
     )
     .post(
@@ -1221,6 +1226,7 @@ export const audioRoutes = new Hono<Env>()
                         "Transcription service is not configured (missing API key)",
                 });
             }
+            validateWhisperResponseFormat(responseFormat);
 
             // Re-build formData for Whisper (Hono consumed the original body stream).
             // Preserve filename — OVH needs the extension to detect format/duration.
@@ -1229,8 +1235,11 @@ export const audioRoutes = new Hono<Env>()
                 file.name && file.name !== "blob" ? file.name : "audio.mp3";
             whisperFormData.append("file", file, filename);
             if (language) whisperFormData.append("language", language);
-            if (responseFormat)
-                whisperFormData.append("response_format", responseFormat);
+            // Always request verbose_json from OVH so usage.seconds (billing) and
+            // segments (srt/vtt) are present; reformat locally to the caller's
+            // requested response_format below. Forwarding e.g. `text` upstream
+            // would return a plain-text body and lose the usage object.
+            whisperFormData.append("response_format", "verbose_json");
             whisperFormData.append("model", "whisper-large-v3");
             whisperFormData.append("timestamp_granularities[]", "word");
 
@@ -1246,20 +1255,29 @@ export const audioRoutes = new Hono<Env>()
             });
             const response = await ensureUpstreamOk(rawResponse, whisperUrl);
 
-            // Read body to extract duration for usage billing
+            // OVH always returns verbose_json now; parse once, bill from it, then
+            // reformat to the caller's requested format.
             const responseBody = await response.text();
-            const duration = extractWhisperUsage(responseBody, log);
+            let whisper: WhisperVerboseJson;
+            try {
+                whisper = JSON.parse(responseBody);
+            } catch {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message:
+                        "Whisper returned an unexpected (non-JSON) response",
+                });
+            }
+            const duration = extractWhisperUsage(whisper, log);
             const usageHeaders = buildUsageHeaders(
                 c.var.model.resolved,
                 createAudioSecondsUsage(duration),
             );
 
-            // Build final response with usage headers
-            const headers = {
-                ...Object.fromEntries(response.headers),
-                ...usageHeaders,
-            };
-            const result = new Response(responseBody, { headers });
+            const result = formatWhisperResponse(
+                whisper,
+                responseFormat,
+                usageHeaders,
+            );
             c.var.track.overrideResponseTracking(result.clone());
 
             return result;
@@ -1281,8 +1299,42 @@ export function parsePositiveInt(
     return n;
 }
 
-function extractWhisperUsage(responseBody: string, log: Logger): number {
-    const json = JSON.parse(responseBody);
+interface WhisperSegment {
+    start: number;
+    end: number;
+    text: string;
+}
+
+interface WhisperVerboseJson {
+    text: string;
+    usage?: { seconds?: number };
+    segments?: WhisperSegment[];
+}
+
+const WHISPER_RESPONSE_FORMATS = [
+    "json",
+    "text",
+    "verbose_json",
+    "srt",
+    "vtt",
+] as const;
+
+type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
+
+function validateWhisperResponseFormat(responseFormat: string | null): void {
+    if (
+        responseFormat &&
+        !WHISPER_RESPONSE_FORMATS.includes(
+            responseFormat as WhisperResponseFormat,
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
+        });
+    }
+}
+
+function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
         throw new Error(
@@ -1291,4 +1343,64 @@ function extractWhisperUsage(responseBody: string, log: Logger): number {
     }
     log.debug("Whisper usage: {seconds}s", { seconds });
     return seconds;
+}
+
+/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
+function formatTimestamp(seconds: number, sep: "," | "."): string {
+    const ms = Math.round(seconds * 1000);
+    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+    const msPart = String(ms % 1000).padStart(3, "0");
+    return `${h}:${m}:${s}${sep}${msPart}`;
+}
+
+function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
+    const sep = kind === "srt" ? "," : ".";
+    const cues = segments.map((seg, i) => {
+        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
+        const head = kind === "srt" ? `${i + 1}\n` : "";
+        return `${head}${time}\n${seg.text.trim()}`;
+    });
+    return kind === "vtt"
+        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
+        : `${cues.join("\n\n")}\n`;
+}
+
+/**
+ * Reformat OVH's verbose_json into the caller's requested response_format.
+ * Mirrors the ElevenLabs scribe path so behaviour is consistent across backends.
+ */
+export function formatWhisperResponse(
+    json: WhisperVerboseJson,
+    responseFormat: string | null,
+    usageHeaders: Record<string, string>,
+): Response {
+    validateWhisperResponseFormat(responseFormat);
+
+    if (responseFormat === "text") {
+        return new Response(json.text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "srt" || responseFormat === "vtt") {
+        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "verbose_json") {
+        const { usage: _usage, ...rest } = json;
+        return Response.json(rest, { headers: usageHeaders });
+    }
+
+    // Default: json
+    return Response.json({ text: json.text }, { headers: usageHeaders });
 }

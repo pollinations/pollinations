@@ -1,59 +1,10 @@
+import { BeakerIcon, InfoTip, MailIcon, TrendUpIcon } from "@pollinations/ui";
 import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
-import { InfoTip } from "../ui/info-tip.tsx";
 import { TierExplanation } from "./tier-explanation";
 
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
-
-const MailIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m3 7 9 7 9-7" />
-    </svg>
-);
-
-const BeakerIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M9 3h6" />
-        <path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" />
-        <path d="M7 14h10" />
-    </svg>
-);
-
-const TrendUpIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="3 17 9 11 13 15 21 7" />
-        <polyline points="15 7 21 7 21 13" />
-    </svg>
-);
 
 type TierFinePrintProps = { showTierHint?: boolean };
 
@@ -110,10 +61,6 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
         </p>
     </div>
 );
-
-// All tier levels render with the same `<Chip intent="tier">` recipe —
-// the soft yellow chip. Tier identity is communicated via the emoji +
-// name, not by colour.
 
 // ─── Microbe: Account Under Review ──────────────────────────
 

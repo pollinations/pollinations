@@ -1,13 +1,11 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
+import { getModalityColors } from "@pollinations/ui/modality";
 import type { FC } from "react";
 import { useState } from "react";
-import { getModalityColors } from "../models/modality-ui.ts";
 import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
-import { Disclosure } from "../ui/disclosure.tsx";
-import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {
     getPermissionUiTheme,
@@ -220,7 +218,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 })}
 
                 {/* Models */}
-                <Disclosure
+                <Collapsible
                     expanded={modelsExpanded}
                     onToggle={() => setModelsExpanded((v) => !v)}
                     disabled={disabled}
@@ -255,7 +253,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             theme={theme}
                         />
                     ))}
-                </Disclosure>
+                </Collapsible>
             </div>
         </div>
     );
@@ -305,7 +303,7 @@ const ModelCategory: FC<{
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
             </button>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <ButtonGroup aria-label={`${label} models`}>
             {models.map((model) => (
                 <ModelChip
                     key={model.id}
@@ -318,7 +316,7 @@ const ModelCategory: FC<{
                     category={label}
                 />
             ))}
-        </div>
+        </ButtonGroup>
     </div>
 );
 
@@ -338,16 +336,31 @@ const ModelChip: FC<{
     disabled,
     showApiName = true,
     category,
-}) => (
-    <ModalityButton
-        category={category}
-        selected={selected}
-        onClick={onClick}
-        disabled={disabled}
-    >
-        {officialName}
-        {showApiName && (
-            <span className="font-mono opacity-70"> - {apiName}</span>
-        )}
-    </ModalityButton>
-);
+}) => {
+    const colors = getModalityColors(category ?? "");
+    const colorClasses = selected
+        ? (colors?.filled ?? "polli:bg-gray-200 polli:text-gray-900")
+        : cn(
+              "polli:bg-gray-100 polli:text-gray-600",
+              !disabled && colors?.hover,
+          );
+
+    return (
+        <Button
+            type="button"
+            size="small"
+            aria-pressed={selected}
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "polli:shrink-0 polli:gap-1 polli:px-3 polli:py-1 polli:text-left polli:text-sm",
+                colorClasses,
+            )}
+        >
+            {officialName}
+            {showApiName && (
+                <span className="font-mono opacity-70"> - {apiName}</span>
+            )}
+        </Button>
+    );
+};

@@ -1,6 +1,10 @@
 /**
  * Worker entry point for pollinations.ai
- * Serves static assets, handles API proxy, and rewrites meta tags per route for SEO.
+ * Serves static assets and rewrites meta tags per route for SEO.
+ *
+ * The site talks to the public APIs (gen/enter) directly from the browser using
+ * the publishable BYOP app key (see src/api.config.ts), so this worker does no
+ * API proxying — it only serves assets and rewrites SEO metadata.
  */
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
@@ -18,11 +22,8 @@ declare class HTMLRewriter {
 }
 
 interface Env {
-    PLN_APPS_KEY: string;
     ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
-
-const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
 
 const ROUTE_META: Record<string, { title: string; description: string }> = {
     "/": {
@@ -31,27 +32,27 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
             "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
     },
     "/play": {
-        title: "Play \u2014 pollinations.ai",
+        title: "Play | pollinations.ai",
         description: "Generate images, text, audio and video with AI models",
     },
     "/apps": {
-        title: "Apps \u2014 pollinations.ai",
+        title: "Apps | pollinations.ai",
         description: "Community-built apps powered by Pollinations AI",
     },
     "/community": {
-        title: "Community \u2014 pollinations.ai",
+        title: "Community | pollinations.ai",
         description: "Contributors, voting, and build diary",
     },
     "/terms": {
-        title: "Terms \u2014 pollinations.ai",
+        title: "Terms | pollinations.ai",
         description: "Terms of service for pollinations.ai",
     },
     "/privacy": {
-        title: "Privacy \u2014 pollinations.ai",
+        title: "Privacy | pollinations.ai",
         description: "Privacy policy for pollinations.ai",
     },
     "/refunds": {
-        title: "Refunds \u2014 pollinations.ai",
+        title: "Refunds | pollinations.ai",
         description: "Refunds and cancellations policy for pollinations.ai",
     },
 };
@@ -89,58 +90,6 @@ function getJsonLd(path: string): string | null {
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
-
-        // Handle CORS preflight
-        if (request.method === "OPTIONS") {
-            return new Response(null, {
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Headers":
-                        "Content-Type, Authorization",
-                },
-            });
-        }
-
-        // Proxy /api/* requests to enter.pollinations.ai
-        if (url.pathname.startsWith("/api/")) {
-            const targetPath = url.pathname.replace(/^\/api/, "");
-            const targetUrl = `${ENTER_BASE_URL}${targetPath}${url.search}`;
-
-            // Clone headers and add auth
-            const headers = new Headers(request.headers);
-            headers.set("Authorization", `Bearer ${env.PLN_APPS_KEY}`);
-
-            const proxyRequest = new Request(targetUrl, {
-                method: request.method,
-                headers,
-                body:
-                    request.method !== "GET" && request.method !== "HEAD"
-                        ? request.body
-                        : undefined,
-            });
-
-            try {
-                const response = await fetch(proxyRequest);
-
-                // Return response with CORS headers
-                const responseHeaders = new Headers(response.headers);
-                responseHeaders.set("Access-Control-Allow-Origin", "*");
-
-                return new Response(response.body, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: responseHeaders,
-                });
-            } catch (error) {
-                const message =
-                    error instanceof Error ? error.message : "Unknown error";
-                return new Response(JSON.stringify({ error: message }), {
-                    status: 500,
-                    headers: { "Content-Type": "application/json" },
-                });
-            }
-        }
 
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);

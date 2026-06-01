@@ -1,12 +1,16 @@
+import {
+    AppIcon,
+    Chip,
+    IconButton,
+    Section,
+    Surface,
+    TerminalIcon,
+    Tooltip,
+} from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { IconButton } from "../ui/icon-button.tsx";
-import { Surface } from "../ui/surface.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
@@ -208,7 +212,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <DashboardSection
+                <Section
                     title="API"
                     theme="blue"
                     framed
@@ -242,8 +246,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             your account.
                         </span>
                     </p>
-                </DashboardSection>
-                <DashboardSection
+                </Section>
+                <Section
                     title="App"
                     theme="blue"
                     framed
@@ -304,7 +308,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             Pollinations account and spend their own Pollen.
                         </span>
                     </p>
-                </DashboardSection>
+                </Section>
             </div>
             <DeleteConfirmation
                 deleteId={deleteId}
@@ -321,35 +325,3 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </>
     );
 };
-
-const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="4 8 8 12 4 16" />
-        <line x1="12" y1="20" x2="20" y2="20" />
-    </svg>
-);
-
-const AppIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="2" y="4" width="20" height="14" rx="2" />
-        <path d="M2 20h20" />
-    </svg>
-);

@@ -1,8 +1,5 @@
-import { Field } from "@ark-ui/react";
-import { cn } from "@frontend/lib/cn.ts";
+import { cn, Field, InfoTip, Input } from "@pollinations/ui";
 import type { FC } from "react";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Input } from "../ui/input.tsx";
 import {
     getPermissionUiTheme,
     type PermissionUiTheme,
@@ -55,7 +52,8 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("input-number-clean w-[90px]", inputClasses)}
+                    className={cn("w-[90px]", inputClasses)}
+                    hideNumberSteppers
                     placeholder="Never"
                     disabled={disabled}
                 />

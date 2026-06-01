@@ -51,6 +51,8 @@ jobs:
       - name: Deploy
         if: steps.app.outputs.skip != 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          CLOUDFLARE_API_TOKEN_OLD: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID_OLD: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: ./apps/_scripts/deploy.sh ${{ steps.app.outputs.app_name }}

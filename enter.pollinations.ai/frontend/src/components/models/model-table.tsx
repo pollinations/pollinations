@@ -1,11 +1,11 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { PaidChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,
+    type PriceDefinition,
 } from "@shared/registry/registry.ts";
-import { type FC, type MouseEvent, useState } from "react";
-import { Chip } from "../ui/chip.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
+import { type FC, useState } from "react";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
@@ -64,31 +64,39 @@ const DEFAULT_DIR: Record<SortKey, SortDir> = {
     output: "asc",
 };
 
-const getInputSortValue = (modelName: string): number => {
+const INPUT_PRICE_FIELDS = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptAudioTokens",
+    "promptAudioSeconds",
+    "promptImageTokens",
+    "promptVideoTokens",
+] as const satisfies (keyof PriceDefinition)[];
+
+const OUTPUT_PRICE_FIELDS = [
+    "completionTextTokens",
+    "completionAudioTokens",
+    "completionAudioSeconds",
+    "completionImageTokens",
+    "completionVideoSeconds",
+    "completionVideoTokens",
+] as const satisfies (keyof PriceDefinition)[];
+
+const sortValueFromFields = (
+    modelName: string,
+    fields: readonly (keyof PriceDefinition)[],
+): number => {
     const p = getPriceDefinition(modelName as ModelName);
     if (!p) return -1;
-    const sum =
-        (p.promptTextTokens ?? 0) +
-        (p.promptCachedTokens ?? 0) +
-        (p.promptAudioTokens ?? 0) +
-        (p.promptAudioSeconds ?? 0) +
-        (p.promptImageTokens ?? 0) +
-        (p.promptVideoTokens ?? 0);
+    const sum = fields.reduce((total, field) => total + (p[field] ?? 0), 0);
     return sum > 0 ? sum : -1;
 };
 
-const getOutputSortValue = (modelName: string): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum =
-        (p.completionTextTokens ?? 0) +
-        (p.completionAudioTokens ?? 0) +
-        (p.completionAudioSeconds ?? 0) +
-        (p.completionImageTokens ?? 0) +
-        (p.completionVideoSeconds ?? 0) +
-        (p.completionVideoTokens ?? 0);
-    return sum > 0 ? sum : -1;
-};
+const getInputSortValue = (modelName: string): number =>
+    sortValueFromFields(modelName, INPUT_PRICE_FIELDS);
+
+const getOutputSortValue = (modelName: string): number =>
+    sortValueFromFields(modelName, OUTPUT_PRICE_FIELDS);
 
 const sortModels = (
     models: ModelPrice[],
@@ -241,7 +249,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const [copied, setCopied] = useState(false);
     const displayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
@@ -261,13 +268,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             packBalance ?? 0,
             showPaidOnly,
         );
-
-    const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(model.name);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 900);
-    };
 
     return (
         <div
@@ -295,23 +295,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                 />
                 <div className="relative z-10 pointer-events-none grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 p-4">
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <svg
-                            className={cn(
-                                "mt-1 w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
-                                expanded && "rotate-180",
-                            )}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
+                        <ChevronIcon
+                            expanded={expanded}
+                            className="mt-1 h-3.5 w-3.5 shrink-0 text-gray-300"
+                        />
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2.5">
                                 {brandLogoPath && (
@@ -355,9 +342,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         </Chip>
                                     )}
                                     {showPaidOnly && (
-                                        <Chip intent="paid" size="sm">
-                                            PAID
-                                        </Chip>
+                                        <PaidChip size="sm">PAID</PaidChip>
                                     )}
                                 </div>
                             )}
@@ -371,26 +356,33 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
                     <div className="flex min-w-0 flex-col gap-2 pl-6">
-                        <button
-                            type="button"
-                            onClick={copyModelName}
-                            className={cn(
-                                "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
-                                copied
-                                    ? "text-teal-700"
-                                    : "hover:text-gray-700",
-                            )}
+                        <CopyButton
+                            value={model.name}
+                            copiedTimeoutMs={900}
+                            tooltip={`Copy API model name ${model.name}`}
                             aria-label={`Copy API model name ${model.name}`}
-                        >
-                            <span className="min-w-0 truncate">
-                                {model.name}
-                            </span>
-                            {copied && (
-                                <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                            className={(copied) =>
+                                cn(
+                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
                                     copied
-                                </span>
+                                        ? "text-teal-700"
+                                        : "hover:text-gray-700",
+                                )
+                            }
+                        >
+                            {(copied) => (
+                                <>
+                                    <span className="min-w-0 truncate">
+                                        {model.name}
+                                    </span>
+                                    {copied && (
+                                        <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                                            copied
+                                        </span>
+                                    )}
+                                </>
                             )}
-                        </button>
+                        </CopyButton>
                         <MobilePriceGroup
                             label="In"
                             model={model}

@@ -63,25 +63,3 @@ export function cached<TArgs extends any[], TReturn>(
         return result;
     };
 }
-
-/**
- * Creates a hash from function arguments for use as cache key (fallback)
- */
-async function hashArgs(args: any[]): Promise<string> {
-    const argsString = JSON.stringify(args, (_, value) => {
-        if (typeof value === "function") {
-            return value.toString();
-        }
-        if (value === undefined) {
-            return "__undefined__";
-        }
-        return value;
-    });
-
-    // Create SHA-256 hash
-    const encoder = new TextEncoder();
-    const data = encoder.encode(argsString);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}

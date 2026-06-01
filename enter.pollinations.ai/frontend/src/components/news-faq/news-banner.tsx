@@ -1,6 +1,5 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { Surface } from "../ui/surface.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";

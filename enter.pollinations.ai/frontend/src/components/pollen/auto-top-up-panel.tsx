@@ -1,5 +1,13 @@
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
+import {
+    Button,
+    cn,
+    ExternalLinkIcon,
+    InfoTip,
+    Switch,
+    type SwitchStatus,
+    Tooltip,
+} from "@pollinations/ui";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -12,10 +20,6 @@ import {
     useEffect,
     useState,
 } from "react";
-import { Button } from "../ui/button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Switch, type SwitchStatus } from "../ui/switch.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -261,7 +265,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         toggleStatus,
         lastIssue,
     );
-    const alertTone = switchStatus === "draft";
+    const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
     return (
@@ -384,7 +388,9 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
         <span>{loading ? "Opening..." : "Manage billing"}</span>
-        {!loading && <ExternalLinkIcon />}
+        {!loading && (
+            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-amber-700/70" />
+        )}
     </Button>
 );
 
@@ -393,10 +399,10 @@ function mapToggleStatusToSwitchStatus(
     issue: AutoTopUpIssue | null,
 ): SwitchStatus {
     if (status === "off") return "off";
-    if (status === "draft") return "draft";
-    // status === "on": red (draft) when there's an unresolved issue,
+    if (status === "draft") return "invalid";
+    // status === "on": red (invalid) when there's an unresolved issue,
     // green (on) when fully configured.
-    return issue !== null ? "draft" : "on";
+    return issue !== null ? "invalid" : "on";
 }
 
 type AutoTopUpSaveButtonProps = {
@@ -466,20 +472,17 @@ function canEnable(setup: SetupReadiness): boolean {
     );
 }
 
-function getDisabledReason(
-    setup: SetupReadiness,
-    action: string,
-): string | null {
+function getDisabledReason(setup: SetupReadiness): string | null {
     if (setup.isSaving) return "Saving auto top-up...";
     if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
     if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
-        return `Add a default payment method and billing details in Stripe before ${action}.`;
+        return "Add a default payment method and billing details in Stripe before saving changes.";
     }
     if (!setup.paymentMethodReady) {
-        return `Add a default payment method in Stripe before ${action}.`;
+        return "Add a default payment method in Stripe before saving changes.";
     }
     if (!setup.billingDetailsReady) {
-        return `Add billing details in Stripe before ${action}.`;
+        return "Add billing details in Stripe before saving changes.";
     }
     return null;
 }
@@ -490,7 +493,7 @@ function getSaveDisabledReason(
         hasUnsavedChanges: boolean;
     },
 ): string | null {
-    const setupReason = getDisabledReason(state, "saving changes");
+    const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
     if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
@@ -518,23 +521,6 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     >
         {children}
     </div>
-);
-
-const ExternalLinkIcon: FC = () => (
-    <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0 text-amber-700/70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );
 
 function formatPaymentMethod(billingState: BillingState | null): string {
@@ -576,7 +562,6 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
 
 function isStripeBillingReturn(): boolean {
     return (
-        typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get(
             "stripe_billing_return",
         ) === "true"
@@ -584,7 +569,6 @@ function isStripeBillingReturn(): boolean {
 }
 
 function readAutoTopUpDraftPackAmount(): number | null {
-    if (typeof window === "undefined") return null;
     try {
         const raw = window.sessionStorage.getItem(
             AUTO_TOP_UP_DRAFT_STORAGE_KEY,

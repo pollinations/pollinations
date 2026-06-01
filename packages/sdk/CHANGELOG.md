@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to `@pollinations_ai/sdk` will be documented in this file.
+All notable changes to `@pollinations/sdk` will be documented in this file.
+
+## [5.0.0] - 2026-06-01
+
+### Removed (Breaking)
+- Removed speculative, never-used helpers from the public API surface:
+  - `generateImages()` / `generateVideos()` — batch generation across multiple different prompts
+  - `generateImageWithProgress()` — image generation with progress polling
+  - `showImage()` / `displayImage()` — browser DOM helpers
+  - Associated types: `BatchResult`, `AwaitOptions`, `ProgressStatus`
+
+  Generating multiple images for a single prompt remains available via the
+  documented `generateImage({ n })` / `imageGenerate({ n })` helpers. For
+  multiple distinct prompts, call `generateImage()` per prompt (e.g. with
+  `Promise.all`).
 
 ## [4.1.0] - 2026-03-05
 
@@ -29,10 +43,10 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
 ### Fixed 
 - Created a single sdk package with react + frontend + backend support.
-- Updated README.md to reflect new usage instructions for react hooks from '@pollinations_ai/sdk'.
+- Updated README.md to reflect new usage instructions for react hooks from '@pollinations/sdk'.
 
 ### Renamed 
-- Renamed package from `pollinations-react` to `@pollinations_ai/sdk`.
+- Renamed package from `pollinations-react` to `@pollinations/sdk`.
 
 ### Improved
 - Updated package.json with new name, version, description, and keywords and authors.

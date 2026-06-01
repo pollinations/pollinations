@@ -128,13 +128,6 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
 
     return {
         ...requestDataWithoutMessages,
-        userInfo: {
-            userId: c.var.auth?.user?.id,
-            username: c.var.auth?.user?.githubUsername,
-            tier: c.var.auth?.user?.tier,
-            referrer: requestData.referrer || "unknown",
-            cf_ray: c.req.header("cf-ray") || "",
-        },
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
     };
@@ -229,53 +222,20 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
         return new Response(completion.responseStream, { headers });
     }
 
-    return new Response(asyncIterableToStream(completion.responseStream), {
-        headers,
-    });
-}
-
-function asyncIterableToStream(
-    iterable: AsyncIterable<unknown> | null | undefined,
-): ReadableStream<Uint8Array> {
+    // Defensive: upstream produced a null stream body.
     const encoder = new TextEncoder();
-    return new ReadableStream({
-        async start(controller) {
-            if (!iterable) {
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-                    ),
-                );
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-                return;
-            }
-
-            try {
-                for await (const chunk of iterable) {
-                    if (typeof chunk === "string") {
-                        controller.enqueue(encoder.encode(chunk));
-                    } else if (chunk instanceof Uint8Array) {
-                        controller.enqueue(chunk);
-                    } else {
-                        controller.enqueue(encoder.encode(String(chunk)));
-                    }
-                }
-            } catch (thrown) {
-                const message =
-                    thrown instanceof Error
-                        ? thrown.message
-                        : "Streaming response failed";
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ error: { message } })}\n\n`,
-                    ),
-                );
-            }
+    const fallbackStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(
+                encoder.encode(
+                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+                ),
+            );
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
         },
     });
+    return new Response(fallbackStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {

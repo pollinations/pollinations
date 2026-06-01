@@ -80,7 +80,7 @@ export interface ChatCompletion {
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;
-    responseStream?: AsyncIterable<unknown> | ReadableStream | null;
+    responseStream?: ReadableStream | null;
     requestData?: unknown;
     [key: string]: unknown;
 }
@@ -93,7 +93,6 @@ export interface ServiceError extends Error {
     details?: unknown;
     model?: string;
     provider?: string;
-    originalProvider?: string;
     response?: { data?: unknown };
 }
 
@@ -133,9 +132,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    authHeaderName?: string;
-    authHeaderValue?: () => string | undefined;
     defaultOptions?: Record<string, unknown>;
-    formatResponse?: ((...args: unknown[]) => unknown) | null;
     additionalHeaders?: Record<string, string>;
 }

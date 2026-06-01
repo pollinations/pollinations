@@ -45,7 +45,6 @@ describe("genericOpenAIClient", () => {
                 modelDef: { name: "openai-fast" },
                 requestedModel: "openai-fast",
                 userApiKey: "sk_should_not_leak",
-                userInfo: { userId: "user-1" },
                 isPrivate: true,
                 referrer: "https://example.com",
                 portkeyGatewayUrl: "https://portkey.test",
@@ -71,7 +70,6 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("referrer");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
-        expect(upstreamBody).not.toHaveProperty("userInfo");
     });
 
     it("drops invalid optional message names before sending upstream", async () => {

@@ -1,15 +1,33 @@
-# @pollinations_ai/sdk
+# @pollinations/sdk
 
 Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, text, audio, and video with one simple package.
 
-[![npm version](https://img.shields.io/npm/v/@pollinations_ai/sdk.svg)](https://www.npmjs.com/package/@pollinations_ai/sdk)
+[![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
 ```bash
-npm install @pollinations_ai/sdk
+npm install @pollinations/sdk
 ```
+
+### CDN / `<script>` tag
+
+The SDK also ships a browser IIFE bundle for direct `<script>` use:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk"></script>
+<script>
+  const { generateImage, generateText } = Pollinations;
+  // ...
+</script>
+```
+
+The IIFE bundle exposes only the **API client** under the global
+`Pollinations`. The React subpath (`PolliProvider`, `useAuthState`, etc.)
+is shipped as ESM/CJS only — use a bundler (Vite, webpack, Next.js, etc.)
+to consume it. There's no IIFE entry for `./react` because every React
+app already has a build step.
 
 ## Quick Start
 
@@ -22,7 +40,7 @@ export POLLINATIONS_API_KEY=your_api_key
 Then:
 
 ```javascript
-import { generateImage, generateText } from '@pollinations_ai/sdk';
+import { generateImage, generateText } from '@pollinations/sdk';
 
 // Generate an image
 const image = await generateImage('a futuristic cityscape');
@@ -41,7 +59,7 @@ New to coding? Here's a complete file you can copy-paste and run:
 // save this as: my-first-ai.mjs
 // First run: export POLLINATIONS_API_KEY=your_api_key
 
-import { generateText, generateImage } from '@pollinations_ai/sdk';
+import { generateText, generateImage } from '@pollinations/sdk';
 
 async function main() {
   // Generate text
@@ -68,7 +86,7 @@ node my-first-ai.mjs
 
 ```html
 <script type="module">
-  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations_ai/sdk';
+  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
 
   // Set your API key
   configure({ apiKey: 'your_api_key' });
@@ -94,7 +112,7 @@ node my-first-ai.mjs
 An API key is required. Get one for free at **https://enter.pollinations.ai**
 
 ```javascript
-import { configure } from '@pollinations_ai/sdk';
+import { configure } from '@pollinations/sdk';
 
 configure({ apiKey: 'your_api_key' });
 ```
@@ -109,7 +127,7 @@ export POLLINATIONS_API_KEY=your_api_key
 For CLI tools, scripts, or any environment without a browser redirect, use the OAuth device flow to let the user approve access without pasting a key:
 
 ```javascript
-import { authorizeDevice, configure, userInfo } from '@pollinations_ai/sdk';
+import { authorizeDevice, configure, userInfo } from '@pollinations/sdk';
 
 const auth = await authorizeDevice();
 console.log(`Open ${auth.verificationUri} and enter code: ${auth.userCode}`);
@@ -123,12 +141,79 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
 
+### React auth provider
+
+React apps can use the `@pollinations/sdk/react` subpath for shared login
+state. The provider only owns the session token and OAuth flow; account data is
+loaded by opt-in hooks.
+
+```tsx
+import {
+  PolliProvider,
+  useAccountProfile,
+  useAuth,
+} from '@pollinations/sdk/react';
+
+function AccountStatus() {
+  const { isLoggedIn, login, logout } = useAuth();
+  const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
+
+  if (!isLoggedIn) {
+    return <button onClick={() => login()}>Log in</button>;
+  }
+
+  return (
+    <button onClick={logout}>
+      Log out{profile?.name ? ` ${profile.name}` : ''}
+    </button>
+  );
+}
+
+export function App() {
+  return (
+    <PolliProvider appKey="pk_your_publishable_key" permissions={['profile']}>
+      <AccountStatus />
+    </PolliProvider>
+  );
+}
+```
+
+Account hooks are intentionally separate from the provider: `useAccountProfile`,
+`useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
+SDK response shapes plus `{ isLoading, error, refresh }`.
+
+#### SSR / Next.js App Router / RSC
+
+`PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
+
+- **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
+
+  ```tsx
+  // app/providers.tsx
+  "use client";
+  import { PolliProvider } from "@pollinations/sdk/react";
+  export function Providers({ children }: { children: React.ReactNode }) {
+    return <PolliProvider appKey="pk_…">{children}</PolliProvider>;
+  }
+
+  // app/layout.tsx (server component)
+  import { Providers } from "./providers";
+  export default function RootLayout({ children }) {
+    return <html><body><Providers>{children}</Providers></body></html>;
+  }
+  ```
+
+- **React Server Components**: `useAuth`, `useAuthState`, `useAuthActions`, and account hooks cannot be called from server components. Any component that reads auth state must be a client component.
+- **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
 
 ```javascript
-import { listKeys, createKey, revokeKey } from '@pollinations_ai/sdk';
+import { listKeys, createKey, revokeKey } from '@pollinations/sdk';
 
 // List all keys on the account
 const keys = await listKeys();
@@ -152,7 +237,7 @@ Without `accountPermissions`, scoped keys can generate media but cannot read acc
 ## Image Generation
 
 ```javascript
-import { generateImage, imageUrl } from '@pollinations_ai/sdk';
+import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
@@ -197,7 +282,7 @@ const url = await imageUrl('a sunset');
 ## Image Editing
 
 ```javascript
-import { editImage } from '@pollinations_ai/sdk';
+import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
@@ -216,7 +301,7 @@ const result2 = await editImage('Combine these two scenes', {
 The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
 
 ```javascript
-import { imageGenerate } from '@pollinations_ai/sdk';
+import { imageGenerate } from '@pollinations/sdk';
 
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
@@ -235,7 +320,7 @@ For the simpler GET-based endpoint, see `generateImage` above.
 ## Text Generation
 
 ```javascript
-import { generateText, generateTextStream } from '@pollinations_ai/sdk';
+import { generateText, generateTextStream } from '@pollinations/sdk';
 
 // Simple
 const text = await generateText('write a poem about coding');
@@ -280,7 +365,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations_ai/sdk';
+import { chat, chatStream, conversation } from '@pollinations/sdk';
 
 // Single message
 const response = await chat([
@@ -308,7 +393,7 @@ convo.clear(); // Reset conversation
 ## Video Generation
 
 ```javascript
-import { generateVideo } from '@pollinations_ai/sdk';
+import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
   model: 'veo',
@@ -338,7 +423,7 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
-import { generateAudio } from '@pollinations_ai/sdk';
+import { generateAudio } from '@pollinations/sdk';
 
 // Text-to-speech
 const speech = await generateAudio('Hello, welcome!', { voice: 'nova' });
@@ -377,7 +462,7 @@ alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel
 ## Vision (Image Input)
 
 ```javascript
-import { chat } from '@pollinations_ai/sdk';
+import { chat } from '@pollinations/sdk';
 
 const response = await chat([
   {
@@ -393,7 +478,7 @@ const response = await chat([
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations_ai/sdk';
+import { getTextModels, getImageModels } from '@pollinations/sdk';
 
 const textModels = await getTextModels();
 const imageModels = await getImageModels();
@@ -404,7 +489,7 @@ console.log(textModels.map(m => m.name));
 ## Error Handling
 
 ```javascript
-import { generateImage, PollinationsError } from '@pollinations_ai/sdk';
+import { generateImage, PollinationsError } from '@pollinations/sdk';
 
 try {
   const image = await generateImage('test');
@@ -422,7 +507,7 @@ Common error codes: `400` invalid params, `401` missing/invalid key, `402` insuf
 ## Advanced: Client Class
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({ apiKey: 'your_key' });
 
@@ -443,7 +528,7 @@ import type {
   Message,
   ImageResponseExt,
   ChatResponseExt,
-} from '@pollinations_ai/sdk';
+} from '@pollinations/sdk';
 ```
 
 ## API Reference
@@ -485,7 +570,7 @@ const base64 = image.toBase64();    // Raw base64 string
 Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
@@ -504,7 +589,7 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 The SDK automatically retries failed requests up to 3 times. To customize:
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({
   maxRetries: 5,  // Retry up to 5 times

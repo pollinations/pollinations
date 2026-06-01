@@ -6,18 +6,33 @@
  */
 
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import millify from "millify";
 import type { ModelPrice } from "./types.ts";
 
 export const TOP_UP_TOOLTIP = "🔒 Top up to use this model";
+
+/** Abbreviate a value >= 1000 as K/M/B with one decimal (locale-stable, "1.5K"). */
+function compact(num: number): string {
+    for (const [divisor, suffix] of [
+        [1e9, "B"],
+        [1e6, "M"],
+        [1e3, "K"],
+    ] as const) {
+        if (num >= divisor) {
+            const value = Math.round((num / divisor) * 10) / 10;
+            return `${value}${suffix}`;
+        }
+    }
+    return num.toString();
+}
 
 /** Format number as coarse estimate (not precise - it's an average) */
 function formatCount(num: number): string {
     if (num < 1) return "1";
     if (num < 10) return Math.round(num).toString();
     if (num < 100) return (Math.round(num / 5) * 5).toString();
-    if (num < 1000) return (Math.round(num / 50) * 50).toString();
-    return millify(Math.round(num / 100) * 100, { precision: 1 });
+    const rounded = Math.round(num / 50) * 50;
+    if (rounded < 1000) return rounded.toString();
+    return compact(Math.round(num / 100) * 100);
 }
 
 /**

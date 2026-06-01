@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **788** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **789** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |  | 🫧 |
 | [🧮 Primbon Jawa Modern](https://jawidigital.my.id) | Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🌸 PetalGen](https://petalgen.tools4all.ai) | PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot | [@danielw-sudo](https://github.com/danielw-sudo) | 1 | 🫧 |
 | [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 The Mork Stack](https://github.com/Mork-Zuckerbarge/mork-stack) | Manage social media with agentic workflows and run autonomous trading on Solana in The Mork Stack. | [@Mork-Zuckerbarge](https://github.com/Mork-Zuckerbarge) | 1 | 🫧 |
 | [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) | 1 | 🫧 |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |  | 🫧 |
-| [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) | 1 | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@s971153](https://github.com/s971153) |  | 🐝 |
 | [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@roni72640](https://github.com/roni72640) |  | 🐝 |
 
-<details><summary>Show all 194 apps</summary>
+<details><summary>Show all 195 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -131,6 +131,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@rikunarita](https://github.com/rikunarita) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |  | 🫧 |
 | [🖼️ RagmyAI](https://ragmyai.com) | Use RagmyAI to generate images like ChatGPT. RagmyAI uses pollinations.ai for image generation. | [@koolong](https://github.com/koolong) |  | 🫧 |
 | [🖼️ ZhenxiJS AI Image Editor (朕喜AI图片编辑器)](https://imgedit.zhenxijs.com/) | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | [@TargetCenter](https://github.com/TargetCenter) |  | 🫧 |
 | [🎨 Lunere Image Gen](https://lunere-image-gen.vercel.app/) | Generate images with Lunere Image Gen using pollinations.ai. | [@boredluisj](https://github.com/boredluisj) |  | 🫧 |

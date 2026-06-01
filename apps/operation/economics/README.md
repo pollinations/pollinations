@@ -1,12 +1,14 @@
 # Economics Dashboard
 
-Grafana OSS dashboard for Pollinations economic observability. Deployed at `economics.myceli.ai`.
+Grafana OSS dashboard for Pollinations economic observability. Public URL:
+`economics.pollinations.ai`; Myceli origin: `economics.myceli.ai`.
 
 ## Architecture
 
 ```
 Local:   Browser → localhost:3000 → Grafana → Tinybird/D1
-Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → Tinybird/D1
+Prod:    Browser → economics.pollinations.ai → pollinations-myceli-proxy
+         → economics.myceli.ai → Cloudflare Tunnel → Grafana → Tinybird/D1
 ```
 
 ## Quick Start (Local)
@@ -82,6 +84,8 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 ### Prerequisites
 - DigitalOcean Droplet (Ubuntu 24.04, $6/mo)
 - Cloudflare Tunnel configured for `economics.myceli.ai`
+- `economics.pollinations.ai` attached to the old-account
+  `pollinations-proxy` worker and forwarded to `economics.myceli.ai`
 - Droplet IP: `207.154.253.25`
 
 ### Architecture on Production
@@ -146,6 +150,14 @@ curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/P
 
 ## Troubleshooting
 
+### Public URL redirects to the Myceli origin
+
+Grafana is currently configured with
+`GF_SERVER_ROOT_URL=https://economics.myceli.ai`. If
+`economics.pollinations.ai` should become canonical, update
+`GF_SERVER_ROOT_URL` and `GF_SERVER_DOMAIN` in `docker-compose.prod.yml`,
+then restart `economics-grafana`.
+
 ### Plugin health check failed
 - Verify tokens in `.env` are correct
 - Check Docker container can reach external hosts
@@ -160,5 +172,6 @@ docker compose -f docker-compose.prod.yml logs cloudflared
 
 ## Resources
 
-- **Dashboard:** https://economics.myceli.ai
+- **Dashboard:** https://economics.pollinations.ai
+- **Myceli origin:** https://economics.myceli.ai
 - **Tinybird:** https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter

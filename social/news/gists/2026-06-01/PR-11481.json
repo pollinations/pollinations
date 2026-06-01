@@ -1,0 +1,34 @@
+{
+  "pr_number": 11481,
+  "title": "test: merge & parameterize redundant test cases",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11481",
+  "merged_at": "2026-06-01T14:24:39Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Consolidate redundant / over-granular tests surfaced by the test-suite audit (every distinct assertion preserved):\n\n- Collapse the 5 per-country Stripe checkout-cohort tests into one parameterized `test.for` (keeps each cohort's metadata wiring; leaves the MO spoof-regression test untouched)\n- Table-drive the 6 single-field `buildUsageHeaders` tests into one case (literal wire-keys that `track.ts`/`text-cache.ts` read raw are preserved)\n- Merge the two `validateInputModalities` \"allows image\" tests into one `it.each`\n- `customer.test.ts`: collapse the 6-tier passthrough loop to one iteration and delete the redundant zero-balance test\n- `pricing-data.test.ts`: reframe around `formatPricePer1M` decimal branching (guards the IEEE-754 rounding bug) instead of restating registry prices\n- `docs.test.ts`: replace two volatile prose substrings with a stable section heading\n\nNet −218 lines, 6 files. biome clean; all affected suites pass (Stripe still runs all 5 cohorts).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the test suite",
+    "blurb": "We swept through the test suite and consolidated redundant checks using parameterized tests. Less code, same coverage, happier developers.",
+    "summary": "Consolidated redundant test cases across the Stripe, customer, and generation suites using parameterized tests, removing 218 lines of code while preserving all assertions.",
+    "impact": "Developers benefit from a cleaner, more maintainable test suite without losing any coverage for critical billing and generation logic.",
+    "keywords": [
+      "tests",
+      "refactor",
+      "parameterization",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot (Polly) organizing or cleaning up a testing area, sweeping up redundant code blocks or organizing them into neat, parameterized boxes. The Nomnom creature eating the deleted lines of code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up scattered code blocks into neat, organized boxes. The round tan nomnom creature happily eats a pile of discarded test scripts. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11481.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up scattered code blocks into neat, organized boxes. The round tan nomnom creature happily eats a pile of discarded test scripts. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T14:25:48.825906+00:00"
+}

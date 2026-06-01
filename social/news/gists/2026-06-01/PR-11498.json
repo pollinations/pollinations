@@ -1,0 +1,34 @@
+{
+  "pr_number": 11498,
+  "title": "fix(gen-test): raise timeout for Bedrock-signing safety tests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11498",
+  "merged_at": "2026-06-01T21:57:41Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\n5 tests in `gen.pollinations.ai/test/safety.test.ts` flakily time out under the full-suite parallel run (`Test timed out in 5000ms`). The failing set is **non-deterministic** — across isolated re-runs of identical code on the same commit, 1–5 different tests fail, and one test passed at 5108ms in one run and timed out in another.\n\n## Root cause\nThe `applySafety` / `applySafetyToChatRequest` tests sign requests with AWS SigV4 (WebCrypto HMAC-SHA256) inside the workerd runtime before reaching the (fully mocked, instant) `fetch`. That crypto path runs ~90ms warm but **6–15s on a cold/loaded runtime** — observed a single test hit 15,362ms. It blows vitest's 5s default. Tests that don't sign (safe omitted, fail-closed, schema-only) always pass.\n\nNot a regression — `safety.test.ts` and every file it exercises were last touched only by the original safety feature and unrelated R2 work, never by recent cleanup PRs.\n\n## Fix\n- Add `{ timeout: 30000 }` to the two Bedrock-backed `describe` blocks.\n- Pure test-budget change; no source or behavior change.\n\n## Verification\n3 isolated runs now green (21/21 each); slowest test 15.4s — comfortably under the new 30s ceiling, far over the old 5s.\n\n## Risks\n- None to product code. Only widens the per-test time budget. A genuine hang now surfaces at 30s instead of 5s (acceptable — these tests legitimately need >5s).",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Giving tests room to breathe",
+    "blurb": "We bumped the timeout on our Bedrock safety tests so they stop failing when the crypto engine needs a second to warm up. No more flaky CI runs!",
+    "summary": "Increased the timeout for Bedrock-backed safety tests in gen.pollinations.ai from 5s to 30s to accommodate slow AWS SigV4 crypto operations on cold runtimes.",
+    "impact": "Developers will experience more stable CI pipelines with fewer flaky test failures during parallel runs.",
+    "keywords": [
+      "testing",
+      "ci",
+      "bedrock",
+      "timeout"
+    ],
+    "visual_concept": "The pollinations bee mascot holding a stopwatch next to a chunky retro server that is slowly warming up. Represents patience and extending time limits for tests.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny stopwatch, patiently waiting next to a chunky retro server that has a 'warming up' progress bar on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and patient."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11498.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny stopwatch, patiently waiting next to a chunky retro server that has a 'warming up' progress bar on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and patient."
+  },
+  "generated_at": "2026-06-01T21:58:42.184726+00:00"
+}

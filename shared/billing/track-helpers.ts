@@ -131,6 +131,12 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     let postDeductionPackBalance: number | null = null;
 
     try {
+        // API key budgets are decremented by the amount the user authorized the
+        // app to spend, including BYOP markup when it applies.
+        if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
+            await deductApiKeyBalance(db, apiKeyId, billedPrice);
+        }
+
         if (userId) {
             const deduction = await deductUserBalance(
                 db,
@@ -140,12 +146,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
-        }
-
-        // API key budgets are decremented by the amount the user authorized the
-        // app to spend, including BYOP markup when it applies.
-        if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
-            await deductApiKeyBalance(db, apiKeyId, billedPrice);
         }
 
         if (markup) {

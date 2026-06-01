@@ -89,6 +89,7 @@ export async function atomicDeductApiKeyBalance(
 			SET pollen_balance = pollen_balance - ${amount}
 			WHERE id = ${apiKeyId}
 			AND pollen_balance IS NOT NULL
+			AND pollen_balance >= ${amount}
 		`);
 
     return { ok: (result.meta.changes ?? 0) > 0 };

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { findModelByName } from "../../../src/text/availableModels.js";
 import { stripCacheControl } from "../../../src/text/transforms/stripCacheControl.js";
 
 describe("stripCacheControl", () => {
@@ -40,5 +41,18 @@ describe("stripCacheControl", () => {
         const { messages: result } = stripCacheControl(messages, {});
 
         expect(result[0]).toBe(messages[0]);
+    });
+});
+
+describe("stripCacheControl model wiring", () => {
+    // Azure-deployed Grok rejects cache_control like its sibling Azure/strict
+    // OpenAI-compatible models; all grok entries must carry the transform so
+    // multi-turn history isn't dropped (see issue #10722).
+    it.each([
+        "grok",
+        "grok-large",
+        "grok-4.3",
+    ])("wires stripCacheControl onto %s", (modelName) => {
+        expect(findModelByName(modelName)?.transform).toBe(stripCacheControl);
     });
 });

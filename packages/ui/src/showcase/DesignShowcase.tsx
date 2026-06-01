@@ -6,12 +6,7 @@ import {
     useState,
 } from "react";
 import { currentPeriod, type PeriodSelection } from "../lib/period.ts";
-import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    ErrorBanner,
-} from "../modules/auth/index.ts";
+import { AuthInfoCard, ErrorBanner } from "../modules/auth/index.ts";
 import { ModalityButton } from "../modules/modality/index.ts";
 import {
     formatPollen,
@@ -74,8 +69,24 @@ import { type ThemeName, themes } from "../theme.ts";
  * This component renders package primitives, tokens, and domain recipes only.
  * App-specific charts, model recipes, routes, and copy belong in host apps.
  */
-export const DesignShowcase: FC = () => {
-    const [theme, setTheme] = useState<ThemeName>("amber");
+export type DesignShowcaseProps = {
+    headerSlot?: ReactNode;
+    hideHeader?: boolean;
+    hideThemeTabs?: boolean;
+    theme?: ThemeName;
+    onThemeChange?: (theme: ThemeName) => void;
+};
+
+export const DesignShowcase: FC<DesignShowcaseProps> = ({
+    headerSlot,
+    hideHeader = false,
+    hideThemeTabs = false,
+    theme: controlledTheme,
+    onThemeChange,
+}) => {
+    const [internalTheme, setInternalTheme] = useState<ThemeName>("amber");
+    const theme = controlledTheme ?? internalTheme;
+    const setTheme = onThemeChange ?? setInternalTheme;
 
     useEffect(() => {
         document.documentElement.classList.add("polli-ui-root");
@@ -92,11 +103,29 @@ export const DesignShowcase: FC = () => {
         <ScrollArea
             theme={theme}
             data-theme={theme}
-            className="polli:h-dvh polli:w-full polli:overflow-x-hidden polli:bg-theme-bg-subtle polli:text-theme-text-base"
+            className={`polli:w-full polli:overflow-x-hidden polli:bg-emerald-100 polli:text-theme-text-base ${
+                hideHeader ? "polli:min-h-0 polli:flex-1" : "polli:h-dvh"
+            }`}
         >
-            <Header theme={theme} onThemeChange={setTheme} />
+            {hideHeader && (headerSlot || !hideThemeTabs) ? (
+                <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:flex-col polli:gap-4 polli:px-5 polli:pt-8">
+                    {headerSlot ? headerSlot : null}
+                    {!hideThemeTabs ? (
+                        <ThemeTabs
+                            value={theme}
+                            options={themes}
+                            onChange={setTheme}
+                        />
+                    ) : null}
+                </div>
+            ) : !hideHeader ? (
+                <Header
+                    theme={theme}
+                    onThemeChange={setTheme}
+                    headerSlot={headerSlot}
+                />
+            ) : null}
             <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:flex-col polli:gap-8 polli:px-5 polli:pt-8 polli:pb-10">
-                <ShowcaseNav />
                 <main className="polli:flex polli:min-w-0 polli:flex-col polli:gap-10">
                     <CoverageDemo />
                     <TypographyDemo />
@@ -119,18 +148,26 @@ export const DesignShowcase: FC = () => {
 type HeaderProps = {
     theme: ThemeName;
     onThemeChange: (theme: ThemeName) => void;
+    headerSlot?: ReactNode;
 };
 
-const Header: FC<HeaderProps> = ({ theme, onThemeChange }) => (
-    <header className="polli:sticky polli:top-0 polli:z-20 polli:border-b polli:border-theme-border polli:bg-theme-bg-subtle/90 polli:px-5 polli:py-4 polli:backdrop-blur">
+const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
+    <header className="polli:sticky polli:top-0 polli:z-20 polli:border-b polli:border-green-950/10 polli:bg-emerald-100 polli:px-5 polli:py-4 polli:backdrop-blur">
         <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:min-w-0 polli:flex-col polli:items-start polli:gap-4">
-            <div>
-                <h1 className="polli:font-heading polli:text-2xl polli:text-theme-text-strong">
-                    Design Showcase
-                </h1>
-                <p className="polli:text-xs polli:text-theme-text-soft">
-                    Package primitives, icons, tokens, and SDK-free recipes.
-                </p>
+            <div className="polli:flex polli:w-full polli:min-w-0 polli:flex-col polli:gap-3 polli:md:flex-row polli:md:items-start polli:md:justify-between">
+                <div className="polli:min-w-0">
+                    <h1 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
+                        Design Showcase
+                    </h1>
+                    <p className="polli:max-w-3xl polli:text-sm polli:leading-6 polli:text-theme-text-soft">
+                        Package primitives, icons, tokens, and SDK-free recipes.
+                    </p>
+                </div>
+                {headerSlot ? (
+                    <div className="polli:w-full polli:md:w-auto">
+                        {headerSlot}
+                    </div>
+                ) : null}
             </div>
             <ThemeTabs
                 value={theme}
@@ -141,42 +178,6 @@ const Header: FC<HeaderProps> = ({ theme, onThemeChange }) => (
     </header>
 );
 
-const navItems = [
-    ["coverage", "Coverage"],
-    ["type", "Typography"],
-    ["themes", "Themes"],
-    ["tokens", "Tokens"],
-    ["icons", "Icons"],
-    ["buttons", "Buttons"],
-    ["inputs", "Inputs"],
-    ["selection", "Selection"],
-    ["overlays", "Overlays"],
-    ["layout", "Layout"],
-    ["feedback", "Feedback"],
-    ["modules", "Modules"],
-] as const;
-
-const ShowcaseNav: FC = () => (
-    <aside className="polli:sticky polli:top-32 polli:z-10 polli:rounded-xl polli:border polli:border-theme-border polli:bg-theme-bg-subtle/95 polli:p-2 polli:backdrop-blur">
-        <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-2">
-            <span className="polli:px-2 polli:text-micro polli:font-bold polli:uppercase polli:tracking-wide polli:text-theme-text-soft">
-                Sections
-            </span>
-            <nav className="polli:flex polli:min-w-0 polli:flex-1 polli:flex-wrap polli:gap-1">
-                {navItems.map(([id, label]) => (
-                    <a
-                        key={id}
-                        href={`#${id}`}
-                        className="polli:rounded-lg polli:px-2 polli:py-1.5 polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-pale polli:hover:text-theme-text-strong"
-                    >
-                        {label}
-                    </a>
-                ))}
-            </nav>
-        </div>
-    </aside>
-);
-
 type ThemeTabsProps = {
     value: ThemeName;
     options: readonly ThemeName[];
@@ -184,17 +185,18 @@ type ThemeTabsProps = {
 };
 
 const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
-    <div className="polli:flex polli:w-full polli:min-w-0 polli:flex-col polli:gap-2">
+    <div className="polli:flex polli:min-w-0 polli:max-w-full polli:flex-col polli:items-start polli:gap-2">
         <span className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
             Theme
         </span>
-        <div className="polli:grid polli:max-w-full polli:grid-cols-[repeat(auto-fit,minmax(100px,1fr))] polli:gap-1.5">
+        <div className="polli:flex polli:w-full polli:max-w-full polli:flex-wrap polli:gap-1.5">
             {options.map((option) => (
                 <TabButton
                     key={option}
                     active={value === option}
                     onClick={() => onChange(option)}
-                    className="polli:w-full polli:px-3"
+                    theme={option}
+                    size="small"
                 >
                     <span className="polli:capitalize">{option}</span>
                 </TabButton>
@@ -218,13 +220,13 @@ const ShowcaseSection: FC<ShowcaseSectionProps> = ({
 }) => (
     <section
         id={id}
-        className="polli:flex polli:w-full polli:min-w-0 polli:scroll-mt-64 polli:flex-col polli:gap-3"
+        className="polli:flex polli:w-full polli:min-w-0 polli:scroll-mt-24 polli:flex-col polli:gap-3"
     >
-        <div>
-            <h2 className="polli:font-subheading polli:text-2xl polli:text-theme-text-strong">
+        <div className="polli:flex polli:flex-col polli:gap-1">
+            <h2 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
                 {title}
             </h2>
-            <p className="polli:max-w-3xl polli:break-words polli:text-sm polli:text-theme-text-soft polli:[overflow-wrap:anywhere]">
+            <p className="polli:max-w-3xl polli:break-words polli:text-sm polli:leading-6 polli:text-theme-text-soft polli:[overflow-wrap:anywhere]">
                 {caption}
             </p>
         </div>
@@ -288,8 +290,6 @@ const primitiveNames = [
 ] as const;
 
 const moduleNames = [
-    "AuthModal",
-    "AuthModalHeader",
     "AuthInfoCard",
     "ErrorBanner",
     "ModalityButton",
@@ -424,7 +424,7 @@ const ThemeDemo: FC<HeaderProps> = ({ theme, onThemeChange }) => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(190px,1fr))] polli:gap-3"
+            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] polli:gap-3"
         >
             {themes.map((item) => (
                 <button
@@ -542,7 +542,10 @@ const IconsDemo: FC = () => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] polli:gap-3"
+            className="polli:grid polli:gap-3"
+            style={{
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            }}
         >
             {iconItems.map(({ name, Icon }) => (
                 <Surface
@@ -552,7 +555,7 @@ const IconsDemo: FC = () => (
                     <span className="polli:flex polli:h-10 polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-pale polli:text-theme-text-strong">
                         <Icon className="polli:h-5 polli:w-5" />
                     </span>
-                    <code className="polli:min-w-0 polli:break-words polli:text-xs polli:text-theme-text-strong polli:[overflow-wrap:anywhere]">
+                    <code className="polli:min-w-0 polli:whitespace-nowrap polli:text-xs polli:text-theme-text-strong">
                         {name}
                     </code>
                 </Surface>
@@ -562,7 +565,7 @@ const IconsDemo: FC = () => (
                     <ChevronIcon className="polli:h-4 polli:w-4" />
                 </span>
                 <span className="polli:min-w-0">
-                    <code className="polli:block polli:break-words polli:text-xs polli:text-theme-text-strong polli:[overflow-wrap:anywhere]">
+                    <code className="polli:block polli:whitespace-nowrap polli:text-xs polli:text-theme-text-strong">
                         ChevronIcon
                     </code>
                     <span className="polli:mt-1 polli:flex polli:gap-2 polli:text-theme-text-soft">
@@ -1122,29 +1125,26 @@ const modalities = [
 ] as const;
 
 const ModuleRecipesDemo: FC = () => {
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-
     return (
         <ShowcaseSection
             id="modules"
-            title="Module Recipes"
-            caption="SDK-free package recipes for auth, wallet, and model modality surfaces."
+            title="Shared Modules"
+            caption="Package-owned pieces used by product screens; host apps provide the data and flows."
         >
             <Surface
                 variant="panel"
                 className="polli:flex polli:flex-col polli:gap-4"
             >
-                <Row label="Wallet chips">
+                <Row label="Wallet markers">
                     <PaidChip>Paid</PaidChip>
                     <TierChip>Tier</TierChip>
-                    <PaidChip size="lg">{formatPollen(93.2)} Pollen</PaidChip>
                     <span className="polli:inline-flex polli:items-center polli:gap-2 polli:text-sm polli:text-theme-text-strong">
                         <WalletDot kind="paid" />
-                        paid
+                        paid balance
                     </span>
                     <span className="polli:inline-flex polli:items-center polli:gap-2 polli:text-sm polli:text-theme-text-strong">
                         <WalletDot kind="tier" />
-                        tier
+                        tier balance
                     </span>
                 </Row>
                 <div className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] polli:gap-3">
@@ -1152,14 +1152,28 @@ const ModuleRecipesDemo: FC = () => {
                         kind="paid"
                         label="Paid"
                         value={formatPollen(24.812)}
-                        footer="+2.1 today"
+                        footer={
+                            <>
+                                +{formatPollen(2.1)}{" "}
+                                <span className="polli:font-medium polli:text-amber-800/70">
+                                    / 7d
+                                </span>
+                            </>
+                        }
                         info={<InfoTip content="Paid wallet balance." />}
                     />
                     <WalletBalanceCard
                         kind="tier"
                         label="Tier"
                         value={formatPollen(183.4)}
-                        footer="flower tier"
+                        footer={
+                            <>
+                                +{formatPollen(8)}{" "}
+                                <span className="polli:font-medium polli:text-amber-800/70">
+                                    / 7d
+                                </span>
+                            </>
+                        }
                         info={<InfoTip content="Tier allowance balance." />}
                     />
                 </div>
@@ -1177,59 +1191,18 @@ const ModuleRecipesDemo: FC = () => {
                     </ModalityButton>
                 </Row>
                 <Surface className="polli:flex polli:flex-col polli:gap-3">
-                    <div className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3">
-                        <div>
-                            <h3 className="polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                                Auth module
-                            </h3>
-                            <p className="polli:text-sm polli:text-theme-text-soft">
-                                Modal shell, header, info card, and error banner
-                                recipes.
-                            </p>
-                        </div>
-                        <Button
-                            size="small"
-                            onClick={() => setAuthModalOpen(true)}
-                        >
-                            Open AuthModal
-                        </Button>
-                    </div>
+                    <h3 className="polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                        Auth feedback
+                    </h3>
                     <AuthInfoCard title="Authorize">
                         <p className="polli:text-sm polli:text-theme-text-base">
-                            This preview uses the exported info card without SDK
-                            auth state.
+                            Sign in to approve this request and return to the
+                            app.
                         </p>
                     </AuthInfoCard>
                     <ErrorBanner>Authorization failed. Try again.</ErrorBanner>
                 </Surface>
             </Surface>
-            {authModalOpen && (
-                <AuthModal dialog={{ label: "Auth modal showcase" }}>
-                    <AuthModalHeader>
-                        <IconButton
-                            title="Close"
-                            onClick={() => setAuthModalOpen(false)}
-                        >
-                            <XIcon className="polli:h-3.5 polli:w-3.5" />
-                        </IconButton>
-                    </AuthModalHeader>
-                    <div className="polli:px-8 polli:pt-2 polli:pb-8">
-                        <AuthInfoCard title="AuthModal">
-                            <p className="polli:text-sm polli:text-theme-text-base">
-                                The host application controls copy and actions.
-                            </p>
-                        </AuthInfoCard>
-                        <div className="polli:mt-5 polli:flex polli:justify-end">
-                            <Button
-                                size="small"
-                                onClick={() => setAuthModalOpen(false)}
-                            >
-                                Close
-                            </Button>
-                        </div>
-                    </div>
-                </AuthModal>
-            )}
         </ShowcaseSection>
     );
 };

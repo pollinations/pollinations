@@ -1,4 +1,5 @@
 import debug from "debug";
+import { arrayBufferToBase64 } from "@/util.ts";
 import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");
@@ -250,18 +251,6 @@ async function fetchImageAsBase64(
         errorLog(`Failed to fetch image ${url}: ${message}`);
         throw new ImageFetchError(errorMessage, 400);
     }
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    const chunkSize = 0x8000;
-
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-
-    return btoa(binary);
 }
 
 /**

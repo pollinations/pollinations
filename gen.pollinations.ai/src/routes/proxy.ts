@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { generateEmbeddings } from "@/embeddings/handler.ts";
@@ -20,13 +20,18 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
-import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    DEFAULT_IMAGE_MODEL,
+    getImageModelIds,
+    getVideoModelIds,
+} from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
+    type ModelInfo,
 } from "@shared/registry/model-info.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
@@ -40,7 +45,6 @@ import {
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import { createFactory } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { UpstreamError } from "@/error.ts";
 import {
@@ -68,19 +72,12 @@ import { handleSimpleAudio } from "./audio.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
-const imageModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(
-        ([, svc]) =>
-            !(svc.outputModalities as string[] | undefined)?.includes("video"),
-    )
-    .map(([id]) => `\`${id}\``)
+const imageModelNames = getImageModelIds()
+    .map((id) => `\`${id}\``)
     .join(", ");
 
-const videoModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(([, svc]) =>
-        (svc.outputModalities as string[] | undefined)?.includes("video"),
-    )
-    .map(([id]) => `\`${id}\``)
+const videoModelNames = getVideoModelIds()
+    .map((id) => `\`${id}\``)
     .join(", ");
 
 const factory = createFactory<Env>();
@@ -122,19 +119,7 @@ const chatCompletionHandlers = factory.createHandlers(
 
         const response = await handleChatCompletionLocal(c, requestBody);
 
-        // Validate streaming responses: if client requested stream but upstream
-        // returned non-SSE, throw rather than forwarding broken data.
-        if (c.var.track.streamRequested) {
-            const contentType = response.headers.get("content-type") || "";
-            if (!contentType.includes("text/event-stream")) {
-                throw new UpstreamError(502, {
-                    message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                    requestUrl: new URL(c.req.url),
-                    upstreamStatus: response.status,
-                    responseBody: contentType,
-                });
-            }
-        }
+        assertStreamContentType(c, response);
 
         // add content filter headers if not streaming
         let contentFilterHeaders = {};
@@ -170,6 +155,22 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
+// Validate streaming responses: if client requested stream but upstream
+// returned non-SSE, throw rather than forwarding broken data.
+function assertStreamContentType(c: Context<Env>, response: Response): void {
+    if (c.var.track.streamRequested) {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("text/event-stream")) {
+            throw new UpstreamError(502, {
+                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
+                requestUrl: new URL(c.req.url),
+                upstreamStatus: response.status,
+                responseBody: contentType,
+            });
+        }
+    }
+}
+
 // Helper to filter models by API key permissions and paid balance
 function filterModelsByPermissions<
     T extends { name: string; paid_only?: boolean },
@@ -195,6 +196,17 @@ function hasPaidBalance(c: any): boolean | undefined {
     if (!user) return undefined;
     return (user.packBalance ?? 0) > 0;
 }
+
+// Factory for model-list endpoints: filters the given models by API key
+// permissions and paid balance, then returns them as JSON.
+const modelsListHandler =
+    (getModels: () => ModelInfo[]) => (c: Context<Env>) => {
+        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+        const paidBalance = hasPaidBalance(c);
+        return c.json(
+            filterModelsByPermissions(getModels(), allowedModels, paidBalance),
+        );
+    };
 
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
@@ -328,22 +340,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
-                [
-                    ...getTextModelsInfo(),
-                    ...getImageModelsInfo(),
-                    ...getRealtimeModelsInfo(),
-                    ...getAudioModelsInfo(),
-                    ...getEmbeddingModelsInfo(),
-                ],
-                allowedModels,
-                paidBalance,
-            );
-            return c.json(models);
-        },
+        modelsListHandler(() => [
+            ...getTextModelsInfo(),
+            ...getImageModelsInfo(),
+            ...getRealtimeModelsInfo(),
+            ...getAudioModelsInfo(),
+            ...getEmbeddingModelsInfo(),
+        ]),
     )
     .get(
         "/image/models",
@@ -370,21 +373,14 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            try {
-                const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-                const paidBalance = hasPaidBalance(c);
-                const models = filterModelsByPermissions(
-                    getImageModelsInfo(),
-                    allowedModels,
-                    paidBalance,
-                );
-                return c.json(models);
-            } catch (error) {
-                throw new HTTPException(500, {
-                    message: "Failed to load image models",
-                    cause: error,
-                });
-            }
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const models = filterModelsByPermissions(
+                getImageModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            return c.json(models);
         },
     )
     .get(
@@ -411,16 +407,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
-                getTextModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            return c.json(models);
-        },
+        modelsListHandler(getTextModelsInfo),
     )
     .get(
         "/audio/models",
@@ -446,16 +433,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
-                getAudioModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            return c.json(models);
-        },
+        modelsListHandler(getAudioModelsInfo),
     )
     .get(
         "/embeddings/models",
@@ -481,16 +459,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
-                getEmbeddingModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            return c.json(models);
-        },
+        modelsListHandler(getEmbeddingModelsInfo),
     )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)
@@ -637,17 +606,7 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             const response = await handleTextContentLocal(c, requestBody);
-            if (c.var.track.streamRequested) {
-                const contentType = response.headers.get("content-type") || "";
-                if (!contentType.includes("text/event-stream")) {
-                    throw new UpstreamError(502, {
-                        message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                        requestUrl: new URL(c.req.url),
-                        upstreamStatus: response.status,
-                        responseBody: contentType,
-                    });
-                }
-            }
+            assertStreamContentType(c, response);
             return withSafetyHeaders(c, response);
         },
     )

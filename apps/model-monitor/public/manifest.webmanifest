@@ -1,7 +1,7 @@
 {
-    "name": "React UI | pollinations.ai",
-    "short_name": "React UI",
-    "description": "React UI showcase for the Pollinations SDK and UI component library.",
+    "name": "Model Monitor | pollinations.ai",
+    "short_name": "Model Monitor",
+    "description": "Real-time health monitoring for Pollinations AI models.",
     "icons": [
         {
             "src": "/icon-192.png",
@@ -22,7 +22,7 @@
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#DBEAFE",
+    "theme_color": "#EDE9FE",
     "background_color": "#110518",
     "display": "standalone",
     "start_url": "/"

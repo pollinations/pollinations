@@ -23,7 +23,6 @@ import {
     WhenLoggedIn,
     WhenLoggedOut,
 } from "@pollinations/ui/auth/sdk";
-import { DesignShowcase } from "@pollinations/ui/showcase";
 import {
     Balance,
     KeyBudget,
@@ -35,7 +34,9 @@ import {
     type ComponentType,
     type CSSProperties,
     createContext,
+    lazy,
     type ReactNode,
+    Suspense,
     useContext,
     useEffect,
     useState,
@@ -45,6 +46,12 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
+
+const DesignShowcase = lazy(() =>
+    import("./showcase/DesignShowcase").then((module) => ({
+        default: module.DesignShowcase,
+    })),
+);
 
 const brandWordmarkMask: CSSProperties = {
     WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
@@ -145,7 +152,7 @@ function ThemeTabs({
                     onClick={() => onThemeChange(option)}
                     size="small"
                 >
-                    <span className="polli:capitalize">{option}</span>
+                    <span className="capitalize">{option}</span>
                 </TabButton>
             ))}
         </nav>
@@ -508,7 +515,7 @@ function FloatingThemeControls({
                 <Surface
                     theme={theme}
                     variant="panel"
-                    className="polli:flex polli:w-max polli:max-w-full polli:p-2 polli:backdrop-blur"
+                    className="flex w-max max-w-full p-2 backdrop-blur"
                 >
                     <ThemeTabs theme={theme} onThemeChange={onThemeChange} />
                 </Surface>
@@ -655,12 +662,14 @@ export default function App() {
                     theme={theme}
                 />
                 <FloatingThemeControls theme={theme} onThemeChange={setTheme} />
-                <DesignShowcase
-                    hideHeader
-                    hideThemeTabs
-                    theme={theme}
-                    onThemeChange={setTheme}
-                />
+                <Suspense fallback={null}>
+                    <DesignShowcase
+                        hideHeader
+                        hideThemeTabs
+                        theme={theme}
+                        onThemeChange={setTheme}
+                    />
+                </Suspense>
             </div>
         );
     }

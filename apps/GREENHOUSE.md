@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **793** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **802** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,16 +44,16 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |  | 🫧 |
+| [🧾 Resume Makinator](https://rm.mkgpdev.xyz) | Resume Makinator is a free browser-based resume builder that lets users edit structured resume sections, preview the result live, and export their resume. It integrates Pollinations.ai through the Cha | [@mkgp-dev](https://github.com/mkgp-dev) |  | 🫧 |
+| [🤖 Xeva AI](https://xeva.tedeca.de/) | Xeva AI lets you ask for support, help, or chat with no chat storage. Chats are kept in a secure database that only the CEO and CTO can access, and data selling is forbidden. | [@DejvidGichev](https://github.com/DejvidGichev) |  | 🫧 |
+| [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menampilkan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
+| [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |  | 🫧 |
+| [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
+| [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |  | 🫧 |
+| [🧩 zolio](zolio.site) | zolioapp | [@LSSHRT](https://github.com/LSSHRT) |  | 🫧 |
+| [✈️ FLTRCK: Flight Log & Records](https://play.google.com/store/apps/details?id=com.fltrckr.app) | Your personal flight log and travel tracker — built for aviation enthusiasts and frequent flyers. Keep a complete flight logbook: log your longest flights, most-visited airports, favourite routes, and | [@me-eujene](https://github.com/me-eujene) |  | 🫧 |
 | [🤖 Jarvis AI](https://jarvis-7-5.github.io/) | Use Jarvis AI as a full working AI assistant powered by pollinations. It provides assistant responses through pollinations. | [@Marco3113](https://github.com/Marco3113) |  | 🫧 |
-| [✅ TaskManager](https://panel.estehlal.com/) | non profite | [@LahbabiCode](https://github.com/LahbabiCode) |  | 🫧 |
-| [🛠️ WorkFlow](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) | ผสาน Pollinations.ai กับ n8n ผ่าน Community Node เพื่อเชื่อมการสร้างภาพและการสร้างวิดีโอ มีระบบเครดิตฟรีสำหรับเริ่มใช้งาน | [@TanatPinkeaw](https://github.com/TanatPinkeaw) |  | 🫧 |
-| [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |  | 🫧 |
-| [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |  | 🫧 |
-| [🧮 Primbon Jawa Modern](https://jawidigital.my.id) | Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
-| [🌸 PetalGen](https://petalgen.tools4all.ai) | PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot | [@danielw-sudo](https://github.com/danielw-sudo) | 1 | 🫧 |
-| [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |  | 🫧 |
-| [🧵 SceneWeave](https://scene-weave.vercel.app) | Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing. | [@an3vilmonk3y](https://github.com/an3vilmonk3y) |  | 🏵️ 🫧 |
-| [🖼️ RagmyAI](https://ragmyai.com) | Use RagmyAI to generate images like ChatGPT. RagmyAI uses pollinations.ai for image generation. | [@koolong](https://github.com/koolong) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@s971153](https://github.com/s971153) |  | 🐝 |
 | [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@roni72640](https://github.com/roni72640) |  | 🐝 |
 
-<details><summary>Show all 195 apps</summary>
+<details><summary>Show all 197 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -131,6 +131,8 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Pollinations-ai-STUDIO](https://pollinations-ai-studio.pages.dev/) | API endpoints, authentication, and image-generation parameters for developer integration. | [@rikunarita](https://github.com/rikunarita) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |  | 🫧 |
+| [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |  | 🫧 |
 | [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |  | 🫧 |
 | [🖼️ RagmyAI](https://ragmyai.com) | Use RagmyAI to generate images like ChatGPT. RagmyAI uses pollinations.ai for image generation. | [@koolong](https://github.com/koolong) |  | 🫧 |
 | [🖼️ ZhenxiJS AI Image Editor (朕喜AI图片编辑器)](https://imgedit.zhenxijs.com/) | Edit images with ZhenxiJS AI Image Editor (朕喜AI图片编辑器). | [@TargetCenter](https://github.com/TargetCenter) |  | 🫧 |
@@ -426,7 +428,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 Zlkcyber AI](https://zlkcyber.tech/) | Next.js AI chat and image generation app | [@Zlkcyber](https://github.com/Zlkcyber) |  | 🐝 |
 | [🧠 AI therapist](https://play.google.com/store/apps/details?id=com.terapeuta.ai) | AI therapy app with chat, personalized routines & user data analysis | [@Mundoapp](https://github.com/Mundoapp) |  | 🐝 |
 
-<details><summary>Show all 126 apps</summary>
+<details><summary>Show all 129 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -470,6 +472,9 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 MindFlow](https://note.aegis-plus.my.id/) | AI second-brain notes that turns messy thoughts into structured insights. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [💬 Synapse](https://chat.aegis-plus.my.id) | Multi-model AI chat app with streaming, sessions, uploads, and Markdown. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [🎨 AISTONE](https://aistone.org/) | Offers image generation via FLUX, Turbo, Kontext and OpenAI Audio TTS for voice without registration, supporting Chinese and English input. | [@peyoba](https://github.com/peyoba) | 1 |  |
+| [🤖 Xeva AI](https://xeva.tedeca.de/) | Xeva AI lets you ask for support, help, or chat with no chat storage. Chats are kept in a secure database that only the CEO and CTO can access, and data selling is forbidden. | [@DejvidGichev](https://github.com/DejvidGichev) |  | 🫧 |
+| [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |  | 🫧 |
+| [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
 | [🔎 Perplexio](http://tcp.ap-northeast-1.clawcloudrun.com:47049/) | Host Perplexio as a self-hosted Perplexity-style AI search assistant using pollinations.ai as its LLM backend via the OpenAI-compatible API endpoint. | [@foxy1402](https://github.com/foxy1402) |  | 🫧 |
 | [🧠 AI Everywhere](https://greasyfork.org/en/scripts/419825-aigpt-everywhere) | Mini A.I. floating menu that can define words, answer questions, translate, generate images, and much more in a single click and with your custom prompts. Includes useful click to search on Google and | [@cyber-sec0](https://github.com/cyber-sec0) |  | 🫧 |
 | [🤖 AI Chat](https://github.com/JoJoGamer2020/AI-Chat) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@JoJoGamer2020](https://github.com/JoJoGamer2020) |  | 🫧 |
@@ -639,7 +644,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@Aavirash](https://github.com/Aavirash) |  | 🏵️ |
 | [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@ravindragit](https://github.com/ravindragit) |  | 🏵️ |
 
-<details><summary>Show all 63 apps</summary>
+<details><summary>Show all 64 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -655,6 +660,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Ecoverse AI](https://ecoverse.cc) | Identify and classify waste from user photos using multi-model analysis and Pollinations models, and return disposal guidance. | [@achyuthhq](https://github.com/achyuthhq) | 4 |  |
 | [🧭 Psy-Path-AI](https://psy-path-ai.vercel.app/) | Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance. | [@unKnownNG](https://github.com/unKnownNG) | 2 | 🫧 |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) | 1 |  |
+| [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menampilkan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |  | 🫧 |
 | [🧮 Primbon Jawa Modern](https://jawidigital.my.id) | Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🌐 Ai Web Translator](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/) | Enable AI Web Translation with BYOK support. | [@nekohacker591](https://github.com/nekohacker591) |  | 🫧 |
@@ -786,7 +792,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ AI Agent Portal](https://agent.makululinux.com/) | Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation. | [@raymerjacque](https://github.com/raymerjacque) |  | 🐝 |
 | [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@pollinations](https://github.com/pollinations) | 4.6k | 🏵️ |
 
-<details><summary>Show all 123 apps</summary>
+<details><summary>Show all 124 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -855,6 +861,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 ChimeraStudio](https://github.com/migueland94/ChimeraStudio) | Provides a client-side sandbox for testing Pollinations.ai image generation, computer vision analysis, and editing while storing API keys locally in the browser. | [@migueland94](https://github.com/migueland94) | 1 |  |
 | [🛠 Pollinations PR Summarizer ️](https://github.com/CloudCompile/pollinations-pr-review) | Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments. | [@CloudCompile](https://github.com/CloudCompile) | 1 |  |
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) | 1 |  |
+| [🧾 Resume Makinator](https://rm.mkgpdev.xyz) | Resume Makinator is a free browser-based resume builder that lets users edit structured resume sections, preview the result live, and export their resume. It integrates Pollinations.ai through the Cha | [@mkgp-dev](https://github.com/mkgp-dev) |  | 🫧 |
 | [🛠️ WorkFlow](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) | ผสาน Pollinations.ai กับ n8n ผ่าน Community Node เพื่อเชื่อมการสร้างภาพและการสร้างวิดีโอ มีระบบเครดิตฟรีสำหรับเริ่มใช้งาน | [@TanatPinkeaw](https://github.com/TanatPinkeaw) |  | 🫧 |
 | [🌀 AI Package](https://cyclonelib.pages.dev/) | Mentions Apple Shortcuts. | [@dsewerek](https://github.com/dsewerek) |  | 🫧 |
 | [🧰 CreatorPack AI](https://creatorpack.qhero.net/) | CreatorPack AI generates multilingual social media content packs, built by Qhero. | [@qhero256](https://github.com/qhero256) |  | 🫧 |
@@ -923,7 +930,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@rhenryw](https://github.com/rhenryw) | 8 |  |
 | [🍳 MASala](https://github.com/Naman009/MASala) | Multi-agent AI recipe generator that creates personalized meals from available ingredients | [@Naman009](https://github.com/Naman009) | 7 |  |
 
-<details><summary>Show all 54 apps</summary>
+<details><summary>Show all 56 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -932,6 +939,8 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@Jadu07](https://github.com/Jadu07) | 1 |  |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) | 1 |  |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@xfynder99-byte](https://github.com/xfynder99-byte) | 1 |  |
+| [🧩 zolio](zolio.site) | zolioapp | [@LSSHRT](https://github.com/LSSHRT) |  | 🫧 |
+| [✈️ FLTRCK: Flight Log & Records](https://play.google.com/store/apps/details?id=com.fltrckr.app) | Your personal flight log and travel tracker — built for aviation enthusiasts and frequent flyers. Keep a complete flight logbook: log your longest flights, most-visited airports, favourite routes, and | [@me-eujene](https://github.com/me-eujene) |  | 🫧 |
 | [✅ TaskManager](https://panel.estehlal.com/) | non profite | [@LahbabiCode](https://github.com/LahbabiCode) |  | 🫧 |
 | [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |  | 🫧 |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |  | 🫧 |

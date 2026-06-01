@@ -247,7 +247,11 @@ import {
 
 function DashboardLink() {
     const { enterUrl } = useAuthActions();
-    return <ExternalLinkButton href={enterUrl}>Dashboard</ExternalLinkButton>;
+    return (
+        <ExternalLinkButton theme="blue" href={enterUrl}>
+            Dashboard
+        </ExternalLinkButton>
+    );
 }
 
 export function AuthActions() {

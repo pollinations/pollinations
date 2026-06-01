@@ -3,7 +3,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { themeColors } from "@pollinations_ai/ui";
 import {
     renderFavicon,
     renderOg,
@@ -23,10 +22,11 @@ const loadLogo = () => uiAsset("logo.svg"); // flower — icons
 const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 
 const DARK = "#110518"; // pollinations splash / OG contrast
+const REACT_BLUE = "#DBEAFE"; // matches @pollinations_ai/ui themeColors.blue
 
 const APPS = {
     react: {
-        brandColor: themeColors.blue, // #DBEAFE — the showcase's blue identity
+        brandColor: REACT_BLUE,
         contrastColor: DARK,
         outDir: "apps/react/public",
         og: true,

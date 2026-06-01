@@ -1,0 +1,21 @@
+{
+    "name": "pollinations.ai - React UI",
+    "short_name": "Pollinations React",
+    "description": "React UI showcase for the Pollinations SDK and UI component library.",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#FEF3C7",
+    "background_color": "#110518",
+    "display": "standalone",
+    "start_url": "/"
+}

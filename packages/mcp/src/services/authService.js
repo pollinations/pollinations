@@ -43,7 +43,7 @@ async function setApiKey(params) {
     ]);
 }
 
-async function getKeyInfo(params) {
+async function getKeyInfo() {
     if (!hasApiKey()) {
         return createMCPResponse([
             createTextContent(
@@ -76,7 +76,7 @@ async function getKeyInfo(params) {
     ]);
 }
 
-async function clearApiKey(params) {
+async function clearApiKey() {
     const wasSet = hasApiKey();
     clearStoredKey();
 

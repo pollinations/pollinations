@@ -23,9 +23,11 @@ describe("fetchUpstream", () => {
         );
 
         const url = "https://example.com/api/v1/foo?id=bar";
-        await expect(
-            fetchUpstream(url, { errorLabel: "Foo failed" }),
-        ).rejects.toMatchObject({
+        const error = await fetchUpstream(url, {
+            errorLabel: "Foo failed",
+        }).catch((e) => e);
+        expect(error).toBeInstanceOf(HttpError);
+        expect(error).toMatchObject({
             name: "HttpError",
             status: 502,
             upstreamUrl: url,
@@ -67,23 +69,5 @@ describe("fetchUpstream", () => {
         });
         // errorLabel must not be passed to fetch as a RequestInit field
         expect(init).not.toHaveProperty("errorLabel");
-    });
-});
-
-describe("fetchUpstream + HttpError integration", () => {
-    it("HttpError carries the URL exactly as fetched (no stripping)", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response("nope", { status: 500 }),
-        );
-
-        const url =
-            "https://ltx2-backend.pollinations.ai/result?prompt_id=abc-123";
-        try {
-            await fetchUpstream(url);
-            expect.fail("should have thrown");
-        } catch (e) {
-            expect(e).toBeInstanceOf(HttpError);
-            expect((e as HttpError).upstreamUrl).toBe(url);
-        }
     });
 });

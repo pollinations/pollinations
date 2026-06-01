@@ -22,7 +22,7 @@ const loadLogo = () => uiAsset("logo.svg"); // flower — icons
 const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 
 const DARK = "#110518"; // pollinations splash / OG contrast
-const REACT_BLUE = "#DBEAFE"; // matches @pollinations/ui themeColors.blue
+const REACT_BLUE = "#DBEAFE"; // blue theme bg-pale token
 
 const APPS = {
     react: {

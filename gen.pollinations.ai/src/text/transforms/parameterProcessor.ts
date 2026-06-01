@@ -37,7 +37,11 @@ export function processParameters(
     // Azure Foundry only accepts stream_options for actual OpenAI deployments.
     // Third-party deployments (Mistral, Grok, DeepSeek, Llama) reject it with a
     // 422 extra_forbidden, so strip it for non-OpenAI Azure models.
-    if (isAzureOpenAI && !isOpenAIModel && updatedOptions.stream_options) {
+    if (
+        isAzureOpenAI &&
+        !isOpenAIModel &&
+        updatedOptions.stream_options !== undefined
+    ) {
         log(
             `Stripping stream_options for non-OpenAI Azure model: ${azureModel}`,
         );

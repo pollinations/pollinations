@@ -49,6 +49,20 @@ describe("processParameters", () => {
         expect(result.options.stream_options).toBeUndefined();
     });
 
+    it("strips nullable stream_options for non-OpenAI Azure models", () => {
+        const result = processParameters(messages, {
+            model: "mistral-large",
+            stream_options: null as unknown as Record<string, unknown>,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "Mistral-Large-3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
     it("keeps stream_options for OpenAI Azure models when streaming", () => {
         const result = processParameters(messages, {
             model: "gpt-5-nano",

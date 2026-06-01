@@ -1,0 +1,35 @@
+{
+  "pr_number": 11485,
+  "title": "refactor(mcp): remove unused install script, getApiKey, and dotenv dep",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11485",
+  "merged_at": "2026-06-01T15:11:12Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete dead install-claude-mcp.js (76 lines); it was never in package.json `files`, so the documented `npx @pollinations/mcp install-claude-mcp` command never worked\n- Fix README \"Claude Desktop Integration\" to point straight at the existing manual claude_desktop_config.json snippet (drops the broken npx block)\n- Remove getApiKey() from authUtils.js and its unused import in authService.js (no callers in the package)\n- Drop unused dotenv dependency from package.json + package-lock.json (not imported anywhere in the package)\n\nRisks: none — pure dead-code removal, no callers, no behavior change. Stale \"uses dotenv\" line in GITHUB_AUTH.md left untouched (out of scope; doc-only).\n\nDeferred (out of scope / premise changed):\n- Optional GITHUB_AUTH.md doc cleanup (stale 'uses dotenv to load environment variables' lin — Explicitly marked optional and 'not part of the dead-code removal' in the Finding 3 proposal, and GITHUB_AUTH.md is not \n\n_~108 net lines removed · biome ✓ · No runnable unit tests for changed code. packages/mcp test script is `node test-mcp-client ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the MCP",
+    "blurb": "Swept away some unused code and dependencies in the MCP package to keep the hive light and breezy.",
+    "summary": "Removed the unused install-claude-mcp.js script, getApiKey function, and dotenv dependency from the @pollinations/mcp package.",
+    "impact": "The MCP package is now leaner with ~108 lines of dead code removed, and the README correctly points to manual Claude Desktop configuration instead of a broken npx command.",
+    "keywords": [
+      "mcp",
+      "refactor",
+      "cleanup",
+      "dead-code",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot sweeping or cleaning up dead leaves/code blocks in a cozy digital garden, while the Nomnom creature eats the dead code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, sweeping up pixelated dead leaves and old code blocks with a small broom. The round tan nomnom creature happily eats a stack of dusty documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11485.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, sweeping up pixelated dead leaves and old code blocks with a small broom. The round tan nomnom creature happily eats a stack of dusty documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:12:19.768967+00:00"
+}

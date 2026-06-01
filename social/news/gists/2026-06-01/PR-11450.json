@@ -1,0 +1,35 @@
+{
+  "pr_number": 11450,
+  "title": "chore: remove 4 dead apps (2026-06-01)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11450",
+  "merged_at": "2026-06-01T08:10:31Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Dead App Removal\n\nThese apps returned 404/410 in **all 3 check rounds** (5 min apart):\n\n- Pollenforge-CLI | https://github.com/ganya002/Pollenforge-CLI/tree/main\n- What If? Scenario Explorer | https://whatif.pythonanywhere.com\n- AI Pet Name Generator | https://petpetgenerator.cc/ai-pet-name-generator\n- JCode Website Builder | https://jcode-ai-website-bulder.netlify.app/\n\nReview before merging. Close this PR to keep all apps.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the digital garden",
+    "blurb": "Our automated bot did some light gardening, removing a few inactive community apps to keep the showcase fresh and functional.",
+    "summary": "Automated cleanup removed four inactive community apps (Pollenforge-CLI, What If? Scenario Explorer, AI Pet Name Generator, and JCode Website Builder) from the APPS.md showcase after they consistently returned 404/410 errors.",
+    "impact": "The community app showcase remains clean and functional, ensuring users don't encounter dead links when exploring projects.",
+    "keywords": [
+      "cleanup",
+      "apps",
+      "showcase",
+      "bot",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee doing light gardening, sweeping up dead leaves or pulling weeds in a digital garden. The Nomnom creature eating dead links (404 errors).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up small brown pixelated leaves around glowing lime green (#ecf874) code-plants. The round tan nomnom creature happily eats a crumpled paper labeled '404'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11450.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up small brown pixelated leaves around glowing lime green (#ecf874) code-plants. The round tan nomnom creature happily eats a crumpled paper labeled '404'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T08:11:31.249466+00:00"
+}

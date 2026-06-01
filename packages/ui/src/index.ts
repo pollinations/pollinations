@@ -9,6 +9,10 @@ export {
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export { Alert, type AlertProps } from "./primitives/Alert.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
+export {
+    ButtonGroup,
+    type ButtonGroupProps,
+} from "./primitives/ButtonGroup.tsx";
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
 export {

@@ -23,11 +23,6 @@
       "import": "./dist/auth/sdk.js",
       "require": "./dist/auth/sdk.cjs"
     },
-    "./showcase": {
-      "types": "./dist/showcase/index.d.ts",
-      "import": "./dist/showcase/index.js",
-      "require": "./dist/showcase/index.cjs"
-    },
     "./modality": {
       "types": "./dist/modality/index.d.ts",
       "import": "./dist/modality/index.js",

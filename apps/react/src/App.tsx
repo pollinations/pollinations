@@ -23,7 +23,6 @@ import {
     WhenLoggedIn,
     WhenLoggedOut,
 } from "@pollinations/ui/auth/sdk";
-import { DesignShowcase } from "@pollinations/ui/showcase";
 import {
     Balance,
     KeyBudget,
@@ -40,6 +39,7 @@ import {
     useEffect,
     useState,
 } from "react";
+import { DesignShowcase } from "./showcase/DesignShowcase";
 
 // Publishable key for this showcase (pk_* is safe to commit).
 // Created via `polli keys create --type publishable` with redirect URIs
@@ -145,7 +145,7 @@ function ThemeTabs({
                     onClick={() => onThemeChange(option)}
                     size="small"
                 >
-                    <span className="polli:capitalize">{option}</span>
+                    <span className="capitalize">{option}</span>
                 </TabButton>
             ))}
         </nav>
@@ -508,7 +508,7 @@ function FloatingThemeControls({
                 <Surface
                     theme={theme}
                     variant="panel"
-                    className="polli:flex polli:w-max polli:max-w-full polli:p-2 polli:backdrop-blur"
+                    className="flex w-max max-w-full p-2 backdrop-blur"
                 >
                     <ThemeTabs theme={theme} onThemeChange={onThemeChange} />
                 </Surface>

@@ -115,11 +115,10 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
   `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
-- `@pollinations/ui/modality` exports model-modality color recipes and
-  `ModalityButton`.
+- `@pollinations/ui/modality` exports model-modality color recipes.
 - `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
-- **Design primitives** — `Alert`, `Button`, `Chip`, `ChevronIcon`,
+- **Design primitives** — `Alert`, `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
   `Collapsible`, `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`,
   `IconButton`, `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`,
   `ScrollArea`, `Section`, `Slider`, `StatCard`, `Surface`, `Switch`,

@@ -3,14 +3,8 @@
  *
  * Each modality (text/image/video/audio/realtime/embedding) gets one
  * page-theme hue, applied at the soft `-200/-900/-400` chip recipe.
- * Used in two places:
- *   1. The model-selection buttons in the API key creation flow.
- *   2. The static modality chips on the OAuth authorize screen.
- *
- * Interactive selection (model-picker) renders as `rounded-full` pills
- * aligned to the canonical Button. Static display (authorize summary)
- * renders as `rounded-lg` chips. Page-theme hues only — no rogue
- * indigo/rose.
+ * Used by apps to compose model-selection buttons and static modality chips.
+ * This module only owns modality color data; primitives own shape and behavior.
  */
 import type { ThemeName } from "../../theme.ts";
 

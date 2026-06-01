@@ -1,82 +1,85 @@
 import {
-    type ComponentType,
-    type FC,
-    type ReactNode,
-    useEffect,
-    useState,
-} from "react";
-import { currentPeriod, type PeriodSelection } from "../lib/period.ts";
-import { AuthInfoCard, ErrorBanner } from "../modules/auth/index.ts";
-import { ModalityButton } from "../modules/modality/index.ts";
-import {
-    formatPollen,
-    PaidChip,
-    TierChip,
-    WalletBalanceCard,
-    WalletDot,
-} from "../modules/wallet/index.ts";
-import { Alert } from "../primitives/Alert.tsx";
-import { Button } from "../primitives/Button.tsx";
-import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
-import { Chip } from "../primitives/Chip.tsx";
-import { Collapsible } from "../primitives/Collapsible.tsx";
-import { CopyButton } from "../primitives/CopyButton.tsx";
-import { Dialog, DialogTitle } from "../primitives/Dialog.tsx";
-import { Dropdown } from "../primitives/Dropdown.tsx";
-import { ExternalLinkButton } from "../primitives/ExternalLinkButton.tsx";
-import { Field as ArkField } from "../primitives/Field.tsx";
-import { IconButton } from "../primitives/IconButton.tsx";
-import { InfoTip } from "../primitives/InfoTip.tsx";
-import { Input } from "../primitives/Input.tsx";
-import {
+    Alert,
     AppIcon,
+    Field as ArkField,
     BeakerIcon,
     BookIcon,
+    Button,
+    ButtonGroup,
     CheckIcon,
+    ChevronIcon,
+    Chip,
     ClipboardIcon,
     ClockIcon,
+    Collapsible,
+    CopyButton,
+    currentPeriod,
+    Dialog,
+    DialogTitle,
     DiscordIcon,
     DownloadIcon,
+    Dropdown,
+    ExternalLinkButton,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
+    IconButton,
     type IconProps,
     ImageIcon,
+    InfoTip,
+    Input,
     LockIcon,
     MailIcon,
     McpIcon,
     MenuIcon,
-    TerminalIcon,
-    TokensIcon,
-    TrendUpIcon,
-    WalletIcon,
-    XIcon,
-} from "../primitives/icons/index.tsx";
-import { MultiSelect } from "../primitives/MultiSelect.tsx";
-import { PeriodPicker } from "../primitives/PeriodPicker.tsx";
-import { ScrollArea } from "../primitives/ScrollArea.tsx";
-import { Section as PrimitiveSection } from "../primitives/Section.tsx";
-import { Slider } from "../primitives/Slider.tsx";
-import { StatCard } from "../primitives/StatCard.tsx";
-import { Surface } from "../primitives/Surface.tsx";
-import { Switch, type SwitchStatus } from "../primitives/Switch.tsx";
-import { TabButton } from "../primitives/TabButton.tsx";
-import {
+    MultiSelect,
+    PeriodPicker,
+    type PeriodSelection,
+    Section as PrimitiveSection,
+    ScrollArea,
+    Slider,
+    StatCard,
+    Surface,
+    Switch,
+    type SwitchStatus,
+    TabButton,
     Table,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
-} from "../primitives/Table.tsx";
-import { Tooltip } from "../primitives/Tooltip.tsx";
-import { type ThemeName, themes } from "../theme.ts";
+    TerminalIcon,
+    type ThemeName,
+    TokensIcon,
+    Tooltip,
+    TrendUpIcon,
+    themes,
+    WalletIcon,
+    XIcon,
+} from "@pollinations/ui";
+import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
+import { getModalityColors } from "@pollinations/ui/modality";
+import {
+    formatPollen,
+    PaidChip,
+    TierChip,
+    WalletBalanceCard,
+    WalletDot,
+} from "@pollinations/ui/wallet";
+import {
+    type ComponentType,
+    type FC,
+    type ReactNode,
+    useEffect,
+    useState,
+} from "react";
 
 /**
- * Package-owned design primitive showcase.
+ * App-owned design primitive showcase.
  *
- * This component renders package primitives, tokens, and domain recipes only.
- * App-specific charts, model recipes, routes, and copy belong in host apps.
+ * This demo composes public @pollinations/ui exports only; it is deliberately
+ * kept outside the package so the published library stays primitive/module-only.
  */
 export type DesignShowcaseProps = {
     headerSlot?: ReactNode;
@@ -112,12 +115,12 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
         <ScrollArea
             theme={theme}
             data-theme={theme}
-            className={`polli:w-full polli:overflow-x-hidden polli:bg-emerald-100 polli:text-theme-text-base ${
-                hideHeader ? "polli:min-h-0 polli:flex-1" : "polli:h-dvh"
+            className={`w-full overflow-x-hidden bg-emerald-100 text-theme-text-base ${
+                hideHeader ? "min-h-0 flex-1" : "h-dvh"
             }`}
         >
             {hideHeader && (headerSlot || !hideThemeTabs) ? (
-                <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:flex-col polli:gap-4 polli:px-5 polli:pt-8">
+                <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-4 px-5 pt-8">
                     {headerSlot ? headerSlot : null}
                     {!hideThemeTabs ? (
                         <ThemeTabs
@@ -134,8 +137,8 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
                     headerSlot={headerSlot}
                 />
             ) : null}
-            <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:flex-col polli:gap-8 polli:px-5 polli:pt-8 polli:pb-10">
-                <main className="polli:flex polli:min-w-0 polli:flex-col polli:gap-10">
+            <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-8 px-5 pt-8 pb-10">
+                <main className="flex min-w-0 flex-col gap-10">
                     <CoverageDemo />
                     <TypographyDemo />
                     <ThemeDemo theme={theme} onThemeChange={setTheme} />
@@ -161,21 +164,19 @@ type HeaderProps = {
 };
 
 const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
-    <header className="polli:sticky polli:top-0 polli:z-20 polli:border-b polli:border-green-950/10 polli:bg-emerald-100 polli:px-5 polli:py-4 polli:backdrop-blur">
-        <div className="polli:mx-auto polli:flex polli:w-full polli:max-w-[1220px] polli:min-w-0 polli:flex-col polli:items-start polli:gap-4">
-            <div className="polli:flex polli:w-full polli:min-w-0 polli:flex-col polli:gap-3 polli:md:flex-row polli:md:items-start polli:md:justify-between">
-                <div className="polli:min-w-0">
-                    <h1 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
+    <header className="sticky top-0 z-20 border-b border-green-950/10 bg-emerald-100 px-5 py-4 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4">
+            <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                    <h1 className="font-serif text-2xl font-black text-theme-text-strong">
                         Design Showcase
                     </h1>
-                    <p className="polli:max-w-3xl polli:text-sm polli:leading-6 polli:text-theme-text-soft">
+                    <p className="max-w-3xl text-sm leading-6 text-theme-text-soft">
                         Package primitives, icons, tokens, and SDK-free recipes.
                     </p>
                 </div>
                 {headerSlot ? (
-                    <div className="polli:w-full polli:md:w-auto">
-                        {headerSlot}
-                    </div>
+                    <div className="w-full md:w-auto">{headerSlot}</div>
                 ) : null}
             </div>
             <ThemeTabs
@@ -194,11 +195,11 @@ type ThemeTabsProps = {
 };
 
 const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
-    <div className="polli:flex polli:min-w-0 polli:max-w-full polli:flex-col polli:items-start polli:gap-2">
-        <span className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+    <div className="flex min-w-0 max-w-full flex-col items-start gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
             Theme
         </span>
-        <div className="polli:flex polli:w-full polli:max-w-full polli:flex-wrap polli:gap-1.5">
+        <div className="flex w-full max-w-full flex-wrap gap-1.5">
             {options.map((option) => (
                 <TabButton
                     key={option}
@@ -207,7 +208,7 @@ const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
                     theme={option}
                     size="small"
                 >
-                    <span className="polli:capitalize">{option}</span>
+                    <span className="capitalize">{option}</span>
                 </TabButton>
             ))}
         </div>
@@ -229,13 +230,13 @@ const ShowcaseSection: FC<ShowcaseSectionProps> = ({
 }) => (
     <section
         id={id}
-        className="polli:flex polli:w-full polli:min-w-0 polli:scroll-mt-24 polli:flex-col polli:gap-3"
+        className="flex w-full min-w-0 scroll-mt-24 flex-col gap-3"
     >
-        <div className="polli:flex polli:flex-col polli:gap-1">
-            <h2 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
+        <div className="flex flex-col gap-1">
+            <h2 className="font-serif text-2xl font-black text-theme-text-strong">
                 {title}
             </h2>
-            <p className="polli:max-w-3xl polli:break-words polli:text-sm polli:leading-6 polli:text-theme-text-soft polli:[overflow-wrap:anywhere]">
+            <p className="max-w-3xl break-words text-sm leading-6 text-theme-text-soft [overflow-wrap:anywhere]">
                 {caption}
             </p>
         </div>
@@ -249,12 +250,12 @@ const Row: FC<{ label: string; children: ReactNode }> = ({
 }) => (
     <Surface
         variant="card-themed"
-        className="polli:flex polli:flex-wrap polli:items-center polli:gap-3"
+        className="flex flex-wrap items-center gap-3"
     >
-        <span className="polli:w-44 polli:shrink-0 polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+        <span className="w-44 shrink-0 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
-        <div className="polli:flex polli:min-w-0 polli:flex-1 polli:flex-wrap polli:items-center polli:gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             {children}
         </div>
     </Surface>
@@ -264,8 +265,8 @@ const ControlGroup: FC<{ label: string; children: ReactNode }> = ({
     label,
     children,
 }) => (
-    <div className="polli:flex polli:min-w-0 polli:flex-col polli:gap-1">
-        <span className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+    <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
         {children}
@@ -275,6 +276,7 @@ const ControlGroup: FC<{ label: string; children: ReactNode }> = ({
 const primitiveNames = [
     "Alert",
     "Button",
+    "ButtonGroup",
     "ChevronIcon",
     "Chip",
     "Collapsible",
@@ -308,7 +310,7 @@ const primitiveNames = [
 const moduleNames = [
     "AuthInfoCard",
     "ErrorBanner",
-    "ModalityButton",
+    "getModalityColors",
     "PaidChip",
     "TierChip",
     "WalletBalanceCard",
@@ -324,27 +326,27 @@ const CoverageDemo: FC = () => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] polli:gap-3"
+            className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3"
         >
             <StatCard
                 label="Primitives"
                 value={primitiveNames.length}
                 detail="Buttons, inputs, overlays, layout, and feedback."
-                className="polli:rounded-xl polli:bg-surface-white polli:p-4"
+                className="rounded-xl bg-surface-white p-4"
             />
             <StatCard
                 label="Icons"
                 value={iconItems.length + 1}
                 detail="All exported icons plus the canonical chevron."
-                className="polli:rounded-xl polli:bg-surface-white polli:p-4"
+                className="rounded-xl bg-surface-white p-4"
             />
             <StatCard
                 label="Recipes"
                 value={moduleNames.length}
                 detail="Auth, wallet, and modality pieces without SDK state."
-                className="polli:rounded-xl polli:bg-surface-white polli:p-4"
+                className="rounded-xl bg-surface-white p-4"
             />
-            <Surface className="polli:col-span-full polli:flex polli:flex-wrap polli:gap-2">
+            <Surface className="col-span-full flex flex-wrap gap-2">
                 {primitiveNames.map((name) => (
                     <Chip key={name} size="sm">
                         {name}
@@ -358,36 +360,36 @@ const CoverageDemo: FC = () => (
 const typographyRows = [
     {
         label: "Heading",
-        className: "polli:font-heading polli:text-4xl",
+        className: "font-heading text-4xl",
         sample: "Pollinations",
     },
     {
         label: "Subheading",
-        className: "polli:font-subheading polli:text-3xl",
+        className: "font-subheading text-3xl",
         sample: "Reusable UI",
     },
     {
         label: "Body",
-        className: "polli:font-body polli:text-base",
+        className: "font-body text-base",
         sample: "Clear defaults for product surfaces.",
     },
     {
         label: "Pixel",
-        className: "polli:font-pixel polli:text-base",
+        className: "font-pixel text-base",
         sample: "API 200 OK",
     },
     {
         label: "Micro",
-        className: "polli:font-body polli:text-micro polli:uppercase",
+        className: "font-body text-micro uppercase",
         sample: "Status label",
     },
 ] as const;
 
 const textRows = [
-    ["strong", "polli:text-theme-text-strong"],
-    ["base", "polli:text-theme-text-base"],
-    ["soft", "polli:text-theme-text-soft"],
-    ["muted", "polli:text-theme-text-muted"],
+    ["strong", "text-theme-text-strong"],
+    ["base", "text-theme-text-base"],
+    ["soft", "text-theme-text-soft"],
+    ["muted", "text-theme-text-muted"],
 ] as const;
 
 const TypographyDemo: FC = () => (
@@ -396,33 +398,30 @@ const TypographyDemo: FC = () => (
         title="Typography"
         caption="Font, size, and semantic text color utilities backed by package tokens."
     >
-        <Surface
-            variant="panel"
-            className="polli:flex polli:flex-col polli:gap-3"
-        >
+        <Surface variant="panel" className="flex flex-col gap-3">
             {typographyRows.map((row) => (
                 <div
                     key={row.label}
-                    className="polli:flex polli:flex-wrap polli:items-baseline polli:gap-x-4 polli:gap-y-1 polli:border-b polli:border-theme-border polli:pb-3 polli:last:border-b-0 polli:last:pb-0"
+                    className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-theme-border pb-3 last:border-b-0 last:pb-0"
                 >
                     <span
-                        className={`polli:w-80 polli:shrink-0 polli:text-theme-text-strong ${row.className}`}
+                        className={`w-80 shrink-0 text-theme-text-strong ${row.className}`}
                     >
                         {row.sample}
                     </span>
-                    <code className="polli:w-36 polli:shrink-0 polli:font-mono polli:text-xs polli:text-theme-text-strong">
+                    <code className="w-36 shrink-0 font-mono text-xs text-theme-text-strong">
                         {row.label}
                     </code>
-                    <span className="polli:min-w-0 polli:flex-1 polli:text-xs polli:text-theme-text-soft">
-                        {row.className.replaceAll("polli:", "")}
+                    <span className="min-w-0 flex-1 text-xs text-theme-text-soft">
+                        {row.className}
                     </span>
                 </div>
             ))}
-            <div className="polli:flex polli:flex-wrap polli:gap-2 polli:pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
                 {textRows.map(([label, className]) => (
                     <span
                         key={label}
-                        className={`polli:rounded-lg polli:bg-theme-bg-pale polli:px-3 polli:py-1 polli:text-sm ${className}`}
+                        className={`rounded-lg bg-theme-bg-pale px-3 py-1 text-sm ${className}`}
                     >
                         text-{label}
                     </span>
@@ -440,7 +439,7 @@ const ThemeDemo: FC<HeaderProps> = ({ theme, onThemeChange }) => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] polli:gap-3"
+            className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3"
         >
             {themes.map((item) => (
                 <button
@@ -449,18 +448,18 @@ const ThemeDemo: FC<HeaderProps> = ({ theme, onThemeChange }) => (
                     data-theme={item}
                     aria-pressed={theme === item}
                     onClick={() => onThemeChange(item)}
-                    className="polli:flex polli:min-w-0 polli:flex-col polli:gap-2 polli:rounded-xl polli:border polli:border-theme-border polli:bg-theme-bg-subtle polli:p-3 polli:text-left polli:transition-colors polli:hover:bg-theme-bg-pale"
+                    className="flex min-w-0 flex-col gap-2 rounded-xl border border-theme-border bg-theme-bg-subtle p-3 text-left transition-colors hover:bg-theme-bg-pale"
                 >
-                    <span className="polli:text-sm polli:font-bold polli:capitalize polli:text-theme-text-strong">
+                    <span className="text-sm font-bold capitalize text-theme-text-strong">
                         {item}
                     </span>
-                    <span className="polli:flex polli:h-8 polli:overflow-hidden polli:rounded-lg">
-                        <span className="polli:flex-1 polli:bg-theme-bg-subtle" />
-                        <span className="polli:flex-1 polli:bg-theme-bg-active" />
-                        <span className="polli:flex-1 polli:bg-theme-bg-hover" />
-                        <span className="polli:flex-1 polli:bg-theme-bg-pale" />
+                    <span className="flex h-8 overflow-hidden rounded-lg">
+                        <span className="flex-1 bg-theme-bg-subtle" />
+                        <span className="flex-1 bg-theme-bg-active" />
+                        <span className="flex-1 bg-theme-bg-hover" />
+                        <span className="flex-1 bg-theme-bg-pale" />
                     </span>
-                    <span className="polli:text-xs polli:text-theme-text-soft">
+                    <span className="text-xs text-theme-text-soft">
                         {theme === item ? "Selected" : "Preview"}
                     </span>
                 </button>
@@ -470,37 +469,29 @@ const ThemeDemo: FC<HeaderProps> = ({ theme, onThemeChange }) => (
 );
 
 const tokenRows = [
-    ["text-base", "var(--polli-color-text-base)", "polli:bg-theme-text-base"],
-    [
-        "text-strong",
-        "var(--polli-color-text-strong)",
-        "polli:bg-theme-text-strong",
-    ],
-    ["text-soft", "var(--polli-color-text-soft)", "polli:bg-theme-text-soft"],
-    [
-        "text-muted",
-        "var(--polli-color-text-muted)",
-        "polli:bg-theme-text-muted",
-    ],
-    ["border", "var(--polli-color-border)", "polli:bg-theme-border"],
-    ["bg-subtle", "var(--polli-color-bg-subtle)", "polli:bg-theme-bg-subtle"],
-    ["bg-active", "var(--polli-color-bg-active)", "polli:bg-theme-bg-active"],
-    ["bg-hover", "var(--polli-color-bg-hover)", "polli:bg-theme-bg-hover"],
-    ["bg-pale", "var(--polli-color-bg-pale)", "polli:bg-theme-bg-pale"],
+    ["text-base", "var(--polli-color-text-base)", "bg-theme-text-base"],
+    ["text-strong", "var(--polli-color-text-strong)", "bg-theme-text-strong"],
+    ["text-soft", "var(--polli-color-text-soft)", "bg-theme-text-soft"],
+    ["text-muted", "var(--polli-color-text-muted)", "bg-theme-text-muted"],
+    ["border", "var(--polli-color-border)", "bg-theme-border"],
+    ["bg-subtle", "var(--polli-color-bg-subtle)", "bg-theme-bg-subtle"],
+    ["bg-active", "var(--polli-color-bg-active)", "bg-theme-bg-active"],
+    ["bg-hover", "var(--polli-color-bg-hover)", "bg-theme-bg-hover"],
+    ["bg-pale", "var(--polli-color-bg-pale)", "bg-theme-bg-pale"],
     [
         "danger-bg",
         "var(--polli-color-danger-bg-light)",
-        "polli:bg-intent-danger-bg-light",
+        "bg-intent-danger-bg-light",
     ],
     [
         "success-bg",
         "var(--polli-color-success-bg-light)",
-        "polli:bg-intent-success-bg-light",
+        "bg-intent-success-bg-light",
     ],
     [
         "warning-bg",
         "var(--polli-color-warning-bg-light)",
-        "polli:bg-intent-warning-bg-light",
+        "bg-intent-warning-bg-light",
     ],
 ] as const;
 
@@ -512,21 +503,18 @@ const TokensDemo: FC = () => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(230px,1fr))] polli:gap-3"
+            className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3"
         >
             {tokenRows.map(([name, variable, swatchClass]) => (
-                <Surface
-                    key={name}
-                    className="polli:flex polli:items-center polli:gap-3"
-                >
+                <Surface key={name} className="flex items-center gap-3">
                     <span
-                        className={`polli:h-10 polli:w-10 polli:shrink-0 polli:rounded-lg polli:border polli:border-theme-border ${swatchClass}`}
+                        className={`h-10 w-10 shrink-0 rounded-lg border border-theme-border ${swatchClass}`}
                     />
-                    <span className="polli:min-w-0">
-                        <span className="polli:block polli:text-sm polli:font-bold polli:text-theme-text-strong">
+                    <span className="min-w-0">
+                        <span className="block text-sm font-bold text-theme-text-strong">
                             {name}
                         </span>
-                        <code className="polli:block polli:truncate polli:text-xs polli:text-theme-text-soft">
+                        <code className="block truncate text-xs text-theme-text-soft">
                             {variable}
                         </code>
                     </span>
@@ -573,33 +561,30 @@ const IconsDemo: FC = () => (
     >
         <Surface
             variant="panel"
-            className="polli:grid polli:gap-3"
+            className="grid gap-3"
             style={{
                 gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
             }}
         >
             {iconItems.map(({ name, Icon }) => (
-                <Surface
-                    key={name}
-                    className="polli:flex polli:items-center polli:gap-3"
-                >
-                    <span className="polli:flex polli:h-10 polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-pale polli:text-theme-text-strong">
-                        <Icon className="polli:h-5 polli:w-5" />
+                <Surface key={name} className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-theme-bg-pale text-theme-text-strong">
+                        <Icon className="h-5 w-5" />
                     </span>
-                    <code className="polli:min-w-0 polli:whitespace-nowrap polli:text-xs polli:text-theme-text-strong">
+                    <code className="min-w-0 whitespace-nowrap text-xs text-theme-text-strong">
                         {name}
                     </code>
                 </Surface>
             ))}
-            <Surface className="polli:flex polli:items-center polli:gap-3">
-                <span className="polli:flex polli:h-10 polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-pale polli:text-theme-text-strong">
-                    <ChevronIcon className="polli:h-4 polli:w-4" />
+            <Surface className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-theme-bg-pale text-theme-text-strong">
+                    <ChevronIcon className="h-4 w-4" />
                 </span>
-                <span className="polli:min-w-0">
-                    <code className="polli:block polli:whitespace-nowrap polli:text-xs polli:text-theme-text-strong">
+                <span className="min-w-0">
+                    <code className="block whitespace-nowrap text-xs text-theme-text-strong">
                         ChevronIcon
                     </code>
-                    <span className="polli:mt-1 polli:flex polli:gap-2 polli:text-theme-text-soft">
+                    <span className="mt-1 flex gap-2 text-theme-text-soft">
                         <ChevronIcon />
                         <ChevronIcon expanded />
                     </span>
@@ -615,7 +600,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
         title="Buttons"
         caption="Button, link, icon, copy, chip, and tab affordances in their supported states."
     >
-        <div className="polli:flex polli:flex-col polli:gap-3">
+        <div className="flex flex-col gap-3">
             <Row label="Button">
                 <Button>Default</Button>
                 <Button size="small">Small</Button>
@@ -641,32 +626,32 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
             </Row>
             <Row label="Icon button">
                 <IconButton title="Copy" onClick={noop}>
-                    <ClipboardIcon className="polli:h-3.5 polli:w-3.5" />
+                    <ClipboardIcon className="h-3.5 w-3.5" />
                 </IconButton>
                 <IconButton title="Open" onClick={noop}>
-                    <ExternalLinkIcon className="polli:h-3.5 polli:w-3.5" />
+                    <ExternalLinkIcon className="h-3.5 w-3.5" />
                 </IconButton>
                 <IconButton title="Delete" intent="danger" onClick={noop}>
-                    <XIcon className="polli:h-3.5 polli:w-3.5" />
+                    <XIcon className="h-3.5 w-3.5" />
                 </IconButton>
             </Row>
             <Row label="Copy button">
                 <CopyButton
                     value="pk_showcase_123"
                     className={(copied) =>
-                        `polli:inline-flex polli:h-8 polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:text-sm polli:font-medium polli:transition-colors ${
+                        `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
                             copied
-                                ? "polli:bg-green-100 polli:text-green-800"
-                                : "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-theme-bg-active text-theme-text-strong"
                         }`
                     }
                 >
                     {(copied) => (
                         <>
                             {copied ? (
-                                <CheckIcon className="polli:h-4 polli:w-4" />
+                                <CheckIcon className="h-4 w-4" />
                             ) : (
-                                <ClipboardIcon className="polli:h-4 polli:w-4" />
+                                <ClipboardIcon className="h-4 w-4" />
                             )}
                             {copied ? "Copied" : "Copy key"}
                         </>
@@ -720,7 +705,7 @@ const InputsDemo: FC = () => {
         >
             <Surface
                 variant="panel"
-                className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] polli:gap-4"
+                className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4"
             >
                 <ControlGroup label="Input">
                     <Input placeholder="Name" />
@@ -734,28 +719,28 @@ const InputsDemo: FC = () => {
                 <ControlGroup label="Disabled">
                     <Input placeholder="Disabled" disabled />
                 </ControlGroup>
-                <div className="polli:col-span-full">
+                <div className="col-span-full">
                     <ArkField.Root
                         invalid
-                        className="polli:flex polli:max-w-xl polli:flex-col polli:gap-1"
+                        className="flex max-w-xl flex-col gap-1"
                     >
-                        <ArkField.Label className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+                        <ArkField.Label className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
                             Field
-                            <ArkField.RequiredIndicator className="polli:ml-1 polli:text-intent-danger-text" />
+                            <ArkField.RequiredIndicator className="ml-1 text-intent-danger-text" />
                         </ArkField.Label>
                         <ArkField.Input
                             placeholder="email@example.com"
-                            className="polli:rounded-lg polli:border polli:border-intent-danger-border polli:bg-white polli:px-3 polli:py-2 polli:text-sm"
+                            className="rounded-lg border border-intent-danger-border bg-white px-3 py-2 text-sm"
                         />
-                        <ArkField.HelperText className="polli:text-xs polli:text-theme-text-soft">
+                        <ArkField.HelperText className="text-xs text-theme-text-soft">
                             Exported Ark field namespace with package styling.
                         </ArkField.HelperText>
-                        <ArkField.ErrorText className="polli:text-xs polli:font-medium polli:text-intent-danger-text">
+                        <ArkField.ErrorText className="text-xs font-medium text-intent-danger-text">
                             Enter a valid email address.
                         </ArkField.ErrorText>
                     </ArkField.Root>
                 </div>
-                <div className="polli:col-span-full">
+                <div className="col-span-full">
                     <ControlGroup label={`Slider ${sliderValue}`}>
                         <Slider
                             min={0}
@@ -770,13 +755,10 @@ const InputsDemo: FC = () => {
                         />
                     </ControlGroup>
                 </div>
-                <div className="polli:col-span-full polli:flex polli:flex-wrap polli:gap-5">
+                <div className="col-span-full flex flex-wrap gap-5">
                     {switchStatuses.map((status) => (
-                        <div
-                            key={status}
-                            className="polli:flex polli:flex-col polli:gap-1"
-                        >
-                            <span className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+                        <div key={status} className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
                                 {status}
                             </span>
                             <Switch
@@ -792,8 +774,8 @@ const InputsDemo: FC = () => {
                             />
                         </div>
                     ))}
-                    <div className="polli:flex polli:flex-col polli:gap-1">
-                        <span className="polli:text-xs polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-strong">
+                    <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
                             disabled
                         </span>
                         <Switch
@@ -839,12 +821,9 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
             title="Selection"
             caption="Mutually exclusive tabs, multiple selection, dropdowns, and period selection."
         >
-            <Surface
-                variant="panel"
-                className="polli:flex polli:flex-col polli:gap-4"
-            >
+            <Surface variant="panel" className="flex flex-col gap-4">
                 <ControlGroup label="TabButton">
-                    <div className="polli:flex polli:flex-wrap polli:gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                         {tabOptions.map((option) => (
                             <TabButton
                                 key={option}
@@ -860,11 +839,11 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                     <Dropdown
                         theme={theme}
                         align="start"
-                        className="polli:w-56 polli:p-2"
+                        className="w-56 p-2"
                         trigger={(open) => (
                             <button
                                 type="button"
-                                className="polli:inline-flex polli:min-h-8 polli:items-center polli:gap-2 polli:rounded-full polli:border polli:border-theme-border polli:bg-theme-bg-subtle polli:px-3 polli:text-sm polli:font-medium polli:text-theme-text-base polli:hover:bg-theme-bg-pale"
+                                className="inline-flex min-h-8 items-center gap-2 rounded-full border border-theme-border bg-theme-bg-subtle px-3 text-sm font-medium text-theme-text-base hover:bg-theme-bg-pale"
                             >
                                 Menu
                                 <ChevronIcon expanded={open} />
@@ -872,14 +851,14 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                         )}
                     >
                         {(close) => (
-                            <div className="polli:flex polli:flex-col">
+                            <div className="flex flex-col">
                                 {["Account", "Usage", "Settings"].map(
                                     (item) => (
                                         <button
                                             key={item}
                                             type="button"
                                             onClick={close}
-                                            className="polli:rounded-md polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:text-theme-text-base polli:hover:bg-theme-bg-subtle"
+                                            className="rounded-md px-3 py-2 text-left text-sm text-theme-text-base hover:bg-theme-bg-subtle"
                                         >
                                             {item}
                                         </button>
@@ -890,7 +869,7 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                     </Dropdown>
                 </ControlGroup>
                 <ControlGroup label="MultiSelect">
-                    <div className="polli:flex polli:flex-wrap polli:gap-3">
+                    <div className="flex flex-wrap gap-3">
                         <MultiSelect
                             options={[...selectionOptions]}
                             selected={selected}
@@ -935,10 +914,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
             title="Overlays and Disclosure"
             caption="Dialog, DialogTitle, Dropdown, Collapsible, and ScrollArea share the package interaction language."
         >
-            <Surface
-                variant="panel"
-                className="polli:flex polli:flex-col polli:gap-4"
-            >
+            <Surface variant="panel" className="flex flex-col gap-4">
                 <Row label="Dialog">
                     <Button onClick={() => setDialogOpen(true)}>
                         Open dialog
@@ -950,18 +926,18 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                         theme={theme}
                         size="sm"
                     >
-                        <div className="polli:p-6">
+                        <div className="p-6">
                             <DialogTitle
                                 id="showcase-dialog-title"
-                                className="polli:font-subheading polli:text-xl polli:text-theme-text-strong"
+                                className="font-subheading text-xl text-theme-text-strong"
                             >
                                 DialogTitle export
                             </DialogTitle>
-                            <p className="polli:mt-2 polli:text-sm polli:text-theme-text-base">
+                            <p className="mt-2 text-sm text-theme-text-base">
                                 The dialog is controlled by the host and uses
                                 the same themed surface tokens.
                             </p>
-                            <div className="polli:mt-5 polli:flex polli:justify-end polli:gap-2">
+                            <div className="mt-5 flex justify-end gap-2">
                                 <Button
                                     size="small"
                                     onClick={() => setDialogOpen(false)}
@@ -972,33 +948,33 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                         </div>
                     </Dialog>
                 </Row>
-                <Surface className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] polli:gap-3">
+                <Surface className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
                     <Collapsible
                         expanded={firstOpen}
                         onToggle={() => setFirstOpen((open) => !open)}
-                        wrapperClassName="polli:border-theme-border polli:bg-theme-bg-pale"
+                        wrapperClassName="border-theme-border bg-theme-bg-pale"
                         label={
-                            <span className="polli:text-sm polli:font-medium polli:text-theme-text-strong">
+                            <span className="text-sm font-medium text-theme-text-strong">
                                 Advanced settings
                             </span>
                         }
                     >
-                        <p className="polli:text-sm polli:text-theme-text-base">
+                        <p className="text-sm text-theme-text-base">
                             Body content is fully controlled by the caller.
                         </p>
                     </Collapsible>
                     <Collapsible
                         expanded={secondOpen}
                         onToggle={() => setSecondOpen((open) => !open)}
-                        wrapperClassName="polli:border-theme-border polli:bg-theme-bg-pale"
+                        wrapperClassName="border-theme-border bg-theme-bg-pale"
                         label={
-                            <span className="polli:text-sm polli:font-medium polli:text-theme-text-strong">
+                            <span className="text-sm font-medium text-theme-text-strong">
                                 Nested details
                             </span>
                         }
                     >
-                        <div className="polli:flex polli:flex-col polli:gap-2">
-                            <p className="polli:text-sm polli:text-theme-text-base">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm text-theme-text-base">
                                 The same primitive works inside compact panels.
                             </p>
                             <Button size="small">Nested action</Button>
@@ -1008,9 +984,9 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                         expanded={false}
                         onToggle={noop}
                         disabled
-                        wrapperClassName="polli:border-theme-border polli:bg-theme-bg-pale"
+                        wrapperClassName="border-theme-border bg-theme-bg-pale"
                         label={
-                            <span className="polli:text-sm polli:font-medium polli:text-theme-text-strong">
+                            <span className="text-sm font-medium text-theme-text-strong">
                                 Disabled row
                             </span>
                         }
@@ -1029,24 +1005,21 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
         title="Layout"
         caption="Surface, Section, StatCard, ScrollArea, and Table primitives for dense product screens."
     >
-        <Surface
-            variant="panel"
-            className="polli:flex polli:flex-col polli:gap-4"
-        >
-            <div className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(210px,1fr))] polli:gap-3">
+        <Surface variant="panel" className="flex flex-col gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
                 <Surface>
-                    <h3 className="polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                    <h3 className="font-subheading text-xl text-theme-text-strong">
                         Surface card
                     </h3>
-                    <p className="polli:mt-1 polli:text-sm polli:text-theme-text-soft">
+                    <p className="mt-1 text-sm text-theme-text-soft">
                         Neutral inner surface for dense content.
                     </p>
                 </Surface>
                 <Surface variant="card-themed">
-                    <h3 className="polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                    <h3 className="font-subheading text-xl text-theme-text-strong">
                         Surface themed
                     </h3>
-                    <p className="polli:mt-1 polli:text-sm polli:text-theme-text-soft">
+                    <p className="mt-1 text-sm text-theme-text-soft">
                         Themed wash for highlights and grouped state.
                     </p>
                 </Surface>
@@ -1054,7 +1027,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     label="StatCard"
                     value={formatPollen(1234.5678)}
                     detail="Tabular value with optional detail."
-                    className="polli:rounded-xl polli:bg-surface-white polli:p-4"
+                    className="rounded-xl bg-surface-white p-4"
                 />
             </div>
             <PrimitiveSection
@@ -1063,21 +1036,21 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 framed
                 action={<Button size="small">Action</Button>}
             >
-                <p className="polli:text-sm polli:text-theme-text-soft">
+                <p className="text-sm text-theme-text-soft">
                     Section owns heading layout and optional framing. The app
                     owns the content inside it.
                 </p>
             </PrimitiveSection>
-            <div className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] polli:gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
                 <Surface>
-                    <p className="polli:mb-2 polli:font-mono polli:text-xs polli:uppercase polli:tracking-wide polli:text-theme-text-soft">
+                    <p className="mb-2 font-mono text-xs uppercase tracking-wide text-theme-text-soft">
                         ScrollArea vertical
                     </p>
-                    <ScrollArea className="polli:h-44 polli:rounded-lg polli:bg-theme-bg-subtle polli:p-3">
+                    <ScrollArea className="h-44 rounded-lg bg-theme-bg-subtle p-3">
                         {scrollRows.map((row) => (
                             <p
                                 key={row}
-                                className="polli:py-1 polli:text-sm polli:text-theme-text-base"
+                                className="py-1 text-sm text-theme-text-base"
                             >
                                 Row {row}
                             </p>
@@ -1085,15 +1058,15 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     </ScrollArea>
                 </Surface>
                 <Surface>
-                    <p className="polli:mb-2 polli:font-mono polli:text-xs polli:uppercase polli:tracking-wide polli:text-theme-text-soft">
+                    <p className="mb-2 font-mono text-xs uppercase tracking-wide text-theme-text-soft">
                         ScrollArea horizontal
                     </p>
                     <ScrollArea
                         axis="x"
                         theme="violet"
-                        className="polli:rounded-lg polli:bg-theme-bg-subtle polli:p-3"
+                        className="rounded-lg bg-theme-bg-subtle p-3"
                     >
-                        <div className="polli:flex polli:w-max polli:gap-2">
+                        <div className="flex w-max gap-2">
                             {scrollRows.slice(0, 16).map((row) => (
                                 <Chip key={row} theme="violet">
                                     item {row}
@@ -1103,9 +1076,9 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     </ScrollArea>
                 </Surface>
             </div>
-            <Surface className="polli:p-0">
+            <Surface className="p-0">
                 <ScrollArea axis="x">
-                    <Table className="polli:min-w-[560px]">
+                    <Table className="min-w-[560px]">
                         <TableHead>
                             <tr>
                                 <TableHeaderCell active sortDirection="asc">
@@ -1124,7 +1097,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                             {tableRows.map((row) => (
                                 <TableRow key={row.model} intent={row.intent}>
                                     <TableCell>
-                                        <span className="polli:font-medium polli:text-theme-text-strong">
+                                        <span className="font-medium text-theme-text-strong">
                                             {row.model}
                                         </span>
                                     </TableCell>
@@ -1183,12 +1156,9 @@ const FeedbackDemo: FC = () => (
         title="Feedback"
         caption="Alert, Tooltip, InfoTip, and formatted value examples for compact product UI."
     >
-        <Surface
-            variant="panel"
-            className="polli:flex polli:flex-col polli:gap-3"
-        >
+        <Surface variant="panel" className="flex flex-col gap-3">
             <Row label="Alert">
-                <div className="polli:grid polli:min-w-0 polli:flex-1 polli:grid-cols-[repeat(auto-fit,minmax(210px,1fr))] polli:gap-2">
+                <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-2">
                     <Alert title="Info">Catalog metadata is synced.</Alert>
                     <Alert intent="success" title="Success">
                         Package assets generated.
@@ -1202,7 +1172,7 @@ const FeedbackDemo: FC = () => (
                 </div>
             </Row>
             <Row label="InfoTip">
-                <span className="polli:inline-flex polli:items-center polli:text-sm polli:text-theme-text-strong">
+                <span className="inline-flex items-center text-sm text-theme-text-strong">
                     Pollen balance
                     <InfoTip content="A compact inline information trigger." />
                 </span>
@@ -1220,7 +1190,7 @@ const FeedbackDemo: FC = () => (
                     content="Use triggerAs='span' around inline text."
                     triggerAs="span"
                 >
-                    <span className="polli:cursor-help polli:text-sm polli:text-theme-text-strong polli:underline polli:decoration-dotted">
+                    <span className="cursor-help text-sm text-theme-text-strong underline decoration-dotted">
                         inline help
                     </span>
                 </Tooltip>
@@ -1245,23 +1215,20 @@ const ModuleRecipesDemo: FC = () => {
             title="Shared Modules"
             caption="Package-owned pieces used by product screens; host apps provide the data and flows."
         >
-            <Surface
-                variant="panel"
-                className="polli:flex polli:flex-col polli:gap-4"
-            >
+            <Surface variant="panel" className="flex flex-col gap-4">
                 <Row label="Wallet markers">
                     <PaidChip>Paid</PaidChip>
                     <TierChip>Tier</TierChip>
-                    <span className="polli:inline-flex polli:items-center polli:gap-2 polli:text-sm polli:text-theme-text-strong">
+                    <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
                         <WalletDot kind="paid" />
                         paid balance
                     </span>
-                    <span className="polli:inline-flex polli:items-center polli:gap-2 polli:text-sm polli:text-theme-text-strong">
+                    <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
                         <WalletDot kind="tier" />
                         tier balance
                     </span>
                 </Row>
-                <div className="polli:grid polli:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] polli:gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
                     <WalletBalanceCard
                         kind="paid"
                         label="Paid"
@@ -1269,7 +1236,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(2.1)}{" "}
-                                <span className="polli:font-medium polli:text-amber-800/70">
+                                <span className="font-medium text-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1283,7 +1250,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(8)}{" "}
-                                <span className="polli:font-medium polli:text-amber-800/70">
+                                <span className="font-medium text-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1291,25 +1258,36 @@ const ModuleRecipesDemo: FC = () => {
                         info={<InfoTip content="Tier allowance balance." />}
                     />
                 </div>
-                <Row label="ModalityButton">
-                    {modalities.map((modality) => (
-                        <ModalityButton key={modality} category={modality}>
-                            {modality}
-                        </ModalityButton>
-                    ))}
-                    <ModalityButton category="unknown" selected={false}>
-                        unknown
-                    </ModalityButton>
-                    <ModalityButton category="text" disabled>
-                        disabled
-                    </ModalityButton>
+                <Row label="ButtonGroup">
+                    <ButtonGroup aria-label="Modality options">
+                        {modalities.map((modality) => (
+                            <Button
+                                key={modality}
+                                type="button"
+                                size="small"
+                                className={getModalityColors(modality)?.filled}
+                            >
+                                {modality}
+                            </Button>
+                        ))}
+                        <Button
+                            type="button"
+                            size="small"
+                            className="polli:bg-gray-100 polli:text-gray-600"
+                        >
+                            unknown
+                        </Button>
+                        <Button type="button" size="small" disabled>
+                            disabled
+                        </Button>
+                    </ButtonGroup>
                 </Row>
-                <Surface className="polli:flex polli:flex-col polli:gap-3">
-                    <h3 className="polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                <Surface className="flex flex-col gap-3">
+                    <h3 className="font-subheading text-xl text-theme-text-strong">
                         Auth feedback
                     </h3>
                     <AuthInfoCard title="Authorize">
-                        <p className="polli:text-sm polli:text-theme-text-base">
+                        <p className="text-sm text-theme-text-base">
                             Sign in to approve this request and return to the
                             app.
                         </p>

@@ -91,19 +91,29 @@ export function determineBalanceSource(
     return { source: "pack", slug: "v1:meter:pack" };
 }
 
+/**
+ * Map a deduction bucket to its meter id/slug pair. The balances sub-object
+ * differs per call site, so this returns only the id/slug pair.
+ */
+export function payerBucketToMeter(bucket: BalanceBucket): {
+    selectedMeterId: string;
+    selectedMeterSlug: "v1:meter:tier" | "v1:meter:pack";
+} {
+    return {
+        selectedMeterId: `local:${bucket}`,
+        selectedMeterSlug:
+            bucket === "tier" ? "v1:meter:tier" : "v1:meter:pack",
+    };
+}
+
 export function createBalanceCheckResult(
     balances: UserBalance,
     isPaidOnly = false,
     amount?: number,
 ): BalanceCheckResult {
-    const { source, slug } = determineBalanceSource(
-        balances,
-        isPaidOnly,
-        amount,
-    );
+    const { source } = determineBalanceSource(balances, isPaidOnly, amount);
     return {
-        selectedMeterId: `local:${source}`,
-        selectedMeterSlug: slug,
+        ...payerBucketToMeter(source),
         balances: {
             "v1:meter:tier": isPaidOnly ? 0 : balances.tierBalance,
             "v1:meter:pack": balances.packBalance,

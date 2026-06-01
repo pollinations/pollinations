@@ -1,0 +1,35 @@
+{
+  "pr_number": 11539,
+  "title": "Add Resume Makinator to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11539",
+  "merged_at": "2026-06-01T20:07:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Resume Makinator](https://rm.mkgpdev.xyz) to build\n- Resume Makinator is a free browser-based resume builder that lets users edit structured resume sections, preview the result live, and export their resume. It integrates Pollinations.ai through the Cha\n\nFixes #10424",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Get a job, pixel by pixel",
+    "blurb": "Resume Makinator just landed in the community greenhouse. It's a browser-based builder that uses our text models to help you write, preview, and export a resume that might actually get read.",
+    "summary": "Added Resume Makinator, a free browser-based resume builder integrating Pollinations.ai for text generation, to the community app showcase.",
+    "impact": "Users can now discover Resume Makinator in the apps directory to build, live-preview, and export structured resumes.",
+    "keywords": [
+      "community",
+      "app",
+      "resume",
+      "text-generation",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working on a resume together. The robot displays a structured document on its screen, while Polly wears a tiny professional tie. Cozy desk environment with plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny necktie, reviewing a pixelated resume document with the chunky Monitor Robot. The robot's screen glows lime green (#ecf874) showing structured text blocks. A cozy wooden desk with small code-plants in pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11539.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny necktie, reviewing a pixelated resume document with the chunky Monitor Robot. The robot's screen glows lime green (#ecf874) showing structured text blocks. A cozy wooden desk with small code-plants in pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T20:08:27.569039+00:00",
+  "app_name": "Resume Makinator",
+  "app_url": "https://rm.mkgpdev.xyz"
+}

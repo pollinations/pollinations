@@ -1229,8 +1229,11 @@ export const audioRoutes = new Hono<Env>()
                 file.name && file.name !== "blob" ? file.name : "audio.mp3";
             whisperFormData.append("file", file, filename);
             if (language) whisperFormData.append("language", language);
-            if (responseFormat)
-                whisperFormData.append("response_format", responseFormat);
+            // Always request verbose_json from OVH so usage.seconds (billing) and
+            // segments (srt/vtt) are present; reformat locally to the caller's
+            // requested response_format below. Forwarding e.g. `text` upstream
+            // would return a plain-text body and lose the usage object.
+            whisperFormData.append("response_format", "verbose_json");
             whisperFormData.append("model", "whisper-large-v3");
             whisperFormData.append("timestamp_granularities[]", "word");
 
@@ -1246,20 +1249,29 @@ export const audioRoutes = new Hono<Env>()
             });
             const response = await ensureUpstreamOk(rawResponse, whisperUrl);
 
-            // Read body to extract duration for usage billing
+            // OVH always returns verbose_json now; parse once, bill from it, then
+            // reformat to the caller's requested format.
             const responseBody = await response.text();
-            const duration = extractWhisperUsage(responseBody, log);
+            let whisper: WhisperVerboseJson;
+            try {
+                whisper = JSON.parse(responseBody);
+            } catch {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message:
+                        "Whisper returned an unexpected (non-JSON) response",
+                });
+            }
+            const duration = extractWhisperUsage(whisper, log);
             const usageHeaders = buildUsageHeaders(
                 c.var.model.resolved,
                 createAudioSecondsUsage(duration),
             );
 
-            // Build final response with usage headers
-            const headers = {
-                ...Object.fromEntries(response.headers),
-                ...usageHeaders,
-            };
-            const result = new Response(responseBody, { headers });
+            const result = formatWhisperResponse(
+                whisper,
+                responseFormat,
+                usageHeaders,
+            );
             c.var.track.overrideResponseTracking(result.clone());
 
             return result;
@@ -1281,8 +1293,19 @@ export function parsePositiveInt(
     return n;
 }
 
-function extractWhisperUsage(responseBody: string, log: Logger): number {
-    const json = JSON.parse(responseBody);
+interface WhisperSegment {
+    start: number;
+    end: number;
+    text: string;
+}
+
+interface WhisperVerboseJson {
+    text: string;
+    usage?: { seconds?: number };
+    segments?: WhisperSegment[];
+}
+
+function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
         throw new Error(
@@ -1291,4 +1314,62 @@ function extractWhisperUsage(responseBody: string, log: Logger): number {
     }
     log.debug("Whisper usage: {seconds}s", { seconds });
     return seconds;
+}
+
+/** Format SRT/VTT timestamps from seconds. SRT uses a comma, VTT a dot. */
+function formatTimestamp(seconds: number, sep: "," | "."): string {
+    const ms = Math.round(seconds * 1000);
+    const h = String(Math.floor(ms / 3_600_000)).padStart(2, "0");
+    const m = String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0");
+    const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+    const msPart = String(ms % 1000).padStart(3, "0");
+    return `${h}:${m}:${s}${sep}${msPart}`;
+}
+
+function toSubtitles(segments: WhisperSegment[], kind: "srt" | "vtt"): string {
+    const sep = kind === "srt" ? "," : ".";
+    const cues = segments.map((seg, i) => {
+        const time = `${formatTimestamp(seg.start, sep)} --> ${formatTimestamp(seg.end, sep)}`;
+        const head = kind === "srt" ? `${i + 1}\n` : "";
+        return `${head}${time}\n${seg.text.trim()}`;
+    });
+    return kind === "vtt"
+        ? `WEBVTT\n\n${cues.join("\n\n")}\n`
+        : `${cues.join("\n\n")}\n`;
+}
+
+/**
+ * Reformat OVH's verbose_json into the caller's requested response_format.
+ * Mirrors the ElevenLabs scribe path so behaviour is consistent across backends.
+ */
+export function formatWhisperResponse(
+    json: WhisperVerboseJson,
+    responseFormat: string | null,
+    usageHeaders: Record<string, string>,
+): Response {
+    if (responseFormat === "text") {
+        return new Response(json.text, {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "srt" || responseFormat === "vtt") {
+        return new Response(toSubtitles(json.segments ?? [], responseFormat), {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (responseFormat === "verbose_json") {
+        const { usage: _usage, ...rest } = json;
+        return Response.json(rest, { headers: usageHeaders });
+    }
+
+    // Default: json
+    return Response.json({ text: json.text }, { headers: usageHeaders });
 }

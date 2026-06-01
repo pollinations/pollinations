@@ -3,7 +3,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
-import { redirectUriMatchesAllowlist } from "./redirect-uri.ts";
+import {
+    isAllowedRedirectUrl,
+    redirectUriMatchesAllowlist,
+} from "./redirect-uri.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -78,6 +81,12 @@ export function validateRedirectUriFormat(redirectUri: string): void {
     if (parsed.hash) {
         throw new HTTPException(400, {
             message: "Redirect URI must not include a fragment",
+        });
+    }
+    if (!isAllowedRedirectUrl(parsed)) {
+        throw new HTTPException(400, {
+            message:
+                "Redirect URI must use https://, except http:// is allowed for loopback hosts",
         });
     }
 }
@@ -202,8 +211,10 @@ async function validateClientRedirectBinding(
             message: "redirect_uri is required when client_id is provided",
         });
     }
-    validateRedirectUriFormat(metadata.redirectUri);
-
+    // No scheme/format check on the incoming redirect_uri here: scheme policy is
+    // enforced at registration (validateRedirectUriFormat on the app key's
+    // redirectUris). The allowlist match below is the only gate the auth flow
+    // applies, so a registered URI of any kind round-trips unchanged.
     const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
     if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
         throw new HTTPException(400, {

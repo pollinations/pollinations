@@ -132,6 +132,14 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(false);
     });
 
+    test("trusts the allowlist regardless of scheme (policy is enforced at registration)", () => {
+        // Scheme restriction is enforced when the URI is registered, not here.
+        // Whatever made it into the allowlist is matched on host/path/port.
+        for (const uri of ["http://app.com/cb", "com.example.app://callback"]) {
+            expect(redirectUriMatchesAllowlist(uri, [uri])).toBe(true);
+        }
+    });
+
     test("accepts any port for loopback entries (RFC 8252 §7.3)", () => {
         expect(
             redirectUriMatchesAllowlist("http://127.0.0.1:54321/cb", [

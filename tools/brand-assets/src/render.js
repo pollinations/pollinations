@@ -21,7 +21,10 @@ function hexToRgb(hex) {
  * Core: a tinted logo sized to `fraction` of the shorter side, centered on a
  * canvas. `bg` is a hex color (opaque background) or null (transparent).
  */
-async function compose(svg, { width, height = width, bg = null, logoColor, fraction }) {
+async function compose(
+    svg,
+    { width, height = width, bg = null, logoColor, fraction },
+) {
     const logoSize = Math.round(Math.min(width, height) * fraction);
     const logo = await sharp(Buffer.from(tintLogo(svg, logoColor)))
         .resize(logoSize, logoSize, { fit: "contain", background: TRANSPARENT })
@@ -61,7 +64,38 @@ export function renderSolidIcon(svg, size, { bg, logoColor, fraction = 0.62 }) {
     return compose(svg, { width: size, bg, logoColor, fraction });
 }
 
-/** OG card: logo centered on a solid brand-color field. */
-export function renderOg(svg, { width = 1200, height = 630, bg, logoColor, fraction = 0.5 }) {
-    return compose(svg, { width, height, bg, logoColor, fraction });
+/**
+ * OG card: a tinted logo (typically the wide wordmark) fit within `wFraction` ×
+ * `hFraction` of the card, centered on a solid brand-color field. Uses fit
+ * "inside" + gravity center so any aspect ratio is preserved without cropping.
+ */
+export async function renderOg(
+    svg,
+    {
+        width = 1200,
+        height = 630,
+        bg,
+        logoColor,
+        wFraction = 0.7,
+        hFraction = 0.55,
+    },
+) {
+    const logo = await sharp(Buffer.from(tintLogo(svg, logoColor)))
+        .resize(Math.round(width * wFraction), Math.round(height * hFraction), {
+            fit: "inside",
+            background: TRANSPARENT,
+        })
+        .png()
+        .toBuffer();
+    return sharp({
+        create: {
+            width,
+            height,
+            channels: 4,
+            background: { ...hexToRgb(bg), alpha: 1 },
+        },
+    })
+        .composite([{ input: logo, gravity: "center" }])
+        .png()
+        .toBuffer();
 }

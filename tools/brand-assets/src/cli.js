@@ -16,9 +16,11 @@ const require = createRequire(import.meta.url);
 // tools/brand-assets/src -> repo root is three levels up.
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-// Single brand source: the logo shipped in the UI package (uses currentColor).
+// Single brand source: the logos shipped in the UI package (use currentColor).
 const UI_ROOT = dirname(require.resolve("@pollinations_ai/ui/package.json"));
-const loadLogo = () => readFile(join(UI_ROOT, "src/assets/logo.svg"), "utf8");
+const uiAsset = (file) => readFile(join(UI_ROOT, "src/assets", file), "utf8");
+const loadLogo = () => uiAsset("logo.svg"); // flower — icons
+const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 
 const DARK = "#110518"; // pollinations splash / OG contrast
 
@@ -39,7 +41,7 @@ const APPS = {
         brandColor: "#D1FAE4", // unchanged; not one of the named themes
         contrastColor: DARK,
         outDir: "enter.pollinations.ai/frontend/public",
-        og: false,
+        og: true,
         manifest: null, // hand-maintained — leave it alone
     },
 };
@@ -138,9 +140,10 @@ async function generate(name) {
     }
 
     if (cfg.og) {
+        const wordmark = await loadWordmark();
         await write(
             "og-image.png",
-            await renderOg(svg, {
+            await renderOg(wordmark, {
                 bg: cfg.brandColor,
                 logoColor: cfg.contrastColor,
             }),

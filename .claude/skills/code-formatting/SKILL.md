@@ -10,7 +10,7 @@ Format JS/TS/JSON files changed on the current branch using Biome.
 ## Quick Usage
 
 ```bash
-packages/skills/code-formatting/scripts/format-branch.sh
+.claude/skills/code-formatting/scripts/format-branch.sh
 ```
 
 This formats all `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, `.jsonc` files changed compared to `main`.
@@ -18,7 +18,7 @@ This formats all `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, `.jsonc` files changed c
 ## Custom Base Branch
 
 ```bash
-packages/skills/code-formatting/scripts/format-branch.sh develop
+.claude/skills/code-formatting/scripts/format-branch.sh develop
 ```
 
 ## What It Does

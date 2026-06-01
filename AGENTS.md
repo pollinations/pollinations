@@ -35,14 +35,13 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 ### Skills
 
-Two homes, one format. This is not a general Claude-skills repo — we only keep skills that help Pollinations.
+Agent skills (`SKILL.md`) follow the cross-tool [agentskills.io](https://agentskills.io) standard so non-Claude harnesses can use them.
 
-- `packages/skills/` — curated, agent-agnostic skills that are also **useful to agents outside our team** (e.g. anyone building on our public API). Consumable by Claude Code, Cursor, Cline, Codex, and any other harness that understands `SKILL.md`.
-- `.claude/skills/` — everything else that helps Pollinations: Claude-Code-harness-specific skills (hooks, settings.json, permission tuning) *and* Pollinations-team-internal workflows (issue conventions, tier management, Tinybird deploys, app review, API probes against our own infra). Also contains symlinks to the shared skills in `packages/skills/` so Claude Code discovers both sets in one place.
-
-When authoring a new skill, ask: *would an agent working outside the Pollinations team benefit from this?* If yes → `packages/skills/` + symlink. If no (it encodes our team's workflow or needs Claude-Code-only features) → `.claude/skills/` as a real directory.
-
-Skills can move between the two folders as scope becomes clearer — that is curation, not a regression.
+- **Source of truth: `.agents/skills/<name>/`** — the standard location read by Codex, Gemini CLI, Cursor, etc.
+- **Claude Code** only discovers `.claude/skills/`, so each shared skill is symlinked: `.claude/skills/<name>` → `../../.agents/skills/<name>`. Edit the file under `.agents/skills/`; the symlink follows.
+- **Exception — package-owned skills** live with their package and symlink from `.claude/skills/` (e.g. `polli` → `packages/polli-cli/SKILL.md`), so the doc versions with the code.
+- Runtime data and secrets stay out of git: `.agents/skills/**/.env` and `.agents/skills/**/data/` are gitignored. Only `SKILL.md` + `scripts/` are tracked.
+- **Windows:** run `git config --global core.symlinks true` before cloning, or the skill symlinks check out as text stubs.
 
 ## API Gateway
 

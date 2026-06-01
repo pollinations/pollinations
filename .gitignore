@@ -380,3 +380,8 @@ apps/operation/finance/secrets/input/2026-03.csv
 apps/operation/finance/secrets/input/2026-02.csv
 apps/operation/finance/secrets/input/2026-01.csv
 apps/operation/finance/config.local.json
+
+# Agent skills: runtime data + secrets never committed (only SKILL.md + scripts are tracked)
+.agents/skills/**/.env
+.agents/skills/**/data/
+.agents/**/*.local.*

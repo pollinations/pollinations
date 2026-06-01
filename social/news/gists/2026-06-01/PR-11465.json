@@ -1,0 +1,34 @@
+{
+  "pr_number": 11465,
+  "title": "chore(enter-account): remove dead exports and dedupe usage/CSV/tinybird helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11465",
+  "merged_at": "2026-06-01T12:23:23Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Remove dead `export default accountRoutes` and the unused `CustomerRoutes` type export\n- Extract a shared `respondDetailedUsage` helper for the duplicated `/usage` and `/key/usage` bodies\n- Hoist the duplicated 19-column CSV header into one constant\n- Reuse `fetchTinybirdRows`/`requireTinybirdReadToken` from account.ts in customer.ts instead of an inline Tinybird fetch\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −11 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "Swept up some unused code and organized our internal helpers for a cleaner, more efficient codebase.",
+    "summary": "Refactored the account and customer routes to remove dead exports and deduplicate usage reporting, CSV headers, and Tinybird fetch logic.",
+    "impact": "Developers benefit from a cleaner, more maintainable codebase with shared helpers for CSV generation and Tinybird queries.",
+    "keywords": [
+      "refactor",
+      "tinybird",
+      "cleanup",
+      "tech-debt"
+    ],
+    "visual_concept": "Polly the bee organizing and cleaning up a workspace, sweeping away old code blocks while Nomnom eats the discarded files.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny maid's apron, sweeping up small glowing code blocks with a tiny broom. The round tan Nomnom creature happily eats a pile of dusty old papers. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11465.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny maid's apron, sweeping up small glowing code blocks with a tiny broom. The round tan Nomnom creature happily eats a pile of dusty old papers. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-06-01T12:24:25.356793+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11510,
+  "title": "chore(registry): fix zimage description and advertise mistral-4 reasoning",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11510",
+  "merged_at": "2026-06-01T19:04:17Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- **zimage**: description called it \"Fast 6B Flux\" — wrong; zimage is Alibaba's S3-DiT 6B. Corrected to \"Z-Image Turbo - Alibaba S3-DiT 6B with 2x SPAN upscaling\". Fixes #10869.\n- **mistral-4**: hybrid reasoning model that didn't set the registry's `reasoning: true` capability flag; added it (mirrors gpt-5.5/mistral-large/DeepSeek convention, declared in `model-info.ts`). Fixes #11264.\n\nRisks: description-only + capability-flag change, no behavior change to generation. `reasoning` is an existing optional boolean in the registry schema already used by many entries.\n\nFixes #10869\nFixes #11264",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Registry spring cleaning",
+    "blurb": "We've updated the registry to correctly identify Z-Image as Alibaba's S3-DiT 6B and officially flagged Mistral-4 as a reasoning model. Accurate metadata makes the hive happy!",
+    "summary": "Updated the model registry to correctly describe Z-Image as Alibaba's S3-DiT 6B and added the reasoning capability flag to Mistral-4.",
+    "impact": "Developers querying the model registry will now see accurate descriptions for Z-Image and correct reasoning capabilities for Mistral-4.",
+    "keywords": [
+      "registry",
+      "metadata",
+      "zimage",
+      "mistral-4",
+      "models"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot organizing a filing cabinet. The robot is stamping a file with a 'REASONING' label, representing the metadata updates.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-head robot organizing a wooden filing cabinet in a warm, sunlit room. The robot is stamping a file folder with a glowing lime green (#ecf874) 'REASONING' label. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11510.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-head robot organizing a wooden filing cabinet in a warm, sunlit room. The robot is stamping a file folder with a glowing lime green (#ecf874) 'REASONING' label. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T19:05:22.337569+00:00"
+}

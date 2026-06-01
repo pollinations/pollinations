@@ -1,0 +1,35 @@
+{
+  "pr_number": 11482,
+  "title": "refactor(gen-middleware): consolidate not-billed guards and drop dead cache-header parsing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11482",
+  "merged_at": "2026-06-01T14:36:59Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Consolidate the not-billed/content-type guards in `trackResponse` and drop dead semantic-cache parsing (gen middleware):\n\n- Add a `notBilled()` helper for the 5 repeated not-billed early-returns; factor the 3 content-type guard blocks into one `getContentTypeGuard()` — preserving the `streamRequested` gate, startsWith-vs-includes per branch, the audio STT model lookup, and a `{kind}` warn\n- `extractCacheHeaders`/`CacheData` reduced to `{ cacheHit, cacheKey }`; remove the always-undefined `cacheType`/`cacheSemanticSimilarity`/`cacheSemanticThreshold` (the `x-cache-*` headers fail zod parse → undefined in every emitted event). Tinybird datasource columns left intact (separate destructive deploy)\n- **Adds 2 regression tests** for the wrong-content-type non-billing paths (JSON for `generate.image`, non-SSE for streamed `generate.text`) — asserting `isBilledUsage:false` + still-200. These paths were previously untested.\n\nNet −15 source lines; biome + tsc clean; tracking/error-observability suites 9/9 (baseline 7 → +2 new).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the tracking middleware",
+    "blurb": "Tidied up the generation tracking middleware by consolidating billing guards and dropping some dead cache-header parsing code. Nomnom had a feast.",
+    "summary": "Consolidated not-billed and content-type guards in the generation tracking middleware and removed unused semantic-cache parsing logic.",
+    "impact": "Improves internal code maintainability and adds regression tests for non-billed edge cases without affecting the public API.",
+    "keywords": [
+      "middleware",
+      "tracking",
+      "refactor",
+      "billing",
+      "cache"
+    ],
+    "visual_concept": "Polly the bee organizing files or sweeping up a server room. Nomnom creature eating old code/dead cache headers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up glowing dead code snippets in a retro server room. The round tan nomnom creature happily eats a stack of old cache headers. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11482.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up glowing dead code snippets in a retro server room. The round tan nomnom creature happily eats a stack of old cache headers. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T14:38:21.311011+00:00"
+}

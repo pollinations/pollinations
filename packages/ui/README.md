@@ -115,14 +115,15 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
   `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
-- `@pollinations/ui/modality` exports model-modality color recipes and
-  `ModalityButton`.
+- `@pollinations/ui/modality` exports model-modality color recipes.
 - `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
-- **Design primitives** — `Button`, `Chip`, `ChevronIcon`, `Collapsible`,
-  `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`,
-  `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`, `ScrollArea`, `Section`,
-  `Slider`, `StatCard`, `Surface`, `Switch`, `TabButton`, `Tooltip`.
+- **Design primitives** — `Alert`, `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
+  `Collapsible`, `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`,
+  `IconButton`, `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`,
+  `ScrollArea`, `Section`, `Slider`, `StatCard`, `Surface`, `Switch`,
+  `Table`, `TableBody`, `TableCell`, `TableHead`, `TableHeaderCell`,
+  `TableRow`, `TabButton`, `Tooltip`.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
@@ -202,6 +203,12 @@ Wallet tokens are public when `@pollinations/ui/wallet.css` is imported:
 | `--polli-color-danger-bg-light`   | Error surface background.        |
 | `--polli-color-danger-text`       | Error text foreground.           |
 | `--polli-color-danger-border`     | Error border.                    |
+| `--polli-color-success-bg-light`  | Success surface background.      |
+| `--polli-color-success-text`      | Success text foreground.         |
+| `--polli-color-success-border`    | Success border.                  |
+| `--polli-color-warning-bg-light`  | Warning surface background.      |
+| `--polli-color-warning-text`      | Warning text foreground.         |
+| `--polli-color-warning-border`    | Warning border.                  |
 
 **Example:**
 

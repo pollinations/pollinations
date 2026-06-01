@@ -2,10 +2,6 @@
 
 This directory contains shared utilities used across Pollinations services.
 
-## Files
-
-- **utils.ts** - Generic utility functions (`omit`, `safeRound`)
-
 ## Registry (`registry/`)
 
 Model definitions and pricing for all Pollinations services:
@@ -16,8 +12,6 @@ Model definitions and pricing for all Pollinations services:
 - **usage-headers.ts** - HTTP header utilities for tracking usage
 - **model-info.ts** - Model metadata and information
 - **price-helpers.ts** - Pricing utility functions
-- **types.ts** - Shared TypeScript types
-
 
 ## Usage
 

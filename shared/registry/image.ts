@@ -218,7 +218,7 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.002, // per image
         },
-        description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
+        description: "Z-Image Turbo - Alibaba S3-DiT 6B with 2x SPAN upscaling",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -562,7 +562,7 @@ export const IMAGE_SERVICES = {
     },
 } as const satisfies Record<string, ModelDefinition<string>>;
 
-export const isVideoService = (svc: {
+const isVideoService = (svc: {
     outputModalities?: readonly string[];
 }): boolean => svc.outputModalities?.includes("video") ?? false;
 

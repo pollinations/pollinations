@@ -1,3 +1,5 @@
+import { lookupUpstream } from "./upstream";
+
 interface Env {
     UPSTREAM_MAP: string;
 }
@@ -85,12 +87,3 @@ export default {
         return new Response(upstream.body, responseInit);
     },
 };
-
-function lookupUpstream(mapJson: string, host: string): string | undefined {
-    try {
-        const map = JSON.parse(mapJson) as Record<string, string>;
-        return map[host];
-    } catch {
-        return undefined;
-    }
-}

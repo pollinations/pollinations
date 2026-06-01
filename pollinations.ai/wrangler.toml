@@ -1,29 +1,25 @@
 name = "pollinations-ai"
 compatibility_date = "2025-11-01"
 main = "src/worker.ts"
-
-[[routes]]
-pattern = "pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
-
-[[routes]]
-pattern = "hello.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+account_id = "b6ec751c0862027ba269faf7029b2501"
 
 [assets]
 directory = "dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*"]
 
-# API Proxy handled by Worker in src/worker.ts
-# Secret: npx wrangler secret put PLN_APPS_KEY
+# Public hostname is pollinations.ai, served by the pollinations-myceli-proxy
+# worker in the old account, which forwards to pollinations.myceli.ai (below).
+[env.production]
+
+[[env.production.routes]]
+pattern = "pollinations.myceli.ai"
+zone_name = "myceli.ai"
+custom_domain = true
 
 [env.staging]
 
 [[env.staging.routes]]
-pattern = "staging.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "staging.pollinations.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true

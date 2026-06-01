@@ -39,14 +39,10 @@ echo "📦 App: $APP_NAME"
 echo "📋 Project: $PROJECT_NAME"
 echo "📁 Output: $OUTPUT_DIR"
 
-# Step 1: Generate PWA assets
-echo ""
-echo "🎨 Generating PWA assets..."
-cd "$REPO_ROOT/tools/pwa-assets"
-npm install --silent
-node generate-apps-assets.js "$APP_NAME" || echo "⚠️ PWA assets generation failed (continuing)"
+# Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
+# migrates to the design-system logo, regenerate them via tools/icons.
 
-# Step 2: Install dependencies
+# Install dependencies
 echo ""
 echo "📦 Installing dependencies..."
 cd "$APP_PATH"

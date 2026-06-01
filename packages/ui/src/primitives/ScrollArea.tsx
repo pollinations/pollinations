@@ -11,12 +11,11 @@ import {
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
-type ScrollAxis = "y" | "x" | "both";
+type ScrollAxis = "y" | "x";
 
 const axisClasses: Record<ScrollAxis, string> = {
     y: "polli:overflow-y-auto polli:overflow-x-hidden",
     x: "polli:overflow-x-auto polli:overflow-y-hidden",
-    both: "polli:overflow-auto",
 };
 
 type ScrollAreaOwnProps = {
@@ -24,8 +23,6 @@ type ScrollAreaOwnProps = {
     theme?: ThemeName;
     /** Scroll direction. Default `y`. */
     axis?: ScrollAxis;
-    /** Idle time before the thumb fades out, in ms. Default `2000`. */
-    hideDelayMs?: number;
     className?: string;
 };
 
@@ -44,10 +41,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
  * `[data-theme="..."]` ancestor; pass `theme` to override locally.
  */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
-    (
-        { theme, axis = "y", hideDelayMs = 2000, className, children, ...rest },
-        externalRef,
-    ) => {
+    ({ theme, axis = "y", className, children, ...rest }, externalRef) => {
         const innerRef = useRef<HTMLDivElement | null>(null);
 
         const setRef = useCallback(
@@ -83,7 +77,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
 
             const scheduleHide = () => {
                 clearHideTimer();
-                hideTimer = window.setTimeout(hide, hideDelayMs);
+                hideTimer = window.setTimeout(hide, 2000);
             };
 
             const handleInteraction = () => {
@@ -117,7 +111,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
                 element.removeEventListener("focusin", handleInteraction);
                 element.removeEventListener("focusout", scheduleHide);
             };
-        }, [hideDelayMs]);
+        }, []);
 
         return (
             <div

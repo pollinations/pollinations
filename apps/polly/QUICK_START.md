@@ -1,59 +1,46 @@
-# 🎉 Polly Media Handlers - Installation & Setup
+# Polly Media Handlers — Installation & Setup
 
-## What's New?
+Polly's `send_long_message()` and the `render_visual` tool produce four kinds of media:
 
-Polly now has three powerful media handlers integrated into `send_long_message()`:
+1. **📊 Markdown Tables** — rendered as styled PNG images with markdown-aware cells (bold/italic/code)
+2. **📈 Charts** — bar / horizontal_bar / line / area / scatter / pie / donut / heatmap / histogram via matplotlib + seaborn
+3. **∑ LaTeX Expressions** — rendered as PNGs (inline `$...$` and display `$$...$$`)
+4. **💻 Code Blocks** — smart splitting without breaking lines
 
-1. **📊 Markdown Tables** → Automatically renders as styled PNG images
-2. **∑ LaTeX Expressions** → Automatically renders as PNG images
-3. **💻 Code Blocks** → Smart splitting without breaking lines
-
-## Files Created
+## Files
 
 ```
 apps/polly/
 ├── src/services/
-│   └── media_handlers.py          ✨ NEW - Main handler module
-├── src/bot.py                      📝 UPDATED - Enhanced send_long_message()
+│   ├── media_handlers.py          Tables, LaTeX, code blocks (PIL)
+│   ├── chart_renderer.py          matplotlib/seaborn chart engine
+│   └── charts.py                  render_visual tool dispatch
 ├── docs/
-│   └── MEDIA_HANDLERS.md          ✨ NEW - Full documentation
-├── requirements-media.txt         ✨ NEW - Optional dependencies
-├── setup-media-handlers.sh        ✨ NEW - Automatic setup with font download
-├── README.md                       📝 UPDATED - Added setup step 4
-├── QUICK_START.md                 ✨ NEW - This file
+│   └── MEDIA_HANDLERS.md          Full documentation
+├── assets/fonts/                  Vendored TTFs (Noto Sans VF, IBM Plex Mono)
+└── requirements.txt               All deps incl. matplotlib, seaborn, pillow
 ```
-
-> **Note:** The `assets/fonts/` directory and fonts are created automatically by `setup-media-handlers.sh`
 
 ## Quick Start
 
-### 1. No Action Required (Basic Installation)
-The handlers are **already integrated** into `send_long_message()` in `bot.py`.
-Your existing code works automatically with:
-- ✓ Code blocks (always works)
-- ⚠️ Tables as text (no PIL)
-- ⚠️ LaTeX as text (no cairosvg)
-# Quick Start — Production
+1. Create and activate a virtualenv:
 
-Minimal production instructions for the Polly media handlers. For development notes and examples, use the repository history.
+   ```bash
+   cd apps/polly
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-1) Create and activate a virtualenv in `apps/polly`:
+2. Install dependencies:
 
-```bash
-cd apps/polly
-python -m venv venv
-source venv/bin/activate
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2) Run the setup script to download fonts and install optional deps:
+3. Run:
 
-```bash
-bash setup-media-handlers.sh
-```
+   ```bash
+   python main.py
+   ```
 
-3) Start the bot (or run under your process manager/container):
-
-```bash
-source venv/bin/activate
-python main.py
-```
+Fonts are vendored in `assets/fonts/`, so no separate font-download step is needed.

@@ -327,25 +327,16 @@ export function createImageUrlToBase64Transform(): TransformFn {
         const provider = config?.provider as string | undefined;
         const requiresBase64ImageUrls =
             config?.requiresBase64ImageUrls === true;
-        const targets = (config?.targets || []) as Array<
-            Record<string, unknown>
-        >;
-        const hasBase64Target = targets.some(
-            (t) => t.provider === "vertex-ai" || t.provider === "bedrock",
-        );
 
         if (
             provider !== "vertex-ai" &&
             provider !== "bedrock" &&
-            !requiresBase64ImageUrls &&
-            !hasBase64Target
+            !requiresBase64ImageUrls
         ) {
             return { messages, options };
         }
 
-        const providerInfo = provider
-            ? provider
-            : `fallback[${targets.map((t) => t.provider).join(", ")}]`;
+        const providerInfo = provider ?? "base64-required";
         log(`Processing messages for ${providerInfo} image URL conversion`);
 
         const context: ImageConversionContext = {

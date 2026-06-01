@@ -1,0 +1,35 @@
+{
+  "pr_number": 11487,
+  "title": "refactor(shared): hoist duplicated model-stats fetch into shared/utils with injected cache",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11487",
+  "merged_at": "2026-06-01T15:36:16Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Add shared/utils/model-stats.ts with TINYBIRD_MODEL_STATS_URL, TinybirdModelStats type, and getModelStats; cached fetcher is injected (not imported) so the module stays free of either service's diverged cache.ts (enter any[] vs gen unknown[]).\n- enter routes/model-stats.ts now imports getModelStats from @shared, passing enter's cached; delete enter's byte-duplicate utils/model-stats.ts.\n- gen generation-access.ts imports getModelStats from @shared (passing gen's cached); gen utils/model-stats.ts keeps only getEstimatedPrice (single consumer) re-using the shared type.\n- Net -83 lines; behavior identical (same URL, cache key, TTL, fetch + empty-data fallback).\n\nRisks:\n- Medium-risk PR: gen's balance-check pricing path now resolves through @shared; covered by gen test/realtime.test.ts (model-stats fetch) — passing.\n- Did NOT remove the gen vitest \"utils/model-stats.ts\" alias the finding suggested: gen's model-stats.ts survives (holds getEstimatedPrice) and is still imported via @/utils/model-stats.ts, and gen's vitest config has no catch-all @/ alias — removing it would break test resolution.\n- Tinybird pipe/token unchanged; packages/polli-cli stats.ts (different model_health pipe) intentionally untouched.\n\nDeferred (out of scope / premise changed):\n- FINDING 1.4: Remove the 'utils/model-stats.ts' entry from gen.pollinations.ai/vitest.confi — Premise broke. The step assumed gen's model-stats.ts would be fully deleted, but FINDING 1 explicitly KEEPS getEstimated\n\n_~92 net lines removed · biome ✓ · gen.pollinations.ai: full suite (37 files, 262 tests) incl. test/realtime.test.ts (17) and ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We've cleaned up some internal wiring, moving our model stats fetching into a shared utility. Less duplicated code means a healthier, happier codebase!",
+    "summary": "Refactored the Tinybird model stats fetching logic into a shared utility package, removing 83 lines of duplicated code across the enter and gen services.",
+    "impact": "This internal cleanup simplifies maintenance and ensures consistent model pricing and stats resolution across the platform without altering existing behavior.",
+    "keywords": [
+      "refactor",
+      "shared",
+      "tinybird",
+      "model-stats",
+      "tech-debt"
+    ],
+    "visual_concept": "The bee organizing files or cleaning up a shared workspace, representing code deduplication. A robot helper holding a shared folder.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up loose code snippets into a neat pile. A chunky robot with a CRT monitor head holds a glowing folder labeled 'SHARED'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11487.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up loose code snippets into a neat pile. A chunky robot with a CRT monitor head holds a glowing folder labeled 'SHARED'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-01T15:37:20.538014+00:00"
+}

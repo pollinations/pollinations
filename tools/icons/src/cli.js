@@ -23,6 +23,7 @@ const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 
 const DARK = "#110518"; // pollinations splash / OG contrast
 const REACT_BLUE = "#DBEAFE"; // matches @pollinations/ui themeColors.blue
+const MODEL_MONITOR_VIOLET = "#EDE9FE"; // matches @pollinations/ui themeColors.violet
 
 const APPS = {
     react: {
@@ -43,6 +44,18 @@ const APPS = {
         outDir: "enter.pollinations.ai/frontend/public",
         og: true,
         manifest: null, // hand-maintained — leave it alone
+    },
+    "model-monitor": {
+        brandColor: MODEL_MONITOR_VIOLET,
+        contrastColor: DARK,
+        outDir: "apps/model-monitor/public",
+        og: true,
+        manifest: {
+            name: "Model Monitor | pollinations.ai",
+            short_name: "Model Monitor",
+            description:
+                "Real-time health monitoring for Pollinations AI models.",
+        },
     },
 };
 

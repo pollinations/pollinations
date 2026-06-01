@@ -1,16 +1,74 @@
+import {
+    Alert,
+    Button,
+    Chip,
+    cn,
+    DiscordIcon,
+    ExternalLinkIcon,
+    GitHubIcon,
+    ScrollArea,
+    Surface,
+    TabButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+} from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import { getModalityColors } from "@pollinations/ui/modality";
 import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
-// Admin mode: enabled when the URL path is /debug (SPA fallback serves index.html
-// for unknown paths, so this works without a router). Reveals the Provider column.
+const APP_THEME = "violet";
+
+const brandWordmarkMask = {
+    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+};
+
+const WINDOW_OPTIONS = [
+    { key: "7d", label: "7d" },
+    { key: "24h", label: "24h" },
+    { key: "4h", label: "4h" },
+    { key: "60m", label: "1h" },
+    { key: "5m", label: "5m" },
+];
+
+const MODEL_TYPES = [
+    { key: "text", title: "Text" },
+    { key: "image", title: "Image" },
+    { key: "video", title: "Video" },
+    { key: "audio", title: "Audio" },
+    { key: "embedding", title: "Embedding" },
+];
+
+const EXTERNAL_LINKS = [
+    {
+        href: "https://enter.pollinations.ai",
+        label: "Log In",
+        icon: <ExternalLinkIcon className="h-4 w-4" />,
+        showLabel: true,
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord",
+        icon: <DiscordIcon className="h-4 w-4" />,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "GitHub",
+        icon: <GitHubIcon className="h-4 w-4" />,
+    },
+];
+
 function isAdminPath() {
     if (typeof window === "undefined") return false;
     const path = window.location.pathname.replace(/\/+$/, "");
     return path === "/debug" || path.endsWith("/debug");
 }
 
-// Severity rank for the combined Status column sort.
-// Higher = surfaces to the top in descending sort.
 function statusSeverity(model) {
     const health = computeHealthStatus(model.stats);
     if (health === "off") return 6;
@@ -23,68 +81,28 @@ function statusSeverity(model) {
     return 0;
 }
 
-// ── Modality color map ──────────────────────────────────────────────
-// primary (lavender) = image, secondary (periwinkle) = text,
-// tertiary (mint) = audio, accent (lime) = video, tan = embedding
-const TYPE_COLORS = {
-    image: {
-        badge: "bg-primary-light text-dark border border-primary-strong",
-        card: "bg-primary-light border-primary-strong",
-        dot: "bg-primary-strong",
-    },
-    text: {
-        badge: "bg-secondary-light text-dark border border-secondary-strong",
-        card: "bg-secondary-light border-secondary-strong",
-        dot: "bg-secondary-strong",
-    },
-    audio: {
-        badge: "bg-tertiary-light text-dark border border-tertiary-strong",
-        card: "bg-tertiary-light border-tertiary-strong",
-        dot: "bg-tertiary-strong",
-    },
-    video: {
-        badge: "bg-accent-light text-dark border border-accent-strong",
-        card: "bg-accent-light border-accent-strong",
-        dot: "bg-accent-strong",
-    },
-    embedding: {
-        badge: "bg-tan text-dark border border-border",
-        card: "bg-tan border-border",
-        dot: "bg-border",
-    },
-};
-
-const fallbackColors = TYPE_COLORS.text;
-
-function typeColor(type) {
-    return TYPE_COLORS[type] || fallbackColors;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
 function formatPercent(count, total, showZero = false) {
-    if (!total || total === 0) return "—";
+    if (!total || total === 0) return "-";
     const pct = (count / total) * 100;
-    if (pct === 0) return showZero ? "0%" : "—";
+    if (pct === 0) return showZero ? "0%" : "-";
     return `${pct.toFixed(1)}%`;
 }
 
-function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
-    const adjustedTotal = total - excludedUserErrors;
-    if (!adjustedTotal || adjustedTotal <= 0) return "text-border";
-    if (ok2xx === 0) return "text-dark font-medium";
-    const pct = (ok2xx / adjustedTotal) * 100;
-    if (pct > 95) return "text-tertiary-strong font-medium";
-    if (pct > 80) return "text-tertiary-strong";
-    if (pct > 50) return "text-muted";
-    return "text-dark font-medium";
+function get2xxColor(ok2xx, total) {
+    if (!total || total <= 0) return "text-theme-text-muted";
+    if (ok2xx === 0) return "text-intent-danger-text font-semibold";
+    const pct = (ok2xx / total) * 100;
+    if (pct > 95) return "text-intent-success-text font-semibold";
+    if (pct > 80) return "text-intent-success-text";
+    if (pct > 50) return "text-theme-text-muted";
+    return "text-intent-danger-text font-semibold";
 }
 
 function getLatencyColor(latencySec) {
-    if (latencySec < 2) return "text-secondary-strong";
-    if (latencySec < 5) return "text-tertiary-strong";
-    if (latencySec < 10) return "text-muted";
-    return "text-dark font-medium";
+    if (latencySec < 2) return "text-theme-text-soft font-semibold";
+    if (latencySec < 5) return "text-intent-success-text";
+    if (latencySec < 10) return "text-theme-text-muted";
+    return "text-intent-warning-text font-semibold";
 }
 
 function computeHealthStatus(stats) {
@@ -99,9 +117,28 @@ function computeHealthStatus(stats) {
     return "on";
 }
 
-// ── Health summary cards ─────────────────────────────────────────────
+function healthIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "success";
+}
+
+function rowIntent(status) {
+    if (status === "off") return "danger";
+    if (status === "degraded") return "warning";
+    return "default";
+}
+
+function modalityChipClass(category) {
+    return (
+        getModalityColors(category)?.filled ??
+        "polli:bg-gray-200 polli:text-gray-900"
+    );
+}
 
 function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
+    if (models.length === 0) return null;
+
     const calcGroupStats = (group) => {
         let total2xx = 0;
         let total5xx = 0;
@@ -109,8 +146,8 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
         let countDegraded = 0;
         let countOff = 0;
 
-        for (const m of group) {
-            const stats = m.stats;
+        for (const model of group) {
+            const stats = model.stats;
             if (!stats) continue;
             total2xx += stats.status_2xx || 0;
             total5xx += stats.errors_5xx || 0;
@@ -138,113 +175,104 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
         };
     };
 
-    const statusLabel = {
-        healthy: "Healthy",
-        degraded: "Degraded",
-        critical: "Critical",
-    };
-
-    const HealthCard = ({ title, type, stats }) => {
-        const colors = typeColor(type);
-        const isActive = typeFilter === type;
-        const isDimmed = typeFilter !== null && !isActive;
-        return (
-            <button
-                type="button"
-                onClick={() => onTypeFilter(isActive ? null : type)}
-                className={`${colors.card} border-r-4 border-b-4 p-3 cursor-pointer select-none text-left transition-all duration-100 ${
-                    isActive
-                        ? "translate-x-[3px] translate-y-[3px] shadow-none"
-                        : "shadow-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
-                } ${isDimmed ? "opacity-35" : ""}`}
-            >
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-dark">
-                        {title}
-                    </span>
-                </div>
-                <div className="flex items-center gap-1.5 mb-1">
-                    <span
-                        className={`w-2 h-2 ${colors.dot} ${stats.status === "critical" ? "animate-pulse" : ""}`}
-                    />
-                    <span className="text-sm font-bold text-dark">
-                        {statusLabel[stats.status]}
-                    </span>
-                </div>
-                <div className="text-xs text-muted">
-                    {stats.successRate.toFixed(1)}% success
-                </div>
-                <div className="text-[10px] text-subtle mt-1">
-                    {stats.totalModels} models
-                    {(stats.countDegraded > 0 || stats.countOff > 0) && (
-                        <span className="ml-1">
-                            (
-                            {stats.countOff > 0 && (
-                                <span className="font-bold text-dark">
-                                    {stats.countOff} off
-                                </span>
-                            )}
-                            {stats.countOff > 0 &&
-                                stats.countDegraded > 0 &&
-                                ", "}
-                            {stats.countDegraded > 0 && (
-                                <span className="font-bold text-muted">
-                                    {stats.countDegraded} degraded
-                                </span>
-                            )}
-                            )
-                        </span>
-                    )}
-                </div>
-            </button>
-        );
-    };
-
-    if (models.length === 0) return null;
-
-    const types = [
-        { key: "text", title: "Text" },
-        { key: "image", title: "Image" },
-        { key: "video", title: "Video" },
-        { key: "audio", title: "Audio" },
-        { key: "embedding", title: "Embedding" },
-    ];
-
     return (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {types.map(({ key, title }) => {
-                const group = models.filter((m) => m.type === key);
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-5">
+            {MODEL_TYPES.map(({ key, title }) => {
+                const group = models.filter((model) => model.type === key);
                 if (group.length === 0) return null;
+
+                const stats = calcGroupStats(group);
+                const isActive = typeFilter === key;
+                const isDimmed = typeFilter !== null && !isActive;
+                const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
+                const colors = getModalityColors(key);
+
                 return (
-                    <HealthCard
+                    <button
                         key={key}
-                        title={title}
-                        type={key}
-                        stats={calcGroupStats(group)}
-                    />
+                        type="button"
+                        onClick={() => onTypeFilter(isActive ? null : key)}
+                        className={cn(
+                            "min-w-0 h-full w-full rounded-xl text-left transition",
+                            isDimmed && "opacity-40",
+                        )}
+                        aria-pressed={isActive}
+                    >
+                        <Surface
+                            theme={colors?.theme}
+                            variant="card-themed"
+                            className={cn(
+                                "flex h-full min-h-24 flex-col gap-3 polli:border polli:border-theme-border sm:min-h-48",
+                                isActive && "ring-2 ring-theme-bg-active",
+                            )}
+                        >
+                            <div className="flex min-w-0 items-start justify-between gap-3">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-col sm:items-start">
+                                    <h2 className="polli:min-w-0 polli:truncate polli:font-serif polli:text-2xl polli:font-black polli:leading-none polli:text-theme-text-strong">
+                                        {title}
+                                    </h2>
+                                    <Chip intent="neutral" size="sm">
+                                        {stats.totalModels} models
+                                    </Chip>
+                                </div>
+                                <div className="shrink-0 text-right sm:hidden">
+                                    <div className="text-2xl font-bold leading-none tabular-nums text-theme-text-strong">
+                                        {stats.successRate.toFixed(1)}%
+                                    </div>
+                                    <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
+                                        success
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="hidden sm:block">
+                                <div className="text-4xl font-bold leading-none tabular-nums text-theme-text-strong md:text-3xl lg:text-4xl">
+                                    {stats.successRate.toFixed(1)}%
+                                </div>
+                                <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
+                                    success
+                                </div>
+                            </div>
+
+                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 polli:border-t polli:border-theme-border pt-2">
+                                <div className="flex flex-wrap gap-1">
+                                    {stats.countOff > 0 && (
+                                        <Chip intent="danger" size="sm">
+                                            {stats.countOff} off
+                                        </Chip>
+                                    )}
+                                    {stats.countDegraded > 0 && (
+                                        <Chip intent="warning" size="sm">
+                                            {stats.countDegraded} degraded
+                                        </Chip>
+                                    )}
+                                    {!hasIssues && (
+                                        <Chip intent="success" size="sm">
+                                            healthy
+                                        </Chip>
+                                    )}
+                                </div>
+                            </div>
+                        </Surface>
+                    </button>
                 );
             })}
         </div>
     );
 }
 
-// ── Status badge ─────────────────────────────────────────────────────
-
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
     if (status === "on") return null;
 
-    const styles = {
-        off: "bg-status-off text-white border-status-off",
-        degraded: "bg-status-degraded text-white border-status-degraded",
-    };
-
     return (
-        <span
-            className={`inline-flex items-center px-1.5 py-0.5 text-[8px] border font-bold ${styles[status]} ${status === "off" ? "animate-pulse" : ""} uppercase tracking-wider`}
+        <Chip
+            intent={healthIntent(status)}
+            size="sm"
+            className={status === "off" ? "animate-pulse" : undefined}
         >
-            {status === "off" ? "OFF" : "DEGRADED"}
-        </span>
+            {status === "off" ? "Off" : "Degraded"}
+        </Chip>
     );
 }
 
@@ -254,77 +282,103 @@ function CatalogStatusBadge({ status }) {
     }
 
     const variants = {
-        hidden: {
-            label: "hidden",
-            className: "bg-tan text-dark border-border",
-        },
-        anomaly: {
-            label: "anomaly",
-            className: "bg-accent-light text-dark border-accent-strong",
-        },
-        unregistered: {
-            label: "unknown",
-            className:
-                "bg-status-degraded-light text-dark border-status-degraded",
-        },
-        "catalog-unavailable": {
-            label: "unverified",
-            className: "bg-secondary-light text-dark border-secondary-strong",
-        },
-        "registry-only": {
-            label: "registry",
-            className: "bg-primary-light text-dark border-primary-strong",
-        },
+        hidden: { label: "hidden", intent: "neutral" },
+        anomaly: { label: "anomaly", intent: "warning" },
+        unregistered: { label: "unknown", intent: "warning" },
+        "catalog-unavailable": { label: "unverified", intent: "neutral" },
+        "registry-only": { label: "registry", intent: "neutral" },
     };
 
     const variant = variants[status];
     if (!variant) return null;
 
     return (
-        <span
-            className={`inline-flex items-center px-1.5 py-0.5 text-[8px] border font-bold uppercase tracking-wider ${variant.className}`}
-        >
+        <Chip intent={variant.intent} size="sm">
             {variant.label}
-        </span>
+        </Chip>
     );
 }
-
-// ── Sortable header ──────────────────────────────────────────────────
 
 function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
     const isActive = currentSort.key === sortKey;
-    const arrow = isActive ? (currentSort.asc ? " ↑" : " ↓") : "";
-    const alignClass =
-        align === "right"
-            ? "text-right"
-            : align === "center"
-              ? "text-center"
-              : "text-left";
 
     return (
-        <th
-            className={`px-3 py-2 font-bold cursor-pointer hover:text-dark select-none uppercase tracking-wider ${alignClass}`}
-            onClick={() => onSort(sortKey)}
+        <TableHeaderCell
+            align={align}
+            active={isActive}
+            sortDirection={
+                isActive ? (currentSort.asc ? "asc" : "desc") : undefined
+            }
+            onSort={() => onSort(sortKey)}
         >
             {label}
-            {arrow}
-        </th>
+        </TableHeaderCell>
     );
 }
 
-// ── Main app ─────────────────────────────────────────────────────────
+function HeaderLink({ href, label, icon, showLabel = false }) {
+    return (
+        <Button
+            as="a"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={label}
+            size="small"
+            className={cn(
+                "polli:h-9 polli:gap-2 polli:py-0",
+                showLabel ? "polli:w-auto polli:px-3" : "polli:w-9 polli:px-0",
+            )}
+            aria-label={label}
+        >
+            {icon}
+            {showLabel && <span>{label}</span>}
+        </Button>
+    );
+}
+
+function BrandMark() {
+    return (
+        <a
+            href="https://pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex text-theme-text-strong"
+            aria-label="Pollinations"
+        >
+            <span className="sr-only">Pollinations</span>
+            <span
+                aria-hidden="true"
+                className="block h-9 w-[292px] max-w-[70vw] shrink-0 bg-current"
+                style={brandWordmarkMask}
+            />
+        </a>
+    );
+}
+
+function WindowTabs({ value, onChange }) {
+    return (
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
+            <span>Window</span>
+            <span className="inline-flex flex-wrap gap-1">
+                {WINDOW_OPTIONS.map(({ key, label }) => (
+                    <TabButton
+                        key={key}
+                        active={value === key}
+                        onClick={() => onChange(key)}
+                        size="small"
+                    >
+                        {label}
+                    </TabButton>
+                ))}
+            </span>
+        </div>
+    );
+}
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [adminMode] = useState(isAdminPath);
-
-    const WINDOW_OPTIONS = [
-        { key: "7d", label: "7d" },
-        { key: "24h", label: "24h" },
-        { key: "4h", label: "4h" },
-        { key: "60m", label: "1h" },
-        { key: "5m", label: "5m" },
-    ];
     const { models, lastUpdated, error, tinybirdConfigured, endpointStatus } =
         useModelMonitor(aggregationWindow);
 
@@ -343,7 +397,6 @@ function App() {
     };
 
     const sortedModels = [...models].sort((a, b) => {
-        // Models with no traffic at all always sink to the bottom
         const aHasData = (a.stats?.total_requests || 0) > 0;
         const bHasData = (b.stats?.total_requests || 0) > 0;
         if (aHasData !== bHasData) return aHasData ? -1 : 1;
@@ -360,7 +413,6 @@ function App() {
                     (a.stats?.total_requests || 0) - (a.stats?.errors_4xx || 0);
                 const bReqs =
                     (b.stats?.total_requests || 0) - (b.stats?.errors_4xx || 0);
-                // Tiebreak: if both have 0 non-4xx, rank by total requests
                 if (aReqs === bReqs) {
                     return (
                         dir *
@@ -378,8 +430,6 @@ function App() {
                 const aHasModelHealth = aTotal2 > 0;
                 const bHasModelHealth = bTotal2 > 0;
 
-                // 4xx-only rows display as "—", so keep them below rows with
-                // real model health data regardless of sort direction.
                 if (aHasModelHealth !== bHasModelHealth) {
                     return aHasModelHealth ? -1 : 1;
                 }
@@ -453,431 +503,361 @@ function App() {
     });
 
     const filteredModels = typeFilter
-        ? sortedModels.filter((m) => m.type === typeFilter)
+        ? sortedModels.filter((model) => model.type === typeFilter)
         : sortedModels;
 
     return (
-        <div className="min-h-screen p-4 md:p-6 bg-cream">
-            <div
-                className={`${adminMode ? "max-w-6xl" : "max-w-5xl"} mx-auto space-y-4`}
-            >
-                {/* Header */}
-                <header className="space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-12 sm:mb-8">
-                        <img
-                            src="/bee-text-black.svg"
-                            alt="pollinations.ai"
-                            className="h-[7.5rem] -my-6"
-                        />
-
-                        <div className="flex items-center justify-center sm:justify-end gap-3">
-                            {!tinybirdConfigured && (
-                                <span className="text-xs text-dark bg-accent-light px-2 py-1 border border-accent-strong font-bold">
-                                    Tinybird not configured
-                                </span>
-                            )}
-
-                            {/* External links */}
-                            <div className="flex items-center gap-1.5">
-                                <a
-                                    href="https://pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="pollinations.ai"
-                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <title>Website</title>
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path d="M2 12h20" />
-                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="Dashboard"
-                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <title>Login</title>
-                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                                        <polyline points="10 17 15 12 10 7" />
-                                        <line x1="15" y1="12" x2="3" y2="12" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="https://discord.gg/pollinations-ai-885844321461485618"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="Discord"
-                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <title>Discord</title>
-                                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.947 2.418-2.157 2.418z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="https://github.com/pollinations/pollinations"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title="GitHub"
-                                    className="p-1.5 border border-dark bg-white text-dark hover:bg-tan transition-colors border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none hover:border-r hover:border-b active:translate-x-[2px] active:translate-y-[2px]"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <title>GitHub</title>
-                                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-xs text-subtle flex items-center gap-2 flex-wrap">
-                        <span className="text-lg font-bold text-dark uppercase tracking-wider">
-                            📡 model monitor
-                        </span>
-                        <span className="text-border mx-0.5">·</span>
-                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                            <span>window:</span>
-                            <div
-                                className="inline-flex border border-dark overflow-hidden"
-                                title="Longer windows are more stable. 5m is live but noisier."
-                            >
-                                {WINDOW_OPTIONS.map(({ key, label }, i) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        onClick={() =>
-                                            setAggregationWindow(key)
-                                        }
-                                        className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                                            i > 0 ? "border-l border-dark" : ""
-                                        } ${
-                                            aggregationWindow === key
-                                                ? key === "5m"
-                                                    ? "bg-accent-strong text-dark"
-                                                    : "bg-dark text-white"
-                                                : "bg-cream text-muted hover:bg-tan"
-                                        }`}
-                                    >
-                                        {label}
-                                    </button>
+        <div
+            className="h-dvh bg-theme-bg-subtle text-theme-text-base"
+            data-theme={APP_THEME}
+        >
+            <ScrollArea axis="y" className="h-full">
+                <main
+                    className={cn(
+                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",
+                        adminMode ? "max-w-6xl" : "max-w-5xl",
+                    )}
+                >
+                    <header className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <BrandMark />
+                            <div className="flex items-center gap-2">
+                                {EXTERNAL_LINKS.map((link) => (
+                                    <HeaderLink key={link.href} {...link} />
                                 ))}
                             </div>
-                        </span>
-                        <span className="text-border mx-1">·</span>
-                        <span className="whitespace-nowrap">
-                            last update:{" "}
-                            {lastUpdated?.toLocaleTimeString("en-GB", {
-                                timeZone: "UTC",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                            }) || "—"}{" "}
-                            UTC
-                        </span>
-                    </div>
-                </header>
+                        </div>
 
-                {/* Error banner */}
-                {error && (
-                    <div className="px-3 py-2 bg-cream border-r-4 border-b-4 border-dark text-xs text-dark font-bold">
-                        {error}
-                    </div>
-                )}
-
-                {failedCatalogEndpoints.length > 0 && (
-                    <div className="px-3 py-2 bg-secondary-light border-r-4 border-b-4 border-secondary-strong text-xs text-dark font-bold">
-                        Catalog fallback active for{" "}
-                        {failedCatalogEndpoints.join(", ")} model
-                        {failedCatalogEndpoints.length > 1
-                            ? " endpoints"
-                            : " endpoint"}
-                        ; using bundled registry metadata.
-                    </div>
-                )}
-
-                {/* Global Health Summary */}
-                <GlobalHealthSummary
-                    models={models}
-                    typeFilter={typeFilter}
-                    onTypeFilter={setTypeFilter}
-                />
-
-                {/* Model Table */}
-                <div className="border border-dark bg-white border-r-4 border-b-4 overflow-x-auto shadow-sm">
-                    <table className="w-full text-sm">
-                        <thead className="bg-tan text-[10px] text-muted">
-                            <tr>
-                                <SortableTh
-                                    label="Type"
-                                    sortKey="type"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                />
-                                <SortableTh
-                                    label="Model"
-                                    sortKey="name"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                />
-                                <SortableTh
-                                    label="Status"
-                                    sortKey="status"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                />
-                                {adminMode && (
-                                    <SortableTh
-                                        label="Provider"
-                                        sortKey="provider"
-                                        currentSort={sort}
-                                        onSort={handleSort}
-                                    />
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="min-w-0">
+                                <h1 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
+                                    Model Monitor
+                                </h1>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm leading-6 text-theme-text-soft">
+                                    <span>
+                                        Real-time health monitoring for models.
+                                    </span>
+                                    <span>
+                                        Last update:{" "}
+                                        {lastUpdated?.toLocaleTimeString(
+                                            "en-GB",
+                                            {
+                                                timeZone: "UTC",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                second: "2-digit",
+                                            },
+                                        ) || "-"}{" "}
+                                        UTC
+                                    </span>
+                                </div>
+                                {!tinybirdConfigured && (
+                                    <div className="mt-2">
+                                        <Chip intent="warning" size="sm">
+                                            Tinybird not configured
+                                        </Chip>
+                                    </div>
                                 )}
-                                <SortableTh
-                                    label="Reqs (+4xx)"
-                                    sortKey="requests"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="Success"
-                                    sortKey="ok2xx"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="5xx"
-                                    sortKey="errors"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="4xx"
-                                    sortKey="user4xx"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="Avg"
-                                    sortKey="avg"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                                <SortableTh
-                                    label="P95"
-                                    sortKey="p95"
-                                    currentSort={sort}
-                                    onSort={handleSort}
-                                    align="right"
-                                />
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-tan">
-                            {filteredModels.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={adminMode ? 10 : 9}
-                                        className="p-8 text-center text-subtle"
-                                    >
-                                        {lastUpdated
-                                            ? "No models found"
-                                            : "Loading models..."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredModels.map((model) => {
-                                    const stats = model.stats;
-                                    const total = stats?.total_requests || 0;
-                                    const total5xx = stats?.errors_5xx || 0;
-                                    const total4xx = stats?.errors_4xx || 0;
-                                    const pct4xx =
-                                        total > 0
-                                            ? (total4xx / total) * 100
-                                            : 0;
-                                    const avgSec = stats?.avg_latency_ms
-                                        ? stats.avg_latency_ms / 1000
-                                        : null;
-                                    const p95Sec = stats?.latency_p95_ms
-                                        ? stats.latency_p95_ms / 1000
-                                        : null;
-                                    const colors = typeColor(model.type);
-                                    const health = computeHealthStatus(stats);
-                                    const rowBg =
-                                        health === "off"
-                                            ? "bg-status-off-light"
-                                            : health === "degraded"
-                                              ? "bg-status-degraded-light"
-                                              : "";
+                            </div>
+                            <WindowTabs
+                                value={aggregationWindow}
+                                onChange={setAggregationWindow}
+                            />
+                        </div>
+                    </header>
 
-                                    return (
-                                        <tr
-                                            key={`${model.type}-${model.name}`}
-                                            className={`hover:bg-cream/50 ${rowBg}`}
-                                        >
-                                            <td className="px-3 py-2">
-                                                <span
-                                                    className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
+                    {error && (
+                        <Alert intent="danger" title="Monitor error">
+                            {error}
+                        </Alert>
+                    )}
+
+                    {failedCatalogEndpoints.length > 0 && (
+                        <Alert intent="warning" title="Catalog fallback">
+                            Fallback active for{" "}
+                            {failedCatalogEndpoints.join(", ")} model
+                            {failedCatalogEndpoints.length > 1
+                                ? " endpoints"
+                                : " endpoint"}
+                            ; using bundled registry metadata.
+                        </Alert>
+                    )}
+
+                    <GlobalHealthSummary
+                        models={models}
+                        typeFilter={typeFilter}
+                        onTypeFilter={setTypeFilter}
+                    />
+
+                    <Surface
+                        variant="card"
+                        className="polli:overflow-hidden polli:p-0"
+                    >
+                        <ScrollArea axis="x">
+                            <Table className="min-w-[960px]">
+                                <TableHead>
+                                    <tr>
+                                        <SortableTh
+                                            label="Type"
+                                            sortKey="type"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableTh
+                                            label="Model"
+                                            sortKey="name"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        <SortableTh
+                                            label="Status"
+                                            sortKey="status"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                        />
+                                        {adminMode && (
+                                            <SortableTh
+                                                label="Provider"
+                                                sortKey="provider"
+                                                currentSort={sort}
+                                                onSort={handleSort}
+                                            />
+                                        )}
+                                        <SortableTh
+                                            label="Reqs (+4xx)"
+                                            sortKey="requests"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="Success"
+                                            sortKey="ok2xx"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="5xx"
+                                            sortKey="errors"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="4xx"
+                                            sortKey="user4xx"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="Avg"
+                                            sortKey="avg"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="P95"
+                                            sortKey="p95"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                    </tr>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredModels.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={adminMode ? 10 : 9}
+                                                align="center"
+                                                className="py-8 text-theme-text-muted"
+                                            >
+                                                {lastUpdated
+                                                    ? "No models found"
+                                                    : "Loading models..."}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredModels.map((model) => {
+                                            const stats = model.stats;
+                                            const total =
+                                                stats?.total_requests || 0;
+                                            const total5xx =
+                                                stats?.errors_5xx || 0;
+                                            const total4xx =
+                                                stats?.errors_4xx || 0;
+                                            const nonUserErrorTotal =
+                                                total - total4xx;
+                                            const pct4xx =
+                                                total > 0
+                                                    ? (total4xx / total) * 100
+                                                    : 0;
+                                            const avgSec = stats?.avg_latency_ms
+                                                ? stats.avg_latency_ms / 1000
+                                                : null;
+                                            const p95Sec = stats?.latency_p95_ms
+                                                ? stats.latency_p95_ms / 1000
+                                                : null;
+                                            const health =
+                                                computeHealthStatus(stats);
+
+                                            return (
+                                                <TableRow
+                                                    key={`${model.type}-${model.name}`}
+                                                    intent={rowIntent(health)}
                                                 >
-                                                    {model.type}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-dark font-medium">
-                                                        {model.name}
-                                                    </span>
-                                                    {model.description && (
-                                                        <span className="text-subtle text-[11px]">
-                                                            {
-                                                                model.description.split(
-                                                                    " - ",
-                                                                )[0]
-                                                            }
-                                                        </span>
+                                                    <TableCell>
+                                                        <Chip
+                                                            size="sm"
+                                                            className={cn(
+                                                                "polli:text-micro polli:font-bold polli:uppercase polli:tracking-wide",
+                                                                modalityChipClass(
+                                                                    model.type,
+                                                                ),
+                                                            )}
+                                                        >
+                                                            {model.type}
+                                                        </Chip>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium text-theme-text-strong">
+                                                                {model.name}
+                                                            </span>
+                                                            {model.description && (
+                                                                <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
+                                                                    {
+                                                                        model.description.split(
+                                                                            " - ",
+                                                                        )[0]
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-wrap items-center gap-1">
+                                                            <StatusBadge
+                                                                stats={stats}
+                                                            />
+                                                            <CatalogStatusBadge
+                                                                status={
+                                                                    model.catalogStatus
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </TableCell>
+                                                    {adminMode && (
+                                                        <TableCell muted>
+                                                            {model.provider ||
+                                                                "-"}
+                                                        </TableCell>
                                                     )}
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-1 flex-wrap">
-                                                    <StatusBadge
-                                                        stats={stats}
-                                                    />
-                                                    <CatalogStatusBadge
-                                                        status={
-                                                            model.catalogStatus
-                                                        }
-                                                    />
-                                                </div>
-                                            </td>
-                                            {adminMode && (
-                                                <td className="px-3 py-2 text-subtle text-xs">
-                                                    {model.provider || "—"}
-                                                </td>
-                                            )}
-                                            <td className="px-3 py-2 text-right tabular-nums text-muted">
-                                                {total > 0 ? (
-                                                    <>
-                                                        {(
-                                                            total - total4xx
-                                                        ).toLocaleString()}
-                                                        {total4xx > 0 && (
-                                                            <span className="text-subtle text-xs ml-1">
-                                                                (
-                                                                {total.toLocaleString()}
-                                                                )
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        muted
+                                                    >
+                                                        {total > 0 ? (
+                                                            <>
+                                                                {nonUserErrorTotal.toLocaleString()}
+                                                                {total4xx >
+                                                                    0 && (
+                                                                    <span className="ml-1 text-xs text-theme-text-muted">
+                                                                        (
+                                                                        {total.toLocaleString()}
+                                                                        )
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={get2xxColor(
+                                                            stats?.status_2xx ||
+                                                                0,
+                                                            nonUserErrorTotal,
+                                                        )}
+                                                    >
+                                                        {formatPercent(
+                                                            stats?.status_2xx ||
+                                                                0,
+                                                            nonUserErrorTotal,
+                                                            true,
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                    >
+                                                        {total5xx > 0 ? (
+                                                            <span className="font-semibold text-intent-danger-text">
+                                                                {total5xx}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-theme-text-muted">
+                                                                -
                                                             </span>
                                                         )}
-                                                    </>
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
-                                                    stats?.status_2xx || 0,
-                                                    total - total4xx,
-                                                    0,
-                                                )}`}
-                                            >
-                                                {formatPercent(
-                                                    stats?.status_2xx || 0,
-                                                    total - total4xx,
-                                                    true,
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-right tabular-nums">
-                                                {total5xx > 0 ? (
-                                                    <span className="text-dark font-bold">
-                                                        {total5xx}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-border">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-right tabular-nums text-subtle">
-                                                {pct4xx > 0
-                                                    ? pct4xx < 1
-                                                        ? `${pct4xx.toFixed(1)}%`
-                                                        : `${Math.round(pct4xx)}%`
-                                                    : "—"}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${
-                                                    avgSec
-                                                        ? getLatencyColor(
-                                                              avgSec,
-                                                          )
-                                                        : "text-border"
-                                                }`}
-                                            >
-                                                {avgSec
-                                                    ? `${avgSec.toFixed(1)}s`
-                                                    : "—"}
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2 text-right tabular-nums ${
-                                                    p95Sec
-                                                        ? getLatencyColor(
-                                                              p95Sec,
-                                                          )
-                                                        : "text-border"
-                                                }`}
-                                            >
-                                                {p95Sec
-                                                    ? `${p95Sec.toFixed(1)}s`
-                                                    : "—"}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        muted
+                                                    >
+                                                        {pct4xx > 0
+                                                            ? pct4xx < 1
+                                                                ? `${pct4xx.toFixed(1)}%`
+                                                                : `${Math.round(pct4xx)}%`
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={
+                                                            avgSec
+                                                                ? getLatencyColor(
+                                                                      avgSec,
+                                                                  )
+                                                                : "text-theme-text-muted"
+                                                        }
+                                                    >
+                                                        {avgSec
+                                                            ? `${avgSec.toFixed(1)}s`
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className={
+                                                            p95Sec
+                                                                ? getLatencyColor(
+                                                                      p95Sec,
+                                                                  )
+                                                                : "text-theme-text-muted"
+                                                        }
+                                                    >
+                                                        {p95Sec
+                                                            ? `${p95Sec.toFixed(1)}s`
+                                                            : "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </Surface>
+                </main>
+            </ScrollArea>
         </div>
     );
 }

@@ -23,4 +23,8 @@ export type ThemeName = (typeof themes)[number];
 export const themeColors: Partial<Record<ThemeName, string>> = {
     amber: "#FEF3C7",
     blue: "#DBEAFE",
+    pink: "#FCE7F3",
+    teal: "#CCFBF1",
+    violet: "#EDE9FE",
+    green: "#D1FAE4",
 };

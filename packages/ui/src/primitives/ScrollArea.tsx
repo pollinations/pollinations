@@ -125,7 +125,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
                 ref={setRef}
                 data-theme={theme}
                 className={cn(
-                    "polli-scrollbar-subtle",
+                    "polli-scrollbar-subtle polli:min-w-0 polli:max-w-full",
                     axisClasses[axis],
                     className,
                 )}

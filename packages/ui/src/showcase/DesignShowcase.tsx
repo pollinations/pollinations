@@ -15,6 +15,7 @@ import {
     WalletBalanceCard,
     WalletDot,
 } from "../modules/wallet/index.ts";
+import { Alert } from "../primitives/Alert.tsx";
 import { Button } from "../primitives/Button.tsx";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Chip } from "../primitives/Chip.tsx";
@@ -60,6 +61,14 @@ import { StatCard } from "../primitives/StatCard.tsx";
 import { Surface } from "../primitives/Surface.tsx";
 import { Switch, type SwitchStatus } from "../primitives/Switch.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+} from "../primitives/Table.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 import { type ThemeName, themes } from "../theme.ts";
 
@@ -264,6 +273,7 @@ const ControlGroup: FC<{ label: string; children: ReactNode }> = ({
 );
 
 const primitiveNames = [
+    "Alert",
     "Button",
     "ChevronIcon",
     "Chip",
@@ -286,6 +296,12 @@ const primitiveNames = [
     "Surface",
     "Switch",
     "TabButton",
+    "Table",
+    "TableBody",
+    "TableCell",
+    "TableHead",
+    "TableHeaderCell",
+    "TableRow",
     "Tooltip",
 ] as const;
 
@@ -471,6 +487,21 @@ const tokenRows = [
     ["bg-active", "var(--polli-color-bg-active)", "polli:bg-theme-bg-active"],
     ["bg-hover", "var(--polli-color-bg-hover)", "polli:bg-theme-bg-hover"],
     ["bg-pale", "var(--polli-color-bg-pale)", "polli:bg-theme-bg-pale"],
+    [
+        "danger-bg",
+        "var(--polli-color-danger-bg-light)",
+        "polli:bg-intent-danger-bg-light",
+    ],
+    [
+        "success-bg",
+        "var(--polli-color-success-bg-light)",
+        "polli:bg-intent-success-bg-light",
+    ],
+    [
+        "warning-bg",
+        "var(--polli-color-warning-bg-light)",
+        "polli:bg-intent-warning-bg-light",
+    ],
 ] as const;
 
 const TokensDemo: FC = () => (
@@ -660,6 +691,9 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <Chip intent="news">NEW</Chip>
                 <Chip intent="alpha">ALPHA</Chip>
                 <Chip intent="neutral">Neutral</Chip>
+                <Chip intent="success">Success</Chip>
+                <Chip intent="warning">Warning</Chip>
+                <Chip intent="danger">Danger</Chip>
                 {themes.map((theme) => (
                     <Chip key={theme} theme={theme}>
                         {theme}
@@ -993,7 +1027,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
     <ShowcaseSection
         id="layout"
         title="Layout"
-        caption="Surface, Section, StatCard, and ScrollArea primitives for dense product screens."
+        caption="Surface, Section, StatCard, ScrollArea, and Table primitives for dense product screens."
     >
         <Surface
             variant="panel"
@@ -1069,6 +1103,48 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     </ScrollArea>
                 </Surface>
             </div>
+            <Surface className="polli:p-0">
+                <ScrollArea axis="x">
+                    <Table className="polli:min-w-[560px]">
+                        <TableHead>
+                            <tr>
+                                <TableHeaderCell active sortDirection="asc">
+                                    Model
+                                </TableHeaderCell>
+                                <TableHeaderCell>Status</TableHeaderCell>
+                                <TableHeaderCell align="right">
+                                    Requests
+                                </TableHeaderCell>
+                                <TableHeaderCell align="right">
+                                    Success
+                                </TableHeaderCell>
+                            </tr>
+                        </TableHead>
+                        <TableBody>
+                            {tableRows.map((row) => (
+                                <TableRow key={row.model} intent={row.intent}>
+                                    <TableCell>
+                                        <span className="polli:font-medium polli:text-theme-text-strong">
+                                            {row.model}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip intent={row.intent} size="sm">
+                                            {row.status}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell align="right" numeric muted>
+                                        {row.requests}
+                                    </TableCell>
+                                    <TableCell align="right" numeric>
+                                        {row.success}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            </Surface>
         </Surface>
     </ShowcaseSection>
 );
@@ -1077,16 +1153,54 @@ const scrollRows = Array.from({ length: 28 }, (_, index) =>
     String(index + 1).padStart(2, "0"),
 );
 
+const tableRows = [
+    {
+        model: "nova-fast",
+        status: "Healthy",
+        requests: "22,115",
+        success: "99.9%",
+        intent: "success" as const,
+    },
+    {
+        model: "video-large",
+        status: "Degraded",
+        requests: "1,024",
+        success: "91.4%",
+        intent: "warning" as const,
+    },
+    {
+        model: "legacy-audio",
+        status: "Offline",
+        requests: "48",
+        success: "0%",
+        intent: "danger" as const,
+    },
+] as const;
+
 const FeedbackDemo: FC = () => (
     <ShowcaseSection
         id="feedback"
         title="Feedback"
-        caption="Tooltip, InfoTip, and formatted value examples for compact product UI."
+        caption="Alert, Tooltip, InfoTip, and formatted value examples for compact product UI."
     >
         <Surface
             variant="panel"
             className="polli:flex polli:flex-col polli:gap-3"
         >
+            <Row label="Alert">
+                <div className="polli:grid polli:min-w-0 polli:flex-1 polli:grid-cols-[repeat(auto-fit,minmax(210px,1fr))] polli:gap-2">
+                    <Alert title="Info">Catalog metadata is synced.</Alert>
+                    <Alert intent="success" title="Success">
+                        Package assets generated.
+                    </Alert>
+                    <Alert intent="warning" title="Warning">
+                        Fallback data is active.
+                    </Alert>
+                    <Alert intent="danger" title="Error">
+                        Publish token is missing.
+                    </Alert>
+                </div>
+            </Row>
             <Row label="InfoTip">
                 <span className="polli:inline-flex polli:items-center polli:text-sm polli:text-theme-text-strong">
                     Pollen balance

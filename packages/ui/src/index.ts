@@ -7,6 +7,7 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export { Alert, type AlertProps } from "./primitives/Alert.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
@@ -52,5 +53,19 @@ export {
     TabButton,
     type TabButtonProps,
 } from "./primitives/TabButton.tsx";
+export {
+    Table,
+    TableBody,
+    type TableBodyProps,
+    TableCell,
+    type TableCellProps,
+    TableHead,
+    TableHeaderCell,
+    type TableHeaderCellProps,
+    type TableHeadProps,
+    type TableProps,
+    TableRow,
+    type TableRowProps,
+} from "./primitives/Table.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export { type ThemeName, themeColors, themes } from "./theme.ts";

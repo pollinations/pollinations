@@ -26,6 +26,24 @@ test("formatPricePer1M renders each decimal branch and strips trailing zeros", (
     expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 → 5 decimals
 });
 
+test("getModelPrices formats text registry rates through formatPricePer1M", () => {
+    const price = getPriceDefinition("gemini-fast");
+    if (!price) throw new Error("gemini-fast price definition missing");
+
+    const geminiFast = getModelPrices().find(
+        (modelPrice) => modelPrice.name === "gemini-fast",
+    );
+
+    expect(geminiFast).toMatchObject({
+        name: "gemini-fast",
+        type: "text",
+        promptTextPrice: formatPricePer1M(price.promptTextTokens ?? 0),
+        promptCachedPrice: formatPricePer1M(price.promptCachedTokens ?? 0),
+        promptAudioPrice: formatPricePer1M(price.promptAudioTokens ?? 0),
+        completionTextPrice: formatPricePer1M(price.completionTextTokens ?? 0),
+    });
+});
+
 test("AssemblyAI STT pricing is exposed per input audio second", () => {
     const universal2 = getModelPrices().find(
         (price) => price.name === "universal-2",

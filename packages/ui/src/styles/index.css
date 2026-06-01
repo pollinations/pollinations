@@ -12,6 +12,142 @@
 @import "./fonts.css";
 @import "./tokens.css";
 
+.polli-scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 160ms ease;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"] {
+    scrollbar-color: var(--polli-color-scrollbar-thumb) transparent;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+    background-color: var(--polli-color-scrollbar-thumb);
+}
+
+.polli-input-number-clean::-webkit-inner-spin-button,
+.polli-input-number-clean::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.polli-input-number-clean {
+    -moz-appearance: textfield;
+}
+
+.polli-slider {
+    --polli-slider-thumb-shadow-fallback: color-mix(
+        in oklab,
+        var(--polli-color-text-strong) 35%,
+        transparent
+    );
+    --polli-slider-progress-value: var(--polli-slider-progress, 0%);
+    --polli-slider-fill-value: var(
+        --polli-slider-fill,
+        var(--polli-color-bg-active)
+    );
+    --polli-slider-track-value: var(
+        --polli-slider-track,
+        var(--polli-color-bg-pale)
+    );
+    --polli-slider-thumb-border-value: var(
+        --polli-slider-thumb-border,
+        var(--polli-color-text-strong)
+    );
+    --polli-slider-thumb-shadow-value: var(
+        --polli-slider-thumb-shadow,
+        var(--polli-slider-thumb-shadow-fallback)
+    );
+
+    width: 100%;
+    height: 0.5rem;
+    cursor: grab;
+    appearance: none;
+    border-radius: 9999px;
+    outline: none;
+    transition: opacity 150ms ease, filter 150ms ease;
+    background: linear-gradient(
+        to right,
+        var(--polli-slider-fill-value) 0%,
+        var(--polli-slider-fill-value) var(--polli-slider-progress-value),
+        var(--polli-slider-track-value) var(--polli-slider-progress-value),
+        var(--polli-slider-track-value) 100%
+    );
+}
+
+.polli-slider:active {
+    cursor: grabbing;
+}
+
+.polli-slider:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.polli-slider:focus-visible {
+    box-shadow: 0 0 0 2px var(--polli-slider-fill-value),
+        0 0 0 4px var(--polli-color-surface-white);
+}
+
+.polli-slider::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: transparent;
+}
+
+.polli-slider::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: transparent;
+}
+
+.polli-slider::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -7px;
+    appearance: none;
+    border: 3px solid var(--polli-slider-thumb-border-value);
+    border-radius: 9999px;
+    background: white;
+    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
+    transition: transform 150ms ease;
+}
+
+.polli-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--polli-slider-thumb-border-value);
+    border-radius: 9999px;
+    background: white;
+    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
+    transition: transform 150ms ease;
+}
+
+.polli-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+}
+
+.polli-slider:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+}
+
 /*
  * No `@source inline(...)` allowlist needed: Tailwind v4 content-scans
  * the package source by default, so every `polli:*` class literal in

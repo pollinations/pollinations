@@ -4,6 +4,7 @@ import {
     getUserBalances,
 } from "@shared/billing/deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
     handleBalanceDeduction,
     resolveDevMarkup,
@@ -438,5 +439,30 @@ describe("BYOP markup", () => {
 
         expect(ok).toBe(false);
         expect(newBalance).toBeNull();
+    });
+
+    it("returns a rounded billedPrice that matches what the ledger was charged", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+
+        const totalPrice = 1.23456789;
+        const { markup, billedPrice } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice,
+            userId: payerId,
+            byopClientKeyId: pkId,
+        });
+
+        expect(markup).not.toBeNull();
+        // billedPrice is totalPrice + devCredit, snapped to ledger precision.
+        expect(billedPrice).toBe(
+            roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0)),
+        );
+
+        // Dev credit lands on the ledger at the same precision.
+        const creditBalance = (await getUserBalances(db, devId)).tierBalance;
+        expect(creditBalance).toBe(
+            roundPollenLedgerAmount(markup?.devCredit ?? 0),
+        );
     });
 });

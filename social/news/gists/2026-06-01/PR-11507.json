@@ -1,0 +1,34 @@
+{
+  "pr_number": 11507,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11507",
+  "merged_at": "2026-06-01T16:23:23Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Freshly Pressed Docs",
+    "blurb": "Our automated bots just gave the API documentation a quick polish to keep everything perfectly in sync.",
+    "summary": "Automated sync of APIDOCS.md to reflect the latest OpenAPI specification changes from production.",
+    "impact": "Developers referencing the API documentation will see the most up-to-date endpoint specifications.",
+    "keywords": [
+      "docs",
+      "api",
+      "openapi",
+      "automation"
+    ],
+    "visual_concept": "The monitor robot acting as an automated librarian, organizing documentation pages while Polly the bee assists.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head organizing a stack of glowing documents, while the bee mascot hovers nearby holding a tiny feather pen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11507.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head organizing a stack of glowing documents, while the bee mascot hovers nearby holding a tiny feather pen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-01T16:24:29.940612+00:00"
+}

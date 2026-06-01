@@ -1,0 +1,35 @@
+{
+  "pr_number": 11501,
+  "title": "Add Primbon Jawa Modern to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11501",
+  "merged_at": "2026-06-01T16:09:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Primbon Jawa Modern](https://jawidigital.my.id) to learn\n- Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli\n\nFixes #10703",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Javanese Wisdom Goes Digital",
+    "blurb": "The greenhouse just got a touch of traditional Javanese culture! Primbon Jawa Modern brings ancient wisdom and calculations into a sleek digital platform.",
+    "summary": "Added 'Primbon Jawa Modern', a digital platform for traditional Javanese cultural wisdom and calculations, to the community apps showcase.",
+    "impact": "Users can now discover and explore this modern take on traditional Javanese Primbon in the community greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "primbon",
+      "culture"
+    ],
+    "visual_concept": "The bee mascot interacting with traditional Javanese elements (like a digital scroll or mystical calculation board) inside the cozy greenhouse, blending ancient culture with digital tech.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traditional patterned scarf, looking at a glowing digital scroll with ancient script inside a lush greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11501.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traditional patterned scarf, looking at a glowing digital scroll with ancient script inside a lush greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T16:10:51.311192+00:00",
+  "app_name": "Primbon Jawa Modern",
+  "app_url": "https://jawidigital.my.id"
+}

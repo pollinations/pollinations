@@ -1,0 +1,35 @@
+{
+  "pr_number": 11462,
+  "title": "refactor(gen-text): remove dead Portkey/client-config branches and unused fields",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11462",
+  "merged_at": "2026-06-01T12:11:14Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Remove the unreachable Portkey `strategy`/`targets` fallback-config branch + `PortkeyTarget`/`resolveTargetAuth`\n- Drop dead config fields never set: `removeSeed`, `formatResponse` (+ orphaned `sseStreamConverter.ts`), `authHeaderName`/`authHeaderValue`\n- Remove the never-matched model-config sampling-default loop and dead `targets`/`hasBase64Target` handling in the image transform\n- Remove unused `ServiceError.originalProvider` field\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −179 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the dead branches",
+    "blurb": "We did some spring cleaning in the text generation codebase, removing unused configurations and dead code to keep the hive running lean and mean.",
+    "summary": "Removed 179 lines of dead code and unused configuration fields from the text generation service, including unreachable Portkey fallback branches and orphaned stream converters.",
+    "impact": "This internal cleanup simplifies the codebase and reduces technical debt without affecting existing API functionality.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "portkey",
+      "text-generation",
+      "tech-debt"
+    ],
+    "visual_concept": "Polly the bee doing some spring cleaning, pruning dead branches from a code-plant while the Nomnom creature eats the discarded code snippets.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning dead pixelated leaves off a glowing code-plant. The round tan nomnom creature sits below, happily eating the discarded code snippets. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11462.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning dead pixelated leaves off a glowing code-plant. The round tan nomnom creature sits below, happily eating the discarded code snippets. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T12:12:18.910963+00:00"
+}

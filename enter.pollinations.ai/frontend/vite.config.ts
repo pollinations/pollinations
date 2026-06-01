@@ -23,7 +23,7 @@ export default defineConfig({
     publicDir: "public",
     assetsInclude: ["**/*.md"],
     resolve: {
-        dedupe: ["zod"],
+        dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
         tanstackRouter({

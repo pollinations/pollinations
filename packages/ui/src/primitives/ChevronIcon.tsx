@@ -8,7 +8,7 @@ type ChevronIconProps = {
 };
 
 /**
- * Canonical chevron used for disclosures, dropdown triggers, and select pills
+ * Canonical chevron used for collapsibles, dropdown triggers, and select pills
  * across the app. One icon everywhere.
  */
 export const ChevronIcon: FC<ChevronIconProps> = ({ expanded, className }) => (

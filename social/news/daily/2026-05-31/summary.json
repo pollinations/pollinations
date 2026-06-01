@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-31",
+  "period_start": "2026-05-31",
+  "period_end": "2026-05-31",
+  "title": "React SDK and UI components",
+  "summary": "Official React and UI packages dropped, turning OAuth and wallet integration into a two-import job.\n\nWiring up OAuth and API key management is tedious. We added @pollinations_ai/sdk/react and @pollinations_ai/ui so you don't have to. Wrap your app in a PolliProvider, drop in the pre-built wallet components, and get back to building the actual app. SSR-safe hooks included.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11217,
+      "date": "2026-05-31"
+    }
+  ],
+  "generated_at": "2026-06-01T07:40:04.018021+00:00"
+}

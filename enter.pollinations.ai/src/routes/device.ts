@@ -288,6 +288,13 @@ export const deviceRoutes = new Hono<Env>()
         auth({ allowApiKey: true, allowSessionCookie: true }),
         async (c) => {
             const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+            if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
+                throw new HTTPException(403, {
+                    message: "API key does not have 'account:profile' permission",
+                });
+            }
+
             const db = drizzle(c.env.DB, { schema });
             const row = await db.query.user.findFirst({
                 where: eq(schema.user.id, user.id),

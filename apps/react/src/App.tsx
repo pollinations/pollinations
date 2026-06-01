@@ -51,7 +51,7 @@ const brandWordmarkMask: CSSProperties = {
     mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
-const ThemeContext = createContext<ThemeName>("amber");
+const ThemeContext = createContext<ThemeName>("blue");
 
 function useAppTheme() {
     return useContext(ThemeContext);
@@ -637,7 +637,7 @@ function SdkDemo({
 
 export default function App() {
     const { activeView, selectView } = useAppView();
-    const [theme, setTheme] = useState<ThemeName>("amber");
+    const [theme, setTheme] = useState<ThemeName>("blue");
 
     if (activeView === "showcase") {
         return (

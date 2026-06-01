@@ -1,5 +1,5 @@
 # Pollinations AI - Auto-fix issues labeled "polly"
-# Trigger: Add "polly" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
+# Trigger: Add "polly" label | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
 
 name: Polly Auto Fix
 
@@ -39,8 +39,7 @@ jobs:
             const whitelist = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];
             const labeledBy = context.payload.sender.login;
 
-            // Allow if labeled by whitelisted user or by pollinations-ai[bot] (project-manager workflow)
-            const isAuthorized = whitelist.includes(labeledBy) || labeledBy === 'pollinations-ai[bot]';
+            const isAuthorized = whitelist.includes(labeledBy);
 
             if (!isAuthorized) {
               await github.rest.issues.removeLabel({

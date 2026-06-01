@@ -1,0 +1,34 @@
+{
+  "pr_number": 11527,
+  "title": "fix: avoid shell interpolation in app approval",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11527",
+  "merged_at": "2026-06-01T22:05:42Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- pass app-review approval PR fields through the step environment instead of rendering them into shell assignments\n- prevents app submission name/url/description values from being interpreted as shell syntax while creating the approval PR\n\n## Testing\n- git diff --check",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Safe and sound submissions",
+    "blurb": "We've tightened up the app submission pipeline to keep those pesky shell injections out of our GitHub Actions.",
+    "summary": "Updated the app-review GitHub Action to pass submission fields via environment variables rather than shell interpolation.",
+    "impact": "This prevents malformed app names, URLs, and descriptions from executing unintended shell commands during the approval PR creation.",
+    "keywords": [
+      "security",
+      "github-actions",
+      "ci-cd",
+      "app-review"
+    ],
+    "visual_concept": "The bee mascot acting as a friendly security guard inspecting a pipeline or a locked box containing app submissions, alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing lime green (#ecf874) pipeline with the chunky monitor robot. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11527.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing lime green (#ecf874) pipeline with the chunky monitor robot. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T22:06:37.177188+00:00"
+}

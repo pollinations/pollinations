@@ -100,7 +100,7 @@ polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrume
 ```bash
 polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4
 ```
-Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any `--duration` value is ignored — you always pay for and receive 5 sec). For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
+Cheapest path: `--model wan-fast` at ~0.01 Pollen/sec, **fixed 5-second output** (any `--duration` value is ignored — you always pay for and receive 5 sec). For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
 
 **Flag support varies per model and is not enforced client-side.** `--duration`, `--aspect-ratio`, `--audio`, `--negative`, and `--enhance` are forwarded to the server but may be silently ignored — verified on `wan-fast` where duration is locked to 5s, `--aspect-ratio 9:16` still returns 16:9, and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
 
@@ -121,7 +121,7 @@ polli models --stats --window 5       # last 5 minutes only
 ```
 Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5xx only** — a model can show `0.0%` while having massive 4xx rates (auth, validation, etc.). For the full picture use `--stats --json` and read `errors_4xx`, `errors_5xx`, `latency_p95_ms`.
 
-**Pricing fields are per-token, not per-request.** `completionImageTokens: 0.000008` means each output image-token costs that much — a single 1024x1024 image from `gptimage` lands at ~$0.008, not $0.000008. Flat-priced image models (`flux`, `zimage`) expose `completionImageTokens` as the whole-image price because they emit exactly one "token" per image. When in doubt, make one call and read the true cost from `polli usage --history --limit 5 --json`.
+**Pricing fields are per-token, not per-request.** `completionImageTokens: 0.000008` means each output image-token costs that many Pollen — a single 1024x1024 image from `gptimage` lands at ~0.008 Pollen, not 0.000008. Flat-priced image models (`flux`, `zimage`) expose `completionImageTokens` as the whole-image price because they emit exactly one "token" per image. When in doubt, make one call and read the true cost from `polli usage --history --limit 5 --json`.
 
 ### Check usage and balance
 ```bash

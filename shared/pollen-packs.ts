@@ -43,6 +43,14 @@ export const formatPollenPackValue = (value: number): string =>
               maximumFractionDigits: 1,
           });
 
+export const formatPollenPackPriceUsd = (value: number): string =>
+    value.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+        maximumFractionDigits: 2,
+    });
+
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ packKey, amountUsd, bonusPollen }) => {
         const pollenGrant = amountUsd + bonusPollen;

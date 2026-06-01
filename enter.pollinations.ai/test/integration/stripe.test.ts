@@ -205,6 +205,71 @@ test("GET /api/stripe/products returns pack list", async () => {
     ]);
 });
 
+type LocalizedPricesResponse = {
+    currency: string | null;
+    prices: Record<string, string>;
+};
+
+test("GET /api/stripe/localized-prices: DE → EUR estimate via FX quote", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "DE" },
+    });
+    expect(response.status).toBe(200);
+
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBe("eur");
+    // (100 / 1.1617 mid-market) * 1.04 cold-start markup = 89.52
+    expect(data.prices.p100).toBe("€89.52");
+    expect(data.prices.p2).toBe("€1.79");
+    expect(Object.keys(data.prices)).toHaveLength(6);
+});
+
+test("GET /api/stripe/localized-prices: JP → zero-decimal JPY", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "JP" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBe("jpy");
+    // (100 / 0.00627132 mid-market) * 1.04 = 16583.5 → 16583 (whole yen)
+    expect(data.prices.p100).toBe("¥16,583");
+});
+
+test("GET /api/stripe/localized-prices: US falls back to USD with no FX call", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "US" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBeNull();
+    expect(data.prices).toEqual({});
+    expect(
+        mocks.stripe.state.requests.some((r) => r.path === "/v1/fx_quotes"),
+    ).toBe(false);
+});
+
+test("GET /api/stripe/localized-prices: unmapped country falls back to USD", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+
+    const response = await SELF.fetch(`${base}/localized-prices`, {
+        headers: { "cf-ipcountry": "ZZ" },
+    });
+    const data = (await response.json()) as LocalizedPricesResponse;
+    expect(data.currency).toBeNull();
+});
+
 test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
     sessionToken,
     mocks,

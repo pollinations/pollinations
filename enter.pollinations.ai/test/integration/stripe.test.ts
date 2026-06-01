@@ -4,7 +4,8 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
+import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -1945,6 +1946,71 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .first<{
             packBalance: number | null;
         }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind(invoiceId)
+        .first<{ status: string; failureReason: string | null }>();
+
+    expect(updatedUser?.packBalance).toBe(14);
+    expect(attempt?.status).toBe("paid");
+    expect(attempt?.failureReason).toBeNull();
+});
+
+test("creditAutoTopUpInvoice credits concurrent duplicate invoices once", async () => {
+    const userId = "user_auto_top_up_concurrent";
+    const now = Date.now();
+    await env.DB.prepare(
+        `INSERT INTO user (
+            id,
+            name,
+            email,
+            email_verified,
+            created_at,
+            updated_at,
+            pack_balance,
+            auto_top_up_enabled,
+            auto_top_up_amount_usd
+        ) VALUES (?, ?, ?, 1, ?, ?, 1, 1, 10)`,
+    )
+        .bind(
+            userId,
+            "Auto Top Up Concurrent",
+            "auto-top-up-concurrent@example.com",
+            now,
+            now,
+        )
+        .run();
+
+    const invoiceId = "in_concurrent_paid_once";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    const invoice = createAutoTopUpInvoiceEvent(
+        "invoice.paid",
+        invoiceId,
+        userId,
+    ).data.object as Parameters<typeof creditAutoTopUpInvoice>[1];
+
+    const dateNow = vi.spyOn(Date, "now").mockReturnValue(1780272000000);
+    try {
+        const results = await Promise.all([
+            creditAutoTopUpInvoice(env, invoice),
+            creditAutoTopUpInvoice(env, invoice),
+        ]);
+
+        expect(results.filter((result) => result.credited)).toHaveLength(1);
+    } finally {
+        dateNow.mockRestore();
+    }
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{ packBalance: number | null }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
         FROM stripe_auto_top_up_attempt

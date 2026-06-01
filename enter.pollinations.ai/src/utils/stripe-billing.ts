@@ -601,23 +601,7 @@ export async function creditAutoTopUpInvoice(
     }
 
     const now = Date.now();
-    const [attemptUpdate] = await env.DB.batch([
-        env.DB.prepare(
-            `UPDATE stripe_auto_top_up_attempt
-                SET status = ?,
-                    completed_at = ?,
-                    updated_at = ?,
-                    failure_reason = NULL
-                WHERE stripe_invoice_id = ?
-                    AND status IN (?, ?)`,
-        ).bind(
-            AUTO_TOP_UP_ATTEMPT_STATUS_PAID,
-            now,
-            now,
-            invoice.id,
-            AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
-            AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
-        ),
+    const [creditUpdate, attemptUpdate] = await env.DB.batch([
         env.DB.prepare(
             `UPDATE user
                 SET pack_balance = COALESCE(pack_balance, 0) + ?
@@ -627,22 +611,52 @@ export async function creditAutoTopUpInvoice(
                         FROM stripe_auto_top_up_attempt
                         WHERE stripe_invoice_id = ?
                             AND user_id = ?
-                            AND status = ?
-                            AND completed_at = ?
+                            AND status IN (?, ?)
                     )`,
         ).bind(
             attempt.pollenGrant,
             attempt.userId,
             invoice.id,
             attempt.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
+            AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
+        ),
+        env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET status = ?,
+                    completed_at = ?,
+                    updated_at = ?,
+                    failure_reason = NULL
+                WHERE stripe_invoice_id = ?
+                    AND user_id = ?
+                    AND status IN (?, ?)
+                    AND EXISTS (
+                        SELECT 1
+                        FROM user
+                        WHERE id = ?
+                    )`,
+        ).bind(
             AUTO_TOP_UP_ATTEMPT_STATUS_PAID,
             now,
+            now,
+            invoice.id,
+            attempt.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
+            AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
+            attempt.userId,
         ),
     ]);
 
     const attemptChanges = attemptUpdate.meta.changes ?? 0;
     if (attemptChanges === 0) {
         return { credited: false, reason: "invoice already credited" };
+    }
+
+    const creditChanges = creditUpdate.meta.changes ?? 0;
+    if (creditChanges !== 1) {
+        throw new Error(
+            `Auto top-up credit failed to update user ${attempt.userId} for invoice ${invoice.id}`,
+        );
     }
 
     return { credited: true, pollenCredited: attempt.pollenGrant };

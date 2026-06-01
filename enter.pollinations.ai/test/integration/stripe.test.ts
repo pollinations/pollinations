@@ -334,18 +334,28 @@ test("GET /api/stripe/checkout/p2 omits FREE label for no-bonus pack", async ({
 });
 
 // Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends
-// USD price_data and leaves presentment localization to Stripe AP.
-test("cohort BR: cf-ipcountry=BR → USD price_data + AP on + buy-pollen PMC", async ({
-    sessionToken,
-    mocks,
-}) => {
+// USD price_data and leaves presentment localization to Stripe AP. Each cohort
+// label must round-trip header → handler → echoed metadata[cohort], holding the
+// USD-native price_data, AP-on, and buy-pollen PMC contract constant.
+test.for([
+    { country: "BR", cohort: "BR", pack: "p5", amountUsd: 5 },
+    { country: "NL", cohort: "EU_CORE", pack: "p10", amountUsd: 10 },
+    { country: "CN", cohort: "APAC_ALIPAY", pack: "p20", amountUsd: 20 },
+    { country: "IN", cohort: "INDIA", pack: "p10", amountUsd: 10 },
+    { country: "GB", cohort: "UK", pack: "p5", amountUsd: 5 },
+])("cohort $cohort: cf-ipcountry=$country → USD price_data + AP on + buy-pollen PMC", async ({
+    country,
+    cohort,
+    pack,
+    amountUsd,
+}, { sessionToken, mocks }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/p5`, {
+    const response = await SELF.fetch(`${base}/checkout/${pack}`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
-            "cf-ipcountry": "BR",
+            "cf-ipcountry": country,
         },
         redirect: "manual",
     });
@@ -356,67 +366,10 @@ test("cohort BR: cf-ipcountry=BR → USD price_data + AP on + buy-pollen PMC", a
     )?.body;
     expect(body).toBeTruthy();
 
-    expectUsdPriceData(body, 5);
+    expectUsdPriceData(body, amountUsd);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
-    expect(body?.["metadata[cohort]"]).toBe("BR");
-    // Pollen grant stays USD-anchored ($5 + 1 bonus = 6 pollen).
-    expect(body?.["metadata[packAmountUsd]"]).toBe("5");
-    expect(body?.["metadata[packPollenGrant]"]).toBe("6");
-});
-
-test("cohort EU_CORE: cf-ipcountry=NL → USD price_data + AP on + buy-pollen PMC", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-            "cf-ipcountry": "NL",
-        },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(302);
-
-    const body = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    )?.body;
-    expect(body).toBeTruthy();
-
-    expectUsdPriceData(body, 10);
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(stripePmcId);
-    expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
-});
-
-test("cohort APAC_ALIPAY: cf-ipcountry=CN → USD price_data + AP on + buy-pollen PMC", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-
-    const response = await SELF.fetch(`${base}/checkout/p20`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-            "cf-ipcountry": "CN",
-        },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(302);
-
-    const body = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    )?.body;
-    expect(body).toBeTruthy();
-
-    expectUsdPriceData(body, 20);
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(stripePmcId);
-    expect(body?.["metadata[cohort]"]).toBe("APAC_ALIPAY");
+    expect(body?.["metadata[cohort]"]).toBe(cohort);
 });
 
 test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIPAY)", async ({
@@ -446,65 +399,6 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     expect(body?.payment_method_configuration).toBe(stripePmcId);
     expect(body?.["metadata[cohort]"]).toBe("USD");
-});
-
-test("cohort INDIA: cf-ipcountry=IN → USD price_data + AP on + buy-pollen PMC", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-            "cf-ipcountry": "IN",
-        },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(302);
-
-    const body = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    )?.body;
-    expect(body).toBeTruthy();
-
-    expectUsdPriceData(body, 10);
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(stripePmcId);
-    expect(body?.["metadata[cohort]"]).toBe("INDIA");
-    // Pollen grant stays USD-anchored ($10 + 3 bonus = 13 pollen).
-    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
-    expect(body?.["metadata[packPollenGrant]"]).toBe("13");
-});
-
-test("cohort UK: cf-ipcountry=GB → USD price_data + AP on + buy-pollen PMC", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-
-    const response = await SELF.fetch(`${base}/checkout/p5`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-            "cf-ipcountry": "GB",
-        },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(302);
-
-    const body = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    )?.body;
-    expect(body).toBeTruthy();
-
-    expectUsdPriceData(body, 5);
-    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
-    expect(body?.payment_method_configuration).toBe(stripePmcId);
-    expect(body?.["metadata[cohort]"]).toBe("UK");
-    expect(body?.["metadata[packAmountUsd]"]).toBe("5");
-    expect(body?.["metadata[packPollenGrant]"]).toBe("6");
 });
 
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({

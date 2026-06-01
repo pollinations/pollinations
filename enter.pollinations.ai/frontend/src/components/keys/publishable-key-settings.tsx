@@ -1,4 +1,4 @@
-import { Button, Field, Input, Switch } from "@pollinations_ai/ui";
+import { Button, Field, Input, Switch } from "@pollinations/ui";
 import type { FC } from "react";
 
 type PublishableKeySettingsProps = {

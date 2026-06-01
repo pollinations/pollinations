@@ -7,7 +7,7 @@ import {
     Switch,
     type SwitchStatus,
     Tooltip,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,

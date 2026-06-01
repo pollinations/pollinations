@@ -4,36 +4,13 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai:ops");
-const logError = debug("pollinations:xai:error");
 
 const XAI_GENERATE_URL = "https://api.x.ai/v1/images/generations";
 const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
-
-const ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
-    { ratio: 1 / 1, label: "1:1" },
-    { ratio: 16 / 9, label: "16:9" },
-    { ratio: 9 / 16, label: "9:16" },
-    { ratio: 4 / 3, label: "4:3" },
-    { ratio: 3 / 4, label: "3:4" },
-    { ratio: 3 / 2, label: "3:2" },
-    { ratio: 2 / 3, label: "2:3" },
-];
-
-function closestAspectRatio(
-    width: number | undefined,
-    height: number | undefined,
-): string | undefined {
-    if (!width || !height) return undefined;
-    const requested = width / height;
-    return ASPECT_RATIOS.reduce((best, ar) =>
-        Math.abs(requested - ar.ratio) < Math.abs(requested - best.ratio)
-            ? ar
-            : best,
-    ).label;
-}
 
 /**
  * Calls the xAI official image API.

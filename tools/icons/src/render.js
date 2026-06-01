@@ -2,7 +2,7 @@ import sharp from "sharp";
 
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 
-/** The @pollinations_ai/ui logo paints with fill:currentColor. */
+/** The @pollinations/ui logo paints with fill:currentColor. */
 export function tintLogo(svg, color) {
     return svg.replaceAll("currentColor", color);
 }

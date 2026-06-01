@@ -16,6 +16,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { UpstreamError } from "@/error.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import { arrayBufferToBase64 } from "@/util.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
@@ -32,14 +33,6 @@ const PASSTHROUGH_PARAMS = [
     "negative_prompt",
     "guidance_scale",
 ] as const;
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binaryStr = "";
-    for (let i = 0; i < bytes.length; i++)
-        binaryStr += String.fromCharCode(bytes[i]);
-    return btoa(binaryStr);
-}
 
 function imageResponse(
     data: { url?: string; b64_json?: string },

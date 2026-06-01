@@ -27,9 +27,14 @@ function buildQueryParams(params) {
     return result;
 }
 
-async function generateImageUrl(params) {
-    requireApiKey();
-
+/**
+ * Validate an image request and build its encoded prompt + query params.
+ * Shared by generateImage and generateImageUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareImageRequest(params) {
     const {
         prompt,
         model,
@@ -79,6 +84,82 @@ async function generateImageUrl(params) {
         safe,
         private: isPrivate,
     });
+
+    return { encodedPrompt, queryParams };
+}
+
+/**
+ * Validate a video request (incl. per-model duration rules) and build its
+ * encoded prompt + query params. Shared by generateVideo and generateVideoUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareVideoRequest(params) {
+    const {
+        prompt,
+        model = "veo",
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
+
+    if (!prompt || typeof prompt !== "string") {
+        throw new Error("Prompt is required and must be a string");
+    }
+
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
+        throw new Error(
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
+        );
+    }
+
+    if (duration !== undefined) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+            throw new Error(
+                "veo model only supports duration of 4, 6, or 8 seconds",
+            );
+        }
+        if (
+            (model === "seedance" || model === "seedance-pro") &&
+            (duration < 2 || duration > 10)
+        ) {
+            throw new Error(
+                "seedance models support duration between 2-10 seconds",
+            );
+        }
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
+
+    return { encodedPrompt, queryParams };
+}
+
+async function generateImageUrl(params) {
+    requireApiKey();
+
+    const { prompt, model, width, height, seed, quality } = params;
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -140,49 +221,11 @@ async function generateImage(params) {
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
         quality,
-        image,
+        enhance,
         transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    if (model) {
-        const validation = await validateImageModel(model);
-        if (!validation.valid) {
-            throw new Error(
-                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    `Use listImageModels to see all ${validation.availableCount} available models.`,
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        width,
-        height,
-        seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -334,53 +377,8 @@ async function generateVideo(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const validation = await validateVideoModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listImageModels to see all ${validation.availableCount} available video models.`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -428,53 +426,8 @@ async function generateVideoUrl(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const validation = await validateVideoModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listImageModels to see all ${validation.availableCount} available video models.`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 

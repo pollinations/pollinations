@@ -1,4 +1,4 @@
-import { useAccountBalance, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAccountBalance, useAuthState } from "@pollinations/sdk/react";
 import { cn } from "../../lib/cn.ts";
 import { Chip } from "../../primitives/Chip.tsx";
 import { formatPollen } from "./format-pollen.ts";

@@ -16,13 +16,13 @@ const require = createRequire(import.meta.url);
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 // Single brand source: the logos shipped in the UI package (use currentColor).
-const UI_ROOT = dirname(require.resolve("@pollinations_ai/ui/package.json"));
+const UI_ROOT = dirname(require.resolve("@pollinations/ui/package.json"));
 const uiAsset = (file) => readFile(join(UI_ROOT, "src/assets", file), "utf8");
 const loadLogo = () => uiAsset("logo.svg"); // flower — icons
 const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 
 const DARK = "#110518"; // pollinations splash / OG contrast
-const REACT_BLUE = "#DBEAFE"; // matches @pollinations_ai/ui themeColors.blue
+const REACT_BLUE = "#DBEAFE"; // matches @pollinations/ui themeColors.blue
 
 const APPS = {
     react: {

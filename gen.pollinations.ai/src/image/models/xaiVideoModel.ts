@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
@@ -12,30 +13,6 @@ const logError = debug("pollinations:xai-video:error");
 
 const XAI_VIDEO_API_URL = "https://api.x.ai/v1/videos/generations";
 const XAI_VIDEO_POLL_URL = "https://api.x.ai/v1/videos";
-
-// xAI video aspect ratios
-const ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
-    { ratio: 1 / 1, label: "1:1" },
-    { ratio: 16 / 9, label: "16:9" },
-    { ratio: 9 / 16, label: "9:16" },
-    { ratio: 4 / 3, label: "4:3" },
-    { ratio: 3 / 4, label: "3:4" },
-    { ratio: 3 / 2, label: "3:2" },
-    { ratio: 2 / 3, label: "2:3" },
-];
-
-function closestAspectRatio(
-    width: number | undefined,
-    height: number | undefined,
-): string | undefined {
-    if (!width || !height) return undefined;
-    const requested = width / height;
-    return ASPECT_RATIOS.reduce((best, ar) =>
-        Math.abs(requested - ar.ratio) < Math.abs(requested - best.ratio)
-            ? ar
-            : best,
-    ).label;
-}
 
 interface XaiVideoStatusResponse {
     id: string;

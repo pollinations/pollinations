@@ -1,11 +1,5 @@
-import {
-    ChevronIcon,
-    Chip,
-    CopyButton,
-    cn,
-    Tooltip,
-} from "@pollinations_ai/ui";
-import { PaidChip } from "@pollinations_ai/ui/wallet";
+import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { PaidChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,

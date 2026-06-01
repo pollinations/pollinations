@@ -31,8 +31,8 @@
 - **GitHub Sponsors:** https://github.com/sponsors/pollinations
 
 ## Packages
-- **NPM SDK (@pollinations_ai/sdk):** https://www.npmjs.com/package/@pollinations_ai/sdk
-- **NPM MCP (@pollinations_ai/mcp):** https://www.npmjs.com/package/@pollinations_ai/mcp
+- **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
+- **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
 
 ## Socials
 - **Discord:** https://discord.gg/pollinations-ai-885844321461485618

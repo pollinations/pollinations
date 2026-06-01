@@ -27,8 +27,8 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `gen.pollinations.ai/` — Edge router + text generation Worker
 - `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
 - `pollinations.ai/` — React frontend
-- `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
-- `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
+- `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
+- `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Community apps + `APPS.md`
 - `social/` — Discord/Reddit/GitHub automation

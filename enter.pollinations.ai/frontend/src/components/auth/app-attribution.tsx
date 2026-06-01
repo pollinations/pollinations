@@ -1,4 +1,4 @@
-import { InfoTip } from "@pollinations_ai/ui";
+import { InfoTip } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;

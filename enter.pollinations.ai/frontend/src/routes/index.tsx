@@ -1,4 +1,4 @@
-import { Button, DownloadIcon, Section } from "@pollinations_ai/ui";
+import { Button, DownloadIcon, Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";

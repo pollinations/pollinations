@@ -1,0 +1,35 @@
+{
+  "pr_number": 11488,
+  "title": "refactor(packages-ui): drop DesignShowcase from published library + dead theme/prop cleanup",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11488",
+  "merged_at": "2026-06-01T15:18:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Exclude the 1212-line DesignShowcase demo from the published @pollinations/ui tarball via a `files` negation (`!dist/showcase`); it still builds to dist for the local apps/react dev demo (export + tsup entry retained, App.tsx untouched).\n- Remove dead `themeColors` export (zero consumers) from theme.ts + index.ts; delete its now-empty theme.test.ts; de-reference it in tools/icons/src/cli.js comment.\n- ScrollArea: narrow `ScrollAxis` to \"y\"|\"x\" (drop unused \"both\"), remove the never-overridden `hideDelayMs` prop and hardcode the 2000ms idle timeout.\n- AuthModal: drop the unused `titleId` prop from AuthInfoCard.\n\nRisks:\n- `@pollinations/ui/showcase` subpath export is retained but its files no longer ship; external npm consumers importing it would 404. Never a supported public API (demo only); the sole consumer (apps/react) resolves it from the locally built dist.\n- Removing the `themeColors` named export is SemVer-relevant for external npm consumers, but it had zero in-repo callers and only ever listed 2 of 6 themes.\n- Verified the tarball exclusion with `npm pack --dry-run` (0 dist/showcase entries, all other entries present); packages/ui vitest (14 pass) and `tsc --noEmit` are clean. apps/react build/typecheck could not run in this environment (workspace `@pollinations/*` symlinks absent), so the dev demo was validated by reasoning: import path, export map, and tsup entry are all unchanged.\n\nDeferred (out of scope / premise changed):\n- Finding 1 — exact prescribed mechanism (remove ./showcase export + tsup entry, deep-import — Implemented the finding's GOAL (demo absent from npm bundle) but via a safer mechanism than the two prescribed options. \n\n_~45 net lines removed · biome ✓ · cd packages/ui && npx vitest run (7 files, 14 tests, all pass); npx tsc --noEmit (clean, e ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the UI package",
+    "blurb": "We've swept out some dead code and removed the massive DesignShowcase from the published UI package. Lighter downloads and cleaner code for everyone!",
+    "summary": "Excluded the 1212-line DesignShowcase demo from the published @pollinations/ui npm tarball and removed unused exports like themeColors and dead props in ScrollArea.",
+    "impact": "The @pollinations/ui package is now significantly lighter for consumers, and the internal codebase is cleaner with fewer dead code paths.",
+    "keywords": [
+      "ui",
+      "refactor",
+      "cleanup",
+      "npm",
+      "packages"
+    ],
+    "visual_concept": "Polly the bee sweeping or cleaning up a digital garden or a UI component library. A tiny broom, sweeping away dead pixel leaves (representing dead code).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny scarf and holding a small broom, sweeping away dead pixelated leaves and old code blocks from a lime green (#ecf874) garden path. A chunky retro monitor in the background shows a clean, organized UI. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11488.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny scarf and holding a small broom, sweeping away dead pixelated leaves and old code blocks from a lime green (#ecf874) garden path. A chunky retro monitor in the background shows a clean, organized UI. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:19:11.334885+00:00"
+}

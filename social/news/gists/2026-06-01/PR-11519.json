@@ -1,0 +1,35 @@
+{
+  "pr_number": 11519,
+  "title": "fix: harden app migration deploy workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11519",
+  "merged_at": "2026-06-01T17:27:56Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Uses the dedicated `CLOUDFLARE_API_TOKEN_MYCELI_APPS` secret for app migration deploys instead of the shared Myceli token.\n- Reads the real Cloudflare Pages project subdomain before creating Myceli origin CNAMEs.\n- Makes Pages custom-domain provisioning and DNS upserts idempotent for reruns.\n- Avoids invalid Pages project list pagination in the old account reclaim path.\n\n## Validation\n- `node --check apps/_scripts/deploy-app.js`\n- `npx biome check --write apps/_scripts/deploy-app.js`\n- `catgpt` workflow dispatch succeeded on this branch: https://github.com/pollinations/pollinations/actions/runs/26770353914\n- Verified `catgpt.myceli.ai` and `catgpt.pollinations.ai` return 200\n\n## Notes\n- This is a follow-up to #11504 from the live canary rollout.\n- No remaining app cutovers were run from this branch.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Hardening the hive's deploy pipelines",
+    "blurb": "We've fortified our app deployment scripts with dedicated tokens and idempotent DNS updates. Smoother automated rollouts for the community!",
+    "summary": "Updated the app deployment workflow to use a dedicated Cloudflare API token and made custom-domain provisioning idempotent for safer reruns.",
+    "impact": "This ensures more reliable and secure automated deployments for community apps without manual intervention.",
+    "keywords": [
+      "infrastructure",
+      "deploy",
+      "cloudflare",
+      "automation",
+      "dns"
+    ],
+    "visual_concept": "The bee mascot working on a sturdy, reinforced pipeline or server rack (representing deployment workflow) with the robot companion. Cloudflare/DNS motifs (clouds, gears).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, tightening a bolt on a glowing lime green (#ecf874) server rack. The chunky monitor-head robot stands nearby holding a clipboard with a checklist. Soft pastel gradient background with fluffy pixel clouds. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11519.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, tightening a bolt on a glowing lime green (#ecf874) server rack. The chunky monitor-head robot stands nearby holding a clipboard with a checklist. Soft pastel gradient background with fluffy pixel clouds. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "generated_at": "2026-06-01T17:28:57.112336+00:00"
+}

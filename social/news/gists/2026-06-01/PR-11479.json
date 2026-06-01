@@ -1,0 +1,35 @@
+{
+  "pr_number": 11479,
+  "title": "fix: clean package publish follow-up",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11479",
+  "merged_at": "2026-06-01T13:27:02Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Renames the CLI package publish job from `publish-polli-cli` to `publish-cli`.\n- Keeps the path/output detection pointed at `packages/polli-cli`, only changing the CI-facing job name.\n- Normalizes `@pollinations/mcp` package metadata so npm does not auto-correct bin/repository fields during publish.\n\nValidation:\n- YAML parse check for `.github/workflows/publish-packages.yml`\n- `git diff --check`\n- `npx biome check --write .github/workflows/publish-packages.yml packages/mcp/package.json`\n- `npm publish --dry-run --access public` from `packages/mcp`\n\nNote:\n- This does not fix the current npm 403. That requires replacing `NPM_TOKEN` with a granular token that has read/write access and bypass 2FA enabled, then rerunning the failed publish jobs.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Publish Pipeline Polish",
+    "blurb": "Tidied up our npm publishing workflows and package metadata to keep our automated releases running smoothly.",
+    "summary": "Renamed the CLI publish job to `publish-cli` and normalized the `@pollinations/mcp` package metadata to prevent npm auto-corrections during automated publishing.",
+    "impact": "Internal CI/CD pipelines are cleaner and more reliable for future package releases.",
+    "keywords": [
+      "ci/cd",
+      "npm",
+      "publishing",
+      "infrastructure",
+      "mcp"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot organizing package boxes on a conveyor belt, representing CI/CD pipeline improvements.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing small cardboard boxes on a conveyor belt. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11479.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing small cardboard boxes on a conveyor belt. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T13:28:09.463616+00:00"
+}

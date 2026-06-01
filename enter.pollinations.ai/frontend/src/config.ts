@@ -8,10 +8,7 @@ const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL
     ? stripTrailingSlash(import.meta.env.VITE_API_BASE_URL)
     : undefined;
 
-const developmentBaseUrl =
-    typeof window === "undefined"
-        ? "http://localhost:3000"
-        : window.location.origin;
+const developmentBaseUrl = window.location.origin;
 
 const environmentConfig = {
     development: {

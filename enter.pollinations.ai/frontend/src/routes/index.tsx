@@ -1,6 +1,6 @@
 import { Button, DownloadIcon, Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -26,6 +26,7 @@ import {
     isDashboardPage,
     type ThemeName,
 } from "../components/layout/dashboard-theme.ts";
+import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 import {
@@ -144,20 +145,9 @@ function RouteComponent() {
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [activePage, setActivePage] = useState<DashboardPage>(() =>
-        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
-    );
+    const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-
-    useEffect(() => {
-        function syncPageFromHash(): void {
-            setActivePage(pageFromHash(window.location.hash));
-        }
-
-        window.addEventListener("hashchange", syncPageFromHash);
-        return () => window.removeEventListener("hashchange", syncPageFromHash);
-    }, []);
 
     const selectableKeys = useMemo(
         () =>

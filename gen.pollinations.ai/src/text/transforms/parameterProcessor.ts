@@ -7,17 +7,9 @@ import type {
 
 const log = debug("pollinations:transforms:parameters");
 
-const SAMPLING_PARAMS = [
-    "temperature",
-    "top_p",
-    "presence_penalty",
-    "frequency_penalty",
-    "repetition_penalty",
-] as const;
-
 /**
- * Transform that applies model-specific sampling defaults, streaming options,
- * and provider-specific parameter conversions.
+ * Transform that applies streaming options and provider-specific parameter
+ * conversions.
  */
 export function processParameters(
     messages: ChatMessage[],
@@ -29,17 +21,6 @@ export function processParameters(
 
     const config = options.modelConfig as Record<string, unknown>;
     const updatedOptions = { ...options };
-
-    // Apply model-specific sampling parameter defaults
-    for (const param of SAMPLING_PARAMS) {
-        if (
-            updatedOptions[param] === undefined &&
-            config[param] !== undefined
-        ) {
-            log(`Setting ${param} to model default value: ${config[param]}`);
-            updatedOptions[param] = config[param] as number;
-        }
-    }
 
     if (updatedOptions.stream) {
         log("Adding stream_options to include usage data in stream");

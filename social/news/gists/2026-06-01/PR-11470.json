@@ -1,0 +1,34 @@
+{
+  "pr_number": 11470,
+  "title": "refactor(packages-mcp): remove dead helpers, fix broken import, dedupe request prep",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11470",
+  "merged_at": "2026-06-01T12:32:44Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Fix `getPricing`’s broken `../utils/modelCache.js` import (now imports from `models.js`); remove the dead dynamic-import fallback\n- Delete unused exported helpers `createToolDefinition` and `createErrorResponse`\n- Extract a shared `postChatCompletion` helper and `prepareImage/VideoRequest` to dedupe request prep across MCP services\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −80 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the MCP",
+    "blurb": "We swept out some dead code and tightened up the MCP package's internal wiring. A cleaner codebase means faster updates down the line!",
+    "summary": "Refactored the MCP package to remove unused helpers like createToolDefinition, fix a broken getPricing import, and deduplicate request preparation logic.",
+    "impact": "Developers working on the MCP server will benefit from a cleaner, more maintainable codebase with 80 fewer lines of redundant code.",
+    "keywords": [
+      "mcp",
+      "refactor",
+      "cleanup",
+      "tech-debt"
+    ],
+    "visual_concept": "The bee mascot cleaning up a retro server room or organizing code blocks. A robot helper holding a neat stack of fresh code, representing the deduplication and cleanup.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up glowing red deprecated code blocks with a small broom. A chunky robot with a CRT monitor head stands nearby holding a neat, organized stack of fresh green code blocks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11470.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up glowing red deprecated code blocks with a small broom. A chunky robot with a CRT monitor head stands nearby holding a neat, organized stack of fresh green code blocks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T12:33:43.215873+00:00"
+}

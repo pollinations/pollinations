@@ -1,0 +1,35 @@
+{
+  "pr_number": 11523,
+  "title": "Add FLTRCK: Flight Log & Records to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11523",
+  "merged_at": "2026-06-01T17:36:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [FLTRCK: Flight Log & Records](https://play.google.com/store/apps/details?id=com.fltrckr.app) to business\n- Your personal flight log and travel tracker — built for aviation enthusiasts and frequent flyers. Keep a complete flight logbook: log your longest flights, most-visited airports, favourite routes, and\n\nFixes #10570",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cleared for Takeoff",
+    "blurb": "FLTRCK just landed in the ecosystem! It's a personal flight log and travel tracker built for aviation enthusiasts to keep track of their favorite routes and longest flights.",
+    "summary": "Added FLTRCK, a personal flight log and travel tracker app for aviation enthusiasts, to the community showcase.",
+    "impact": "Users can now discover FLTRCK in the apps directory to track their flights, most-visited airports, and favorite routes.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "aviation",
+      "tracker"
+    ],
+    "visual_concept": "Polly the bee dressed as a retro aviator (goggles and scarf) flying alongside a tiny pixel-art commercial airplane over a cozy landscape, representing the flight tracking app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles and a red scarf, flying alongside a small chunky pixel airplane over a soft pastel landscape. Lime green (#ecf874) and sky blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11523.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny aviator goggles and a red scarf, flying alongside a small chunky pixel airplane over a soft pastel landscape. Lime green (#ecf874) and sky blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T17:38:39.736159+00:00",
+  "app_name": "FLTRCK: Flight Log & Records",
+  "app_url": "https://play.google.com/store/apps/details?id=com.fltrckr.app"
+}

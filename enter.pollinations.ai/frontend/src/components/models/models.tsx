@@ -1,7 +1,12 @@
+import {
+    ClockIcon,
+    ExternalLinkButton,
+    ImageIcon,
+    Section,
+    TabButton,
+    TokensIcon,
+} from "@pollinations_ai/ui";
 import { type FC, useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { LinkButton } from "../ui/link-button.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,
@@ -37,27 +42,27 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection
+            <Section
                 title="Models"
                 theme="teal"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                        <LinkButton
+                        <ExternalLinkButton
                             theme="teal"
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
                             📊 Model Health
-                        </LinkButton>
-                        <LinkButton
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
                             theme="teal"
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >
                             🗳️ Vote for next model
-                        </LinkButton>
+                        </ExternalLinkButton>
                     </div>
                 }
             >
@@ -108,55 +113,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         </span>
                     </p>
                 </div>
-            </DashboardSection>
+            </Section>
         </div>
     );
 };
-
-const ImageIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="9" cy="9" r="2" />
-        <path d="m21 15-5-5L5 21" />
-    </svg>
-);
-
-const TokensIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />
-    </svg>
-);
-
-const ClockIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-    </svg>
-);

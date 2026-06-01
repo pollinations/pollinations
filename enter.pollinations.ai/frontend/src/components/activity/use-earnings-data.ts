@@ -1,6 +1,9 @@
+import {
+    getPeriodBucketKeys,
+    periodBucketKeyToDate,
+} from "@pollinations_ai/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
 export type DeveloperEarningsRow = {

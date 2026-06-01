@@ -1,4 +1,4 @@
-import { safeRound } from "../utils";
+import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import {
     AUDIO_SERVICES,
     type AudioModelId,
@@ -20,9 +20,6 @@ import {
     type RealtimeModelName,
 } from "./realtime";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
-
-// Current Pollen ledger precision for the final customer charge.
-const POLLEN_BILLING_PRECISION = 8;
 
 export type Category =
     | "text"
@@ -311,9 +308,8 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
             `Failed to get current price for model: ${model.toString()}`,
         );
     const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = safeRound(
+    const totalPrice = roundPollenLedgerAmount(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),
-        POLLEN_BILLING_PRECISION,
     );
     return {
         ...usagePrice,

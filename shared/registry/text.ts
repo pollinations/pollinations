@@ -723,12 +723,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
-            // Bedrock us.anthropic.claude-opus-4-8 — Anthropic list $5/$25 per M
-            // (+ ~10% Bedrock premium), 5-minute cache writes at 1.25x input.
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            promptCacheWriteTokens: perMillion(6.875),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
         description: "Claude Opus 4.8 - Most Intelligent Model",
         inputModalities: ["text", "image"],

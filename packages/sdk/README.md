@@ -11,6 +11,24 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 npm install @pollinations_ai/sdk
 ```
 
+### CDN / `<script>` tag
+
+The SDK also ships a browser IIFE bundle for direct `<script>` use:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@pollinations_ai/sdk"></script>
+<script>
+  const { generateImage, generateText } = Pollinations;
+  // ...
+</script>
+```
+
+The IIFE bundle exposes only the **API client** under the global
+`Pollinations`. The React subpath (`PolliProvider`, `useAuthState`, etc.)
+is shipped as ESM/CJS only — use a bundler (Vite, webpack, Next.js, etc.)
+to consume it. There's no IIFE entry for `./react` because every React
+app already has a build step.
+
 ## Quick Start
 
 First, get your API key at **https://enter.pollinations.ai** and set it:
@@ -122,6 +140,73 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 ```
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
+
+### React auth provider
+
+React apps can use the `@pollinations_ai/sdk/react` subpath for shared login
+state. The provider only owns the session token and OAuth flow; account data is
+loaded by opt-in hooks.
+
+```tsx
+import {
+  PolliProvider,
+  useAccountProfile,
+  useAuth,
+} from '@pollinations_ai/sdk/react';
+
+function AccountStatus() {
+  const { isLoggedIn, login, logout } = useAuth();
+  const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
+
+  if (!isLoggedIn) {
+    return <button onClick={() => login()}>Log in</button>;
+  }
+
+  return (
+    <button onClick={logout}>
+      Log out{profile?.name ? ` ${profile.name}` : ''}
+    </button>
+  );
+}
+
+export function App() {
+  return (
+    <PolliProvider appKey="pk_your_publishable_key" permissions={['profile']}>
+      <AccountStatus />
+    </PolliProvider>
+  );
+}
+```
+
+Account hooks are intentionally separate from the provider: `useAccountProfile`,
+`useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
+SDK response shapes plus `{ isLoading, error, refresh }`.
+
+#### SSR / Next.js App Router / RSC
+
+`PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
+
+- **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
+
+  ```tsx
+  // app/providers.tsx
+  "use client";
+  import { PolliProvider } from "@pollinations_ai/sdk/react";
+  export function Providers({ children }: { children: React.ReactNode }) {
+    return <PolliProvider appKey="pk_…">{children}</PolliProvider>;
+  }
+
+  // app/layout.tsx (server component)
+  import { Providers } from "./providers";
+  export default function RootLayout({ children }) {
+    return <html><body><Providers>{children}</Providers></body></html>;
+  }
+  ```
+
+- **React Server Components**: `useAuth`, `useAuthState`, `useAuthActions`, and account hooks cannot be called from server components. Any component that reads auth state must be a client component.
+- **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
 
 ### Managing API keys
 

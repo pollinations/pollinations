@@ -1,0 +1,35 @@
+{
+  "pr_number": 11439,
+  "title": "refactor: move Enter UI onto shared package",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11439",
+  "merged_at": "2026-06-01T10:44:30Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Moves Enter from duplicated local UI primitives, fonts, tokens, and app styles to `@pollinations_ai/ui`.\n- Adds the shared primitives and modules Enter now consumes: dialogs, dropdowns, sliders, multi-selects, period picker, scroll area, auth modal shell, modality helpers, and wallet components.\n- Keeps Enter product behavior in Enter, including dashboard navigation and centered modal flows for API key and app key creation.\n- Defines the package boundary around `@pollinations_ai/ui`, `/auth`, `/wallet`, `/modality`, `/showcase`, package CSS/font exports, and colorable source SVGs under `@pollinations_ai/ui/assets/*`.\n- Keeps favicon, PWA, and SEO assets app-owned in Enter, and removes unused public logo/Myceli/stats assets.\n- Updates the BYOP React demo to React 19 and the current public UI package API.\n\nValidation:\n- `npm run test --prefix packages/ui -- Dialog`\n- `npm run build --prefix packages/ui`\n- `npm run build:ui --prefix enter.pollinations.ai`\n- `tsc --noEmit -p enter.pollinations.ai/tsconfig.json`\n- `npm run build:frontend --prefix enter.pollinations.ai`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Packing up the UI",
+    "blurb": "We just did some major spring cleaning in the codebase. All our UI components—buttons, dialogs, sliders—now live in a shared package, making it way easier to build consistent apps.",
+    "summary": "Migrated UI primitives, fonts, and design tokens from the Enter dashboard into a standalone @pollinations_ai/ui package.",
+    "impact": "Internal development gets a lot cleaner, as all apps can now pull standardized components like dialogs and sliders from a single source of truth.",
+    "keywords": [
+      "ui",
+      "refactor",
+      "frontend",
+      "components",
+      "architecture"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot organizing UI elements (buttons, sliders) into neat storage boxes or shelves, representing the move to a shared UI package.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, organizing glowing UI components like buttons and sliders into neat wooden cubbies. A chunky monitor-headed robot helps by carrying a box of pixelated fonts. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11439.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, organizing glowing UI components like buttons and sliders into neat wooden cubbies. A chunky monitor-headed robot helps by carrying a box of pixelated fonts. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic, emotionally warm."
+  },
+  "generated_at": "2026-06-01T10:45:36.714052+00:00"
+}

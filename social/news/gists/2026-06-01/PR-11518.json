@@ -1,0 +1,35 @@
+{
+  "pr_number": 11518,
+  "title": "Add TaskManager to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11518",
+  "merged_at": "2026-06-01T17:15:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [TaskManager](https://panel.estehlal.com/) to business\n- non profite\n\nFixes #10607",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Managing Tasks in the Hive",
+    "blurb": "A new non-profit TaskManager app has sprouted in the Greenhouse! We love seeing the community build useful tools.",
+    "summary": "Added the non-profit TaskManager app to the community showcase and Greenhouse directory.",
+    "impact": "Users can now discover and explore the TaskManager app in the community projects list.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "taskmanager",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee acting as a manager, holding a tiny clipboard or checklist inside a lush greenhouse setting, representing the addition to GREENHOUSE.md.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny manager's visor, holding a small clipboard with a checklist inside a lush digital greenhouse. Code-plants sprout from lime green (#ecf874) flower pots around her. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11518.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny manager's visor, holding a small clipboard with a checklist inside a lush digital greenhouse. Code-plants sprout from lime green (#ecf874) flower pots around her. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T17:16:58.183946+00:00",
+  "app_name": "TaskManager",
+  "app_url": "https://panel.estehlal.com/"
+}

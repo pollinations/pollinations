@@ -94,16 +94,25 @@ export function normalizeOptions(
     normalized.stream = parseStreamOption(normalized.stream);
     log("Normalized stream option to %s", normalized.stream);
 
-    if (normalized.temperature !== undefined) {
+    if (
+        normalized.temperature !== undefined &&
+        normalized.temperature !== null
+    ) {
         normalized.temperature = clamp(normalized.temperature, 0, 3);
     }
-    if (normalized.top_p !== undefined) {
+    if (normalized.top_p !== undefined && normalized.top_p !== null) {
         normalized.top_p = clamp(normalized.top_p, 0, 1);
     }
-    if (normalized.presence_penalty !== undefined) {
+    if (
+        normalized.presence_penalty !== undefined &&
+        normalized.presence_penalty !== null
+    ) {
         normalized.presence_penalty = clamp(normalized.presence_penalty, -2, 2);
     }
-    if (normalized.frequency_penalty !== undefined) {
+    if (
+        normalized.frequency_penalty !== undefined &&
+        normalized.frequency_penalty !== null
+    ) {
         normalized.frequency_penalty = clamp(
             normalized.frequency_penalty,
             -2,

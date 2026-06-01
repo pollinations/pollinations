@@ -185,7 +185,7 @@ PR gists by date:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        temperature=0.3
     )
     if not response:
         return None
@@ -261,7 +261,7 @@ def generate_discord_post(
         task += f"\nTotal PRs merged: {pr_count}"
     task += "\n\n" + fmt + _weekly_image_context()
 
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=0.7)
     if not response:
         return None
 

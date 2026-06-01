@@ -390,74 +390,42 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
+    const notBilled = (
+        extra?: Partial<ResponseTrackingData>,
+    ): ResponseTrackingData => ({
+        responseOk: response.ok,
+        responseStatus: response.status,
+        cacheData: cacheInfo,
+        isBilledUsage: false,
+        ...extra,
+    });
+
     if (!response.ok || cacheInfo.cacheHit) {
-        return {
-            responseOk: response.ok,
-            responseStatus: response.status,
-            cacheData: cacheInfo,
-            isBilledUsage: false,
-        };
+        return notBilled();
     }
 
-    // For image generation, verify the response is actually an image
-    // Don't bill if the response is JSON/text (error response with HTTP 200)
-    if (eventType === "generate.image") {
-        const contentType = response.headers.get("content-type") || "";
-        if (
-            !contentType.startsWith("image/") &&
-            !contentType.startsWith("video/")
-        ) {
-            log.warn(
-                "Image generation returned non-image content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
+    // Verify the response content-type matches the expected output before
+    // billing. Don't bill (or attempt usage extraction) when upstream returns
+    // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
+    // or JSON for a stream: true request.
+    const contentType = response.headers.get("content-type") || "";
+    const contentTypeGuard = getContentTypeGuard(
+        eventType,
+        requestTracking,
+        resolvedModelRequested,
+    );
+    if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
+        log.warn(
+            "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
+            {
+                contentType,
+                model: resolvedModelRequested,
+                kind: contentTypeGuard.kind,
+            },
+        );
+        return notBilled();
     }
-    // For text streaming, verify the response is actually SSE.
-    // Don't try SSE parsing if upstream returned JSON for a stream: true request.
-    if (eventType === "generate.text" && requestTracking.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            log.warn(
-                "Stream requested but upstream returned non-SSE content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
-    }
-    // For audio generation, verify the response content-type is expected.
-    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
-    if (eventType === "generate.audio") {
-        const contentType = response.headers.get("content-type") || "";
-        const isAudio = contentType.startsWith("audio/");
-        const isSTT =
-            contentType.startsWith("application/json") &&
-            getModelDefinition(resolvedModelRequested)
-                ?.outputModalities?.[0] === "text";
-        if (!isAudio && !isSTT) {
-            log.warn(
-                "Audio generation returned unexpected content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
-    }
+
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
@@ -468,13 +436,7 @@ async function trackResponse(
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
-        return {
-            responseOk: response.ok,
-            responseStatus: response.status,
-            cacheData: cacheInfo,
-            isBilledUsage: false,
-            contentFilterResults,
-        };
+        return notBilled({ contentFilterResults });
     }
     const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
     const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
@@ -489,6 +451,45 @@ async function trackResponse(
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+// Resolve the per-event content-type expectation for billing. Returns null
+// when the event type (or stream mode) has no content-type guard, so the
+// caller skips the check entirely. Preserves the per-branch rules: image/video
+// uses startsWith; text-stream only guards when a stream was requested and uses
+// includes; audio allows audio/* (TTS) or application/json for STT models.
+function getContentTypeGuard(
+    eventType: EventType,
+    requestTracking: RequestTrackingData,
+    resolvedModelRequested: ModelName,
+): { kind: string; isExpected: (contentType: string) => boolean } | null {
+    if (eventType === "generate.image") {
+        return {
+            kind: "image",
+            isExpected: (contentType) =>
+                contentType.startsWith("image/") ||
+                contentType.startsWith("video/"),
+        };
+    }
+    if (eventType === "generate.text" && requestTracking.streamRequested) {
+        return {
+            kind: "text-stream",
+            isExpected: (contentType) =>
+                contentType.includes("text/event-stream"),
+        };
+    }
+    if (eventType === "generate.audio") {
+        const isSTTModel =
+            getModelDefinition(resolvedModelRequested)
+                ?.outputModalities?.[0] === "text";
+        return {
+            kind: "audio",
+            isExpected: (contentType) =>
+                contentType.startsWith("audio/") ||
+                (isSTTModel && contentType.startsWith("application/json")),
+        };
+    }
+    return null;
 }
 
 async function* extractResponseStream(
@@ -792,25 +793,12 @@ async function extractUsageAndContentFilterResults(
 type CacheData = {
     cacheHit: boolean;
     cacheKey?: string;
-    cacheType?: "exact" | "semantic";
-    cacheSemanticSimilarity?: number;
-    cacheSemanticThreshold?: number;
 };
 
 function extractCacheHeaders(response: Response): CacheData {
     return {
         cacheHit: response.headers.get("x-cache") === "HIT",
         cacheKey: response.headers.get("x-cache-key") || undefined,
-        cacheType: z
-            .enum(["exact", "semantic"])
-            .safeParse(response.headers.get("x-cache-type")).data,
-        cacheSemanticSimilarity: z
-            .number()
-            .safeParse(response.headers.get("x-cache-semantic-similarity"))
-            .data,
-        cacheSemanticThreshold: z
-            .number()
-            .safeParse(response.headers.get("x-cache-semantic-threshold")).data,
     };
 }
 

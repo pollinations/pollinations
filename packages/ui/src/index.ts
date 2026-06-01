@@ -53,4 +53,4 @@ export {
     type TabButtonProps,
 } from "./primitives/TabButton.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
-export { type ThemeName, themeColors, themes } from "./theme.ts";
+export { type ThemeName, themes } from "./theme.ts";

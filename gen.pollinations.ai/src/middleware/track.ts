@@ -203,6 +203,7 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
                     const deduction = await handleBalanceDeduction({
@@ -217,6 +218,7 @@ export const track = (eventType: EventType) =>
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
+                    billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
                         totalPrice > 0 &&
@@ -269,6 +271,7 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     responseTracking,
                     markup,
+                    billedPrice,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
@@ -563,6 +566,7 @@ type TrackingEventInput = {
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
     markup: MarkupResolution | null;
+    billedPrice: number;
     errorTracking?: ErrorData;
 };
 
@@ -581,6 +585,7 @@ function createTrackingEvent({
     requestTracking,
     responseTracking,
     markup,
+    billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -613,9 +618,7 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice:
-            (responseTracking.price?.totalPrice || 0) +
-            (markup?.devCredit ?? 0),
+        totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
 

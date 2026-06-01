@@ -87,8 +87,8 @@ const grantCommand = command({
             process.exit(2);
         }
 
-        // Idempotency key uses the immutable github_id, not the mutable username.
-        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:assignee`;
+        // Idempotency key is quest-scoped and uses the immutable github_id.
+        const payoutKey = `quest:${questIssue}:gh:${githubId}:role:assignee`;
         const sql = `
             INSERT OR IGNORE INTO quest_payout_credits (
                 payout_key,

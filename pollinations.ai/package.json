@@ -6,10 +6,11 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
-        "build:staging": "CLOUDFLARE_ENV=staging tsc && CLOUDFLARE_ENV=staging vite build --mode=staging",
+        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
+        "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
         "preview": "vite preview",
-        "deploy:staging": "npm run build:staging && CLOUDFLARE_ACCOUNT_ID=efdcb0933eaac64f27c0b295039b28f2 wrangler deploy",
-        "deploy:production": "npm run build && wrangler deploy"
+        "deploy:staging": "npm run build:staging && wrangler deploy --config dist/pollinations_ai/wrangler.json",
+        "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_ai/wrangler.json"
     },
     "dependencies": {
         "class-variance-authority": "^0.7.1",
@@ -19,6 +20,7 @@
         "react-dom": "^18.2.0",
         "react-markdown": "^10.1.0",
         "react-router-dom": "^6.20.0",
+        "rehype-slug": "^6.0.0",
         "remark-gfm": "^4.0.1",
         "tailwind-merge": "^3.4.0"
     },

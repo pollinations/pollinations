@@ -1,70 +1,71 @@
 import type { Logger } from "@logtape/logtape";
-import type { TinybirdEvent } from "./db/schema/event.ts";
-import { capitalize, exponentialBackoffDelay, removeUnset } from "./util.ts";
+import { exponentialBackoffDelay, removeUnset } from "./util.ts";
 
 const MAX_RETRIES = 3;
 const MIN_DELAY = 100;
 const MAX_DELAY = 2000;
 
-export async function sendToTinybird(
-    event: TinybirdEvent,
+export type TinybirdErrorEvent = {
+    timestamp: string;
+    kind: "server_error";
+    severity: "error";
+    request_id?: string;
+    environment?: string;
+    route_path?: string;
+    method?: string;
+    status: number;
+    duration_ms?: number;
+    error_code?: string;
+    error_class?: string;
+    message?: string;
+    stack?: string;
+    upstream_host?: string;
+    upstream_status?: number;
+    upstream_body?: string;
+    model_requested?: string;
+    resolved_model_requested?: string;
+    request_inputs?: string;
+    user_id?: string;
+    user_tier?: string;
+    api_key_id?: string;
+};
+
+export async function sendErrorEventToTinybird(
+    event: TinybirdErrorEvent,
     tinybirdIngestUrl: string,
     tinybirdIngestToken: string,
     log: Logger,
 ): Promise<void> {
-    const tinybirdEvent = removeUnset(event);
-    const body = JSON.stringify(tinybirdEvent);
+    const body = JSON.stringify(removeUnset(event));
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const response = await fetch(tinybirdIngestUrl, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${tinybirdIngestToken}`,
-                    "Content-Type": "application/x-ndjson",
-                },
-                body,
+    try {
+        const response = await fetch(tinybirdIngestUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdIngestToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body,
+            signal: AbortSignal.timeout(5000),
+        });
+
+        if (!response.ok) {
+            log.warn("Tinybird error event ingest failed: status={status}", {
+                status: response.status,
             });
-
-            if (response.ok) {
-                return;
-            }
-
-            const errorText = await response.text();
-            const isRetryable =
-                response.status >= 500 || response.status === 429;
-            const isLastAttempt = attempt === MAX_RETRIES;
-
-            if (!isRetryable || isLastAttempt) {
-                log.error(
-                    "Tinybird API error: status={status} error={error} attempt={attempt}",
-                    { status: response.status, error: errorText, attempt },
-                );
-                return;
-            }
-
-            await retryWithBackoff(
-                attempt,
-                log,
-                "Tinybird retry",
-                response.status,
-            );
-        } catch (error) {
-            if (attempt === MAX_RETRIES) {
-                log.error(
-                    "Failed to send event to Tinybird: {error} attempt={attempt}",
-                    { error, attempt },
-                );
-                return;
-            }
-
-            await retryWithBackoff(
-                attempt,
-                log,
-                "Tinybird network error, retrying",
-            );
         }
+    } catch (error) {
+        log.warn("Tinybird error event ingest failed: {error}", { error });
     }
+}
+
+export function getTinybirdDatasourceIngestUrl(
+    referenceIngestUrl: string,
+    datasourceName: string,
+): string {
+    const url = new URL(referenceIngestUrl);
+    url.searchParams.set("name", datasourceName);
+    return url.toString();
 }
 
 async function retryWithBackoff(
@@ -83,23 +84,6 @@ async function retryWithBackoff(
 
     log.warn(`${message}: attempt={attempt} delay={delay}ms`, logData);
     await new Promise((resolve) => setTimeout(resolve, delay));
-}
-
-// Type for Polar event ingestion (used by test mocks)
-export type PolarEvent = {
-    external_customer_id: string;
-    name: string;
-    metadata: Record<string, unknown>;
-};
-
-export function flattenBalances(balances: Record<string, number> | null) {
-    if (!balances) return {};
-    return Object.fromEntries(
-        Object.entries(balances).map(([slug, balance]) => {
-            const meterType = slug.split(":").at(-1) || "unknown";
-            return [`pollen${capitalize(meterType)}Balance`, balance];
-        }),
-    );
 }
 
 // Tier event types for Tinybird tier_event datasource

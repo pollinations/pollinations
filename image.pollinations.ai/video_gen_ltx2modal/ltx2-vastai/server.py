@@ -1,7 +1,7 @@
 """
 LTX-2 ComfyUI wrapper server for Vast.ai
 Exposes /enqueue, /status, /result endpoints matching the API expected by ltx2VideoModel.ts
-Also handles heartbeat registration with the EC2 gateway.
+Also handles heartbeat registration with the gen worker registry.
 """
 
 import json, os, random, threading, time, urllib.request, urllib.parse, subprocess, logging
@@ -27,7 +27,7 @@ FRAME_COUNT_NODE = "177:113"
 SEED_NODES = ["177:118", "177:123"]
 
 # Heartbeat config
-REGISTER_URL = os.environ.get("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
+REGISTER_URL = os.environ.get("REGISTER_URL", "https://gen.pollinations.ai/register")
 PUBLIC_IP = os.environ.get("PUBLIC_IP", "")
 PUBLIC_PORT = os.environ.get("PUBLIC_PORT", "")
 SERVICE_TYPE = os.environ.get("SERVICE_TYPE", "ltx2")

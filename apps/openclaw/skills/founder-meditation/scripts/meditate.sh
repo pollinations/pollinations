@@ -25,7 +25,7 @@ echo ""
 
 # Use Pollinations TTS API with a calm ElevenLabs voice
 # charlotte = warm, soothing female voice perfect for meditation
-API_KEY="sk_zJv4vyQXkd4H7OiwWA27dnJZhQ2x6fBN"
+API_KEY="<YOUR_POLLINATIONS_API_KEY>" # Set this env var for better performance, or leave empty for free tier
 AUTH_HEADER=""
 if [ -n "$API_KEY" ]; then
     AUTH_HEADER="-H \"Authorization: Bearer ${API_KEY}\""

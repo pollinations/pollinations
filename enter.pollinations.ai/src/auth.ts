@@ -1,3 +1,16 @@
+import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
+import {
+    assertStagingAccess,
+    createApiKeyPlugin,
+    StagingAccessDeniedError,
+} from "@shared/auth/api-key.ts";
+import * as betterAuthSchema from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
+import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -7,58 +20,14 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import * as betterAuthSchema from "./db/schema/better-auth.ts";
-import {
-    account as accountTable,
-    user as userTable,
-} from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
-import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
-
-    const PUBLISHABLE_KEY_PREFIX = "pk";
-
-    const apiKeyPlugin = apiKey({
-        enableMetadata: true,
-        deferUpdates: true, // Defers lastRequest/requestCount updates - OK if dropped, prevents D1 contention
-        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
-        defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
-        minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
-        maximumNameLength: 253, // DNS hostname max length
-        startingCharactersConfig: {
-            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
-        },
-        customKeyGenerator: (options: {
-            length: number;
-            prefix: string | undefined;
-        }) => {
-            // Publishable keys (pk_) are SHORT (16 chars), Secret keys (sk_) are LONG (32 chars)
-            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
-            const keyLength = isPublishable ? 16 : 32;
-            const chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const randomBytes = crypto.getRandomValues(
-                new Uint8Array(keyLength),
-            );
-            const key = Array.from(
-                randomBytes,
-                (byte) => chars[byte % chars.length],
-            ).join("");
-            return options.prefix ? `${options.prefix}_${key}` : key;
-        },
-        keyExpiration: {
-            minExpiresIn: 0, // No minimum - allow any positive expiry
-            maxExpiresIn: 365, // Max 1 year
-        },
-        rateLimit: {
-            enabled: false, // Disabled - Roblox games hit rate limits with many concurrent players
-        },
-    });
+    const apiKeyPlugin = createApiKeyPlugin();
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -69,6 +38,11 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     });
 
     return betterAuth({
+        // Always anchor auth (callbacks, cookies, redirects) to the public
+        // Pollinations hostname, never the Myceli upstream. The proxy
+        // architecture treats *.myceli.ai as internal; direct auth flows
+        // against it are intentionally non-functional.
+        baseURL: env.BETTER_AUTH_URL,
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
@@ -82,7 +56,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // Required for deferUpdates to work properly
             backgroundTasks: ctx
                 ? {
-                      handler: (promise: Promise<any>) => {
+                      handler: (promise: Promise<unknown>) => {
                           ctx.waitUntil(
                               promise.catch(() => {
                                   // Silently ignore - these are non-critical tracking updates
@@ -94,23 +68,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                   }
                 : undefined,
         },
-        trustedOrigins: ["*"],
+
+        trustedOrigins: [
+            ...AUTH_TRUSTED_ORIGINS,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
         user: {
-            additionalFields: {
-                githubId: {
-                    type: "number",
-                    input: false,
-                },
-                githubUsername: {
-                    type: "string",
-                    input: false,
-                },
-                tier: {
-                    type: "string",
-                    defaultValue: "spore",
-                    input: false,
-                },
-            },
+            additionalFields: authAdditionalFields.user,
         },
         socialProviders: {
             github: {
@@ -126,6 +91,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),
+            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -138,7 +104,6 @@ export type User = Auth["$Infer"]["Session"]["user"];
 
 /**
  * Plugin to initialize tier balance for new users in D1.
- * This replaces the old Polar-based tier management.
  */
 function tierPlugin(
     env: Cloudflare.Env,
@@ -303,4 +268,51 @@ function onAfterUserCreate(
             });
         }
     };
+}
+
+/**
+ * Restricts new signups on staging to an allowlist of GitHub user IDs
+ * (immutable, unlike usernames). No-op outside staging.
+ *
+ * This is a thin UX layer only — it rejects disallowed users during OAuth
+ * before a `user` row is created, so /error shows "staging is invite-only"
+ * instead of a 403 after they think they're logged in. The actual security
+ * boundary is {@link assertStagingAccess} called per-request in
+ * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
+ * blocks spend on the production provider keys held by staging-gen. See #11137.
+ */
+function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    if (env.ENVIRONMENT !== "staging") {
+        return { id: "staging-access" };
+    }
+    return {
+        id: "staging-access",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    user: {
+                        create: {
+                            before: async (user: GenericUser) => {
+                                try {
+                                    assertStagingAccess(env, {
+                                        githubId: (
+                                            user as { githubId?: number }
+                                        ).githubId,
+                                    });
+                                } catch (e) {
+                                    if (e instanceof StagingAccessDeniedError) {
+                                        throw new APIError("FORBIDDEN", {
+                                            message: e.message,
+                                        });
+                                    }
+                                    throw e;
+                                }
+                                return { data: user };
+                            },
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
 }

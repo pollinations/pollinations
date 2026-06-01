@@ -16,11 +16,9 @@ import { Body, Title } from "../components/ui/typography";
 function PlayPage() {
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { apiKey, isLoggedIn } = useAuth();
+    const { apiKey, isLoggedIn, login } = useAuth();
     const {
         imageModels,
-        textModels,
-        audioModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -125,10 +123,9 @@ function PlayPage() {
                     <PlayGenerator
                         selectedModel={selectedModel}
                         prompt={prompt}
-                        imageModels={imageModels}
-                        textModels={textModels}
-                        audioModels={audioModels}
-                        apiKey={apiKey || ""}
+                        currentModel={currentModel}
+                        apiKey={apiKey}
+                        onLoginRequired={login}
                     />
                 </div>
             </PageCard>

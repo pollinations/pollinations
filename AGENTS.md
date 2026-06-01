@@ -24,13 +24,11 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 ## Repository Structure
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
-- `gen.pollinations.ai/` — Edge router → enter gateway
-- `image.pollinations.ai/` — Image backend (EC2 + Vast.ai)
-- `text.pollinations.ai/` — Text backend (EC2)
+- `gen.pollinations.ai/` — Edge router + text generation Worker
+- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
 - `pollinations.ai/` — React frontend
-- `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
-- `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
-- `packages/skills/` — Curated agent-agnostic skills (SKILL.md format) useful to agents *outside* the Pollinations team. Symlinked back into `.claude/skills/` for Claude Code. See `packages/skills/README.md`.
+- `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
+- `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Community apps + `APPS.md`
 - `social/` — Discord/Reddit/GitHub automation
@@ -52,19 +50,19 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
-- Services: Text (Portkey, multi-provider), Image (Flux/Turbo on EC2/Vast.ai/io.net), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Tiers: microbe → spore → seed → flower → router (nectar is legacy — still supported, no longer granted; see `enter.pollinations.ai/src/tier-config.ts`)
 
 ### Local Development
 
-Ports: enter `3000` (API at `/api/*`), text `16385`, image `16384`. Run `npm run dev` per service.
+Ports: enter `3000` (API at `/api/*`), gen `8788`. Run `npm run dev` per service.
 
-To point enter at local backends, edit `enter.pollinations.ai/wrangler.toml` `IMAGE_SERVICE_URL`/`TEXT_SERVICE_URL` to `http://localhost:1638[45]`. EC2 hostnames in wrangler.toml may change — check actual values.
+Image generation now runs inside `gen.pollinations.ai`; local image API tests should target the gen worker on port `8788`.
 
 Local API test:
 ```bash
-curl "http://localhost:3000/api/generate/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
-curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
 ```
 
 ## API Quick Reference
@@ -89,12 +87,14 @@ curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization:
 
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
-- Validate first: `tb --cloud deploy --check --wait`
+- Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
+- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
+- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
 - Never `--allow-destructive-operations` without explicit permission
 - Never `tb push` (deprecated); use `tb --cloud deploy --wait`
 - Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
 - Run from `enter.pollinations.ai/observability`
-- Pipes are shared — verify all consumers before modifying any pipe
+- Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 
@@ -126,8 +126,8 @@ curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization:
 
 Commands:
 - enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
+- gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
 - image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
-- text.pollinations.ai: no runner yet
 
 Run individually — full suite is slow:
 ```bash
@@ -143,9 +143,9 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image → `image.pollinations.ai/`; text → `text.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
-- Text models: add config in `text.pollinations.ai/configs/modelConfigs.ts`, entry in `availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `text.pollinations.ai/configs/providerConfigs.js`.
-- Image models: handler in `image.pollinations.ai/src/`, register in `shared/registry/image.ts`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
+- Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update API docs + model registry for new models.
 - API changes: maintain backward compatibility; document; handle errors.
 - API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.

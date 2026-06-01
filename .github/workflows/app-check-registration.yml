@@ -58,13 +58,13 @@ jobs:
         id: check
         if: steps.pr-status.outputs.merged == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           GITHUB_USERNAME: ${{ github.event.issue.user.login }}
         run: |
           npm install -g wrangler
-          cd enter.pollinations.ai
           npm install
+          cd enter.pollinations.ai
           
           echo "Checking registration for $GITHUB_USERNAME..."
           
@@ -82,8 +82,8 @@ jobs:
         id: upgrade
         if: steps.pr-status.outputs.merged == 'true' && steps.check.outputs.registered == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           GITHUB_USERNAME: ${{ github.event.issue.user.login }}
         run: |
           cd enter.pollinations.ai

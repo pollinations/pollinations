@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to `@pollinations_ai/sdk` will be documented in this file.
+All notable changes to `@pollinations/sdk` will be documented in this file.
+
+## [5.0.0] - 2026-06-01
+
+### Removed (Breaking)
+- Removed speculative, never-used helpers from the public API surface:
+  - `generateImages()` / `generateVideos()` — batch generation across multiple different prompts
+  - `generateImageWithProgress()` — image generation with progress polling
+  - `showImage()` / `displayImage()` — browser DOM helpers
+  - Associated types: `BatchResult`, `AwaitOptions`, `ProgressStatus`
+
+  Generating multiple images for a single prompt remains available via the
+  documented `generateImage({ n })` / `imageGenerate({ n })` helpers. For
+  multiple distinct prompts, call `generateImage()` per prompt (e.g. with
+  `Promise.all`).
 
 ## [4.1.0] - 2026-03-05
 
@@ -9,7 +23,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 - **Media Upload**: `upload()` method for uploading images, audio, and video to `media.pollinations.ai` with content-addressed deduplication
 - **BYOP (Bring Your Own Pollen)**: `authorizeUrl()` to build authorization URLs that let users grant apps access to their Pollen balance with model/budget/permission scoping
 - **Account endpoints**:
-  - `accountProfile()` / `getProfile()` - Get user profile (name, email, tier)
+  - `accountProfile()` / `getProfile()` - Get user profile (GitHub username, image)
   - `accountBalance()` / `getBalance()` - Get pollen balance
   - `accountUsage()` / `getUsage()` - Get detailed usage history with pagination
   - `accountUsageDaily()` / `getDailyUsage()` - Get daily aggregated usage
@@ -29,10 +43,10 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
 ### Fixed 
 - Created a single sdk package with react + frontend + backend support.
-- Updated README.md to reflect new usage instructions for react hooks from '@pollinations_ai/sdk'.
+- Updated README.md to reflect new usage instructions for react hooks from '@pollinations/sdk'.
 
 ### Renamed 
-- Renamed package from `pollinations-react` to `@pollinations_ai/sdk`.
+- Renamed package from `pollinations-react` to `@pollinations/sdk`.
 
 ### Improved
 - Updated package.json with new name, version, description, and keywords and authors.
@@ -94,7 +108,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 ### Removed
 
 -   `lodash.memoize` dependency (uses React built-in memoization)
--   Legacy `text.pollinations.ai` and `image.pollinations.ai` endpoints
+-   Legacy `gen.pollinations.ai` and `image.pollinations.ai` endpoints
 
 ## Migration from v2.x
 

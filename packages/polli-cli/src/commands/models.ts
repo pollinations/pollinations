@@ -20,11 +20,13 @@ interface ModelEntry {
     context_length?: number;
     paid_only?: boolean;
     voices?: string[];
+    video_capabilities?: string[];
 }
 
 function classifyType(m: ModelEntry): string {
     const out = m.output_modalities ?? [];
     if (out.includes("video")) return "video";
+    if (out.includes("embedding")) return "embedding";
     if (out.includes("audio")) return "audio";
     if (out.includes("image")) return "image";
     if (out.includes("text")) return "text";
@@ -36,6 +38,7 @@ function capabilities(m: ModelEntry): string {
     if (m.tools) caps.push("tools");
     if (m.reasoning) caps.push("reasoning");
     if (m.input_modalities?.includes("image")) caps.push("vision");
+    if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");
     if (m.paid_only) caps.push(chalk.dim("paid"));
     return caps.join(",") || "-";
@@ -67,7 +70,11 @@ function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
 
 export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
-    .option("--type <type>", "Filter: text, image, audio, video, all", "all")
+    .option(
+        "--type <type>",
+        "Filter: text, image, audio, video, embedding, all",
+        "all",
+    )
     .option("--verbose", "Show additional details (context length)")
     .option("--stats", "Show model health stats (err% column counts 5xx only)")
     .option("--window <minutes>", "Stats window in minutes", "60")
@@ -141,6 +148,12 @@ export const modelsCommand = new Command("models")
                 const audioModels = await gen<ModelEntry[]>("/audio/models");
                 for (const m of audioModels)
                     raw.push({ model: m, type: "audio" });
+            }
+            if (type === "all" || type === "embedding") {
+                const embeddingModels =
+                    await gen<ModelEntry[]>("/embeddings/models");
+                for (const m of embeddingModels)
+                    raw.push({ model: m, type: "embedding" });
             }
 
             if (getOutputMode() === "json") {

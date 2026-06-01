@@ -23,14 +23,14 @@ Like Lambda Labs, we bill against a **prepaid credit pool** on BytePlus. Invoice
 
 - `curl` + `python3`
 - **No `byteplus` CLI, no `vectl` CLI.** Python SDK (`pip install volcengine`) exists but targets the mainland Volcengine (Chinese) endpoints — NOT the international `ap-southeast` surface we use. Useless for us.
-- API key in `image.pollinations.ai/secrets/env.json` as `BYTEDANCE_API_KEY`
+- API key in `gen.pollinations.ai/secrets/prod.vars.json` as `BYTEDANCE_API_KEY`
 
 ## Secret handling
 
 **BytePlus `BYTEDANCE_API_KEY` already lives in SOPS** (not local `.env`), because the image.pollinations.ai Cloudflare Worker needs it to call Seedance/Seedream at request time. This is different from Wise/RunPod/Lambda/Alibaba where the keys are local-only finance tools.
 
 ```bash
-SECRETS=$(sops -d image.pollinations.ai/secrets/env.json 2>/dev/null)
+SECRETS=$(sops -d gen.pollinations.ai/secrets/prod.vars.json 2>/dev/null)
 export BYTEDANCE_API_KEY=$(echo "$SECRETS" | python3 -c "import sys, json; print(json.load(sys.stdin)['BYTEDANCE_API_KEY'])")
 unset SECRETS
 ```
@@ -47,7 +47,7 @@ Sanity check only the prefix: `echo "${BYTEDANCE_API_KEY:0:10}"` — format is a
 Service:            BytePlus Model Ark (International)
 Region:             ap-southeast (Singapore)
 Base URL:           https://ark.ap-southeast.bytepluses.com/api/v3
-Secret location:    image.pollinations.ai/secrets/env.json → BYTEDANCE_API_KEY
+Secret location:    gen.pollinations.ai/secrets/prod.vars.json → BYTEDANCE_API_KEY
 Console:            https://console.byteplus.com
 Auth format:        Bearer UUID token (not sk_* or prefixed)
 Models in use:
@@ -220,7 +220,7 @@ BytePlus bills via wire or credit card through the Console's billing integration
 
 | Query | Result |
 |---|---|
-| Key exists in `image.pollinations.ai/secrets/env.json` | ✅ `BYTEDANCE_API_KEY` (UUID, 36 chars) |
+| Key exists in `gen.pollinations.ai/secrets/prod.vars.json` | ✅ `BYTEDANCE_API_KEY` (UUID, 36 chars) |
 | `GET /api/v3/models` | ✅ 200, ~18 KB catalog |
 | `GET /api/v3/usage` | ❌ 404 |
 | `GET /api/v3/billing` | ❌ 404 |

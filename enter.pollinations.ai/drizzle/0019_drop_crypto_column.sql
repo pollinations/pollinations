@@ -1,0 +1,1 @@
+ALTER TABLE `user` DROP COLUMN `crypto_balance`;

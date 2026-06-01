@@ -121,6 +121,11 @@ def main():
     summary = ai.get("summary", gist["title"])
     impact = ai.get("impact", "")
     keywords = ", ".join(ai.get("keywords", []))
+    # Trust boundary: PR body comes from merged PRs (requires repo write access),
+    # not arbitrary user input. Already truncated to 2000 chars upstream.
+    if "pr_body_excerpt" not in gist:
+        print("  WARN: gist has no pr_body_excerpt field — older gist format, specifics may be lost")
+    pr_excerpt = gist.get("pr_body_excerpt") or "(no PR body)"
 
     # Voice = platform tone (system prompt), Task = format with data (user prompt)
     voice = load_prompt("tone/discord")
@@ -129,10 +134,11 @@ def main():
         .replace("{summary}", summary)
         .replace("{impact}", impact)
         .replace("{keywords}", keywords)
+        .replace("{pr_excerpt}", pr_excerpt)
     )
 
     snippet = call_pollinations_api(
-        voice, task, pollinations_token, temperature=0.7, exit_on_failure=False
+        voice, task, pollinations_token, temperature=0.7
     )
     if not snippet:
         print("  FATAL: Discord snippet generation failed")

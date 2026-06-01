@@ -74,7 +74,7 @@ If you prefer to set up manually, follow these steps:
 4. **Set environment variable**:
    Add to your `.env` file:
    ```
-   GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/text.pollinations.ai/credentials/google_vertex_key.json
+   GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/gen.pollinations.ai/credentials/google_vertex_key.json
    GCLOUD_PROJECT_ID=stellar-verve-465920-b7
    ```
 
@@ -122,7 +122,7 @@ Expected output:
 
 **Environment Variables (.env):**
 ```bash
-GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/text.pollinations.ai/credentials/google_vertex_key.json
+GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/gen.pollinations.ai/credentials/google_vertex_key.json
 GCLOUD_PROJECT_ID=stellar-verve-465920-b7
 ```
 

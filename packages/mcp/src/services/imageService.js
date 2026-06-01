@@ -1,16 +1,21 @@
 import { z } from "zod";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     arrayBufferToBase64,
     buildShareableUrl,
     buildUrl,
+    chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import { getImageModels, validateImageModel } from "../utils/models.js";
+import {
+    getImageModels,
+    getVideoModels,
+    validateImageModel,
+    validateVideoModel,
+} from "../utils/models.js";
 
 function buildQueryParams(params) {
     const result = {};
@@ -22,9 +27,14 @@ function buildQueryParams(params) {
     return result;
 }
 
-async function generateImageUrl(params) {
-    requireApiKey();
-
+/**
+ * Validate an image request and build its encoded prompt + query params.
+ * Shared by generateImage and generateImageUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareImageRequest(params) {
     const {
         prompt,
         model,
@@ -74,6 +84,82 @@ async function generateImageUrl(params) {
         safe,
         private: isPrivate,
     });
+
+    return { encodedPrompt, queryParams };
+}
+
+/**
+ * Validate a video request (incl. per-model duration rules) and build its
+ * encoded prompt + query params. Shared by generateVideo and generateVideoUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareVideoRequest(params) {
+    const {
+        prompt,
+        model = "veo",
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
+
+    if (!prompt || typeof prompt !== "string") {
+        throw new Error("Prompt is required and must be a string");
+    }
+
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
+        throw new Error(
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
+        );
+    }
+
+    if (duration !== undefined) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+            throw new Error(
+                "veo model only supports duration of 4, 6, or 8 seconds",
+            );
+        }
+        if (
+            (model === "seedance" || model === "seedance-pro") &&
+            (duration < 2 || duration > 10)
+        ) {
+            throw new Error(
+                "seedance models support duration between 2-10 seconds",
+            );
+        }
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
+
+    return { encodedPrompt, queryParams };
+}
+
+async function generateImageUrl(params) {
+    requireApiKey();
+
+    const { prompt, model, width, height, seed, quality } = params;
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -135,49 +221,11 @@ async function generateImage(params) {
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
         quality,
-        image,
+        enhance,
         transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    if (model) {
-        const validation = await validateImageModel(model);
-        if (!validation.valid) {
-            throw new Error(
-                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    `Use listImageModels to see all ${validation.availableCount} available models.`,
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        width,
-        height,
-        seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -329,59 +377,8 @@ async function generateVideo(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
-        throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}\n` +
-                `- veo: text-to-video, 4/6/8 seconds, supports audio\n` +
-                `- seedance: text/image-to-video, 2-10 seconds\n` +
-                `- seedance-pro: text/image-to-video, 2-10 seconds, better quality`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    if (audio && model !== "veo") {
-        console.warn("Warning: audio parameter is only supported by veo model");
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -429,52 +426,8 @@ async function generateVideoUrl(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
-        throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -530,55 +483,20 @@ async function describeImage(params) {
         throw new Error("imageUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: imageUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "image_url",
+            mediaUrl: imageUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze image (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const description = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    description,
+                    description: content,
                     imageUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,
@@ -603,55 +521,20 @@ async function analyzeVideo(params) {
         throw new Error("videoUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "video_url",
-                        video_url: {
-                            url: videoUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "video_url",
+            mediaUrl: videoUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze video (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const analysis = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    analysis,
+                    analysis: content,
                     videoUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,
@@ -665,15 +548,15 @@ async function analyzeVideo(params) {
 
 async function listImageModels(_params) {
     try {
-        const models = await getImageModels();
+        const [models, videoModels] = await Promise.all([
+            getImageModels(),
+            getVideoModels(),
+        ]);
 
         const imageOnlyModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("image") &&
                 !m.output_modalities?.includes("video"),
-        );
-        const videoModels = models.filter((m) =>
-            m.output_modalities?.includes("video"),
         );
         const imageToImageModels = models.filter((m) =>
             m.input_modalities?.includes("image"),
@@ -697,6 +580,7 @@ async function listImageModels(_params) {
                 outputModalities: m.output_modalities,
                 supportsImageToVideo:
                     m.input_modalities?.includes("image") || false,
+                videoCapabilities: m.video_capabilities || [],
             })),
             imageToImageCapable: imageToImageModels.map((m) => m.name),
             summary: {
@@ -823,24 +707,24 @@ const videoParamsSchema = {
         .string()
         .describe("Text description of the video to generate (required)"),
     model: z
-        .enum(["veo", "seedance", "seedance-pro"])
+        .string()
         .optional()
         .describe(
-            "Video model (default: 'veo'):\n" +
-                "- veo: Google's model, text/image-to-video, 4/6/8 sec, supports audio, single image input\n" +
-                "- seedance: ByteDance, text/image-to-video, 2-10 sec, multi-image support\n" +
-                "- seedance-pro: ByteDance Pro, text/image-to-video, 2-10 sec, multi-image, best prompt adherence",
+            "Video model (default: 'veo'). Common options: veo, seedance, seedance-2.0, wan, wan-fast. " +
+                "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
         .number()
         .int()
         .min(2)
-        .max(10)
+        .max(120)
         .optional()
         .describe(
             "Video duration in seconds:\n" +
                 "- veo: 4, 6, or 8 seconds only\n" +
-                "- seedance/seedance-pro: 2-10 seconds",
+                "- seedance/seedance-pro: 2-10 seconds\n" +
+                "- seedance-2.0/wan: up to 15 seconds\n" +
+                "- nova-reel: up to 120 seconds",
         ),
     aspectRatio: z
         .string()
@@ -852,14 +736,14 @@ const videoParamsSchema = {
         .boolean()
         .optional()
         .describe(
-            "Enable audio generation (default: false). Only supported by veo model",
+            "Enable audio generation where supported. Check videoCapabilities from listImageModels for per-model support.",
         ),
     image: z
         .string()
         .optional()
         .describe(
             "Reference image URL(s) for image-to-video generation. " +
-                "veo: single image only. seedance/seedance-pro: multi-image (separate with | or comma).",
+                "For video models, image[0] is the start frame and image[1] is the end frame when videoCapabilities includes end_frame.",
         ),
     seed: z
         .number()

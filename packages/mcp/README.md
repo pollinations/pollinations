@@ -1,27 +1,20 @@
-# pollinations.ai MCP Server v2.0
+# pollinations.ai MCP Server
 
-A Model Context Protocol (MCP) server for pollinations.ai that enables AI assistants to generate images, videos, text, and audio.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
 
-## What's New in v2.0
-
-- **New API endpoint**: Uses `gen.pollinations.ai` - the unified pollinations.ai gateway
-- **Authentication**: API key system (pk*/sk* keys) — get keys via dashboard, BYOP, or OAuth 2.1
-- **Video generation**: New `generateVideo` tool with veo, seedance, seedance-pro
-- **Chat completions**: OpenAI-compatible `chatCompletion` tool with function calling
-- **Dynamic models**: Models fetched from API - always up to date, no hardcoding!
-- **SDK upgrade**: Updated to MCP SDK 1.25.1 with latest protocol support
+All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing are read live from the registry — no hardcoded enums.
 
 ## Quick Start
 
 ```bash
 # Run directly with npx (no installation required)
-npx @pollinations_ai/mcp
+npx @pollinations/mcp
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @pollinations_ai/mcp
+npm install -g @pollinations/mcp
 pollinations-mcp
 ```
 
@@ -29,102 +22,85 @@ pollinations-mcp
 
 Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai), or use [BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users bring their own pollen (supports web redirects and [device flow](../../BRING_YOUR_OWN_POLLEN.md#clis--headless-apps-device-flow) for CLIs).
 
-**Key Types:**
+**Key types:**
 
-- `pk_` (Publishable): Client-safe, rate-limited (1 pollen per IP per hour)
-- `sk_` (Secret): Server-side only, no rate limits, can spend Pollen
+- `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
+- `sk_` (secret) — server-side only, no rate limits, can spend Pollen
 
 Set your key via environment variable or the `setApiKey` tool:
 
 ```bash
-# Environment variable
-export POLLINATIONS_API_KEY=pk_your_key_here
-npx @pollinations_ai/mcp
+export POLLINATIONS_API_KEY=sk_your_key_here
+npx @pollinations/mcp
 ```
 
 ## Available Tools
 
 ### Image & Video Generation
 
-| Tool               | Description                                  |
-| ------------------ | -------------------------------------------- |
-| `generateImageUrl` | Generate an image URL from text prompt       |
-| `generateImage`    | Generate image and return base64 data        |
-| `generateVideo`    | Generate video (veo, seedance, seedance-pro) |
-| `listImageModels`  | List available models (dynamic)              |
+| Tool                 | Description                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `generateImageUrl`   | Generate a shareable image URL from a text prompt          |
+| `generateImage`      | Generate an image and return base64 data                   |
+| `generateImageBatch` | Generate multiple images in parallel (best with `sk_` keys)|
+| `generateVideo`      | Generate a video and return base64 data                    |
+| `generateVideoUrl`   | Generate a shareable video URL from a text prompt          |
+| `describeImage`      | Vision analysis of an image URL                            |
+| `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
+| `listImageModels`    | List available image & video models (live)                 |
 
-**Image parameters:**
-
-- `prompt` (required): Text description
-- `model`: flux, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana, nanobanana-pro, zimage
-- `width`, `height`: Image dimensions (default: 1024)
-- `seed`: Reproducible results
-- `enhance`: Improve prompt
-- `negative_prompt`: What to avoid
-- `quality`: low, medium, high, hd
-- `image`: Reference image URL for image-to-image
-- `transparent`: Transparent background
-
-**Video parameters:**
-
-- `model`: veo (text-to-video), seedance, seedance-pro (image-to-video)
-- `duration`: Video length in seconds
-- `aspectRatio`: 16:9, 9:16, etc.
-- `audio`: Enable audio (veo only)
+Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `enhance`, `negative_prompt`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
 
 ### Text Generation
 
-| Tool             | Description                              |
-| ---------------- | ---------------------------------------- |
-| `generateText`   | Simple text generation                   |
-| `chatCompletion` | OpenAI-compatible chat with tool calling |
-| `listTextModels` | List available models (dynamic)          |
+| Tool             | Description                                       |
+| ---------------- | ------------------------------------------------- |
+| `generateText`   | Simple text generation from a prompt              |
+| `chatCompletion` | OpenAI-compatible chat completions + tool calling |
+| `webSearch`      | Web-grounded answers (perplexity, gemini-search)  |
+| `listTextModels` | List available text models (live)                 |
+| `getPricing`     | Per-model pricing (text / image / audio)          |
 
-**Text models include:** openai, openai-fast, openai-large, gemini, gemini-fast, gemini-large, claude, claude-fast, claude-large, deepseek, grok, mistral, qwen-coder, and more!
+Call `listTextModels` for the current model set, aliases, and capabilities (reasoning, tools, audio output, etc.).
 
-**Chat completion features:**
+### Audio
 
-- Multi-turn conversations
-- Function/tool calling
-- JSON response format
-- Audio output (with openai-audio model)
+| Tool               | Description                              |
+| ------------------ | ---------------------------------------- |
+| `respondAudio`     | AI responds to a prompt with speech      |
+| `sayText`          | Text-to-speech (verbatim)                |
+| `transcribeAudio`  | Transcribe audio (gemini-large)          |
+| `listAudioVoices`  | List available voices (live)             |
 
-### Audio Generation
+Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, flac, opus, pcm16.
 
-| Tool              | Description               |
-| ----------------- | ------------------------- |
-| `respondAudio`    | AI responds with speech   |
-| `sayText`         | Text-to-speech (verbatim) |
-| `listAudioVoices` | List available voices     |
+### Auth Tools
 
-**Voices:** alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, amuch, dan
+| Tool          | Description                          |
+| ------------- | ------------------------------------ |
+| `setApiKey`   | Set the API key for this session     |
+| `getKeyInfo`  | Check stored key type/prefix (local) |
+| `clearApiKey` | Remove the stored key                |
 
-**Formats:** mp3, wav, flac, opus, pcm16
+### Account
 
-### Authentication
-
-| Tool          | Description              |
-| ------------- | ------------------------ |
-| `setApiKey`   | Set API key for requests |
-| `getKeyInfo`  | Check current key status |
-| `clearApiKey` | Remove stored key        |
+| Tool         | Description                                                                  |
+| ------------ | ---------------------------------------------------------------------------- |
+| `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)        |
+| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`) |
 
 ## Claude Desktop Integration
 
-```bash
-npx @pollinations_ai/mcp install-claude-mcp
-```
-
-Or manually add to your Claude Desktop config:
+Add to your Claude Desktop config:
 
 ```json
 {
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations_ai/mcp"],
+      "args": ["@pollinations/mcp"],
       "env": {
-        "POLLINATIONS_API_KEY": "pk_your_key_here"
+        "POLLINATIONS_API_KEY": "sk_your_key_here"
       }
     }
   }
@@ -133,62 +109,31 @@ Or manually add to your Claude Desktop config:
 
 ## Examples
 
-### Generate an image
+```text
+Generate an image of a sunset over mountains using the flux model.
 
-```
-Generate an image of a sunset over mountains using the flux model
-```
+Create a 6-second video of waves crashing on a beach using veo.
 
-### Generate a video
+Have a chatCompletion conversation about the weather, with the ability to call a weather API.
 
-```
-Create a 6-second video of waves crashing on a beach using veo
+Say "Hello, welcome to pollinations.ai!" using the nova voice.
 ```
 
-### Chat with function calling
+## Testing
 
-```
-Use chatCompletion to have a conversation about the weather, with the ability to call a weather API
+```bash
+POLLINATIONS_API_KEY=sk_… npm run test
 ```
 
-### Text-to-speech
-
-```
-Say "Hello, welcome to pollinations.ai!" using the nova voice
-```
+Spawns the server over stdio, lists tools, and exercises a small live slice (auth, text, image URL, balance). Skips authenticated calls when the env var is unset.
 
 ## System Requirements
 
-- **Node.js**: Version 18.0.0 or higher
+- Node.js 18.0.0 or higher
 
 ## API Reference
 
-All requests go through `https://gen.pollinations.ai`
-
-| Endpoint                    | Description          |
-| --------------------------- | -------------------- |
-| GET `/image/{prompt}`       | Generate image/video |
-| GET `/text/{prompt}`        | Generate text        |
-| POST `/v1/chat/completions` | Chat completions     |
-| GET `/image/models`         | List image models    |
-| GET `/text/models`          | List text models     |
-
-Full API docs: [enter.pollinations.ai/api/docs](https://enter.pollinations.ai/api/docs)
-
-## Migration from v1.x
-
-### Breaking Changes
-
-1. **Authentication**: OAuth removed → Use API keys (pk*/sk*)
-2. **Removed tools**: `startAuth`, `exchangeToken`, `refreshToken`, `getDomains`, `updateDomains`
-3. **New tools**: `generateVideo`, `chatCompletion`, `setApiKey`, `getKeyInfo`, `clearApiKey`
-4. **API endpoint**: Now uses `gen.pollinations.ai`
-
-### Upgrade Steps
-
-1. Get API key from [pollinations.ai](https://pollinations.ai)
-2. Update: `npm update @pollinations_ai/mcp`
-3. Set your key: Use `setApiKey` tool or `POLLINATIONS_API_KEY` env var
+All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
 
 ## License
 
@@ -197,5 +142,5 @@ MIT
 ## Links
 
 - [pollinations.ai](https://pollinations.ai)
-- [API Documentation](https://enter.pollinations.ai/api/docs)
+- [API Documentation](https://gen.pollinations.ai/docs)
 - [GitHub Issues](https://github.com/pollinations/pollinations/issues)

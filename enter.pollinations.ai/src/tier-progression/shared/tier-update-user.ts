@@ -16,7 +16,7 @@
 
 import { execSync } from "node:child_process";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
-import type { TierName } from "../../tier-config.ts";
+import type { TierName } from "../../../../shared/tier-config.ts";
 
 type Environment = "staging" | "production";
 

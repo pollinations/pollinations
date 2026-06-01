@@ -2,8 +2,7 @@
 
 # Default values
 HEARTBEAT_INTERVAL=30
-# Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-POLLINATIONS_URL="${REGISTER_URL:-http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register}"
+POLLINATIONS_URL="${REGISTER_URL:-https://gen.pollinations.ai/register}"
 
 # Function to get public IP
 get_public_ip() {
@@ -17,6 +16,7 @@ send_heartbeat() {
         url="http://${public_ip}:${PORT}"
         response=$(curl -s -X POST "$POLLINATIONS_URL" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PLN_GPU_TOKEN}" \
             -d "{\"url\": \"$url\", \"type\": \"$TYPE\"}")
         if [ $? -eq 0 ]; then
             echo "[$(date)] Heartbeat sent successfully. URL: $url Type: $TYPE"

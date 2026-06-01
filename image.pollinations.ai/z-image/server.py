@@ -53,12 +53,14 @@ async def send_heartbeat():
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
             url = f"https://{public_ip}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
-            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register")
+            register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
+            token = os.getenv("PLN_GPU_TOKEN", "")
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
-                    json={'url': url, 'type': service_type}
+                    json={'url': url, 'type': service_type},
+                    headers=headers,
                 ) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")

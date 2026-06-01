@@ -4,38 +4,37 @@
 
 Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolve)*.
 
+🔒 Pollen is in-app credit for the Pollinations API. It lives inside your Pollinations wallet, isn't transferable between accounts, and isn't redeemable outside Pollinations.
+
 ⚡ You spend Pollen to make API calls — every generation costs Pollen based on the model you use.
 
 ## 🧩 Is Pollinations a coding tool or app builder?
 
-**No.** Pollinations is not a code editor, no-code builder, or app development platform like Lovable, Bolt, or Cursor. We provide the **building blocks** that creators integrate into their own apps:
+**No.** Pollinations isn't a code editor or app builder like Lovable, Bolt, or Cursor. It's two pieces of infrastructure you wire into your own app:
 
-- 🤖 **AI Generation APIs** — Access 38+ models (text, image, audio, video) through a single API
-- 💰 **Payment Infrastructure** — Let your app's users pay per use with Pollen credits, so you don't foot the compute bill
-- 📊 **Monetization Tools** — Revenue share (launching Q2), and soon ads SDK — everything you need to earn from your app
+- 🤖 **AI Generation APIs** — 38+ models (text, image, audio, video) behind one API
+- 💰 **Payment Infrastructure** — your users pay for requests in your app, not you
+- 🌻 **BYOP** — users spend their own Pollen. Flip on Developer earnings on your App Key to take a cut.
 
-🔧 You build the app your way — with any framework, any tool, any language. Plug in Pollinations for the AI capabilities and the monetization. We're the **engine and the cash register**, not the workshop.
+You build the app. We handle the models and the billing.
 
 ## 🛒 How do I get Pollen?
 
 There are **three ways**:
 
-1. 💳 **Buy It** — Purchase Pollen packs with a credit card. Goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2. 🎁 **Grants** — All tiers receive free Pollen that refills every hour.
-3. 🏆 **Earn It** — Contribute to the ecosystem — code, docs, community support, publishing apps — and unlock higher tiers with bigger grants.
+1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
+2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
+3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
 
 ## 🆓 Can I try it for free?
 
-**Yes!** Register, grab an API key, and start building — **no credit card required**.
-
-- ✅ Every account gets **free Pollen** that refills hourly
-- 📈 Contribute to unlock higher tiers with **bigger grants** (up to 0.8 pollen/hour)
+Free Pollen on every account, refilled hourly. No credit card to register. Contribute on GitHub or ship an app and the hourly grant gets bigger.
 
 ## 💳 What payment methods do you accept?
 
 Currently **credit cards** via Stripe. We're actively exploring more options based on community feedback.
 
-🗳️ **Want to pay differently?** Vote for your preferred method in our [payment methods issue](https://github.com/pollinations/pollinations/issues/4826) — crypto, PayPal, Alipay, and more!
+🗳️ **Want to pay differently?** Vote for your preferred method in our [payment methods issue](https://github.com/pollinations/pollinations/issues/4826) — PayPal, Alipay, and more!
 
 ## 📅 Is there a monthly subscription?
 
@@ -45,25 +44,31 @@ Currently **credit cards** via Stripe. We're actively exploring more options bas
 
 ## 🎉 What do I get when I register?
 
-Registration gives you **instant access** to the Pollinations API. Create API keys and start making requests right away:
+Registration gets you API keys. There are two:
 
-- **🌐 Publishable Key (pk\_):** For client-side apps *(bound to your domain)*. Rate limits: **1 pollen per IP per hour**.
-- **🔒 Secret Key (sk\_):** For server-side apps only. **No rate limits.**
-
-🎁 All registered accounts get **free Pollen** refilled hourly — no purchase required. Active creators unlock higher tiers with bigger grants.
+- **🔒 Secret Key (sk\_)** — server-side only, no rate limits.
+- **🖥️ App Key** — for BYOP. Surfaces your app name and GitHub on the consent screen and attributes usage and earnings to you.
 
 ## 👛 How does my Pollen wallet work?
 
-You get **one central wallet** for all your applications. It holds two types of Pollen:
+One central wallet across all your apps, split into two balances:
 
-- 🔄 **Tier Pollen** — Free pollen from your tier, refilled automatically every hour. Does not carry over between refills.
-- 💎 **Purchased Pollen** — From packs you've bought. **Never expires.** Top up anytime.
+- **🌱 Tier balance** — free, refilled hourly up to your tier cap.
+- **💳 Paid balance** — purchased Pollen.
+- **Earnings** — credited to the balance the user spent from.
 
-⚡ Tier Pollen is always spent **first**, then purchased Pollen kicks in. Some models marked with 💎 **Paid Only** require purchased Pollen and skip tier grants.
+Balances expire after 12 months of account inactivity.
 
-⏰ Pollen refills every hour. If a request costs slightly more than estimated, your balance may go briefly negative — the **next refill covers the difference** automatically.
+**Every request comes from one balance, not both at once.**
+
+- **Regular models** use your free tier balance first. If it can't cover the cost, they switch to paid.
+- **Paid-only models** always charge your paid balance.
+
+⏰ A request can overshoot its estimate and push the balance that paid for it negative. Your 🌱 tier balance refills hourly until it's back to its cap; your 💳 paid balance stays negative until you top up.
 
 ## 🏅 What are tiers?
+
+Your tier sets how much free Pollen you get each hour. The tier balance tops up to that amount, then waits.
 
 | Tier | Pollen/hour |
 |------|-------------|
@@ -71,39 +76,44 @@ You get **one central wallet** for all your applications. It holds two types of 
 | 🌱 Seed | 0.15 |
 | 🌸 Flower | 0.4 |
 
-All tiers refill every hour. Everyone starts at Spore — the more you build and contribute, the bigger your grants:
-- **Seed** — Automatic, based on GitHub activity (8+ dev points)
-- **Flower** — Publish an app to the showcase
+Everyone starts at Spore. Tiers go up as you build:
+- **Seed** — automatic, once you've racked up enough GitHub activity in the Pollinations org.
+- **Flower** — publish an app to the showcase.
 
 ## 🔌 What is BYOP (Bring Your Own Pollen)?
 
-BYOP lets your app's users **pay for their own AI generations** with their Pollen — instead of it coming out of *your* balance.
+BYOP lets your users connect their Pollinations account to your app and spend their own Pollen on AI generations.
 
-🚀 **Why it matters:** Without BYOP, every user of your app burns *your* Pollen. With BYOP, your **compute cost drops to zero**. Your users get a seamless experience, and you can scale without worrying about costs.
+**If you build with Pollinations:**
 
-🔄 Every user on the platform gets free Pollen refilled hourly. With BYOP, they spend that Pollen in *your* app — the **Pollinations flywheel**: build an app for free → integrate BYOP → your users arrive with Pollen → they fuel the app → you grow → bigger grants → build bigger.
+1. Your users pay for their requests, not you.
+2. Turn on Developer earnings on an App Key to charge +25% over model cost — kept by you.
+3. Earnings only count for traffic through that App Key.
 
-🔑 **App Key:** Create an **App Key** (`pk_...`) on [enter.pollinations.ai](https://enter.pollinations.ai) to get the most out of BYOP. With an App Key, the consent screen shows your **app name + GitHub** instead of a generic hostname, and the traffic your app drives is **tracked to your account** — helping you qualify for automatic tier upgrades and higher Pollen grants.
+**If you use a Pollinations app:**
+
+1. You spend Pollen from your wallet, not the developer's.
+2. Apps may add a 25% share — shown at sign-in.
+3. Tier balance pays first; paid balance covers it if tier can't.
+4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
 
 ## 🎨 What can I create with Pollen?
 
-Anything you can imagine — **text**, **images**, **audio**, and **video**, all from one API.
+Text, images, audio, and video — one API.
 
-- ✍️ Generate text with 30+ language models
-- 🖼️ Create images with Flux, Turbo, and more
-- 🎵 Text-to-speech, music generation
-- 🎬 Video generation with Wan, Veo, LTX
-
-💡 **Pro tip:** Mix efficient models for high-volume tasks with high-quality models when it matters most.
+- 30+ language models for text.
+- Flux, Turbo, and others for images.
+- Text-to-speech and music generation.
+- Video via Wan, Veo, and LTX.
 
 ## 🚀 What's coming?
 
-- 🧮 **Scoring System** — Tiers will be based on a transparent score — GitHub activity, API usage, apps shipped, and community contributions.
-- 🔑 **Pollinations Login** — OAuth sign-in for your users. Token handling and production-ready auth.
-- 🏠 **App Hosting** — Ship your app on our infra. No deploy setup, no separate hosting bill.
-- 🌻 **Creator Rewards** — Get recognized for what people build with your app.
-- 🗺️ **App Discovery** — A marketplace where users find your app.
+- 🎯 **Pollen Quest** — earn Pollen through achievements, milestones, and closing issues.
+- 🔑 **Pollinations Login** — OAuth sign-in for your users, with token handling handled for you.
+- 🏠 **App Hosting** — run your app on our infra, no separate hosting bill.
+- 🗺️ **App Discovery** — a marketplace for users to find your app.
+- 📣 **Ads SDK** — optional ad placements next to generations, revenue back into your wallet.
 
 🌱 Plans change. We build in the open and figure it out as we go.

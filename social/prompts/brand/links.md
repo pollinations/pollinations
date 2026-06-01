@@ -15,7 +15,7 @@
 - **Available Text Models:** https://gen.pollinations.ai/v1/models
 
 ## Official Documentation
-- **API Docs (Swagger):** https://enter.pollinations.ai/api/docs
+- **API Docs (Swagger):** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React Hooks Docs:** https://react-hooks.pollinations.ai
 - **MCP Protocol:** https://mcp.sequa.ai/v1/pollinations/contribute
@@ -31,8 +31,8 @@
 - **GitHub Sponsors:** https://github.com/sponsors/pollinations
 
 ## Packages
-- **NPM SDK (@pollinations_ai/sdk):** https://www.npmjs.com/package/@pollinations_ai/sdk
-- **NPM MCP (@pollinations_ai/mcp):** https://www.npmjs.com/package/@pollinations_ai/mcp
+- **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
+- **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
 
 ## Socials
 - **Discord:** https://discord.gg/pollinations-ai-885844321461485618

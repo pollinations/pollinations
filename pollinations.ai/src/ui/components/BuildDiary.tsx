@@ -204,7 +204,7 @@ export function BuildDiary() {
     const { prettified: prettifiedSummary } = usePrettify(
         summaryItem,
         "text",
-        apiKey,
+        apiKey ?? undefined,
         "name",
     );
 

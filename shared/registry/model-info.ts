@@ -1,17 +1,20 @@
 import { z } from "zod";
 import {
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     getVisibleAudioModels,
+    getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleRealtimeModels,
     getVisibleTextModels,
     type ModelName,
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
-// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
-//         promptImageTokens, completionTextTokens, completionReasoningTokens,
-//         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
+// Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
+//         promptAudioTokens, promptAudioSeconds, promptImageTokens,
+//         completionTextTokens, completionReasoningTokens, completionAudioTokens,
+//         completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -21,6 +24,7 @@ export const ModelInfoSchema = z.object({
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
+    video_capabilities: z.array(z.string()).optional(),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
@@ -43,18 +47,16 @@ function toFixedPoint(n: number): string {
  * Get enriched model information for a service
  * Combines pricing from price definitions with metadata from service definition
  */
-export function getModelInfo(modelName: ModelName): ModelInfo {
+function getModelInfo(modelName: ModelName): ModelInfo {
     const service = getModelDefinition(modelName);
-    const priceDefinition = getActivePriceDefinition(modelName);
+    const priceDefinition = getPriceDefinition(modelName);
     if (!priceDefinition) {
         throw new Error(`No price definition found for model: ${modelName}`);
     }
-    // Filter out date, zero, and undefined values from price definition
-    const { date: _date, ...priceFields } = priceDefinition;
     const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
-    for (const [key, value] of Object.entries(priceFields)) {
+    for (const [key, value] of Object.entries(priceDefinition)) {
         if (typeof value === "number" && value > 0) {
             pricing[key] = toFixedPoint(value);
         }
@@ -68,6 +70,7 @@ export function getModelInfo(modelName: ModelName): ModelInfo {
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        video_capabilities: service.videoCapabilities,
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,
@@ -96,4 +99,18 @@ export function getImageModelsInfo(): ModelInfo[] {
  */
 export function getAudioModelsInfo(): ModelInfo[] {
     return getVisibleAudioModels().map(getModelInfo);
+}
+
+/**
+ * Get all embedding models with enriched information
+ */
+export function getEmbeddingModelsInfo(): ModelInfo[] {
+    return getVisibleEmbeddingModels().map(getModelInfo);
+}
+
+/**
+ * Get all realtime models with enriched information
+ */
+export function getRealtimeModelsInfo(): ModelInfo[] {
+    return getVisibleRealtimeModels().map(getModelInfo);
 }

@@ -1,8 +1,8 @@
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     type ModelName,
     type Usage,
 } from "@shared/registry/registry.ts";
@@ -14,6 +14,7 @@ type BillingEvent = {
     selectedMeterSlug?: string | null;
     tokenPricePromptText: number;
     tokenPricePromptCached: number;
+    tokenPricePromptCacheWrite?: number;
     tokenPricePromptAudio: number;
     tokenPricePromptImage: number;
     tokenPriceCompletionText: number;
@@ -24,6 +25,7 @@ type BillingEvent = {
     tokenPriceCompletionVideoTokens?: number;
     tokenCountPromptText: number;
     tokenCountPromptCached: number;
+    tokenCountPromptCacheWrite?: number;
     tokenCountPromptAudio: number;
     tokenCountPromptImage: number;
     tokenCountCompletionText: number;
@@ -40,6 +42,7 @@ function usageFromEvent(event: BillingEvent): Usage {
     return {
         promptTextTokens: event.tokenCountPromptText,
         promptCachedTokens: event.tokenCountPromptCached,
+        promptCacheWriteTokens: event.tokenCountPromptCacheWrite || 0,
         promptAudioTokens: event.tokenCountPromptAudio,
         promptImageTokens: event.tokenCountPromptImage,
         completionTextTokens: event.tokenCountCompletionText,
@@ -56,7 +59,7 @@ export function assertTrackedBillingEvent(
     modelName: ModelName,
 ): void {
     const modelDefinition = getModelDefinition(modelName);
-    const priceDefinition = getActivePriceDefinition(modelName);
+    const priceDefinition = getPriceDefinition(modelName);
     const usage = usageFromEvent(event);
     const expectedCost = calculateCost(modelName, usage);
     const expectedPrice = calculatePrice(modelName, usage);
@@ -73,6 +76,9 @@ export function assertTrackedBillingEvent(
     expect(event.tokenPricePromptCached).toBe(
         priceDefinition?.promptCachedTokens || 0,
     );
+    expect(event.tokenPricePromptCacheWrite || 0).toBe(
+        priceDefinition?.promptCacheWriteTokens || 0,
+    );
     expect(event.tokenPricePromptAudio).toBe(
         priceDefinition?.promptAudioTokens || 0,
     );
@@ -83,7 +89,9 @@ export function assertTrackedBillingEvent(
         priceDefinition?.completionTextTokens || 0,
     );
     expect(event.tokenPriceCompletionReasoning).toBe(
-        priceDefinition?.completionReasoningTokens || 0,
+        priceDefinition?.completionReasoningTokens ??
+            priceDefinition?.completionTextTokens ??
+            0,
     );
     expect(event.tokenPriceCompletionAudio).toBe(
         priceDefinition?.completionAudioTokens || 0,

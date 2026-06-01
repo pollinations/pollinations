@@ -1,0 +1,24 @@
+DESCRIPTION >
+    Recent developer earnings (BYOP markup) split by which balance the
+    spending user paid from. `paid_week` aggregates earnings from events
+    where the user was charged from their pack (paid) balance;
+    `tier_week` aggregates earnings from tier-side debits.
+    Window is the last 7 days (rolling). Scoped to the requesting dev via
+    `api_key_created_for_user_id` — earnings from deleted app keys are
+    still attributed to the dev who owned the app.
+
+TOKEN tinybird_read READ
+
+NODE today
+SQL >
+    %
+    SELECT
+        sumIf(total_price - dev_price, selected_meter_slug = 'v1:meter:pack') AS paid_week,
+        sumIf(total_price - dev_price, selected_meter_slug = 'v1:meter:tier') AS tier_week
+    FROM generation_event
+    WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND markup_rate > 0
+      AND total_price > dev_price
+      AND start_time >= now() - INTERVAL 7 DAY
+
+TYPE endpoint

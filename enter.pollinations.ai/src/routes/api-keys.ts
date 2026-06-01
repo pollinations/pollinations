@@ -1,14 +1,21 @@
+import {
+    createApiKeyForUser,
+    validateRedirectUriFormat,
+} from "@shared/auth/api-key-creation.ts";
+import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+
+const SECONDS_PER_DAY = 24 * 60 * 60;
 
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
@@ -104,7 +111,7 @@ async function updateKeyMetadata(
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: ["flux", "openai"] = restrict to specific models
- * - account: ["balance", "usage"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -122,7 +129,9 @@ const UpdateApiKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe('Account permissions: ["balance", "usage"]. null = none'),
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
     expiresAt: z
         .string()
         .datetime()
@@ -132,19 +141,64 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
+const CreateApiKeySchema = z.object({
+    name: z.string().min(1).max(253).describe("Name for the API key"),
+    type: z
+        .enum(["secret", "publishable"])
+        .optional()
+        .default("secret")
+        .describe("Key type: secret (sk_) or publishable (pk_)"),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * SECONDS_PER_DAY)
+        .optional()
+        .describe("Expiry in seconds from now (max 365 days)"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models allowed"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap for this key. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 /**
  * Schema for updating metadata on an API key.
+ * Only caller-owned fields are accepted. Server-controlled fields like
+ * keyType, createdVia, and plaintextKey cannot be modified after creation.
  */
+const UrlWithSchemeSchema = z.string().refine(
+    (val) => {
+        try {
+            validateRedirectUriFormat(val);
+            return true;
+        } catch {
+            return false;
+        }
+    },
+    {
+        message:
+            "Must be an https:// redirect URI with no fragment, or http:// on a loopback host",
+    },
+);
+
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    keyType: z.string().optional(),
-    plaintextKey: z.string().optional(),
-    appUrl: z
-        .string()
-        .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
-            message: "Must be a valid URL with a scheme (e.g. https://...)",
-        })
-        .optional(),
+    redirectUris: z.array(UrlWithSchemeSchema).optional(),
+    earningsEnabled: z.boolean().optional(),
 });
 
 /**
@@ -154,6 +208,46 @@ const UpdateMetadataSchema = z.object({
  */
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    /**
+     * Create an API key for the authenticated dashboard/BYOP session.
+     * Centralizes key creation so validation happens before Better Auth creates
+     * the key, avoiding the old create-then-metadata-update flow.
+     */
+    .post(
+        "/",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Create an API key for the current session user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", CreateApiKeySchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const createdVia =
+                typeof input.metadata?.redirectUri === "string" ||
+                typeof input.metadata?.deviceUserCode === "string"
+                    ? "redirect-auth"
+                    : "dashboard";
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: input.name,
+                type: input.type,
+                expiresIn: input.expiresIn,
+                allowedModels: input.allowedModels,
+                pollenBudget: input.pollenBudget,
+                accountPermissions: input.accountPermissions,
+                metadata: input.metadata,
+                allowAccountKeysPermission: true,
+                defaultCreatedVia: createdVia,
+            });
+
+            return c.json(created);
+        },
+    )
     /**
      * List all API keys for the current user with pollenBalance from D1.
      * Extends better-auth's native list with custom D1 columns.
@@ -189,6 +283,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    byopClientKeyId: key.byopClientKeyId,
                 })),
             });
         },
@@ -224,10 +319,17 @@ export const apiKeysRoutes = new Hono<Env>()
                 ? JSON.parse(existingKey.permissions as string)
                 : {};
 
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Dashboard-only endpoint, so "keys" is allowed here.
+            const sanitizedAccountPerms =
+                accountPermissions === undefined
+                    ? undefined
+                    : sanitizeAuthorizeAccountPermissions(accountPermissions);
+
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
                 allowedModels,
-                accountPermissions,
+                sanitizedAccountPerms,
             );
 
             if (updatedPermissions) {
@@ -272,7 +374,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/metadata",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update metadata for an API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -285,21 +387,20 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            // Check for duplicate appUrl across all keys
-            if (metadataUpdate.appUrl) {
-                const allKeys = await db.query.apikey.findMany();
-                const duplicate = allKeys.find((k) => {
-                    if (k.id === id) return false;
-                    const meta = parseMetadata(k.metadata);
-                    return meta.appUrl === metadataUpdate.appUrl;
-                });
-                if (duplicate) {
-                    throw new HTTPException(409, {
-                        message: `This URL is already registered. Please use a different URL.`,
-                    });
+            if (metadataUpdate.redirectUris) {
+                for (const uri of metadataUpdate.redirectUris) {
+                    validateRedirectUriFormat(uri);
                 }
             }
-
+            if (
+                metadataUpdate.earningsEnabled !== undefined &&
+                existingKey.prefix !== "pk"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
             const metadata = await updateKeyMetadata(
                 db,
                 id,

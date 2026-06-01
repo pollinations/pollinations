@@ -28,6 +28,19 @@ fi
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:$HOME/google-cloud-sdk/bin:$PATH"
 
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# launchd does not inherit interactive shell secrets. Prefer a local age key
+# file so SOPS can decrypt shared provider keys during the daily job.
+if [ -z "${SOPS_AGE_KEY:-}" ] && [ -z "${SOPS_AGE_KEY_FILE:-}" ]; then
+  if [ -f "$APP_DIR/secrets/sops-age.key" ]; then
+    export SOPS_AGE_KEY_FILE="$APP_DIR/secrets/sops-age.key"
+  elif [ -f "$HOME/.config/sops/age/keys.txt" ]; then
+    export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
+  elif [ -f "$HOME/Library/Application Support/sops/age/keys.txt" ]; then
+    export SOPS_AGE_KEY_FILE="$HOME/Library/Application Support/sops/age/keys.txt"
+  fi
+fi
+
 cd "$APP_DIR"
 
 echo "===== $(date '+%Y-%m-%d %H:%M:%S') ====="
@@ -36,6 +49,7 @@ echo "node=$(command -v node || echo MISSING)"
 echo "az=$(command -v az || echo MISSING)"
 echo "aws=$(command -v aws || echo MISSING)"
 echo "gog=$(command -v gog || echo MISSING)"
+echo "sops_age_key_file=$([ -n "${SOPS_AGE_KEY_FILE:-}" ] && echo set || echo unset)"
 echo "----"
 
-exec node "$APP_DIR/bin/update-live.mjs"
+exec node "$APP_DIR/bin/update-live.mjs" "$@"

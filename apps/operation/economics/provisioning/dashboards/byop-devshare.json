@@ -1,0 +1,2956 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "description": "BYOP (Bring Your Own Pollen) and DevShare developer earnings. Clean = events with parent-pk tracking (api_key_client_id). DevShare = clean events with markup_rate > 0. Legacy = pre-tracking BYOP (migration health only).",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "panels": [],
+            "title": "Clean BYOP \u2014 apps with parent-pk tracking",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Distinct BYOP parent apps (pk_) with at least one billed event in the selected period. Filter: api_key_client_id != ''.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 0,
+                "y": 1
+            },
+            "id": 101,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT uniq(api_key_client_id) AS active_apps\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active apps",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Distinct developers (parent-pk owners) with at least one billed event. Joined via d1_apikey to recover ownership for the active parent keys.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 4,
+                "y": 1
+            },
+            "id": 102,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\napp_owners AS (\n  SELECT id AS app_key_id, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n)\nSELECT uniq(ao.user_id) AS active_devs\nFROM generation_event ge\nLEFT JOIN app_owners ao ON ge.api_key_client_id = ao.app_key_id\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active developers",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Distinct end-users (BYOP app users) with at least one billed event in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 8,
+                "y": 1
+            },
+            "id": 103,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT uniq(user_github_id) AS active_users\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND user_github_id != '' AND user_github_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "End users",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total billed requests through BYOP apps in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 12,
+                "y": 1
+            },
+            "id": 104,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT count() AS requests\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Requests",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total Pollen consumed through BYOP apps (total_price = baseline + dev markup credit).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD",
+                    "decimals": 2
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 16,
+                "y": 1
+            },
+            "id": 105,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT sum(total_price) AS pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pollen consumed",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Share of total platform Pollen (across all sources) flowing through clean BYOP apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "decimals": 2
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 106,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT sumIf(total_price, api_key_client_id != '' AND api_key_client_id != 'undefined') / nullIf(sum(total_price), 0) AS share\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Share of platform \u03c1",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily BYOP Pollen split by meter: pack (end-user paid) vs tier (subsidy). Pack growth = healthy. Tier growth = subsidy burn.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 25,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack \u03c1"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier \u03c1"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 5
+            },
+            "id": 110,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily BYOP Pollen \u2014 Pack vs Tier",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily counts: BYOP requests, active apps, active end-users. Shows ecosystem activity over time.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Requests"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Apps"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "purple",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "End users"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 5
+            },
+            "id": 111,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username)\nSELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  count() AS requests,\n  uniq(api_key_client_id) AS apps,\n  uniqIf(user_github_id, user_github_id != '' AND user_github_id != 'undefined') AS users\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily BYOP \u2014 requests, apps, users",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 14
+            },
+            "id": 120,
+            "panels": [],
+            "title": "Clean BYOP \u2014 Leaderboards",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top BYOP apps ranked by Pollen consumed. App name resolved via d1_apikey; falls back to client_id if unsynced. Pack/tier split shows revenue vs subsidy mix per app.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "app"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 220
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "App"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 160
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Developer"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Pack \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Tier \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 12,
+                "x": 0,
+                "y": 15
+            },
+            "id": 121,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\napp_labels AS (\n  SELECT id AS app_key_id, coalesce(nullIf(name, ''), id) AS app_name, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(al.app_name, ge.api_key_client_id) AS app,\n  coalesce(dl.github_username, '') AS developer,\n  sum(ge.total_price) AS total_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_pollen,\n  uniqIf(ge.user_github_id, ge.user_github_id != '' AND ge.user_github_id != 'undefined') AS users,\n  count() AS requests\nFROM generation_event ge\nLEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id\nLEFT JOIN dev_labels dl ON al.user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, developer\nORDER BY total_pollen DESC\nLIMIT 200",
+                    "refId": "A"
+                }
+            ],
+            "title": "Top BYOP Apps",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top BYOP developers (parent-pk owners) by Pollen consumed across all their apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 180
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Developer"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Apps"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "End users"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Pack \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 12,
+                "x": 12,
+                "y": 15
+            },
+            "id": 122,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Total \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\napp_owners AS (\n  SELECT id AS app_key_id, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(dl.github_username, ao.user_id, '') AS developer,\n  uniq(ge.api_key_client_id) AS apps,\n  uniqIf(ge.user_github_id, ge.user_github_id != '' AND ge.user_github_id != 'undefined') AS users,\n  count() AS requests,\n  sum(ge.total_price) AS total_pollen,\n  sumIf(ge.total_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_pollen\nFROM generation_event ge\nLEFT JOIN app_owners ao ON ge.api_key_client_id = ao.app_key_id\nLEFT JOIN dev_labels dl ON ao.user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.total_price > 0\n  AND ge.user_github_username NOT IN (SELECT github_username FROM banned_users)\n  AND ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY developer\nORDER BY total_pollen DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Top BYOP Developers",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 29
+            },
+            "id": 130,
+            "panels": [],
+            "title": "End-User Mix",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Tier composition of BYOP end-users: how much of their Pollen comes from free-tier subsidy vs paid packs. Pack-heavy traffic is monetized; tier-heavy means BYOP apps are mostly serving free-tier users.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 25,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Pack users"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_only_users"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Tier-only users"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 24,
+                "x": 0,
+                "y": 30
+            },
+            "id": 132,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\nuser_day AS (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n    user_github_id,\n    countIf(selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_events,\n    countIf(selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_events\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND user_github_id != '' AND user_github_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, user_github_id\n)\nSELECT\n  time,\n  countIf(pack_events > 0) AS pack_users,\n  countIf(pack_events = 0 AND tier_events > 0) AS tier_only_users\nFROM user_day\nGROUP BY time ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "End-User Tier Composition",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 39
+            },
+            "id": 200,
+            "panels": [],
+            "title": "DevShare \u2014 Developer Earnings (25% markup)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Developers earning DevShare (markup_rate > 0) in the selected period. DevShare = total_price - dev_price per event.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 0,
+                "y": 40
+            },
+            "id": 201,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT uniq(api_key_created_for_user_id) AS earning_devs\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND api_key_created_for_user_id != '' AND api_key_created_for_user_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Earning developers",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Apps earning DevShare in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 4,
+                "y": 40
+            },
+            "id": 202,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT uniq(api_key_client_id) AS earning_apps\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Earning apps",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total DevShare Pollen credited to developers in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD",
+                    "decimals": 4
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 8,
+                "y": 40
+            },
+            "id": 203,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(total_price - dev_price) AS pollen_paid\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "DevShare Pollen paid",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "DevShare paid out of pack-funded events as a share of total pack revenue. Shows what fraction of paying-user revenue is being redirected to developers.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "decimals": 3
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 12,
+                "y": 40
+            },
+            "id": 204,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT\n  sumIf(total_price - dev_price, markup_rate > 0 AND total_price > dev_price AND selected_meter_slug IN ('v1:meter:pack', 'local:pack'))\n  / nullIf(sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')), 0) AS devshare_pct_of_pack\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "DevShare / pack revenue",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Weighted average markup rate across DevShare events. Currently fixed at 25% (MARKUP_PCT in shared/billing/markup.ts).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "decimals": 2
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 16,
+                "y": 40
+            },
+            "id": 205,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(markup_rate * dev_price) / nullIf(sum(dev_price), 0) AS weighted_markup\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Weighted avg markup",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Active BYOP apps (any billed event) vs apps earning DevShare (markup_rate > 0). The gap is the activation opportunity.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "yellow",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "decimals": 2
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 40
+            },
+            "id": 206,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT\n  uniqIf(api_key_client_id, markup_rate > 0 AND total_price > dev_price)\n  / nullIf(uniq(api_key_client_id), 0) AS activation_pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "DevShare activation",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily DevShare Pollen paid out, split by the meter the spending user paid from. Pack = monetized (revenue redirected). Tier = developer earned from subsidy-funded usage.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 25,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_earned"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "From pack \u03c1"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_earned"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "From tier \u03c1"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 24,
+                "x": 0,
+                "y": 44
+            },
+            "id": 210,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_earned,\n  sumIf(total_price - dev_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_earned\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND markup_rate > 0\n  AND total_price > dev_price\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Daily DevShare \u2014 Pack vs Tier",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 53
+            },
+            "id": 220,
+            "panels": [],
+            "title": "DevShare \u2014 Earners & Opportunity",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top earning developers by total DevShare Pollen in the selected period. Earnings = total_price - dev_price.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 200
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Developer"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "apps"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 70
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "earned"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 120
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Earned \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 4
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_share"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Pack-funded"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 12,
+                "x": 0,
+                "y": 54
+            },
+            "id": 221,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Earned \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH dev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(dl.github_username, ge.api_key_created_for_user_id) AS developer,\n  uniq(ge.api_key_client_id) AS apps,\n  count() AS requests,\n  sum(ge.total_price - ge.dev_price) AS earned,\n  sumIf(ge.total_price - ge.dev_price, ge.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) / nullIf(sum(ge.total_price - ge.dev_price), 0) AS pack_share\nFROM generation_event ge\nLEFT JOIN dev_labels dl ON ge.api_key_created_for_user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.markup_rate > 0\n  AND ge.total_price > ge.dev_price\n  AND ge.api_key_created_for_user_id != '' AND ge.api_key_created_for_user_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY developer\nORDER BY earned DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Top Earning Developers",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top earning apps by DevShare Pollen.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "app"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 200
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "App"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 150
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Developer"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "earned"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 120
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Earned \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 4
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 12,
+                "x": 12,
+                "y": 54
+            },
+            "id": 222,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Earned \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH app_labels AS (\n  SELECT id AS app_key_id, coalesce(nullIf(name, ''), id) AS app_name, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n)\nSELECT\n  coalesce(al.app_name, ge.api_key_client_id) AS app,\n  coalesce(dl.github_username, '') AS developer,\n  uniqIf(ge.user_github_id, ge.user_github_id != '' AND ge.user_github_id != 'undefined') AS users,\n  count() AS requests,\n  sum(ge.total_price - ge.dev_price) AS earned\nFROM generation_event ge\nLEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id\nLEFT JOIN dev_labels dl ON al.user_id = dl.user_id\nWHERE $__timeFilter(ge.start_time)\n  AND ge.environment = 'production'\n  AND ge.response_status >= 200 AND ge.response_status < 300\n  AND ge.markup_rate > 0\n  AND ge.total_price > ge.dev_price\n  AND ge.api_key_client_id != '' AND ge.api_key_client_id != 'undefined'\n  AND (ge.start_time < toDateTime('2025-12-30 16:59:45') OR ge.start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app, developer\nORDER BY earned DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Top Earning Apps",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "BYOP apps active in the period that are NOT earning DevShare (markup_rate = 0). Activation opportunity \u2014 these developers have shipped but haven't enabled markup.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "app"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 240
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "App"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 160
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Developer"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "potential_devshare"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 150
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Potential DevShare \u03c1 (25%)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 4
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "gradient",
+                                    "type": "color-background"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 68
+            },
+            "id": 223,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Potential DevShare \u03c1 (25%)"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "WITH app_labels AS (\n  SELECT id AS app_key_id, coalesce(nullIf(name, ''), id) AS app_name, user_id\n  FROM d1_apikey\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)\n),\ndev_labels AS (\n  SELECT id AS user_id, github_username\n  FROM d1_user\n  WHERE github_username != '' AND github_username != 'undefined'\n),\nper_app AS (\n  SELECT\n    api_key_client_id AS app_key_id,\n    max(markup_rate) AS max_markup,\n    sum(total_price) AS total_pollen,\n    count() AS requests,\n    uniqIf(user_github_id, user_github_id != '' AND user_github_id != 'undefined') AS users\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY app_key_id\n)\nSELECT\n  coalesce(al.app_name, pa.app_key_id) AS app,\n  coalesce(dl.github_username, '') AS developer,\n  pa.users AS users,\n  pa.requests AS requests,\n  pa.total_pollen AS total_pollen,\n  pa.total_pollen * 0.25 AS potential_devshare\nFROM per_app pa\nLEFT JOIN app_labels al ON pa.app_key_id = al.app_key_id\nLEFT JOIN dev_labels dl ON al.user_id = dl.user_id\nWHERE pa.max_markup = 0\nORDER BY pa.total_pollen DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Eligible But Not Earning \u2014 Activation Opportunity",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 80
+            },
+            "id": 300,
+            "panels": [],
+            "title": "Legacy / Heuristic BYOP \u2014 Migration Health (minimal)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "BYOP-shaped traffic without parent-pk tracking. Filter: api_key_client_id='' AND (redirect-auth OR hostname-shaped key name). Should trend toward zero as the 0023 backfill matures.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 81
+            },
+            "id": 301,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT count() AS legacy_events\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (api_key_client_id = '' OR api_key_client_id = 'undefined')\n  AND (\n    api_key_created_via = 'redirect-auth'\n    OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')\n  )\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Legacy events",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Distinct hostnames seen via legacy heuristic (api_key_name LIKE '%.%').",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 81
+            },
+            "id": 302,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT uniq(api_key_name) AS hostnames\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (api_key_client_id = '' OR api_key_client_id = 'undefined')\n  AND api_key_type = 'secret' AND api_key_name LIKE '%.%'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Legacy hostnames",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Legacy BYOP Pollen as share of total platform Pollen. Migration-health indicator \u2014 should approach zero.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percentunit",
+                    "decimals": 3
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 81
+            },
+            "id": 303,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT\n  sumIf(total_price, (api_key_client_id = '' OR api_key_client_id = 'undefined') AND (api_key_created_via = 'redirect-auth' OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')))\n  / nullIf(sum(total_price), 0) AS share\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Legacy share of \u03c1",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Pollen via legacy BYOP detection in the selected period.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD",
+                    "decimals": 2
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 81
+            },
+            "id": 304,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "rawSql": "SELECT sum(total_price) AS pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (api_key_client_id = '' OR api_key_client_id = 'undefined')\n  AND (api_key_created_via = 'redirect-auth' OR (api_key_type = 'secret' AND api_key_name LIKE '%.%'))\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                    "refId": "A"
+                }
+            ],
+            "title": "Legacy Pollen",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily legacy BYOP events (without parent-pk tracking). Trend should decline as backfill closes the gap; spikes indicate apps not yet using the new redirect-auth flow.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 25,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "legacy_events"
+                        },
+                        "properties": [
+                            {
+                                "id": "displayName",
+                                "value": "Legacy events"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 85
+            },
+            "id": 310,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 0,
+                    "range": true,
+                    "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  count() AS legacy_events\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (api_key_client_id = '' OR api_key_client_id = 'undefined')\n  AND (api_key_created_via = 'redirect-auth' OR (api_key_type = 'secret' AND api_key_name LIKE '%.%'))\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Legacy BYOP Events \u2014 Migration Trend",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Top hostnames detected via legacy heuristic. These apps need redirect-auth migration to surface in Clean BYOP.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "hostname"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 280
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Hostname"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "requests"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pollen"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Pollen \u03c1"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 85
+            },
+            "id": 311,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Pollen \u03c1"
+                    }
+                ]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "format": 1,
+                    "rawSql": "SELECT\n  api_key_name AS hostname,\n  count() AS requests,\n  sum(total_price) AS pollen\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (api_key_client_id = '' OR api_key_client_id = 'undefined')\n  AND api_key_type = 'secret' AND api_key_name LIKE '%.%'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY hostname\nORDER BY pollen DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Top Legacy Hostnames",
+            "type": "table"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 93
+            },
+            "id": 400,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PAD1A0A25CD30D456"
+                    },
+                    "description": "Weekly signal coverage: clean (parent-pk tracked) vs legacy-only (redirect-auth or hostname heuristic without parent-pk). Confirms the 0022/0023 migration is closing the legacy gap.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "mode": "palette-classic"
+                            },
+                            "custom": {
+                                "axisBorderShow": false,
+                                "axisCenteredZero": false,
+                                "axisColorMode": "text",
+                                "axisPlacement": "auto",
+                                "fillOpacity": 25,
+                                "gradientMode": "none",
+                                "hideFrom": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": false
+                                },
+                                "lineWidth": 1,
+                                "scaleDistribution": {
+                                    "type": "linear"
+                                },
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "percent"
+                                },
+                                "thresholdsStyle": {
+                                    "mode": "off"
+                                }
+                            },
+                            "mappings": [],
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                    {
+                                        "color": "green",
+                                        "value": null
+                                    }
+                                ]
+                            },
+                            "unit": "percentunit"
+                        },
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "clean"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "displayName",
+                                        "value": "Clean (parent-pk)"
+                                    },
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "green",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "legacy_only"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "displayName",
+                                        "value": "Legacy only"
+                                    },
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "orange",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "gridPos": {
+                        "h": 9,
+                        "w": 24,
+                        "x": 0,
+                        "y": 94
+                    },
+                    "id": 401,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom",
+                            "showLegend": true
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "pluginVersion": "12.4.0",
+                    "targets": [
+                        {
+                            "datasource": {
+                                "type": "grafana-clickhouse-datasource",
+                                "uid": "PAD1A0A25CD30D456"
+                            },
+                            "format": 0,
+                            "range": true,
+                            "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n  countIf(api_key_client_id != '' AND api_key_client_id != 'undefined') AS clean,\n  countIf((api_key_client_id = '' OR api_key_client_id = 'undefined') AND (api_key_created_via = 'redirect-auth' OR (api_key_type = 'secret' AND api_key_name LIKE '%.%'))) AS legacy_only\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND (\n    api_key_client_id != '' AND api_key_client_id != 'undefined'\n    OR api_key_created_via = 'redirect-auth'\n    OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')\n  )\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time ORDER BY time",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Weekly BYOP Signal Coverage",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Diagnostics",
+            "type": "row"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": [
+        "byop",
+        "devshare",
+        "economics",
+        "apps"
+    ],
+    "templating": {
+        "list": [
+            {
+                "name": "bucket",
+                "label": "Bucket",
+                "type": "custom",
+                "description": "Time bucket for all timeseries panels",
+                "hide": 0,
+                "includeAll": false,
+                "multi": false,
+                "query": "Hourly : 1 HOUR,Daily : 1 DAY,Weekly : 1 WEEK,Monthly : 1 MONTH",
+                "current": {
+                    "text": "Daily",
+                    "value": "1 DAY",
+                    "selected": true
+                },
+                "options": [
+                    {
+                        "text": "Hourly",
+                        "value": "1 HOUR",
+                        "selected": false
+                    },
+                    {
+                        "text": "Daily",
+                        "value": "1 DAY",
+                        "selected": true
+                    },
+                    {
+                        "text": "Weekly",
+                        "value": "1 WEEK",
+                        "selected": false
+                    },
+                    {
+                        "text": "Monthly",
+                        "value": "1 MONTH",
+                        "selected": false
+                    }
+                ]
+            }
+        ]
+    },
+    "time": {
+        "from": "now-7d",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "BYOP & DevShare",
+    "uid": "byop-devshare",
+    "version": 1
+}

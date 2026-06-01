@@ -106,7 +106,14 @@ function hasAudioOutput(m: RawModel): boolean {
     return typeof m !== "string" && !!m.output_modalities?.includes("audio");
 }
 
-async function fetchAllowedModels(apiKey: string): Promise<AllowedModelsData> {
+const EMPTY_ALLOWED: AllowedModelsData = { image: [], text: [], audio: [] };
+
+async function fetchAllowedModels(
+    apiKey: string | null,
+): Promise<AllowedModelsData> {
+    // Logged-out users have no allowed models — everything shows grayed out.
+    if (!apiKey) return EMPTY_ALLOWED;
+
     const authHeaders = { Authorization: `Bearer ${apiKey}` };
 
     const [allowedImageList, allowedTextList, allowedAudioList] =
@@ -145,9 +152,9 @@ async function fetchAllowedModels(apiKey: string): Promise<AllowedModelsData> {
  * Custom hook to fetch and manage available models from the API
  * Full model list comes from the shared registry (instant).
  * Only fetches API to determine which models are allowed for the current key.
- * @param apiKey - API key to use for authentication (from useAuth hook)
+ * @param apiKey - API key from useAuth (null when logged out → all models grayed out)
  */
-export function useModelList(apiKey: string): UseModelListReturn {
+export function useModelList(apiKey: string | null): UseModelListReturn {
     const [error, setError] = useState<Error | null>(null);
 
     const fetcher = useCallback(

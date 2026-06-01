@@ -30,7 +30,9 @@ describe("Account Key Management API", () => {
             expect(data.type).toBe("secret");
         });
 
-        test("should create a publishable key", async ({ sessionToken }) => {
+        test("should create a publishable app key with earnings off by default", async ({
+            sessionToken,
+        }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
                 {
@@ -42,6 +44,7 @@ describe("Account Key Management API", () => {
                     body: JSON.stringify({
                         name: "test-pub-key",
                         type: "publishable",
+                        redirectUris: ["https://cli.example/callback"],
                     }),
                 },
             );
@@ -50,6 +53,69 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.key.startsWith("pk_")).toBe(true);
             expect(data.type).toBe("publishable");
+            expect(data.metadata.redirectUris).toEqual([
+                "https://cli.example/callback",
+            ]);
+            expect(data.metadata.earningsEnabled).toBe(false);
+        });
+
+        test("should reject unsafe publishable app redirect URIs", async ({
+            sessionToken,
+        }) => {
+            for (const redirectUri of [
+                "javascript://x/%0afetch('https://example.com')//",
+                "data://x/text/html,<script>alert(1)</script>",
+                "file://localhost/tmp/callback",
+                "http://app.example/callback",
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/account/keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: "unsafe-pub-key",
+                            type: "publishable",
+                            redirectUris: [redirectUri],
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(400);
+            }
+        });
+
+        test("should create a publishable app key with earnings enabled", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "test-pub-key-earnings",
+                        type: "publishable",
+                        redirectUris: ["https://cli-earnings.example/callback"],
+                        earningsEnabled: true,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.key.startsWith("pk_")).toBe(true);
+            expect(data.type).toBe("publishable");
+            expect(data.metadata.redirectUris).toEqual([
+                "https://cli-earnings.example/callback",
+            ]);
+            expect(data.metadata.earningsEnabled).toBe(true);
         });
 
         test("should create key with permissions and budget", async ({
@@ -67,7 +133,7 @@ describe("Account Key Management API", () => {
                         name: "restricted-child",
                         allowedModels: ["flux", "openai"],
                         pollenBudget: 50,
-                        accountPermissions: ["balance", "usage"],
+                        accountPermissions: ["profile", "usage"],
                     }),
                 },
             );
@@ -76,7 +142,7 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.permissions).toEqual({
                 models: ["flux", "openai"],
-                account: ["balance", "usage"],
+                account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
         });
@@ -94,7 +160,7 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "escalation-attempt",
-                        accountPermissions: ["balance", "keys", "usage"],
+                        accountPermissions: ["profile", "keys", "usage"],
                     }),
                 },
             );
@@ -102,7 +168,7 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             // "keys" should be stripped
-            expect(data.permissions.account).toEqual(["balance", "usage"]);
+            expect(data.permissions.account).toEqual(["profile", "usage"]);
             expect(data.permissions.account).not.toContain("keys");
         });
 

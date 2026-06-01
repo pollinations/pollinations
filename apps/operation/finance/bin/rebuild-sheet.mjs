@@ -14,13 +14,18 @@ import {
 import {
     loadConfig,
     loadDotenv,
+    loadPoolHistory,
+    loadSharedModelSecrets,
     loadVendors,
     saveVendors,
 } from "../lib/io.mjs";
 import { buildLayout } from "../lib/layout.mjs";
 import { normalize } from "../lib/normalize.mjs";
 import { promptNewVendor } from "../lib/prompt.mjs";
-import { fetchMonths } from "../lib/providers/wise-transactions.mjs";
+import {
+    fetchLiveBankBalanceEur,
+    fetchMonths,
+} from "../lib/providers/wise-transactions.mjs";
 
 function colLetter(zeroIdx) {
     let n = zeroIdx;
@@ -108,7 +113,9 @@ async function resolveVendorsInteractively(rawRows) {
 }
 
 async function main() {
-    // Load secrets (WISE_API_TOKEN, etc.)
+    // Load secrets — shared SOPS file first (provider/model API keys), then
+    // finance's local .env (WISE_API_TOKEN and any local overrides).
+    await loadSharedModelSecrets();
     await loadDotenv();
 
     const config = await loadConfig();
@@ -192,7 +199,7 @@ async function main() {
 
     // Credit pools live in vendors.json under the "_pools" key.
     const pools = vendors._pools ?? {};
-    const poolHistory = {}; // TODO: load from secrets/pool-history.json
+    const poolHistory = await loadPoolHistory();
 
     // Inject live MTD cash from payg pool APIs into NEXT month (not current).
     // Payg providers (AWS, Alibaba) consume now but invoice next month —
@@ -300,11 +307,38 @@ async function main() {
         }
     }
 
+    // One-time events from vendors.json._one_time_events: explicit
+    // (month, vendor, amount) entries for things that don't fit the forecast
+    // rules — one-off fundraises, deposits, refunds, etc. If the vendor has
+    // no Wise history, it's added as a synthetic vendor so it gets its own
+    // row. Remove the entry from vendors.json once the real Wise transaction
+    // lands so the actual amount takes over.
+    const oneTimeEvents = vendors._one_time_events ?? [];
+    for (const event of oneTimeEvents) {
+        if (!extended.data[event.month]) continue;
+        if (!extended.vendors[event.vendor_canonical]) {
+            extended.vendors[event.vendor_canonical] = event.category;
+        }
+        extended.data[event.month][event.vendor_canonical] = event.amount_eur;
+    }
+
+    let liveBankBalanceEur = null;
+    try {
+        const wiseBalance = await fetchLiveBankBalanceEur(fxRate);
+        liveBankBalanceEur = wiseBalance.total_eur;
+        console.log(
+            `Live Wise balance: €${liveBankBalanceEur.toLocaleString()} (${wiseBalance.breakdown.map((b) => `${b.value} ${b.currency}`).join(", ")})`,
+        );
+    } catch (e) {
+        console.warn(`Could not fetch live Wise balance: ${e.message}`);
+    }
+
     const layout = buildLayout(extended, config, {
         currentMonth: nowMonth,
         pools,
         poolHistory,
         unmatched,
+        liveBankBalanceEur,
     });
 
     // Write to sheet
@@ -320,7 +354,7 @@ async function main() {
         spreadsheetId,
         {
             range: fullCanvas,
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment",
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment,userEnteredFormat.numberFormat",
             format: {
                 textFormat: {
                     bold: false,
@@ -345,7 +379,7 @@ async function main() {
 
     const firstMonthCol = colLetter(2);
     const totalCol = colLetter(2 + extended.months.length);
-    const firstDataRow = layout.freezeRows + 1;
+    const firstDataRow = layout.firstNumericRow;
     const numericRange = `Runway!${firstMonthCol}${firstDataRow}:${totalCol}${layout.cells.length}`;
     await applyNumberFormat(
         spreadsheetId,

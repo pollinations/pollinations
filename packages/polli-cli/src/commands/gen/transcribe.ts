@@ -15,7 +15,11 @@ export function createTranscribeCommand() {
     return new Command("transcribe")
         .description("Transcribe audio to text (speech-to-text)")
         .argument("<file>", "Audio file path (mp3, wav, etc.)")
-        .option("--model <model>", "STT model (whisper, scribe)", "whisper")
+        .option(
+            "--model <model>",
+            "STT model (whisper, scribe, universal-2, universal-3-pro)",
+            "whisper",
+        )
         .option("--language <lang>", "Language hint (ISO code)")
         .action(async (file, opts) => {
             const key = requireKey();

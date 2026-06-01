@@ -1,4 +1,4 @@
-import { enter, requireKey } from "./api.js";
+import { gen, requireKey } from "./api.js";
 
 // Returns null for non-402 so callers fall through to their generic error path.
 export async function budgetHint(
@@ -6,7 +6,7 @@ export async function budgetHint(
     bodyText: string,
 ): Promise<string | null> {
     if (status !== 402) return null;
-    const balance = await enter<{ balance?: number }>("/api/account/balance", {
+    const balance = await gen<{ balance?: number }>("/account/balance", {
         apiKey: requireKey(),
     })
         .then((r) => r.balance)

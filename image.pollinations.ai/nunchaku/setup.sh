@@ -124,48 +124,32 @@ setup_python_env() {
     pip install --upgrade pip
     
     log_info "Installing PyTorch with CUDA 12.8..."
-    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
-    
+    # Pin torch 2.9.1: matches prebuilt nunchaku wheel (cu12.8torch2.9) and
+    # works with driver 570.x / CUDA 12.8. Newer torch (2.11+) requires CUDA 13.
+    pip install torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu128
+
     log_info "Installing other requirements..."
     pip install -r requirements.txt
     
     log_info "Python environment ready"
 }
 
-# Build and install nunchaku
-build_nunchaku() {
-    log_step "📦 Step 4: Building nunchaku (this takes 10-15 minutes)"
-    
-    # Set CUDA environment for build
-    export PATH=/usr/local/cuda-12.8/bin:$PATH
-    export CUDA_HOME=/usr/local/cuda-12.8
-    export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
-    
-    # Clone nunchaku if not exists
-    if [ ! -d "$HOME/nunchaku" ]; then
-        log_info "Cloning nunchaku..."
-        cd $HOME
-        git clone --recursive https://github.com/mit-han-lab/nunchaku.git
-    else
-        log_info "Updating nunchaku..."
-        cd $HOME/nunchaku
-        git pull
-        git submodule update --init --recursive
-    fi
-    
-    cd $HOME/nunchaku
+# Install nunchaku from prebuilt wheel
+install_nunchaku() {
+    log_step "📦 Step 4: Installing prebuilt nunchaku wheel"
+
     source $HOME/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate
-    
-    # Clean previous build
-    rm -rf build/ dist/ *.egg-info
-    
-    log_info "Building nunchaku for RTX 4090 (SM 8.9)..."
-    TORCH_CUDA_ARCH_LIST="8.9" pip install -e .
-    
-    # Verify installation
+
+    # Prebuilt wheel bundles CUDA kernels for SM 7.5/8.0/8.6/8.9/120 — no
+    # source build, no CUDA toolkit, no 10-15 min compile. Must match the
+    # pinned torch (cu12.8torch2.9) and Python (cp312) in setup_python_env.
+    local wheel_url="https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu12.8torch2.9-cp312-cp312-linux_x86_64.whl"
+    log_info "Downloading wheel..."
+    pip install --no-cache-dir --no-deps "$wheel_url"
+
     python -c "from nunchaku.models import NunchakuFluxTransformer2dModel; print('✅ nunchaku installed successfully')"
-    
-    log_info "Nunchaku build complete"
+
+    log_info "Nunchaku install complete"
 }
 
 # Create .env file
@@ -298,7 +282,7 @@ main() {
     install_system_deps
     setup_repo
     setup_python_env
-    build_nunchaku
+    install_nunchaku
     create_env_file
     create_services
     start_services

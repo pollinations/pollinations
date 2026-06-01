@@ -470,8 +470,6 @@ async function shareMeme() {
 
 // ── BYOP Auth ────────────────────────────────────────────────────────────────
 
-const TIER_EMOJIS = { seed: "🌱", flower: "🌸", nectar: "🍯" };
-
 function handleAuthRedirect() {
     const key = extractApiKeyFromFragment();
     if (!key) return;
@@ -532,9 +530,8 @@ async function updateAuthUI({ skipModelPick = false } = {}) {
         ]);
 
         if (profile) {
-            const name = profile.githubUsername || profile.name || "User";
+            const name = profile.githubUsername || "User";
             $("authUserName").textContent = name;
-            $("authUserEmail").textContent = profile.email || "";
 
             const avatarImg = $("authAvatar");
             const avatarFallback = $("authAvatarFallback");
@@ -547,12 +544,6 @@ async function updateAuthUI({ skipModelPick = false } = {}) {
                 show(avatarFallback);
                 avatarFallback.textContent = name.charAt(0).toUpperCase();
             }
-
-            const tier = profile.tier;
-            $("authTier").textContent =
-                tier && TIER_EMOJIS[tier]
-                    ? `${TIER_EMOJIS[tier]} ${tier.charAt(0).toUpperCase() + tier.slice(1)}`
-                    : "Free";
         }
 
         if (balance) {

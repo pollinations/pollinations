@@ -1,9 +1,9 @@
-# HTML Wrapper for text.pollinations.ai
+# HTML Wrapper for gen.pollinations.ai
 
-This is a simple wrapper service around text.pollinations.ai/openai that:
+This is a simple wrapper service around gen.pollinations.ai/v1/chat/completions that:
 
 1. Receives a prompt in the path of a GET request
-2. Calls the text.pollinations.ai/openai endpoint with model openai-large and streaming enabled
+2. Calls the gen.pollinations.ai/v1/chat/completions endpoint with model openai-large and streaming enabled
 3. Uses a system prompt that instructs the model to return a single HTML file
 4. Detects when the first HTML tag appears and starts streaming the HTML directly (not as SSE)
 
@@ -48,11 +48,11 @@ The server will return the HTML content directly, which can be rendered in a bro
 ## How it Works
 
 1. The service takes the entire path after the first slash as the prompt
-2. It sends a request to text.pollinations.ai/openai with:
+2. It sends a request to gen.pollinations.ai/v1/chat/completions with:
    - The openai-large model
    - A system prompt that instructs the model to generate HTML
    - Streaming enabled
-3. It processes the SSE stream from text.pollinations.ai
+3. It processes the SSE stream from gen.pollinations.ai
 4. When it detects the first HTML tag, it starts streaming the HTML directly to the client
 5. If no HTML tags are found, it wraps the content in a basic HTML structure
 

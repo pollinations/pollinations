@@ -3,15 +3,6 @@ import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
 export const API_BASE_URL = "https://gen.pollinations.ai";
 
 /**
- * @param {Object} schema - The schema object for the tool
- * @param {Function} handler - The handler function for the tool
- * @returns {Object} - Tool definition object
- */
-export function createToolDefinition(schema, handler) {
-    return { schema, handler };
-}
-
-/**
  * @param {Array} content - Array of content objects (text, image, etc.)
  * @returns {Object} - MCP response object
  */
@@ -135,6 +126,90 @@ export async function fetchJsonWithAuth(url, options = {}) {
 }
 
 /**
+ * Run a vision/audio/video chat-completion prompt against /v1/chat/completions.
+ * Consolidates the shared boilerplate across describeImage/analyzeVideo/transcribeAudio.
+ *
+ * @param {Object} args
+ * @param {string} args.model - Model name (e.g. "openai", "gemini-large")
+ * @param {string} args.prompt - Text prompt to pair with the media
+ * @param {"image_url"|"video_url"|"input_audio"} args.mediaType - Content-block kind
+ * @param {string} args.mediaUrl - URL of the media to analyze
+ * @returns {Promise<{content: string, model: string}>}
+ */
+export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
+    const mediaBlock =
+        mediaType === "input_audio"
+            ? { type: "input_audio", input_audio: { url: mediaUrl } }
+            : { type: mediaType, [mediaType]: { url: mediaUrl } };
+
+    const response = await fetchWithAuth(
+        `${API_BASE_URL}/v1/chat/completions`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [{ type: "text", text: prompt }, mediaBlock],
+                    },
+                ],
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(parseApiError(response.status, errorText));
+    }
+
+    const result = await response.json();
+    return {
+        content: result.choices?.[0]?.message?.content || "",
+        model: result.model || model,
+    };
+}
+
+/**
+ * POST a chat-completion request body to /v1/chat/completions.
+ * Strips null/undefined keys, reuses the 30s timeout in fetchWithAuth, and maps
+ * errors (with the dedicated rate-limit message). Returns the raw Response so
+ * callers can shape the JSON themselves.
+ *
+ * @param {Object} body - Request body (null/undefined fields are stripped)
+ * @returns {Promise<Response>} - Raw fetch response (already checked for !ok)
+ */
+export async function postChatCompletion(body) {
+    const cleanedBody = {};
+    for (const [key, value] of Object.entries(body)) {
+        if (value !== undefined && value !== null) {
+            cleanedBody[key] = value;
+        }
+    }
+
+    const response = await fetchWithAuth(
+        `${API_BASE_URL}/v1/chat/completions`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cleanedBody),
+            timeoutMs: 30000,
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        if (response.status === 429) {
+            throw new Error("Rate limited. Please wait before retrying.");
+        }
+        throw new Error(parseApiError(response.status, errorText));
+    }
+
+    return response;
+}
+
+/**
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
@@ -157,14 +232,6 @@ export async function fetchBinaryWithAuth(url, options = {}) {
  */
 export function arrayBufferToBase64(buffer) {
     return Buffer.from(buffer).toString("base64");
-}
-
-/**
- * @param {Error} error - Error object
- * @returns {Object} - MCP response with error message
- */
-export function createErrorResponse(error) {
-    return createMCPResponse([createTextContent(`Error: ${error.message}`)]);
 }
 
 /**

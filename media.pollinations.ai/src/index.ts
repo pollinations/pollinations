@@ -1,13 +1,22 @@
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 
 const DOMAIN = "media.pollinations.ai";
-const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
+// gen.pollinations.ai proxies /account/* to enter — using the public path
+// keeps internal services consistent with the documented SDK/external usage.
+const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
+// Content-addressed storage means the URL → bytes mapping is fixed forever:
+// re-uploading the
+// same content reproduces the same URL, and there is no other content the URL
+// could ever point to. R2's 30-day lifecycle can delete the underlying object,
+// but a fresh upload restores byte-identical content, so `immutable` is safe.
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
-const DEFAULT_MAX_SIZE = 10485760; // 10 MB
+const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -22,7 +31,7 @@ interface AuthResult {
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
-        const res = await fetch(ENTER_VERIFY_URL, {
+        const res = await fetch(KEY_VERIFY_URL, {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
@@ -61,6 +70,16 @@ const ErrorSchema = z.object({
     error: z.string(),
 });
 
+const MetadataResponseSchema = z.object({
+    hash: z.string().describe("16-char hex content hash"),
+    contentType: z.string(),
+    size: z.number().int().describe("File size in bytes"),
+    uploadedAt: z
+        .string()
+        .optional()
+        .describe("ISO-8601 upload timestamp, when recorded"),
+});
+
 const api = new Hono<{ Bindings: Env }>();
 
 api.post(
@@ -69,7 +88,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Re-uploading resets the 14-day TTL.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -86,7 +105,7 @@ api.post(
                 },
             },
             413: {
-                description: "File too large (max 10MB)",
+                description: "File too large (max 50MB)",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -242,7 +261,8 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its content hash. No authentication required. Responses are cached immutably.",
+            "Get a file by its content hash. Access keeps files from expiring.",
+        security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
             400: {
@@ -292,10 +312,83 @@ api.get(
                 );
             }
 
-            return new Response(object.body, { headers });
+            const responseBody = refreshR2ObjectTtl(
+                c.env.MEDIA_BUCKET,
+                hash,
+                object,
+                (promise) => c.executionCtx.waitUntil(promise),
+                (error) => {
+                    console.error("TTL refresh error:", error);
+                },
+            );
+
+            return new Response(responseBody, { headers });
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
+        }
+    },
+);
+
+api.get(
+    "/:hash/metadata",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Get file metadata",
+        description:
+            "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+        security: [],
+        responses: {
+            200: {
+                description: "File metadata",
+                content: {
+                    "application/json": {
+                        schema: resolver(MetadataResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash");
+
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+
+        try {
+            const object = await c.env.MEDIA_BUCKET.head(hash);
+
+            if (!object) {
+                return c.json({ error: "Not found" }, 404);
+            }
+
+            c.header("Cache-Control", CACHE_CONTROL);
+            return c.json({
+                hash,
+                contentType:
+                    object.httpMetadata?.contentType ||
+                    "application/octet-stream",
+                size: object.size,
+                ...(object.customMetadata?.uploadedAt && {
+                    uploadedAt: object.customMetadata.uploadedAt,
+                }),
+            });
+        } catch (error) {
+            console.error("Metadata error:", error);
+            return c.json({ error: "Metadata lookup failed" }, 500);
         }
     },
 );
@@ -308,6 +401,7 @@ api.on(
         summary: "Check if media exists",
         description:
             "Check existence and metadata without downloading the file.",
+        security: [],
         responses: {
             200: {
                 description:
@@ -373,7 +467,7 @@ app.get("/", (c) => {
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "10MB",
+            maxFileSize: "50MB",
         },
     });
 });

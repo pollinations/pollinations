@@ -2,16 +2,16 @@
 
 ## Architecture
 ```
-gen.pollinations.ai → enter.pollinations.ai (auth/billing) → text.|image.pollinations.ai (backends)
+gen.pollinations.ai (unified proxy) → enter.pollinations.ai (auth/billing) | text.pollinations.ai (text backend)
 ```
 Repo: `pollinations/pollinations` (main branch) | Discord: guild `885844321461485618`
-Docs: https://enter.pollinations.ai/api/docs | Monitor: https://model-monitor.pollinations.ai
+Docs: https://gen.pollinations.ai/docs | Monitor: https://model-monitor.pollinations.ai
 
 ## API — gen.pollinations.ai (the ONLY public URL)
 
 Endpoints: `/v1/chat/completions` POST (OpenAI-compatible, RECOMMENDED) | `/text/{{prompt}}` GET | `/image/{{prompt}}` GET | `/audio/{{text}}` GET | `/v1/models` GET | `/text/models` GET (w/ pricing) | `/image/models` GET (w/ pricing) | `/account/balance|profile|usage` GET (auth required)
 
-DEAD URLs — NEVER suggest: `image.pollinations.ai/prompt/...` (404), `pollinations.ai/p/...` (dead), `text.pollinations.ai` (legacy redirect), `enter.pollinations.ai` (auth gateway only, NOT for generation)
+DEAD URLs — NEVER suggest: `image.pollinations.ai` (completely deprecated/removed; all image and video logic consolidated under gen.pollinations.ai/src/image/), `pollinations.ai/p/...` (dead), `enter.pollinations.ai` (auth gateway only, NOT for generation)
 
 ## Models (use `/text/models` or `/image/models` for current list + pricing)
 
@@ -21,7 +21,7 @@ Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, gr
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
 
-Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-legacy, gemini, gemini-large, gemini-legacy, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
 
 Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
 
@@ -65,8 +65,8 @@ Both accept standard OpenAI params.
 
 ## SDK & MCP
 
-SDK: `npm i @pollinations_ai/sdk` → generateImage, generateText, chat, Pollinations client
-MCP: `npx @pollinations_ai/mcp` → Claude Desktop compatible, 15+ tools
+SDK: `npm i @pollinations/sdk` → generateImage, generateText, chat, Pollinations client
+MCP: `npx @pollinations/mcp` → Claude Desktop compatible, 15+ tools
 
 ## Image Params
 
@@ -79,4 +79,4 @@ ElevenLabs: rachel, domi, bella, charlotte, sarah, emily, lily, matilda (F) | ad
 
 ## Monorepo
 
-enter.pollinations.ai/ (CF Worker gateway) | text.pollinations.ai/ (Express+Portkey) | image.pollinations.ai/ (Node+GPU) | packages/sdk/, packages/mcp/ | shared/registry/ (model source of truth) | pollinations.ai/ (React frontend) | apps/ (community) | .github/ (38+ workflows)
+enter.pollinations.ai/ (API Dashboard, Auth & Billing React app + CF Workers) | gen.pollinations.ai/ (Unified Hono proxy gateway for image, text, and video generation in gen.pollinations.ai/src/image/) | text.pollinations.ai/ (Node.js text generation API) | packages/sdk/ (Official SDK) | packages/mcp/ (Official MCP server) | shared/ (Shared registries and utilities) | pollinations.ai/ (React main site) | apps/ (Core/official apps, community apps linked in APPS.md)

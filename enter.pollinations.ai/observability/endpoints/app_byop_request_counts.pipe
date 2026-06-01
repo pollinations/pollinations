@@ -1,20 +1,31 @@
 DESCRIPTION >
     Get request counts per BYOP app in the last 24 hours.
-    Priority: api_key_created_for_app (explicit) > api_key_name (hostname heuristic).
+    Priority: registered app name via api_key_client_id join > api_key_name (hostname heuristic).
     Counts ALL requests through a BYOP app's API key, regardless of end user.
 
 TOKEN tinybird_read READ
 
+NODE latest_apps
+SQL >
+    SELECT
+        id AS app_key_id,
+        name AS app_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+      AND prefix = 'pk'
+
 NODE app_byop_request_counts_node
 SQL >
     SELECT
-        if(api_key_created_for_app != 'undefined', api_key_created_for_app, api_key_name) as hostname,
-        count() as requests
-    FROM generation_event
-    WHERE start_time > now() - INTERVAL 1 DAY
+        coalesce(nullIf(la.app_name, ''), ge.api_key_name) AS hostname,
+        count() AS requests
+    FROM generation_event ge
+    LEFT JOIN latest_apps la
+        ON ge.api_key_client_id = la.app_key_id
+    WHERE ge.start_time > now() - INTERVAL 1 DAY
       AND (
-        api_key_created_via = 'redirect-auth'
-        OR (api_key_type = 'secret' AND api_key_name LIKE '%.%')
+        ge.api_key_created_via = 'redirect-auth'
+        OR (ge.api_key_type = 'secret' AND ge.api_key_name LIKE '%.%')
       )
     GROUP BY hostname
     HAVING requests > 0

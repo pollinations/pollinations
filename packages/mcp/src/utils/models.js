@@ -1,45 +1,50 @@
 import { getAuthHeaders } from "./authUtils.js";
 
 const API_BASE_URL = "https://gen.pollinations.ai";
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
-export async function getImageModels() {
+const cache = new Map();
+
+async function fetchCached(path) {
+    const hit = cache.get(path);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-    const response = await fetch(`${API_BASE_URL}/image/models`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
         headers: getAuthHeaders(),
         signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch image models: ${response.status}`);
+        throw new Error(`Failed to fetch ${path}: ${response.status}`);
     }
-
-    return response.json();
+    const data = await response.json();
+    cache.set(path, { data, at: Date.now() });
+    return data;
 }
 
-export async function getTextModels() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+export const getImageModels = () => fetchCached("/image/models");
+export const getTextModels = () => fetchCached("/text/models");
+export const getAudioModels = () => fetchCached("/audio/models");
 
-    const response = await fetch(`${API_BASE_URL}/text/models`, {
-        headers: getAuthHeaders(),
-        signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId));
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch text models: ${response.status}`);
-    }
-
-    return response.json();
+export async function getVideoModels() {
+    const models = await getImageModels();
+    return models.filter((m) => m.output_modalities?.includes("video"));
 }
 
 export async function getAudioVoices() {
-    const models = await getTextModels();
-    const audioModel = models.find((m) => m.name === "openai-audio");
-    if (audioModel && Array.isArray(audioModel.voices)) {
-        return audioModel.voices;
-    }
+    try {
+        const audioModels = await getAudioModels();
+        const voices = new Set();
+        for (const m of audioModels) {
+            if (Array.isArray(m.voices)) {
+                for (const v of m.voices) voices.add(v);
+            }
+        }
+        if (voices.size > 0) return Array.from(voices);
+    } catch {}
+    // Last-resort fallback. Registry normally covers this.
     return [
         "alloy",
         "echo",
@@ -55,66 +60,57 @@ export async function getAudioVoices() {
     ];
 }
 
-export async function validateImageModel(modelName) {
-    if (!modelName) {
-        return { valid: true };
-    }
-
-    const models = await getImageModels();
+async function validateAgainstRegistry(modelName, fetcher, kind) {
+    if (!modelName) return { valid: true };
+    const models = await fetcher();
     const model = models.find(
         (m) => m.name === modelName || m.aliases?.includes(modelName),
     );
-
-    if (model) {
-        return { valid: true, model };
-    }
+    if (model) return { valid: true, model };
 
     const allNames = models.flatMap((m) => [m.name, ...(m.aliases || [])]);
+    const lower = modelName.toLowerCase();
     const suggestions = allNames
         .filter(
             (name) =>
-                name.toLowerCase().includes(modelName.toLowerCase()) ||
-                modelName.toLowerCase().includes(name.toLowerCase()),
+                name.toLowerCase().includes(lower) ||
+                lower.includes(name.toLowerCase()),
         )
         .slice(0, 3);
-
     return {
         valid: false,
-        error: `Unknown image model "${modelName}".`,
+        error: `Unknown ${kind} model "${modelName}".`,
         suggestions:
             suggestions.length > 0 ? suggestions : allNames.slice(0, 5),
         availableCount: models.length,
     };
 }
 
-export async function validateTextModel(modelName) {
-    if (!modelName) {
-        return { valid: true };
-    }
+export const validateImageModel = (name) =>
+    validateAgainstRegistry(name, getImageModels, "image");
 
-    const models = await getTextModels();
-    const model = models.find(
-        (m) => m.name === modelName || m.aliases?.includes(modelName),
-    );
+export const validateTextModel = (name) =>
+    validateAgainstRegistry(name, getTextModels, "text");
 
-    if (model) {
-        return { valid: true, model };
-    }
+export const validateVideoModel = (name) =>
+    validateAgainstRegistry(name, getVideoModels, "video");
 
-    const allNames = models.flatMap((m) => [m.name, ...(m.aliases || [])]);
-    const suggestions = allNames
+export async function validateVoice(voice) {
+    if (!voice) return { valid: true };
+    const voices = await getAudioVoices();
+    if (voices.includes(voice)) return { valid: true };
+    const lower = voice.toLowerCase();
+    const suggestions = voices
         .filter(
-            (name) =>
-                name.toLowerCase().includes(modelName.toLowerCase()) ||
-                modelName.toLowerCase().includes(name.toLowerCase()),
+            (v) =>
+                v.toLowerCase().includes(lower) ||
+                lower.includes(v.toLowerCase()),
         )
         .slice(0, 3);
-
     return {
         valid: false,
-        error: `Unknown text model "${modelName}".`,
-        suggestions:
-            suggestions.length > 0 ? suggestions : allNames.slice(0, 5),
-        availableCount: models.length,
+        error: `Unknown voice "${voice}".`,
+        suggestions: suggestions.length > 0 ? suggestions : voices.slice(0, 8),
+        availableCount: voices.length,
     };
 }

@@ -28,7 +28,7 @@ test(
     "GET /api/account/key - returns key status for secret key",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -53,7 +53,7 @@ test(
     "GET /api/account/key - returns key status for publishable key",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -73,7 +73,7 @@ test(
     "GET /api/account/key - shows permissions for restricted key",
     { timeout: 30000 },
     async ({ restrictedApiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -92,7 +92,7 @@ test(
     "GET /api/account/key - shows pollenBudget for budgeted key",
     { timeout: 30000 },
     async ({ budgetedApiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -112,7 +112,7 @@ test(
     "GET /api/account/key - works with query parameter",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(
             `http://localhost:3000${endpoint}?key=${apiKey}`,
@@ -128,7 +128,7 @@ test(
     "GET /api/account/key - calculates expiresIn correctly",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -159,7 +159,7 @@ test(
     "GET /api/account/key - returns null for keys without expiry",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird");
+        await mocks.enable("tinybird");
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {

@@ -34,6 +34,9 @@ export type VideoModel = string;
 /** Image quality options */
 export type ImageQuality = "low" | "medium" | "high" | "hd";
 
+/** Reasoning depth for supported image models */
+export type ImageReasoningMode = "fast" | "balanced" | "pro";
+
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
     /** Image model to use (default: 'zimage') */
@@ -65,11 +68,11 @@ export interface ImageGenerateOptions extends RequestOptions {
     /** How closely to follow prompt, 1-20 (higher = stricter) */
     guidanceScale?: number;
     /**
-     * Enable reasoning mode on supported models (nanobanana-pro,
-     * gptimage family). Silently ignored by models that don't advertise
-     * `reasoning: true`.
+     * Reasoning mode for supported image models.
+     * Booleans are accepted for backward compatibility: true = "pro",
+     * false = "balanced".
      */
-    reasoning?: boolean;
+    reasoning?: boolean | ImageReasoningMode;
 }
 
 /** Options for image editing (POST /v1/images/edits) */
@@ -104,9 +107,9 @@ export interface VideoGenerateOptions extends RequestOptions {
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation (default: false). wan always has audio */
+    /** Enable audio generation where supported by the selected video model */
     audio?: boolean;
-    /** Reference image URL(s) for image-to-video */
+    /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
     /** Keep generation private (default: false) */
     private?: boolean;
@@ -495,6 +498,8 @@ export type TranscriptionModel =
     | "whisper-large-v3"
     | "whisper-1"
     | "scribe"
+    | "universal-2"
+    | "universal-3-pro"
     | string;
 
 /** Response format for transcription */
@@ -565,7 +570,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "balance" | "usage";
+export type AccountPermission = "profile" | "usage" | "keys";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -573,9 +578,13 @@ export interface AuthorizeOptions {
     redirectUrl: string;
     /** Your app's publishable key (shows app name to user) */
     appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
     /** Restrict to specific models */
     models?: string[];
-    /** Cap pollen usage */
+    /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
     /** Key lifetime in days (default: 30) */
     expiry?: number;
@@ -589,13 +598,16 @@ export interface AuthorizeOptions {
 
 /** User profile information */
 export interface AccountProfile {
-    name: string;
-    email: string;
-    githubUsername?: string;
-    image?: string;
+    githubUsername: string | null;
+    image: string | null;
+    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
     tier: string;
-    createdAt: string;
-    nextResetAt?: string;
+    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
+    nextResetAt: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
 }
 
 /** Account balance */
@@ -614,11 +626,14 @@ export interface UsageRecord {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number;
 }
@@ -639,7 +654,14 @@ export interface UsageOptions {
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
 }
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
 
 /** Options for fetching daily usage */
 export interface DailyUsageOptions {
@@ -647,6 +669,12 @@ export interface DailyUsageOptions {
     format?: "json" | "csv";
     /** Number of days to include, max 90 (default: 90) */
     days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+    /** Filter to one or more API keys by id */
+    api_key_ids?: string[];
 }
 
 /** Daily usage summary */
@@ -668,14 +696,14 @@ export interface DailyUsageResponse {
 export interface KeyInfo {
     valid: boolean;
     type: string;
-    name?: string;
-    expiresAt?: string;
-    expiresIn?: number;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
     permissions?: {
-        models?: string[];
-        account?: string[];
+        models?: string[] | null;
+        account?: string[] | null;
     };
-    pollenBudget?: number;
+    pollenBudget?: number | null;
     rateLimitEnabled?: boolean;
 }
 
@@ -701,7 +729,7 @@ export interface AccountKey {
 }
 
 /** Key-scope permissions that can be granted on created keys. */
-export type KeyAccountPermission = "balance" | "usage" | "models" | string;
+export type KeyAccountPermission = "profile" | "usage" | "keys" | string;
 
 /** Options for POST /account/keys */
 export interface CreateKeyOptions {
@@ -716,11 +744,24 @@ export interface CreateKeyOptions {
     /** Pollen budget cap */
     pollenBudget?: number;
     /**
-     * Account permissions to grant (e.g. `["balance", "usage"]`).
-     * Without this, scoped keys cannot read account state.
-     * `"keys"` is auto-stripped server-side.
+     * Account permissions to grant (e.g. `["profile", "usage"]`).
+     * Without this, scoped keys cannot read account state beyond their
+     * own key metadata, budget, and per-key usage.
+     * `"keys"` is auto-stripped server-side on the BYOP flow.
      */
     accountPermissions?: KeyAccountPermission[];
+    /**
+     * Allowed OAuth redirect URIs for publishable app keys. Required when
+     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * Matching pins scheme, host, port, and path; one trailing slash is
+     * ignored; loopback ports are matched port-agnostically.
+     */
+    redirectUris?: string[];
+    /**
+     * Opt the publishable app key into developer earnings. Defaults to
+     * `false` server-side; only meaningful on `type: "publishable"` keys.
+     */
+    earningsEnabled?: boolean;
 }
 
 /**
@@ -749,6 +790,13 @@ export interface CreatedKey {
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 
+/** Per-model video frame-control capabilities (video models only) */
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
+
 /** Model information */
 export interface ModelInfo {
     name: string;
@@ -758,6 +806,7 @@ export interface ModelInfo {
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
+    video_capabilities?: VideoCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;
@@ -803,7 +852,7 @@ export interface DeviceTokenResponse {
 export interface AuthorizeDeviceOptions extends RequestOptions {
     /** OAuth client ID. Defaults to the public polli CLI client. */
     clientId?: string;
-    /** Space-separated scope string (default: "generate keys balance usage") */
+    /** Space-separated scope string (default: "generate keys usage") */
     scope?: string;
 }
 
@@ -850,8 +899,8 @@ export interface ImageGenerateV1Options extends RequestOptions {
     n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
-    /** Enable reasoning mode (nanobanana-pro, gptimage family). Silently ignored by other models. */
-    reasoning?: boolean;
+    /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */
+    reasoning?: boolean | ImageReasoningMode;
     /** Seed for reproducible generation */
     seed?: number;
     /** Output quality */

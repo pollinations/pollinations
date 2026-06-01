@@ -1,0 +1,100 @@
+{
+  "name": "@pollinations/ui",
+  "version": "0.0.1",
+  "description": "Design primitives and UI modules for Pollinations apps.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.cjs"
+    },
+    "./auth/sdk": {
+      "types": "./dist/auth/sdk.d.ts",
+      "import": "./dist/auth/sdk.js",
+      "require": "./dist/auth/sdk.cjs"
+    },
+    "./modality": {
+      "types": "./dist/modality/index.d.ts",
+      "import": "./dist/modality/index.js",
+      "require": "./dist/modality/index.cjs"
+    },
+    "./wallet": {
+      "types": "./dist/wallet/index.d.ts",
+      "import": "./dist/wallet/index.js",
+      "require": "./dist/wallet/index.cjs"
+    },
+    "./wallet/sdk": {
+      "types": "./dist/wallet/sdk.d.ts",
+      "import": "./dist/wallet/sdk.js",
+      "require": "./dist/wallet/sdk.cjs"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./app.css": "./dist/app.css",
+    "./wallet.css": "./dist/wallet.css",
+    "./assets/*": "./dist/assets/*",
+    "./fonts/*": "./dist/fonts/*",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:css && npm run build:fonts && npm run build:assets && npm run build:licenses",
+    "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "build:assets": "mkdir -p dist/assets && cp src/assets/* dist/assets/",
+    "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
+    "build:js": "tsup",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css && cp src/modules/wallet/styles.css dist/wallet.css",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pollinations/pollinations.git",
+    "directory": "packages/ui"
+  },
+  "peerDependencies": {
+    "@pollinations/sdk": "^4.4.0",
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@pollinations/sdk": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@ark-ui/react": "^5.29.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@pollinations/sdk": "*",
+    "@tailwindcss/cli": "^4.0.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}

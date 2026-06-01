@@ -1,15 +1,11 @@
 // ==============================================
 // API CONFIGURATION
 // ==============================================
-// Direct calls to gen.pollinations.ai with publishable key.
-// No proxy needed - publishable keys are safe to expose on frontend.
+// Direct calls to gen.pollinations.ai. Users must log in and use their own
+// API key (sk_ / pk_ issued via enter.pollinations.ai) to generate.
 
-export const DEFAULT_API_KEY = "pk_iOJLArs0DLNG7EGm"; // Anonymous API access (rate-limited)
 export const APP_KEY = "pk_5F0qxjbCjlgBODHa"; // BYOP app key for authorization flow
 export const API_BASE = "https://gen.pollinations.ai";
-
-// Re-export for backward compatibility (use getApiKey() from useAuth for dynamic key)
-export const API_KEY = DEFAULT_API_KEY;
 
 export const API = {
     TEXT_GENERATION: `${API_BASE}/v1/chat/completions`,

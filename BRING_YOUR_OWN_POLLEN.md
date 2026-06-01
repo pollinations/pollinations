@@ -1,69 +1,76 @@
-# 🌼 Bring Your Own Pollen (BYOP)
+BYOP (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
-Your users pay for their own AI usage. You pay $0.
-
-## 🔄 How It Works
-
-1. User connects — via your web app or CLI
-2. Signs in, creates a scoped API key
-3. Their pollen, your app
-
-Why this is good:
-
-- 💸 **$0 costs** — scales to any number of users without costing you a cent
-- 🔑 **No key management** — the auth flow handles it
-- ⚖️ **Self-regulating** — everyone pays for what they use
-- 🌐 **Works everywhere** — web apps, CLIs, MCP servers, anything
-
-Both flows land on the same authorize screen where users set model restrictions, budget, and expiry. Same key, same pollen, different entry point.
+Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
 ## 🗝️ App Key
 
-An **App Key** is a publishable key (`pk_...`) you create on [enter.pollinations.ai](https://enter.pollinations.ai) specifically for BYOP. It's optional but strongly recommended:
-
-| Without App Key | With App Key |
-|----------------|-------------|
-| Consent screen shows generic hostname | Consent screen shows **your app name + your GitHub** |
-| No traffic attribution | Traffic your app drives is **tracked to your account** |
-| No tier benefit | Real usage → **automatic tier upgrades** → higher pollen grants |
+An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
 
-![Create New App Key](https://media.pollinations.ai/aa8ca9fe3110aff7)
+<p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
 
-Set the **Name** (shows on the consent screen) and **App URL** (your app's domain). The key you get back is your `app_key`.
+Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
-When users authorize, this is what they see:
+When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-![Authorize Screen](https://media.pollinations.ai/b030a47e32df2b2b)
+<p align="left"><img src="https://media.pollinations.ai/fbc04dd1c77dbfd8" alt="Authorize — signed out" width="420"></p>
+
+Once signed in, they review the requested access and confirm:
+
+<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+
+## Developer Earnings
+
+Developer earnings are opt-in per App Key. When enabled, users pay 25% over base rates. The markup credits to your balance.
+
+```text
+Base request cost: 1.00 pollen
+User pays:         1.25 pollen
+You receive:       0.25 pollen
+```
+
+Credits land in the same balance type the user paid from: tier balance when the request used tier balance, paid balance when it used paid balance.
+
+Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
+
+```bash
+curl -X POST https://gen.pollinations.ai/account/keys \
+  -H 'Authorization: Bearer sk_yoursecretkey' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
+```
 
 ## ⚙️ Web Apps (Redirect Flow)
 
 ### 1. Build the Auth Link
 
-With `app_key` (consent screen shows your app name + your GitHub):
+With `client_id` (consent screen shows your app name + your GitHub):
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey
 ```
 
 Without (still works, just shows the hostname):
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com
 ```
 
 With restrictions:
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey&models=flux,openai&expiry=7&budget=10
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10
 ```
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `app_key` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
-| `redirect_url` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
+| `scope` | Account access (space or comma separated) | `usage keys` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
-| `budget` | Pollen cap | `10` |
-| `expiry` | Key lifetime in days (default: 30) | `7` |
-| `permissions` | Account access | `profile,balance,usage` |
+| `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
+| `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
+
+Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
 
 ### 2. Handle the Redirect
 
@@ -72,15 +79,15 @@ User comes back with a key in the URL fragment:
 https://myapp.com#api_key=sk_abc123xyz
 ```
 
-Fragment, not query param — never hits server logs. 🔒
+Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
 ### 💻 Code
 
 ```javascript
 // Send user to auth
 const params = new URLSearchParams({
-  redirect_url: location.href,
-  app_key: 'pk_yourkey', // optional — shows app name + author
+  redirect_uri: location.href,
+  client_id: 'pk_yourkey', // optional — shows app name + author
 });
 window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 
@@ -125,7 +132,7 @@ curl -X POST https://enter.pollinations.ai/api/device/token \
 
 ## 👤 Who's Using This Key?
 
-Once you have a key, you can check who it belongs to:
+Once you have the user-authorized `sk_...` key, you can check who it belongs to:
 
 ```bash
 curl https://enter.pollinations.ai/api/device/userinfo \
@@ -133,10 +140,10 @@ curl https://enter.pollinations.ai/api/device/userinfo \
 # → { "sub": "user-id", "name": "Thomas", "preferred_username": "voodoohop", "email": "...", "picture": "..." }
 ```
 
-Standard OIDC userinfo shape — works with any `sk_` or `pk_` key.
+Standard OIDC userinfo shape.
 
 ---
 
-🕐 Keys expire in 30 days. Users can revoke anytime from the dashboard.
+🕐 User-authorized keys default to 7 days. Users can revoke anytime from the dashboard.
 
 [edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

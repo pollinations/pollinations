@@ -1,8 +1,8 @@
 import { env, SELF } from "cloudflare:test";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/customer";
@@ -14,7 +14,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -31,11 +31,11 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return all balance types and lastTierGrant", async ({
+test("/balance should return tier, pack, and lastTierGrant", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB);
 
     // Get the authenticated user ID from session
@@ -54,7 +54,6 @@ test("/balance should return all balance types and lastTierGrant", async ({
     const testBalances = {
         tierBalance: 10.5,
         packBalance: 25.3,
-        cryptoBalance: 5.0,
     };
     const lastTierGrant = Date.now() - 3600000; // 1 hour ago
 
@@ -62,6 +61,7 @@ test("/balance should return all balance types and lastTierGrant", async ({
         .update(userTable)
         .set({
             ...testBalances,
+            tier: "seed",
             lastTierGrant,
         })
         .where(eq(userTable.id, userId));
@@ -81,19 +81,17 @@ test("/balance should return all balance types and lastTierGrant", async ({
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
         packBalance: testBalances.packBalance,
-        cryptoBalance: testBalances.cryptoBalance,
         lastTierGrant,
     });
 });
 
-test("/balance should return zero balances for new users", async ({
+test("/balance should return raw tier and pack balances regardless of tier", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB);
 
-    // Get the authenticated user ID from session
     const sessionResponse = await SELF.fetch(
         "http://localhost:3000/api/auth/get-session",
         {
@@ -105,13 +103,14 @@ test("/balance should return zero balances for new users", async ({
     const session = await sessionResponse.json();
     const userId = session.user.id;
 
-    // Reset all balances to 0
+    // The /balance handler never reads the tier column, so a single tier
+    // proves the raw passthrough (tierBalance/packBalance/lastTierGrant=null).
     await db
         .update(userTable)
         .set({
-            tierBalance: 0,
-            packBalance: 0,
-            cryptoBalance: 0,
+            tier: "seed",
+            tierBalance: 1,
+            packBalance: 3,
             lastTierGrant: null,
         })
         .where(eq(userTable.id, userId));
@@ -124,18 +123,15 @@ test("/balance should return zero balances for new users", async ({
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json();
-
-    expect(data).toEqual({
-        tierBalance: 0,
-        packBalance: 0,
-        cryptoBalance: 0,
+    expect(await response.json()).toEqual({
+        tierBalance: 1,
+        packBalance: 3,
         lastTierGrant: null,
     });
 });
 
 test("/balance should reject API key authentication", async ({ mocks }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
 
     // Try to access with API key instead of session
     const response = await SELF.fetch(`${base}/balance`, {

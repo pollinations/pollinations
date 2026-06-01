@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import open from "open";
-import { ENTER_URL } from "../lib/config.js";
+import { BASE_URL } from "../lib/config.js";
 import {
     getOutputMode,
     printError,
@@ -9,8 +9,8 @@ import {
     printResult,
 } from "../lib/output.js";
 
-const DOCS_URL = `${ENTER_URL}/api/docs`;
-const LLM_TXT_URL = `${ENTER_URL}/api/docs/llm.txt`;
+const DOCS_URL = `${BASE_URL}/docs`;
+const LLM_TXT_URL = `${BASE_URL}/docs/llm.txt`;
 
 async function fetchLlmTxt(): Promise<string> {
     const res = await fetch(LLM_TXT_URL, {

@@ -55,6 +55,7 @@ export const PLAY_PAGE = {
     generateTextButton: "Generate Text",
     generateAudioButton: "Generate Audio",
     generateVideoButton: "Generate Video",
+    loginToGenerateButton: "Log in to generate",
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",
@@ -106,16 +107,16 @@ export const PLAY_PAGE = {
     authTitle: "Authentication",
     authIntro:
         "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
-    publishableLabel: "Publishable",
-    publishableFeature1: "🧪 Client-side demos & prototypes",
-    publishableFeature2: "⏱️ Rate limited: 1 pollen per IP per hour",
-    publishableBetaWarning:
-        "Beta — Turnstile protection coming soon. Not recommended for production yet.",
     secretLabel: "Secret",
     secretFeature1: "🔒 Server-side only",
     secretFeature2: "🚀 No rate limits",
     secretWarning:
         "Never expose in client-side code, git repos, or public URLs",
+    appKeyLabel: "App Key",
+    appKeyFeature1: "🌼 Identifies your app in the BYOP consent screen",
+    appKeyFeature2: "📈 Traffic attribution",
+    appKeyNote:
+        "For developers building apps where users bring their own Pollen. Create one at enter.pollinations.ai.",
     byopLabel: "Bring Your Own Pollen",
     byopDescription: "Building an app? Let users bring their own Pollen.",
     getKeyButton: "Get Your Key",

@@ -22,14 +22,14 @@ Perplexity bills from a **prepaid credit pool**. The API key authenticates model
 
 - `curl` + `python3`
 - **No Perplexity CLI exists.** Anywhere.
-- API key in `text.pollinations.ai/secrets/env.json` as `PERPLEXITY_API_KEY`. Format: `pplx-<53 char base64>`.
+- API key in `gen.pollinations.ai/secrets/prod.vars.json` as `PERPLEXITY_API_KEY`. Format: `pplx-<53 char base64>`.
 
 ## Secret handling
 
 **Perplexity `PERPLEXITY_API_KEY` is in SOPS**, not the local finance `.env` — because the text.pollinations.ai Worker needs it at inference time. Same pattern as `DASHSCOPE_API_KEY` (Alibaba) and `BYTEDANCE_API_KEY` (BytePlus): these keys serve production traffic and MUST be deployable.
 
 ```bash
-SECRETS=$(sops -d text.pollinations.ai/secrets/env.json 2>/dev/null)
+SECRETS=$(sops -d gen.pollinations.ai/secrets/prod.vars.json 2>/dev/null)
 export PERPLEXITY_API_KEY=$(echo "$SECRETS" | python3 -c "import sys, json; print(json.load(sys.stdin)['PERPLEXITY_API_KEY'])")
 unset SECRETS
 ```
@@ -45,7 +45,7 @@ Sanity check only the prefix: `echo "${PERPLEXITY_API_KEY:0:5}"` → should prin
 ```
 Service:            Perplexity Sonar API
 Base URL:           https://api.perplexity.ai
-Secret location:    text.pollinations.ai/secrets/env.json → PERPLEXITY_API_KEY
+Secret location:    gen.pollinations.ai/secrets/prod.vars.json → PERPLEXITY_API_KEY
 Dashboard:          https://www.perplexity.ai/account/api
 Auth format:        Bearer sk-style (pplx- prefix)
 Active models:
@@ -219,7 +219,7 @@ Currently **none of our Stripe transactions reference Perplexity** — meaning w
 
 | Query | Result |
 |---|---|
-| Key exists in `text.pollinations.ai/secrets/env.json` | ✅ `PERPLEXITY_API_KEY` (`pplx-`, 53 chars) |
+| Key exists in `gen.pollinations.ai/secrets/prod.vars.json` | ✅ `PERPLEXITY_API_KEY` (`pplx-`, 53 chars) |
 | `GET /models` | ❌ 404 empty |
 | `GET /billing` | ❌ 404 empty |
 | `GET /usage` | ❌ 404 empty |

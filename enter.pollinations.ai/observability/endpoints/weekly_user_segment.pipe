@@ -24,7 +24,6 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{ Int32(weeks_back, 12) }} WEEK
         {% end %}
-        AND environment = 'production'
     GROUP BY week, is_byop
 
 NODE weekly_user_segment_node

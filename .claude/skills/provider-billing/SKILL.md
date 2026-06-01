@@ -34,8 +34,11 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | BytePlus (Seedance + Seedream) | [providers/byteplus.md](providers/byteplus.md) | ✅ Production — Model Ark `/api/v3/models` works, ❌ zero billing endpoints on the international tenant. Shadow cost via Tinybird `generation_event`; credit pool balance Console-only. | 2026-04-12 |
 | Perplexity (Sonar web-search) | [providers/perplexity.md](providers/perplexity.md) | ✅ Production — `POST /chat/completions` is the only endpoint that exists. Every billing/usage/models path returns 404. Shadow cost via Tinybird; credit pool balance dashboard-only. | 2026-04-12 |
 | Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl account get` for live balance, `billing export-metrics` for per-model CSV. $10k credit pool on `pollinations` account. | 2026-04-12 |
+| DeepInfra | [providers/deepinfra.md](providers/deepinfra.md) | ✅ Production — OpenAI-compatible runtime + REST token management. Billing usage endpoints expose cents by month/token. | 2026-04-24 |
+| OpenRouter | [providers/openrouter.md](providers/openrouter.md) | ✅ Production candidate — `/credits` exposes total credits/usage; key management API supports rolling rotation. | 2026-05-06 |
+| Replicate | [providers/replicate.md](providers/replicate.md) | ✅ Production candidate — single token, no public credit/balance API, no token CRUD API (UI-only). Pay-as-you-go via Wise. Per-second video pricing tiered by resolution + audio. | 2026-05-07 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
-| Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
+| Tinybird | `providers/tinybird.md` | ⏳ TODO — two workspaces now (`pollinations_enter` prod + `pollinations_enter_staging`); billing playbook should cover per-workspace cost. See also `tinybird-deploy` skill for deploys. | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |
 | Vast.ai | `providers/vast.md` | ⏳ TODO | — |
 | OVH | `providers/ovh.md` | ⏳ TODO | — |

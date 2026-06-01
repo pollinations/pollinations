@@ -29,6 +29,7 @@ export function createAudioCommand() {
         .option("--speed <n>", "Playback speed (0.25-4)")
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
+        .option("--seed <n>", "Seed for deterministic output")
         .option("--output <path>", "Save to file", "speech.mp3")
         .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {
@@ -49,6 +50,7 @@ export function createAudioCommand() {
             if (opts.speed) params.set("speed", opts.speed);
             if (opts.duration) params.set("duration", opts.duration);
             if (opts.instrumental) params.set("instrumental", "true");
+            if (opts.seed) params.set("seed", opts.seed);
 
             const encodedText = encodeURIComponent(inputText);
             const url = `${BASE_URL}/audio/${encodedText}?${params}`;

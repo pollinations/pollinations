@@ -17,11 +17,8 @@ export const AVAILABLE_MODELS = [
 ] as const;
 
 export interface UserProfile {
-    name: string;
-    email: string;
     githubUsername: string | null;
     image: string | null;
-    tier: "seed" | "flower" | "nectar" | null;
 }
 
 export interface UserBalance {
@@ -59,7 +56,7 @@ const APP_KEY = "pk_vbqLj6cwn05D2v5B";
 
 function getAuthorizeUrl(): string {
     const redirect = window.location.href.split("#")[0];
-    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect, app_key: APP_KEY, permissions: "profile,balance" })}`;
+    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect, app_key: APP_KEY, permissions: "profile,usage" })}`;
 }
 
 export function useBYOP() {
@@ -107,11 +104,8 @@ export function useBYOP() {
                 if (!res.ok) return;
                 const data = await res.json();
                 setProfile({
-                    name: data.name,
-                    email: data.email,
                     githubUsername: data.githubUsername,
                     image: data.image ?? null,
-                    tier: data.tier ?? null,
                 });
             } catch {
                 // Profile fetch failed silently

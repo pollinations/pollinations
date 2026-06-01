@@ -98,8 +98,8 @@ jobs:
       - name: Install wrangler
         run: npm install -g wrangler
 
-      - name: Install enter dependencies
-        run: cd enter.pollinations.ai && npm install
+      - name: Install dependencies
+        run: npm install
 
       - name: Check comment author permissions
         id: auth
@@ -154,8 +154,8 @@ jobs:
           COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
           COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
 
       - name: Setup Python
         if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
@@ -204,6 +204,15 @@ jobs:
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Remove TIER-APP-REVIEW label
+        if: contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW')
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh api -X DELETE "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/TIER-APP-REVIEW" || true
 
       - uses: actions/checkout@v4
         with:

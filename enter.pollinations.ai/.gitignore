@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.vite/
 .pipelight/
 .wrangler/
 .dev.vars

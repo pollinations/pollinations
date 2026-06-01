@@ -1,0 +1,106 @@
+import { Buffer } from "node:buffer";
+import { HttpError } from "../httpError.ts";
+
+export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
+    return new Uint8Array(buffer);
+}
+
+export function base64ToBuffer(base64: string): Buffer {
+    const input = base64
+        .replace(/^data:[^,]+,/, "")
+        .replace(/\s/g, "")
+        .replace(/-/g, "+")
+        .replace(/_/g, "/")
+        .replace(/=+$/, "");
+    const buffer = Buffer.alloc(Math.floor((input.length * 6) / 8));
+    let bits = 0;
+    let value = 0;
+    let index = 0;
+
+    for (const char of input) {
+        const digit =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(
+                char,
+            );
+        if (digit < 0) {
+            throw new HttpError("Invalid base64 image response", 502);
+        }
+        value = (value << 6) | digit;
+        bits += 6;
+
+        if (bits >= 8) {
+            bits -= 8;
+            buffer[index] = (value >> bits) & 0xff;
+            index += 1;
+        }
+    }
+
+    return buffer;
+}
+
+export function detectMimeType(buffer: Uint8Array): string {
+    if (
+        buffer[0] === 0x89 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x4e &&
+        buffer[3] === 0x47
+    ) {
+        return "image/png";
+    }
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+        return "image/jpeg";
+    }
+    if (
+        buffer[0] === 0x52 &&
+        buffer[1] === 0x49 &&
+        buffer[2] === 0x46 &&
+        buffer[3] === 0x46 &&
+        buffer[8] === 0x57 &&
+        buffer[9] === 0x45 &&
+        buffer[10] === 0x42 &&
+        buffer[11] === 0x50
+    ) {
+        return "image/webp";
+    }
+    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
+        return "image/gif";
+    }
+    if (buffer[0] === 0x42 && buffer[1] === 0x4d) return "image/bmp";
+    return "image/jpeg";
+}
+
+export async function downloadUserImage(
+    imageUrl: string,
+    signal?: AbortSignal,
+): Promise<{ buffer: Buffer; mimeType: string }> {
+    let imageResponse: Response;
+    try {
+        imageResponse = await fetch(imageUrl, { signal });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(
+            `Failed to fetch image ${imageUrl}: ${message}`,
+            400,
+            { validation: true },
+        );
+    }
+
+    if (!imageResponse.ok) {
+        throw new HttpError(
+            `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
+            400,
+            { validation: true },
+        );
+    }
+
+    const buffer = Buffer.from(await imageResponse.arrayBuffer());
+    return { buffer, mimeType: detectMimeType(buffer) };
+}
+
+export async function downloadImageAsBase64(
+    imageUrl: string,
+    signal?: AbortSignal,
+): Promise<{ base64: string; mimeType: string }> {
+    const { buffer, mimeType } = await downloadUserImage(imageUrl, signal);
+    return { base64: buffer.toString("base64"), mimeType };
+}

@@ -9,3 +9,8 @@ export const PRIVACY_PAGE = {
     pageTitle: "privacy policy",
     pageDescription: "Privacy Policy for pollinations.ai",
 };
+
+export const REFUNDS_PAGE = {
+    pageTitle: "refunds and cancellations",
+    pageDescription: "Refunds and cancellations policy for pollinations.ai",
+};

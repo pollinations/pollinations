@@ -1,0 +1,34 @@
+{
+  "pr_number": 11483,
+  "title": "chore(sdk)!: remove speculative batch/progress/browser helpers from extras",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11483",
+  "merged_at": "2026-06-01T15:27:19Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Remove speculative, never-used public exports from the SDK `extras` module:\n\n- Drop `generateImages`, `generateVideos`, `generateBatch`/`BatchResult`, `generateImageWithProgress`/`AwaitOptions`/`ProgressStatus`, `showImage`, `displayImage` (verified zero internal callers via full-repo grep)\n- Keep `wrapImageResponse`/`wrapVideoResponse`/`wrapAudioResponse`/`wrapChatResponse`, `Conversation`, and `arrayBufferToBase64` (still used by the kept wrappers)\n- The batch / multiple-image use case remains available via the documented `generateImage({ n })` / `imageGenerate({ n })`\n\n**Breaking (public API):** version bumped 4.4.0 → 4.5.0 with a CHANGELOG \"Removed (Breaking)\" entry. Net −237 lines; tsup build (incl. DTS) succeeds, 24/24 tests pass.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the SDK",
+    "blurb": "We've pruned some unused, speculative helper functions from the SDK's extras module to keep the codebase light and focused.",
+    "summary": "Removed unused speculative helpers like generateImages, generateBatch, and generateImageWithProgress from the SDK's extras module, bumping the version to 4.5.0.",
+    "impact": "Developers get a leaner SDK with a cleaner API surface, while batch generation remains fully supported via the standard generateImage({ n }) parameter.",
+    "keywords": [
+      "sdk",
+      "cleanup",
+      "api",
+      "breaking-change"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, pruning a digital code-plant to keep it healthy. Unused code blocks falling away into a compost bin.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning a digital code-plant in a warm garden shed. Small pixelated code blocks fall gently into a wooden compost bin. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11483.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning a digital code-plant in a warm garden shed. Small pixelated code blocks fall gently into a wooden compost bin. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T15:28:26.421431+00:00"
+}

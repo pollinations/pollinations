@@ -2,6 +2,20 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [4.5.0] - 2026-06-01
+
+### Removed (Breaking)
+- Removed speculative, never-used helpers from the public API surface:
+  - `generateImages()` / `generateVideos()` — batch generation across multiple different prompts
+  - `generateImageWithProgress()` — image generation with progress polling
+  - `showImage()` / `displayImage()` — browser DOM helpers
+  - Associated types: `BatchResult`, `AwaitOptions`, `ProgressStatus`
+
+  Generating multiple images for a single prompt remains available via the
+  documented `generateImage({ n })` / `imageGenerate({ n })` helpers. For
+  multiple distinct prompts, call `generateImage()` per prompt (e.g. with
+  `Promise.all`).
+
 ## [4.1.0] - 2026-03-05
 
 ### Added

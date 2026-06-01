@@ -14,7 +14,6 @@ export interface TransformationParams {
   imageUrls: string[];
   width?: number;
   height?: number;
-  nologo?: boolean;
   seed?: number;
   enhance?: boolean;
 }
@@ -286,7 +285,6 @@ export class PollinationsTransformationService {
       imageUrls,
       width,
       height,
-      nologo = true,
       seed,
       enhance = false
     } = params;
@@ -296,10 +294,6 @@ export class PollinationsTransformationService {
     console.log("imageUrls :", imageUrls)
 
     url += `&referer=${PollinationsTransformationService.referer}`;
-
-    if (nologo) {
-      url += '&nologo=true';
-    }
 
     const encodedImages = imageUrls.map(u => encodeURIComponent(u)).join(',');
     url += `&image=${encodedImages}`;

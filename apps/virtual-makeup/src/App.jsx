@@ -159,7 +159,7 @@ function App() {
 
             const randomSeed = Math.floor(Math.random() * 1000000);
 
-            const apiUrl = `${POLLINATIONS_IMAGE_API}/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&nologo=true&enhance=true&seed=${randomSeed}`;
+            const apiUrl = `${POLLINATIONS_IMAGE_API}/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&enhance=true&seed=${randomSeed}`;
 
             const response = await fetch(apiUrl, {
                 headers: {

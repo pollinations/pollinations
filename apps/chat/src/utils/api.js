@@ -505,7 +505,6 @@ export const generateImage = async (prompt, options = {}) => {
         width = 1024,
         height = 1024,
         seed = Math.floor(Math.random() * 2147483647),
-        nologo = false,
         enhance = false,
         nofeed = false,
         safe = false,
@@ -518,7 +517,6 @@ export const generateImage = async (prompt, options = {}) => {
         height,
         seed,
         enhance,
-        nologo,
         nofeed,
         safe,
         quality,
@@ -543,11 +541,10 @@ export const generateVideo = async (prompt, options = {}) => {
     const {
         model = "veo",
         seed = Math.floor(Math.random() * 2147483647),
-        nologo = false,
         nofeed = false,
     } = options;
 
-    const params = new URLSearchParams({ model, seed, nologo, nofeed });
+    const params = new URLSearchParams({ model, seed, nofeed });
     // Correct endpoint: /video/{prompt}  (not /image/{prompt})
     const url = `${BASE_URL}/video/${encodeURIComponent(prompt)}?${params}`;
     const token = getApiToken();

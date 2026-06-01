@@ -103,7 +103,7 @@ function App() {
       const seed = Math.floor(Math.random() * 999999999);
       
       // Step 4: Generate with nanobanana model
-      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=nanobanana&image=${encodedImageUrl}&referrer=isometricmap&nologo=true&enhance=true`;
+      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=nanobanana&image=${encodedImageUrl}&referrer=isometricmap&enhance=true`;
       
       
       setGeneratedImage(apiUrl);

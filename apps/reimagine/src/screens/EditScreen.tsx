@@ -76,7 +76,6 @@ export default function EditScreen({ navigation, route }: RootStackScreenProps<'
         prompt: prompt.trim(),
         model,
         imageUrls: prepResult.imageUrls,
-        nologo: true,
         enhance: false,
       });
 
@@ -113,7 +112,6 @@ export default function EditScreen({ navigation, route }: RootStackScreenProps<'
         params: {
           width: 1024,
           height: 1024,
-          nologo: true,
         },
         timestamp: new Date().toISOString(),
       };

@@ -8,7 +8,6 @@ export interface KontextParams {
   width?: number;
   height?: number;
   seed?: number;
-  nologo?: boolean;
 }
 
 
@@ -19,7 +18,6 @@ export interface GPTImageParams {
   width?: number;
   height?: number;
   seed?: number;
-  nologo?: boolean;
 }
 
 
@@ -28,7 +26,6 @@ export type TransformationParams = KontextParams | GPTImageParams;
 export const DEFAULT_TRANSFORMATION_SETTINGS = {
   width: 1024,
   height: 1024,
-  nologo: true,
   referer : 'com.ismafly.promptexploratorapp',
   //referer: 'com.ismafly.reimagine',
 } as const;

@@ -8,7 +8,6 @@ const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
         height: 1024,
         seed: 42,
         enhance: false,
-        nologo: false,
         nofeed: false,
         safe: false,
         quality: "medium",
@@ -20,7 +19,6 @@ const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
     // Video generation defaults
     const [videoOptions, setVideoOptions] = useState({
         seed: 42,
-        nologo: false,
         nofeed: false,
         duration: 4,
         aspectRatio: "16:9",
@@ -260,22 +258,6 @@ const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
                                 <label className="option-checkbox">
                                     <input
                                         type="checkbox"
-                                        checked={imageOptions.nologo}
-                                        onChange={(e) =>
-                                            handleImageOptionChange(
-                                                "nologo",
-                                                e.target.checked,
-                                            )
-                                        }
-                                    />
-                                    <span>Remove watermark</span>
-                                </label>
-                            </div>
-
-                            <div className="option-group checkbox-group">
-                                <label className="option-checkbox">
-                                    <input
-                                        type="checkbox"
                                         checked={imageOptions.nofeed}
                                         onChange={(e) =>
                                             handleImageOptionChange(
@@ -395,22 +377,6 @@ const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
                                         }
                                     />
                                     <span>Enable audio (veo only)</span>
-                                </label>
-                            </div>
-
-                            <div className="option-group checkbox-group">
-                                <label className="option-checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={videoOptions.nologo}
-                                        onChange={(e) =>
-                                            handleVideoOptionChange(
-                                                "nologo",
-                                                e.target.checked,
-                                            )
-                                        }
-                                    />
-                                    <span>Remove watermark</span>
                                 </label>
                             </div>
 

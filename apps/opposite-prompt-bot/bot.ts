@@ -74,7 +74,7 @@ async function generateOpposite(prompt: string): Promise<string> {
 }
 
 async function fetchImage(prompt: string): Promise<Buffer> {
-    const url = `${IMAGE_API}/${encodeURIComponent(prompt)}?model=zimage&nologo=true`;
+    const url = `${IMAGE_API}/${encodeURIComponent(prompt)}?model=zimage`;
     log(`Image API request: ${url}`);
     const res = await axios.get(url, {
         headers: AUTH,

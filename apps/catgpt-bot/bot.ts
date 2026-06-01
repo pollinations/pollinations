@@ -81,7 +81,7 @@ function createPrompt(
 }
 
 function buildImageUrl(prompt: string, avatarUrl: string | null): string {
-    let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}&nologo=true`;
+    let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}`;
     if (API_KEY) url += `&key=${encodeURIComponent(API_KEY)}`;
 
     if (avatarUrl) {

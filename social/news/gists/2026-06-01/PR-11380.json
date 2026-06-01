@@ -1,0 +1,34 @@
+{
+  "pr_number": 11380,
+  "title": "Restrict BYOP redirect URI schemes",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11380",
+  "merged_at": "2026-06-01T09:00:52Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\r\n- restrict BYOP redirect URIs to `https://` by default, with `http://` allowed only for loopback hosts\r\n- apply the same redirect-scheme policy in allowlist matching, app-key creation, and metadata updates\r\n- add regression coverage for app creation, metadata updates, stale stored metadata, app lookup, and secret-key minting\r\n\r\n## Testing\r\n- `XDG_CONFIG_HOME=F:\\tmp\\xdg-config npx vitest run test/url-utils.test.ts test/integration/api-keys.test.ts test/integration/account-keys.test.ts`\r\n- `XDG_CONFIG_HOME=F:\\tmp\\xdg-config npm run typecheck`\r\n\r\n##  TODO before merge\r\n\r\n- [ ] **CI green** — all four checks currently `queued`, wait for them to complete.\r\n- [ ] **Migration audit (prod D1).** Confirm no existing publishable keys have registered redirect URIs that this PR will retroactively reject. Run against prod:\r\n  ```sql\r\n  SELECT id, name, metadata\r\n  FROM apikey\r\n  WHERE metadata LIKE '%redirectUris%'\r\n    AND metadata NOT LIKE '%\"https://%'\r\n    AND metadata NOT LIKE '%\"http://127.0.0.1%'\r\n    AND metadata NOT LIKE '%\"http://localhost%'\r\n    AND metadata NOT LIKE '%\"http://[::1]%';\r\n```\r\n\r\n> If 0 rows: safe to merge as-is. If >0 rows: list owners and decide — notify + grace period, grandfather via flag, or force-update.\r\n- [ ]  Custom URL schemes. Confirm no registered native app relies on a private-use scheme (com.example.app://). RFC 8252 §7.1 allows these; this PR rejects them. Same query as above, looking for redirectUris values that don't start with http.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Locking down the flight path",
+    "blurb": "We've tightened up security for BYOP apps by ensuring redirect URIs use secure HTTPS connections or local loopbacks. Keeping the hive safe from misdirected pollen!",
+    "summary": "BYOP redirect URIs are now restricted to https:// by default, with http:// permitted only for local loopback addresses across app-key creation and metadata updates.",
+    "impact": "Developers configuring BYOP apps must now use secure HTTPS endpoints or localhost for their redirect URIs, preventing potential vulnerabilities from unencrypted or custom scheme redirects.",
+    "keywords": [
+      "security",
+      "byop",
+      "auth",
+      "api-keys"
+    ],
+    "visual_concept": "The pollinations.ai bee acting as a friendly traffic controller, directing glowing data packets along a secure, glowing green path. A chunky robot companion holds a 'HTTPS' sign.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic controller hat, directing glowing data packets along a bright lime green (#ecf874) path. A chunky robot companion with a CRT monitor head holds a sign reading 'HTTPS' in pixel font. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11380.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic controller hat, directing glowing data packets along a bright lime green (#ecf874) path. A chunky robot companion with a CRT monitor head holds a sign reading 'HTTPS' in pixel font. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T09:02:13.094162+00:00"
+}

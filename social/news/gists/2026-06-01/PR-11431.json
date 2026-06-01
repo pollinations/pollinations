@@ -1,0 +1,35 @@
+{
+  "pr_number": 11431,
+  "title": "fix(gen-text): strip reasoning_effort for non-reasoning grok via transform",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11431",
+  "merged_at": "2026-06-01T19:16:52Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Strips `reasoning_effort` only for `grok` / `grok-4-20-non-reasoning`; prod repro showed 500 with the param and 200 without it.\n- Preserves `reasoning_effort` for reasoning Grok variants (`grok-large`, `grok-4.3`).\n- Composes with `stripCacheControl` from #11512 so the newer Grok Azure fix is not regressed.\n- Adds transform and model-wiring tests for the stripped and preserved paths.\n\nVerification:\n- `npm run test -- --run test/text/transforms/stripReasoningEffort.test.ts test/text/transforms/stripCacheControl.test.ts`\n- `npx tsc --noEmit --project gen.pollinations.ai/tsconfig.json`\n\nAddresses #11167\nAddresses #11089",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No overthinking allowed",
+    "blurb": "Fixed a bug where asking standard Grok models to think too hard caused them to crash. Non-reasoning Grok models will now politely ignore the reasoning_effort parameter instead of throwing an error.",
+    "summary": "Strips the `reasoning_effort` parameter from requests to non-reasoning Grok models (`grok`, `grok-4-20-non-reasoning`) to prevent 500 errors, while preserving it for reasoning variants like `grok-large`.",
+    "impact": "Developers can now safely pass `reasoning_effort` in their API calls without breaking standard Grok models, as the parameter is automatically filtered out when unsupported.",
+    "keywords": [
+      "grok",
+      "bug fix",
+      "api",
+      "text generation",
+      "reasoning"
+    ],
+    "visual_concept": "The Nomnom creature eating a complex 'reasoning' gear or parameter block before it reaches a retro computer terminal, keeping the terminal happy. Polly the bee watches amused.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing 'reasoning' gear before it reaches a retro computer terminal. The bee mascot hovers nearby wearing tiny wizard glasses, watching amused. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11431.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing 'reasoning' gear before it reaches a retro computer terminal. The bee mascot hovers nearby wearing tiny wizard glasses, watching amused. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T19:17:58.401457+00:00"
+}

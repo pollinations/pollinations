@@ -82,12 +82,14 @@ function App() {
         height: 1024,
         seed: 42,
         enhance: false,
+        nologo: false,
         nofeed: false,
         safe: false,
         quality: "medium",
     });
     const [videoGenerationOptions, setVideoGenerationOptions] = useState({
         seed: 42,
+        nologo: false,
         nofeed: false,
         duration: 4,
         aspectRatio: "16:9",

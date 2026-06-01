@@ -5,6 +5,7 @@ export interface PollinationsRequest {
   height: number;
   seed?: number;
   enhance?: boolean;
+  nologo?: boolean;
   imageUrl?: string;
 }
 

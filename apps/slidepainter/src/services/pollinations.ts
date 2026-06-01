@@ -9,6 +9,7 @@ const POLLINATIONS_API_BASE = 'https://gen.pollinations.ai';
 const DEFAULT_CONFIG = {
   model: 'gptimage' as const,
   enhance: true,
+  nologo: true,
 };
 
 export class PollinationsService {
@@ -39,6 +40,7 @@ export class PollinationsService {
         width: options.width,
         height: options.height,
         enhance: options?.enhance ?? DEFAULT_CONFIG.enhance,
+        nologo: options?.nologo ?? DEFAULT_CONFIG.nologo,
         seed: options?.seed || Math.floor(Math.random() * 1000000),
         ...(inputImageUrl && { imageUrl: inputImageUrl }),
       };
@@ -51,6 +53,7 @@ export class PollinationsService {
       url.searchParams.set('width', payload.width.toString());
       url.searchParams.set('height', payload.height.toString());
       url.searchParams.set('enhance', (payload.enhance ?? DEFAULT_CONFIG.enhance).toString());
+      url.searchParams.set('nologo', (payload.nologo ?? DEFAULT_CONFIG.nologo).toString());
       url.searchParams.set('seed', payload.seed!.toString());
 
       if (payload.imageUrl && this.isValidUrl(payload.imageUrl)) {

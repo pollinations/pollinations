@@ -13,6 +13,7 @@ export interface TransformationVersion {
     width: number;
     height: number;
     seed?: number;
+    nologo: boolean;
   };
   timestamp: string;
   favorite?: boolean;

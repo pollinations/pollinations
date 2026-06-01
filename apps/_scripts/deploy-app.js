@@ -113,46 +113,87 @@ async function getPagesProject(account, headers, project) {
 }
 
 async function detachPagesDomain(account, headers, customDomain) {
-    const { ok, json } = await cf(
-        `${CF_API}/accounts/${account}/pages/projects?per_page=100`,
-        headers,
-    );
-    if (!ok) {
-        throw new Error(`List Pages projects failed: ${JSON.stringify(json)}`);
-    }
-
-    for (const project of json.result || []) {
-        const { ok: listOk, json: domains } = await cf(
-            `${CF_API}/accounts/${account}/pages/projects/${project.name}/domains`,
+    for (let page = 1; ; page += 1) {
+        const { ok, json } = await cf(
+            `${CF_API}/accounts/${account}/pages/projects?per_page=25&page=${page}`,
             headers,
         );
-        if (!listOk) {
+        if (!ok) {
             throw new Error(
-                `List domains for ${project.name} failed: ${JSON.stringify(domains)}`,
+                `List Pages projects failed: ${JSON.stringify(json)}`,
             );
         }
 
-        if (!domains.result?.some((domain) => domain.name === customDomain)) {
-            continue;
-        }
+        const projects = json.result || [];
+        if (projects.length === 0) return;
 
-        const { ok: deleteOk, json: deleted } = await cf(
-            `${CF_API}/accounts/${account}/pages/projects/${project.name}/domains/${customDomain}`,
-            headers,
-            { method: "DELETE" },
-        );
-        if (!deleteOk) {
-            throw new Error(
-                `Detach ${customDomain} from ${project.name} failed: ${JSON.stringify(deleted)}`,
+        for (const project of projects) {
+            const detached = await detachPagesDomainFromProject(
+                account,
+                headers,
+                project.name,
+                customDomain,
             );
+            if (detached) return;
         }
-
-        console.log(`Detached ${customDomain} from ${project.name}`);
-        return;
     }
 }
 
+async function detachPagesDomainFromProject(
+    account,
+    headers,
+    project,
+    customDomain,
+) {
+    const { ok: listOk, json: domains } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects/${project}/domains`,
+        headers,
+    );
+    if (!listOk) {
+        throw new Error(
+            `List domains for ${project} failed: ${JSON.stringify(domains)}`,
+        );
+    }
+
+    if (!domains.result?.some((domain) => domain.name === customDomain)) {
+        return false;
+    }
+
+    const { ok: deleteOk, json: deleted } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects/${project}/domains/${customDomain}`,
+        headers,
+        { method: "DELETE" },
+    );
+    if (!deleteOk) {
+        throw new Error(
+            `Detach ${customDomain} from ${project} failed: ${JSON.stringify(deleted)}`,
+        );
+    }
+
+    console.log(`Detached ${customDomain} from ${project}`);
+    return true;
+}
+
+async function projectHasPagesDomain(account, headers, project, customDomain) {
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects/${project}/domains`,
+        headers,
+    );
+    if (!ok) {
+        throw new Error(
+            `List domains for ${project} failed: ${JSON.stringify(json)}`,
+        );
+    }
+
+    return json.result?.some((domain) => domain.name === customDomain);
+}
+
 async function addPagesDomain(account, headers, project, customDomain) {
+    if (await projectHasPagesDomain(account, headers, project, customDomain)) {
+        console.log(`Pages custom domain ready: ${customDomain}`);
+        return;
+    }
+
     const postDomain = () =>
         cf(
             `${CF_API}/accounts/${account}/pages/projects/${project}/domains`,
@@ -195,7 +236,7 @@ async function upsertCname(zoneId, headers, name, target) {
                 name,
                 content: target,
                 ttl: 1,
-                proxied: true,
+                proxied: false,
             }),
         },
     );
@@ -221,7 +262,7 @@ async function upsertCname(zoneId, headers, name, target) {
             );
         }
 
-        if (record.content === target) {
+        if (record.content === target && record.proxied === false) {
             console.log(`DNS CNAME already correct: ${name}`);
             return;
         }
@@ -229,7 +270,10 @@ async function upsertCname(zoneId, headers, name, target) {
         const { ok: updateOk, json: updated } = await cf(
             `${CF_API}/zones/${zoneId}/dns_records/${record.id}`,
             headers,
-            { method: "PATCH", body: JSON.stringify({ content: target }) },
+            {
+                method: "PATCH",
+                body: JSON.stringify({ content: target, proxied: false }),
+            },
         );
         if (!updateOk) {
             throw new Error(

@@ -562,7 +562,7 @@ export const IMAGE_SERVICES = {
     },
 } as const satisfies Record<string, ModelDefinition<string>>;
 
-export const isVideoService = (svc: {
+const isVideoService = (svc: {
     outputModalities?: readonly string[];
 }): boolean => svc.outputModalities?.includes("video") ?? false;
 

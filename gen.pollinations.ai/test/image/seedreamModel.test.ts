@@ -9,6 +9,7 @@ vi.mock("../../src/image/utils/imageDownload", () => ({
 }));
 
 import { syncImageEnvironment } from "../../src/image/handler.ts";
+import { callSeedream5API } from "../../src/image/models/seedream5ReplicateModel.ts";
 import {
     callSeedreamAPI,
     callSeedreamProAPI,
@@ -116,6 +117,8 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
         // seed must NOT be sent — Replicate seedream-4 silently drops it,
         // seedream-4.5 strict-rejects unknown fields.
         expect(input.seed).toBeUndefined();
+        // output_format is seedream5-only — must NOT leak into the 4.0 payload.
+        expect(input.output_format).toBeUndefined();
     });
 
     it("returns seedream as actualModel", async () => {
@@ -179,6 +182,9 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
             .input;
         // 2048px → "2K" bucket on seedream-4.5
         expect(input.size).toBe("2K");
+        // 4.5 strict-rejects unknown fields — output_format must stay opt-in
+        // (seedream5 only).
+        expect(input.output_format).toBeUndefined();
     });
 
     it("routes reference images as data URIs in image_input", async () => {
@@ -467,5 +473,130 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         expect(input.aspect_ratio).toBe("16:9");
         expect(input.width).toBeUndefined();
         expect(input.height).toBeUndefined();
+    });
+});
+
+describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
+    it("posts to bytedance/seedream-5-lite with size 2K at <=2048px and output_format png", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5",
+            width: 2048,
+            height: 2048,
+        };
+        await callSeedream5API(
+            "test prompt",
+            params,
+            asProgress(makeProgress()),
+            "req-seedream5-2k",
+        );
+
+        expect(requests).toHaveLength(1);
+        expect(requests[0].url).toBe(
+            "https://api.replicate.com/v1/models/bytedance/seedream-5-lite/predictions",
+        );
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        // 2048px is the boundary — stays in the "2K" bucket.
+        expect(input.size).toBe("2K");
+        expect(input.output_format).toBe("png");
+        expect(input.sequential_image_generation).toBe("disabled");
+        expect(input.max_images).toBe(1);
+        // 5.0 has no custom-size mode — never sends size:"custom" or raw px.
+        expect(input.size).not.toBe("custom");
+        expect(input.width).toBeUndefined();
+        expect(input.height).toBeUndefined();
+    });
+
+    it("resolves size 3K when the longer side exceeds 2048px", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5",
+            width: 4096,
+            height: 2048,
+        };
+        await callSeedream5API(
+            "test prompt",
+            params,
+            asProgress(makeProgress()),
+            "req-seedream5-3k",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        expect(input.size).toBe("3K");
+    });
+
+    it("ignores dimensionsExplicit — no custom-size branch for 5.0", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5",
+            width: 1792,
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+        await callSeedream5API(
+            "test",
+            params,
+            asProgress(makeProgress()),
+            "req-seedream5-no-custom",
+        );
+
+        const input = (requests[0].body as { input: Record<string, unknown> })
+            .input;
+        // 5.0's size enum is only ["2K","3K"] — must stay on the preset path
+        // and derive aspect_ratio from the dimensions.
+        expect(input.size).not.toBe("custom");
+        expect(input.size).toBe("2K");
+        expect(input.aspect_ratio).toBe("16:9");
+        expect(input.width).toBeUndefined();
+        expect(input.height).toBeUndefined();
+        expect(input.output_format).toBe("png");
+    });
+
+    it("rejects more than 14 reference images", async () => {
+        mockReplicateFetch([]);
+
+        const params: ImageParams = {
+            ...baseParams,
+            model: "seedream5",
+            image: Array.from(
+                { length: 15 },
+                (_, i) => `https://example.com/${i}.jpg`,
+            ),
+        };
+
+        await expect(
+            callSeedream5API(
+                "test",
+                params,
+                asProgress(makeProgress()),
+                "req-seedream5-overflow",
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("returns seedream5 as actualModel", async () => {
+        mockReplicateFetch([]);
+
+        const params: ImageParams = { ...baseParams, model: "seedream5" };
+        const result = await callSeedream5API(
+            "test prompt",
+            params,
+            asProgress(makeProgress()),
+            "req-seedream5-tracking",
+        );
+
+        expect(result.trackingData?.actualModel).toBe("seedream5");
+        expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 });

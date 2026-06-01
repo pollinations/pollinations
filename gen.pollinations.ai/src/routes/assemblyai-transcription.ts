@@ -5,6 +5,11 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import {
+    buildTranscriptionResponse,
+    type NormalizedDiarizedSegment,
+    type NormalizedWord,
+} from "./transcription-response.ts";
 
 const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
@@ -320,53 +325,22 @@ function buildAssemblyAiTranscriptResponse(opts: {
     usageHeaders: Record<string, string>;
 }): Response {
     const { transcript, responseFormat, duration, usageHeaders } = opts;
-    const text = transcript.text || "";
 
-    if (responseFormat === "text") {
-        return new Response(text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        const body: Record<string, unknown> = {
-            text,
-            task: "transcribe",
-            language: transcript.language_code || "unknown",
+    // AssemblyAI reports times in milliseconds — convert to seconds and fall
+    // back across its field aliases while normalizing into the shared shape.
+    return buildTranscriptionResponse({
+        normalized: {
+            text: transcript.text || "",
+            language: transcript.language_code || undefined,
             duration,
-            words: toOpenAiWords(transcript.words),
-            segments: [
-                {
-                    id: 0,
-                    start: 0,
-                    end: duration,
-                    text,
-                },
-            ],
-        };
-        return Response.json(body, { headers: usageHeaders });
-    }
-
-    if (responseFormat === "diarized_json") {
-        return Response.json(
-            {
-                task: "transcribe",
-                duration,
-                text,
-                segments: toOpenAiDiarizedSegments(transcript.utterances),
-                usage: {
-                    type: "duration",
-                    seconds: duration,
-                },
-            },
-            { headers: usageHeaders },
-        );
-    }
-
-    return Response.json({ text }, { headers: usageHeaders });
+            words: toNormalizedWords(transcript.words),
+            diarizedSegments: toNormalizedDiarizedSegments(
+                transcript.utterances,
+            ),
+        },
+        responseFormat,
+        usageHeaders,
+    });
 }
 
 function delay(ms: number): Promise<void> {
@@ -418,11 +392,9 @@ function getAssemblyAiDuration(
     return 0;
 }
 
-function toOpenAiWords(words: AssemblyAiWord[] | null | undefined): {
-    word: string;
-    start: number;
-    end: number;
-}[] {
+function toNormalizedWords(
+    words: AssemblyAiWord[] | null | undefined,
+): NormalizedWord[] {
     return (
         words?.map((word) => ({
             word: word.text || word.word || "",
@@ -432,27 +404,18 @@ function toOpenAiWords(words: AssemblyAiWord[] | null | undefined): {
     );
 }
 
-function toOpenAiDiarizedSegments(
+function toNormalizedDiarizedSegments(
     utterances: AssemblyAiUtterance[] | null | undefined,
-): {
-    type: "transcript.text.segment";
-    id: string;
-    start: number;
-    end: number;
-    text: string;
-    speaker: string;
-}[] {
+): NormalizedDiarizedSegment[] {
     return (
-        utterances?.map((utterance, index) => ({
-            type: "transcript.text.segment",
-            id: `seg_${String(index + 1).padStart(3, "0")}`,
+        utterances?.map((utterance) => ({
             start:
                 typeof utterance.start === "number"
                     ? utterance.start / 1000
                     : 0,
             end: typeof utterance.end === "number" ? utterance.end / 1000 : 0,
             text: utterance.text || "",
-            speaker: utterance.speaker ?? "unknown",
+            speaker: utterance.speaker ?? null,
         })) ?? []
     );
 }

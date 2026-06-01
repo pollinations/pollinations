@@ -33,7 +33,7 @@ export const stripeRoutes = new Hono<Env>()
      * form ("2".."100") is no longer accepted — all first-party callers and
      * the /products endpoint expose packKey.
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CheckoutCohort for analytics.
+     * Cohort routing (Phase 1): CF-IPCountry → CohortId for analytics.
      * Stripe Adaptive Pricing localizes presentment.
      *
      * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
@@ -96,7 +96,7 @@ export const stripeRoutes = new Hono<Env>()
                 packAmountUsd: String(pack.amountUsd),
                 packPollenGrant: String(pack.pollenGrant),
                 packBonusPollen: String(pack.bonusPollen),
-                cohort: cohort.id,
+                cohort,
             };
 
             const checkoutSession = await stripe.checkout.sessions.create({

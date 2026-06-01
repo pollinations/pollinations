@@ -52,6 +52,18 @@ export function capitalize(str: string): string {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }
 
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+
+    return btoa(binary);
+}
+
 export type ExponentialBackoffOptions = {
     maxAttempts?: number;
     minDelay?: number;

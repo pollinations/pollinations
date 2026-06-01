@@ -1,14 +1,17 @@
 # @pollinations_ai/ui
 
-Internal UI primitives for Pollinations apps. Auth state lives in
-[`@pollinations_ai/sdk/react`](../sdk/README.md#react-auth-provider) — this
-package provides the visual layer that consumes it.
+Internal UI primitives for Pollinations apps. SDK-backed subpaths consume auth
+state from [`@pollinations_ai/sdk/react`](../sdk/README.md#react-auth-provider);
+core primitives and display recipes stay SDK-free.
 
 ## Install
 
 ```bash
-npm install @pollinations_ai/sdk @pollinations_ai/ui
+npm install @pollinations_ai/ui
 ```
+
+Install `@pollinations_ai/sdk` too when using `@pollinations_ai/ui/*/sdk`
+subpaths.
 
 ## Usage
 
@@ -17,17 +20,20 @@ import "@pollinations_ai/ui/styles.css";
 import { PolliProvider, useAccountKeyUsage } from "@pollinations_ai/sdk/react";
 import { Surface } from "@pollinations_ai/ui";
 import {
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
     LoginButton,
     LogoutButton,
     UserAvatar,
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth";
+} from "@pollinations_ai/ui/auth/sdk";
+import {
+    Balance,
+    KeyBudget,
+    KeyExpiry,
+    KeyModels,
+    KeyPrefix,
+} from "@pollinations_ai/ui/wallet/sdk";
 
 function RecentRequests() {
     const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
@@ -46,6 +52,7 @@ export function App() {
                 <WhenLoggedIn>
                     <UserAvatar size="md" />
                     <UserName />
+                    <Balance />
                     <KeyPrefix />
                     <KeyBudget />
                     <KeyExpiry />
@@ -59,29 +66,82 @@ export function App() {
 }
 ```
 
+For Pollinations apps that use unprefixed Tailwind utilities, import the
+package-owned app stylesheet instead:
+
+```css
+@import "@pollinations_ai/ui/app.css";
+```
+
+`app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
+and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
+
+Canonical Pollinations source SVGs are exported from the package:
+
+```ts
+import logoUrl from "@pollinations_ai/ui/assets/logo.svg";
+import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
+```
+
+The SVG sources use `currentColor`. Apps control the rendered color by inlining
+them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
+app-owned.
+
+Wallet-specific colors and utilities live in a separate stylesheet:
+
+```css
+@import "@pollinations_ai/ui/wallet.css";
+```
+
 ## What's exported
 
 - `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
   theme data. These can be used without Pollinations auth.
-- `@pollinations_ai/ui/auth` exports auth-aware components that read from the
-  surrounding `<PolliProvider>`:
-  - **null when not logged in (or before data loads):** `Balance`,
-    `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`, `LogoutButton`,
+- `@pollinations_ai/ui/auth` exports SDK-free auth modal pieces:
+  `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
+  `ErrorBanner`.
+- `@pollinations_ai/ui/auth/sdk` exports identity/session components that read
+  from the surrounding `<PolliProvider>`:
+  - **null when not logged in (or before data loads):** `LogoutButton`,
     `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
   - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
 
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
-- **Design primitives** — `Button`, `Chip`, `Disclosure`, `IconButton`,
-  `InfoTip`, `Input`, `LinkButton`, `Surface`, `Switch`, `TabButton`,
-  `Tooltip`, `ChevronIcon`.
-- **Helpers** — `cn`, `formatPollen`.
+- `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
+  internal preview surface for rendering primitives and tokens together.
+- `@pollinations_ai/ui/wallet` exports SDK-free wallet-specific display helpers
+  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
+  `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
+  `TIER_BALANCE_CHART_COLOR`.
+- `@pollinations_ai/ui/wallet/sdk` exports SDK-backed wallet components:
+  `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
+- `@pollinations_ai/ui/modality` exports model-modality color recipes and
+  `ModalityButton`.
+- `@pollinations_ai/ui/assets/*` exports canonical Pollinations source SVGs:
+  `logo.svg` and `logo-wordmark.svg`.
+- **Design primitives** — `Button`, `Chip`, `ChevronIcon`, `Collapsible`,
+  `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`,
+  `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`, `ScrollArea`, `Section`,
+  `Slider`, `StatCard`, `Surface`, `Switch`, `TabButton`, `Tooltip`.
+- **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
+  `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 For per-request usage data and other dynamic queries, call the opt-in hooks
 from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 `useAccountBalance`, etc.) directly.
+
+## Source Layout
+
+- `src/primitives/*` contains generic, SDK-free building blocks.
+- `src/modules/*` contains package-owned recipes with domain assumptions
+  such as auth, wallet, and modality.
+- Public subpath exports (`@pollinations_ai/ui/auth`,
+  `@pollinations_ai/ui/auth/sdk`, `@pollinations_ai/ui/wallet`,
+  `@pollinations_ai/ui/wallet/sdk`, `@pollinations_ai/ui/modality`,
+  `@pollinations_ai/ui/showcase`) are built directly from those modules.
 
 ## Theming
 
@@ -96,10 +156,8 @@ These CSS variables are part of the public contract. You may reference
 them in your own CSS / inline styles. Renames between minor versions
 count as breaking.
 
-All public tokens sit under the `--polli-color-*` namespace so they can't
-collide with Tailwind v4's prefixed namespaces (`--polli-text-*`,
-`--polli-font-*`, `--polli-spacing-*`, etc. — all reserved by the
-internal Tailwind theme).
+Public tokens sit under the `--polli-*` namespace so they do not collide
+with host app tokens.
 
 **Theme-aware (resolve against the active `data-theme`):**
 
@@ -114,6 +172,30 @@ internal Tailwind theme).
 | `--polli-color-bg-active`     | Selected / active state background.           |
 | `--polli-color-bg-hover`      | Hover state background.                       |
 | `--polli-color-bg-pale`       | Light wash (cards, chips, large blocks).      |
+| `--polli-color-scrollbar-thumb` | Active themed scrollbar thumb color.        |
+
+**Static app tokens:**
+
+| Token                         | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `--polli-font-heading`        | Heading display face.                         |
+| `--polli-font-subheading`     | Secondary display face.                       |
+| `--polli-font-body`           | Body text face.                               |
+| `--polli-font-pixel`          | Pixel/monospace fallback stack.               |
+| `--polli-text-micro`          | Micro label size.                             |
+| `--polli-text-base`           | Base text size.                               |
+| `--polli-color-surface-white` | Translucent white surface.                    |
+
+Wallet tokens are public when `@pollinations_ai/ui/wallet.css` is imported:
+
+| Token                         | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `--polli-color-paid-pale`     | Paid-balance wash.                            |
+| `--polli-color-paid-soft`     | Paid-balance marker.                          |
+| `--polli-color-paid-deep`     | Paid-balance text.                            |
+| `--polli-color-tier-pale`     | Tier-balance wash.                            |
+| `--polli-color-tier-soft`     | Tier-balance marker.                          |
+| `--polli-color-tier-deep`     | Tier-balance text.                            |
 
 **Intent (theme-independent):**
 
@@ -133,6 +215,5 @@ internal Tailwind theme).
 }
 ```
 
-Anything not listed above (including the `polli:*` Tailwind utility
-class names and the `--color-paid-*` / `--color-tier-*` hue ramps) is
-library-internal and may change without notice.
+Anything not listed above, including the `polli:*` Tailwind utility class
+names, is library-internal and may change without notice.

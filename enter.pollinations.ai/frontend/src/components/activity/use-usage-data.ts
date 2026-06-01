@@ -1,7 +1,10 @@
+import {
+    getPeriodBucketKeys,
+    periodBucketKeyToDate,
+} from "@pollinations_ai/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { ALL_MODELS, type ModelModality } from "./constants";
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
     DataPoint,

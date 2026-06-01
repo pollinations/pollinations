@@ -1,1 +1,2 @@
-@import "tailwindcss";
+@import "@pollinations_ai/ui/app.css";
+@import "@pollinations_ai/ui/wallet.css";

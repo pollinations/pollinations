@@ -561,3 +561,17 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame"],
     },
 } as const satisfies Record<string, ModelDefinition<string>>;
+
+export const isVideoService = (svc: {
+    outputModalities?: readonly string[];
+}): boolean => svc.outputModalities?.includes("video") ?? false;
+
+export const getVideoModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter((id) =>
+        isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );
+
+export const getImageModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter(
+        (id) => !isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );

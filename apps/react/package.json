@@ -14,15 +14,15 @@
   },
   "dependencies": {
     "@pollinations_ai/sdk": "*",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@pollinations_ai/ui": "*"
+    "@pollinations_ai/ui": "*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "vite": "^7.0.0"

@@ -1,13 +1,14 @@
-import { cn } from "@frontend/lib/cn.ts";
+import { Collapsible, cn } from "@pollinations_ai/ui";
+import {
+    getModalityColors,
+    ModalityButton,
+} from "@pollinations_ai/ui/modality";
 import type { FC } from "react";
 import { useState } from "react";
-import { getModalityColors } from "../models/modality-ui.ts";
 import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
-import { Disclosure } from "../ui/disclosure.tsx";
-import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {
     getPermissionUiTheme,
@@ -220,7 +221,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 })}
 
                 {/* Models */}
-                <Disclosure
+                <Collapsible
                     expanded={modelsExpanded}
                     onToggle={() => setModelsExpanded((v) => !v)}
                     disabled={disabled}
@@ -255,7 +256,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             theme={theme}
                         />
                     ))}
-                </Disclosure>
+                </Collapsible>
             </div>
         </div>
     );

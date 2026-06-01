@@ -1,0 +1,34 @@
+{
+  "pr_number": 11489,
+  "title": "refactor(enter): remove dead exports across util, events, middleware, and cache",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11489",
+  "merged_at": "2026-06-01T15:30:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- util.ts: drop 10 unused exports (generateRandomId, batches, omit, joinOptionalStrings, applyStyle/AnsiStyle/ansiStyles, lines, safeRound, withRetry/RetryOptions) plus the now-orphaned nanoid id helper\n- events.ts: remove dead sendToTinybird + flattenBalances and the unused TinybirdEvent import + capitalize import; update events.test.ts (drop 5 now-dead tests)\n- middleware/balance.ts: remove unused requirePositiveBalance/requirePaidBalance + fetchBalanceWithErrorHandling helper and trim shared balance-check imports; keep getBalance/getAvailableBalance/UserBalance\n- middleware/auth.ts: remove unused requireModelAccess/requireKeyBudget and the ModelVariables augmentation; keep requireAuthorization/requireUser\n- delete unused middleware/alias.ts (zero importers) and dead hashArgs fallback in cache.ts\n\nRisks: none — pure dead-code removal, no callers, no behavior change. getBalance path never used the deleted 503 wrapper, so customer.ts behavior is unchanged.\n\n_~505 net lines removed · biome ✓ · cd enter.pollinations.ai && npx vitest run test/events.test.ts test/balance-check.test.ts  ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "Swept away over 500 lines of unused code from our API gateway. A lighter codebase means faster development and fewer bugs hiding in the shadows!",
+    "summary": "Removed over 500 lines of dead code and unused exports across the enter.pollinations.ai utility, events, middleware, and cache modules.",
+    "impact": "Developers benefit from a cleaner, more maintainable codebase with no changes to existing API behavior.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "tech-debt",
+      "enter.pollinations.ai"
+    ],
+    "visual_concept": "The bee mascot sweeping up dead leaves or throwing away old, dusty code blocks into a recycling bin. Nomnom creature eating the old code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor hat, sweeping up dusty, gray pixelated code blocks. The round tan nomnom creature happily eats the pile of discarded code. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11489.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor hat, sweeping up dusty, gray pixelated code blocks. The round tan nomnom creature happily eats the pile of discarded code. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:31:16.934437+00:00"
+}

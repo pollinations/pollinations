@@ -4,7 +4,7 @@
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {
-    "polli": "./bin/polli.js"
+    "polli": "bin/polli.js"
   },
   "scripts": {
     "build": "tsup",
@@ -18,6 +18,9 @@
     "bin",
     "SKILL.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "pollinations",
     "ai",
@@ -46,7 +49,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pollinations/pollinations.git",
+    "url": "git+https://github.com/pollinations/pollinations.git",
     "directory": "packages/polli-cli"
   },
   "homepage": "https://pollinations.ai",

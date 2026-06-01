@@ -111,9 +111,6 @@ export type TinybirdEvent = {
 
     // Cache
     cacheHit?: boolean;
-    cacheType?: string;
-    cacheSemanticSimilarity?: number;
-    cacheSemanticThreshold?: number;
     cacheKey?: string;
 
     // Error

@@ -1,38 +1,57 @@
-**Polly Media Handlers — Production deployment (minimal)**
+# Polly Media Handlers — Production deployment
 
-This file contains the minimal steps required to deploy the Polly media handlers in production (Markdown table rendering, LaTeX conversion, and code block handling).
+Renders Markdown tables, LaTeX expressions, code blocks, and charts (bar / line / pie / heatmap / etc.) as PNG images attached to Discord messages.
 
-Prerequisites
-- Python 3.10+ (tested with 3.14)
-- System packages required by `cairosvg` if you plan to convert SVG → PNG locally
+## Components
 
-Quick production steps
+- `src/services/media_handlers.py` — PIL-based table renderer, LaTeX→PNG, code-block splitter
+- `src/services/chart_renderer.py` — matplotlib + seaborn chart engine
+- `src/services/charts.py` — `render_visual` tool handler that dispatches to the above
+- `assets/fonts/` — vendored Noto Sans (variable axis) + IBM Plex Mono TTFs
 
-1) Create and activate a virtual environment in `apps/polly`:
+## Prerequisites
 
-```bash
-cd apps/polly
-python -m venv venv
-source venv/bin/activate
-```
+- Python 3.10+
+- System packages required by `cairosvg` (libcairo2, libpangocairo) for LaTeX SVG→PNG
 
-2) Run the setup helper to download fonts and install Python dependencies:
+## Setup
 
-```bash
-bash setup-media-handlers.sh
-```
+1. Create and activate a virtualenv:
 
-- This places Noto Sans TTF variants in `assets/fonts/` and installs optional packages (`pillow`, `pilmoji`, `cairosvg`, `requests`).
+   ```bash
+   cd apps/polly
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-3) Start the bot/service in production mode:
+2. Install dependencies:
 
-```bash
-source venv/bin/activate
-python main.py
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-For robust production deployments, run the process under a supervisor (systemd, supervisord) or inside a container, and provide required environment variables and secrets securely.
+3. Start the bot:
 
-Notes
-- If `assets/fonts/` is missing, the handlers will fall back to default system fonts.
-- Development docs and examples were removed from the working tree to keep the repository small; retrieve them from the Git history if needed.
+   ```bash
+   python main.py
+   ```
+
+For production, run under systemd / supervisord / docker with env vars supplied securely.
+
+## How the AI uses it
+
+The AI calls a single tool, `render_visual(type, title, data, options)`. Internally:
+
+| Path | Trigger |
+|---|---|
+| Local PIL renderer    | `type="table"` |
+| Local matplotlib/seaborn | `type` in `bar / horizontal_bar / line / area / scatter / pie / donut / heatmap / histogram` |
+| Gemini code-execution | `type="free_form"` or any unrecognized type |
+
+Multiple `render_visual` calls in one turn attach multiple images (Discord caps at 10 per message).
+
+## Notes
+
+- Fonts ship in `assets/fonts/`; no separate download step is needed.
+- If the font files are missing for any reason, PIL falls back to the bitmap default (degraded but functional).
+- Markdown tables that the AI emits in plain text are still detected post-hoc by `detect_and_parse_markdown_tables` and rendered as a fallback. The `render_visual` tool is the preferred path.

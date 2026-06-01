@@ -1,9 +1,11 @@
 import {
     Button,
+    CopyButton,
     cn,
     Dialog,
     DialogTitle,
     Field,
+    Input,
     ScrollArea,
     Tooltip,
 } from "@pollinations_ai/ui";
@@ -68,7 +70,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
@@ -100,20 +101,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }
     }
 
-    async function handleCopyAndClose() {
-        if (!createdKey) return;
-
-        try {
-            await navigator.clipboard.writeText(createdKey.key);
-            setCopied(true);
-            setTimeout(() => {
-                onComplete();
-                setIsOpen(false);
-            }, 500);
-        } catch {
+    function closeAfterCopy() {
+        setTimeout(() => {
             onComplete();
             setIsOpen(false);
-        }
+        }, 500);
     }
 
     const { allowedModels } = keyPermissions.permissions;
@@ -123,15 +115,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         allowedModels.length === 0;
     const isCreateDisabled =
         !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
-    const keyInputStyles = {
-        editableInputClasses:
-            "border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200",
-        readOnlyInputClasses: "border-blue-200 bg-blue-50",
-    };
-
     function getButtonText(): string {
-        if (copied) return "Copied! Closing...";
-        if (createdKey) return "Copy and Close";
         if (isSubmitting) return "Creating...";
         return "Create";
     }
@@ -141,10 +125,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             ? "Select at least one model"
             : undefined;
 
-    const submitButton = (
+    const submitButton = createdKey ? (
+        <CopyButton
+            value={createdKey.key}
+            copiedTimeoutMs={500}
+            tooltip="Copy key"
+            copiedTooltip="Copied! Closing..."
+            onCopied={closeAfterCopy}
+            onCopyError={() => {
+                onComplete();
+                setIsOpen(false);
+            }}
+            className="inline-flex items-center justify-center self-center rounded-full bg-theme-bg-active px-4 pb-2 pt-1.5 font-medium leading-normal text-theme-text-base transition-colors hover:bg-theme-bg-hover hover:brightness-105"
+        >
+            {(copied) => (copied ? "Copied! Closing..." : "Copy and Close")}
+        </CopyButton>
+    ) : (
         <Button
-            type={createdKey ? "button" : "submit"}
-            onClick={createdKey ? handleCopyAndClose : undefined}
+            type="submit"
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >
@@ -158,7 +156,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             onOpenChange={(open) => {
                 if (open) {
                     setCreatedKey(null);
-                    setCopied(false);
                     setError(null);
                     setName(generateFunName());
                     setRedirectUris([]);
@@ -247,15 +244,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     : "Your API Key"
                                 : "Name"}
                         </Field.Label>
-                        <Field.Input
+                        <Input
                             type="text"
                             value={createdKey ? createdKey.key : name}
                             onChange={(e) => setName(e.target.value)}
                             className={cn(
-                                "w-full px-3 py-2 border rounded-lg",
+                                "w-full",
                                 createdKey
-                                    ? `${keyInputStyles.readOnlyInputClasses} font-mono text-xs`
-                                    : keyInputStyles.editableInputClasses,
+                                    ? "border-blue-200 bg-blue-50 font-mono text-xs"
+                                    : "border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200",
                             )}
                             placeholder={createdKey ? "" : "Enter API key name"}
                             required={!createdKey}

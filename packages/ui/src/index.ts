@@ -1,17 +1,10 @@
 export { cn } from "./lib/cn-app.ts";
 export {
-    addUtcDays,
     currentPeriod,
-    formatPeriodLabel,
     getPeriodBucketKeys,
-    isPeriodSelectable,
     type PeriodGranularity,
     type PeriodSelection,
-    type PeriodWindow,
     periodBucketKeyToDate,
-    periodFromDate,
-    periodToWindow,
-    startOfUtcDay,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
@@ -21,9 +14,9 @@ export {
     Collapsible,
     type CollapsibleProps,
 } from "./primitives/Collapsible.tsx";
+export { CopyButton, type CopyButtonProps } from "./primitives/CopyButton.tsx";
 export {
     Dialog,
-    DialogDescription,
     type DialogProps,
     DialogTitle,
 } from "./primitives/Dialog.tsx";
@@ -39,7 +32,6 @@ export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
 export {
     MultiSelect,
-    type MultiSelectOption,
     type MultiSelectProps,
 } from "./primitives/MultiSelect.tsx";
 export {
@@ -49,6 +41,7 @@ export {
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Section, type SectionProps } from "./primitives/Section.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
+export { StatCard, type StatCardProps } from "./primitives/StatCard.tsx";
 export { Surface } from "./primitives/Surface.tsx";
 export {
     Switch,

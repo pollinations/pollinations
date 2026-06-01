@@ -3,6 +3,7 @@ import {
     Chip,
     MultiSelect,
     Section,
+    StatCard,
     Tooltip,
 } from "@pollinations_ai/ui";
 import {
@@ -12,7 +13,7 @@ import {
     TIER_BALANCE_CHART_COLOR,
     TierChip,
 } from "@pollinations_ai/ui/wallet";
-import type { FC, ReactNode } from "react";
+import type { FC } from "react";
 import { useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chart } from "./chart";
@@ -149,10 +150,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 
                 <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                        <EarningsStatCard
+                        <StatCard
                             theme={theme}
                             label="Pollen earned"
                             value={formatPollen(stats.totalPollen)}
+                            labelClassName="text-theme-text-soft"
+                            valueClassName="text-theme-text-base"
                             detail={
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
@@ -194,10 +197,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         />
                     </div>
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                        <EarningsStatCard
+                        <StatCard
                             theme={theme}
                             label="Active users"
                             value={stats.activeUsers.toLocaleString()}
+                            labelClassName="text-theme-text-soft"
+                            valueClassName="text-theme-text-base"
                             detail={
                                 stats.appCount > 0 ? (
                                     <span className="text-theme-text-soft">
@@ -211,9 +216,11 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         />
                     </div>
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                        <EarningsStatCard
+                        <StatCard
                             theme={theme}
                             label="Top app"
+                            labelClassName="text-theme-text-soft"
+                            valueClassName="text-theme-text-base"
                             value={
                                 <span className="text-xl leading-tight">
                                     {stats.topApp?.label || "None"}
@@ -273,24 +280,5 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         </Section>
     );
 };
-
-const EarningsStatCard: FC<{
-    theme: ThemeName;
-    label: string;
-    value: ReactNode;
-    detail?: ReactNode;
-}> = ({ theme, label, value, detail }) => (
-    <div data-theme={theme} className="text-sm">
-        <div className="text-micro uppercase tracking-wide font-bold text-theme-text-soft">
-            {label}
-        </div>
-        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-base">
-            {value}
-        </div>
-        {detail && (
-            <div className="mt-2 text-xs text-theme-text-soft">{detail}</div>
-        )}
-    </div>
-);
 
 export default EarningsGraph;

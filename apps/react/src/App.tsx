@@ -18,14 +18,14 @@ import {
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth";
+} from "@pollinations_ai/ui/auth/sdk";
 import {
     Balance,
     KeyBudget,
     KeyExpiry,
     KeyModels,
     KeyPrefix,
-} from "@pollinations_ai/ui/wallet";
+} from "@pollinations_ai/ui/wallet/sdk";
 import { type ReactNode, useEffect, useState } from "react";
 
 // Publishable key for this showcase (pk_… is safe to commit).
@@ -408,13 +408,13 @@ ${primitiveImports.map((c) => `    ${c},`).join("\n")}
 
     const authImportBlock = `import {
 ${authImports.map((c) => `    ${c},`).join("\n")}
-} from "@pollinations_ai/ui/auth";\n`;
+} from "@pollinations_ai/ui/auth/sdk";\n`;
 
     const walletImportBlock =
         walletImports.length > 0
             ? `import {
 ${walletImports.map((c) => `    ${c},`).join("\n")}
-} from "@pollinations_ai/ui/wallet";\n`
+} from "@pollinations_ai/ui/wallet/sdk";\n`
             : "";
 
     const sdkImportBlock = `import {

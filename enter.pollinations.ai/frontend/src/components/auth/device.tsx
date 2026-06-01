@@ -1,4 +1,4 @@
-import { Button } from "@pollinations_ai/ui";
+import { Button, Input } from "@pollinations_ai/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -138,14 +138,14 @@ export function Device({ prefilledCode }: DeviceProps) {
                         <p className="text-theme-text-strong">
                             Enter the code from your device.
                         </p>
-                        <input
+                        <Input
                             type="text"
                             value={userCode}
                             onChange={(e) =>
                                 setUserCode(e.target.value.toUpperCase())
                             }
                             placeholder="XXXX-XXXX"
-                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-theme-border rounded-lg bg-surface-white text-theme-text-strong"
+                            className="w-full border-2 border-theme-border bg-surface-white p-3 text-center font-mono text-2xl tracking-widest text-theme-text-strong"
                             ref={inputRef}
                             maxLength={20}
                             disabled={checking}

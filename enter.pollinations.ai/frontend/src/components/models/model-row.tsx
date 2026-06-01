@@ -1,6 +1,6 @@
-import { Chip, cn, InfoTip, Tooltip } from "@pollinations_ai/ui";
+import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations_ai/ui";
 import { PaidChip } from "@pollinations_ai/ui/wallet";
-import { type FC, useState } from "react";
+import type { FC } from "react";
 import {
     calculatePerPollen,
     canAffordModel,
@@ -40,7 +40,6 @@ export const ModelRow: FC<ModelRowProps> = ({
     const capabilityIcons = getModelCapabilityIcons(model.name);
     const capabilityLabel = getModelCapabilityLabel(model.name);
     const publicModelName = modelDisplayName || model.name;
-    const [copied, setCopied] = useState(false);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
@@ -132,15 +131,6 @@ export const ModelRow: FC<ModelRowProps> = ({
         },
     ]);
 
-    const copyModelName = async () => {
-        // Copy the registry key (model.name), not the display name — the display
-        // name is often a provider-internal string (e.g. "flux-schnell") that
-        // isn't a valid model or alias and would 404 in API requests.
-        await navigator.clipboard.writeText(model.name);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 900);
-    };
-
     return (
         <div
             className={cn(
@@ -179,22 +169,31 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <InfoTip text={modelDescription} />
                         )}
                     </span>
-                    <button
-                        type="button"
-                        onClick={copyModelName}
-                        className={cn(
-                            "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-gray-500 transition-colors",
-                            copied ? "text-teal-700" : "hover:text-gray-700",
-                        )}
+                    <CopyButton
+                        value={model.name}
+                        copiedTimeoutMs={900}
+                        tooltip={`Copy API model name ${model.name}`}
                         aria-label={`Copy API model name ${model.name}`}
-                    >
-                        <span>{model.name}</span>
-                        {copied && (
-                            <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                        className={(copied) =>
+                            cn(
+                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-gray-500 transition-colors",
                                 copied
-                            </span>
+                                    ? "text-teal-700"
+                                    : "hover:text-gray-700",
+                            )
+                        }
+                    >
+                        {(copied) => (
+                            <>
+                                <span>{model.name}</span>
+                                {copied && (
+                                    <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                                        copied
+                                    </span>
+                                )}
+                            </>
                         )}
-                    </button>
+                    </CopyButton>
                     {(modalityIcons.length > 0 ||
                         capabilityIcons.length > 0 ||
                         showNew ||

@@ -1,10 +1,16 @@
-import { ChevronIcon, Chip, cn, Tooltip } from "@pollinations_ai/ui";
+import {
+    ChevronIcon,
+    Chip,
+    CopyButton,
+    cn,
+    Tooltip,
+} from "@pollinations_ai/ui";
 import { PaidChip } from "@pollinations_ai/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
-import { type FC, type MouseEvent, useState } from "react";
+import { type FC, useState } from "react";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
@@ -240,7 +246,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const [copied, setCopied] = useState(false);
     const displayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
@@ -260,13 +265,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             packBalance ?? 0,
             showPaidOnly,
         );
-
-    const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(model.name);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 900);
-    };
 
     return (
         <div
@@ -355,26 +353,33 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
                     <div className="flex min-w-0 flex-col gap-2 pl-6">
-                        <button
-                            type="button"
-                            onClick={copyModelName}
-                            className={cn(
-                                "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
-                                copied
-                                    ? "text-teal-700"
-                                    : "hover:text-gray-700",
-                            )}
+                        <CopyButton
+                            value={model.name}
+                            copiedTimeoutMs={900}
+                            tooltip={`Copy API model name ${model.name}`}
                             aria-label={`Copy API model name ${model.name}`}
-                        >
-                            <span className="min-w-0 truncate">
-                                {model.name}
-                            </span>
-                            {copied && (
-                                <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                            className={(copied) =>
+                                cn(
+                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
                                     copied
-                                </span>
+                                        ? "text-teal-700"
+                                        : "hover:text-gray-700",
+                                )
+                            }
+                        >
+                            {(copied) => (
+                                <>
+                                    <span className="min-w-0 truncate">
+                                        {model.name}
+                                    </span>
+                                    {copied && (
+                                        <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                                            copied
+                                        </span>
+                                    )}
+                                </>
                             )}
-                        </button>
+                        </CopyButton>
                         <MobilePriceGroup
                             label="In"
                             model={model}

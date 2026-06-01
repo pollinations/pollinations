@@ -1,41 +1,25 @@
-import { type ThemeName, themes } from "@pollinations_ai/ui";
-
-export { themes };
+import type { ThemeName } from "@pollinations_ai/ui";
 export type { ThemeName };
 
 // Intent maps live per-primitive now: Button/Surface/IconButton support
 // `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 
-export type DashboardPage =
-    | "news-faq"
-    | "pollen"
-    | "activity"
-    | "keys"
-    | "models";
-
-/** Alias kept for backwards-compat at call sites; identical to ThemeName. */
-export type DashboardTheme = ThemeName;
-
-export const DASHBOARD_NAV_ITEMS: {
-    id: DashboardPage;
-    label: string;
-    theme: ThemeName;
-}[] = [
+export const DASHBOARD_NAV_ITEMS = [
     { id: "news-faq", label: "News & FAQ", theme: "violet" },
     { id: "models", label: "Models", theme: "teal" },
     { id: "keys", label: "Keys", theme: "blue" },
     { id: "pollen", label: "Pollen", theme: "amber" },
     { id: "activity", label: "Activity", theme: "pink" },
-];
+] as const satisfies readonly {
+    id: string;
+    label: string;
+    theme: ThemeName;
+}[];
 
-export const DASHBOARD_PAGES: DashboardPage[] = [
-    "news-faq",
-    "models",
-    "keys",
-    "pollen",
-    "activity",
-];
+export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
+
+export const DASHBOARD_PAGES = DASHBOARD_NAV_ITEMS.map(({ id }) => id);
 
 // Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
 // Pages should read their theme from here so flipping a nav item's `theme`

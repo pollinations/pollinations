@@ -1,7 +1,7 @@
 import {
     Button,
-    ChevronIcon,
     Chip,
+    Collapsible,
     cn,
     MailIcon,
     useScrollLock,
@@ -87,6 +87,7 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const [permissionsExpanded, setPermissionsExpanded] = useState(false);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -611,37 +612,36 @@ export function Authorize() {
                             />
                         </div>
 
-                        <details className="group -mx-6 border-t border-theme-border">
-                            <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-theme-text-soft hover:bg-theme-bg-pale hover:text-theme-text-strong transition-colors">
-                                    Permissions
-                                    <ChevronIcon className="text-theme-text-soft group-open:rotate-180" />
+                        <Collapsible
+                            expanded={permissionsExpanded}
+                            onToggle={() => setPermissionsExpanded((v) => !v)}
+                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-theme-border bg-transparent"
+                            hoverClassName="hover:bg-theme-bg-pale"
+                            panelClassName="px-3 pb-3 pt-1 space-y-6"
+                            label={
+                                <span className="flex justify-end">
+                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-theme-text-soft transition-colors hover:text-theme-text-strong">
+                                        Permissions
+                                    </span>
                                 </span>
-                            </summary>
-                            <div className="px-3 pb-3 pt-1 space-y-6">
-                                <AccountPermissionsInput
-                                    value={
-                                        keyPermissions.permissions
-                                            .accountPermissions
-                                    }
-                                    onChange={
-                                        keyPermissions.setAccountPermissions
-                                    }
-                                    allowedModels={
-                                        keyPermissions.permissions.allowedModels
-                                    }
-                                    onModelsChange={
-                                        keyPermissions.setAllowedModels
-                                    }
-                                    visiblePermissions={
-                                        visibleOptionalPermissions
-                                    }
-                                    theme="amber"
-                                    showApiName={false}
-                                    modelsInitiallyExpanded
-                                />
-                            </div>
-                        </details>
+                            }
+                        >
+                            <AccountPermissionsInput
+                                value={
+                                    keyPermissions.permissions
+                                        .accountPermissions
+                                }
+                                onChange={keyPermissions.setAccountPermissions}
+                                allowedModels={
+                                    keyPermissions.permissions.allowedModels
+                                }
+                                onModelsChange={keyPermissions.setAllowedModels}
+                                visiblePermissions={visibleOptionalPermissions}
+                                theme="amber"
+                                showApiName={false}
+                                modelsInitiallyExpanded
+                            />
+                        </Collapsible>
                     </div>
                 )}
             </div>

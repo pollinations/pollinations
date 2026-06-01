@@ -2,13 +2,13 @@ import { apiClient } from "@frontend/api.ts";
 import {
     Button,
     Chip,
+    CopyButton,
     cn,
     Dialog,
     DialogTitle,
     Field,
     Input,
     ScrollArea,
-    Tooltip,
 } from "@pollinations_ai/ui";
 import type { FC } from "react";
 import { useState } from "react";
@@ -61,7 +61,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
 
     const isPublishable = isPublishableKey(apiKey);
     const appKey = isAppKey(apiKey);
@@ -74,17 +73,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [earningsEnabled, setEarningsEnabled] = useState(
         initialEarningsEnabled,
     );
-
-    async function handleCopyKey(): Promise<void> {
-        if (!plaintextKey) return;
-        try {
-            await navigator.clipboard.writeText(plaintextKey);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Clipboard API may fail in some contexts
-        }
-    }
 
     const expiryDays = apiKey.expiresAt
         ? Math.ceil(
@@ -175,24 +163,21 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                               : "🔒 Secret"}
                     </Chip>
                     {isPublishable && plaintextKey ? (
-                        <Tooltip
-                            triggerAs="span"
-                            content={copied ? "Copied!" : "Click to copy"}
-                            className="inline-flex min-w-0"
-                        >
-                            <button
-                                type="button"
-                                onClick={handleCopyKey}
-                                className={cn(
+                        <CopyButton
+                            value={plaintextKey}
+                            tooltipClassName="inline-flex min-w-0"
+                            aria-label="Copy publishable API key"
+                            className={(copied) =>
+                                cn(
                                     "font-mono text-sm cursor-pointer transition-all",
                                     copied
                                         ? "text-blue-700 font-semibold"
                                         : "text-blue-600 hover:text-blue-800 hover:underline",
-                                )}
-                            >
-                                {copied ? "✓ Copied!" : plaintextKey}
-                            </button>
-                        </Tooltip>
+                                )
+                            }
+                        >
+                            {(copied) => (copied ? "✓ Copied!" : plaintextKey)}
+                        </CopyButton>
                     ) : (
                         <span className="font-mono text-sm text-gray-500">
                             {apiKey.start}...

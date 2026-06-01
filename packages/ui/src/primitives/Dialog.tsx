@@ -102,4 +102,3 @@ export const Dialog: FC<DialogProps> = ({
 );
 
 export const DialogTitle = ArkDialog.Title;
-export const DialogDescription = ArkDialog.Description;

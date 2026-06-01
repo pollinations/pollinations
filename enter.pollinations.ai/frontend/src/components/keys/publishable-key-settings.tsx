@@ -1,4 +1,4 @@
-import { Button, Field, Switch } from "@pollinations_ai/ui";
+import { Button, Field, Input, Switch } from "@pollinations_ai/ui";
 import type { FC } from "react";
 
 type PublishableKeySettingsProps = {
@@ -52,11 +52,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         key={index}
                         className="flex items-center gap-2"
                     >
-                        <Field.Input
+                        <Input
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            className="flex-1 border-blue-200 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />

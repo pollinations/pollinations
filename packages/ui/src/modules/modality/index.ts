@@ -1,6 +1,5 @@
 export {
     getModalityColors,
-    MODALITY_COLORS,
     type Modality,
     type ModalityColorSet,
 } from "./colors.ts";

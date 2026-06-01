@@ -140,5 +140,5 @@
     --color-intent-danger-text:      var(--polli-color-danger-text);
     --color-intent-danger-border:    var(--polli-color-danger-border);
 
-    --color-surface-white:           oklch(1 0 0 / 0.8);
+    --color-surface-white:           var(--polli-color-surface-white);
 }

@@ -36,3 +36,38 @@
     );
     color: var(--polli-color-paid-deep);
 }
+
+.polli-wallet-panel-tier {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-tier-pale) 60%,
+        transparent
+    );
+    color: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-dot-paid {
+    background-color: var(--polli-color-paid-soft);
+}
+
+.polli-wallet-dot-tier {
+    background-color: var(--polli-color-tier-soft);
+}
+
+.polli-wallet-text-paid {
+    color: var(--polli-color-paid-deep);
+}
+
+.polli-wallet-text-tier {
+    color: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-balance-value {
+    font-size: 2.25rem;
+}
+
+@media (min-width: 640px) {
+    .polli-wallet-balance-value {
+        font-size: 3rem;
+    }
+}

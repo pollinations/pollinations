@@ -3,6 +3,7 @@ import {
     CheckIcon,
     ChevronIcon,
     ClipboardIcon,
+    CopyButton,
     cn,
     DiscordIcon,
     Dropdown,
@@ -71,8 +72,7 @@ type SupportAction = {
     icon: ReactNode;
     idleIcon?: ReactNode;
     successIcon?: ReactNode;
-    active?: boolean;
-    onClick: () => void | Promise<void>;
+    copyValue: string | (() => string | Promise<string>);
 };
 
 type SupportLink = {
@@ -142,7 +142,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     walletArea,
     children,
 }) => {
-    const [docsCopied, setDocsCopied] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -164,14 +163,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         }
 
         setIsDrawerOpen(false);
-    }, []);
-
-    const handleCopyDocs = useCallback(async () => {
-        const res = await fetch(`${genDocsUrl()}/llm.txt`);
-        const text = await res.text();
-        await navigator.clipboard.writeText(text);
-        setDocsCopied(true);
-        setTimeout(() => setDocsCopied(false), 1200);
     }, []);
 
     useEffect(() => {
@@ -258,8 +249,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             <ClipboardIcon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
         ),
         successIcon: <CheckIcon className="h-4 w-4 shrink-0 text-green-700" />,
-        active: docsCopied,
-        onClick: handleCopyDocs,
+        copyValue: async () => {
+            const res = await fetch(`${genDocsUrl()}/llm.txt`);
+            return res.text();
+        },
     };
 
     const rail = (
@@ -509,20 +502,27 @@ const DashboardSupport: FC<{
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
     <div className="mt-2 border-t border-green-950/10 pt-3">
-        <button
-            type="button"
-            onClick={action.onClick}
+        <CopyButton
+            value={action.copyValue}
+            copiedTimeoutMs={1200}
+            tooltip={action.title}
+            copiedTooltip="Copied!"
+            tooltipClassName="w-full"
             title={action.title}
             className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
         >
-            <span className="flex items-center gap-2">
-                {action.icon}
-                {action.label}
-            </span>
-            {action.active
-                ? (action.successIcon ?? null)
-                : (action.idleIcon ?? null)}
-        </button>
+            {(copied) => (
+                <>
+                    <span className="flex items-center gap-2">
+                        {action.icon}
+                        {action.label}
+                    </span>
+                    {copied
+                        ? (action.successIcon ?? null)
+                        : (action.idleIcon ?? null)}
+                </>
+            )}
+        </CopyButton>
         <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />

@@ -61,21 +61,10 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             max,
         });
         const sliderStyle = {
-            "--polli-range-slider-fill":
-                "var(--polli-slider-fill, var(--polli-color-bg-active))",
-            "--polli-range-slider-track":
-                "var(--polli-slider-track, var(--polli-color-bg-pale))",
-            "--polli-range-slider-thumb-border":
-                "var(--polli-slider-thumb-border, var(--polli-color-text-strong))",
-            "--polli-range-slider-thumb-shadow":
-                "var(--polli-slider-thumb-shadow, color-mix(in oklab, var(--polli-color-text-strong) 35%, transparent))",
             ...style,
             ...(progressPercent === undefined
                 ? null
-                : {
-                      "--polli-slider-progress": `${progressPercent}%`,
-                      "--polli-range-slider-progress": `${progressPercent}%`,
-                  }),
+                : { "--polli-slider-progress": `${progressPercent}%` }),
         } as CSSProperties;
 
         return (
@@ -87,7 +76,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
                 value={value}
                 defaultValue={defaultValue}
                 style={sliderStyle}
-                className={cn("polli-slider polli-range-slider", className)}
+                className={cn("polli-slider", className)}
                 {...props}
             />
         );

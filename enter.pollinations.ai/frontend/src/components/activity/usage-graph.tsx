@@ -2,6 +2,7 @@ import {
     Chip,
     MultiSelect,
     Section,
+    StatCard,
     TabButton,
     Tooltip,
 } from "@pollinations_ai/ui";
@@ -160,7 +161,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 {!loading && !error && (
                     <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                            <StatCard
                                 label="Pollen spent"
                                 value={formatPollen(stats.totalPollen)}
                                 detail={
@@ -183,7 +184,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             />
                         </div>
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                            <StatCard
                                 label="Requests"
                                 value={stats.totalRequests.toLocaleString()}
                                 detail={
@@ -196,7 +197,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             />
                         </div>
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                            <StatCard
                                 label="Top model"
                                 value={
                                     <span className="text-xl leading-tight">
@@ -258,25 +259,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         </Section>
     );
 };
-
-const UsageStatCard: FC<{
-    label: string;
-    value: ReactNode;
-    detail?: ReactNode;
-    theme: ThemeName;
-}> = ({ label, value, detail, theme }) => (
-    <div data-theme={theme} className="text-sm">
-        <div className="text-micro uppercase tracking-wide font-bold text-theme-text-strong">
-            {label}
-        </div>
-        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-strong">
-            {value}
-        </div>
-        {detail && (
-            <div className="mt-2 text-xs text-theme-text-soft">{detail}</div>
-        )}
-    </div>
-);
 
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;

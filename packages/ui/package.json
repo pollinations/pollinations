@@ -18,6 +18,11 @@
       "import": "./dist/auth/index.js",
       "require": "./dist/auth/index.cjs"
     },
+    "./auth/sdk": {
+      "types": "./dist/auth/sdk.d.ts",
+      "import": "./dist/auth/sdk.js",
+      "require": "./dist/auth/sdk.cjs"
+    },
     "./showcase": {
       "types": "./dist/showcase/index.d.ts",
       "import": "./dist/showcase/index.js",
@@ -32,6 +37,11 @@
       "types": "./dist/wallet/index.d.ts",
       "import": "./dist/wallet/index.js",
       "require": "./dist/wallet/index.cjs"
+    },
+    "./wallet/sdk": {
+      "types": "./dist/wallet/sdk.d.ts",
+      "import": "./dist/wallet/sdk.js",
+      "require": "./dist/wallet/sdk.cjs"
     },
     "./styles.css": "./dist/styles.css",
     "./app.css": "./dist/app.css",

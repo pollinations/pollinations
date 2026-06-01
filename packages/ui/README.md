@@ -1,14 +1,17 @@
 # @pollinations_ai/ui
 
-Internal UI primitives for Pollinations apps. Auth state lives in
-[`@pollinations_ai/sdk/react`](../sdk/README.md#react-auth-provider) — this
-package provides the visual layer that consumes it.
+Internal UI primitives for Pollinations apps. SDK-backed subpaths consume auth
+state from [`@pollinations_ai/sdk/react`](../sdk/README.md#react-auth-provider);
+core primitives and display recipes stay SDK-free.
 
 ## Install
 
 ```bash
-npm install @pollinations_ai/sdk @pollinations_ai/ui
+npm install @pollinations_ai/ui
 ```
+
+Install `@pollinations_ai/sdk` too when using `@pollinations_ai/ui/*/sdk`
+subpaths.
 
 ## Usage
 
@@ -23,14 +26,14 @@ import {
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth";
+} from "@pollinations_ai/ui/auth/sdk";
 import {
     Balance,
     KeyBudget,
     KeyExpiry,
     KeyModels,
     KeyPrefix,
-} from "@pollinations_ai/ui/wallet";
+} from "@pollinations_ai/ui/wallet/sdk";
 
 function RecentRequests() {
     const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
@@ -94,35 +97,36 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 
 - `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
   theme data. These can be used without Pollinations auth.
-- `@pollinations_ai/ui/auth` exports identity/session components and auth
-  modal pieces that read from the surrounding `<PolliProvider>`:
+- `@pollinations_ai/ui/auth` exports SDK-free auth modal pieces:
+  `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
+  `ErrorBanner`.
+- `@pollinations_ai/ui/auth/sdk` exports identity/session components that read
+  from the surrounding `<PolliProvider>`:
   - **null when not logged in (or before data loads):** `LogoutButton`,
     `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
   - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
-  - **auth modal shell:** `AuthModal`, `AuthModalHeader`,
-    `AuthModalLoading`, `AuthInfoCard`, `ErrorBanner`.
 
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
 - `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
   internal preview surface for rendering primitives and tokens together.
-- `@pollinations_ai/ui/wallet` exports wallet-specific display helpers and
-  recipes: `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, `KeyPrefix`,
-  `formatPollen`, `PaidChip`, `TierChip`, `PAID_BALANCE_CHART_COLOR`, and
+- `@pollinations_ai/ui/wallet` exports SDK-free wallet-specific display helpers
+  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
+  `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
+- `@pollinations_ai/ui/wallet/sdk` exports SDK-backed wallet components:
+  `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
 - `@pollinations_ai/ui/modality` exports model-modality color recipes and
   `ModalityButton`.
 - `@pollinations_ai/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
 - **Design primitives** — `Button`, `Chip`, `ChevronIcon`, `Collapsible`,
-  `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`, `InfoTip`,
-  `Input`, `MultiSelect`, `PeriodPicker`, `ScrollArea`, `Section`, `Slider`,
-  `Surface`, `Switch`, `TabButton`, `Tooltip`.
-- **Helpers** — `cn`, `useScrollLock`, `addUtcDays`, `currentPeriod`,
-  `formatPeriodLabel`, `getPeriodBucketKeys`, `isPeriodSelectable`,
-  `periodBucketKeyToDate`, `periodFromDate`, `periodToWindow`,
-  `startOfUtcDay`.
+  `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`,
+  `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`, `ScrollArea`, `Section`,
+  `Slider`, `StatCard`, `Surface`, `Switch`, `TabButton`, `Tooltip`.
+- **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
+  `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 For per-request usage data and other dynamic queries, call the opt-in hooks
@@ -135,7 +139,8 @@ from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 - `src/modules/*` contains package-owned recipes with domain assumptions
   such as auth, wallet, and modality.
 - Public subpath exports (`@pollinations_ai/ui/auth`,
-  `@pollinations_ai/ui/wallet`, `@pollinations_ai/ui/modality`,
+  `@pollinations_ai/ui/auth/sdk`, `@pollinations_ai/ui/wallet`,
+  `@pollinations_ai/ui/wallet/sdk`, `@pollinations_ai/ui/modality`,
   `@pollinations_ai/ui/showcase`) are built directly from those modules.
 
 ## Theming

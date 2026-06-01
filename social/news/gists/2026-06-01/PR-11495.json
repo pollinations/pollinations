@@ -1,0 +1,35 @@
+{
+  "pr_number": 11495,
+  "title": "refactor(gen-audio): remove dead speed param, stale comment, and dedupe transcription response builder",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11495",
+  "merged_at": "2026-06-01T15:45:14Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Drop unimplemented `speed` field from CreateSpeechRequestSchema (POST /speech); no handler read it and it was never forwarded to any provider.\n- Rewrite dangling comment that named the deleted `parseMp4Duration` function; duration is estimated from MP3 byte size.\n- Extract shared `buildTranscriptionResponse` (transcription-response.ts) emitting the text/verbose_json/diarized_json/json branches; ElevenLabs and AssemblyAI keep their own normalization (groupScribeUtterances; ms->s + field fallbacks) and map into a seconds-based intermediate.\n\nRisks:\n- Out-of-range `speed` is now silently stripped instead of returning 400; never affected generated audio (the param was unused).\n- `speed` leaves the inferred CreateSpeechRequest type and the POST /speech OpenAPI docs (intended); polli-cli `--speed` still sends an ignored query param (follow-up, out of scope).\n\n_~138 net lines removed · biome ✓ · cd gen.pollinations.ai && npx vitest run test/scribe-transcription.test.ts test/assemblyai ✓_",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the audio weeds",
+    "blurb": "We did some spring cleaning in the audio generation code, removing unused parameters and streamlining how transcriptions are built. A cleaner codebase means faster updates in the future!",
+    "summary": "Removed the unimplemented `speed` parameter from the POST /speech endpoint and extracted a shared `buildTranscriptionResponse` utility for ElevenLabs and AssemblyAI.",
+    "impact": "Developers will see a cleaner OpenAPI schema without the dead `speed` field, while internal transcription handling is now more maintainable.",
+    "keywords": [
+      "audio",
+      "refactor",
+      "transcription",
+      "api",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature doing some spring cleaning. Nomnom eating dead code (the unused speed parameter) while Polly organizes audio files.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, organizing retro audio cassettes on a wooden shelf. Nearby, the round tan Nomnom creature happily eats a dusty piece of paper labeled 'SPEED'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11495.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, organizing retro audio cassettes on a wooden shelf. Nearby, the round tan Nomnom creature happily eats a dusty piece of paper labeled 'SPEED'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:46:30.136346+00:00"
+}

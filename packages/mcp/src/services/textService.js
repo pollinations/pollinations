@@ -5,8 +5,13 @@ import {
     createMCPResponse,
     createTextContent,
     parseApiError,
+    postChatCompletion,
 } from "../utils/coreUtils.js";
-import { getTextModels, validateTextModel } from "../utils/models.js";
+import {
+    getImageModels,
+    getTextModels,
+    validateTextModel,
+} from "../utils/models.js";
 
 async function generateText(params) {
     requireApiKey();
@@ -59,37 +64,8 @@ async function generateText(params) {
         requestBody.response_format = { type: "json_object" };
     }
 
-    const cleanedBody = {};
-    Object.entries(requestBody).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    });
-
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(cleanedBody),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            if (response.status === 429) {
-                throw new Error("Rate limited. Please wait before retrying.");
-            }
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
+        const response = await postChatCompletion(requestBody);
         const result = await response.json();
         const content = result.choices?.[0]?.message?.content || "";
 
@@ -175,37 +151,8 @@ async function chatCompletion(params) {
         user,
     };
 
-    const cleanedBody = {};
-    Object.entries(requestBody).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    });
-
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(cleanedBody),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            if (response.status === 429) {
-                throw new Error("Rate limited. Please wait before retrying.");
-            }
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
+        const response = await postChatCompletion(requestBody);
         const result = await response.json();
 
         const choice = result.choices?.[0];
@@ -447,7 +394,6 @@ async function getPricing(params) {
         }
 
         if (type === "all" || type === "image") {
-            const { getImageModels } = await import("../utils/modelCache.js");
             const imageModels = await getImageModels();
             results.imageModels = imageModels
                 .map((m) => ({

@@ -74,6 +74,11 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Build shared SDK/UI packages for typecheck
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm run build:ui
+
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai

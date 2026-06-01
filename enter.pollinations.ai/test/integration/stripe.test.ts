@@ -2795,6 +2795,61 @@ test("POST /api/webhooks/stripe does not credit sessions without pack metadata",
     expect(processedEvent?.count).toBe(0);
 });
 
+test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybird", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const pack = getPollenPackByAmount(10);
+    expect(pack).toBeDefined();
+    if (!pack) throw new Error("Expected $10 pollen pack");
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_checkout_paid_emit",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_checkout_paid_emit",
+                object: "checkout.session",
+                metadata: { userId: user.id, packKey: pack.packKey },
+                payment_status: "paid",
+                amount_subtotal: pack.amountUsd * 100,
+                amount_total: pack.amountUsd * 100,
+                currency: "usd",
+                customer_email: "buyer@example.com",
+                payment_method_types: ["card", "link"],
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_id: "evt_test_checkout_paid_emit",
+        event_type: "checkout.session.completed",
+        session_id: "cs_test_checkout_paid_emit",
+        amount_cents: pack.amountUsd * 100,
+        currency: "usd",
+        payment_status: "paid",
+        payment_method: "unknown",
+        payment_methods_offered: "card,link",
+        customer_email: "buyer@example.com",
+        livemode: 0,
+    });
+});
+
 test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({
     mocks,
 }) => {

@@ -1,20 +1,14 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 
-@theme {
-    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
-    --font-subheading: "Fraunces", ui-serif, serif;
-    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
-    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
-    --text-micro: 10px;
-    --text-base: 16px;
+:root {
+    --polli-font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    --polli-font-subheading: "Fraunces", ui-serif, serif;
+    --polli-font-body: "Uncut Sans", ui-sans-serif, sans-serif;
+    --polli-font-pixel: "Pixelify Sans", ui-monospace, monospace;
+    --polli-text-micro: 10px;
+    --polli-text-base: 16px;
 
-    /* Paid + Tier identity colors used by Chip's `paid`/`tier` intents. */
-    --color-paid-pale: oklch(0.93 0.09 95.746);
-    --color-paid-soft: oklch(0.85 0.16 95.746);
-    --color-paid-deep: #78350f;
-    --color-tier-pale: oklch(0.93 0.06 55);
-    --color-tier-soft: oklch(0.83 0.13 55);
-    --color-tier-deep: #7C3F1E;
+    --polli-color-surface-white: oklch(1 0 0 / 0.8);
 }
 
 /* ─── Per-theme cascade (public `--polli-color-*` tokens) ────────
@@ -33,6 +27,7 @@
     --polli-color-bg-active:    oklch(0.924 0.12 95.746);
     --polli-color-bg-hover:     oklch(0.879 0.169 91.605);
     --polli-color-bg-pale:      oklch(0.962 0.059 95.617);
+    --polli-color-scrollbar-thumb: oklch(0.828 0.189 84.429 / 0.7);
 }
 
 [data-theme="blue"] {
@@ -47,6 +42,7 @@
     --polli-color-bg-active:    oklch(0.882 0.059 254.128);
     --polli-color-bg-hover:     oklch(0.809 0.105 251.813);
     --polli-color-bg-pale:      oklch(0.932 0.032 255.585);
+    --polli-color-scrollbar-thumb: oklch(0.707 0.165 254.624 / 0.7);
 }
 
 [data-theme="pink"] {
@@ -61,6 +57,7 @@
     --polli-color-bg-active:    oklch(0.899 0.061 343.231);
     --polli-color-bg-hover:     oklch(0.823 0.12 346.018);
     --polli-color-bg-pale:      oklch(0.948 0.028 342.258);
+    --polli-color-scrollbar-thumb: oklch(0.718 0.202 349.761 / 0.7);
 }
 
 [data-theme="teal"] {
@@ -75,6 +72,7 @@
     --polli-color-bg-active:    oklch(0.91 0.096 180.426);
     --polli-color-bg-hover:     oklch(0.855 0.138 181.071);
     --polli-color-bg-pale:      oklch(0.953 0.051 180.801);
+    --polli-color-scrollbar-thumb: oklch(0.704 0.14 182.503 / 0.7);
 }
 
 [data-theme="violet"] {
@@ -89,6 +87,7 @@
     --polli-color-bg-active:    oklch(0.894 0.057 293.283);
     --polli-color-bg-hover:     oklch(0.811 0.111 293.571);
     --polli-color-bg-pale:      oklch(0.943 0.029 294.588);
+    --polli-color-scrollbar-thumb: oklch(0.702 0.183 293.541 / 0.7);
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
@@ -106,6 +105,7 @@
     --polli-color-bg-active:    oklch(0.925 0.084 155.995);
     --polli-color-bg-hover:     oklch(0.871 0.15 154.449);
     --polli-color-bg-pale:      oklch(0.962 0.044 156.743);
+    --polli-color-scrollbar-thumb: oklch(0.792 0.209 151.711 / 0.7);
 }
 
 /* Intent tokens (semantic, theme-independent). Public. */
@@ -117,6 +117,13 @@
 
 /* Tailwind utility surface — internal. */
 @theme inline {
+    --font-heading:                   "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading:                "Fraunces", ui-serif, serif;
+    --font-body:                      "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel:                     "Pixelify Sans", ui-monospace, monospace;
+    --text-micro:                     10px;
+    --text-base:                      16px;
+
     --color-theme-text-base:         var(--polli-color-text-base);
     --color-theme-text-strong:       var(--polli-color-text-strong);
     --color-theme-text-soft:         var(--polli-color-text-soft);
@@ -133,5 +140,5 @@
     --color-intent-danger-text:      var(--polli-color-danger-text);
     --color-intent-danger-border:    var(--polli-color-danger-border);
 
-    --color-surface-white:           oklch(1 0 0 / 0.8);
+    --color-surface-white:           var(--polli-color-surface-white);
 }

@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
-/** Button only supports `danger`. Paid/alpha live on Chip; success is gone. */
+/** Button only supports `danger`. Label/status color recipes live on Chip. */
 type ButtonIntent = "danger";
 
 const sizes = {

@@ -1,6 +1,6 @@
 import { Button } from "@pollinations_ai/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { authClient } from "../auth.ts";
 import {
     type DashboardPage,
@@ -10,6 +10,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
+import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 
@@ -63,18 +64,7 @@ export const Route = createFileRoute("/sign-in")({
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
-    const [activePage, setActivePage] = useState<DashboardPage>(() =>
-        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
-    );
-
-    useEffect(() => {
-        function syncPageFromHash(): void {
-            setActivePage(pageFromHash(window.location.hash));
-        }
-
-        window.addEventListener("hashchange", syncPageFromHash);
-        return () => window.removeEventListener("hashchange", syncPageFromHash);
-    }, []);
+    const [activePage, setActivePage] = usePageFromHash(pageFromHash);
 
     const handleSignIn = async () => {
         setLoading(true);

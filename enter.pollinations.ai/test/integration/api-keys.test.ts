@@ -150,6 +150,73 @@ describe("API Key Management", () => {
             }
         });
 
+        test("rejects redirect metadata through native Better Auth API-key routes", async ({
+            sessionToken,
+        }) => {
+            const nativeCreate = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/create",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "native-redirect-bypass",
+                        prefix: "pk",
+                        metadata: {
+                            redirectUris: [
+                                "javascript://x/%0afetch('https://example.com')//",
+                            ],
+                        },
+                    }),
+                },
+            );
+
+            expect(nativeCreate.status).toBe(400);
+
+            const safeCreate = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "safe-publishable",
+                        type: "publishable",
+                        metadata: {
+                            redirectUris: ["https://safe.example/callback"],
+                        },
+                    }),
+                },
+            );
+            expect(safeCreate.status).toBe(200);
+            const created = await safeCreate.json();
+
+            const nativeUpdate = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/update",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        keyId: created.id,
+                        metadata: {
+                            redirectUris: [
+                                "javascript://x/%0afetch('https://example.com')//",
+                            ],
+                        },
+                    }),
+                },
+            );
+
+            expect(nativeUpdate.status).toBe(400);
+        });
+
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
             sessionToken,
         }) => {

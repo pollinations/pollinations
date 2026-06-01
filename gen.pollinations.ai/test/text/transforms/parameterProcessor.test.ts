@@ -35,6 +35,34 @@ describe("processParameters", () => {
         expect(result.options.max_completion_tokens).toBeUndefined();
     });
 
+    it("strips stream_options for non-OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "grok-4.3",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "grok-4.3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
+    it("keeps stream_options for OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5-nano",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-5-nano",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toEqual({ include_usage: true });
+    });
+
     it.each([
         "us.anthropic.claude-opus-4-7",
         "global.anthropic.claude-opus-4-8",

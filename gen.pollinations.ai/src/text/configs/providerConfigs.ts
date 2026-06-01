@@ -1,5 +1,3 @@
-const DEFAULT_AZURE_API_VERSION = "2024-08-01-preview";
-
 // =============================================================================
 // Shared Types
 // =============================================================================
@@ -34,11 +32,11 @@ function createOpenAICompatibleConfig(
 
 function extractAzureResourceName(endpoint: string | undefined): string {
     if (!endpoint) return "pollinations";
-    const match = endpoint.match(
-        /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
+    return (
+        endpoint.match(
+            /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
+        )?.[1] ?? "pollinations"
     );
-    const result = match?.[1];
-    return !result || result === "undefined" ? "pollinations" : result;
 }
 
 function extractAzureDeploymentName(
@@ -49,13 +47,7 @@ function extractAzureDeploymentName(
 }
 
 function extractAzureApiVersion(endpoint: string | undefined): string {
-    if (!endpoint)
-        return process.env.OPENAI_API_VERSION || DEFAULT_AZURE_API_VERSION;
-    return (
-        endpoint.match(/api-version=([^&]+)/)?.[1] ??
-        process.env.OPENAI_API_VERSION ??
-        DEFAULT_AZURE_API_VERSION
-    );
+    return endpoint?.match(/api-version=([^&]+)/)?.[1] ?? "2024-08-01-preview";
 }
 
 // =============================================================================
@@ -66,15 +58,13 @@ export function createAzureModelConfig(
     apiKey: string | undefined,
     endpoint: string | undefined,
     modelName: string,
-    resourceName?: string,
     overrides: ModelOverride = {},
 ): ProviderConfig {
     const deploymentId = extractAzureDeploymentName(endpoint) || modelName;
     return {
         provider: "azure-openai",
         "azure-api-key": apiKey,
-        "azure-resource-name":
-            resourceName || extractAzureResourceName(endpoint),
+        "azure-resource-name": extractAzureResourceName(endpoint),
         "azure-deployment-id": deploymentId,
         "azure-api-version": extractAzureApiVersion(endpoint),
         "azure-model-name": deploymentId,

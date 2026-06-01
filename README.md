@@ -20,6 +20,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |
+| [🧮 Primbon Jawa Modern](https://jawidigital.my.id) | Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli | [@arekgresikid](https://github.com/arekgresikid) |
 | [🌸 PetalGen](https://petalgen.tools4all.ai) | PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot | [@danielw-sudo](https://github.com/danielw-sudo) |
 | [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |
 | [🧵 SceneWeave](https://scene-weave.vercel.app) | Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing. | [@an3vilmonk3y](https://github.com/an3vilmonk3y) |
@@ -28,8 +30,6 @@
 | [🤖 The Mork Stack](https://github.com/Mork-Zuckerbarge/mork-stack) | Manage social media with agentic workflows and run autonomous trading on Solana in The Mork Stack. | [@Mork-Zuckerbarge](https://github.com/Mork-Zuckerbarge) |
 | [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) |
 | [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |
-| [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
-| [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

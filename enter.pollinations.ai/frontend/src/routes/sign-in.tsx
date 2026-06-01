@@ -1,4 +1,4 @@
-import { Button } from "@pollinations_ai/ui";
+import { Button } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";

@@ -1,24 +1,24 @@
-# @pollinations_ai/ui
+# @pollinations/ui
 
 Internal UI primitives for Pollinations apps. SDK-backed subpaths consume auth
-state from [`@pollinations_ai/sdk/react`](../sdk/README.md#react-auth-provider);
+state from [`@pollinations/sdk/react`](../sdk/README.md#react-auth-provider);
 core primitives and display recipes stay SDK-free.
 
 ## Install
 
 ```bash
-npm install @pollinations_ai/ui
+npm install @pollinations/ui
 ```
 
-Install `@pollinations_ai/sdk` too when using `@pollinations_ai/ui/*/sdk`
+Install `@pollinations/sdk` too when using `@pollinations/ui/*/sdk`
 subpaths.
 
 ## Usage
 
 ```tsx
-import "@pollinations_ai/ui/styles.css";
-import { PolliProvider, useAccountKeyUsage } from "@pollinations_ai/sdk/react";
-import { Surface } from "@pollinations_ai/ui";
+import "@pollinations/ui/styles.css";
+import { PolliProvider, useAccountKeyUsage } from "@pollinations/sdk/react";
+import { Surface } from "@pollinations/ui";
 import {
     LoginButton,
     LogoutButton,
@@ -26,14 +26,14 @@ import {
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth/sdk";
+} from "@pollinations/ui/auth/sdk";
 import {
     Balance,
     KeyBudget,
     KeyExpiry,
     KeyModels,
     KeyPrefix,
-} from "@pollinations_ai/ui/wallet/sdk";
+} from "@pollinations/ui/wallet/sdk";
 
 function RecentRequests() {
     const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
@@ -70,7 +70,7 @@ For Pollinations apps that use unprefixed Tailwind utilities, import the
 package-owned app stylesheet instead:
 
 ```css
-@import "@pollinations_ai/ui/app.css";
+@import "@pollinations/ui/app.css";
 ```
 
 `app.css` includes `styles.css`, the Pollinations UI Tailwind theme bridge,
@@ -79,8 +79,8 @@ and generic `polli-ui-root`, `polli-ui-body`, and `polli-ui-shell` classes.
 Canonical Pollinations source SVGs are exported from the package:
 
 ```ts
-import logoUrl from "@pollinations_ai/ui/assets/logo.svg";
-import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
+import logoUrl from "@pollinations/ui/assets/logo.svg";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 ```
 
 The SVG sources use `currentColor`. Apps control the rendered color by inlining
@@ -90,17 +90,17 @@ app-owned.
 Wallet-specific colors and utilities live in a separate stylesheet:
 
 ```css
-@import "@pollinations_ai/ui/wallet.css";
+@import "@pollinations/ui/wallet.css";
 ```
 
 ## What's exported
 
-- `@pollinations_ai/ui` exports SDK-free design primitives, helpers, and
+- `@pollinations/ui` exports SDK-free design primitives, helpers, and
   theme data. These can be used without Pollinations auth.
-- `@pollinations_ai/ui/auth` exports SDK-free auth modal pieces:
+- `@pollinations/ui/auth` exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
-- `@pollinations_ai/ui/auth/sdk` exports identity/session components that read
+- `@pollinations/ui/auth/sdk` exports identity/session components that read
   from the surrounding `<PolliProvider>`:
   - **null when not logged in (or before data loads):** `LogoutButton`,
     `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
@@ -109,17 +109,17 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
-- `@pollinations_ai/ui/showcase` exports `DesignShowcase`, a package-owned
+- `@pollinations/ui/showcase` exports `DesignShowcase`, a package-owned
   internal preview surface for rendering primitives and tokens together.
-- `@pollinations_ai/ui/wallet` exports SDK-free wallet-specific display helpers
+- `@pollinations/ui/wallet` exports SDK-free wallet-specific display helpers
   and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
-- `@pollinations_ai/ui/wallet/sdk` exports SDK-backed wallet components:
+- `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
   `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
-- `@pollinations_ai/ui/modality` exports model-modality color recipes and
+- `@pollinations/ui/modality` exports model-modality color recipes and
   `ModalityButton`.
-- `@pollinations_ai/ui/assets/*` exports canonical Pollinations source SVGs:
+- `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
 - **Design primitives** — `Button`, `Chip`, `ChevronIcon`, `Collapsible`,
   `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`, `IconButton`,
@@ -130,7 +130,7 @@ Wallet-specific colors and utilities live in a separate stylesheet:
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 For per-request usage data and other dynamic queries, call the opt-in hooks
-from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
+from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 `useAccountBalance`, etc.) directly.
 
 ## Source Layout
@@ -138,10 +138,10 @@ from `@pollinations_ai/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 - `src/primitives/*` contains generic, SDK-free building blocks.
 - `src/modules/*` contains package-owned recipes with domain assumptions
   such as auth, wallet, and modality.
-- Public subpath exports (`@pollinations_ai/ui/auth`,
-  `@pollinations_ai/ui/auth/sdk`, `@pollinations_ai/ui/wallet`,
-  `@pollinations_ai/ui/wallet/sdk`, `@pollinations_ai/ui/modality`,
-  `@pollinations_ai/ui/showcase`) are built directly from those modules.
+- Public subpath exports (`@pollinations/ui/auth`,
+  `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
+  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`,
+  `@pollinations/ui/showcase`) are built directly from those modules.
 
 ## Theming
 
@@ -186,7 +186,7 @@ with host app tokens.
 | `--polli-text-base`           | Base text size.                               |
 | `--polli-color-surface-white` | Translucent white surface.                    |
 
-Wallet tokens are public when `@pollinations_ai/ui/wallet.css` is imported:
+Wallet tokens are public when `@pollinations/ui/wallet.css` is imported:
 
 | Token                         | Purpose                                       |
 | ----------------------------- | --------------------------------------------- |

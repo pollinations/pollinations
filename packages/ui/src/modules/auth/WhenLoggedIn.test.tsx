@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WhenLoggedIn } from "./WhenLoggedIn.tsx";
 
 const mockUseAuthState = vi.fn();
-vi.mock("@pollinations_ai/sdk/react", () => ({
+vi.mock("@pollinations/sdk/react", () => ({
     useAuthState: () => mockUseAuthState(),
 }));
 

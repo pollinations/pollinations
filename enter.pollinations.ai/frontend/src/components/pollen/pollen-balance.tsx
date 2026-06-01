@@ -6,12 +6,12 @@ import {
     MailIcon,
     Tooltip,
     WalletIcon,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import {
     formatPollen,
     WalletBalanceCard,
     WalletDot,
-} from "@pollinations_ai/ui/wallet";
+} from "@pollinations/ui/wallet";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { type FC, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";

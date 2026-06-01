@@ -52,7 +52,7 @@ config.mcpServers = config.mcpServers || {};
 // Add or update the pollinations MCP server configuration
 config.mcpServers.pollinations = {
     command: "npx",
-    args: ["@pollinations_ai/mcp"],
+    args: ["@pollinations/mcp"],
     disabled: false,
     alwaysAllow: [],
 };

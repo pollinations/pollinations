@@ -2,7 +2,7 @@
 
 /*
  * Tailwind v4 — skip preflight so host apps that import
- * `@pollinations_ai/ui/styles.css` don't get their global `margin`,
+ * `@pollinations/ui/styles.css` don't get their global `margin`,
  * `list-style`, heading sizes, etc. reset. We only need the theme machinery
  * (so `@theme inline` in tokens.css resolves) and the utility classes.
  */

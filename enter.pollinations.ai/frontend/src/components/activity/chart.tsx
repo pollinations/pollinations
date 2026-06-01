@@ -2,7 +2,7 @@ import {
     formatPollen,
     PAID_BALANCE_CHART_COLOR,
     TIER_BALANCE_CHART_COLOR,
-} from "@pollinations_ai/ui/wallet";
+} from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";

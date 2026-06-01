@@ -1,4 +1,4 @@
-import { ExternalLinkButton, Section } from "@pollinations_ai/ui";
+import { ExternalLinkButton, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ, FAQ_GITHUB_URL } from "./faq.tsx";
 import { HIGHLIGHTS_GITHUB_URL, NewsBanner } from "./news-banner.tsx";

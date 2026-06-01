@@ -1,4 +1,4 @@
-import { cn, LockIcon } from "@pollinations_ai/ui";
+import { cn, LockIcon } from "@pollinations/ui";
 import type { FC } from "react";
 
 const paymentMethods = [

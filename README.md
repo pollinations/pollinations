@@ -42,7 +42,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
 - **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
 - **API keys** — publishable keys for frontend, secret keys for backend
-- **CLI** — `npx @pollinations_ai/cli` for humans and AI agents ([source](packages/polli-cli))
+- **CLI** — `npx @pollinations/cli` for humans and AI agents ([source](packages/polli-cli))
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
@@ -149,7 +149,7 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations_ai/mcp"]
+      "args": ["@pollinations/mcp"]
     }
   }
 }
@@ -158,7 +158,7 @@ Add this to your MCP client configuration:
 ### Run with npx (no installation required)
 
 ```bash
-npx @pollinations_ai/mcp
+npx @pollinations/mcp
 ```
 
 Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.

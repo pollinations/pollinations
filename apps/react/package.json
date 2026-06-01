@@ -13,8 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pollinations_ai/sdk": "*",
-    "@pollinations_ai/ui": "*",
+    "@pollinations/sdk": "*",
+    "@pollinations/ui": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

@@ -17,8 +17,8 @@ import {
     useScrollLock,
     WalletIcon,
     XIcon,
-} from "@pollinations_ai/ui";
-import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
+} from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import type {
     CSSProperties,
     FC,

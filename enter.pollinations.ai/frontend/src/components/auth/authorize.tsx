@@ -5,16 +5,16 @@ import {
     cn,
     MailIcon,
     useScrollLock,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
-} from "@pollinations_ai/ui/auth";
-import { getModalityColors } from "@pollinations_ai/ui/modality";
-import { formatPollen } from "@pollinations_ai/ui/wallet";
+} from "@pollinations/ui/auth";
+import { getModalityColors } from "@pollinations/ui/modality";
+import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,

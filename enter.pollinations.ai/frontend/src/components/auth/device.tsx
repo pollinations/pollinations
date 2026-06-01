@@ -1,11 +1,11 @@
-import { Button, Input } from "@pollinations_ai/ui";
+import { Button, Input } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
-} from "@pollinations_ai/ui/auth";
+} from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";

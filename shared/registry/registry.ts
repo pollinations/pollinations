@@ -215,20 +215,6 @@ export function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
-/**
- * Get embedding model names (service IDs)
- */
-export function getEmbeddingModels(): EmbeddingServiceId[] {
-    return Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[];
-}
-
-/**
- * Get realtime model names
- */
-export function getRealtimeModels(): RealtimeModelName[] {
-    return Object.keys(REALTIME_SERVICES) as RealtimeModelName[];
-}
-
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
@@ -239,9 +225,9 @@ export const getVisibleTextModels = () => filterVisible(getTextModels());
 export const getVisibleImageModels = () => filterVisible(getImageModels());
 export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>
-    filterVisible(getEmbeddingModels());
+    filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
-    filterVisible(getRealtimeModels());
+    filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
 
 /**
  * Get a model definition by public model name
@@ -252,14 +238,6 @@ export function getModelDefinition(model: ModelName): ModelDefinition {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
-}
-
-/**
- * Get aliases for a model
- */
-export function getModelAliases(model: ModelName): readonly string[] {
-    const service = MODEL_REGISTRY[model];
-    return service?.aliases || [];
 }
 
 /**

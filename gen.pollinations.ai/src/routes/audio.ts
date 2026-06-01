@@ -115,6 +115,45 @@ function mapOutputFormat(format: string): string {
     return formatMap[format] || "mp3_44100_128";
 }
 
+/**
+ * ElevenLabs streams WAV with a placeholder length in the RIFF header (the
+ * data-chunk size and the overall RIFF size are written as 0x7FFFFFFF and never
+ * back-patched once the real length is known). Tools that trust the header
+ * (Python `wave`, ffmpeg) then crash or truncate. Rewrite both size fields to
+ * the real byte counts. No-op if the header is already correct or not RIFF/WAVE.
+ */
+export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length < 44) return buffer; // too short to be a valid WAV header
+    const view = new DataView(buffer);
+    const tag = (offset: number) =>
+        String.fromCharCode(
+            bytes[offset],
+            bytes[offset + 1],
+            bytes[offset + 2],
+            bytes[offset + 3],
+        );
+    if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return buffer;
+
+    // Walk the chunk list (offset 12 onward) to find the `data` sub-chunk,
+    // honouring declared sizes rather than scanning bytes (which could match
+    // "data" inside the PCM payload).
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+        const chunkId = tag(offset);
+        const chunkSize = view.getUint32(offset + 4, true);
+        if (chunkId === "data") {
+            const actualDataSize = bytes.length - (offset + 8);
+            if (chunkSize === actualDataSize) return buffer; // already correct
+            view.setUint32(offset + 4, actualDataSize, true); // data chunk size
+            view.setUint32(4, bytes.length - 8, true); // RIFF chunk size
+            return buffer;
+        }
+        offset += 8 + chunkSize;
+    }
+    return buffer; // no data chunk found
+}
+
 export async function generateSpeech(opts: {
     modelName?: AudioModelName;
     text: string;
@@ -196,6 +235,21 @@ export async function generateSpeech(opts: {
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
+
+    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
+    // which requires buffering the body. Audio is small (input capped at 4096
+    // chars) so this is cheap; all other formats keep streaming.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
 
     return new Response(response.body, {
         status: 200,

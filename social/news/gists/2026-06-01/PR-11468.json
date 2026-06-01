@@ -1,0 +1,34 @@
+{
+  "pr_number": 11468,
+  "title": "chore(enter-billing): delete dead hash.ts, getEstimatedPrice, collapse CheckoutCohort wrapper",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11468",
+  "merged_at": "2026-06-01T12:27:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete `utils/hash.ts` entirely (dead: `bufferToHex`/`simpleHash`/`createCacheKey`, zero callers)\n- Remove dead `getEstimatedPrice` from model-stats.ts\n- Collapse the over-built `CheckoutCohort` wrapper to a plain `CohortId` string (analytics-only)\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −88 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the dead branches",
+    "blurb": "We swept out some unused code and simplified our billing analytics wrappers. A lighter codebase means a happier hive!",
+    "summary": "Removed unused hashing utilities (hash.ts) and simplified the CheckoutCohort analytics wrapper to a plain string in the enter-billing service.",
+    "impact": "This internal cleanup reduces codebase complexity by 88 lines without affecting any user-facing billing functionality.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "billing",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a digital garden. Nomnom is eating deprecated code snippets (represented as dry leaves or old paper), while Polly sweeps up.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dry, brown pixelated leaves labeled 'dead code' while Polly the bee mascot sweeps a digital garden path with a tiny broom. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11468.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dry, brown pixelated leaves labeled 'dead code' while Polly the bee mascot sweeps a digital garden path with a tiny broom. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T12:28:46.371438+00:00"
+}

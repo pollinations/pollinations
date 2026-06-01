@@ -30,7 +30,10 @@ import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import {
+    getDurationBasedEstimatedPrice,
+    requireGenerationAccess,
+} from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 
 const CreateSpeechRequestSchema = z
@@ -1036,7 +1039,13 @@ export const audioRoutes = new Hono<Env>()
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
-            await requireGenerationAccess(c.var, c.env);
+            const body = c.req.valid("json" as never) as CreateSpeechRequest;
+            await requireGenerationAccess(c.var, c.env, {
+                minimumEstimatedPrice: getDurationBasedEstimatedPrice(
+                    c.var.model.resolved,
+                    body.duration,
+                ),
+            });
 
             const {
                 input,
@@ -1048,7 +1057,7 @@ export const audioRoutes = new Hono<Env>()
                 seed,
                 style,
                 instruct,
-            } = c.req.valid("json" as never) as CreateSpeechRequest;
+            } = body;
             requireTextToAudioModel(c.var.model.resolved);
             const safeInput = await applySafety(c, input, safe);
 

@@ -14,7 +14,10 @@ import {
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
-import { checkBalance } from "@/utils/generation-access.ts";
+import {
+    checkBalance,
+    getDurationBasedEstimatedPrice,
+} from "@/utils/generation-access.ts";
 
 const db = drizzle(env.DB);
 
@@ -393,6 +396,63 @@ describe("BYOP markup", () => {
                 },
             } as unknown as D1Database,
         } as CloudflareBindings);
+    });
+
+    it("uses requested duration as a media preflight floor", () => {
+        expect(getDurationBasedEstimatedPrice("nova-reel", 120)).toBe(9.6);
+        expect(getDurationBasedEstimatedPrice("acestep", 300)).toBe(0.15);
+    });
+
+    it("rejects duration-billed media when balance only covers the historical average", async () => {
+        const vars = {
+            auth: {
+                user: { id: "duration-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 10 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 1,
+                    packBalance: 1,
+                }),
+            },
+            model: { requested: "nova-reel", resolved: "nova-reel" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.744, "nova-reel"), {
+                minimumEstimatedPrice: getDurationBasedEstimatedPrice(
+                    "nova-reel",
+                    120,
+                ),
+            }),
+        ).rejects.toMatchObject({ status: 402 });
+    });
+
+    it("rejects finite API key budgets below the requested duration price", async () => {
+        const vars = {
+            auth: {
+                user: { id: "duration-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 1 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 10,
+                }),
+            },
+            model: { requested: "nova-reel", resolved: "nova-reel" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.744, "nova-reel"), {
+                minimumEstimatedPrice: getDurationBasedEstimatedPrice(
+                    "nova-reel",
+                    120,
+                ),
+            }),
+        ).rejects.toMatchObject({ status: 402 });
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

@@ -50,6 +50,11 @@ echo "📦 Installing dependencies..."
 cd "$APP_PATH"
 if [ -f "package.json" ]; then
     npm install --silent
+
+    if grep -qF "../../packages/" package.json; then
+        echo "📦 Installing monorepo package dependencies..."
+        npm install --silent --prefix "$REPO_ROOT"
+    fi
 fi
 
 # Step 3: Build

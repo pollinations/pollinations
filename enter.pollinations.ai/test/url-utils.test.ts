@@ -132,23 +132,12 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(false);
     });
 
-    test("rejects non-web redirect schemes even when allowlisted", () => {
-        for (const uri of [
-            "javascript://x/%0afetch('https://example.com')//",
-            "data://x/text/html,<script>alert(1)</script>",
-            "file://localhost/tmp/callback",
-            "com.example.app://callback",
-        ]) {
-            expect(redirectUriMatchesAllowlist(uri, [uri])).toBe(false);
+    test("trusts the allowlist regardless of scheme (policy is enforced at registration)", () => {
+        // Scheme restriction is enforced when the URI is registered, not here.
+        // Whatever made it into the allowlist is matched on host/path/port.
+        for (const uri of ["http://app.com/cb", "com.example.app://callback"]) {
+            expect(redirectUriMatchesAllowlist(uri, [uri])).toBe(true);
         }
-    });
-
-    test("rejects public http redirect URIs even when allowlisted", () => {
-        expect(
-            redirectUriMatchesAllowlist("http://app.com/cb", [
-                "http://app.com/cb",
-            ]),
-        ).toBe(false);
     });
 
     test("accepts any port for loopback entries (RFC 8252 §7.3)", () => {

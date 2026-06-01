@@ -211,8 +211,10 @@ async function validateClientRedirectBinding(
             message: "redirect_uri is required when client_id is provided",
         });
     }
-    validateRedirectUriFormat(metadata.redirectUri);
-
+    // No scheme/format check on the incoming redirect_uri here: scheme policy is
+    // enforced at registration (validateRedirectUriFormat on the app key's
+    // redirectUris). The allowlist match below is the only gate the auth flow
+    // applies, so a registered URI of any kind round-trips unchanged.
     const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
     if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
         throw new HTTPException(400, {

@@ -138,10 +138,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "flux": {
     "cost": {
-      "completionImageTokens": 0.001,
+      "completionImageTokens": 0.0014,
     },
     "price": {
-      "completionImageTokens": 0.001,
+      "completionImageTokens": 0.00175,
     },
   },
   "gemini": {

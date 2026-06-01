@@ -6,6 +6,7 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
@@ -851,9 +852,14 @@ const generateImage = async (
                 requestId,
                 25,
                 "Processing",
-                "Using registered servers",
+                "Using Fireworks FLUX",
             );
-            return await callSelfHostedServer(prompt, safeParams);
+            return await callFireworksFluxSchnellAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
         default:
             // zimage and any unrecognized model fall through to self-hosted servers

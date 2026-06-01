@@ -1,0 +1,35 @@
+{
+  "pr_number": 11490,
+  "title": "refactor(gen-text): remove dead code in handler, transforms, prompts, and auth",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11490",
+  "merged_at": "2026-06-01T15:42:16Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- handler: drop unreachable async-iterable streaming path; keep only the\n  ReadableStream return and the defensive null-body SSE fallback (same payload)\n- handler/genericOpenAIClient: remove unused userInfo gateway context bag and\n  its strip entry; keep referrer/isPrivate strips (still leak-guarded)\n- createGeminiToolsTransform: make toolNames required, drop unused url_context\n  default (url_context stays valid in shared/sdk/mcp; just not a per-model default)\n- prompts/auth/portkey/imageUrl: remove dead `character` base prompt, unused\n  service-account project_id, redundant additionalHeaders default, and a\n  single-use byte-limit alias\n\nRisks: none — pure dead-code removal, no callers, no behavior change. The null\nstreaming fallback emits the identical SSE payload; tsc and the\ngenericOpenAIClient + error-observability suites pass.\n\n_~69 net lines removed · biome ✓ · cd gen.pollinations.ai && npx vitest run test/text/genericOpenAIClient.test.ts test/error- ✓_",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the text API",
+    "blurb": "We did some spring cleaning in the text generation API, sweeping away unused code and unreachable paths. A lighter codebase means a happier hive!",
+    "summary": "Removed approximately 69 lines of dead code across the text generation handler, transforms, prompts, and auth modules, including an unreachable streaming path and unused context variables.",
+    "impact": "The text generation codebase is now leaner and easier to maintain, with zero changes to existing API behavior or SSE payloads.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "text-api",
+      "dead-code",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny janitor's hat, sweeping up pixelated code snippets. The Nomnom creature happily eating the swept-up dead code.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny janitor's hat, sweeping up glowing pixelated code snippets into a dustpan. The round tan Nomnom creature sits nearby, happily eating the swept-up dead code. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11490.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny janitor's hat, sweeping up glowing pixelated code snippets into a dustpan. The round tan Nomnom creature sits nearby, happily eating the swept-up dead code. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T15:43:28.183680+00:00"
+}

@@ -150,7 +150,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <div className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800">
+                                <div className="mt-3 max-w-none text-gray-600 leading-relaxed [&_a]:font-medium [&_a]:text-purple-600 [&_a]:underline [&_a:hover]:text-purple-800 [&_li]:text-gray-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {item.answer}
                                     </ReactMarkdown>

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11530,
+  "title": "Add AnggunFM to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11530",
+  "merged_at": "2026-06-01T18:33:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AnggunFM](https://www.anggunfm.my) to chat\n- Display a greeting message for the team.\n\nFixes #10484",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tuning into AnggunFM",
+    "blurb": "The hive is buzzing to a new frequency! We've added AnggunFM to the community showcase, complete with a special greeting for the team.",
+    "summary": "Added the AnggunFM radio app to the community showcase and greenhouse, including a custom greeting message for their team.",
+    "impact": "Users can now discover and interact with AnggunFM directly through the community apps directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "anggunfm",
+      "radio"
+    ],
+    "visual_concept": "A cozy radio station setup in a greenhouse. Polly the bee wearing tiny headphones, tuning a retro radio or microphone. Plants growing around the radio equipment.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny headphones, tuning a retro radio inside a lush greenhouse. Code-plants and vines grow around the broadcasting equipment. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11530.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny headphones, tuning a retro radio inside a lush greenhouse. Code-plants and vines grow around the broadcasting equipment. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T18:35:01.549692+00:00",
+  "app_name": "AnggunFM",
+  "app_url": "https://www.anggunfm.my"
+}

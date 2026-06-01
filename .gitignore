@@ -1,6 +1,7 @@
 
 # Temp test scripts (may contain API keys)
 temp/
+pollinations-myceli-proxy/wrangler.generated.toml
 
 # Crush
 .crush/

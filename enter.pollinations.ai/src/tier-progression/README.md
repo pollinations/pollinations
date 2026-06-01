@@ -56,13 +56,14 @@ High-level behavior:
 5. Apply usage-based rules to adjust block actions (`review`).
 6. Downgrade users with a `block` action to `microbe` tier with 0.1 pollen balance (`apply`).
 
-There is no scheduled workflow for this pipeline. Run the steps manually:
+There is no scheduled workflow for this pipeline. Run the steps manually from
+`enter.pollinations.ai/`:
 
 ```bash
 npx tsx src/tier-progression/flows/spore-to-microbe-scan.ts
 npx tsx src/tier-progression/flows/spore-to-microbe-enrich.ts
 npx tsx src/tier-progression/flows/spore-to-microbe-review.ts
-npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts
+npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks
 ```
 
 ## Entry Point

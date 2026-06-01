@@ -10,7 +10,9 @@ export interface ChatMessage {
     name?: string;
     tool_calls?: unknown[];
     function_call?: unknown;
+    reasoning?: unknown;
     reasoning_content?: unknown;
+    reasoning_details?: unknown;
     audio?: unknown;
     [key: string]: unknown;
 }
@@ -42,6 +44,7 @@ export interface TransformOptions {
     thinking_budget?: number;
     modalities?: string[];
     audio?: Record<string, unknown>;
+    reasoning?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
     isPrivate?: boolean;
     referrer?: string;
@@ -116,6 +119,7 @@ export interface RequestData {
     tool_choice?: unknown;
     modalities?: string[];
     audio?: Record<string, unknown>;
+    reasoning?: Record<string, unknown>;
     reasoning_effort?: string;
     thinking_budget?: number;
     response_format?: { type: string; [key: string]: unknown };

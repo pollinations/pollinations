@@ -121,6 +121,43 @@ export function openaiUsageToUsage(openaiUsage: {
     };
 }
 
+/**
+ * Convert OpenAI Responses API usage format to Usage format.
+ *
+ * Responses reports `input_tokens` and `output_tokens`, with reasoning as an
+ * output-token detail. For billing headers we split visible output text from
+ * hidden reasoning tokens.
+ */
+export function responsesUsageToUsage(responsesUsage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details?: {
+        cached_tokens?: number | null;
+    } | null;
+    output_tokens_details?: {
+        reasoning_tokens?: number | null;
+    } | null;
+}): Usage {
+    const promptCachedTokens =
+        responsesUsage.input_tokens_details?.cached_tokens || 0;
+    const completionReasoningTokens =
+        responsesUsage.output_tokens_details?.reasoning_tokens || 0;
+
+    return {
+        promptTextTokens: Math.max(
+            0,
+            responsesUsage.input_tokens - promptCachedTokens,
+        ),
+        promptCachedTokens,
+        completionTextTokens: Math.max(
+            0,
+            responsesUsage.output_tokens - completionReasoningTokens,
+        ),
+        completionReasoningTokens,
+    };
+}
+
 function sumTokens(tokens: readonly number[]): number {
     return tokens.reduce((sum, token) => sum + token, 0);
 }

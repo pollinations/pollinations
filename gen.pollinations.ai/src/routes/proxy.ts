@@ -36,6 +36,9 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    type CreateResponseRequest,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
@@ -59,6 +62,7 @@ import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
+    handleCreateResponseLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
@@ -170,6 +174,51 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
+async function applySafetyToResponseRequest(
+    c: Parameters<typeof applySafetyToTexts>[0],
+    body: CreateResponseRequest,
+): Promise<CreateResponseRequest> {
+    const targets: ("input" | "instructions")[] = [];
+    if (typeof body.input === "string") targets.push("input");
+    if (typeof body.instructions === "string") targets.push("instructions");
+    if (targets.length === 0) return body;
+
+    const safeTexts = await applySafetyToTexts(
+        c,
+        targets.map((target) => body[target] as string),
+        body.safe as SafeValue,
+    );
+    if (safeTexts.every((text, index) => text === body[targets[index]])) {
+        return body;
+    }
+
+    return {
+        ...body,
+        ...Object.fromEntries(
+            targets.map((target, index) => [target, safeTexts[index]]),
+        ),
+    };
+}
+
+const createResponseHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    generationAccess,
+    async (c) => {
+        const requestBody = await applySafetyToResponseRequest(c, {
+            ...(c.req.valid("json" as never) as CreateResponseRequest),
+            model: c.var.model.resolved,
+        });
+
+        return withSafetyHeaders(
+            c,
+            await handleCreateResponseLocal(c, requestBody),
+        );
+    },
+);
+
 // Helper to filter models by API key permissions and paid balance
 function filterModelsByPermissions<
     T extends { name: string; paid_only?: boolean },
@@ -269,6 +318,16 @@ export const proxyRoutes = new Hono<Env>()
                 supported_endpoints: supportedEndpoints,
                 ...(m.tools && { tools: m.tools }),
                 ...(m.reasoning && { reasoning: m.reasoning }),
+                ...(m.responses && { responses: m.responses }),
+                ...(m.responses_reasoning_summary && {
+                    responses_reasoning_summary: m.responses_reasoning_summary,
+                }),
+                ...(m.responses_reasoning_text && {
+                    responses_reasoning_text: m.responses_reasoning_text,
+                }),
+                ...(m.responses_reasoning_effort && {
+                    responses_reasoning_effort: m.responses_reasoning_effort,
+                }),
                 ...(m.context_length && {
                     context_length: m.context_length,
                 }),
@@ -280,6 +339,7 @@ export const proxyRoutes = new Hono<Env>()
                     ...textModels.map((m) =>
                         toModelEntry(m, [
                             "/v1/chat/completions",
+                            ...(m.responses ? ["/v1/responses"] : []),
                             "/text",
                             "/text/{prompt}",
                         ]),
@@ -557,6 +617,30 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate a Responses API object for reasoning-capable text models.",
+                "",
+                "Local prototype scope: non-streaming `POST /v1/responses` only. Use `reasoning.summary` to request extractable reasoning summaries from supported OpenAI/Azure models.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        ...createResponseHandlers,
     )
     .post(
         "/v1/embeddings",

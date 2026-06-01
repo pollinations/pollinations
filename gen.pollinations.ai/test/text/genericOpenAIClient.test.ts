@@ -136,6 +136,78 @@ describe("genericOpenAIClient", () => {
         ]);
     });
 
+    it("preserves OpenRouter reasoning context fields before sending upstream", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "ok",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                });
+            },
+        );
+
+        await genericOpenAIClient(
+            [
+                {
+                    role: "assistant",
+                    content: "",
+                    reasoning: "previous reasoning",
+                    reasoning_details: [
+                        {
+                            type: "reasoning.text",
+                            text: "previous reasoning",
+                            format: "unknown",
+                            index: 0,
+                        },
+                    ],
+                },
+                { role: "user", content: "continue" },
+            ],
+            {
+                model: "provider-model",
+                reasoning: { effort: "high", exclude: false },
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(upstreamBody).toMatchObject({
+            reasoning: { effort: "high", exclude: false },
+            messages: [
+                {
+                    role: "assistant",
+                    content: "",
+                    reasoning: "previous reasoning",
+                    reasoning_details: [
+                        {
+                            type: "reasoning.text",
+                            text: "previous reasoning",
+                        },
+                    ],
+                },
+                { role: "user", content: "continue" },
+            ],
+        });
+    });
+
     it("preserves valid semantic tool and function message names", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 

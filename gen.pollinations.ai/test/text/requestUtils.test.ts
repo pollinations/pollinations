@@ -20,4 +20,25 @@ describe("getRequestData", () => {
         expect(requestData.max_tokens).toBe(12);
         expect(requestData.max_completion_tokens).toBe(16);
     });
+
+    it("passes through reasoning config from chat completion bodies", () => {
+        const requestData = getRequestData({
+            query: {},
+            body: {
+                model: "mistral-4",
+                messages: [{ role: "user", content: "hello" }],
+                reasoning: { effort: "high", exclude: false },
+            },
+            path: "/v1/chat/completions",
+            params: {},
+            method: "POST",
+            headers: {},
+            url: "https://gen.pollinations.ai/v1/chat/completions",
+        });
+
+        expect(requestData.reasoning).toEqual({
+            effort: "high",
+            exclude: false,
+        });
+    });
 });

@@ -60,8 +60,11 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
         if (normalizedName) normalizedMsg.name = normalizedName;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;
+        if (msg.reasoning) normalizedMsg.reasoning = msg.reasoning;
         if (msg.reasoning_content)
             normalizedMsg.reasoning_content = msg.reasoning_content;
+        if (msg.reasoning_details)
+            normalizedMsg.reasoning_details = msg.reasoning_details;
         if (msg.audio) normalizedMsg.audio = msg.audio;
 
         return normalizedMsg;

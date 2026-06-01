@@ -53,6 +53,7 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         tool_choice: data.tool_choice,
         modalities: data.modalities as string[] | undefined,
         audio: data.audio as Record<string, unknown> | undefined,
+        reasoning: data.reasoning as Record<string, unknown> | undefined,
         response_format: data.response_format as RequestData["response_format"],
         stop: data.stop,
         stream_options: data.stream_options as

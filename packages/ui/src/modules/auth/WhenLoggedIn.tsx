@@ -1,4 +1,4 @@
-import { useAuthState } from "@pollinations_ai/sdk/react";
+import { useAuthState } from "@pollinations/sdk/react";
 import { Fragment, type ReactNode } from "react";
 
 export type WhenLoggedInProps = { children: ReactNode };

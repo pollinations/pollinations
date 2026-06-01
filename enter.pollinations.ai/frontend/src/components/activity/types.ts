@@ -1,4 +1,4 @@
-import type { PeriodSelection } from "@pollinations_ai/ui";
+import type { PeriodSelection } from "@pollinations/ui";
 
 export type DailyUsageRecord = {
     date: string;
@@ -8,7 +8,7 @@ export type DailyUsageRecord = {
     cost_usd: number;
 };
 
-export type { PeriodGranularity } from "@pollinations_ai/ui";
+export type { PeriodGranularity } from "@pollinations/ui";
 
 export type UsagePeriodSelection = PeriodSelection;
 

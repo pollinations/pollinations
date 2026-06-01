@@ -1,4 +1,4 @@
-import type { ThemeName } from "@pollinations_ai/ui";
+import type { ThemeName } from "@pollinations/ui";
 export type { ThemeName };
 
 // Intent maps live per-primitive now: Button/Surface/IconButton support
@@ -28,9 +28,9 @@ export const dashboardThemeByPage = Object.fromEntries(
     DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
 ) as Record<DashboardPage, ThemeName>;
 
-// Page chrome colors are driven by @pollinations_ai/ui CSS variables.
+// Page chrome colors are driven by @pollinations/ui CSS variables.
 // Components scope their subtree with `data-theme="..."` and read the
-// Tailwind bridge utilities from @pollinations_ai/ui/app.css.
+// Tailwind bridge utilities from @pollinations/ui/app.css.
 
 export function isDashboardPage(page: string): page is DashboardPage {
     return DASHBOARD_PAGES.includes(page as DashboardPage);

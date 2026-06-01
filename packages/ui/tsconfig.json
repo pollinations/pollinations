@@ -17,8 +17,8 @@
     "verbatimModuleSyntax": false,
     "baseUrl": ".",
     "paths": {
-      "@pollinations_ai/sdk": ["../sdk/src/index.ts"],
-      "@pollinations_ai/sdk/react": ["../sdk/src/react/index.ts"]
+      "@pollinations/sdk": ["../sdk/src/index.ts"],
+      "@pollinations/sdk/react": ["../sdk/src/react/index.ts"]
     },
     "forceConsistentCasingInFileNames": true
   },

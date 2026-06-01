@@ -16,7 +16,7 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     minify: false,
-    external: ["@pollinations_ai/sdk", "@pollinations_ai/sdk/react", "react"],
+    external: ["@pollinations/sdk", "@pollinations/sdk/react", "react"],
     loader: {
         ".svg": "dataurl",
     },

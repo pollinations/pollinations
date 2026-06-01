@@ -1,4 +1,4 @@
-import { Button, Surface } from "@pollinations_ai/ui";
+import { Button, Surface } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/error")({

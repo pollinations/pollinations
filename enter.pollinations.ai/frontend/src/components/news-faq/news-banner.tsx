@@ -1,4 +1,4 @@
-import { cn, Surface } from "@pollinations_ai/ui";
+import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =

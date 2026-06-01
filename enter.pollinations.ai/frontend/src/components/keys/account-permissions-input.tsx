@@ -1,8 +1,5 @@
-import { Collapsible, cn } from "@pollinations_ai/ui";
-import {
-    getModalityColors,
-    ModalityButton,
-} from "@pollinations_ai/ui/modality";
+import { Collapsible, cn } from "@pollinations/ui";
+import { getModalityColors, ModalityButton } from "@pollinations/ui/modality";
 import type { FC } from "react";
 import { useState } from "react";
 import {

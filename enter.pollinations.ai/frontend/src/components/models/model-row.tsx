@@ -1,5 +1,5 @@
-import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations_ai/ui";
-import { PaidChip } from "@pollinations_ai/ui/wallet";
+import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations/ui";
+import { PaidChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import {
     calculatePerPollen,

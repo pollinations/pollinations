@@ -17,6 +17,15 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
+const ACTIVE_CONTENT_TYPES = new Set([
+    "application/javascript",
+    "application/xhtml+xml",
+    "application/xml",
+    "image/svg+xml",
+    "text/html",
+    "text/javascript",
+    "text/xml",
+]);
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -56,6 +65,44 @@ function fileTooLargeError(maxSize: number): { error: string } {
 
 function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
+}
+
+function normalizeContentType(contentType?: string): string {
+    return (contentType || "application/octet-stream")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+}
+
+function isActiveContentType(contentType?: string): boolean {
+    const normalized = normalizeContentType(contentType);
+    return ACTIVE_CONTENT_TYPES.has(normalized) || normalized.endsWith("+xml");
+}
+
+function setContentHeaders(
+    headers: Headers,
+    contentType: string | undefined,
+    originalName?: string,
+) {
+    const resolvedType = contentType || "application/octet-stream";
+    const active = isActiveContentType(resolvedType);
+    headers.set("Content-Type", resolvedType);
+    headers.set("X-Content-Type-Options", "nosniff");
+
+    if (active) {
+        headers.set("Content-Security-Policy", "default-src 'none'; sandbox");
+    }
+
+    if (originalName) {
+        const sanitized = encodeURIComponent(originalName);
+        const disposition = active ? "attachment" : "inline";
+        headers.set(
+            "Content-Disposition",
+            `${disposition}; filename*=UTF-8''${sanitized}`,
+        );
+    } else if (active) {
+        headers.set("Content-Disposition", "attachment");
+    }
 }
 
 const UploadResponseSchema = z.object({
@@ -294,23 +341,14 @@ api.get(
             }
 
             const headers = new Headers();
-            headers.set(
-                "Content-Type",
+            setContentHeaders(
+                headers,
                 object.httpMetadata?.contentType || "application/octet-stream",
+                object.customMetadata?.originalName,
             );
             headers.set("Cache-Control", CACHE_CONTROL);
             headers.set("X-Content-Hash", hash);
             headers.set("X-Content-Size", object.size.toString());
-
-            const originalName = object.customMetadata?.originalName;
-            if (originalName) {
-                // RFC 5987: use filename* with UTF-8 encoding to safely handle any characters
-                const sanitized = encodeURIComponent(originalName);
-                headers.set(
-                    "Content-Disposition",
-                    `inline; filename*=UTF-8''${sanitized}`,
-                );
-            }
 
             const responseBody = refreshR2ObjectTtl(
                 c.env.MEDIA_BUCKET,
@@ -426,9 +464,10 @@ api.on(
             }
 
             const headers = new Headers();
-            headers.set(
-                "Content-Type",
+            setContentHeaders(
+                headers,
                 object.httpMetadata?.contentType || "application/octet-stream",
+                object.customMetadata?.originalName,
             );
             headers.set("Content-Length", object.size.toString());
             headers.set("Cache-Control", CACHE_CONTROL);

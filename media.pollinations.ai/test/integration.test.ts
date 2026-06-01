@@ -109,6 +109,7 @@ describe("media.pollinations.ai", () => {
         expect(getRes.headers.get("cache-control")).toBe(
             "public, max-age=31536000, immutable",
         );
+        expect(getRes.headers.get("x-content-type-options")).toBe("nosniff");
         expect(getRes.headers.get("content-disposition")).toContain("test.png");
         const body = new Uint8Array(await getRes.arrayBuffer());
         expect(body.length).toBe(TINY_PNG.length);
@@ -138,6 +139,56 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("serves active document types as downloads", async () => {
+        const html = "<!doctype html><script>globalThis.executed=true</script>";
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    data: btoa(html),
+                    contentType: "text/html",
+                    name: "proof.html",
+                }),
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.contentType).toBe("text/html");
+
+        const getRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+        );
+        expect(getRes.status).toBe(200);
+        expect(getRes.headers.get("content-type")).toBe("text/html");
+        expect(getRes.headers.get("content-disposition")).toContain(
+            "attachment",
+        );
+        expect(getRes.headers.get("content-disposition")).toContain(
+            "proof.html",
+        );
+        expect(getRes.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; sandbox",
+        );
+        expect(getRes.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(await getRes.text()).toBe(html);
+
+        const headRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+            { method: "HEAD" },
+        );
+        expect(headRes.headers.get("content-disposition")).toContain(
+            "attachment",
+        );
+        expect(headRes.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; sandbox",
+        );
     });
 
     it("refreshes uploaded media TTL on aged GET", async () => {

@@ -34,17 +34,24 @@ import {
     type ComponentType,
     type CSSProperties,
     createContext,
+    lazy,
     type ReactNode,
+    Suspense,
     useContext,
     useEffect,
     useState,
 } from "react";
-import { DesignShowcase } from "./showcase/DesignShowcase";
 
 // Publishable key for this showcase (pk_* is safe to commit).
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
+
+const DesignShowcase = lazy(() =>
+    import("./showcase/DesignShowcase").then((module) => ({
+        default: module.DesignShowcase,
+    })),
+);
 
 const brandWordmarkMask: CSSProperties = {
     WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
@@ -655,12 +662,14 @@ export default function App() {
                     theme={theme}
                 />
                 <FloatingThemeControls theme={theme} onThemeChange={setTheme} />
-                <DesignShowcase
-                    hideHeader
-                    hideThemeTabs
-                    theme={theme}
-                    onThemeChange={setTheme}
-                />
+                <Suspense fallback={null}>
+                    <DesignShowcase
+                        hideHeader
+                        hideThemeTabs
+                        theme={theme}
+                        onThemeChange={setTheme}
+                    />
+                </Suspense>
             </div>
         );
     }

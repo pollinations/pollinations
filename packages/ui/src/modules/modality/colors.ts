@@ -23,8 +23,6 @@ export type ModalityColorSet = {
     filled: string;
     /** Hover hint shown on the unselected button (subtle tint). */
     hover: string;
-    /** Soft card/surface treatment for modality-owned summary blocks. */
-    surface: string;
     /** Heading text colour for the category label. */
     text: string;
 };
@@ -35,42 +33,36 @@ export const MODALITY_COLORS: Record<Modality, ModalityColorSet> = {
         theme: "blue",
         filled: "polli:bg-blue-200 polli:text-blue-900",
         hover: "polli:hover:bg-blue-100 polli:hover:text-blue-900",
-        surface: "polli:border-blue-200 polli:bg-blue-100",
         text: "polli:text-blue-800",
     },
     image: {
         theme: "pink",
         filled: "polli:bg-pink-200 polli:text-pink-900",
         hover: "polli:hover:bg-pink-100 polli:hover:text-pink-900",
-        surface: "polli:border-pink-200 polli:bg-pink-100",
         text: "polli:text-pink-800",
     },
     video: {
         theme: "teal",
         filled: "polli:bg-teal-200 polli:text-teal-900",
         hover: "polli:hover:bg-teal-100 polli:hover:text-teal-900",
-        surface: "polli:border-teal-200 polli:bg-teal-100",
         text: "polli:text-teal-800",
     },
     audio: {
         theme: "violet",
         filled: "polli:bg-violet-200 polli:text-violet-900",
         hover: "polli:hover:bg-violet-100 polli:hover:text-violet-900",
-        surface: "polli:border-violet-200 polli:bg-violet-100",
         text: "polli:text-violet-800",
     },
     realtime: {
         theme: "green",
         filled: "polli:bg-green-200 polli:text-green-900",
         hover: "polli:hover:bg-green-100 polli:hover:text-green-900",
-        surface: "polli:border-green-200 polli:bg-green-100",
         text: "polli:text-green-800",
     },
     embedding: {
         theme: "amber",
         filled: "polli:bg-amber-200 polli:text-amber-900",
         hover: "polli:hover:bg-amber-100 polli:hover:text-amber-900",
-        surface: "polli:border-amber-200 polli:bg-amber-100",
         text: "polli:text-amber-800",
     },
 };

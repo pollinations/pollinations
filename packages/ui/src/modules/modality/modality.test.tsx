@@ -7,9 +7,6 @@ describe("modality", () => {
         expect(getModalityColors("embeddings")?.text).toBe(
             "polli:text-amber-800",
         );
-        expect(getModalityColors("video")?.surface).toBe(
-            "polli:border-teal-200 polli:bg-teal-100",
-        );
         expect(getModalityColors("video")?.theme).toBe("teal");
     });
 });

@@ -1273,7 +1273,7 @@ const ModuleRecipesDemo: FC = () => {
                         <Button
                             type="button"
                             size="small"
-                            className="polli:bg-gray-100 polli:text-gray-600"
+                            className="bg-gray-100 text-gray-600"
                         >
                             unknown
                         </Button>

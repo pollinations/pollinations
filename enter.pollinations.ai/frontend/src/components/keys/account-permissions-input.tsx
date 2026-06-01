@@ -340,7 +340,10 @@ const ModelChip: FC<{
     const colors = getModalityColors(category ?? "");
     const colorClasses = selected
         ? (colors?.filled ?? "polli:bg-gray-200 polli:text-gray-900")
-        : cn("polli:bg-gray-100 polli:text-gray-600", colors?.hover);
+        : cn(
+              "polli:bg-gray-100 polli:text-gray-600",
+              !disabled && colors?.hover,
+          );
 
     return (
         <Button
@@ -350,7 +353,7 @@ const ModelChip: FC<{
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "polli:shrink-0 polli:gap-1 polli:text-left",
+                "polli:shrink-0 polli:gap-1 polli:px-3 polli:py-1 polli:text-left polli:text-sm",
                 colorClasses,
             )}
         >

@@ -130,10 +130,7 @@ function rowIntent(status) {
 }
 
 function modalityChipClass(category) {
-    return (
-        getModalityColors(category)?.filled ??
-        "polli:bg-gray-200 polli:text-gray-900"
-    );
+    return getModalityColors(category)?.filled ?? "bg-gray-200 text-gray-900";
 }
 
 function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
@@ -202,13 +199,13 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                             theme={colors?.theme}
                             variant="card-themed"
                             className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 polli:border polli:border-theme-border sm:min-h-48",
+                                "flex h-full min-h-24 flex-col gap-3 border border-theme-border sm:min-h-48",
                                 isActive && "ring-2 ring-theme-bg-active",
                             )}
                         >
                             <div className="flex min-w-0 items-start justify-between gap-3">
                                 <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-col sm:items-start">
-                                    <h2 className="polli:min-w-0 polli:truncate polli:font-serif polli:text-2xl polli:font-black polli:leading-none polli:text-theme-text-strong">
+                                    <h2 className="min-w-0 truncate font-serif text-2xl font-black leading-none text-theme-text-strong">
                                         {title}
                                     </h2>
                                     <Chip intent="neutral" size="sm">
@@ -234,7 +231,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                                 </div>
                             </div>
 
-                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 polli:border-t polli:border-theme-border pt-2">
+                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-theme-border pt-2">
                                 <div className="flex flex-wrap gap-1">
                                     {stats.countOff > 0 && (
                                         <Chip intent="danger" size="sm">
@@ -326,8 +323,8 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             title={label}
             size="small"
             className={cn(
-                "polli:h-9 polli:gap-2 polli:py-0",
-                showLabel ? "polli:w-auto polli:px-3" : "polli:w-9 polli:px-0",
+                "h-9 gap-2 py-0",
+                showLabel ? "w-auto px-3" : "w-9 px-0",
             )}
             aria-label={label}
         >
@@ -530,7 +527,7 @@ function App() {
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div className="min-w-0">
-                                <h1 className="polli:font-serif polli:text-2xl polli:font-black polli:text-theme-text-strong">
+                                <h1 className="font-serif text-2xl font-black text-theme-text-strong">
                                     Model Monitor
                                 </h1>
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm leading-6 text-theme-text-soft">
@@ -589,10 +586,7 @@ function App() {
                         onTypeFilter={setTypeFilter}
                     />
 
-                    <Surface
-                        variant="card"
-                        className="polli:overflow-hidden polli:p-0"
-                    >
+                    <Surface variant="card" className="overflow-hidden p-0">
                         <ScrollArea axis="x">
                             <Table className="min-w-[960px]">
                                 <TableHead>
@@ -713,7 +707,7 @@ function App() {
                                                         <Chip
                                                             size="sm"
                                                             className={cn(
-                                                                "polli:text-micro polli:font-bold polli:uppercase polli:tracking-wide",
+                                                                "text-micro font-bold uppercase tracking-wide",
                                                                 modalityChipClass(
                                                                     model.type,
                                                                 ),

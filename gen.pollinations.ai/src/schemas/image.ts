@@ -65,7 +65,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default("worst quality, blurry")
         .meta({
             description:
-                "What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this.",
+                "What to avoid in the generated image. Only supported by `zimage` — other models ignore this.",
         }),
     safe: SafeSchema,
     quality: z

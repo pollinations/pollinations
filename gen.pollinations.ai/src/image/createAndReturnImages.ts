@@ -158,7 +158,7 @@ async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
- * Calls self-hosted image generation servers (flux, zimage pools).
+ * Calls self-hosted image generation servers (zimage pool).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
  * @returns {Promise<Array>} - The generated images.

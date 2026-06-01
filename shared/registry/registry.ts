@@ -181,13 +181,6 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Check if a public model name exists in the registry
- */
-export function isValidModel(model: ModelName | string): model is ModelName {
-    return !!MODEL_REGISTRY[model as ModelName];
-}
-
-/**
  * Get all public model names
  */
 export function getModels(): ModelName[] {
@@ -197,21 +190,21 @@ export function getModels(): ModelName[] {
 /**
  * Get text model names
  */
-export function getTextModels(): TextModelName[] {
+function getTextModels(): TextModelName[] {
     return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**
  * Get image model names
  */
-export function getImageModels(): ImageModelName[] {
+function getImageModels(): ImageModelName[] {
     return Object.keys(IMAGE_SERVICES) as ImageModelName[];
 }
 
 /**
  * Get audio model names
  */
-export function getAudioModels(): AudioModelName[] {
+function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 

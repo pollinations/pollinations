@@ -1,7 +1,6 @@
 import type { Logger } from "@logtape/logtape";
-import { cached } from "../cache.ts";
 
-const TINYBIRD_MODEL_STATS_URL =
+export const TINYBIRD_MODEL_STATS_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=200";
 const CACHE_KEY = "model-stats";
 const CACHE_TTL = 3600; // 1 hour
@@ -16,9 +15,28 @@ export type TinybirdModelStats = {
     }>;
 };
 
+type CacheOptions = {
+    log: Logger;
+    ttl: number;
+    kv: KVNamespace;
+    keyGenerator: () => string;
+};
+
+/**
+ * The `cached` helper each service provides (enter/src/cache.ts,
+ * gen/src/cache.ts). Injected rather than imported because the two
+ * implementations have diverged in their generic constraints
+ * (`any[]` vs `unknown[]`) and live in separate service-local modules.
+ */
+type CachedFn = (
+    fn: (log: Logger) => Promise<TinybirdModelStats>,
+    options: CacheOptions,
+) => (log: Logger) => Promise<TinybirdModelStats>;
+
 export async function getModelStats(
     kv: KVNamespace,
     log: Logger,
+    cached: CachedFn,
 ): Promise<TinybirdModelStats> {
     return await cached(fetchModelStats, {
         log,

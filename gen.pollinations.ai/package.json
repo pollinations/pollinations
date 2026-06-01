@@ -10,11 +10,13 @@
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
         "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
         "deploy:production": "npm run build:production && wrangler deploy --env production",
+        "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-images --file r2-lifecycle.json --force && wrangler r2 bucket lifecycle set pollinations-text-enter --file r2-lifecycle.json --force",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production'",
         "test": "vitest run",
         "typecheck": "tsc --noEmit",
-        "docs:generate": "tsx scripts/generate-apidocs.ts"
+        "docs:generate": "tsx scripts/generate-apidocs.ts",
+        "docs:validate": "tsx scripts/validate-apidocs.ts"
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.33.2",
@@ -47,9 +49,11 @@
         "hono": "4.10.6",
         "hono-openapi": "1.2.0",
         "jose": "^6.2.3",
+        "marked": "^18.0.4",
         "nanoid": "5.1.6",
         "piexif-ts": "^2.1.0",
         "tailwind-merge": "3.4.0",
+        "yaml": "^2.9.0",
         "zod": "4.3.5"
     }
 }

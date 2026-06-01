@@ -1,5 +1,10 @@
-import type { Logger } from "@logtape/logtape";
+import { getLogger, type Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
+import {
+    collectRequestInputs,
+    type RequestInputs,
+    stringifyRequestInputs,
+} from "@shared/observability/request-inputs.ts";
 import { APIError } from "better-auth";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -159,6 +164,7 @@ type ServerErrorEnvelope = {
     upstreamBody?: string;
     modelRequested?: string;
     resolvedModelRequested?: string;
+    requestInputs?: RequestInputs;
     userId?: string;
     userTier?: string;
     apiKeyId?: string;
@@ -172,14 +178,18 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
     c: Context<TEnv>,
 ) {
-    const log = c.get("log");
+    // Use getLogger directly instead of c.get("log"). The error handler must
+    // never depend on logger middleware having run successfully — getLogger is
+    // idempotent (returns the same singleton for the same category).
+    const log = getLogger(["hono"]);
     const timestamp = new Date().toISOString();
 
     c.set("error", err);
 
     if (err instanceof UpstreamError) {
         const status = err.status;
-        if (status >= 500) emitServerError(c, err, status, timestamp, log);
+        if (status >= 500)
+            await emitServerError(c, err, status, timestamp, log);
         else {
             log.trace("UpstreamError: {message}", {
                 message: err.message || getDefaultErrorMessage(err.status),
@@ -193,7 +203,8 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
 
     if (err instanceof HTTPException) {
         const status = err.status;
-        if (status >= 500) emitServerError(c, err, status, timestamp, log);
+        if (status >= 500)
+            await emitServerError(c, err, status, timestamp, log);
         else {
             log.trace("HttpException: {message}", {
                 message: err.message || getDefaultErrorMessage(err.status),
@@ -204,7 +215,8 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
 
     if (err instanceof APIError) {
         const status = err.statusCode as ContentfulStatusCode;
-        if (status >= 500) emitServerError(c, err, status, timestamp, log);
+        if (status >= 500)
+            await emitServerError(c, err, status, timestamp, log);
         else log.trace("APIError: {error}", { error: err });
         return c.json(createErrorResponse(err, status, timestamp), status);
     }
@@ -217,7 +229,7 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
     }
 
     const status = 500;
-    emitServerError(c, err, status, timestamp, log);
+    await emitServerError(c, err, status, timestamp, log);
     const response = createInternalErrorResponse(err, status, timestamp);
     return c.json(response, status);
 }
@@ -304,7 +316,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 426, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -319,6 +331,7 @@ export function getDefaultErrorMessage(status: number): string {
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",
         422: "Your request looks good, but some required fields are missing or invalid.",
+        426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",
@@ -327,14 +340,19 @@ export function getDefaultErrorMessage(status: number): string {
     return messages[status] || "UNKNOWN_ERROR";
 }
 
-function emitServerError<TEnv extends ErrorHandlerEnv>(
+async function emitServerError<TEnv extends ErrorHandlerEnv>(
     c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
     log: Logger,
-): void {
-    const envelope = createServerErrorEnvelope(c, error, status, timestamp);
+): Promise<void> {
+    const envelope = await createServerErrorEnvelope(
+        c,
+        error,
+        status,
+        timestamp,
+    );
     log.error(
         "server_error route={routePath} status={status} class={errorClass}",
         envelope,
@@ -353,12 +371,12 @@ function emitServerError<TEnv extends ErrorHandlerEnv>(
     );
 }
 
-function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
+async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
     c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
-): ServerErrorEnvelope {
+): Promise<ServerErrorEnvelope> {
     const vars = c.var as Partial<{
         auth: {
             user?: { id?: string; tier?: string };
@@ -407,6 +425,7 @@ function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
                 : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
+        requestInputs: await collectRequestInputs(c),
         userId: vars.auth?.user?.id,
         userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,
@@ -435,6 +454,7 @@ function toTinybirdErrorEvent(
         upstream_body: envelope.upstreamBody,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,
+        request_inputs: stringifyRequestInputs(envelope.requestInputs),
         user_id: envelope.userId,
         user_tier: envelope.userTier,
         api_key_id: envelope.apiKeyId,

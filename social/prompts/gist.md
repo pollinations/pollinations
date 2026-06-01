@@ -95,8 +95,20 @@ Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory.
 ### `summary`
 One clear sentence. Focus on WHAT changed and WHY. Written for a technical audience who follows the project.
 
+**Preserve the load-bearing specifics from the PR body.** A summary that reads like a category label ("updated tier options", "new model added", "API improvements", "improved performance") is not useful — it forces readers to open the PR to learn anything. Identify the 1–3 concrete facts that make this PR distinct and put them in the sentence:
+- Names of models, endpoints, packages, fields, features, or providers being added/changed/removed
+- Numbers — version bumps, new defaults, prices, limits, sizes, timeouts, token counts
+- Before/after values when the PR changes existing behavior
+- The specific replacement when something is deprecated
+
+Examples — vague vs. specific:
+- ❌ "Added a new image model" → ✅ "Added Llama 4 Maverick via Fireworks, exposed at /v1/chat/completions"
+- ❌ "Updated tier options" → ✅ "Pollen pack bonuses reduced: $10 → 13 (was 20), $50 → 75 (was 110)"
+- ❌ "Improved checkout flow" → ✅ "Checkout metadata now uses packPollenGrant + packBonusPollen; the legacy 2x credit fallback is removed"
+- ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for the free tier"
+
 ### `impact`
-One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y."
+One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.
@@ -119,12 +131,10 @@ A short (1-2 sentence) pixel art scene description for generating the PR's annou
 
 All output fields (summary, impact) MUST frame changes positively — what users GAIN, not what they lose.
 
-### Reframing Guide
-- Price increases → "new tier options" or "updated plans" — focus on what tiers unlock
-- Rate limiting / tighter quotas → "reliability improvements" or "fairer usage"
-- Feature removals → "streamlined experience" — focus on what remains or replaces it
-- Breaking API changes → "migration to better system" — focus on the improvement
-- Deprecations → "making way for [replacement]"
+### Framing Principle
+Positive framing means tone, not abstraction. Always name the concrete change first — then frame it neutrally to positively. Abstracting a change into a category ("updated plans", "improvements", "new options") strips the information users actually came for, regardless of whether the underlying change is good news or bad news.
+
+Apply this to every PR type — new features, deprecations, pricing changes, rate-limit changes, model additions, breaking API changes, performance improvements, infrastructure swaps, refactors. The specifics carry through to the user-facing sentence; the framing controls only the tone of how they're presented.
 
 ### Never surface in social content
 - Revenue or financial pressures

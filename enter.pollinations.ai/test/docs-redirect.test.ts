@@ -21,11 +21,9 @@ test("enter docs schema remains available for gen service binding", async () => 
 
     expect(response.status).toBe(200);
     const schema = (await response.json()) as {
-        info?: { description?: string };
         paths?: Record<string, unknown>;
     };
 
-    expect(schema.info?.description).toContain("Quick Start");
     expect(schema.paths?.["/account/profile"]).toBeDefined();
 });
 

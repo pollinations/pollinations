@@ -23,10 +23,11 @@ export async function atomicDeductUserBalance(
     userId: string,
     amount: number,
     isPaidOnly = false,
-): Promise<{ ok: boolean; bucket: Bucket | null }> {
-    if (amount <= 0) return { ok: true, bucket: null };
+): Promise<{ ok: boolean; bucket: Bucket | null; packBalance: number | null }> {
+    if (amount <= 0) return { ok: true, bucket: null, packBalance: null };
 
-    const row = await db.get<{ bucket: Bucket }>(sql`
+    const row = await db.get<{ bucket: Bucket; packBalance: number | null }>(
+        sql`
         WITH decision AS MATERIALIZED (
             SELECT
                 id,
@@ -52,10 +53,17 @@ export async function atomicDeductUserBalance(
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
-        RETURNING (SELECT bucket FROM decision) AS bucket
-    `);
+        RETURNING
+            (SELECT bucket FROM decision) AS bucket,
+            pack_balance AS packBalance
+    `,
+    );
 
-    return { ok: !!row, bucket: row?.bucket ?? null };
+    return {
+        ok: !!row,
+        bucket: row?.bucket ?? null,
+        packBalance: row?.packBalance ?? null,
+    };
 }
 
 /**

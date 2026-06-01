@@ -37,6 +37,33 @@ OWNER = "pollinations"
 REPO = "pollinations"
 GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
 
+
+# Models-weekly staging
+MODELS_NEWS_DIR = "social/news/models"
+
+
+def models_news_staging_dir(date_str: str) -> str:
+    """Workspace-local dir holding the artifacts to be committed to the news
+    branch in a single tree commit. Generator writes them all here; publisher
+    reads them, posts Discord, and only on success commits all four atomically.
+    A publish failure leaves the news branch untouched, so next week's run
+    re-detects and re-announces the same changes."""
+    base = os.environ.get("RUNNER_TEMP") or "/tmp"
+    path = os.path.join(base, f"models-news-{date_str}")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def models_news_staged_files(date_str: str) -> list[tuple[str, str]]:
+    """Returns [(local_filename, news_branch_path), ...] for the four artifacts
+    committed atomically per weekly run."""
+    return [
+        ("discord.json", f"{MODELS_NEWS_DIR}/{date_str}/discord.json"),
+        ("diff.json", f"{MODELS_NEWS_DIR}/diffs/{date_str}.json"),
+        ("models.md", f"{MODELS_NEWS_DIR}/models.md"),
+        ("snapshot.json", f"{MODELS_NEWS_DIR}/snapshots/{date_str}.json"),
+    ]
+
 # Image generation
 IMAGE_SIZE = 2048
 # Style suffix appended to every image prompt — ensures consistent pixel art style

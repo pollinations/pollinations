@@ -1,0 +1,133 @@
+/* BYOP (bring-your-own-pollen) modal — reuses .themes-modal* shell */
+.byop-modal .themes-modal-content {
+  max-width: 460px;
+}
+
+.byop-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.byop-desc code {
+  padding: 0.1rem 0.35rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-family: monospace;
+}
+
+.byop-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.byop-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.byop-input:focus {
+  border-color: var(--accent-color, #6366f1);
+}
+
+.byop-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.byop-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.byop-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-light);
+  margin-right: auto;
+}
+
+.byop-btn-ghost:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.byop-btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.byop-btn-secondary:hover {
+  background: var(--bg-secondary);
+}
+
+.byop-btn-primary {
+  background: var(--accent-color, #6366f1);
+  color: #fff;
+}
+
+.byop-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+/* Wrap span+button so they stack inside .simple-error (which is row-flex) */
+.simple-error-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* In-message BYOP prompt */
+.message-byop-prompt {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message-byop-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--accent-color, #6366f1);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: filter var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.message-byop-btn:hover {
+  filter: brightness(1.08);
+}

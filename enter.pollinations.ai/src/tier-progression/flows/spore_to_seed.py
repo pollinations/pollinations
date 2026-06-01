@@ -53,8 +53,8 @@ def fetch_spore_users(env: str = "production") -> tuple[list[int], list[int], in
     slot = now.weekday() * 6 + now.hour // 4
     total_slots = 42
     recent_cutoff = int(
-        (now.timestamp() - 8 * 3600) * 1000
-    )  # 8 hours ago in ms — overlaps previous run so missed slots don't lose users
+        now.timestamp() - 8 * 3600
+    )  # 8 hours ago in seconds - overlaps previous run so missed slots don't lose users
 
     # Get new users (created in last 8 hours)
     new_query = f"""

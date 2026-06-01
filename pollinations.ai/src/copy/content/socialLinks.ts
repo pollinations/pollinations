@@ -71,11 +71,14 @@ export const LINKS = {
     githubGoodFirstIssue:
         "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
     githubNewIssue: "https://github.com/pollinations/pollinations/issues/new",
-    docsText: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation",
+    docsText: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text",
     docsStreaming:
-        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
-    docsImage:
-        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image-generation",
-    docsAudio: "https://gen.pollinations.ai/docs#tag/-audio-generation",
-    docsAuth: "https://gen.pollinations.ai/docs#description/-authentication",
+        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text/POST/v1/chat/completions",
+    docsImage: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image",
+    docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
+    docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
+    highlightsSource:
+        "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+    polliCli:
+        "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

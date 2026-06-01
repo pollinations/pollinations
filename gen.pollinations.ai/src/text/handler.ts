@@ -1,3 +1,4 @@
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
     type ModelName,
@@ -145,7 +146,7 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
 
 function sendTextContentResponse(completion: ChatCompletion): Response {
     const headers = usageHeaders(completion);
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
@@ -167,7 +168,7 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
         return new Response(base64ToArrayBuffer(audio.data), { headers });
     }
 
-    if (message.content) {
+    if (message.content !== undefined && message.content !== null) {
         let content = String(message.content);
         if (completion.citations?.length) {
             content += "\n\n---\nSources:\n";
@@ -270,15 +271,15 @@ function throwTextError(error: ServiceError, c: TextContext): never {
             : typeof error.code === "number"
               ? error.code
               : 500;
-    const mappedStatus =
-        error.name === "ModelResolutionError" || status === 429
-            ? status
-            : remapUpstreamStatus(status);
+    const upstreamStatus =
+        typeof error.upstreamStatus === "number"
+            ? error.upstreamStatus
+            : status;
 
-    throw new UpstreamError(mappedStatus as ContentfulStatusCode, {
+    throw new UpstreamError(status as ContentfulStatusCode, {
         message: error.message || "Text generation failed",
         requestUrl: new URL(c.req.url),
-        upstreamStatus: status,
+        upstreamStatus,
         responseBody: serializeDetails(error.details || error.response?.data),
         cause: error,
     });
@@ -306,7 +307,10 @@ async function generateTextResponse(
             const error = new Error(
                 errorObj.message || "Text generation failed",
             ) as ServiceError;
-            error.status = errorObj.status;
+            if (typeof errorObj.status === "number") {
+                error.status = remapUpstreamStatus(errorObj.status);
+                error.upstreamStatus = errorObj.status;
+            }
             error.details = errorObj.details;
             throw error;
         }

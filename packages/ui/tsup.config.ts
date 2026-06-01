@@ -1,0 +1,23 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+    entry: {
+        index: "src/index.ts",
+        "auth/index": "src/modules/auth/index.ts",
+        "auth/sdk": "src/modules/auth/sdk.ts",
+        "modality/index": "src/modules/modality/index.ts",
+        "showcase/index": "src/showcase/index.ts",
+        "wallet/index": "src/modules/wallet/index.ts",
+        "wallet/sdk": "src/modules/wallet/sdk.ts",
+    },
+    format: ["esm", "cjs"],
+    dts: true,
+    splitting: false,
+    sourcemap: true,
+    clean: true,
+    minify: false,
+    external: ["@pollinations_ai/sdk", "@pollinations_ai/sdk/react", "react"],
+    loader: {
+        ".svg": "dataurl",
+    },
+});

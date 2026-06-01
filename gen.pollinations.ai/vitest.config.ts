@@ -32,6 +32,7 @@ const genAliases = [
     "middleware/validator.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
+    "schemas/realtime.ts",
     "schemas/text.ts",
     "util",
     "util.ts",
@@ -100,8 +101,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
-                            BYTEDANCE_API_KEY:
-                                env.BYTEDANCE_API_KEY || "test-key",
                         },
                         serviceBindings: {
                             ENTER: async (request: Request) => {

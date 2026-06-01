@@ -11,6 +11,7 @@ import {
     type Bucket,
 } from "./deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
+import { roundPollenLedgerAmount } from "./precision.ts";
 
 const log = getLogger(["track", "helpers"]);
 
@@ -85,10 +86,17 @@ export async function resolveDevMarkup(
 
 /**
  * Handles balance deduction and BYOP dev credit for billable requests.
+ *
+ * Returns `billedPrice` — the rounded amount actually debited from the payer
+ * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
+ * should use this for analytics/event totals so they match the ledger.
  */
-export async function handleBalanceDeduction(
-    params: DeductionParams,
-): Promise<{ markup: MarkupResolution | null; payerBucket: Bucket | null }> {
+export async function handleBalanceDeduction(params: DeductionParams): Promise<{
+    markup: MarkupResolution | null;
+    payerBucket: Bucket | null;
+    postDeductionPackBalance: number | null;
+    billedPrice: number;
+}> {
     const {
         db,
         isBilledUsage,
@@ -100,8 +108,13 @@ export async function handleBalanceDeduction(
         modelResolved,
     } = params;
 
-    if (!isBilledUsage || !totalPrice) {
-        return { markup: null, payerBucket: null };
+    if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
+        return {
+            markup: null,
+            payerBucket: null,
+            postDeductionPackBalance: null,
+            billedPrice: 0,
+        };
     }
 
     const resolved = await resolveDevMarkup(
@@ -111,17 +124,22 @@ export async function handleBalanceDeduction(
         userId,
     );
     const markup: MarkupResolution | null = resolved;
-    const billedPrice = totalPrice + (markup?.devCredit ?? 0);
+    const billedPrice = roundPollenLedgerAmount(
+        totalPrice + (markup?.devCredit ?? 0),
+    );
     let payerBucket: Bucket | null = null;
+    let postDeductionPackBalance: number | null = null;
 
     try {
         if (userId) {
-            payerBucket = await deductUserBalance(
+            const deduction = await deductUserBalance(
                 db,
                 userId,
                 billedPrice,
                 modelResolved,
             );
+            payerBucket = deduction.bucket;
+            postDeductionPackBalance = deduction.postDeductionPackBalance;
         }
 
         // API key budgets are decremented by the amount the user authorized the
@@ -135,11 +153,12 @@ export async function handleBalanceDeduction(
                 throw new Error("BYOP markup requires a payer balance bucket");
             }
             const creditBucket = payerBucket;
+            const creditAmount = roundPollenLedgerAmount(markup.devCredit);
             const { ok } = await atomicCreditUserBalance(
                 db,
                 markup.devUserId,
                 creditBucket,
-                markup.devCredit,
+                creditAmount,
             );
             if (!ok) {
                 throw new Error(
@@ -149,7 +168,7 @@ export async function handleBalanceDeduction(
             log.debug(
                 "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
                 {
-                    credit: markup.devCredit,
+                    credit: creditAmount,
                     devUserId: markup.devUserId,
                     bucket: creditBucket,
                     pct: (markup.markupRate * 100).toFixed(0),
@@ -182,7 +201,7 @@ export async function handleBalanceDeduction(
         throw error;
     }
 
-    return { markup, payerBucket };
+    return { markup, payerBucket, postDeductionPackBalance, billedPrice };
 }
 
 function hasApiKeyBudget(
@@ -221,13 +240,16 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
-): Promise<Bucket | null> {
+): Promise<{
+    bucket: Bucket | null;
+    postDeductionPackBalance: number | null;
+}> {
     try {
         const isPaidOnly = modelResolved
             ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
             : false;
 
-        const { ok, bucket } = await atomicDeductUserBalance(
+        const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
             userId,
             amount,
@@ -251,7 +273,10 @@ async function deductUserBalance(
                 ...deductionSource,
             },
         );
-        return bucket;
+        return {
+            bucket,
+            postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+        };
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {
             userId,

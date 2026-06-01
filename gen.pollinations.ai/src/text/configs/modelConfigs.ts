@@ -5,6 +5,7 @@ import {
     createDashScopeModelConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -57,6 +58,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
             "gpt-5.4",
         ),
+    "gpt-5.4-mini": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.4-mini",
+        ),
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
     "gpt-5.5": () =>
@@ -94,12 +101,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
             "grok-4-20-reasoning",
         ),
-
-    // -- DeepInfra (DeepSeek) -------------------------------------------------
-    "deepseek-ai/DeepSeek-V4-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "deepseek-ai/DeepSeek-V4-Flash",
-        }),
+    "grok-4.3": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
+            "grok-4.3",
+        ),
 
     // -- DeepInfra (Gemma) ----------------------------------------------------
     "google/gemma-4-26B-A4B-it": () =>
@@ -108,6 +115,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
+    "accounts/fireworks/models/deepseek-v4-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4-flash",
+        }),
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-pro",
@@ -123,13 +134,20 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k2p6",
         }),
 
-    // -- Azure (Myceli Prod — eastus, Mistral Small + Large) ------------------
+    // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
+    // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
+    // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
+    // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
     "mistral-small-2503": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-small-2503/chat/completions?api-version=2024-12-01-preview",
-            "mistral-small-2503",
-        ),
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-3.2-24b-instruct",
+        }),
+    "mistral-small-2603": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-2603",
+        }),
+
+    // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
@@ -151,6 +169,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-opus-4-7",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "claude-opus-4-8": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
@@ -182,9 +205,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
+    "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
+    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
@@ -217,23 +242,35 @@ export const portkeyConfig: PortkeyConfigMap = {
             undefined,
             { requiresBase64ImageUrls: true },
         ),
+    // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
+    // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
     "Llama-4-Scout-17B-16E-Instruct": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Scout-17B-16E-Instruct/chat/completions?api-version=2024-12-01-preview",
-            "Llama-4-Scout-17B-16E-Instruct",
-            undefined,
-            { requiresBase64ImageUrls: true },
-        ),
+        createOpenRouterModelConfig({
+            model: "meta-llama/llama-4-scout",
+        }),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
 
-    // -- Fireworks AI (Qwen VL) -----------------------------------------------
-    "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    "qwen/qwen3-vl-30b-a3b-instruct": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-30b-a3b-instruct",
+        }),
+    "qwen/qwen3-vl-235b-a22b-thinking": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-235b-a22b-thinking",
+        }),
+
+    // -- OpenRouter (StepFun) -------------------------------------------------
+    "stepfun/step-3.5-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-3.7-flash": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-3.7-flash",
         }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------

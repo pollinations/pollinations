@@ -1,5 +1,5 @@
 # Pollinations AI - AI assistant via Pollinations AI
-# Trigger: polly | Whitelist: voodoohop, ElliotEtag, eulervoid, Circuit-Overtime, Itachi-1824
+# Trigger: polly | Whitelist: voodoohop, ElliotEtag, Circuit-Overtime, Itachi-1824
 
 name: Polly
 
@@ -58,7 +58,7 @@ jobs:
               return; 
             }
 
-            const whitelist = ['voodoohop', 'ElliotEtag', 'eulervoid', 'Circuit-Overtime', 'Itachi-1824'];
+            const whitelist = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];
             const actor = context.actor;
             if (!whitelist.includes(actor)) {
               await github.rest.issues.createComment({

@@ -1,4 +1,6 @@
 import { getLogger, type Logger, withContext } from "@logtape/logtape";
+import { getRealClientIp } from "@shared/client-ip.ts";
+import { getPublicUrl } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
 import { ensureConfigured } from "@/logger";
 
@@ -11,6 +13,22 @@ type Env = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables;
 };
+
+function redactCredentialQueryParams(url: URL): string {
+    const redacted = new URL(url);
+    const credentialParams = new Set([
+        "access_token",
+        "api_key",
+        "key",
+        "token",
+    ]);
+    for (const param of redacted.searchParams.keys()) {
+        if (credentialParams.has(param.toLowerCase())) {
+            redacted.searchParams.set(param, "[redacted]");
+        }
+    }
+    return redacted.toString();
+}
 
 export const logger = createMiddleware<Env>(async (c, next) => {
     await ensureConfigured({
@@ -25,21 +43,21 @@ export const logger = createMiddleware<Env>(async (c, next) => {
     const shouldEmitRequestLogs =
         c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
 
+    const publicUrl = redactCredentialQueryParams(getPublicUrl(c));
+
     await withContext(
         {
             requestId: c.var.requestId,
             method: c.req.method,
-            routePath: c.req.url,
+            routePath: publicUrl,
             userAgent: c.req.header("user-agent"),
-            ipAddress:
-                c.req.header("cf-connecting-ip") ||
-                c.req.header("x-forwarded-for"),
+            ipAddress: getRealClientIp(c),
         },
         async () => {
             if (shouldEmitRequestLogs) {
                 log.info("{method} {url}", {
                     method: c.req.method,
-                    url: c.req.url,
+                    url: publicUrl,
                 });
             }
 

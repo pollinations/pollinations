@@ -7,7 +7,6 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { useTranslateAndPrettify } from "../../hooks/useTranslateAndPrettify";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
 import { LazyMarkdown } from "../components/ui/lazy-markdown";
@@ -24,6 +23,11 @@ function HelloPage() {
     );
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
+    const quietLinkClass =
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2 inline-flex items-center gap-1";
+    const quietMarkdownLinkClass =
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2";
+
     const { translated: translatedWhatYouGet } = useTranslate(
         HELLO_PAGE.whatYouGetItems,
         "desc",
@@ -32,21 +36,6 @@ function HelloPage() {
         HELLO_PAGE.roadmapItems,
         "description",
     );
-
-    const tiers = [
-        {
-            emoji: pageCopy.tierSeedEmoji,
-            title: pageCopy.tierSeedTitle,
-            desc: pageCopy.tierSeedDescription,
-            grant: pageCopy.tierSeedGrant,
-        },
-        {
-            emoji: pageCopy.tierFlowerEmoji,
-            title: pageCopy.tierFlowerTitle,
-            desc: pageCopy.tierFlowerDescription,
-            grant: pageCopy.tierFlowerGrant,
-        },
-    ];
 
     return (
         <PageContainer>
@@ -117,115 +106,7 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 2 — How it works */}
-                <div className="mb-12">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Left: heading + bullets */}
-                        <div className="flex flex-col">
-                            <Heading variant="section" spacing="comfortable">
-                                {pageCopy.howItWorksTitle}
-                            </Heading>
-                            <div className="flex flex-col gap-3 mb-6">
-                                {pageCopy.startFreeLines.map(
-                                    (line: {
-                                        pre: string;
-                                        bold: string;
-                                        post: string;
-                                        emoji: string;
-                                        pillColor: string;
-                                    }) => (
-                                        <div
-                                            key={line.emoji}
-                                            className={`${line.pillColor} border border-border-subtle rounded-full px-4 py-2 flex items-center gap-3 w-fit`}
-                                        >
-                                            <span className="text-lg">
-                                                {line.emoji}
-                                            </span>
-                                            <span className="font-body text-base text-dark leading-relaxed">
-                                                {line.pre}
-                                                {line.bold && (
-                                                    <strong>{line.bold}</strong>
-                                                )}
-                                                {line.post}
-                                            </span>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
-                        {/* Right: tier ladder */}
-                        <div>
-                            <div className="border-r-2 border-b-2 border-dark p-4 bg-accent-light flex flex-col">
-                                <Badge
-                                    variant="highlight"
-                                    className="mb-4 w-fit"
-                                >
-                                    {pageCopy.computeTiersTitle}
-                                </Badge>
-                                {tiers.map((tier, i) => (
-                                    <div key={tier.title}>
-                                        {i > 0 && (
-                                            <div className="flex items-start gap-3 py-1">
-                                                <span className="text-lg w-[1.125rem] shrink-0" />
-                                                <span className="text-base text-dark">
-                                                    ↓
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-start gap-3 py-1.5">
-                                            <span className="text-lg mt-0.5">
-                                                {tier.emoji}
-                                            </span>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-headline text-xs font-black text-dark">
-                                                        {tier.title}
-                                                    </span>
-                                                    <span className="font-mono text-xs font-black text-dark ml-auto">
-                                                        {tier.grant}
-                                                    </span>
-                                                </div>
-                                                <Body
-                                                    size="sm"
-                                                    spacing="none"
-                                                    className="text-muted mt-0.5 max-w-[240px]"
-                                                >
-                                                    {tier.desc}
-                                                </Body>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <span className="font-body text-xs text-subtle italic mt-3 pt-3 border-t border-border-subtle">
-                                    {pageCopy.tiersBetaNote}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-1 mt-6">
-                        <span className="font-body text-sm text-muted">
-                            {pageCopy.tierHowText}
-                        </span>
-                        <div>
-                            <a
-                                href={LINKS.enterTiersFaq}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
-                            >
-                                {pageCopy.tierHowLink}
-                                <ExternalLinkIcon
-                                    className="w-3 h-3"
-                                    strokeWidth="4"
-                                />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <Divider />
-
-                {/* Section — What you get */}
+                {/* Section 2 — Toolbox */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.whatYouGetTitle}
@@ -236,6 +117,7 @@ function HelloPage() {
                                 item: {
                                     emoji: string;
                                     title: string;
+                                    lead?: string;
                                     desc: string;
                                     linkText?: string;
                                     linkUrl?: string;
@@ -243,36 +125,85 @@ function HelloPage() {
                                 },
                                 i: number,
                             ) => {
-                                const colors = [
-                                    "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
-                                    "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
-                                    "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-                                    "border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                const accents = [
+                                    {
+                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                    },
+                                    {
+                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                    },
+                                    {
+                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                    },
+                                    {
+                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                    },
                                 ];
+                                const accent = accents[i % accents.length];
                                 return (
                                     <div
                                         key={item.title}
-                                        className={`bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i % colors.length]}${item.fullWidth ? " md:col-span-2" : ""}`}
+                                        className={
+                                            item.fullWidth
+                                                ? "md:col-span-2 flex flex-col"
+                                                : "flex flex-col"
+                                        }
                                     >
-                                        <div className="flex items-start gap-3">
-                                            <span className="text-lg mt-0.5 w-6 text-center shrink-0">
-                                                {item.emoji}
-                                            </span>
-                                            <div className="flex-1">
-                                                <span className="font-headline text-xs font-black text-dark">
+                                        <div
+                                            className={`rounded-sub-card border-r-2 border-b-2 flex flex-col flex-1 overflow-hidden ${accent.card}`}
+                                        >
+                                            <div className="px-4 pt-3">
+                                                <h3 className="font-headline text-base font-black text-dark bg-white inline-block px-2 py-1 rounded">
                                                     {item.title}
-                                                </span>
-                                                <p className="font-body text-sm text-muted leading-relaxed mt-0.5 whitespace-pre-line">
-                                                    {item.desc}
-                                                </p>
-                                                {item.linkText && (
-                                                    <div
-                                                        className={
-                                                            item.linkUrl
-                                                                ? "mt-2"
-                                                                : ""
-                                                        }
+                                                </h3>
+                                            </div>
+                                            <div className="px-4 pt-2 pb-4 flex flex-col flex-1">
+                                                <div className="font-body text-sm font-medium text-dark leading-relaxed mt-2">
+                                                    <LazyMarkdown
+                                                        components={{
+                                                            ul: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <ul
+                                                                    {...props}
+                                                                    className="space-y-2.5 list-disc pl-5 marker:text-dark"
+                                                                />
+                                                            ),
+                                                            li: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <li
+                                                                    {...props}
+                                                                    className="text-sm text-dark leading-relaxed pl-1"
+                                                                />
+                                                            ),
+                                                            p: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <p
+                                                                    {...props}
+                                                                    className="m-0"
+                                                                />
+                                                            ),
+                                                            strong: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <strong
+                                                                    {...props}
+                                                                    className="font-bold text-dark"
+                                                                />
+                                                            ),
+                                                        }}
                                                     >
+                                                        {item.desc}
+                                                    </LazyMarkdown>
+                                                </div>
+                                                {item.linkText && (
+                                                    <div className="mt-auto pt-3 flex justify-end">
                                                         <a
                                                             href={
                                                                 item.linkUrl
@@ -283,12 +214,14 @@ function HelloPage() {
                                                             }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5 mt-1"
+                                                            className={
+                                                                quietLinkClass
+                                                            }
                                                         >
                                                             {item.linkText}
                                                             <ExternalLinkIcon
-                                                                className="w-3 h-3"
-                                                                strokeWidth="4"
+                                                                className="w-2.5 h-2.5"
+                                                                strokeWidth="3"
                                                             />
                                                         </a>
                                                     </div>
@@ -300,25 +233,85 @@ function HelloPage() {
                             },
                         )}
                     </div>
-                    <div className="flex flex-col gap-1 mt-6">
-                        <span className="font-body text-sm text-muted">
-                            {pageCopy.whatYouGetFooter}
-                        </span>
-                        <div>
+                </div>
+
+                <Divider />
+
+                {/* Section 5 — Last Updates */}
+                <div className="mb-12">
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.openTitle}
+                    </Heading>
+                    <div className="bg-secondary-light border-r-2 border-b-2 border-dark p-5">
+                        <div className="md:columns-2 md:gap-6 space-y-2">
+                            {translatedHighlights.map((item) => (
+                                <div
+                                    key={`${item.date}-${item.title}`}
+                                    className="py-1 break-inside-avoid"
+                                >
+                                    <p className="text-xs text-dark">
+                                        <span>{item.emoji}</span>
+                                        <span className="font-body text-xs font-bold text-dark bg-white px-1.5 py-0.5 ml-1">
+                                            {item.title}
+                                        </span>
+                                        <span className="font-body font-semibold text-muted ml-2">
+                                            {item.date}
+                                        </span>
+                                    </p>
+                                    <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                        <LazyMarkdown
+                                            components={{
+                                                a: ({ node, ...props }) => (
+                                                    <a
+                                                        {...props}
+                                                        className={
+                                                            quietMarkdownLinkClass
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    />
+                                                ),
+                                                p: ({ node, ...props }) => (
+                                                    <p
+                                                        {...props}
+                                                        className="mb-1"
+                                                    />
+                                                ),
+                                                ul: ({ node, ...props }) => (
+                                                    <ul
+                                                        {...props}
+                                                        className="list-disc list-inside mt-1 space-y-0.5"
+                                                    />
+                                                ),
+                                                li: ({ node, ...props }) => (
+                                                    <li
+                                                        {...props}
+                                                        className="text-sm text-muted leading-relaxed"
+                                                    />
+                                                ),
+                                            }}
+                                        >
+                                            {item.description}
+                                        </LazyMarkdown>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4 flex justify-end">
                             <a
                                 href={
                                     LINKS[
-                                        pageCopy.whatYouGetFooterUrl as keyof typeof LINKS
+                                        pageCopy.recentUpdatesMoreUrl as keyof typeof LINKS
                                     ]
                                 }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                                className={quietLinkClass}
                             >
-                                {pageCopy.whatYouGetFooterLink}
+                                {pageCopy.recentUpdatesMoreText}
                                 <ExternalLinkIcon
-                                    className="w-3 h-3"
-                                    strokeWidth="4"
+                                    className="w-2.5 h-2.5"
+                                    strokeWidth="3"
                                 />
                             </a>
                         </div>
@@ -327,130 +320,40 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 5 — We build in the open */}
+                {/* Section 6 — Next */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
-                        {pageCopy.openTitle}
+                        {pageCopy.roadmapTitle}
                     </Heading>
-
-                    <div className="flex flex-col gap-6">
-                        {/* What's New — full-width, CSS columns for journal flow */}
-                        <div className="bg-secondary-light border-r-2 border-b-2 border-dark p-5">
-                            <Badge variant="highlight" className="mb-4">
-                                {pageCopy.recentUpdatesTitle}
-                            </Badge>
-                            <div className="md:columns-2 md:gap-6 space-y-2">
-                                {translatedHighlights.map((item) => (
+                    <div className="bg-tertiary-light border-r-2 border-b-2 border-dark p-5">
+                        <div className="md:columns-2 md:gap-6 space-y-2">
+                            {translatedRoadmap.map(
+                                (item: {
+                                    title: string;
+                                    description: string;
+                                }) => (
                                     <div
-                                        key={`${item.date}-${item.title}`}
+                                        key={item.title}
                                         className="py-1 break-inside-avoid"
                                     >
-                                        <p className="font-mono font-black text-xs text-dark">
-                                            <span className="bg-primary-strong px-1.5 py-0.5">
-                                                {item.date}
-                                            </span>
-                                            <span className="ml-2">
-                                                {item.emoji}
-                                            </span>
-                                            <span className="font-headline text-[10px] font-black text-dark ml-1">
+                                        <p className="font-body text-xs font-bold text-dark">
+                                            <span className="bg-white px-1.5 py-0.5">
                                                 {item.title}
                                             </span>
                                         </p>
-                                        <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
-                                            <LazyMarkdown
-                                                components={{
-                                                    a: ({ node, ...props }) => (
-                                                        <a
-                                                            {...props}
-                                                            className="bg-accent-strong px-1 text-dark hover:underline"
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                        />
-                                                    ),
-                                                    p: ({ node, ...props }) => (
-                                                        <p
-                                                            {...props}
-                                                            className="mb-1"
-                                                        />
-                                                    ),
-                                                    ul: ({
-                                                        node,
-                                                        ...props
-                                                    }) => (
-                                                        <ul
-                                                            {...props}
-                                                            className="list-disc list-inside mt-1 space-y-0.5"
-                                                        />
-                                                    ),
-                                                    li: ({
-                                                        node,
-                                                        ...props
-                                                    }) => (
-                                                        <li
-                                                            {...props}
-                                                            className="text-sm text-muted leading-relaxed"
-                                                        />
-                                                    ),
-                                                }}
-                                            >
-                                                {item.description}
-                                            </LazyMarkdown>
-                                        </div>
+                                        <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
+                                            {item.description}
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
-                            <div className="mt-4 flex justify-end">
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
-                                >
-                                    More
-                                    <ExternalLinkIcon
-                                        className="w-3 h-3"
-                                        strokeWidth="4"
-                                    />
-                                </a>
-                            </div>
-                        </div>
-
-                        {/* What's Next */}
-                        <div className="bg-tertiary-light border-r-2 border-b-2 border-dark p-5">
-                            <Badge variant="highlight" className="mb-4">
-                                {pageCopy.roadmapLabel}
-                            </Badge>
-                            <div className="md:columns-2 md:gap-6 space-y-2">
-                                {translatedRoadmap.map(
-                                    (item: {
-                                        emoji: string;
-                                        title: string;
-                                        description: string;
-                                    }) => (
-                                        <div
-                                            key={item.title}
-                                            className="py-1 break-inside-avoid"
-                                        >
-                                            <p className="font-headline text-[10px] font-black text-dark">
-                                                <span className="mr-2">
-                                                    {item.emoji}
-                                                </span>
-                                                {item.title}
-                                            </p>
-                                            <p className="font-body text-sm text-muted leading-relaxed mt-0.5">
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
+                                ),
+                            )}
                         </div>
                     </div>
                 </div>
 
                 <Divider />
 
-                {/* Section 6 — CTA */}
+                {/* Section 7 — CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.ctaTitle}
@@ -468,15 +371,6 @@ function HelloPage() {
                         >
                             {pageCopy.startBuildingButton}
                             <ExternalLinkIcon className="w-4 h-4" />
-                        </Button>
-                        <Button
-                            as={Link}
-                            to="/apps"
-                            variant="secondary"
-                            size="lg"
-                            className="bg-accent-light text-dark"
-                        >
-                            {pageCopy.browseAppsLink}
                         </Button>
                         <Button
                             as={Link}

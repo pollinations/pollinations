@@ -166,6 +166,10 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     labels = [l["name"] for l in pr_data.get("labels", [])]
     author = pr_data.get("user", {}).get("login", "unknown")
 
+    # Preserve a PR body excerpt so downstream realtime/Discord generation can
+    # quote concrete numbers/names that the AI-distilled summary may abstract away.
+    pr_body_excerpt = (pr_data.get("body") or "")[:2000]
+
     gist = {
         "pr_number": pr_data["number"],
         "title": pr_data["title"],
@@ -173,6 +177,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
         "url": pr_data["html_url"],
         "merged_at": pr_data.get("merged_at", datetime.now(timezone.utc).isoformat()),
         "labels": labels,
+        "pr_body_excerpt": pr_body_excerpt,
         "gist": ai_analysis,
         "image": {"url": None, "prompt": None},
         "generated_at": datetime.now(timezone.utc).isoformat(),

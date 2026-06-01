@@ -18,10 +18,14 @@ from .services.github_auth import github_app_auth, init_github_app
 from .services.github_graphql import github_graphql
 from .services.github_pr import github_pr_manager
 from .services.media_handlers import (
+    BLOCK_LATEX_PATTERN,
+    PIL_AVAILABLE,
     convert_latex_to_png,
     detect_and_parse_markdown_tables,
     detect_latex,
+    format_table_as_markdown,
     render_table_image,
+    replace_latex_with_unicode,
     send_code_block,
 )
 from .services.pollinations import pollinations_client
@@ -1340,73 +1344,59 @@ async def send_long_message(
     files: list[discord.File] | None = None,
     mention_author: bool = True,
 ):
-    """
-    Send a message, splitting if too long, with support for tables, code blocks, and LaTeX.
-    First chunk replies to message if provided.
-
-    Handlers:
-    - Markdown tables (|...|...) → rendered as PNG images
-    - LaTeX expressions ($...$, $$...$$ , \\[...\\]) → rendered as PNG images
-    - Code blocks (```...) → sent as formatted code blocks, split if needed
-
-    Args:
-        channel: Channel or thread to send to
-        text: Message text (supports markdown tables and LaTeX)
-        max_length: Max characters per message (Discord limit 2000)
-        reply_to: Optional message to reply to (only for first chunk)
-        files: Optional list of discord.File to attach (only to first message, max 10)
-        mention_author: Whether to ping the author when replying (default True)
-    """
-    # Files only go with the first message - Discord max 10 files
-    files_to_send = files[:10] if files else []
-    first_message_sent = False
-
-    # ==========================================================================
-    # STEP 1: Extract and render markdown tables
-    # ==========================================================================
+    attachments = files[:10] if files else []
+    
     modified_text, tables = detect_and_parse_markdown_tables(text)
-    table_images = []
+    
+    for idx, (headers, rows, alignments) in enumerate(tables):
+        placeholder = f"__TABLE_IMG_{idx}__"
+        rendered = False
+        if PIL_AVAILABLE:
+            try:
+                img_buffer, links = await render_table_image(headers, rows, alignments)
+                if img_buffer:
+                    file = discord.File(img_buffer, filename=f"table_{idx}.png")
+                    attachments.append(file)
+                    replace_text = "\n*(Table image attached)*\n"
+                    if links:
+                        replace_text += "**References:**\n" + "\n".join(f"- {l}" for l in links) + "\n"
+                    modified_text = modified_text.replace(placeholder, replace_text)
+                    rendered = True
+            except Exception as e:
+                logger.error(f"Table rendering error: {e}")
+        
+        if not rendered:
+            fallback_table = f"\n```\n{format_table_as_markdown(headers, rows)}\n```\n"
+            modified_text = modified_text.replace(placeholder, fallback_table)
 
-    def _restore_markdown_table(headers: list[str], rows: list[list[str]]) -> str:
-        out = "\n| " + " | ".join(str(h) for h in headers) + " |\n"
-        out += "|" + "---|" * len(headers) + "\n"
-        for r in rows:
-            out += "| " + " | ".join(str(c) for c in r) + " |\n"
-        return out
+    latex_blocks = BLOCK_LATEX_PATTERN.findall(modified_text)
+    for idx, latex_expr in enumerate(latex_blocks):
+        placeholder = f"__LATEX_IMG_{idx}__"
+        modified_text = modified_text.replace(latex_expr, placeholder)
 
-    for headers, rows, alignments in tables:
-        img_buffer = None
+        rendered = False
         try:
-            img_buffer, links = await render_table_image(headers, rows, alignments)
+            latex_buffer, success = await convert_latex_to_png(latex_expr)
+            if success and isinstance(latex_buffer, io.BytesIO):
+                file = discord.File(latex_buffer, filename=f"equation_{idx}.png")
+                attachments.append(file)
+                modified_text = modified_text.replace(placeholder, "\n*(Equation rendered below)*\n")
+                rendered = True
         except Exception as e:
-            logger.error(f"Table rendering error: {e}")
+            logger.error(f"LaTeX block rendering error: {e}")
 
-        if img_buffer:
-            file = discord.File(img_buffer, filename="table.png")
-            if not first_message_sent and reply_to:
-                await reply_to.reply("**Table:**", file=file, mention_author=mention_author)
-                first_message_sent = True
-            elif not first_message_sent:
-                await channel.send("**Table:**", file=file)
-                first_message_sent = True
-            else:
-                await channel.send("**Table:**", file=file)
-        else:
-            # Render failed (PIL unavailable or bad input) — restore the raw
-            # markdown table back into the text so users see something.
-            modified_text += _restore_markdown_table(headers, rows)
+        if not rendered:
+            modified_text = modified_text.replace(placeholder, f"\n```latex\n{latex_expr.strip()}\n```\n")
 
-    # ==========================================================================
-    # STEP 2: Process LaTeX and code blocks in remaining text
-    # ==========================================================================
+    modified_text = replace_latex_with_unicode(modified_text)
+
     lines = modified_text.split("\n")
     output_lines = []
     i = 0
+    first_message_sent = False
 
     while i < len(lines):
         line = lines[i]
-
-        # Check for code block start
         if line.strip().startswith("```"):
             code_block_lines = [line]
             i += 1
@@ -1416,91 +1406,46 @@ async def send_long_message(
             if i < len(lines):
                 code_block_lines.append(lines[i])
                 i += 1
-
+            
             code_block_text = "\n".join(code_block_lines)
+            current_len = len("\n".join(output_lines)) if output_lines else 0
+            fits = (current_len + len(code_block_text) + (1 if output_lines else 0)) <= max_length
 
-            # Check if it's LaTeX code block
-            if "```latex" in code_block_text.lower() or "```tex" in code_block_text.lower():
-                try:
-                    latex_buffer, success = await convert_latex_to_png(code_block_text)
-                    if success and isinstance(latex_buffer, io.BytesIO):
-                        file = discord.File(latex_buffer, filename="latex.png")
-                        if not first_message_sent and reply_to:
-                            await reply_to.reply("**LaTeX:**", file=file, mention_author=mention_author)
-                            first_message_sent = True
-                        elif not first_message_sent:
-                            await channel.send("**LaTeX:**", file=file)
-                            first_message_sent = True
-                        else:
-                            await channel.send("**LaTeX:**", file=file)
-                        continue
-                except Exception as e:
-                    logger.error(f"LaTeX rendering error: {e}")
-                    # Fallback: send as code block
-                    pass
-            # Send regular code block
-            try:
-                await send_code_block(channel, code_block_text, max_length)
-                first_message_sent = True
-            except Exception as e:
-                logger.error(f"Code block send error: {e}")
+            if fits:
                 output_lines.extend(code_block_lines)
+            else:
+                if output_lines:
+                    first_message_sent = await _send_chunk(
+                        channel, "\n".join(output_lines), max_length, first_message_sent, reply_to, attachments, mention_author
+                    )
+                    output_lines = []
+                if len(code_block_text) > max_length:
+                    try:
+                        await send_code_block(channel, code_block_text, max_length)
+                        first_message_sent = True
+                    except Exception as e:
+                        logger.error(f"Code block send error: {e}")
+                        output_lines.extend(code_block_lines)
+                else:
+                    output_lines.extend(code_block_lines)
             continue
-
-        # Check for inline LaTeX
-        if "$" in line and detect_latex(line):
-            for latex_expr in detect_latex(line):
-                if latex_expr.startswith("```"):
-                    continue  # Skip, already processed as code block
-
-                try:
-                    latex_buffer, success = await convert_latex_to_png(latex_expr)
-                    if success and isinstance(latex_buffer, io.BytesIO):
-                        file = discord.File(latex_buffer, filename="equation.png")
-                        if not first_message_sent and reply_to:
-                            await reply_to.reply(file=file, mention_author=mention_author)
-                            first_message_sent = True
-                        elif not first_message_sent:
-                            await channel.send(file=file)
-                            first_message_sent = True
-                        else:
-                            await channel.send(file=file)
-                        # Remove LaTeX from line
-                        line = line.replace(latex_expr, "[LaTeX rendered above]")
-                except Exception as e:
-                    logger.debug(f"Inline LaTeX rendering attempted: {e}")
-                    pass
-
+        
         output_lines.append(line)
         i += 1
 
-    text = "\n".join(output_lines)
+    if output_lines:
+        text_to_send = "\n".join(output_lines)
+        await _send_chunk(
+            channel, text_to_send, max_length, first_message_sent, reply_to, attachments, mention_author
+        )
 
-    # ==========================================================================
-    # STEP 3: Send remaining text, split if needed
-    # ==========================================================================
-    if not text.strip():
-        return
 
-    if len(text) <= max_length:
-        if not first_message_sent and reply_to:
-            if files_to_send:
-                await reply_to.reply(text, files=files_to_send, mention_author=mention_author)
-            else:
-                await reply_to.reply(text, mention_author=mention_author)
-        elif not first_message_sent:
-            if files_to_send:
-                await channel.send(text, files=files_to_send)
-            else:
-                await channel.send(text)
-        else:
-            await channel.send(text)
-        return
+async def _send_chunk(channel, text, max_length, first_sent, reply_to, attachments, mention_author):
+    if not text.strip() and not attachments:
+        return first_sent
 
-    # Split on newlines first, then by length
     chunks = []
     current_chunk = ""
-
     for line in text.split("\n"):
         if len(current_chunk) + len(line) + 1 <= max_length:
             current_chunk += line + "\n"
@@ -1508,26 +1453,39 @@ async def send_long_message(
             if current_chunk:
                 chunks.append(current_chunk.strip())
             current_chunk = line + "\n"
-
     if current_chunk:
         chunks.append(current_chunk.strip())
 
-    for i, chunk in enumerate(chunks):
-        if chunk:
-            # Reply to user's message for first chunk only, with files (if not already sent)
-            if i == 0 and reply_to and not first_message_sent:
-                if files_to_send:
-                    await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
-                else:
-                    await reply_to.reply(chunk, mention_author=mention_author)
-            elif i == 0 and not first_message_sent:
-                if files_to_send:
-                    await channel.send(chunk, files=files_to_send)
-                else:
-                    await channel.send(chunk)
-            else:
+    if not chunks:
+        chunks = [""]
+
+    for idx, chunk in enumerate(chunks):
+        files_to_send = attachments[:10] if not first_sent else []
+        if files_to_send:
+            attachments[:] = attachments[10:]
+        
+        if not first_sent and reply_to:
+            if chunk:
+                await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
+            elif files_to_send:
+                await reply_to.reply(files=files_to_send, mention_author=mention_author)
+            first_sent = True
+        elif not first_sent:
+            if chunk:
+                await channel.send(chunk, files=files_to_send)
+            elif files_to_send:
+                await channel.send(files=files_to_send)
+            first_sent = True
+        else:
+            if chunk:
                 await channel.send(chunk)
-        first_message_sent = True
+    
+    while attachments:
+        files_to_send = attachments[:10]
+        attachments[:] = attachments[10:]
+        await channel.send(files=files_to_send)
+
+    return first_sent
 
 
 async def archive_thread(channel: discord.Thread | discord.TextChannel):

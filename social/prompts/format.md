@@ -113,16 +113,20 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 
 ## Realtime
 
-Given a PR's summary, impact, and keywords, write a short message announcing the change.
+Given a PR's summary, impact, keywords, and a verbatim excerpt of the PR body, write a short message announcing the change.
 
 Summary: {summary}
 Impact: {impact}
 Keywords: {keywords}
 
+PR body excerpt:
+{pr_excerpt}
+
 - 150-400 characters total
 - Start with a one-line summary of what changed
 - Bullet points with emojis if needed
 - Written for people who use the tools — skip internal details
+- **Pick the load-bearing specifics out of the PR body and put them in the message**: names (models, endpoints, packages, providers, features), numbers (versions, defaults, prices, limits, sizes, timeouts), and before/after values when behavior changes. Don't substitute them with category labels ("updated plans", "new model added", "API improvements"). If the PR is about changing a value or naming a thing, the message must include that value or name.
 - Plain language, no hype
 
 Return ONLY the announcement text. No JSON, no markdown fences, no explanation.

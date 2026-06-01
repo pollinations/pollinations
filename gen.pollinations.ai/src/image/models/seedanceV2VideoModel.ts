@@ -13,6 +13,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -24,16 +25,42 @@ const logError = debug("pollinations:seedance2:error");
 const MODEL = "bytedance/seedance-2.0";
 const TRACKING_LABEL = "seedance-2.0";
 
+// Replicate's Seedance 2.0 accepts a narrower set than our shared aspectRatio
+// enum (which also allows 9:21). Validate at the boundary so users get a clear
+// 400 instead of a Replicate 422 round-trip.
+const SEEDANCE_V2_ASPECT_RATIOS = [
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
+    "21:9",
+    "adaptive",
+] as const;
+type SeedanceV2AspectRatio = (typeof SEEDANCE_V2_ASPECT_RATIOS)[number];
+
+export function resolveSeedanceV2AspectRatio(
+    requested: ImageParams["aspectRatio"] | undefined,
+): SeedanceV2AspectRatio {
+    if (!requested) return "16:9";
+    if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
+        return requested as SeedanceV2AspectRatio;
+    }
+    throw new HttpError(
+        `aspectRatio "${requested}" is not supported by Seedance 2.0. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
+        400,
+    );
+}
+
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
     resolution: "720p";
-    aspect_ratio: NonNullable<ImageParams["aspectRatio"]>;
+    aspect_ratio: SeedanceV2AspectRatio;
     generate_audio: boolean;
     seed?: number;
     image?: string;
     last_frame_image?: string;
-    reference_images?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -56,18 +83,13 @@ export async function callSeedanceV2API(
         Math.min(15, Math.floor(safeParams.duration ?? 5)),
     );
 
+    // Positional image[] contract:
+    //   length=1 → first-frame only (I2V)
+    //   length=2 → image[0] first frame, image[1] last frame
     const images = safeParams.image ?? [];
-    const lastFrameImage = safeParams.last_frame_image;
-
-    if (lastFrameImage && images.length === 0) {
+    if (images.length > 2) {
         throw new HttpError(
-            "last_frame_image requires image (first frame) to also be provided",
-            400,
-        );
-    }
-    if (lastFrameImage && images.length > 1) {
-        throw new HttpError(
-            "last_frame_image cannot combine with multiple images. Pass exactly one image alongside last_frame_image, or omit last_frame_image to use multiple reference images.",
+            "Seedance 2.0 supports at most two images: image[0] as first frame and image[1] as last frame.",
             400,
         );
     }
@@ -76,27 +98,27 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution: "720p",
-        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
         generate_audio: safeParams.audio,
     };
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    if (images.length === 1) {
-        input.image = images[0];
-        if (lastFrameImage) input.last_frame_image = lastFrameImage;
-    } else if (images.length > 1) {
-        input.reference_images = images.slice(0, 9);
-    }
+    // Replicate fetches input URLs server-side and saves them under a temp
+    // path derived from the URL — query strings and missing extensions break
+    // it. Match the other video models: download here and pass data URIs.
+    const toDataUri = async (url: string): Promise<string> => {
+        const { buffer, mimeType } = await downloadUserImage(url);
+        return `data:${mimeType};base64,${buffer.toString("base64")}`;
+    };
+    if (images.length >= 1) input.image = await toDataUri(images[0]);
+    if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
     logOps("Seedance 2.0 input:", {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
-        reference_images: input.reference_images
-            ? `[${input.reference_images.length} url(s)]`
-            : undefined,
     });
 
     progress.updateBar(
@@ -121,8 +143,12 @@ export async function callSeedanceV2API(
             video_output_duration: actualDurationSeconds,
         });
     } catch (err) {
+        logError("Seedance 2.0 prediction call failed:", err);
         if (err instanceof ReplicateError) {
-            logError("Replicate error:", err.message);
+            logError("Replicate raw error details:", {
+                message: err.message,
+                status: err.status,
+            });
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
                 err.status ?? 500,

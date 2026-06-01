@@ -5,6 +5,7 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
+import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
@@ -32,6 +33,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4"],
     },
     {
+        name: "gpt-5.4-mini",
+        config: portkeyConfig["gpt-5.4-mini"],
+    },
+    {
         name: "gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
     },
@@ -51,9 +56,19 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig[
-            "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking"
-        ],
+        config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
+    },
+    {
+        name: "qwen-vision-pro",
+        config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
+    },
+    {
+        name: "step-3.5-flash",
+        config: portkeyConfig["stepfun/step-3.5-flash"],
+    },
+    {
+        name: "step-flash",
+        config: portkeyConfig["stepfun/step-3.7-flash"],
     },
     {
         name: "mistral",
@@ -61,8 +76,13 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "mistral-4",
+        config: portkeyConfig["mistral-small-2603"],
+        transform: stripCacheControl,
+    },
+    {
         name: "deepseek",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
     },
     {
         name: "gemma",
@@ -79,6 +99,10 @@ const models: ModelDefinition[] = [
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+    },
+    {
+        name: "grok-4.3",
+        config: portkeyConfig["grok-4.3"],
     },
     {
         name: "openai-audio",
@@ -105,8 +129,22 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
+        name: "claude-opus-4.8",
+        config: portkeyConfig["claude-opus-4-8"],
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-3.5-flash",
+        config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
@@ -140,22 +178,52 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-search-fast",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-search-large",
+        config: portkeyConfig["gemini-3.5-flash"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "midijourney",
-        config: portkeyConfig["claude-haiku-4-5"],
+        config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "midijourney-large",
-        config: portkeyConfig["claude-opus-4-6"],
+        config: portkeyConfig["gpt-5.5"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("low"),
+    },
+    {
+        name: "perplexity-deep",
+        config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("high"),
+    },
+    {
+        name: "perplexity",
+        config: portkeyConfig["sonar-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "kimi",

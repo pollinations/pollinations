@@ -21,8 +21,10 @@ type PipeCall = {
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
+    stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
+    earningsResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -30,8 +32,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const state: MockTinybirdState = {
         events: [],
         errorEvents: [],
+        stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
+        earningsResponse: [],
         pipeCalls: [],
     };
 
@@ -62,6 +66,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
             if (eventName === "error_event") {
                 state.errorEvents.push(...rows);
+            } else if (eventName === "stripe_event") {
+                state.stripeEvents.push(...rows);
             }
 
             return c.json(
@@ -76,6 +82,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
+        })
+        .get("/v0/pipes/developer_earnings.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.earningsResponse }, 200);
         });
 
     const handlerMap = {
@@ -85,8 +95,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const reset = () => {
         state.events = [];
         state.errorEvents = [];
+        state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
+        state.earningsResponse = [];
         state.pipeCalls = [];
     };
 

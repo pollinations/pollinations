@@ -28,12 +28,7 @@ export const useChat = () => {
             );
         } else {
             // Create initial chat
-            const initialChat = {
-                id: generateId(),
-                title: "New Chat",
-                messages: [],
-                createdAt: Date.now(),
-            };
+            const initialChat = createNewChat("New Chat");
             setChats([initialChat]);
             setActiveChatId(initialChat.id);
         }
@@ -63,13 +58,6 @@ export const useChat = () => {
     };
 
     const addChat = () => {
-        // Don't create a new chat if the current chat is empty
-        const activeChat = chats.find((c) => c.id === activeChatId);
-        if (activeChat && activeChat.messages.length === 0) {
-            // Current chat is already empty, no need to create a new one
-            return activeChat;
-        }
-
         const newChat = createNewChat();
         setChats((prev) => [newChat, ...prev]);
         setActiveChatId(newChat.id);

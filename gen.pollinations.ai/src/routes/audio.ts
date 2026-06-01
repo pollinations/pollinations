@@ -33,8 +33,6 @@ import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 
-const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
-
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
@@ -117,7 +115,47 @@ function mapOutputFormat(format: string): string {
     return formatMap[format] || "mp3_44100_128";
 }
 
+/**
+ * ElevenLabs streams WAV with a placeholder length in the RIFF header (the
+ * data-chunk size and the overall RIFF size are written as 0x7FFFFFFF and never
+ * back-patched once the real length is known). Tools that trust the header
+ * (Python `wave`, ffmpeg) then crash or truncate. Rewrite both size fields to
+ * the real byte counts. No-op if the header is already correct or not RIFF/WAVE.
+ */
+export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length < 44) return buffer; // too short to be a valid WAV header
+    const view = new DataView(buffer);
+    const tag = (offset: number) =>
+        String.fromCharCode(
+            bytes[offset],
+            bytes[offset + 1],
+            bytes[offset + 2],
+            bytes[offset + 3],
+        );
+    if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return buffer;
+
+    // Walk the chunk list (offset 12 onward) to find the `data` sub-chunk,
+    // honouring declared sizes rather than scanning bytes (which could match
+    // "data" inside the PCM payload).
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+        const chunkId = tag(offset);
+        const chunkSize = view.getUint32(offset + 4, true);
+        if (chunkId === "data") {
+            const actualDataSize = bytes.length - (offset + 8);
+            if (chunkSize === actualDataSize) return buffer; // already correct
+            view.setUint32(offset + 4, actualDataSize, true); // data chunk size
+            view.setUint32(4, bytes.length - 8, true); // RIFF chunk size
+            return buffer;
+        }
+        offset += 8 + chunkSize;
+    }
+    return buffer; // no data chunk found
+}
+
 export async function generateSpeech(opts: {
+    modelName?: AudioModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -125,7 +163,9 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, voice, responseFormat, apiKey, log } = opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const resolvedModelName: AudioModelName = modelName ?? "elevenlabs";
+    const elevenLabsModelId = getModelDefinition(resolvedModelName).modelId;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -161,7 +201,7 @@ export async function generateSpeech(opts: {
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
-        model_id: DEFAULT_ELEVENLABS_MODEL,
+        model_id: elevenLabsModelId,
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -187,11 +227,29 @@ export async function generateSpeech(opts: {
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
     const usageHeaders = {
-        ...buildUsageHeaders("elevenlabs", createAudioTokenUsage(text.length)),
+        ...buildUsageHeaders(
+            resolvedModelName,
+            createAudioTokenUsage(text.length),
+        ),
         "x-tts-voice": voice,
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
+
+    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
+    // which requires buffering the body. Audio is small (input capped at 4096
+    // chars) so this is cheap; all other formats keep streaming.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
 
     return new Response(response.body, {
         status: 200,
@@ -209,6 +267,8 @@ interface ElevenLabsTranscriptionResponse {
         text: string;
         start: number;
         end: number;
+        speaker_id?: string | null;
+        type?: string;
     }[];
 }
 
@@ -218,8 +278,16 @@ export async function transcribeWithElevenLabs(opts: {
     responseFormat?: string;
     apiKey: string;
     log: Logger;
+    numSpeakers?: number;
 }): Promise<Response> {
-    const { file, language, responseFormat = "json", apiKey, log } = opts;
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        apiKey,
+        log,
+        numSpeakers,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -231,10 +299,12 @@ export async function transcribeWithElevenLabs(opts: {
     // Validate response format
     if (
         responseFormat &&
-        !["json", "text", "verbose_json"].includes(responseFormat)
+        !["json", "text", "verbose_json", "diarized_json"].includes(
+            responseFormat,
+        )
     ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json`,
+            message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json, diarized_json`,
         });
     }
 
@@ -248,6 +318,14 @@ export async function transcribeWithElevenLabs(opts: {
     formData.append("model_id", "scribe_v2");
     if (language) {
         formData.append("language_code", language);
+    }
+    const wantsDiarizedJson = responseFormat === "diarized_json";
+
+    if (wantsDiarizedJson) {
+        formData.append("diarize", "true");
+        if (numSpeakers !== undefined) {
+            formData.append("num_speakers", String(numSpeakers));
+        }
     }
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/speech-to-text";
@@ -297,7 +375,7 @@ export async function transcribeWithElevenLabs(opts: {
 
     if (responseFormat === "verbose_json") {
         // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse = {
+        const verboseResponse: Record<string, unknown> = {
             text: elevenLabsData.text,
             task: "transcribe",
             language: elevenLabsData.language_code || "unknown",
@@ -320,11 +398,112 @@ export async function transcribeWithElevenLabs(opts: {
         return Response.json(verboseResponse, { headers: usageHeaders });
     }
 
+    if (responseFormat === "diarized_json") {
+        const utterances = groupScribeUtterances(elevenLabsData.words);
+        return Response.json(
+            {
+                task: "transcribe",
+                duration,
+                text: elevenLabsData.text,
+                segments: toOpenAiDiarizedSegments(utterances),
+                usage: {
+                    type: "duration",
+                    seconds: duration,
+                },
+            },
+            { headers: usageHeaders },
+        );
+    }
+
     // Default: json format
     return Response.json(
         { text: elevenLabsData.text },
         { headers: usageHeaders },
     );
+}
+
+function groupScribeUtterances(
+    words:
+        | {
+              text: string;
+              start: number;
+              end: number;
+              speaker_id?: string | null;
+              type?: string;
+          }[]
+        | undefined,
+): { speaker: string | null; text: string; start: number; end: number }[] {
+    if (!words || words.length === 0) return [];
+
+    const utterances: {
+        speaker: string | null;
+        text: string;
+        start: number;
+        end: number;
+    }[] = [];
+    let current: {
+        speaker: string | null;
+        words: typeof words;
+    } | null = null;
+
+    for (const w of words) {
+        const speaker: string | null =
+            w.type === "spacing" && current
+                ? current.speaker
+                : (w.speaker_id ?? null);
+        if (current && current.speaker === speaker) {
+            current.words.push(w);
+        } else {
+            if (current) utterances.push(finalizeScribeUtterance(current));
+            current = { speaker, words: [w] };
+        }
+    }
+    if (current) utterances.push(finalizeScribeUtterance(current));
+
+    return utterances;
+}
+
+function finalizeScribeUtterance(group: {
+    speaker: string | null;
+    words: {
+        text: string;
+        start: number;
+        end: number;
+        type?: string;
+    }[];
+}): { speaker: string | null; text: string; start: number; end: number } {
+    const first = group.words[0];
+    const last = group.words[group.words.length - 1];
+    const text = group.words
+        .map((w) => w.text)
+        .join("")
+        .trim();
+    return {
+        speaker: group.speaker,
+        text,
+        start: first?.start ?? 0,
+        end: last?.end ?? first?.start ?? 0,
+    };
+}
+
+function toOpenAiDiarizedSegments(
+    utterances: ReturnType<typeof groupScribeUtterances>,
+): {
+    type: "transcript.text.segment";
+    id: string;
+    start: number;
+    end: number;
+    text: string;
+    speaker: string;
+}[] {
+    return utterances.map((utterance, index) => ({
+        type: "transcript.text.segment",
+        id: `seg_${String(index + 1).padStart(3, "0")}`,
+        start: utterance.start,
+        end: utterance.end,
+        text: utterance.text,
+        speaker: utterance.speaker ?? "unknown",
+    }));
 }
 
 export async function generateMusic(opts: {
@@ -743,6 +922,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     return withSafetyHeaders(
         c,
         await generateSpeech({
+            modelName: c.var.model.resolved as AudioModelName,
             text,
             voice: query.voice || "alloy",
             responseFormat: query.response_format || "mp3",
@@ -759,7 +939,7 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/speech",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["🔊 Audio"],
             summary: "Text to Speech (OpenAI-compatible)",
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
@@ -867,6 +1047,7 @@ export const audioRoutes = new Hono<Env>()
             return withSafetyHeaders(
                 c,
                 await generateSpeech({
+                    modelName: c.var.model.resolved as AudioModelName,
                     text: safeInput,
                     voice,
                     responseFormat: response_format,
@@ -880,7 +1061,7 @@ export const audioRoutes = new Hono<Env>()
     .post(
         "/transcriptions",
         describeRoute({
-            tags: ["🔊 Audio Generation"],
+            tags: ["🔊 Audio"],
             summary: "Transcribe Audio",
             description: [
                 "Transcribe audio files to text. Compatible with the OpenAI Whisper API.",
@@ -932,15 +1113,22 @@ export const audioRoutes = new Hono<Env>()
                                         "srt",
                                         "verbose_json",
                                         "vtt",
+                                        "diarized_json",
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output.",
+                                        "The format of the transcript output. Use `diarized_json` for OpenAI-compatible speaker segments on diarization-capable models.",
                                 },
                                 temperature: {
                                     type: "number",
                                     description:
                                         "Sampling temperature between 0 and 1. Lower is more deterministic.",
+                                },
+                                speakers_expected: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    description:
+                                        "Optional provider hint for the number of speakers. Only honored with `response_format=diarized_json`.",
                                 },
                             },
                         },
@@ -956,6 +1144,27 @@ export const audioRoutes = new Hono<Env>()
                                 type: "object",
                                 properties: {
                                     text: { type: "string" },
+                                    segments: {
+                                        type: "array",
+                                        description:
+                                            "OpenAI-compatible diarized segments. Present when `response_format=diarized_json`.",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                type: {
+                                                    type: "string",
+                                                    enum: [
+                                                        "transcript.text.segment",
+                                                    ],
+                                                },
+                                                id: { type: "string" },
+                                                speaker: { type: "string" },
+                                                text: { type: "string" },
+                                                start: { type: "number" },
+                                                end: { type: "number" },
+                                            },
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -973,7 +1182,18 @@ export const audioRoutes = new Hono<Env>()
             await requireGenerationAccess(c.var, c.env);
 
             // Get formData from middleware or parse it
-            const formData = c.get("formData") || (await c.req.formData());
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch (error) {
+                log.warn("Invalid multipart form data: {message}", {
+                    message:
+                        error instanceof Error ? error.message : String(error),
+                });
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
 
             const file = formData.get("file") as File;
             const language = formData.get("language") as string | null;
@@ -986,10 +1206,22 @@ export const audioRoutes = new Hono<Env>()
                 temperatureRaw !== null && temperatureRaw !== ""
                     ? Number(temperatureRaw)
                     : undefined;
+            const speakersExpected = parsePositiveInt(
+                formData.get("speakers_expected"),
+                "speakers_expected",
+            );
+            const wantsDiarizedJson = responseFormat === "diarized_json";
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
                     message: "Missing required field: file",
+                });
+            }
+
+            if (speakersExpected !== undefined && !wantsDiarizedJson) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message:
+                        "speakers_expected requires response_format=diarized_json",
                 });
             }
 
@@ -1004,6 +1236,7 @@ export const audioRoutes = new Hono<Env>()
                     responseFormat: responseFormat || undefined,
                     apiKey: elevenLabsApiKey,
                     log,
+                    numSpeakers: speakersExpected,
                 });
 
                 // Override tracking with final response
@@ -1027,6 +1260,7 @@ export const audioRoutes = new Hono<Env>()
                     model: c.var.model.resolved,
                     apiKey: assemblyAiApiKey,
                     log,
+                    speakersExpected,
                 });
 
                 c.var.track.overrideResponseTracking(response.clone());
@@ -1042,9 +1276,12 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Re-build formData for Whisper (Hono consumed the original body stream)
+            // Re-build formData for Whisper (Hono consumed the original body stream).
+            // Preserve filename — OVH needs the extension to detect format/duration.
             const whisperFormData = new FormData();
-            whisperFormData.append("file", file);
+            const filename =
+                file.name && file.name !== "blob" ? file.name : "audio.mp3";
+            whisperFormData.append("file", file, filename);
             if (language) whisperFormData.append("language", language);
             if (responseFormat)
                 whisperFormData.append("response_format", responseFormat);
@@ -1083,18 +1320,29 @@ export const audioRoutes = new Hono<Env>()
         },
     );
 
-/**
- * Extract usage from Whisper response body and build tracking headers.
- * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
- */
+export function parsePositiveInt(
+    value: FormDataEntryValue | null,
+    field: string,
+): number | undefined {
+    if (value === null) return undefined;
+    if (typeof value !== "string" || value.trim() === "") return undefined;
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 1) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${field} must be a positive integer`,
+        });
+    }
+    return n;
+}
+
 function extractWhisperUsage(responseBody: string, log: Logger): number {
     const json = JSON.parse(responseBody);
-    const duration = json.usage?.duration;
-    if (typeof duration !== "number" || duration <= 0) {
+    const seconds = json.usage?.seconds;
+    if (typeof seconds !== "number" || seconds <= 0) {
         throw new Error(
-            `Whisper response missing usage.duration: ${JSON.stringify(json.usage)}`,
+            `Whisper response missing usage.seconds: ${JSON.stringify(json.usage)}`,
         );
     }
-    log.debug("Whisper usage: {duration}s", { duration });
-    return duration;
+    log.debug("Whisper usage: {seconds}s", { seconds });
+    return seconds;
 }

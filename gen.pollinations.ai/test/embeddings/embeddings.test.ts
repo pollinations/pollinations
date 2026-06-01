@@ -17,13 +17,19 @@ import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
-const TEST_AZURE_SMALL_MODEL = "openai-3-small";
-const TEST_AZURE_LARGE_MODEL = "openai-3-large";
-const TEST_AZURE_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
-const TEST_AZURE_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
+const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
+const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
+const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
+const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
+const TEST_COHERE_MODEL = "cohere-embed-v4";
+const TEST_COHERE_PROVIDER_MODEL = "embed-v-4-0";
+const TEST_QWEN_MODEL = "qwen3-embedding-8b";
+const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
-const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
+const OPENAI_HOST = "api.openai.com";
+const COHERE_AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
+const FIREWORKS_HOST = "api.fireworks.ai";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
 beforeEach(() => {
@@ -57,7 +63,9 @@ function buildEmbeddingsBody(extra: Record<string, unknown> = {}) {
 
 function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
+    env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
+    env.FIREWORKS_API_KEY = "test-fireworks-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
     return createFetchMock({
@@ -69,7 +77,9 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
-        azure: createAzureMock(),
+        openai: createOpenAIMock(),
+        cohereAzure: createCohereAzureMock(),
+        fireworks: createFireworksMock(),
         vertex: createVertexMock(),
     });
 }
@@ -126,7 +136,7 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
+function createOpenAIMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     const state: { requests: unknown[]; urls: string[] } = {
         requests: [],
         urls: [],
@@ -134,7 +144,7 @@ function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     return {
         state,
         handlerMap: {
-            [AZURE_HOST]: async (request) => {
+            [OPENAI_HOST]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -146,7 +156,104 @@ function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                 const inputs = body.input ?? [];
                 const dimensions =
                     body.dimensions ??
-                    (body.model === TEST_AZURE_LARGE_MODEL ? 3072 : 1536);
+                    (body.model === TEST_OPENAI_LARGE_PROVIDER_MODEL
+                        ? 3072
+                        : 1536);
+
+                return Response.json({
+                    object: "list",
+                    data: inputs.map((_, index) => ({
+                        object: "embedding",
+                        embedding: Array.from(
+                            { length: dimensions },
+                            (_, valueIndex) => index + valueIndex / 10,
+                        ),
+                        index,
+                    })),
+                    model: body.model,
+                    usage: {
+                        prompt_tokens: inputs.length * 4,
+                        total_tokens: inputs.length * 4,
+                    },
+                });
+            },
+        },
+        reset: () => {
+            state.requests = [];
+            state.urls = [];
+        },
+    };
+}
+
+function createCohereAzureMock(): MockAPI<{
+    requests: unknown[];
+    urls: string[];
+}> {
+    const state: { requests: unknown[]; urls: string[] } = {
+        requests: [],
+        urls: [],
+    };
+    return {
+        state,
+        handlerMap: {
+            [COHERE_AZURE_HOST]: async (request) => {
+                const body = (await request.json()) as {
+                    input?: string[];
+                    input_type?: string;
+                    model?: string;
+                };
+                state.urls.push(request.url);
+                state.requests.push(body);
+
+                const inputs = body.input ?? [];
+
+                return Response.json({
+                    object: "list",
+                    data: inputs.map((_, index) => ({
+                        object: "embedding",
+                        embedding: Array.from(
+                            { length: 1536 },
+                            (_, valueIndex) => index + valueIndex / 10,
+                        ),
+                        index,
+                    })),
+                    model: body.model,
+                    usage: {
+                        prompt_tokens: inputs.length * 4,
+                        total_tokens: inputs.length * 4,
+                    },
+                });
+            },
+        },
+        reset: () => {
+            state.requests = [];
+            state.urls = [];
+        },
+    };
+}
+
+function createFireworksMock(): MockAPI<{
+    requests: unknown[];
+    urls: string[];
+}> {
+    const state: { requests: unknown[]; urls: string[] } = {
+        requests: [],
+        urls: [],
+    };
+    return {
+        state,
+        handlerMap: {
+            [FIREWORKS_HOST]: async (request) => {
+                const body = (await request.json()) as {
+                    input?: string[];
+                    dimensions?: number;
+                    model?: string;
+                };
+                state.urls.push(request.url);
+                state.requests.push(body);
+
+                const inputs = body.input ?? [];
+                const dimensions = body.dimensions ?? 4096;
 
                 return Response.json({
                     object: "list",
@@ -346,7 +453,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -354,7 +461,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             }),
@@ -370,18 +477,18 @@ describe("POST /v1/embeddings", () => {
             model: string;
             usage: { prompt_tokens: number; total_tokens: number };
         };
-        expect(data.model).toBe(TEST_AZURE_SMALL_MODEL);
+        expect(data.model).toBe(TEST_OPENAI_SMALL_MODEL);
         expect(data.data).toHaveLength(2);
         expect(data.data[0].embedding).toHaveLength(512);
         expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
         expect(data.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
         expect(response.headers.get("x-model-used")).toBe(
-            TEST_AZURE_SMALL_MODEL,
+            TEST_OPENAI_SMALL_MODEL,
         );
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
-        expect(mocks.azure.state.requests).toEqual([
+        expect(mocks.openai.state.requests).toEqual([
             {
-                model: TEST_AZURE_SMALL_PROVIDER_MODEL,
+                model: TEST_OPENAI_SMALL_PROVIDER_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             },
@@ -393,9 +500,9 @@ describe("POST /v1/embeddings", () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
             eventType: "generate.embedding",
-            modelRequested: TEST_AZURE_SMALL_MODEL,
-            resolvedModelRequested: TEST_AZURE_SMALL_MODEL,
-            modelUsed: TEST_AZURE_SMALL_MODEL,
+            modelRequested: TEST_OPENAI_SMALL_MODEL,
+            resolvedModelRequested: TEST_OPENAI_SMALL_MODEL,
+            modelUsed: TEST_OPENAI_SMALL_MODEL,
             tokenCountPromptText: 8,
             isBilledUsage: true,
         });
@@ -405,7 +512,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -413,7 +520,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_LARGE_MODEL,
+                model: TEST_OPENAI_LARGE_MODEL,
                 input: TEST_EMBEDDING_INPUT,
                 dimensions: 256,
             }),
@@ -428,12 +535,12 @@ describe("POST /v1/embeddings", () => {
             data: { embedding: number[]; index: number }[];
             model: string;
         };
-        expect(data.model).toBe(TEST_AZURE_LARGE_MODEL);
+        expect(data.model).toBe(TEST_OPENAI_LARGE_MODEL);
         expect(data.data).toHaveLength(1);
         expect(data.data[0].embedding).toHaveLength(256);
-        expect(mocks.azure.state.requests).toEqual([
+        expect(mocks.openai.state.requests).toEqual([
             {
-                model: TEST_AZURE_LARGE_PROVIDER_MODEL,
+                model: TEST_OPENAI_LARGE_PROVIDER_MODEL,
                 input: [TEST_EMBEDDING_INPUT],
                 dimensions: 256,
             },
@@ -441,11 +548,11 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("rejects text-embedding-3-small dimensions above its model limit", async ({
+    test("supports Cohere Embed v4 through Azure", async ({
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -453,7 +560,115 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_COHERE_MODEL,
+                input: ["Hello", "World"],
+            }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        const data = JSON.parse(body) as {
+            data: { embedding: number[]; index: number }[];
+            model: string;
+            usage: { prompt_tokens: number; total_tokens: number };
+        };
+        expect(data.model).toBe(TEST_COHERE_MODEL);
+        expect(data.data).toHaveLength(2);
+        expect(data.data[0].embedding).toHaveLength(1536);
+        expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
+        expect(data.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
+        expect(mocks.cohereAzure.state.requests).toEqual([
+            {
+                model: TEST_COHERE_PROVIDER_MODEL,
+                input: ["Hello", "World"],
+                input_type: "document",
+            },
+        ]);
+        await wait();
+
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelRequested: TEST_COHERE_MODEL,
+            resolvedModelRequested: TEST_COHERE_MODEL,
+            modelUsed: TEST_COHERE_MODEL,
+            tokenCountPromptText: 8,
+            isBilledUsage: true,
+        });
+    });
+
+    test("supports Fireworks Qwen3 embeddings at 4096 dimensions", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "fireworks");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_QWEN_MODEL,
+                input: TEST_EMBEDDING_INPUT,
+                dimensions: 4096,
+            }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        const data = JSON.parse(body) as {
+            data: { embedding: number[]; index: number }[];
+            model: string;
+            usage: { prompt_tokens: number; total_tokens: number };
+        };
+        expect(data.model).toBe(TEST_QWEN_MODEL);
+        expect(data.data).toHaveLength(1);
+        expect(data.data[0].embedding).toHaveLength(4096);
+        expect(data.usage).toEqual({ prompt_tokens: 4, total_tokens: 4 });
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("4");
+        expect(mocks.fireworks.state.requests).toEqual([
+            {
+                model: TEST_QWEN_PROVIDER_MODEL,
+                input: [TEST_EMBEDDING_INPUT],
+                dimensions: 4096,
+            },
+        ]);
+        await wait();
+
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelRequested: TEST_QWEN_MODEL,
+            resolvedModelRequested: TEST_QWEN_MODEL,
+            modelUsed: TEST_QWEN_MODEL,
+            tokenCountPromptText: 4,
+            isBilledUsage: true,
+        });
+    });
+
+    test("rejects text-embedding-3-small dimensions above its model limit", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_OPENAI_SMALL_MODEL,
                 dimensions: 2048,
             }),
         });
@@ -461,7 +676,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("supports dimensions up to 1536");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -469,7 +684,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -477,7 +692,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 input: [
                     {
                         type: "image_url",
@@ -492,7 +707,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("text input only");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -500,7 +715,7 @@ describe("POST /v1/embeddings", () => {
         apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        await mocks.enable("tinybird", "tinybirdStats", "openai");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -508,7 +723,7 @@ describe("POST /v1/embeddings", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: buildEmbeddingsBody({
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_OPENAI_SMALL_MODEL,
                 task_type: "RETRIEVAL_QUERY",
             }),
         });
@@ -516,7 +731,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("task_type");
-        expect(mocks.azure.state.requests).toHaveLength(0);
+        expect(mocks.openai.state.requests).toHaveLength(0);
         await wait();
     });
 
@@ -639,11 +854,19 @@ describe("embedding models", () => {
                     output_modalities: ["embedding"],
                 }),
                 expect.objectContaining({
-                    name: TEST_AZURE_SMALL_MODEL,
+                    name: TEST_OPENAI_SMALL_MODEL,
                     output_modalities: ["embedding"],
                 }),
                 expect.objectContaining({
-                    name: TEST_AZURE_LARGE_MODEL,
+                    name: TEST_OPENAI_LARGE_MODEL,
+                    output_modalities: ["embedding"],
+                }),
+                expect.objectContaining({
+                    name: TEST_COHERE_MODEL,
+                    output_modalities: ["embedding"],
+                }),
+                expect.objectContaining({
+                    name: TEST_QWEN_MODEL,
                     output_modalities: ["embedding"],
                 }),
             ]),
@@ -666,11 +889,19 @@ describe("embedding models", () => {
                     supported_endpoints: ["/v1/embeddings"],
                 }),
                 expect.objectContaining({
-                    id: TEST_AZURE_SMALL_MODEL,
+                    id: TEST_OPENAI_SMALL_MODEL,
                     supported_endpoints: ["/v1/embeddings"],
                 }),
                 expect.objectContaining({
-                    id: TEST_AZURE_LARGE_MODEL,
+                    id: TEST_OPENAI_LARGE_MODEL,
+                    supported_endpoints: ["/v1/embeddings"],
+                }),
+                expect.objectContaining({
+                    id: TEST_COHERE_MODEL,
+                    supported_endpoints: ["/v1/embeddings"],
+                }),
+                expect.objectContaining({
+                    id: TEST_QWEN_MODEL,
                     supported_endpoints: ["/v1/embeddings"],
                 }),
             ]),

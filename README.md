@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🩺 Viatosis](https://www.viatosis.tech) | Viatosis is a specialized medical e-learning platform that leverages Pollinations.ai to simplify the learning experience for students. We integrate AI-generated illustrations to explain complex medica | [@web](https://github.com/web) |
-| [🤖 PolliGPT](https://polli-gpt.lovable.app/) | **PolliGPT** | [@web](https://github.com/web) |
-| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@web](https://github.com/web) |
-| [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@web](https://github.com/web) |
-| [📱 Toddler Read QR Card Generator](https://toddler-read.netlify.app/) | Generate a collection of toddler cards with QR codes readable in a dedicated mobile app, designed for toddlers without screen interaction. | [@web](https://github.com/web) |
-| [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@web](https://github.com/web) |
-| [🖼️ pollimage](https://www.npmjs.com/package/pollimage) | PollImage is a developer-focused CLI powered by Pollinations.AI that generates AI images directly from the terminal. | [@cli](https://github.com/cli) |
-| [🖼️ ZenWall AI](https://zenwall.netlify.app/) | ZenWall AI generates minimalist 9:16 vertical wallpapers in a web application. | [@web](https://github.com/web) |
-| [🧰 App forge](torrents.signalcity.tv) | App forge. | [@web](https://github.com/web) |
-| [📷 Photo Prompt](https://photoprompt.my.id/) | Photo Prompt generates images from detailed prompts using multi-model AI tools. It includes a library of ready-to-use prompts and creative workflows for photographers and designers. | [@web](https://github.com/web) |
+| [🌸 PetalGen](https://petalgen.tools4all.ai) | PetalGen is a prompt engineering tool for AI image generation powered by Pollinations API key . Paste any monolithic image prompt and it decomposes it into structured, remixable modules (Subject, Clot | [@danielw-sudo](https://github.com/danielw-sudo) |
+| [📈 GrowthKit Studio from JCode](https://growthkit.jcode.be) | GrowthKit Studio from JCode uses Pollinations.ai as its LLM backend to generate Business Kit reports. | [@JCode-gh](https://github.com/JCode-gh) |
+| [🧵 SceneWeave](https://scene-weave.vercel.app) | Paste a text story into the field or use a URL to an existing one; SceneWeave currently supports URLs under testing. | [@an3vilmonk3y](https://github.com/an3vilmonk3y) |
+| [🖼️ RagmyAI](https://ragmyai.com) | Use RagmyAI to generate images like ChatGPT. RagmyAI uses pollinations.ai for image generation. | [@koolong](https://github.com/koolong) |
+| [🌐 Ai Web Translator](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/) | Enable AI Web Translation with BYOK support. | [@nekohacker591](https://github.com/nekohacker591) |
+| [🤖 The Mork Stack](https://github.com/Mork-Zuckerbarge/mork-stack) | Manage social media with agentic workflows and run autonomous trading on Solana in The Mork Stack. | [@Mork-Zuckerbarge](https://github.com/Mork-Zuckerbarge) |
+| [🧠 Helix AI](https://helixai-4-0.github.io/) | # Helix AI | [@HelixAI-4-0](https://github.com/HelixAI-4-0) |
+| [🧾 Duwit](https://duwit-45a37.web.app/) | Duwit — Brief Description | [@Ashraf-Swaidan](https://github.com/Ashraf-Swaidan) |
+| [🤖 J.aRVIS](https://github.com/cifik1-lgtm/J.aRVIS) | JARVIS: Cifik Intelegents 🤖🦾 | [@cifik1-lgtm](https://github.com/cifik1-lgtm) |
+| [🧭 ContentPilot](https://cp-frontend-alpha.vercel.app/) | ContentPilot Repupose. | [@meenaharsh5432-tech](https://github.com/meenaharsh5432-tech) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-05-08** – **🤖 Gemma 4 26B** The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)
-- **2026-05-08** – **🚀 Command Line Canvas** Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage) <!-- app -->
-- **2026-05-08** – **🌟 Madlisten** The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/) <!-- app -->
-- **2026-05-08** – **📱 QR Codes for Tiny Humans** Generate and print custom QR-enabled learning cards for screen-free toddler interaction. [Try it](https://toddler-read.netlify.app/) <!-- app -->
-- **2026-05-07** – **🧠 Text Embeddings API** You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai).
-- **2026-05-07** – **🎬 Seedance 2.0 Video Model** We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs.
-- **2026-05-07** – **🍯 Creator Rewards** App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up.
-- **2026-05-06** – **🔑 BYOP Attribution** Bring-your-own-keys tracking is now persistent. Your app actually gets credit for the generations it drives, which is helpful if you like accurate stats. [Check your dashboard](https://enter.pollinations.ai).
-- **2026-05-06** – **🌸 Showcase Pruning** We swept through the [community showcase](https://hello.pollinations.ai) to remove dead links and fix ownership credits. The garden is slightly more organized now.
-- **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
+- **2026-05-31** – **🚀 React Auth & UI Packages** Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai).
+- **2026-05-29** – **🎙️ Realtime Voice API** The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)
+- **2026-05-29** – **🧠 Model Roster Expansion** Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models).
+- **2026-05-29** – **💾 Persistent Cache** The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive.
+- **2026-05-28** – **🌍 Local Currency Support** Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)
+- **2026-05-27** – **🚀 Six new brains for the hive** Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models).
+- **2026-05-26** – **🤖 LLM-Ready Docs** We added "Copy for LLMs" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.
+- **2026-05-25** – **💬 Helix AI Enters the Chat** Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/) <!-- app -->
+- **2026-05-22** – **📱 Dashboard Navigation Update** Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).
+- **2026-05-21** – **🔌 MCP Server** The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.
 ---
 
 ## 🌱 Introduction

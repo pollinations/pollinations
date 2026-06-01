@@ -20,6 +20,7 @@ interface ModelEntry {
     context_length?: number;
     paid_only?: boolean;
     voices?: string[];
+    video_capabilities?: string[];
 }
 
 function classifyType(m: ModelEntry): string {
@@ -37,6 +38,7 @@ function capabilities(m: ModelEntry): string {
     if (m.tools) caps.push("tools");
     if (m.reasoning) caps.push("reasoning");
     if (m.input_modalities?.includes("image")) caps.push("vision");
+    if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");
     if (m.paid_only) caps.push(chalk.dim("paid"));
     return caps.join(",") || "-";

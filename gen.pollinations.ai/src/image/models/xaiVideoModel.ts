@@ -87,7 +87,7 @@ export async function callXaiVideoAPI(
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (safeParams.image?.length) {
-        requestBody.image = safeParams.image[0];
+        requestBody.image = { url: safeParams.image[0] };
     }
 
     logOps("Request body:", JSON.stringify(requestBody));
@@ -200,7 +200,7 @@ async function pollXaiVideoStatus(
         if (pollData.status === "failed") {
             throw new HttpError(
                 `xAI video generation failed: ${pollData.error ?? "unknown error"}`,
-                500,
+                502,
                 undefined,
                 pollUrl,
             );

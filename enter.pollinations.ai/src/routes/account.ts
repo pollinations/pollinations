@@ -44,7 +44,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-function resolveUsageTargetUserId(
+export function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {
@@ -137,7 +137,7 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
         ),
     earningsEnabled: z
         .boolean()
@@ -461,11 +461,14 @@ type UsageRecord = {
     input_text_tokens: number;
     input_cached_tokens: number;
     input_audio_tokens: number;
+    input_audio_seconds: number;
     input_image_tokens: number;
     output_text_tokens: number;
     output_reasoning_tokens: number;
     output_audio_tokens: number;
+    output_audio_seconds: number;
     output_image_tokens: number;
+    output_video_seconds: number;
     cost_usd: number;
     response_time_ms: number | null;
 };
@@ -513,11 +516,69 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
 }
 
 function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
     return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
+}
+
+type DeveloperEarningsRow = {
+    date: string;
+    app_key_id: string;
+    app_name: string;
+    requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    cost_usd: number;
+    markup_rate: number;
+    unique_users: number;
+};
+
+const developerEarningsRowSchema = z.object({
+    date: z
+        .string()
+        .describe(
+            "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
+        ),
+    app_key_id: z
+        .string()
+        .describe("BYOP app key id; empty string on the global rollup row"),
+    app_name: z.string().describe("App display name"),
+    requests: z.number().describe("Number of billed requests"),
+    baseline_price: z
+        .number()
+        .describe("Model cost before markup (sum over the bucket)"),
+    pollen_earned: z
+        .number()
+        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+    cost_usd: z
+        .number()
+        .describe(
+            "Markup-inclusive total charged to payers (sum over the bucket)",
+        ),
+    markup_rate: z.number().describe("Average markup rate applied"),
+    unique_users: z
+        .number()
+        .describe(
+            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
+        ),
+});
+
+const developerEarningsResponseSchema = z.object({
+    daily: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-(date, app) buckets for the period"),
+    perApp: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-app rollups for the period"),
+    global: developerEarningsRowSchema
+        .nullable()
+        .describe("Global rollup across all apps for the period"),
+});
+
+function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -616,6 +677,9 @@ const usageRecordSchema = z.object({
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
+    input_audio_seconds: z
+        .number()
+        .describe("Duration of input audio in seconds (for transcription/STT)"),
     input_image_tokens: z.number().describe("Number of input image tokens"),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
@@ -624,9 +688,17 @@ const usageRecordSchema = z.object({
             "Number of reasoning tokens (for models with chain-of-thought)",
         ),
     output_audio_tokens: z.number().describe("Number of output audio tokens"),
+    output_audio_seconds: z
+        .number()
+        .describe(
+            "Duration of output audio in seconds (for TTS/music generation)",
+        ),
     output_image_tokens: z
         .number()
         .describe("Number of output image tokens (1 per image)"),
+    output_video_seconds: z
+        .number()
+        .describe("Duration of output video in seconds"),
     cost_usd: z.number().describe("Cost in USD for this request"),
     response_time_ms: z
         .number()
@@ -816,7 +888,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
@@ -943,9 +1015,12 @@ export const accountRoutes = new Hono<Env>()
                 let cached = false;
 
                 try {
-                    const cachedData = await kv.get(cacheKey, "json");
+                    const cachedData = await kv.get<DailyUsageRecord[]>(
+                        cacheKey,
+                        "json",
+                    );
                     if (cachedData) {
-                        usage = cachedData as DailyUsageRecord[];
+                        usage = cachedData;
                         cached = true;
                     }
                 } catch (err) {
@@ -1016,6 +1091,166 @@ export const accountRoutes = new Hono<Env>()
             } catch (error) {
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
+        },
+    )
+    .get(
+        "/earnings",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Developer Earnings",
+            description:
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Combined earnings buckets and rollups",
+                    content: {
+                        "application/json": {
+                            schema: resolver(developerEarningsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", usageDailyQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+                throw new HTTPException(403, {
+                    message: "API key does not have 'account:usage' permission",
+                });
+            }
+
+            const {
+                format,
+                days,
+                granularity,
+                period,
+                api_key_ids: apiKeyIds,
+            } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
+            const { userId: devUserId, overridden: devUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+            const kv = c.env.KV;
+            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
+            // any old cached rows that would render as undefined in CSV.
+            const cacheKeyPrefix = devUserOverridden
+                ? `earnings:v2:debug:${devUserId}`
+                : `earnings:v2:${devUserId}`;
+            const periodCacheKey =
+                granularity && period ? `${granularity}:${period}` : `${days}d`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
+            const window = formatUsageWindow(
+                resolveUsageWindow(days, { granularity, period }),
+            );
+
+            type EarningsPayload = {
+                daily: DeveloperEarningsRow[];
+                perApp: DeveloperEarningsRow[];
+                global: DeveloperEarningsRow | null;
+            };
+
+            try {
+                let payload: EarningsPayload | null = null;
+                let cached = false;
+
+                try {
+                    const cachedData = await kv.get<EarningsPayload>(
+                        cacheKey,
+                        "json",
+                    );
+                    if (cachedData) {
+                        payload = cachedData;
+                        cached = true;
+                    }
+                } catch (err) {
+                    log.trace("KV get error: {err}", { err });
+                }
+
+                if (!payload) {
+                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
+                        tinybirdOrigin,
+                        "/v0/pipes/developer_earnings.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            since: window.since,
+                            until: window.until,
+                            grain,
+                            api_key_ids:
+                                apiKeyIds.length > 0
+                                    ? apiKeyIds.join(",")
+                                    : undefined,
+                        },
+                    );
+                    const daily = rows.filter((r) => r.date !== "");
+                    const rollups = rows.filter((r) => r.date === "");
+                    const perApp = [...rollups]
+                        .filter((r) => r.app_key_id !== "")
+                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
+                    const global =
+                        rollups.find((r) => r.app_key_id === "") ?? null;
+                    payload = { daily, perApp, global };
+
+                    try {
+                        await kv.put(cacheKey, JSON.stringify(payload), {
+                            expirationTtl: CACHE_TTL,
+                        });
+                    } catch (err) {
+                        log.trace("KV put error: {err}", { err });
+                    }
+                }
+
+                log.debug(
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} appCount={appCount} cached={cached}",
+                    {
+                        requesterUserId: user.id,
+                        devUserId,
+                        override: devUserOverridden,
+                        days,
+                        dailyCount: payload.daily.length,
+                        appCount: payload.perApp.length,
+                        cached,
+                    },
+                );
+
+                if (format === "csv") {
+                    const header =
+                        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
+                    const rows = payload.daily.map(dailyEarningsRowToCsvRow);
+                    const csv = [header, ...rows].join("\n");
+
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json(payload);
+            } catch (error) {
+                log.error("Error fetching earnings: {error}", { error });
+                return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
         },
     )
@@ -1387,7 +1622,7 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",

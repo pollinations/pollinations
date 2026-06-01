@@ -3,6 +3,8 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
@@ -16,44 +18,6 @@ const testLog = {
     warn() {},
     error() {},
 } as unknown as Logger;
-
-type CachedObject = {
-    body: Uint8Array;
-    httpMetadata?: R2HTTPMetadata;
-    customMetadata?: Record<string, string>;
-    uploaded: Date;
-};
-
-function createMediaBucket(): R2Bucket {
-    const objects = new Map<string, CachedObject>();
-
-    return {
-        get: async (key: string) => {
-            const object = objects.get(key);
-            if (!object) return null;
-            return {
-                ...object,
-                body: object.body.slice(),
-            };
-        },
-        put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
-            const body = new Uint8Array(
-                await new Response(value).arrayBuffer(),
-            );
-            const httpMetadata =
-                options?.httpMetadata instanceof Headers
-                    ? undefined
-                    : options?.httpMetadata;
-            objects.set(key, {
-                body,
-                httpMetadata,
-                customMetadata: options?.customMetadata,
-                uploaded: new Date(),
-            });
-            return null;
-        },
-    } as unknown as R2Bucket;
-}
 
 type TestEnv = {
     Bindings: CloudflareBindings;
@@ -97,10 +61,12 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
     };
 }
 
-function createMediaCacheEnv(): CloudflareBindings {
+function createMediaCacheEnv(
+    bucket = createTestR2Bucket(),
+): CloudflareBindings {
     return {
-        IMAGE_BUCKET: createMediaBucket(),
-    } as CloudflareBindings;
+        IMAGE_BUCKET: bucket,
+    } as unknown as CloudflareBindings;
 }
 
 async function dispatch(
@@ -158,6 +124,9 @@ describe("media cache", () => {
         expect(await consumeAndWait(cachedNoAuth)).toBe("origin:1");
         expect(cachedNoAuth.response.status).toBe(200);
         expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
+        expect(cachedNoAuth.response.headers.get("Cache-Control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
         expect(media.originHits).toBe(1);
 
         const missNoAuth = await dispatch(
@@ -171,5 +140,29 @@ describe("media cache", () => {
         );
         expect(missNoAuth.response.status).toBe(401);
         expect(media.originHits).toBe(1);
+    });
+
+    it("refreshes cached media TTL on aged cache hits", async () => {
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const bucket = createTestR2Bucket();
+        const env = createMediaCacheEnv(bucket);
+        const path = "/media/ttl-refresh";
+
+        const warm = await dispatch(
+            media.app,
+            path,
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
+            env,
+        );
+        expect(await consumeAndWait(warm)).toBe("origin:1");
+        expect(bucket.putCount).toBe(1);
+
+        const cached = await dispatch(media.app, path, undefined, env);
+        expect(await consumeAndWait(cached)).toBe("origin:1");
+        expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+        expect(media.originHits).toBe(1);
+        expect(bucket.putCount).toBe(2);
     });
 });

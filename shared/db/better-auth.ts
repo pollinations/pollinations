@@ -5,8 +5,8 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import { relations, sql } from "drizzle-orm";
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -33,8 +33,14 @@ export const user = sqliteTable("user", {
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   lastTierGrant: integer("last_tier_grant"),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
+    .default(sql`0`)
+    .notNull(),
+  autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
 ]);
 
 export const session = sqliteTable("session", {
@@ -136,11 +142,35 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
+export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  stripeInvoiceId: text("stripe_invoice_id").unique(),
+  amountUsd: integer("amount_usd").notNull(),
+  pollenGrant: real("pollen_grant").notNull(),
+  status: text("status").notNull(),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+}, (table) => [
+  index("idx_stripe_auto_top_up_attempt_user_id").on(table.userId),
+  index("idx_stripe_auto_top_up_attempt_status").on(table.status),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
   sessions: many(session),
   accounts: many(account),
+  stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -163,6 +193,16 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const stripeAutoTopUpAttemptRelations = relations(
+  stripeAutoTopUpAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeAutoTopUpAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
 
 // Device Authorization Grant (RFC 8628) table
 export const deviceCode = sqliteTable("device_code", {
@@ -192,4 +232,22 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
     .notNull(),
 }, (table) => [
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
+]);
+
+export const questPayoutCredits = sqliteTable("quest_payout_credits", {
+  payoutKey: text("payout_key").primaryKey(),
+  questIssueNumber: integer("quest_issue_number").notNull(),
+  prNumber: integer("pr_number").notNull(),
+  role: text("role").notNull(),
+  githubUsername: text("github_username").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_quest_payout_credits_user_id").on(table.userId),
+  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
 ]);

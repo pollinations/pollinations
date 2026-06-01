@@ -5,6 +5,7 @@ interface CloudflareBindings {
     ELEVENLABS_API_KEY: string;
     ASSEMBLYAI_API_KEY?: string;
     OVHCLOUD_API_KEY: string;
+    PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
@@ -22,6 +23,7 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     ALLOW_ANONYMOUS_USAGE?: boolean;
+    STAGING_ALLOWED_GITHUB_IDS?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
@@ -39,7 +41,6 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
-    BYTEDANCE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FIREWORKS_API_KEY: string;
     GOOGLE_CLIENT_EMAIL: string;

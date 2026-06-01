@@ -3,11 +3,13 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { handleError, UpstreamError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
+import { handleChatCompletionLocal } from "@/text/handler.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -18,7 +20,8 @@ function createTestApp() {
 
     app.use("*", requestId());
     app.use("*", logger);
-    app.post("/v1/chat/completions", (c) => {
+    app.post("/v1/chat/completions", async (c) => {
+        await c.req.json();
         c.set("model", {
             requested: "openai",
             resolved: "openai",
@@ -54,7 +57,38 @@ describe("error observability", () => {
                 body: JSON.stringify({
                     model: "openai",
                     stream: true,
-                    messages: [{ role: "user", content: "test" }],
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "test" },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://example.com/a.png",
+                                    },
+                                },
+                                {
+                                    type: "input_audio",
+                                    input_audio: {
+                                        data: "abc",
+                                        format: "mp3",
+                                    },
+                                },
+                            ],
+                        },
+                        { role: "assistant", content: "hello" },
+                    ],
+                    tools: [
+                        {
+                            type: "function",
+                            function: { name: "lookup" },
+                        },
+                    ],
+                    tool_choice: "auto",
+                    response_format: { type: "json_object" },
+                    max_tokens: 256,
+                    temperature: 0.7,
                 }),
             }),
             {
@@ -90,7 +124,11 @@ describe("error observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
             kind: "server_error",
             severity: "error",
             environment: "test",
@@ -104,6 +142,292 @@ describe("error observability", () => {
             upstream_body: "application/json",
             model_requested: "openai",
             resolved_model_requested: "openai",
+            request_inputs: expect.any(String),
+        });
+        expect(
+            JSON.parse(tinybirdPayload.request_inputs as string),
+        ).toMatchObject({
+            body: {
+                model: "openai",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "test" },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "https://example.com/a.png",
+                                },
+                            },
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    data: "abc",
+                                    format: "mp3",
+                                },
+                            },
+                        ],
+                    },
+                    { role: "assistant", content: "hello" },
+                ],
+                tools: [
+                    {
+                        type: "function",
+                        function: { name: "lookup" },
+                    },
+                ],
+                tool_choice: "auto",
+                response_format: { type: "json_object" },
+                max_tokens: 256,
+                temperature: 0.7,
+            },
+        });
+    });
+
+    it("does not mask 5xx errors when no route matched", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.notFound((c) => {
+            c.set("log", {
+                error: vi.fn(),
+                trace: vi.fn(),
+                warn: vi.fn(),
+            } as never);
+            return handleError(new HTTPException(500), c);
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request(
+                "https://gen.pollinations.ai/unmatched?x=1&key=sk_secret&token=secret_token",
+            ),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "INTERNAL_ERROR",
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            route_path: "/unmatched",
+            status: 500,
+            error_class: "Error",
+            request_inputs: JSON.stringify({
+                query: {
+                    x: "1",
+                    key: "[redacted]",
+                    token: "[redacted]",
+                },
+            }),
+        });
+    });
+
+    it("does not require logger middleware state for 5xx errors", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.get("/before-logger", () => {
+            throw new Error("pre-logger failure");
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/before-logger"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "INTERNAL_ERROR",
+                message: "pre-logger failure",
+            },
+        });
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            route_path: "/before-logger",
+            status: 500,
+            error_class: "Error",
+        });
+    });
+
+    it("remaps text provider 429 to 502 while preserving upstream status", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            if (new Request(input).url.includes("tinybird.test"))
+                return new Response("ok");
+            return Response.json(
+                { error: { message: "provider rate limited" } },
+                { status: 429 },
+            );
+        });
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", async (c) =>
+            handleChatCompletionLocal(c, await c.req.json()),
+        );
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                AZURE_MYCELI_PROD_API_KEY: "test_azure_key",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "BAD_GATEWAY",
+                details: { upstreamStatus: 429 },
+            },
+        });
+    });
+
+    it("keeps user image URL fetch 429 client-facing", async () => {
+        const fetchRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                fetchRequests.push(request);
+                return Response.json(
+                    { error: { message: "image host rate limited" } },
+                    { status: 429, statusText: "Too Many Requests" },
+                );
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", async (c) =>
+            handleChatCompletionLocal(c, await c.req.json()),
+        );
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "nova",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "describe this" },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://example.com/image.png",
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            }),
+            {
+                AWS_ACCESS_KEY_ID: "test_aws_key_id",
+                AWS_REGION: "us-east-1",
+                AWS_SECRET_ACCESS_KEY: "test_aws_secret",
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(fetchRequests).toHaveLength(1);
+        expect(fetchRequests[0].url).toBe("https://example.com/image.png");
+        expect(response.status).toBe(429);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: "RATE_LIMITED",
+                message: expect.stringContaining(
+                    "The image server is rate limiting requests",
+                ),
+                details: { upstreamStatus: 429 },
+            },
         });
     });
 });

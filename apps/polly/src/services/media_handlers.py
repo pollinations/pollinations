@@ -109,19 +109,26 @@ LATEX_TO_EMOJI = {
     r"\Leftrightarrow": "⇔",
 }
 
-LATEX_PATTERN = re.compile(
+BLOCK_LATEX_PATTERN = re.compile(
     r"```(?:latex|tex)[^\`]*?```|"
     r"\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}|"
     r"\$\$[\s\S]*?\$\$|"
-    r"\\\[[\s\S]*?\\\]|"
-    r"\$[^$][\s\S]*?\$|"
-    r"\\(?:begin|end)\{(?:equation|align|gather|multline)\*?\}|"
-    r"\\frac\{.*?\}\{.*?\}|"
-    r"\\sqrt\{.*?\}|"
-    r"\\text\{.*?\}|"
-    r"\\[a-zA-Z]+",
+    r"\\\[[\s\S]*?\\\]",
     flags=re.DOTALL,
 )
+
+LATEX_PATTERN = re.compile(r"\$([^$\n]+?)\$")
+
+
+def detect_latex(text: str) -> list[str]:
+    matches = LATEX_PATTERN.findall(text)
+    valid_latex = []
+    for expr in matches:
+        clean = expr.strip()
+        if re.match(r"^\d+(?:[.,]\d+)?$", clean):
+            continue
+        valid_latex.append(f"${expr}$")
+    return valid_latex
 
 
 def _latex_to_svg(formula: str) -> bytes:
@@ -184,10 +191,6 @@ async def convert_latex_to_png(latex: str) -> tuple[io.BytesIO | str, bool]:
     except Exception as e:
         logger.error(f"LaTeX conversion failed: {e}")
         return f"```\n${latex}$\n```", True
-
-
-def detect_latex(text: str) -> list[str]:
-    return LATEX_PATTERN.findall(text)
 
 
 # =============================================================================
@@ -539,10 +542,7 @@ async def render_table_image(
         return None, []
 
 
-def detect_and_parse_markdown_tables(
-    text: str,
-) -> tuple[str, list[tuple[list[str], list[list[str]], list[str]]]]:
-    """Detect markdown tables. Returns (text-with-table-lines-removed, tables)."""
+def detect_and_parse_markdown_tables(text: str) -> tuple[str, list[tuple[list[str], list[list[str]], list[str]]]]:
     tables = []
     lines = text.split("\n")
     output_lines = []
@@ -551,58 +551,95 @@ def detect_and_parse_markdown_tables(
     while i < len(lines):
         line = lines[i].strip()
 
-        if line.startswith("|") and line.endswith("|"):
-            headers = [p.strip() for p in line[1:-1].split("|")]
+        if "|" in line:
+            raw_header = line
+            if raw_header.startswith("|"):
+                raw_header = raw_header[1:]
+            if raw_header.endswith("|"):
+                raw_header = raw_header[:-1]
+            headers = [p.strip() for p in raw_header.split("|")]
             num_cols = len(headers)
 
             if i + 1 < len(lines):
                 sep_line = lines[i + 1].strip()
-                if sep_line.startswith("|") and sep_line.endswith("|"):
-                    sep_parts = [p.strip() for p in sep_line[1:-1].split("|")]
-                    alignments = []
-                    for sep in sep_parts:
-                        if sep.startswith(":") and sep.endswith(":"):
-                            alignments.append("center")
-                        elif sep.endswith(":"):
-                            alignments.append("right")
-                        elif sep.startswith(":"):
-                            alignments.append("left")
-                        else:
-                            alignments.append("left")
+                if "|" in sep_line and all(c in "|- : \t" for c in sep_line):
+                    raw_sep = sep_line
+                    if raw_sep.startswith("|"):
+                        raw_sep = raw_sep[1:]
+                    if raw_sep.endswith("|"):
+                        raw_sep = raw_sep[:-1]
+                    sep_parts = [p.strip() for p in raw_sep.split("|")]
 
-                    # Empty separator parts (no dashes) → not a real table.
-                    if not all(set(s) <= set(":-") and "-" in s for s in sep_parts):
-                        output_lines.append(lines[i])
-                        i += 1
-                        continue
+                    if len(sep_parts) == num_cols:
+                        alignments = []
+                        for sep in sep_parts:
+                            if sep.startswith(":") and sep.endswith(":"):
+                                alignments.append("center")
+                            elif sep.endswith(":"):
+                                alignments.append("right")
+                            elif sep.startswith(":"):
+                                alignments.append("left")
+                            else:
+                                alignments.append("left")
 
-                    rows = []
-                    j = i + 2
-                    while j < len(lines):
-                        row_line = lines[j].strip()
-                        if not row_line.startswith("|") or not row_line.endswith("|"):
-                            break
-                        row = [p.strip() for p in row_line[1:-1].split("|")]
-                        # Auto-pad short rows; truncate over-long ones.
-                        if len(row) < num_cols:
-                            row = row + [""] * (num_cols - len(row))
-                        elif len(row) > num_cols:
-                            row = row[:num_cols]
-                        rows.append(row)
-                        j += 1
+                        rows = []
+                        j = i + 2
+                        while j < len(lines):
+                            row_line = lines[j].strip()
+                            if "|" not in row_line:
+                                break
+                            raw_row = row_line
+                            if raw_row.startswith("|"):
+                                raw_row = raw_row[1:]
+                            if raw_row.endswith("|"):
+                                raw_row = raw_row[:-1]
+                            row = [p.strip() for p in raw_row.split("|")]
+                            if len(row) == num_cols:
+                                rows.append(row)
+                            else:
+                                break
+                            j += 1
 
-                    if rows:
-                        tables.append((headers, rows, alignments))
-                        i = j
-                        # Drop the original markdown lines entirely; the
-                        # caller renders the table as an image and the raw
-                        # asterisks would have looked wrong anyway.
-                        continue
+                        if rows:
+                            placeholder = f"__TABLE_IMG_{len(tables)}__"
+                            tables.append((headers, rows, alignments))
+                            output_lines.append(placeholder)
+                            i = j
+                            continue
 
         output_lines.append(lines[i])
         i += 1
 
     return "\n".join(output_lines), tables
+
+
+def format_table_as_markdown(headers: list[str], rows: list[list[str]]) -> str:
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for idx, cell in enumerate(row):
+            if idx < len(widths):
+                widths[idx] = max(widths[idx], len(str(cell)))
+
+    header_str = "| " + " | ".join(h.ljust(w) for h, w in zip(headers, widths)) + " |"
+    sep_str = "| " + " | ".join("-" * w for w in widths) + " |"
+    row_strs = []
+    for row in rows:
+        row_strs.append("| " + " | ".join(str(cell).ljust(w) for cell, w in zip(row, widths)) + " |")
+
+    return "\n".join([header_str, sep_str] + row_strs)
+
+
+def replace_latex_with_unicode(text: str) -> str:
+    def replacer(match):
+        expr = match.group(1)
+        for latex_cmd, unicode_symbol in LATEX_TO_EMOJI.items():
+            expr = expr.replace(latex_cmd, unicode_symbol)
+        expr = expr.replace(r"\text", "")
+        expr = expr.replace("{", "").replace("}", "")
+        return expr
+
+    inline_pattern = re.compile(r"\$([^$\n]+?)\$")
+    return inline_pattern.sub(replacer, text)
 
 
 # =============================================================================

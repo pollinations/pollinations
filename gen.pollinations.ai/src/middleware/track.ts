@@ -1,15 +1,21 @@
 import { getLogger } from "@logtape/logtape";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
+import { getRealClientIp } from "@shared/client-ip.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     type ModelName,
     type PriceDefinition,
     type UsageCost,
@@ -38,6 +44,7 @@ import {
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
 import { eq } from "drizzle-orm";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -120,8 +127,9 @@ export const track = (eventType: EventType) =>
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
 
-        const rawIp = c.req.header("cf-connecting-ip");
-        const clientIp = rawIp ? stripIPv4MappedPrefix(rawIp) : undefined;
+        const rawIp = getRealClientIp(c);
+        const clientIp =
+            rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
@@ -195,6 +203,8 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let billedPrice = 0;
+                let shouldRunAutoTopUp = false;
                 try {
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
@@ -208,6 +218,19 @@ export const track = (eventType: EventType) =>
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
+                    billedPrice = deduction.billedPrice;
+                    const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    if (
+                        totalPrice > 0 &&
+                        payerBucket === "pack" &&
+                        deduction.postDeductionPackBalance != null &&
+                        deduction.postDeductionPackBalance <=
+                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                        userTracking.userId &&
+                        (await isAutoTopUpConfigured(db, userTracking.userId))
+                    ) {
+                        shouldRunAutoTopUp = true;
+                    }
                 } catch (error) {
                     log.error(
                         "Billing deduction failed after response; continuing tracking: {error}",
@@ -248,6 +271,7 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     responseTracking,
                     markup,
+                    billedPrice,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
@@ -275,9 +299,68 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
+
+                if (shouldRunAutoTopUp && userTracking.userId) {
+                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                }
             })(),
         );
     });
+
+async function isAutoTopUpConfigured(
+    db: DrizzleD1Database,
+    userId: string,
+): Promise<boolean> {
+    const [user] = await db
+        .select({
+            enabled: userTable.autoTopUpEnabled,
+            amountUsd: userTable.autoTopUpAmountUsd,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+
+    if (!user?.enabled || user.amountUsd == null) {
+        return false;
+    }
+
+    return true;
+}
+
+async function triggerAutoTopUp(
+    env: CloudflareBindings,
+    userId: string,
+    log: ReturnType<typeof getLogger>,
+): Promise<void> {
+    try {
+        const response = await env.ENTER.fetch(
+            `${PUBLIC_URLS.enter.production}/api/stripe/auto-top-up/trigger`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId,
+                    environment: env.ENVIRONMENT,
+                }),
+            },
+        );
+
+        if (!response.ok) {
+            log.warn("Auto top-up trigger failed for user {userId}", {
+                userId,
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Auto top-up trigger errored for user {userId}: {error}", {
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
 
 async function trackRequest(
     modelInfo: ModelVariables["model"],
@@ -288,9 +371,7 @@ async function trackRequest(
     const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getActivePriceDefinition(
-        resolvedModelRequested,
-    );
+    const modelPriceDefinition = getPriceDefinition(resolvedModelRequested);
     if (!modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,
@@ -485,6 +566,7 @@ type TrackingEventInput = {
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
     markup: MarkupResolution | null;
+    billedPrice: number;
     errorTracking?: ErrorData;
 };
 
@@ -503,6 +585,7 @@ function createTrackingEvent({
     requestTracking,
     responseTracking,
     markup,
+    billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -535,9 +618,7 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice:
-            (responseTracking.price?.totalPrice || 0) +
-            (markup?.devCredit ?? 0),
+        totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
 

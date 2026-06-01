@@ -1,12 +1,14 @@
 import {
     type AuthenticatedApiKey,
     assertNotBanned,
+    assertStagingAccess,
     authenticateApiKeyRequest,
     BannedAccountError,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { Session, User } from "@/auth.ts";
+import type { Session, User } from "../auth.ts";
 import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
 
@@ -63,8 +65,12 @@ export const auth = (options: AuthOptions) =>
 
             try {
                 assertNotBanned(result.user);
+                assertStagingAccess(c.env, result.user);
             } catch (error) {
-                if (error instanceof BannedAccountError) {
+                if (
+                    error instanceof BannedAccountError ||
+                    error instanceof StagingAccessDeniedError
+                ) {
                     throw new HTTPException(403, { message: error.message });
                 }
                 throw error;
@@ -92,7 +98,10 @@ export const auth = (options: AuthOptions) =>
                     rawApiKey: result.rawApiKey,
                 };
             } catch (error) {
-                if (error instanceof BannedAccountError) {
+                if (
+                    error instanceof BannedAccountError ||
+                    error instanceof StagingAccessDeniedError
+                ) {
                     throw new HTTPException(403, { message: error.message });
                 }
                 throw error;

@@ -1,0 +1,34 @@
+{
+  "pr_number": 11508,
+  "title": "feat: migrate model monitor to Pollinations UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11508",
+  "merged_at": "2026-06-01T17:42:33Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Migrates Model Monitor to `@pollinations/ui` primitives and package-owned modality theme colors.\n- Adds reusable UI primitives needed by the app: `Alert` and `Table`, plus chip/scroll/theme updates.\n- Regenerates Model Monitor favicon/PWA/OG assets from the shared icon tooling with the violet UI theme.\n- Keeps the UI showcase export so `apps/react` continues to build after merging `origin/main`.\n\nValidation:\n- `npx biome check --write packages/ui/src/theme.ts tools/icons/src/cli.js packages/ui/src/showcase/DesignShowcase.tsx packages/ui/src/showcase/index.ts packages/ui/package.json packages/ui/tsup.config.ts packages/ui/src/index.ts packages/ui/src/primitives/ScrollArea.tsx apps/model-monitor/src/App.jsx`\n- `npm test --prefix packages/ui`\n- `npm run build --prefix apps/model-monitor`\n- `npm run build --prefix apps/react`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Violet vibes for Model Monitor",
+    "blurb": "The Model Monitor just got a major glow-up! We've migrated it to our official UI library, bringing a sleek new violet theme and buttery-smooth tables to your model-watching experience.",
+    "summary": "Migrated the Model Monitor app to use @pollinations/ui primitives, introducing new reusable Alert and Table components alongside a refreshed violet theme.",
+    "impact": "Users will see a cleaner, more cohesive interface when checking model status, and developers can now use the new Alert and Table primitives in their own apps.",
+    "keywords": [
+      "ui",
+      "model-monitor",
+      "design-system",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee as a painter/designer, updating a retro computer monitor that displays a clean table layout with violet accents.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, touching up a retro computer monitor with a paintbrush. The monitor displays a neat, chunky pixel table layout with soft violet accents. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11508.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, touching up a retro computer monitor with a paintbrush. The monitor displays a neat, chunky pixel table layout with soft violet accents. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-01T17:43:42.412000+00:00"
+}

@@ -1112,8 +1112,9 @@ API_RESTRICTED_ACTIONS = {
     "github_project": ADMIN_ACTIONS["github_project"],
 }
 
-# Tools entirely excluded from API (Discord-only tools)
+# Tools entirely excluded from API mode
 API_EXCLUDED_TOOLS = {
+    "github_custom",
     "subscribe_issue",
     "unsubscribe_issue",
     "unsubscribe_all",
@@ -1357,7 +1358,6 @@ API_TOOLS_SECTION = """- `github_overview` - Repo summary
 - `github_issue` - Issues: get, search, history, labels, milestones (read-only)
 - `github_pr` - PRs: get, list, diff, files (read-only)
 - `github_project` - Projects V2: list, view (read-only)
-- `github_custom` - Raw data (commits, history, stats)
 - `web_search` - Web search
 - `web_scrape` - Web scraping
 - `code_search` - Semantic code search

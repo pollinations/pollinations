@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-31",
+  "period_start": "2026-05-31",
+  "period_end": "2026-05-31",
+  "generated_at": "2026-06-01T07:40:04.018021+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-31/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-31/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-31/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Writing auth logic from scratch every time is a special kind of punishment. We just merged a React auth provider and UI package to the repo (PR #11217). Drop it in, wrap your app, and get back to building the fun parts. Less boilerplate, more making cool stuff. Available on npm and the repo now. 🧱✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #reactjs #webdev #frontend #javascript",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

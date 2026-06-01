@@ -6,7 +6,7 @@ import {
     Surface,
     TerminalIcon,
     Tooltip,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";

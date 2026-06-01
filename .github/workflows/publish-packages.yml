@@ -92,8 +92,8 @@ jobs:
       - name: Install dependencies & build
         run: |
           npm ci
-          npm run build --workspace @pollinations_ai/sdk
-          npm run build --workspace @pollinations_ai/ui
+          npm run build --workspace @pollinations/sdk
+          npm run build --workspace @pollinations/ui
 
       - name: Check if version already published
         id: check
@@ -178,7 +178,7 @@ jobs:
         working-directory: packages/polli-cli
         run: |
           v=$(node -p "require('./package.json').version")
-          if npm view "@pollinations_ai/cli@$v" version >/dev/null 2>&1; then
+          if npm view "@pollinations/cli@$v" version >/dev/null 2>&1; then
             echo "Version $v already on npm — skipping publish"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else

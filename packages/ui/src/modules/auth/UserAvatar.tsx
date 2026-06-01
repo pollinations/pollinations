@@ -1,4 +1,4 @@
-import { useAccountProfile, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAccountProfile, useAuthState } from "@pollinations/sdk/react";
 import { cn } from "../../lib/cn.ts";
 
 export type UserAvatarProps = {

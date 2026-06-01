@@ -1,4 +1,4 @@
-import { PolliProvider, useAuthActions } from "@pollinations_ai/sdk/react";
+import { PolliProvider, useAuthActions } from "@pollinations/sdk/react";
 import {
     AppIcon,
     BookIcon,
@@ -12,8 +12,8 @@ import {
     TrendUpIcon,
     themes,
     WalletIcon,
-} from "@pollinations_ai/ui";
-import logoWordmarkUrl from "@pollinations_ai/ui/assets/logo-wordmark.svg";
+} from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import {
     LoginButton,
     LogoutButton,
@@ -22,15 +22,15 @@ import {
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth/sdk";
-import { DesignShowcase } from "@pollinations_ai/ui/showcase";
+} from "@pollinations/ui/auth/sdk";
+import { DesignShowcase } from "@pollinations/ui/showcase";
 import {
     Balance,
     KeyBudget,
     KeyExpiry,
     KeyModels,
     KeyPrefix,
-} from "@pollinations_ai/ui/wallet/sdk";
+} from "@pollinations/ui/wallet/sdk";
 import {
     type ComponentType,
     type CSSProperties,
@@ -224,8 +224,8 @@ function Metric({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const SNIPPETS = {
-    provider: `import "@pollinations_ai/ui/styles.css";
-import { PolliProvider } from "@pollinations_ai/sdk/react";
+    provider: `import "@pollinations/ui/styles.css";
+import { PolliProvider } from "@pollinations/sdk/react";
 
 const APP_KEY = "pk_your_key_here";
 
@@ -236,14 +236,14 @@ export function App() {
         </PolliProvider>
     );
 }`,
-    auth: `import { useAuthActions } from "@pollinations_ai/sdk/react";
-import { ExternalLinkButton } from "@pollinations_ai/ui";
+    auth: `import { useAuthActions } from "@pollinations/sdk/react";
+import { ExternalLinkButton } from "@pollinations/ui";
 import {
     LoginButton,
     LogoutButton,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "@pollinations_ai/ui/auth/sdk";
+} from "@pollinations/ui/auth/sdk";
 
 function DashboardLink() {
     const { enterUrl } = useAuthActions();
@@ -272,7 +272,7 @@ export function AuthActions() {
     UserEmail,
     UserName,
     WhenLoggedIn,
-} from "@pollinations_ai/ui/auth/sdk";
+} from "@pollinations/ui/auth/sdk";
 
 export function UserIdentity() {
     return (
@@ -283,8 +283,8 @@ export function UserIdentity() {
         </WhenLoggedIn>
     );
 }`,
-    balance: `import { WhenLoggedIn } from "@pollinations_ai/ui/auth/sdk";
-import { Balance } from "@pollinations_ai/ui/wallet/sdk";
+    balance: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
+import { Balance } from "@pollinations/ui/wallet/sdk";
 
 export function WalletBalance() {
     return (
@@ -293,12 +293,12 @@ export function WalletBalance() {
         </WhenLoggedIn>
     );
 }`,
-    key: `import { WhenLoggedIn } from "@pollinations_ai/ui/auth/sdk";
+    key: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
 import {
     KeyBudget,
     KeyExpiry,
     KeyPrefix,
-} from "@pollinations_ai/ui/wallet/sdk";
+} from "@pollinations/ui/wallet/sdk";
 
 export function AccountKeySummary() {
     return (
@@ -309,8 +309,8 @@ export function AccountKeySummary() {
         </WhenLoggedIn>
     );
 }`,
-    models: `import { WhenLoggedIn } from "@pollinations_ai/ui/auth/sdk";
-import { KeyModels } from "@pollinations_ai/ui/wallet/sdk";
+    models: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
+import { KeyModels } from "@pollinations/ui/wallet/sdk";
 
 export function AllowedModels() {
     return (

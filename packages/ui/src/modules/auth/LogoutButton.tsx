@@ -1,4 +1,4 @@
-import { useAuthActions, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
 import type { ReactNode } from "react";
 import { Button, type ButtonProps } from "../../primitives/Button.tsx";
 

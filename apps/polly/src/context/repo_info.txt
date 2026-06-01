@@ -65,8 +65,8 @@ Both accept standard OpenAI params.
 
 ## SDK & MCP
 
-SDK: `npm i @pollinations_ai/sdk` → generateImage, generateText, chat, Pollinations client
-MCP: `npx @pollinations_ai/mcp` → Claude Desktop compatible, 15+ tools
+SDK: `npm i @pollinations/sdk` → generateImage, generateText, chat, Pollinations client
+MCP: `npx @pollinations/mcp` → Claude Desktop compatible, 15+ tools
 
 ## Image Params
 

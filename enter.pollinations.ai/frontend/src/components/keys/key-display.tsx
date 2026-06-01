@@ -1,4 +1,4 @@
-import { CopyButton, cn } from "@pollinations_ai/ui";
+import { CopyButton, cn } from "@pollinations/ui";
 import type { FC } from "react";
 
 export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({

@@ -1,4 +1,4 @@
-import { cn, Surface, Tooltip } from "@pollinations_ai/ui";
+import { cn, Surface, Tooltip } from "@pollinations/ui";
 import {
     TIER_EMOJIS,
     TIER_POLLEN,

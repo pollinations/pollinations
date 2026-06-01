@@ -5,7 +5,7 @@ import {
     Section,
     TabButton,
     TokensIcon,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
 import {

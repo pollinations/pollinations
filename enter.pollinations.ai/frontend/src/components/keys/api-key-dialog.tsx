@@ -8,7 +8,7 @@ import {
     Input,
     ScrollArea,
     Tooltip,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import {

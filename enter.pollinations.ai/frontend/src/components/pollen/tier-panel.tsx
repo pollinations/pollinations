@@ -1,9 +1,4 @@
-import {
-    BeakerIcon,
-    InfoTip,
-    MailIcon,
-    TrendUpIcon,
-} from "@pollinations_ai/ui";
+import { BeakerIcon, InfoTip, MailIcon, TrendUpIcon } from "@pollinations/ui";
 import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { TierExplanation } from "./tier-explanation";

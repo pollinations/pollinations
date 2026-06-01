@@ -1,0 +1,35 @@
+{
+  "pr_number": 11535,
+  "title": "Add Primbon Jawa & Kalender Pasaran Jawa to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11535",
+  "merged_at": "2026-06-01T19:35:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) to learn\n- Menampilkan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa.\n\nFixes #10487",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Wisdom of the Weton",
+    "blurb": "The hive is getting mystical! A new community app brings the Javanese calendar, Weton calculations, and Primbon divination to our growing greenhouse.",
+    "summary": "Added 'Primbon Jawa & Kalender Pasaran Jawa' to the community showcase, featuring modern Javanese calendar tracking, Weton calculations, and script conversion.",
+    "impact": "Users can now explore traditional Javanese divination and calendar systems built by the community directly from the apps showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "calendar",
+      "divination",
+      "javanese"
+    ],
+    "visual_concept": "The pollinations bee exploring traditional Javanese culture. The bee looking at a glowing ancient scroll or calendar with mystical script, surrounded by glowing code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot looking at a glowing ancient scroll displaying a mystical calendar and Javanese script. The scroll rests on a wooden desk surrounded by glowing lime green (#ecf874) code-plants in terracotta pots. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11535.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot looking at a glowing ancient scroll displaying a mystical calendar and Javanese script. The scroll rests on a wooden desk surrounded by glowing lime green (#ecf874) code-plants in terracotta pots. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T19:36:34.789900+00:00",
+  "app_name": "Primbon Jawa & Kalender Pasaran Jawa",
+  "app_url": "https://jawidigital.my.id"
+}

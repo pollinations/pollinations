@@ -16,6 +16,8 @@ real work (D1, KV, R2, Workers) runs in the Myceli account.
 | `enter.pollinations.ai` | `enter.myceli.ai` |
 | `gen.pollinations.ai` | `gen.myceli.ai` |
 | `media.pollinations.ai` | `media.myceli.ai` |
+| `kpi.pollinations.ai` | `kpi.myceli.ai` |
+| `economics.pollinations.ai` | `economics.myceli.ai` |
 
 ## Forwarded headers
 
@@ -59,8 +61,12 @@ cp ~/Library/Preferences/.wrangler/config/pollinations.toml \
 
 npm run deploy:staging
 
-# Production — this owns pollinations.ai + enter/gen/media.pollinations.ai.
-npm run deploy:production
+# Production core routes only — safe before app/ops migration is complete.
+npm run deploy:production:core
+
+# Production full route set — core + generated app routes + ops routes.
+# Use only after the Myceli origins are verified.
+npm run deploy:production:full
 ```
 
 ## Rollback

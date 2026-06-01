@@ -101,7 +101,10 @@ describe("safety schema", () => {
     });
 });
 
-describe("applySafety", () => {
+// The Bedrock-backed tests sign requests with AWS SigV4 (WebCrypto HMAC-SHA256)
+// inside the workerd runtime; that crypto path can take several seconds on a cold
+// or loaded runtime, so give these blocks generous headroom over the 5s default.
+describe("applySafety", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -290,7 +293,7 @@ describe("applySafety", () => {
     });
 });
 
-describe("applySafetyToChatRequest", () => {
+describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11512,
+  "title": "fix(gen-text): add stripCacheControl transform to grok models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11512",
+  "merged_at": "2026-06-01T18:55:42Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds `transform: stripCacheControl` to `grok`, `grok-large`, `grok-4.3` (all on the same Azure Myceli endpoint).\n- These were the only Azure/strict-OpenAI-compatible text models missing the transform that `mistral`, `kimi`/`kimi-k2.6`, `glm` already carry.\n- Without it, `cache_control` annotations in multi-turn requests are rejected/mishandled by the Azure-deployed Grok upstream, dropping conversation history. Stripping them restores multi-turn context.\n- Extends `stripCacheControl.test.ts` to assert all three grok entries wire up the transform (6/6 pass).\n\nRisks: strips `cache_control` annotations for grok like sibling Azure models; no effect on providers that already ignored them.\n\nFixes #10722",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok gets its memory back",
+    "blurb": "Grok models were getting a little amnesiac during long conversations. We've stripped out some problematic cache headers so they can actually remember what you said five minutes ago.",
+    "summary": "Added the stripCacheControl transform to grok, grok-large, and grok-4.3 models to prevent upstream Azure endpoints from rejecting cache_control annotations.",
+    "impact": "Multi-turn conversations with Grok models now correctly retain their history instead of dropping context.",
+    "keywords": [
+      "grok",
+      "bug-fix",
+      "chat",
+      "multi-turn",
+      "api"
+    ],
+    "visual_concept": "Polly the bee helping the Monitor Robot remember a conversation, represented by a chain of connected chat bubbles or a glowing memory disk.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing memory floppy disk to a chunky robot with a CRT monitor head. The monitor displays a continuous chain of chat bubbles. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11512.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing memory floppy disk to a chunky robot with a CRT monitor head. The monitor displays a continuous chain of chat bubbles. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T18:56:44.071345+00:00"
+}

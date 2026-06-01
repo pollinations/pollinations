@@ -353,7 +353,7 @@ function appContext(appName) {
 }
 
 async function runOrigin(appName) {
-    const { appConfig, subdomain, project, originDomain } = appContext(appName);
+    const { appConfig, project, originDomain } = appContext(appName);
     console.log(`Myceli origin: ${originDomain}`);
 
     const myceliHeaders = headersFor(MYC_TOKEN);
@@ -368,7 +368,7 @@ async function runOrigin(appName) {
     await upsertCname(
         myceliZoneId,
         myceliHeaders,
-        subdomain,
+        originDomain,
         pagesProject.subdomain || `${project}.pages.dev`,
     );
 

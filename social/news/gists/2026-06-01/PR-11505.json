@@ -1,0 +1,35 @@
+{
+  "pr_number": 11505,
+  "title": "Add EkHo Image Lab to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11505",
+  "merged_at": "2026-06-01T16:21:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) to image\n- EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images.\n\nFixes #10699",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "EkHo joins the greenhouse",
+    "blurb": "EkHo Image Lab just sprouted in our community showcase. It's a sleek new interface for generating high-fidelity images using your own Pollen balance.",
+    "summary": "Added EkHo Image Lab to the community apps showcase, featuring a BYOP (Bring Your Own Pollen) integration for image generation.",
+    "impact": "Users can now discover EkHo Image Lab in the greenhouse and connect their accounts to generate images using their personal Pollen balance.",
+    "keywords": [
+      "community",
+      "apps",
+      "ekho",
+      "byop",
+      "image-generation"
+    ],
+    "visual_concept": "A cozy digital greenhouse/laboratory hybrid. Polly the bee wearing a tiny lab coat, looking at a freshly generated image on an easel or retro monitor. Plants and code vines around.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny white lab coat, admiring a freshly painted canvas in a digital greenhouse. Code-plants sprout from lime green (#ecf874) flower pots nearby. A chunky retro computer monitor glows softly in the background. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11505.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny white lab coat, admiring a freshly painted canvas in a digital greenhouse. Code-plants sprout from lime green (#ecf874) flower pots nearby. A chunky retro computer monitor glows softly in the background. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T16:22:17.666004+00:00",
+  "app_name": "EkHo Image Lab",
+  "app_url": "https://ekho.re/html/saas/image_ai.html"
+}

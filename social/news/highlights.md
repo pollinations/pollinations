@@ -1,3 +1,4 @@
+- **2026-05-31** – **🚀 React Auth & UI Packages** Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai).
 - **2026-05-29** – **🎙️ Realtime Voice API** The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)
 - **2026-05-29** – **🧠 Model Roster Expansion** Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models).
 - **2026-05-29** – **💾 Persistent Cache** The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive.

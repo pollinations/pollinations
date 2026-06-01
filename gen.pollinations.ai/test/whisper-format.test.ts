@@ -55,4 +55,12 @@ describe("formatWhisperResponse", () => {
         expect(vtt.startsWith("WEBVTT\n\n")).toBe(true);
         expect(vtt).toContain("00:00:00.000 --> 00:00:01.500");
     });
+
+    it("rejects unsupported Whisper response formats", () => {
+        expect(() =>
+            formatWhisperResponse(VERBOSE, "diarized_json", usageHeaders),
+        ).toThrow(
+            "Unsupported response_format for whisper model: diarized_json",
+        );
+    });
 });

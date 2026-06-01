@@ -1221,6 +1221,7 @@ export const audioRoutes = new Hono<Env>()
                         "Transcription service is not configured (missing API key)",
                 });
             }
+            validateWhisperResponseFormat(responseFormat);
 
             // Re-build formData for Whisper (Hono consumed the original body stream).
             // Preserve filename — OVH needs the extension to detect format/duration.
@@ -1305,6 +1306,29 @@ interface WhisperVerboseJson {
     segments?: WhisperSegment[];
 }
 
+const WHISPER_RESPONSE_FORMATS = [
+    "json",
+    "text",
+    "verbose_json",
+    "srt",
+    "vtt",
+] as const;
+
+type WhisperResponseFormat = (typeof WHISPER_RESPONSE_FORMATS)[number];
+
+function validateWhisperResponseFormat(responseFormat: string | null): void {
+    if (
+        responseFormat &&
+        !WHISPER_RESPONSE_FORMATS.includes(
+            responseFormat as WhisperResponseFormat,
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for whisper model: ${responseFormat}. Supported: ${WHISPER_RESPONSE_FORMATS.join(", ")}`,
+        });
+    }
+}
+
 function extractWhisperUsage(json: WhisperVerboseJson, log: Logger): number {
     const seconds = json.usage?.seconds;
     if (typeof seconds !== "number" || seconds <= 0) {
@@ -1347,6 +1371,8 @@ export function formatWhisperResponse(
     responseFormat: string | null,
     usageHeaders: Record<string, string>,
 ): Response {
+    validateWhisperResponseFormat(responseFormat);
+
     if (responseFormat === "text") {
         return new Response(json.text, {
             headers: {

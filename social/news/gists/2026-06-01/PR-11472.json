@@ -1,0 +1,35 @@
+{
+  "pr_number": 11472,
+  "title": "Migrate pollinations.ai website to the Myceli Cloudflare account",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11472",
+  "merged_at": "2026-06-01T12:19:33Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Moves the last piece of the stack — the website worker — into the Myceli Cloudflare account, matching enter/gen/media. The public URL stays `pollinations.ai`: the existing proxy in the old account forwards the apex to `pollinations.myceli.ai`, so there's no DNS move.\n\n- Repoints the website worker + its deploy workflow at the Myceli account (`pollinations.myceli.ai` / `staging.pollinations.myceli.ai`)\n- Proxy now forwards `pollinations.ai` → `pollinations.myceli.ai` (and staging)\n- Removes the unused `/api/*` proxy + `PLN_APPS_KEY` — the frontend already calls the public APIs directly with the publishable BYOP key\n- Aligns build/deploy scripts to the `@cloudflare/vite-plugin` pattern used by enter\n\nMerging deploys the worker to Myceli (additive, zero-downtime); the apex flip to `pollinations.ai` is a deliberate follow-up step — deploy the proxy in the old account to reassign the custom domain.\n\nPre-existing SEO issue surfaced during this work, tracked separately: #11466",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Moving day for the hive",
+    "blurb": "We've moved the main website worker over to our new Myceli Cloudflare account. Everything looks exactly the same on the outside, but it's much tidier on the inside.",
+    "summary": "Migrated the pollinations.ai website worker to the Myceli Cloudflare account, removing the unused /api/* proxy and aligning deploy scripts with the @cloudflare/vite-plugin pattern.",
+    "impact": "The public URL remains unchanged via a zero-downtime proxy, while the internal infrastructure is now fully consolidated under a single Cloudflare account.",
+    "keywords": [
+      "infrastructure",
+      "cloudflare",
+      "migration",
+      "worker",
+      "myceli"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot carrying a small glowing server box (representing the website worker) from an old garden bed to a fresh, new lime green garden bed labeled 'Myceli'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny moving hat and a chunky Monitor Robot carrying a glowing server box to a fresh new garden bed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11472.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny moving hat and a chunky Monitor Robot carrying a glowing server box to a fresh new garden bed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T12:20:37.748641+00:00"
+}

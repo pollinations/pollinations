@@ -1,12 +1,17 @@
 import type { Logger } from "@logtape/logtape";
+import { createBalanceCheckResult } from "@shared/billing/balance.ts";
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import {
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import {
+    calculatePrice,
     getModelDefinition,
+    getPriceDefinition,
     type ModelName,
+    type Usage,
 } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
@@ -33,6 +38,8 @@ import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
+
+export const MAX_TRANSCRIPTION_SECONDS = 60 * 60;
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -568,6 +575,67 @@ function requireTextToAudioModel(model: ModelName): void {
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message: `Model '${model}' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.`,
+    });
+}
+
+export function getMaxTranscriptionPreflightPrice(
+    model: ModelName,
+    maxSeconds = MAX_TRANSCRIPTION_SECONDS,
+): number {
+    const priceDefinition = getPriceDefinition(model);
+    if (!priceDefinition?.promptAudioSeconds) return 0;
+
+    const usage: Usage = { promptAudioSeconds: maxSeconds };
+    return calculatePrice(model, usage).totalPrice;
+}
+
+export async function requireMaxTranscriptionBudget(
+    vars: Pick<Env["Variables"], "auth" | "balance" | "model">,
+    maxSeconds = MAX_TRANSCRIPTION_SECONDS,
+): Promise<void> {
+    const maxPrice = getMaxTranscriptionPreflightPrice(
+        vars.model.resolved,
+        maxSeconds,
+    );
+    if (maxPrice <= 0) return;
+
+    const userId = vars.auth.user?.id;
+    if (!userId) return;
+
+    const apiKeyBudget = vars.auth.apiKey?.pollenBalance;
+    if (typeof apiKeyBudget === "number" && apiKeyBudget <= maxPrice) {
+        throw new UpstreamError(402 as ContentfulStatusCode, {
+            message: `API key budget too low. Transcription requests must reserve up to ${maxSeconds}s (~${maxPrice.toFixed(4)} pollen), but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+        });
+    }
+
+    const balances = await vars.balance.getBalance(userId);
+    const isPaidOnly =
+        getModelDefinition(vars.model.resolved).paidOnly ?? false;
+
+    if (!canCoverEstimatedCharge(balances, maxPrice, isPaidOnly)) {
+        const available = isPaidOnly
+            ? balances.packBalance
+            : Math.max(balances.tierBalance, balances.packBalance);
+        throw new UpstreamError(402 as ContentfulStatusCode, {
+            message: `Insufficient balance. Transcription requests must reserve up to ${maxSeconds}s (~${maxPrice.toFixed(4)} pollen), but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+        });
+    }
+
+    vars.balance.balanceCheckResult = createBalanceCheckResult(
+        balances,
+        isPaidOnly,
+        maxPrice,
+    );
+}
+
+export function assertTranscriptionDurationWithinLimit(
+    durationSeconds: number,
+    maxSeconds = MAX_TRANSCRIPTION_SECONDS,
+): void {
+    if (durationSeconds <= maxSeconds) return;
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `Audio duration exceeds the ${maxSeconds}s transcription limit`,
     });
 }
 
@@ -1130,7 +1198,8 @@ export const audioRoutes = new Hono<Env>()
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");
-            await requireGenerationAccess(c.var, c.env);
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
 
             // Get formData from middleware or parse it
             let formData: FormData;
@@ -1176,6 +1245,8 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
+            await requireMaxTranscriptionBudget(c.var);
+
             // Route to ElevenLabs Scribe or Whisper based on model
             if (c.var.model.resolved === "scribe") {
                 const elevenLabsApiKey = (
@@ -1189,6 +1260,12 @@ export const audioRoutes = new Hono<Env>()
                     log,
                     numSpeakers: speakersExpected,
                 });
+                const duration = Number(
+                    response.headers.get("x-usage-prompt-audio-seconds"),
+                );
+                if (Number.isFinite(duration)) {
+                    assertTranscriptionDurationWithinLimit(duration);
+                }
 
                 // Override tracking with final response
                 c.var.track.overrideResponseTracking(response.clone());
@@ -1213,6 +1290,12 @@ export const audioRoutes = new Hono<Env>()
                     log,
                     speakersExpected,
                 });
+                const duration = Number(
+                    response.headers.get("x-usage-prompt-audio-seconds"),
+                );
+                if (Number.isFinite(duration)) {
+                    assertTranscriptionDurationWithinLimit(duration);
+                }
 
                 c.var.track.overrideResponseTracking(response.clone());
                 return response;
@@ -1268,6 +1351,7 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
             const duration = extractWhisperUsage(whisper, log);
+            assertTranscriptionDurationWithinLimit(duration);
             const usageHeaders = buildUsageHeaders(
                 c.var.model.resolved,
                 createAudioSecondsUsage(duration),

@@ -1,5 +1,4 @@
 export type PermissionUiTheme = "amber" | "blue";
-export type PermissionInfoTone = "amber" | "blue";
 
 type PermissionUiFrameConfig = {
     selectedClasses: string;
@@ -10,7 +9,6 @@ type PermissionUiFrameConfig = {
 
 type PermissionUiAccentConfig = {
     actionTextClasses: string;
-    tipTone: PermissionInfoTone;
 };
 
 type PermissionUiInputConfig = {
@@ -36,7 +34,6 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
             },
             accent: {
                 actionTextClasses: "text-amber-800 hover:text-amber-950",
-                tipTone: "amber",
             },
             input: {
                 classes:
@@ -53,7 +50,6 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
             },
             accent: {
                 actionTextClasses: "text-blue-800 hover:text-blue-950",
-                tipTone: "blue",
             },
             input: {
                 classes:

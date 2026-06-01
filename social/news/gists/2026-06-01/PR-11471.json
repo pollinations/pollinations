@@ -1,0 +1,34 @@
+{
+  "pr_number": 11471,
+  "title": "refactor(frontend-main): dedupe PlayGenerator blocks and drop dead fallbacks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11471",
+  "merged_at": "2026-06-01T12:39:54Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Reuse the `imageParams` memo instead of rebuilding URLSearchParams inline in `handleGenerate`\n- Extract one `runGeneration(fetchFn, onSuccess, label)` helper for the three near-identical try/catch generation branches\n- Pass the already-computed `currentModel` to PlayGenerator instead of three model arrays it re-derives\n- Drop the unread `error` field from `useNews` and the unreachable linkedin/twitter.json fallbacks in `useDiaryData`\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −100 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the hedges",
+    "blurb": "We've swept up some dead code and simplified the PlayGenerator logic. A cleaner codebase means faster updates for the hive!",
+    "summary": "Refactored PlayGenerator to deduplicate generation logic and removed unreachable fallbacks in useDiaryData, resulting in a net reduction of 100 lines of code.",
+    "impact": "Developers will benefit from a cleaner, more maintainable frontend codebase without any changes to the user experience.",
+    "keywords": [
+      "refactor",
+      "frontend",
+      "cleanup",
+      "react"
+    ],
+    "visual_concept": "Polly the bee doing some spring cleaning, sweeping up dead leaves (representing dead code) around a healthy, glowing code-plant.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up fallen brown pixelated leaves around a glowing lime green (#ecf874) code-plant. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11471.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up fallen brown pixelated leaves around a glowing lime green (#ecf874) code-plant. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T12:40:56.468330+00:00"
+}

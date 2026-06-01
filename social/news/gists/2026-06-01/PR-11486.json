@@ -1,0 +1,35 @@
+{
+  "pr_number": 11486,
+  "title": "refactor(gen-image): fold seedream5 into SEEDREAM_VARIANTS table",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11486",
+  "merged_at": "2026-06-01T15:39:15Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Add seedream5 (bytedance/seedream-5-lite) as a 3rd entry in\n  SEEDREAM_VARIANTS instead of a standalone handler; widen size unions\n  with Seedream5Size = \"2K\"|\"3K\" and add opt-in outputFormat to the\n  variant config.\n- buildPresetInput now spreads output_format only when variant.outputFormat\n  is set, so seedream-4.5's strict schema never sees an unknown field.\n- callSeedream5API is now a thin wrapper over callSeedreamReplicateAPI;\n  seedream5ReplicateModel.ts becomes a ~3-line re-export so the\n  createAndReturnImages.ts dispatch import is unchanged.\n- Delete the ~140-line duplicate seedream5 handler (aspect-ratio +\n  size resolvers were near-identical copies of the shared variants).\n- Add seedream5 payload tests (2K at <=2048, 3K at >2048, output_format\n  png, no custom-size branch, 14-image cap) plus output_format opt-in\n  guards on the 4.0/4.5 payloads.\n\nRisks:\n- billed model seedream5 previously had zero tests; this PR adds payload\n  coverage before collapsing its handler, so behavior is now pinned.\n- medium-risk because seedream5's emitted payload changed source: verified\n  identical fields (size 2K/3K, output_format png, sequential disabled,\n  max_images 1, 14-image cap, match_input_image default) via the new tests.\n\n_~91 net lines removed · biome ✓ · cd gen.pollinations.ai && npx vitest run test/image/seedreamModel.test.ts ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the Seedream code",
+    "blurb": "Cleaned up the image generation backend by folding Seedream5 into our shared variants table. Less duplicate code means a healthier, happier hive!",
+    "summary": "Refactored the Seedream5 image generation handler to use the shared SEEDREAM_VARIANTS table, removing ~140 lines of duplicate code and adding payload test coverage.",
+    "impact": "This internal cleanup makes the image generation backend easier to maintain and ensures consistent behavior for the bytedance/seedream-5-lite model.",
+    "keywords": [
+      "refactor",
+      "seedream5",
+      "image-generation",
+      "testing",
+      "backend"
+    ],
+    "visual_concept": "The bee mascot organizing files or folding blueprints, while the Nomnom creature eats the deleted duplicate code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, neatly folding glowing blue blueprints on a wooden workbench. The round tan nomnom creature happily eats a stack of discarded duplicate code papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11486.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, neatly folding glowing blue blueprints on a wooden workbench. The round tan nomnom creature happily eats a stack of discarded duplicate code papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T15:40:30.374403+00:00"
+}

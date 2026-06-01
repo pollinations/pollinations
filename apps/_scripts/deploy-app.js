@@ -99,6 +99,19 @@ async function createPagesProject(account, headers, project, appConfig) {
     );
 }
 
+async function getPagesProject(account, headers, project) {
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects/${project}`,
+        headers,
+    );
+    if (!ok) {
+        throw new Error(
+            `Get project ${project} failed: ${JSON.stringify(json)}`,
+        );
+    }
+    return json.result;
+}
+
 async function detachPagesDomain(account, headers, customDomain) {
     const { ok, json } = await cf(
         `${CF_API}/accounts/${account}/pages/projects?per_page=100`,
@@ -302,12 +315,17 @@ async function runOrigin(appName) {
     const myceliHeaders = headersFor(MYC_TOKEN);
     const myceliZoneId = await resolveZoneId(UPSTREAM_ZONE, myceliHeaders);
     await createPagesProject(MYC_ACCOUNT, myceliHeaders, project, appConfig);
+    const pagesProject = await getPagesProject(
+        MYC_ACCOUNT,
+        myceliHeaders,
+        project,
+    );
     await addPagesDomain(MYC_ACCOUNT, myceliHeaders, project, originDomain);
     await upsertCname(
         myceliZoneId,
         myceliHeaders,
         subdomain,
-        `${project}.pages.dev`,
+        pagesProject.subdomain || `${project}.pages.dev`,
     );
 
     console.log(`Origin provisioned: https://${originDomain}`);

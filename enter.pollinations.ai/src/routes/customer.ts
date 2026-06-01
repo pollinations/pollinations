@@ -7,7 +7,11 @@ import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";
-import { resolveUsageTargetUserId } from "./account.ts";
+import {
+    fetchTinybirdRows,
+    requireTinybirdReadToken,
+    resolveUsageTargetUserId,
+} from "./account.ts";
 
 type EarningsTodayRow = {
     paid_week: number;
@@ -61,41 +65,31 @@ export const customerRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            if (!c.env.TINYBIRD_READ_TOKEN) {
-                throw new HTTPException(500, {
-                    message: "Tinybird read token is not configured",
-                });
-            }
+            const token = requireTinybirdReadToken(c.env);
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
                 c.var.auth.apiKey,
             );
-            const url = new URL(
-                "/v0/pipes/developer_earnings_today.json",
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-            );
-            url.searchParams.set("dev_user_id", devUserId);
-            const response = await fetch(url.toString(), {
-                headers: {
-                    Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
-                },
-            });
-            if (!response.ok) {
-                const errorText = await response.text();
+            const origin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            let rows: EarningsTodayRow[];
+            try {
+                rows = await fetchTinybirdRows<EarningsTodayRow>(
+                    origin,
+                    "/v0/pipes/developer_earnings_today.json",
+                    token,
+                    { dev_user_id: devUserId },
+                );
+            } catch (error) {
                 throw new HTTPException(502, {
-                    message: `Tinybird error: ${response.status} ${errorText || "(empty)"}`,
+                    message:
+                        error instanceof Error ? error.message : String(error),
                 });
             }
-            const body = (await response.json()) as {
-                data: EarningsTodayRow[];
-            };
-            const row = body.data[0];
+            const row = rows[0];
             return c.json({
                 paidWeek: row?.paid_week ?? 0,
                 tierWeek: row?.tier_week ?? 0,
             });
         },
     );
-
-export type CustomerRoutes = typeof customerRoutes;

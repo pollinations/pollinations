@@ -1,4 +1,4 @@
-import { Button, Dialog } from "@pollinations_ai/ui";
+import { Button, Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 
 interface DeleteConfirmationProps {

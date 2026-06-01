@@ -3,7 +3,7 @@ export {
     type PeriodGranularity,
     PeriodPicker,
     type PeriodSelection as UsagePeriodSelection,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 export { EarningsGraph } from "./earnings-graph";
 export { getEarningsEnabledApps } from "./earnings-visibility";
 export type {

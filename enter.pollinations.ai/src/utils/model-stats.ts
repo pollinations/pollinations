@@ -28,15 +28,6 @@ export async function getModelStats(
     })(log);
 }
 
-export function getEstimatedPrice(
-    stats: TinybirdModelStats,
-    model: string | undefined,
-): number {
-    if (!model) return 0;
-    const row = stats.data?.find((r) => r.model === model);
-    return row?.avg_cost_usd || 0;
-}
-
 async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {
     try {
         const response = await fetch(TINYBIRD_MODEL_STATS_URL);

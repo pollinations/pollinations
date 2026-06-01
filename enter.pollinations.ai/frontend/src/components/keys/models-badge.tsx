@@ -1,4 +1,4 @@
-import { Chip, Tooltip } from "@pollinations_ai/ui";
+import { Chip, Tooltip } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 
 export const ModelsBadge: FC<{

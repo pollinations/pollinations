@@ -1,4 +1,4 @@
-import { useAccountKey, useAuthState } from "@pollinations_ai/sdk/react";
+import { useAccountKey, useAuthState } from "@pollinations/sdk/react";
 import { Chip } from "../../primitives/Chip.tsx";
 
 export type KeyModelsProps = { className?: string };

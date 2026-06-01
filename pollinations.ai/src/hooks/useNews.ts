@@ -13,7 +13,6 @@ interface NewsItem {
 interface UseNewsReturn {
     news: NewsItem[];
     loading: boolean;
-    error: Error | null;
 }
 
 /**
@@ -23,7 +22,6 @@ interface UseNewsReturn {
 export function useNews(filePath: string): UseNewsReturn {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         if (!filePath) {
@@ -69,7 +67,6 @@ export function useNews(filePath: string): UseNewsReturn {
                 setLoading(false);
             } catch (err) {
                 console.error("Error loading news:", err);
-                setError(err instanceof Error ? err : new Error(String(err)));
                 setLoading(false);
             }
         }
@@ -77,5 +74,5 @@ export function useNews(filePath: string): UseNewsReturn {
         fetchNews();
     }, [filePath]);
 
-    return { news, loading, error };
+    return { news, loading };
 }

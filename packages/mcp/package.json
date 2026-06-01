@@ -1,5 +1,5 @@
 {
-    "name": "@pollinations_ai/mcp",
+    "name": "@pollinations/mcp",
     "version": "2.1.0",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",

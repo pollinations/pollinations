@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations_ai/sdk';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * // Generate an image and save it
  * const image = await generateImage('A cute cat');
@@ -87,7 +87,7 @@ export function resetClient(): void {
  *
  * @example
  * ```ts
- * import { configure } from '@pollinations_ai/sdk';
+ * import { configure } from '@pollinations/sdk';
  * configure({ apiKey: 'your-api-key' });
  * ```
  */

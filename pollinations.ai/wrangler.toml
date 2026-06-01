@@ -7,6 +7,11 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 directory = "dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+# Run the worker on every request so the SEO HTMLRewriter fires on navigations.
+# Without this, compatibility_date >= 2025-04-01 serves navigation requests as
+# static assets and skips the worker, so per-route meta never gets rewritten.
+# Non-HTML responses are passed through unchanged (see src/worker.ts).
+run_worker_first = true
 
 # Public hostname is pollinations.ai, served by the pollinations-myceli-proxy
 # worker in the old account, which forwards to pollinations.myceli.ai (below).

@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
-@import "@pollinations_ai/ui/styles.css";
+@import "@pollinations/ui/styles.css";
 @import "tailwindcss";
 
 /* Tailwind utility surface for Pollinations UI app classes.

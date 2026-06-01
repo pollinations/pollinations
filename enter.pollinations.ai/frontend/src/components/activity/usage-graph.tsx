@@ -5,14 +5,14 @@ import {
     StatCard,
     TabButton,
     Tooltip,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import {
     formatPollen,
     PAID_BALANCE_CHART_COLOR,
     PaidChip,
     TIER_BALANCE_CHART_COLOR,
     TierChip,
-} from "@pollinations_ai/ui/wallet";
+} from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { ThemeName } from "../layout/dashboard-theme.ts";

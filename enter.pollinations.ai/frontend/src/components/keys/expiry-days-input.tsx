@@ -1,4 +1,4 @@
-import { cn, Field, InfoTip, Input } from "@pollinations_ai/ui";
+import { cn, Field, InfoTip, Input } from "@pollinations/ui";
 import type { FC } from "react";
 import {
     getPermissionUiTheme,

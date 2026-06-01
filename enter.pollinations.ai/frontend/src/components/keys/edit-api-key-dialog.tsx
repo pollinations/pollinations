@@ -9,7 +9,7 @@ import {
     Field,
     Input,
     ScrollArea,
-} from "@pollinations_ai/ui";
+} from "@pollinations/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";

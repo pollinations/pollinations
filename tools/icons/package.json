@@ -3,7 +3,7 @@
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "description": "Generates each app's web identity (favicons, app icons, OG, manifest) from the @pollinations_ai/ui logo + theme colors.",
+    "description": "Generates each app's web identity (favicons, app icons, OG, manifest) from the @pollinations/ui logo + theme colors.",
     "bin": {
         "pollinations-icons": "src/cli.js"
     },
@@ -12,7 +12,7 @@
         "test": "node --test"
     },
     "dependencies": {
-        "@pollinations_ai/ui": "*",
+        "@pollinations/ui": "*",
         "sharp": "^0.33.5"
     }
 }

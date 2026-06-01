@@ -1,4 +1,4 @@
-import { Chip, cn, Slider } from "@pollinations_ai/ui";
+import { Chip, cn, Slider } from "@pollinations/ui";
 import {
     formatPollenPackValue,
     getPackBonusPercent,

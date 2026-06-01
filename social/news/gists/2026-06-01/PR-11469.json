@@ -1,0 +1,35 @@
+{
+  "pr_number": 11469,
+  "title": "chore(shared): delete dead modules, schemas, and unused registry helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11469",
+  "merged_at": "2026-06-01T12:30:58Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete dead modules: `extractFromRequest.js` (247 lines) + README refs, and `ipLogger.js`\n- Remove three unused `create*Usage` wrappers and the dead OpenAI streaming-response schema chain\n- Drop unused registry exports (`getModelAliases`, `getEmbeddingModels`/`getRealtimeModels` getters) and tighten `getModelInfo` visibility\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net −363 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the shared codebase",
+    "blurb": "We swept away some dusty, unused code in our shared libraries to keep the hive running lean and mean.",
+    "summary": "Removed 363 lines of dead code from the shared package, including unused modules like extractFromRequest.js and ipLogger.js, obsolete usage wrappers, and dead OpenAI schemas.",
+    "impact": "This internal cleanup reduces technical debt and simplifies the shared registry and schema definitions for developers.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "refactor",
+      "shared",
+      "technical-debt"
+    ],
+    "visual_concept": "The Nomnom creature eating old, dusty code printouts while Polly the bee helps sweep up the area, representing dead code removal and repository cleanup.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of dusty, old code printouts. The cute bee mascot hovers nearby holding a tiny broom, sweeping up pixelated dust bunnies. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11469.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of dusty, old code printouts. The cute bee mascot hovers nearby holding a tiny broom, sweeping up pixelated dust bunnies. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T12:32:03.079727+00:00"
+}

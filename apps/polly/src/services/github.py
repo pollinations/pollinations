@@ -1058,6 +1058,21 @@ async def tool_github_issue(
 
     # All privileged actions (both collaborator + admin-only)
     ALL_PRIVILEGED_ACTIONS = COLLABORATOR_ACTIONS | ADMIN_ACTIONS
+    API_READ_ACTIONS = {
+        "get",
+        "get_history",
+        "search",
+        "search_user",
+        "find_similar",
+        "list_labels",
+        "list_milestones",
+        "get_sub_issues",
+        "get_parent",
+    }
+
+    if _context and _context.get("is_http_api") and action not in API_READ_ACTIONS:
+        logger.warning(f"SECURITY: Blocked API-mode github_issue write action '{action}'")
+        return {"error": "GitHub issue actions are read-only in API mode."}
 
     # Exception: Issue #6418 (Seed Upgrade Tracking) can be edited by anyone
     SEED_TRACKING_ISSUE = 6418

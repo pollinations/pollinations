@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎭 RoleChar](https://rolechar.com) | RoleChar provides AI character chat and roleplay, plus image and video generation in one place. | [@peacefulfrog](https://github.com/peacefulfrog) |
 | [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |
 | [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |
@@ -29,7 +30,6 @@
 | [✅ TaskManager](https://panel.estehlal.com/) | non profite | [@LahbabiCode](https://github.com/LahbabiCode) |
 | [🛠️ WorkFlow](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) | ผสาน Pollinations.ai กับ n8n ผ่าน Community Node เพื่อเชื่อมการสร้างภาพและการสร้างวิดีโอ มีระบบเครดิตฟรีสำหรับเริ่มใช้งาน | [@TanatPinkeaw](https://github.com/TanatPinkeaw) |
 | [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |
-| [🖼️ EkHo Image Lab](https://ekho.re/html/saas/image_ai.html) | EkHo Image Lab creates high-fidelity images by integrating the Pollinations.ai BYOP flow. Connect your account and use your own pollen balance to generate images. | [@BullShieldTeck](https://github.com/BullShieldTeck) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

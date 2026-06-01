@@ -1,7 +1,6 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
-    type ModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import {
@@ -70,54 +69,27 @@ function createExpressLikeRequest(
     };
 }
 
-function getRequestModelDefinition(
-    requestParams: RequestData,
-): ModelDefinition | undefined {
+function prepareRequestParameters(requestParams: RequestData): RequestData {
+    let isAudioModel = false;
     try {
-        return getModelDefinition(requestParams.model as ModelName);
+        const serviceDef = getModelDefinition(requestParams.model as ModelName);
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
     } catch {
-        return undefined;
-    }
-}
-
-function stripUnsupportedReasoningEffort(
-    requestParams: RequestData,
-    serviceDef = getRequestModelDefinition(requestParams),
-): RequestData {
-    // Drop reasoning_effort for models that don't support reasoning. Some
-    // upstreams (e.g. the non-reasoning Grok deployment) return an opaque 500
-    // instead of ignoring the unsupported param.
-    if (
-        serviceDef?.reasoning === true ||
-        requestParams.reasoning_effort === undefined
-    ) {
-        return requestParams;
+        // Model not in registry.
     }
 
-    const { reasoning_effort: _dropped, ...rest } = requestParams;
-    return rest;
-}
+    if (!isAudioModel) return requestParams;
 
-export function prepareRequestParameters(
-    requestParams: RequestData,
-): RequestData {
-    const serviceDef = getRequestModelDefinition(requestParams);
-    const params = stripUnsupportedReasoningEffort(requestParams, serviceDef);
-    const isAudioModel =
-        serviceDef?.outputModalities?.includes("audio") ?? false;
-
-    if (!isAudioModel) return params;
-
-    const voice = params.voice || params.audio?.voice || "amuch";
-    const audioFormat = params.stream ? "pcm16" : "mp3";
+    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
+    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {
-        ...params,
-        modalities: params.modalities || ["text", "audio"],
-        audio: params.audio
+        ...requestParams,
+        modalities: requestParams.modalities || ["text", "audio"],
+        audio: requestParams.audio
             ? {
-                  ...params.audio,
-                  format: params.audio.format || audioFormat,
+                  ...requestParams.audio,
+                  format: requestParams.audio.format || audioFormat,
               }
             : { voice, format: audioFormat },
     };
@@ -316,7 +288,7 @@ export async function handleChatCompletionLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, "/openai");
-    const requestData = stripUnsupportedReasoningEffort(getRequestData(req));
+    const requestData = getRequestData(req);
     return generateTextResponse(c, requestData, false);
 }
 

@@ -18,8 +18,6 @@ export const AUDIO_VOICES = [
     "dan",
 ] as const;
 
-export type AudioVoice = (typeof AUDIO_VOICES)[number];
-
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
@@ -196,6 +194,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
     },

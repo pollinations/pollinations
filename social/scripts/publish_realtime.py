@@ -138,7 +138,7 @@ def main():
     )
 
     snippet = call_pollinations_api(
-        voice, task, pollinations_token, temperature=0.7, exit_on_failure=False
+        voice, task, pollinations_token, temperature=0.7
     )
     if not snippet:
         print("  FATAL: Discord snippet generation failed")

@@ -5,7 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { closestAspectRatio } from "../utils/aspectRatio.ts";
+import { ASPECT_RATIOS, closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
@@ -60,7 +60,16 @@ export async function callXaiVideoAPI(
         duration: durationSeconds,
     };
 
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    // When the caller passed explicit width/height, derive the aspect ratio
+    // from them. Otherwise honor an explicit `aspectRatio` param directly —
+    // params.ts fills width/height with a square default when dims are omitted,
+    // which would otherwise collapse every preset to 1:1.
+    const aspectRatio =
+        safeParams.dimensionsExplicit || !safeParams.aspectRatio
+            ? closestAspectRatio(safeParams.width, safeParams.height)
+            : ASPECT_RATIOS.some((ar) => ar.label === safeParams.aspectRatio)
+              ? safeParams.aspectRatio
+              : closestAspectRatio(safeParams.width, safeParams.height);
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (safeParams.image?.length) {

@@ -11,6 +11,7 @@ import { removeUnset } from "@/util.ts";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
 
 function hasActiveSafety(value: string | null | undefined): boolean {
@@ -87,6 +88,7 @@ function prepareCustomMetadata(response: Response): Record<string, string> {
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
         if (
+            CACHED_HEADER_NAMES.has(lowerName) ||
             CACHED_HEADER_PREFIXES.some((prefix) =>
                 lowerName.startsWith(prefix),
             )

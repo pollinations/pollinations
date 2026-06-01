@@ -40,7 +40,7 @@ echo "📋 Project: $PROJECT_NAME"
 echo "📁 Output: $OUTPUT_DIR"
 
 # Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
-# migrates to the design-system logo, regenerate them via tools/brand-assets.
+# migrates to the design-system logo, regenerate them via tools/icons.
 
 # Install dependencies
 echo ""

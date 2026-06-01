@@ -13,7 +13,7 @@ import {
 
 const require = createRequire(import.meta.url);
 
-// tools/brand-assets/src -> repo root is three levels up.
+// tools/icons/src -> repo root is three levels up.
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 // Single brand source: the logos shipped in the UI package (use currentColor).
@@ -156,17 +156,17 @@ async function generate(name) {
         );
     }
 
-    console.log(`brand-assets: generated "${name}" -> ${cfg.outDir}`);
+    console.log(`icons: generated "${name}" -> ${cfg.outDir}`);
 }
 
 const app = parseApp(process.argv.slice(2));
 if (!app) {
-    console.error("Usage: brand-assets --app <name>");
+    console.error("Usage: npm run generate -- --app <name>");
     process.exit(1);
 }
 try {
     await generate(app);
 } catch (err) {
-    console.error(`brand-assets: ${err.message}`);
+    console.error(`icons: ${err.message}`);
     process.exit(1);
 }

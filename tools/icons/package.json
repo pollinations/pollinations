@@ -1,11 +1,11 @@
 {
-    "name": "@pollinations/brand-assets",
+    "name": "@pollinations/icons",
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "description": "Generates brand/head assets (favicons, icons, OG, manifest) from the @pollinations_ai/ui logo + theme colors.",
+    "description": "Generates each app's web identity (favicons, app icons, OG, manifest) from the @pollinations_ai/ui logo + theme colors.",
     "bin": {
-        "brand-assets": "src/cli.js"
+        "pollinations-icons": "src/cli.js"
     },
     "scripts": {
         "generate": "node src/cli.js",

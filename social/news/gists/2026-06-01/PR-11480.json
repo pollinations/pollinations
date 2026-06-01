@@ -1,0 +1,34 @@
+{
+  "pr_number": 11480,
+  "title": "test: remove low-value smoke/constant tests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11480",
+  "merged_at": "2026-06-01T14:09:41Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Remove low/zero-value tests surfaced by the test-suite audit (no real coverage lost):\n\n- Delete `fixtures.test.ts` (a fixture smoke test with zero assertions), `httpError.test.ts` (no-logic constructor — covered via real code in `fetchUpstream.test.ts`), and `openai-schema.test.ts` (only exercises Zod `.passthrough()` on fabricated keys)\n- Delete the duplicate `fetchUpstream + HttpError integration` block (folds the `instanceof HttpError` guarantee into the existing test)\n- Drop two constant-equals-itself lines (`POLLEN_BILLING_PRECISION`, `CONSENT_PERMISSIONS`) — for the latter, route `keys` through the real `sanitize()` so the allowlist stays pinned through actual filtering\n- Trim a hardcoded-hex theme assertion and the per-attribute icon render smoke-test\n\nNet −69 lines, 8 files. biome clean; all 5 affected suites pass with no new failures. Keep-but-note tests (vcr, r2-storage, byop, wallet, Dialog) untouched.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the test suite",
+    "blurb": "We've swept away some low-value smoke tests and redundant assertions to keep our test suite fast and focused. Less clutter, same great coverage!",
+    "summary": "Removed 69 lines of low-value and redundant tests across the enter, gen, and UI packages, including zero-assertion smoke tests and constant-equals-itself checks.",
+    "impact": "Developers will experience a slightly cleaner test suite without any loss in actual code coverage.",
+    "keywords": [
+      "tests",
+      "chore",
+      "cleanup",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a retro server room. Polly sweeping dust bunnies, Nomnom eating old test papers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small pixelated dust bunnies in a retro server room. The round tan nomnom creature happily eats a stack of old test papers. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11480.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small pixelated dust bunnies in a retro server room. The round tan nomnom creature happily eats a stack of old test papers. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T14:10:44.931635+00:00"
+}

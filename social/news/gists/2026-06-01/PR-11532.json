@@ -1,0 +1,35 @@
+{
+  "pr_number": 11532,
+  "title": "Add PromptForge / KIRA to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11532",
+  "merged_at": "2026-06-01T18:51:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) to chat\n- PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses.\n\nFixes #10507",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Forging better prompts",
+    "blurb": "PromptForge (KIRA) just landed in the community greenhouse! It takes your vague AI prompts and hammers them into highly specific, context-aware masterpieces.",
+    "summary": "Added PromptForge (KIRA) to the community apps showcase, a tool designed to refine vague AI inputs into specific, context-aware prompts.",
+    "impact": "Users can now explore PromptForge in the greenhouse to improve their prompt engineering and get more helpful, accurate responses from AI models.",
+    "keywords": [
+      "community",
+      "apps",
+      "prompt-engineering",
+      "tools",
+      "showcase"
+    ],
+    "visual_concept": "A cozy blacksmith's forge but for text/code. Polly the bee wearing a tiny blacksmith apron, working at a glowing anvil with the Monitor Robot. The anvil has glowing text or code on it, representing the 'forging' of prompts.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, hammering glowing text on a small anvil. A chunky retro monitor robot watches eagerly, its screen glowing. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11532.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, hammering glowing text on a small anvil. A chunky retro monitor robot watches eagerly, its screen glowing. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T18:52:43.488299+00:00",
+  "app_name": "PromptForge / KIRA",
+  "app_url": "https://knowledgeable-interface-for-refinem.vercel.app"
+}

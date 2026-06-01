@@ -131,7 +131,6 @@ export async function genericOpenAIClient(
             referrer: _referrer,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
-            userInfo: _userInfo,
             ...cleanedOptions
         } = normalizedOptions;
         const requestBody = cleanNullAndUndefined({

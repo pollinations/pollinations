@@ -95,14 +95,17 @@ const models: ModelDefinition[] = [
     {
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
+        transform: stripCacheControl,
     },
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+        transform: stripCacheControl,
     },
     {
         name: "grok-4.3",
         config: portkeyConfig["grok-4.3"],
+        transform: stripCacheControl,
     },
     {
         name: "openai-audio",

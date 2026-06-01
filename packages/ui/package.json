@@ -54,7 +54,8 @@
     "**/*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "!dist/showcase"
   ],
   "scripts": {
     "build": "npm run build:js && npm run build:css && npm run build:fonts && npm run build:assets && npm run build:licenses",

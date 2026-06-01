@@ -1,0 +1,34 @@
+{
+  "pr_number": 11455,
+  "title": "fix: consistent, locale-stable response count formatting in model table",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11455",
+  "merged_at": "2026-06-01T09:54:37Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Supersedes #8876 (which targeted the pre-refactor path `src/client/components/pricing/calculations.ts`, now relocated to `frontend/src/components/models/`).\n\n- Fixes #8875: `formatCount` rounded 975–999 to `\"1000\"` (`.toString()`) while all values ≥1000 went through `millify` → `\"1K\"`, so adjacent models showed `\"1000\"` vs `\"1K\"` in the same column.\n- Drops the `millify` dependency — it was the sole consumer, and it abbreviates via `navigator`-locale `toLocaleString`, rendering `1050` as `\"1,1K\"` on non-en-US browsers. Every other formatter in the app builds compact strings manually and is locale-stable; replaced with a small inline K/M/B helper matching the existing chart style.\n- All other displayed values unchanged (verified across the full range).\n\nVerified: `tsc --noEmit` clean, biome clean, behavior table matches old output except the intended 975–999 → `\"1K\"`.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A thousand ways to say 1K",
+    "blurb": "Fixed a quirky bug where 999 responses showed up as '1000' right next to '1K'. We also dropped a dependency to make sure numbers look right no matter where you live.",
+    "summary": "Replaced the millify dependency with a custom K/M/B formatter to fix inconsistent rounding (975-999 showing as '1000' instead of '1K') and locale-specific comma issues in the model table.",
+    "impact": "Response counts in the model table now consistently use 'K' for thousands and format correctly regardless of your browser's locale settings.",
+    "keywords": [
+      "ui",
+      "bugfix",
+      "formatting",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee organizing numbers or blocks with '1K' on them, maybe sweeping away a '1000' block. A cute robot looking at a clean table of numbers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing blocks with '1K' written on them, while a chunky robot with a CRT monitor head happily points at a clean data table. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11455.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing blocks with '1K' written on them, while a chunky robot with a CRT monitor head happily points at a clean data table. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T09:55:38.835946+00:00"
+}

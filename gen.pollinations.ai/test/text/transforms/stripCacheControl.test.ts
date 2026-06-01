@@ -48,8 +48,30 @@ describe("stripCacheControl model wiring", () => {
     // Azure-deployed Grok rejects cache_control like its sibling Azure/strict
     // OpenAI-compatible models; all grok entries must carry the transform so
     // multi-turn history isn't dropped (see issue #10722).
+    it("wires cache_control stripping onto grok", async () => {
+        const transform = findModelByName("grok")?.transform;
+        if (!transform) throw new Error("grok transform missing");
+
+        const { messages: result } = await transform(
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "hi",
+                            cache_control: { type: "ephemeral" },
+                        },
+                    ],
+                },
+            ],
+            {},
+        );
+
+        expect(result[0].content).toEqual([{ type: "text", text: "hi" }]);
+    });
+
     it.each([
-        "grok",
         "grok-large",
         "grok-4.3",
     ])("wires stripCacheControl onto %s", (modelName) => {

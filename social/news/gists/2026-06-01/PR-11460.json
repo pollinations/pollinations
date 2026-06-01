@@ -1,0 +1,35 @@
+{
+  "pr_number": 11460,
+  "title": "fix: move packages to @pollinations scope",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11460",
+  "merged_at": "2026-06-01T13:05:14Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Renames published packages and workspace imports from `@pollinations_ai/*` to `@pollinations/*`.\n- Keeps package publishing on npmjs.org only and removes the legacy GitHub Packages rewrite path.\n- Uses the verified GitHub Actions `NPM_TOKEN` secret for npmjs.org publishes under the `@pollinations` npm org.\n- Updates docs, app catalog links, lockfiles, and local consumers for SDK, UI, MCP, and CLI package names.\n- Cleans the publish workflow so package detection covers the full push range and CLI version checks read the package name from `package.json`.\n\nValidation:\n- `rg` check for stale `@pollinations_ai/*` package imports in `apps/react`, `enter.pollinations.ai`, `packages/ui`, `packages/sdk`, and lockfiles\n- `npm ls @pollinations/ui @pollinations/sdk --workspaces --depth=0`\n- `npm run typecheck --prefix apps/react`\n- `npm run build --prefix apps/react`\n- `npm run typecheck --prefix enter.pollinations.ai`\n- `npm run build:frontend --prefix enter.pollinations.ai`\n- `npm test --workspace @pollinations/icons`\n- `npm run build --prefix packages/polli-cli`\n- `env PATH=\"/opt/homebrew/bin:$PATH\" npx --yes npm@10.8.2 publish --dry-run --access public` from `packages/polli-cli`\n- `git diff --check`\n- YAML parse check for `.github/workflows/publish-packages.yml`\n\nNotes:\n- `@pollinations/sdk`, `@pollinations/ui`, and `@pollinations/mcp` are not currently published on npm; this workflow will publish them after merge when package paths change.\n- `@pollinations/cli` already exists at `0.1.0-alpha.0`; this repo version is `0.1.5`.\n- `@pollinations_ai/ui@0.0.1` is already live on npm and still needs a manual npm unpublish/deprecate decision.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Moving day on npm",
+    "blurb": "We packed up our boxes and moved to a cleaner neighborhood on npm. All our SDKs and tools now live under the official @pollinations scope.",
+    "summary": "All pollinations packages, including the SDK, UI components, MCP server, and CLI, have been migrated from the legacy @pollinations_ai scope to @pollinations on npmjs.org.",
+    "impact": "Developers using the CLI or early SDKs will need to update their package.json dependencies and import paths to use the new @pollinations prefix.",
+    "keywords": [
+      "npm",
+      "sdk",
+      "packages",
+      "infrastructure",
+      "cli"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing neatly labeled cardboard boxes (representing npm packages) onto a fresh shelf, symbolizing the move to a new namespace.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny red baseball cap, organizing small cardboard boxes with code symbols onto a bright lime green (#ecf874) shelf. A chunky retro robot with a monitor head helps carry a box, its screen glowing with a happy face. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11460.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny red baseball cap, organizing small cardboard boxes with code symbols onto a bright lime green (#ecf874) shelf. A chunky retro robot with a monitor head helps carry a box, its screen glowing with a happy face. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-01T13:06:26.301749+00:00"
+}

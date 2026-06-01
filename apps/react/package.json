@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@pollinations_ai/sdk": "*",
+    "@pollinations_ai/ui": "*",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@pollinations_ai/ui": "*"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

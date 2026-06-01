@@ -1,0 +1,18 @@
+{
+    "name": "@pollinations/brand-assets",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Generates brand/head assets (favicons, icons, OG, manifest) from the @pollinations_ai/ui logo + theme colors.",
+    "bin": {
+        "brand-assets": "src/cli.js"
+    },
+    "scripts": {
+        "generate": "node src/cli.js",
+        "test": "node --test"
+    },
+    "dependencies": {
+        "@pollinations_ai/ui": "*",
+        "sharp": "^0.33.5"
+    }
+}

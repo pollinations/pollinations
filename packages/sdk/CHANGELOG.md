@@ -2,7 +2,7 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [4.5.0] - 2026-06-01
+## [5.0.0] - 2026-06-01
 
 ### Removed (Breaking)
 - Removed speculative, never-used helpers from the public API surface:

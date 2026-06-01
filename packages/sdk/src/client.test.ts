@@ -315,6 +315,7 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         fetchMock.mockResolvedValueOnce(makeResponse({ data: [{}] }));
 
         await expect(client.imageEdit("make it blue")).rejects.toMatchObject({
+            message: "Unexpected response format from image edit",
             code: "INVALID_RESPONSE",
             status: 500,
         });

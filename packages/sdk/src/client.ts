@@ -565,7 +565,11 @@ export class Pollinations {
             );
         }
 
-        return this.resolveImageItem(item, options.signal);
+        return this.resolveImageItem(
+            item,
+            options.signal,
+            "Unexpected response format from image edit",
+        );
     }
 
     // ============================================================================
@@ -667,6 +671,7 @@ export class Pollinations {
     private async resolveImageItem(
         item: { url?: string; b64_json?: string },
         signal?: AbortSignal,
+        invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {
         if (item.url) {
             const imgResponse = await fetchWithTimeout(
@@ -693,7 +698,7 @@ export class Pollinations {
             };
         }
         throw new PollinationsError(
-            "Unexpected image item shape in response",
+            invalidResponseMessage,
             "INVALID_RESPONSE",
             500,
         );

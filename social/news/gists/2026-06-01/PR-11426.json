@@ -1,0 +1,35 @@
+{
+  "pr_number": 11426,
+  "title": "Fix quest payout idempotency",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11426",
+  "merged_at": "2026-06-01T00:41:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- move quest payout idempotency from quest/PR/user/role scope to quest/user/role scope\n- add a shared payout-key helper so the behavior is importable and testable\n- guard the CLI entrypoint so importing the helper path does not execute the command\n\n## Tests\n- `npx vitest run test/quest-grant-pollen.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One quest, one reward",
+    "blurb": "Fixed a sneaky bug in our quest payout system to make sure rewards are handed out exactly once. The hive's accounting is back in perfect order!",
+    "summary": "Updated the quest payout idempotency key to scope by quest, user, and role instead of including the PR, preventing duplicate pollen grants.",
+    "impact": "Ensures users receive their pollen rewards exactly once per quest role, tightening up the backend accounting.",
+    "keywords": [
+      "bug fix",
+      "pollen",
+      "quests",
+      "idempotency",
+      "accounting"
+    ],
+    "visual_concept": "The bee mascot acting as a careful accountant, ensuring exactly one reward is given. The Nomnom creature receiving a single golden pollen coin. Represents idempotency and exact payouts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, carefully handing exactly one glowing golden pollen coin to the round tan nomnom creature. A retro ledger book sits on a wooden desk. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11426.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, carefully handing exactly one glowing golden pollen coin to the round tan nomnom creature. A retro ledger book sits on a wooden desk. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T00:42:41.964517+00:00"
+}

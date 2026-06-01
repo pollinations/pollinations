@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://image.pollinations.ai/prompt/A%20cute%20parrot%20mascot%20named%20Polly%20with%20GitHub%20and%20Discord%20logos%2C%20digital%20art%2C%20friendly%2C%20colorful?width=200&height=200" alt="Polly" width="150" height="150">
+  <img src="https://image.pollinations.ai/prompt/A%20cute%20parrot%20mascot%20named%20Polly%20with%20GitHub%20and%20Discord%20logos%2C%20digital%20art%2C%20friendly%2C%20colorful?width=200&height=200&nologo=true" alt="Polly" width="150" height="150">
 </p>
 
 <h1 align="center">🦜 Polly</h1>

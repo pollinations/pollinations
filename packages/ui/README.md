@@ -109,8 +109,6 @@ Wallet-specific colors and utilities live in a separate stylesheet:
   These are intentionally bare wrappers around `useAuth*` hooks. They render
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
-- `@pollinations/ui/showcase` exports `DesignShowcase`, a package-owned
-  internal preview surface for rendering primitives and tokens together.
 - `@pollinations/ui/wallet` exports SDK-free wallet-specific display helpers
   and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
@@ -140,8 +138,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, and modality.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
-  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`,
-  `@pollinations/ui/showcase`) are built directly from those modules.
+  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`) are built
+  directly from those modules.
 
 ## Theming
 

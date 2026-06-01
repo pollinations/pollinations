@@ -1,0 +1,34 @@
+{
+  "pr_number": 11528,
+  "title": "Add AI Image Forge to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11528",
+  "merged_at": "2026-06-01T18:15:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) to image\n- AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution.\n\nFixes #10511",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Forging new pixels",
+    "blurb": "A new community app just dropped! AI Image Forge is an all-in-one web tool for crafting AI art with custom resolutions and models.",
+    "summary": "Added 'AI Image Forge', a new web-based AI art generation tool built on the Pollinations API, to the community showcase.",
+    "impact": "Users can now discover and use AI Image Forge to generate images with custom prompts, models, and resolutions directly from their browser.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "The PR is about 'AI Image Forge', an image generation tool. Metaphor: A blacksmith's forge but for pixels/images. Polly the bee as a blacksmith working at a glowing forge, hammering out glowing pixels or a picture frame. Monitor robot helping.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny blacksmith apron, hammering glowing square pixels on an anvil in a warm, rustic forge. A chunky monitor robot stands nearby holding a freshly forged picture frame. Soft lime green (#ecf874) and warm orange gradient background. Cozy 8-bit aesthetic, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11528.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny blacksmith apron, hammering glowing square pixels on an anvil in a warm, rustic forge. A chunky monitor robot stands nearby holding a freshly forged picture frame. Soft lime green (#ecf874) and warm orange gradient background. Cozy 8-bit aesthetic, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T18:16:50.474566+00:00",
+  "app_name": "AI Image Forge",
+  "app_url": "https://hilarious-seahorse-09c5c6.netlify.app/"
+}

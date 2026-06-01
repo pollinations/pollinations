@@ -1,0 +1,35 @@
+{
+  "pr_number": 11467,
+  "title": "refactor(enter-account): dedupe stripe-webhook analytics emit handlers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11467",
+  "merged_at": "2026-06-01T12:25:47Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Extract `emitCheckoutSessionAnalytics` and `emitPaymentIntentAnalytics` for the near-identical Stripe-webhook analytics handlers\n- Add a contract-lock test asserting the paid `checkout.session.completed` Tinybird payload (previously unasserted)\n\nVerified non-breaking: biome clean, affected tests green vs the main baseline. Net +34 lines (net) — adds a regression test; source shrinks.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidy webhooks",
+    "blurb": "Cleaned up our Stripe webhook analytics handlers to keep the codebase neat and added new tests to ensure payment tracking stays perfectly reliable.",
+    "summary": "Refactored the Stripe webhook handlers in enter.pollinations.ai by extracting emitCheckoutSessionAnalytics and emitPaymentIntentAnalytics to deduplicate code, and added a contract-lock test for Tinybird payloads.",
+    "impact": "The codebase is now cleaner and more maintainable, with guaranteed reliability for checkout.session.completed analytics tracking.",
+    "keywords": [
+      "stripe",
+      "webhooks",
+      "analytics",
+      "refactor",
+      "testing"
+    ],
+    "visual_concept": "The bee mascot organizing files or cleaning up a messy room of receipts (representing Stripe webhooks/payments). The Nomnom creature eating duplicate code snippets.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny maid headband, sweeping up duplicate code snippets while the round tan Nomnom creature happily eats them. A retro terminal in the background displays a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11467.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny maid headband, sweeping up duplicate code snippets while the round tan Nomnom creature happily eats them. A retro terminal in the background displays a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T12:26:46.003471+00:00"
+}

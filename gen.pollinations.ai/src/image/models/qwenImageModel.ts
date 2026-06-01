@@ -4,15 +4,10 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { callDashScopeMultimodalImage } from "../utils/dashScopeImage.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
-const logError = debug("pollinations:qwen-image:error");
-
-// DashScope multimodal generation endpoint (synchronous)
-const DASHSCOPE_API_BASE =
-    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
 const GENERATION_MODEL = "qwen-image-plus";
 const EDITING_MODEL = "qwen-image-edit-plus";
@@ -41,26 +36,6 @@ function snapToAllowedSize(width: number, height: number): [number, number] {
         }
     }
     return best;
-}
-
-interface QwenImageResponse {
-    output?: {
-        choices?: Array<{
-            finish_reason: string;
-            message: {
-                role: string;
-                content: Array<{ image?: string }>;
-            };
-        }>;
-    };
-    usage?: {
-        image_count?: number;
-        width?: number;
-        height?: number;
-    };
-    request_id?: string;
-    code?: string;
-    message?: string;
 }
 
 /**
@@ -142,10 +117,11 @@ async function callQwenImageGenerateInternal(
         },
     };
 
-    return callDashScopeImageAPI(
+    return callDashScopeMultimodalImage(
         apiKey,
         requestBody,
         "qwen-image",
+        "Qwen Image",
         progress,
         requestId,
     );
@@ -209,88 +185,12 @@ async function callQwenImageEditInternal(
         },
     };
 
-    return callDashScopeImageAPI(
+    return callDashScopeMultimodalImage(
         apiKey,
         requestBody,
         "qwen-image-edit",
+        "Qwen Image Edit",
         progress,
         requestId,
     );
-}
-
-/**
- * Call the DashScope multimodal generation API and return the result
- */
-async function callDashScopeImageAPI(
-    apiKey: string,
-    requestBody: Record<string, unknown>,
-    actualModel: string,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> {
-    // Log request safely (hide base64 data)
-    const safeBody = JSON.stringify(requestBody, (key, value) => {
-        if (
-            key === "image" &&
-            typeof value === "string" &&
-            value.startsWith("data:")
-        ) {
-            return "[base64]";
-        }
-        return value;
-    });
-    logOps("DashScope image request:", safeBody);
-
-    const response = await fetchUpstream(DASHSCOPE_API_BASE, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        errorLabel: "DashScope image API failed",
-    });
-
-    const data: QwenImageResponse = await response.json();
-
-    if (data.code) {
-        throw new HttpError(
-            `DashScope image error: ${data.message || data.code}`,
-            400,
-            undefined,
-            DASHSCOPE_API_BASE,
-        );
-    }
-
-    const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
-    if (!imageUrl) {
-        throw new HttpError(
-            "No image URL in DashScope response",
-            500,
-            undefined,
-            DASHSCOPE_API_BASE,
-        );
-    }
-
-    logOps("Image generated, downloading from:", imageUrl);
-    progress.updateBar(requestId, 80, "Processing", "Downloading image...");
-
-    const imageResponse = await fetchUpstream(imageUrl, {
-        errorLabel: "Failed to download generated image",
-    });
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
-    logOps(`Image downloaded, size: ${(buffer.length / 1024).toFixed(1)} KB`);
-    progress.updateBar(requestId, 95, "Success", "Image generation completed");
-
-    return {
-        buffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel,
-            usage: {
-                completionImageTokens: 1, // flat per-image pricing
-            },
-        },
-    };
 }

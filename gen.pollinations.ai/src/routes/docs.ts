@@ -1,7 +1,11 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    getImageModelIds,
+    getVideoModelIds,
+    IMAGE_SERVICES,
+} from "@shared/registry/image.ts";
 import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
@@ -91,24 +95,9 @@ const ALL_ALIASES = new Set([
     ...EMBEDDING_ALIASES,
 ]);
 
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
-    .join(", ");
+const imageModelDisplayNames = getImageModelIds().join(", ");
 
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
-    .join(", ");
+const videoModelDisplayNames = getVideoModelIds().join(", ");
 
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");

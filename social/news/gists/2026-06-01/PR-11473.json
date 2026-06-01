@@ -1,0 +1,35 @@
+{
+  "pr_number": 11473,
+  "title": "refactor(frontend-enter): drop SSR guards and dedupe small frontend helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11473",
+  "merged_at": "2026-06-01T14:28:05Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Remove dead SSR `typeof window === \"undefined\"` guards across config.ts, index.tsx, sign-in.tsx, auto-top-up-panel.tsx — this is a pure client-side Vite SPA with no SSR/prerender path, so those branches are unreachable (kept the legitimate sessionStorage private-mode try/catch)\n- Extract the duplicated hashchange state+listener into a generic `usePageFromHash(parse)` hook; each route keeps its own `pageFromHash` so routing is unchanged\n- Drop the speculative `action` param from `getDisabledReason` (one caller, always `\"saving changes\"`) — tooltip text byte-identical\n- Collapse the near-identical `getInputSortValue`/`getOutputSortValue` into one `sortValueFromFields` + explicit INPUT/OUTPUT price-field arrays typed against the shared `PriceDefinition`\n\nVerified non-breaking: biome clean on all 6 files; `tsc --noEmit` introduces zero new type errors (only pre-existing/environmental ones, proven by a stash-and-recompile baseline). Net −60 lines. Re-verified against current main after #11439 landed.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the frontend",
+    "blurb": "Swept away some dead code and simplified our frontend helpers. A cleaner codebase means faster updates for the hive!",
+    "summary": "Removed unreachable SSR guards and deduplicated routing and sorting helpers across the enter.pollinations.ai frontend.",
+    "impact": "This internal refactor reduces technical debt and simplifies the codebase by removing 60 lines of dead code without changing any user-facing behavior.",
+    "keywords": [
+      "refactor",
+      "frontend",
+      "spa",
+      "cleanup",
+      "technical-debt"
+    ],
+    "visual_concept": "Polly the bee holding a small broom, sweeping up pixelated dead leaves (representing dead code) in a cozy digital garden, assisted by the monitor robot holding a dustpan.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a small broom, sweeping up pixelated dead leaves and code blocks in a digital garden. A chunky monitor robot helps by holding a dustpan. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11473.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a small broom, sweeping up pixelated dead leaves and code blocks in a digital garden. A chunky monitor robot helps by holding a dustpan. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T14:29:24.151273+00:00"
+}

@@ -41,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -76,30 +75,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
-      - name: Publish to GitHub Packages
-        if: steps.check.outputs.skip != 'true'
-        working-directory: packages/sdk
-        run: |
-          # GitHub Packages requires scope matching the repo owner
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@pollinations/sdk';
-            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/sdk' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   publish-ui:
     needs: detect-changes
     if: needs.detect-changes.outputs.ui == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -134,29 +115,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
-      - name: Publish to GitHub Packages
-        if: steps.check.outputs.skip != 'true'
-        working-directory: packages/ui
-        run: |
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@pollinations/ui';
-            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/ui' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   publish-mcp:
     needs: detect-changes
     if: needs.detect-changes.outputs.mcp == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -189,29 +153,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
-      - name: Publish to GitHub Packages
-        if: steps.check.outputs.skip != 'true'
-        working-directory: packages/mcp
-        run: |
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@pollinations/mcp';
-            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/mcp' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   publish-polli-cli:
     needs: detect-changes
     if: needs.detect-changes.outputs.polli-cli == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -244,19 +191,3 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
-
-      - name: Publish to GitHub Packages
-        if: steps.check.outputs.skip != 'true'
-        working-directory: packages/polli-cli
-        run: |
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@pollinations/cli';
-            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/polli-cli' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

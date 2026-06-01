@@ -15,8 +15,10 @@ these flows, but the business logic lives here.
 ## Layout
 
 - `flows/spore_to_seed.py`: upgrade spore users to seed based on GitHub activity
-- `flows/spore-to-microbe-scan.ts`: LLM-based abuse detection and scoring
-- `flows/apply-abuse-blocks.ts`: apply tier downgrades from abuse report
+- `flows/spore-to-microbe-scan.ts`: LLM-based abuse detection and scoring (outputs CSV)
+- `flows/spore-to-microbe-enrich.ts`: enrich the scan CSV with Tinybird consumption data
+- `flows/spore-to-microbe-review.ts`: apply usage-based rules to adjust block actions
+- `flows/spore-to-microbe-apply.ts`: apply tier downgrades from the reviewed report
 - `flows/cleanup-github-users.ts`: audit D1 users against GitHub API (renamed/deleted accounts)
 - `shared/github_profile.py`: GitHub identity lookup and scoring logic
 - `shared/d1_updates.py`: shared D1 query and mutation helpers
@@ -42,19 +44,26 @@ This flow is triggered by:
 
 ### spore → microbe (abuse downgrade)
 
-The downgrade flow is `spore-to-microbe-scan.ts` + `apply-abuse-blocks.ts`.
+The downgrade pipeline is `spore-to-microbe-scan.ts` → `spore-to-microbe-enrich.ts`
+→ `spore-to-microbe-review.ts` → `spore-to-microbe-apply.ts`.
 
 High-level behavior:
 
 1. Find the most recent microbe user's registration date as cutoff (`--since-last-block`).
 2. Fetch users created after that cutoff from D1.
-3. Score users via LLM (Gemini) in overlapping chunks, looking for coordinated abuse patterns.
-4. Users scoring >= 70 are flagged for blocking.
-5. Blocked users are downgraded to `microbe` tier with 0.1 pollen balance.
+3. Score users via LLM (Gemini) in overlapping chunks, looking for coordinated abuse patterns (`scan`, outputs CSV).
+4. Enrich the CSV with Tinybird consumption data (`enrich`).
+5. Apply usage-based rules to adjust block actions (`review`).
+6. Downgrade users with a `block` action to `microbe` tier with 0.1 pollen balance (`apply`).
 
-This flow is triggered by:
+There is no scheduled workflow for this pipeline. Run the steps manually:
 
-- `.github/workflows/user-downgrade-spore-to-microbe.yml`
+```bash
+npx tsx src/tier-progression/flows/spore-to-microbe-scan.ts
+npx tsx src/tier-progression/flows/spore-to-microbe-enrich.ts
+npx tsx src/tier-progression/flows/spore-to-microbe-review.ts
+npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts
+```
 
 ## Entry Point
 

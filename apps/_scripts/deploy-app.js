@@ -113,29 +113,23 @@ async function getPagesProject(account, headers, project) {
 }
 
 async function detachPagesDomain(account, headers, customDomain) {
-    for (let page = 1; ; page += 1) {
-        const { ok, json } = await cf(
-            `${CF_API}/accounts/${account}/pages/projects?per_page=25&page=${page}`,
+    const { ok, json } = await cf(
+        `${CF_API}/accounts/${account}/pages/projects`,
+        headers,
+    );
+    if (!ok) {
+        throw new Error(`List Pages projects failed: ${JSON.stringify(json)}`);
+    }
+
+    for (const project of json.result || []) {
+        const detached = await detachPagesDomainFromProject(
+            account,
             headers,
+            project.name,
+            customDomain,
         );
-        if (!ok) {
-            throw new Error(
-                `List Pages projects failed: ${JSON.stringify(json)}`,
-            );
-        }
 
-        const projects = json.result || [];
-        if (projects.length === 0) return;
-
-        for (const project of projects) {
-            const detached = await detachPagesDomainFromProject(
-                account,
-                headers,
-                project.name,
-                customDomain,
-            );
-            if (detached) return;
-        }
+        if (detached) return;
     }
 }
 

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11477,
+  "title": "chore(enter-tierprog): remove dead flows code and fix stale README",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11477",
+  "merged_at": "2026-06-01T12:59:44Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Dead-code cleanup in tier-progression maintenance scripts (no production path, no tests):\n\n- Delete the never-called `ban_deleted_accounts` function (d1_updates.py)\n- Remove the dead `split` / `retry` CLI subcommands (cleanup-github-users.ts) — only `audit`/`apply` are used\n- Collapse the speculative, never-configured GitHub-App JWT auth path down to a single `GITHUB_TOKEN` PAT (kept the `TokenProvider` interface so call sites/log lines are unchanged)\n- Fix the stale README: drop 3 referenced files that don't exist, correct the spore-to-microbe pipeline (scan → enrich → review → apply), remove the false workflow trigger\n\nNet −251 lines. biome clean; cleanup-github-users.ts type-checks; no test references any deleted symbol. Skipped the queryD1/CSV dedups (held for separate review).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We did some spring cleaning in our tier-progression scripts, sweeping away dead code and updating the README. A tidier codebase means a happier hive!",
+    "summary": "Removed 251 lines of dead code from the tier-progression maintenance scripts, including unused CLI subcommands and legacy GitHub-App JWT auth paths, and updated the README to reflect the current pipeline.",
+    "impact": "Internal maintenance scripts are now cleaner and easier to maintain, reducing technical debt without affecting production workflows.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "tier-progression",
+      "maintenance",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee sweeping up or pruning dead pixelated leaves/code blocks in a cozy garden shed. Nomnom creature eating the discarded code.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, sweeping up dead pixelated leaves and old code blocks in a warm, glowing garden shed. The round tan Nomnom creature happily eats the discarded code from a dustpan. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11477.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, sweeping up dead pixelated leaves and old code blocks in a warm, glowing garden shed. The round tan Nomnom creature happily eats the discarded code from a dustpan. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-01T13:00:56.095219+00:00"
+}

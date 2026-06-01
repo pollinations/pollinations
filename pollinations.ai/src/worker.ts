@@ -32,27 +32,27 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
             "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
     },
     "/play": {
-        title: "Play — pollinations.ai",
+        title: "Play | pollinations.ai",
         description: "Generate images, text, audio and video with AI models",
     },
     "/apps": {
-        title: "Apps — pollinations.ai",
+        title: "Apps | pollinations.ai",
         description: "Community-built apps powered by Pollinations AI",
     },
     "/community": {
-        title: "Community — pollinations.ai",
+        title: "Community | pollinations.ai",
         description: "Contributors, voting, and build diary",
     },
     "/terms": {
-        title: "Terms — pollinations.ai",
+        title: "Terms | pollinations.ai",
         description: "Terms of service for pollinations.ai",
     },
     "/privacy": {
-        title: "Privacy — pollinations.ai",
+        title: "Privacy | pollinations.ai",
         description: "Privacy policy for pollinations.ai",
     },
     "/refunds": {
-        title: "Refunds — pollinations.ai",
+        title: "Refunds | pollinations.ai",
         description: "Refunds and cancellations policy for pollinations.ai",
     },
 };

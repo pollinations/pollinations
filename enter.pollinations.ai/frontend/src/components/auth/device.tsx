@@ -1,16 +1,16 @@
-import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
-import { authClient } from "../../auth.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
-import { Button } from "../ui/button.tsx";
+import { Button, Input } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
-} from "./auth-modal.tsx";
+} from "@pollinations/ui/auth";
+import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
+import { authClient } from "../../auth.ts";
+import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 
 type DeviceProps = {
     prefilledCode: string;
@@ -138,14 +138,14 @@ export function Device({ prefilledCode }: DeviceProps) {
                         <p className="text-theme-text-strong">
                             Enter the code from your device.
                         </p>
-                        <input
+                        <Input
                             type="text"
                             value={userCode}
                             onChange={(e) =>
                                 setUserCode(e.target.value.toUpperCase())
                             }
                             placeholder="XXXX-XXXX"
-                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-theme-border rounded-lg bg-surface-white text-theme-text-strong"
+                            className="w-full border-2 border-theme-border bg-surface-white p-3 text-center font-mono text-2xl tracking-widest text-theme-text-strong"
                             ref={inputRef}
                             maxLength={20}
                             disabled={checking}

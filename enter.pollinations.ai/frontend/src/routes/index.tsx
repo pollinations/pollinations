@@ -1,3 +1,4 @@
+import { Button, DownloadIcon, Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -16,7 +17,6 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
-import { DashboardSection } from "../components/layout/dashboard-section.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -34,10 +34,10 @@ import {
     SidebarWallet,
     TierPanel,
 } from "../components/pollen";
-import { Button } from "../components/ui/button.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
+const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
 
 function DownloadCsvButton({
     theme,
@@ -53,22 +53,7 @@ function DownloadCsvButton({
             onClick={onClick}
             className="flex items-center gap-1.5"
         >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <title>Download</title>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
             Download CSV
         </Button>
     );
@@ -320,7 +305,7 @@ function RouteComponent() {
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
-                    <DashboardSection title="Wallet" theme="amber" framed>
+                    <Section title="Wallet" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
@@ -328,19 +313,19 @@ function RouteComponent() {
                             paidWeek={paidWeek}
                             tierWeek={tierWeek}
                         />
-                    </DashboardSection>
-                    <DashboardSection
+                    </Section>
+                    <Section
                         title="Top-up"
                         theme="amber"
                         framed
                         id="buy-pollen"
                     >
                         <BuyPollenPanel initialBillingState={billingState} />
-                    </DashboardSection>
+                    </Section>
                     {tierData && (
-                        <DashboardSection title="Tier" theme="amber" framed>
+                        <Section title="Tier" theme="amber" framed>
                             <TierPanel {...tierData} />
-                        </DashboardSection>
+                        </Section>
                     )}
                 </div>
             )}
@@ -351,6 +336,7 @@ function RouteComponent() {
                             value={activityPeriod}
                             onChange={setActivityPeriod}
                             theme={dashboardThemeByPage.activity}
+                            minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-gray-400">
                             Data refreshes every hour. Times shown in UTC.

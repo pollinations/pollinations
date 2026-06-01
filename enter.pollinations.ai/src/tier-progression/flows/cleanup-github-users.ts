@@ -16,12 +16,9 @@
  *   CLOUDFLARE_API_TOKEN  - Required for D1 access via wrangler
  *   CLOUDFLARE_ACCOUNT_ID - Required for D1 access via wrangler
  *   GITHUB_TOKEN          - Required for GitHub API (5000 req/hr)
- *   GITHUB_APP_ID         - GitHub App ID (for 15k/hr Enterprise rate limit)
- *   GITHUB_APP_PRIVATE_KEY_PATH - Path to .pem private key
  */
 
 import { execSync } from "node:child_process";
-import * as crypto from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 
@@ -158,126 +155,23 @@ function saveReport(report: AuditReport, path: string): void {
     writeFileSync(path, JSON.stringify(report, null, 2));
 }
 
-// ── GitHub App auth (15k/hr on Enterprise Cloud) ─────────────
-
-function generateJWT(appId: string, privateKey: string): string {
-    const header = Buffer.from(
-        JSON.stringify({ alg: "RS256", typ: "JWT" }),
-    ).toString("base64url");
-    const now = Math.floor(Date.now() / 1000);
-    const payload = Buffer.from(
-        JSON.stringify({ iat: now - 60, exp: now + 10 * 60, iss: appId }),
-    ).toString("base64url");
-    const signature = crypto
-        .sign("SHA256", Buffer.from(`${header}.${payload}`), privateKey)
-        .toString("base64url");
-    return `${header}.${payload}.${signature}`;
-}
-
-async function getInstallationToken(
-    appId: string,
-    privateKey: string,
-): Promise<{ token: string; expiresAt: number }> {
-    const jwt = generateJWT(appId, privateKey);
-
-    // Find first installation
-    const installRes = await fetch("https://api.github.com/app/installations", {
-        headers: {
-            Authorization: `Bearer ${jwt}`,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "pollinations-audit",
-        },
-    });
-    const installations = (await installRes.json()) as {
-        id: number;
-        account: { login: string };
-    }[];
-    if (installations.length === 0) {
-        throw new Error(
-            "No installations found — install the app on an org first",
-        );
-    }
-    const installationId = installations[0].id;
-
-    // Get token
-    const tokenRes = await fetch(
-        `https://api.github.com/app/installations/${installationId}/access_tokens`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-                Accept: "application/vnd.github+json",
-                "User-Agent": "pollinations-audit",
-            },
-        },
-    );
-    const tokenData = (await tokenRes.json()) as {
-        token: string;
-        expires_at: string;
-    };
-    // Refresh 5 min before expiry
-    const expiresAt = new Date(tokenData.expires_at).getTime() - 5 * 60 * 1000;
-    return { token: tokenData.token, expiresAt };
-}
-
 interface TokenProvider {
     getToken: () => Promise<string>;
     label: string;
 }
 
-async function createTokenProvider(): Promise<TokenProvider> {
-    const appId = process.env.GITHUB_APP_ID;
-    const keyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
-
-    // Prefer GitHub App (15k/hr) over PAT (5k/hr)
-    if (appId && keyPath && existsSync(keyPath)) {
-        const privateKey = readFileSync(keyPath, "utf-8");
-        let current = await getInstallationToken(appId, privateKey);
-        console.log(
-            `🔑 GitHub App auth (15k/hr) — token expires ${new Date(current.expiresAt + 5 * 60 * 1000).toISOString()}`,
-        );
-
-        return {
-            label: "GitHub App (15k/hr)",
-            getToken: async () => {
-                if (Date.now() >= current.expiresAt) {
-                    console.log("  🔄 Refreshing installation token...");
-                    current = await getInstallationToken(appId, privateKey);
-                    console.log(
-                        `  ✅ New token expires ${new Date(current.expiresAt + 5 * 60 * 1000).toISOString()}`,
-                    );
-                }
-                return current.token;
-            },
-        };
-    }
-
-    // Fallback: PAT(s)
-    const tokenStr = process.env.GITHUB_TOKENS || process.env.GITHUB_TOKEN;
-    if (!tokenStr) {
-        console.error(
-            "❌ Set GITHUB_APP_ID+GITHUB_APP_PRIVATE_KEY_PATH (15k/hr) or GITHUB_TOKEN (5k/hr)",
-        );
+function createTokenProvider(): TokenProvider {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+        console.error("❌ Set GITHUB_TOKEN (5k/hr)");
         process.exit(1);
     }
-    const tokens = tokenStr
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    let tokenIndex = 0;
-    const label =
-        tokens.length > 1
-            ? `${tokens.length} PATs (~${tokens.length * 5000}/hr)`
-            : "PAT (5k/hr)";
+    const label = "PAT (5k/hr)";
     console.log(`🔑 Using ${label}`);
 
     return {
         label,
-        getToken: async () => {
-            const t = tokens[tokenIndex % tokens.length];
-            tokenIndex++;
-            return t;
-        },
+        getToken: async () => token,
     };
 }
 
@@ -305,7 +199,7 @@ const auditCommand = command({
     handler: async (opts) => {
         const env = opts.env as Environment;
 
-        const tokenProvider = await createTokenProvider();
+        const tokenProvider = createTokenProvider();
 
         const reportPath = getReportPath(env);
         let report: AuditReport;
@@ -684,127 +578,4 @@ const applyCommand = command({
     },
 });
 
-// ── Split command ──────────────────────────────────────────────
-
-const splitCommand = command({
-    name: "split",
-    desc: "Split audit report into separate files (renamed, deleted, errors)",
-    options: {
-        env: string().enum("staging", "production").default("production"),
-    },
-    handler: async (opts) => {
-        const env = opts.env as Environment;
-        const report = loadReport(env);
-
-        const renamed = report.results.filter((r) => r.status === "renamed");
-        const deleted = report.results.filter((r) => r.status === "deleted");
-        const errors = report.results.filter((r) => r.status === "error");
-
-        const dir = `${process.cwd()}/scripts`;
-
-        writeFileSync(
-            `${dir}/audit-renamed.json`,
-            JSON.stringify(renamed, null, 2),
-        );
-        writeFileSync(
-            `${dir}/audit-deleted.json`,
-            JSON.stringify(deleted, null, 2),
-        );
-        writeFileSync(
-            `${dir}/audit-errors.json`,
-            JSON.stringify(errors, null, 2),
-        );
-
-        console.log(`📂 Split audit report into:`);
-        console.log(
-            `   scripts/audit-renamed.json  (${renamed.length} entries)`,
-        );
-        console.log(
-            `   scripts/audit-deleted.json  (${deleted.length} entries)`,
-        );
-        console.log(
-            `   scripts/audit-errors.json   (${errors.length} entries)`,
-        );
-    },
-});
-
-// ── Retry command ──────────────────────────────────────────────
-
-const retryCommand = command({
-    name: "retry",
-    desc: "Retry errored entries from the audit report",
-    options: {
-        env: string().enum("staging", "production").default("production"),
-    },
-    handler: async (opts) => {
-        const env = opts.env as Environment;
-        const reportPath = getReportPath(env);
-        const report = loadReport(env);
-        const errors = report.results.filter((r) => r.status === "error");
-
-        if (errors.length === 0) {
-            console.log("✅ No errors to retry!");
-            return;
-        }
-
-        console.log(`🔄 Retrying ${errors.length} errored entries...\n`);
-
-        const tokenProvider = await createTokenProvider();
-        let fixed = 0;
-
-        for (const entry of errors) {
-            const result = await checkGitHubUser(
-                entry.githubId,
-                await tokenProvider.getToken(),
-            );
-
-            if (result.status === 200 && result.login) {
-                if (
-                    result.login.toLowerCase() ===
-                    (entry.d1Username || "").toLowerCase()
-                ) {
-                    entry.status = "ok";
-                    entry.currentUsername = result.login;
-                    delete entry.error;
-                    console.log(
-                        `   ✅ OK: ${entry.d1Username} (${entry.githubId})`,
-                    );
-                } else {
-                    entry.status = "renamed";
-                    entry.currentUsername = result.login;
-                    delete entry.error;
-                    console.log(
-                        `   🔄 Renamed: ${entry.d1Username} → ${result.login} (${entry.githubId})`,
-                    );
-                }
-                fixed++;
-            } else if (result.status === 404) {
-                entry.status = "deleted";
-                delete entry.error;
-                console.log(
-                    `   ❌ Deleted: ${entry.d1Username} (${entry.githubId})`,
-                );
-                fixed++;
-            } else {
-                console.log(
-                    `   ⚠️  Still error: ${entry.d1Username} (${entry.githubId}) → HTTP ${result.status}`,
-                );
-                entry.error = `HTTP ${result.status}`;
-            }
-
-            await sleep(750);
-        }
-
-        saveReport(report, reportPath);
-
-        const remaining = report.results.filter(
-            (r) => r.status === "error",
-        ).length;
-        console.log(
-            `\n📊 Retry results: ${fixed} resolved, ${remaining} still errored`,
-        );
-        console.log(`📄 Updated report: ${reportPath}`);
-    },
-});
-
-run([auditCommand, applyCommand, splitCommand, retryCommand]);
+run([auditCommand, applyCommand]);

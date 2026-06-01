@@ -47,7 +47,7 @@ function toFixedPoint(n: number): string {
  * Get enriched model information for a service
  * Combines pricing from price definitions with metadata from service definition
  */
-export function getModelInfo(modelName: ModelName): ModelInfo {
+function getModelInfo(modelName: ModelName): ModelInfo {
     const service = getModelDefinition(modelName);
     const priceDefinition = getPriceDefinition(modelName);
     if (!priceDefinition) {

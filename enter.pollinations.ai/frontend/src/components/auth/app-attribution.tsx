@@ -1,4 +1,4 @@
-import { InfoTip } from "../ui/info-tip.tsx";
+import { InfoTip } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;

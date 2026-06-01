@@ -1,5 +1,13 @@
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
+import {
+    Button,
+    cn,
+    ExternalLinkIcon,
+    InfoTip,
+    Switch,
+    type SwitchStatus,
+    Tooltip,
+} from "@pollinations/ui";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -12,10 +20,6 @@ import {
     useEffect,
     useState,
 } from "react";
-import { Button } from "../ui/button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Switch, type SwitchStatus } from "../ui/switch.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -261,7 +265,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         toggleStatus,
         lastIssue,
     );
-    const alertTone = switchStatus === "draft";
+    const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
     return (
@@ -384,7 +388,9 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
         <span>{loading ? "Opening..." : "Manage billing"}</span>
-        {!loading && <ExternalLinkIcon />}
+        {!loading && (
+            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-amber-700/70" />
+        )}
     </Button>
 );
 
@@ -393,10 +399,10 @@ function mapToggleStatusToSwitchStatus(
     issue: AutoTopUpIssue | null,
 ): SwitchStatus {
     if (status === "off") return "off";
-    if (status === "draft") return "draft";
-    // status === "on": red (draft) when there's an unresolved issue,
+    if (status === "draft") return "invalid";
+    // status === "on": red (invalid) when there's an unresolved issue,
     // green (on) when fully configured.
-    return issue !== null ? "draft" : "on";
+    return issue !== null ? "invalid" : "on";
 }
 
 type AutoTopUpSaveButtonProps = {
@@ -518,23 +524,6 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     >
         {children}
     </div>
-);
-
-const ExternalLinkIcon: FC = () => (
-    <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0 text-amber-700/70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );
 
 function formatPaymentMethod(billingState: BillingState | null): string {

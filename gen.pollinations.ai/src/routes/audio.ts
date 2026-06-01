@@ -115,6 +115,45 @@ function mapOutputFormat(format: string): string {
     return formatMap[format] || "mp3_44100_128";
 }
 
+/**
+ * ElevenLabs streams WAV with a placeholder length in the RIFF header (the
+ * data-chunk size and the overall RIFF size are written as 0x7FFFFFFF and never
+ * back-patched once the real length is known). Tools that trust the header
+ * (Python `wave`, ffmpeg) then crash or truncate. Rewrite both size fields to
+ * the real byte counts. No-op if the header is already correct or not RIFF/WAVE.
+ */
+export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length < 44) return buffer; // too short to be a valid WAV header
+    const view = new DataView(buffer);
+    const tag = (offset: number) =>
+        String.fromCharCode(
+            bytes[offset],
+            bytes[offset + 1],
+            bytes[offset + 2],
+            bytes[offset + 3],
+        );
+    if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return buffer;
+
+    // Walk the chunk list (offset 12 onward) to find the `data` sub-chunk,
+    // honouring declared sizes rather than scanning bytes (which could match
+    // "data" inside the PCM payload).
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+        const chunkId = tag(offset);
+        const chunkSize = view.getUint32(offset + 4, true);
+        if (chunkId === "data") {
+            const actualDataSize = bytes.length - (offset + 8);
+            if (chunkSize === actualDataSize) return buffer; // already correct
+            view.setUint32(offset + 4, actualDataSize, true); // data chunk size
+            view.setUint32(4, bytes.length - 8, true); // RIFF chunk size
+            return buffer;
+        }
+        offset += 8 + chunkSize;
+    }
+    return buffer; // no data chunk found
+}
+
 export async function generateSpeech(opts: {
     modelName?: AudioModelName;
     text: string;
@@ -196,6 +235,21 @@ export async function generateSpeech(opts: {
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
+
+    // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
+    // which requires buffering the body. Audio is small (input capped at 4096
+    // chars) so this is cheap; all other formats keep streaming.
+    if (responseFormat === "wav") {
+        const audioBuffer = fixWavHeader(await response.arrayBuffer());
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type": contentType,
+                "Content-Length": String(audioBuffer.byteLength),
+                ...usageHeaders,
+            },
+        });
+    }
 
     return new Response(response.body, {
         status: 200,
@@ -802,6 +856,101 @@ export async function generateAceStepMusic(opts: {
     });
 }
 
+/**
+ * Runs the 4-way text-to-audio model cascade (acestep -> elevenmusic ->
+ * qwen-tts -> elevenlabs speech) for the resolved model and wraps the result in
+ * safety headers. Shared by the GET /audio/:text and POST /v1/audio/speech
+ * handlers. Callers normalize their inputs first (GET maps seed=-1 -> undefined
+ * since only its schema permits the sentinel).
+ */
+async function dispatchAudioGeneration(
+    c: AudioContext,
+    opts: {
+        text: string;
+        voice: string;
+        responseFormat: string;
+        seed?: number;
+        duration?: number;
+        style?: string;
+        instrumental?: boolean;
+        instruct?: string;
+        apiKey: string;
+        dashScopeApiKey: string;
+        env: Env["Bindings"];
+        log: Logger;
+    },
+): Promise<Response> {
+    const {
+        text,
+        voice,
+        responseFormat,
+        seed,
+        duration,
+        style,
+        instrumental,
+        instruct,
+        apiKey,
+        dashScopeApiKey,
+        env,
+        log,
+    } = opts;
+
+    if (c.var.model.resolved === "acestep") {
+        return withSafetyHeaders(
+            c,
+            await generateAceStepMusic({
+                prompt: text,
+                style,
+                durationSeconds: duration,
+                serviceUrl: env.MUSIC_SERVICE_URL,
+                serviceToken: env.PLN_GPU_TOKEN,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "elevenmusic") {
+        return withSafetyHeaders(
+            c,
+            await generateMusic({
+                prompt: text,
+                durationSeconds: duration,
+                forceInstrumental: instrumental,
+                seed,
+                apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (isQwenTtsModel(c.var.model.resolved)) {
+        return withSafetyHeaders(
+            c,
+            await generateQwenTts({
+                modelName: c.var.model.resolved,
+                text,
+                voice,
+                instruct,
+                apiKey: dashScopeApiKey,
+                log,
+            }),
+        );
+    }
+
+    return withSafetyHeaders(
+        c,
+        await generateSpeech({
+            modelName: c.var.model.resolved as AudioModelName,
+            text,
+            voice,
+            responseFormat,
+            seed,
+            apiKey,
+            log,
+        }),
+    );
+}
+
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
@@ -823,60 +972,22 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
-    if (c.var.model.resolved === "acestep") {
-        return withSafetyHeaders(
-            c,
-            await generateAceStepMusic({
-                prompt: text,
-                style: query.style,
-                durationSeconds: query.duration,
-                serviceUrl: c.env.MUSIC_SERVICE_URL,
-                serviceToken: c.env.PLN_GPU_TOKEN,
-                log,
-            }),
-        );
-    }
-
-    if (c.var.model.resolved === "elevenmusic") {
-        return withSafetyHeaders(
-            c,
-            await generateMusic({
-                prompt: text,
-                durationSeconds: query.duration,
-                forceInstrumental: query.instrumental,
-                seed: query.seed === -1 ? undefined : query.seed,
-                apiKey,
-                log,
-            }),
-        );
-    }
-
-    if (isQwenTtsModel(c.var.model.resolved)) {
-        return withSafetyHeaders(
-            c,
-            await generateQwenTts({
-                modelName: c.var.model.resolved,
-                text,
-                voice: query.voice || "alloy",
-                instruct: query.instruct,
-                apiKey: c.env.DASHSCOPE_API_KEY,
-                log,
-            }),
-        );
-    }
-
-    return withSafetyHeaders(
-        c,
-        await generateSpeech({
-            modelName: c.var.model.resolved as AudioModelName,
-            text,
-            voice: query.voice || "alloy",
-            responseFormat: query.response_format || "mp3",
-            seed: query.seed === -1 ? undefined : query.seed,
-            apiKey,
-            log,
-        }),
-    );
+    // Only the GET query schema permits the -1 "random seed" sentinel; map it to
+    // undefined here so the generators only ever see a real seed or none.
+    return dispatchAudioGeneration(c, {
+        text,
+        voice: query.voice,
+        responseFormat: query.response_format,
+        seed: query.seed === -1 ? undefined : query.seed,
+        duration: query.duration,
+        style: query.style,
+        instrumental: query.instrumental,
+        instruct: query.instruct,
+        apiKey,
+        dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        env: c.env,
+        log,
+    });
 }
 
 export const audioRoutes = new Hono<Env>()
@@ -927,81 +1038,38 @@ export const audioRoutes = new Hono<Env>()
             const log = c.get("log").getChild("tts");
             await requireGenerationAccess(c.var, c.env);
 
-            const { input, safe, voice, response_format } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
+            const {
+                input,
+                safe,
+                voice,
+                response_format,
+                duration,
+                instrumental,
+                seed,
+                style,
+                instruct,
+            } = c.req.valid("json" as never) as CreateSpeechRequest;
             requireTextToAudioModel(c.var.model.resolved);
             const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "acestep") {
-                const { duration, style } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateAceStepMusic({
-                        prompt: safeInput,
-                        style,
-                        durationSeconds: duration,
-                        serviceUrl: c.env.MUSIC_SERVICE_URL,
-                        serviceToken: c.env.PLN_GPU_TOKEN,
-                        log,
-                    }),
-                );
-            }
-
-            if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental, seed } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateMusic({
-                        prompt: safeInput,
-                        durationSeconds: duration,
-                        forceInstrumental: instrumental,
-                        seed,
-                        apiKey,
-                        log,
-                    }),
-                );
-            }
-
-            const { seed } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
-            if (isQwenTtsModel(c.var.model.resolved)) {
-                const { instruct } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
-                return withSafetyHeaders(
-                    c,
-                    await generateQwenTts({
-                        modelName: c.var.model.resolved,
-                        text: safeInput,
-                        voice,
-                        instruct,
-                        apiKey: c.env.DASHSCOPE_API_KEY,
-                        log,
-                    }),
-                );
-            }
-
-            return withSafetyHeaders(
-                c,
-                await generateSpeech({
-                    modelName: c.var.model.resolved as AudioModelName,
-                    text: safeInput,
-                    voice,
-                    responseFormat: response_format,
-                    seed,
-                    apiKey,
-                    log,
-                }),
-            );
+            // POST schema forbids seed=-1 (.min(0)), so no sentinel mapping here.
+            return dispatchAudioGeneration(c, {
+                text: safeInput,
+                voice,
+                responseFormat: response_format,
+                seed,
+                duration,
+                style,
+                instrumental,
+                instruct,
+                apiKey,
+                dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                env: c.env,
+                log,
+            });
         },
     )
     .post(

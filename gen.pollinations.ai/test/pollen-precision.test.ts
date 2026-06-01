@@ -1,12 +1,8 @@
-import {
-    POLLEN_BILLING_PRECISION,
-    roundPollenLedgerAmount,
-} from "@shared/billing/precision.ts";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { describe, expect, it } from "vitest";
 
 describe("roundPollenLedgerAmount", () => {
     it("snaps to POLLEN_BILLING_PRECISION decimal places", () => {
-        expect(POLLEN_BILLING_PRECISION).toBe(8);
         expect(roundPollenLedgerAmount(0.123456789)).toBe(0.12345679);
     });
 

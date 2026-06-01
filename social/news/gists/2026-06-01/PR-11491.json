@@ -1,0 +1,35 @@
+{
+  "pr_number": 11491,
+  "title": "refactor(gen-text): drop redundant Azure config re-parsing (lower-risk subset only)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11491",
+  "merged_at": "2026-06-01T15:05:34Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Remove unused `resourceName` param from createAzureModelConfig; resource name now always derived from the endpoint URL (no caller ever passed it).\n- Update the lone Llama-4-Maverick call site to drop the `undefined` positional and pass `{ requiresBase64ImageUrls: true }` as the now-4th overrides arg.\n- Delete the `DEFAULT_AZURE_API_VERSION` const and `process.env.OPENAI_API_VERSION` fallbacks in extractAzureApiVersion; inline a single default (unreachable since every Azure URL carries ?api-version=...).\n- Simplify extractAzureResourceName: drop the never-true `=== 'undefined'` guard, keep the 'pollinations' no-match fallback.\n\nRisks:\n- extractAzureApiVersion no longer honors the OPENAI_API_VERSION env var. No gen-worker code sets or reads it, and every configured Azure URL includes ?api-version=, so the override was already dead — pure behavior-equivalent for all current models.\n- URL remains the source of truth for deployment names (gpt-5-nano-2025-08-07 -> gpt-5-nano, gpt-audio-mini-2025-12-15 -> gpt-audio-mini); signature intentionally NOT rewritten to region+deployment to avoid re-deriving these.\n\nDeferred (out of scope / premise changed):\n- FINDING 1 full signature rewrite to (region, deploymentName, apiVersion) — Explicitly rejected by the proposal as out-of-scope/too risky. The URL must remain the source of truth because registry \n\n_~17 net lines removed · biome ✓ · cd gen.pollinations.ai && npx vitest run test/text/genericOpenAIClient.test.ts test/error- ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the Azure configs",
+    "blurb": "Swept away some unused parameters and dead code in our Azure model configurations. Just keeping the hive tidy!",
+    "summary": "Refactored Azure model configuration parsing in the text generation worker by removing the unused resourceName parameter and dead OPENAI_API_VERSION environment variable fallbacks.",
+    "impact": "This is a purely internal codebase cleanup that simplifies the Azure provider logic without changing any existing model behavior or endpoints.",
+    "keywords": [
+      "refactor",
+      "azure",
+      "config",
+      "cleanup",
+      "gen-text"
+    ],
+    "visual_concept": "The bee mascot organizing or cleaning up a server room or configuration files. A broom or duster. Cloud/server motifs.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up dusty old code blocks in a glowing server room. A chunky retro monitor displays clean, organized folders. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11491.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up dusty old code blocks in a glowing server room. A chunky retro monitor displays clean, organized folders. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "generated_at": "2026-06-01T15:06:41.259683+00:00"
+}

@@ -9,8 +9,10 @@ real work (D1, KV, R2, Workers) runs in the Myceli account.
 
 | Public host (this Worker) | Upstream (Myceli) |
 | --- | --- |
+| `staging.pollinations.ai` | `staging.pollinations.myceli.ai` |
 | `staging.enter.pollinations.ai` | `staging.enter.myceli.ai` |
 | `staging.gen.pollinations.ai` | `staging.gen.myceli.ai` |
+| `pollinations.ai` | `pollinations.myceli.ai` |
 | `enter.pollinations.ai` | `enter.myceli.ai` |
 | `gen.pollinations.ai` | `gen.myceli.ai` |
 | `media.pollinations.ai` | `media.myceli.ai` |
@@ -57,18 +59,23 @@ cp ~/Library/Preferences/.wrangler/config/pollinations.toml \
 
 npm run deploy:staging
 
-# Production — this owns enter/gen/media.pollinations.ai.
+# Production — this owns pollinations.ai + enter/gen/media.pollinations.ai.
 npm run deploy:production
 ```
 
 ## Rollback
 
-Rollback is a route-owner change, not a DNS change. Re-deploy the previous
-Pollinations-account workers to retake their custom domains:
+Rollback is a route-owner change, not a DNS change. Re-attach the custom
+domain to the previous Pollinations-account worker to retake it:
 
+- `pollinations-ai` (old-account SPA worker) for `pollinations.ai`
 - `pollinations-enter-production` for `enter.pollinations.ai`
 - `pollinations-gen-production` for `gen.pollinations.ai`
 - `pollinations-media-prod` for `media.pollinations.ai`
+
+The old-account `pollinations-ai` worker still serves the SPA directly, so the
+apex rollback is just re-pointing its custom domain. Don't delete it until the
+proxy cutover is confirmed stable.
 
 If media writes occurred on Myceli before rollback, copy Myceli -> old before
 sending `media.pollinations.ai` back to the old worker, or keep media on

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **799** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **800** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🤖 Xeva AI](https://xeva.tedeca.de/) | Xeva AI lets you ask for support, help, or chat with no chat storage. Chats are kept in a secure database that only the CEO and CTO can access, and data selling is forbidden. | [@DejvidGichev](https://github.com/DejvidGichev) |  | 🫧 |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menampilkan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |  | 🫧 |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 Jarvis AI](https://jarvis-7-5.github.io/) | Use Jarvis AI as a full working AI assistant powered by pollinations. It provides assistant responses through pollinations. | [@Marco3113](https://github.com/Marco3113) |  | 🫧 |
 | [✅ TaskManager](https://panel.estehlal.com/) | non profite | [@LahbabiCode](https://github.com/LahbabiCode) |  | 🫧 |
 | [🛠️ WorkFlow](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) | ผสาน Pollinations.ai กับ n8n ผ่าน Community Node เพื่อเชื่อมการสร้างภาพและการสร้างวิดีโอ มีระบบเครดิตฟรีสำหรับเริ่มใช้งาน | [@TanatPinkeaw](https://github.com/TanatPinkeaw) |  | 🫧 |
-| [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |  | 🫧 |
 
 ---
 
@@ -427,7 +427,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 Zlkcyber AI](https://zlkcyber.tech/) | Next.js AI chat and image generation app | [@Zlkcyber](https://github.com/Zlkcyber) |  | 🐝 |
 | [🧠 AI therapist](https://play.google.com/store/apps/details?id=com.terapeuta.ai) | AI therapy app with chat, personalized routines & user data analysis | [@Mundoapp](https://github.com/Mundoapp) |  | 🐝 |
 
-<details><summary>Show all 128 apps</summary>
+<details><summary>Show all 129 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -471,6 +471,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 MindFlow](https://note.aegis-plus.my.id/) | AI second-brain notes that turns messy thoughts into structured insights. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [💬 Synapse](https://chat.aegis-plus.my.id) | Multi-model AI chat app with streaming, sessions, uploads, and Markdown. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [🎨 AISTONE](https://aistone.org/) | Offers image generation via FLUX, Turbo, Kontext and OpenAI Audio TTS for voice without registration, supporting Chinese and English input. | [@peyoba](https://github.com/peyoba) | 1 |  |
+| [🤖 Xeva AI](https://xeva.tedeca.de/) | Xeva AI lets you ask for support, help, or chat with no chat storage. Chats are kept in a secure database that only the CEO and CTO can access, and data selling is forbidden. | [@DejvidGichev](https://github.com/DejvidGichev) |  | 🫧 |
 | [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |  | 🫧 |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
 | [🔎 Perplexio](http://tcp.ap-northeast-1.clawcloudrun.com:47049/) | Host Perplexio as a self-hosted Perplexity-style AI search assistant using pollinations.ai as its LLM backend via the OpenAI-compatible API endpoint. | [@foxy1402](https://github.com/foxy1402) |  | 🫧 |

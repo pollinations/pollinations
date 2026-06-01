@@ -91,11 +91,7 @@ Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, fla
 
 ## Claude Desktop Integration
 
-```bash
-npx @pollinations/mcp install-claude-mcp
-```
-
-Or manually add to your Claude Desktop config:
+Add to your Claude Desktop config:
 
 ```json
 {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11509,
+  "title": "fix(gen-text): strip stream_options for non-OpenAI Azure models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11509",
+  "merged_at": "2026-06-01T18:59:12Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Azure Foundry rejects `stream_options` for non-OpenAI deployments (Mistral, Grok, DeepSeek, Llama) with `422 extra_forbidden`; the gateway injects it on every stream.\n- Strips `stream_options` when provider is `azure-openai` and the deployment isn't an OpenAI model, reusing the existing `isOpenAIModel` gate. OpenAI Azure models keep it.\n- Strips top-level `null`/`undefined` provider options at the upstream boundary without recursing into nested messages, tool schemas, or JSON schemas.\n- Adds focused tests for Azure strip/keep paths and provider payload cleanup — 17/17 local tests pass.\n\nNote: the exact model in the issue title (`mistral-small-2503`) has since moved to OpenRouter, but the bug class is still live for current `azure-openai` non-OpenAI deployments (grok-4-20, Mistral-Large-3, Llama-4-Maverick, etc.).\n\nRisks: low — gated on `azure-openai` + non-OpenAI deployment id; OpenAI Azure streaming usage reporting is unaffected. The null cleanup only affects top-level provider options that should mean “unset”.\n\nFixes #10902",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Azure streams unblocked",
+    "blurb": "Fixed a pesky bug where Azure would reject streaming requests for non-OpenAI models like Mistral and Grok. The spice must flow, and so must the tokens.",
+    "summary": "The text generation gateway now strips the stream_options parameter for non-OpenAI models on Azure (like Mistral, Grok, and Llama) to prevent 422 extra_forbidden errors.",
+    "impact": "Developers can now successfully stream responses from non-OpenAI models hosted on Azure Foundry without encountering validation errors.",
+    "keywords": [
+      "azure",
+      "streaming",
+      "bug-fix",
+      "text-generation",
+      "api"
+    ],
+    "visual_concept": "Polly the bee acting as a plumber, unclogging a glowing blue (Azure) pipe so that data can flow smoothly. Nomnom creature happily eating the rejected 'stream_options' tags.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny plumber's hat, unclogging a glowing blue pipe while the round Nomnom creature happily eats discarded 'stream_options' tags. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11509.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny plumber's hat, unclogging a glowing blue pipe while the round Nomnom creature happily eats discarded 'stream_options' tags. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T19:00:15.589472+00:00"
+}

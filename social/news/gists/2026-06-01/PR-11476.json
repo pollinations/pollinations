@@ -1,0 +1,35 @@
+{
+  "pr_number": 11476,
+  "title": "Fix SEO meta rewriting on pollinations.ai (run worker on navigations)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11476",
+  "merged_at": "2026-06-01T12:44:19Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The `pollinations-ai` worker rewrites per-route SEO tags via HTMLRewriter, but with `compatibility_date >= 2025-04-01` navigation requests are served the static asset directly and skip the worker — so the rewriting never fired (`/play` showed the default `pollinations.ai` title instead of `Play — pollinations.ai`).\n\n- Sets `run_worker_first = true` so the worker runs on all requests; non-HTML responses pass through unchanged.\n- Verified on `staging.pollinations.myceli.ai` (with `Sec-Fetch-Mode: navigate`): `/play` → `Play — pollinations.ai`, `/apps` → `Apps — pollinations.ai`, canonical `https://pollinations.ai/play`, og:title + JSON-LD present.\n\nTradeoff: the worker now runs on every request (incl. static assets), but it only transforms HTML and passes the rest through unchanged; assets stay browser-cached after first load. Can scope with negative globs later if invocation cost matters.\n\nFixes #11466",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Proper introductions",
+    "blurb": "Fixed a bug where our website pages were forgetting their names. Now, links to specific pages like /play or /apps will show the correct titles and preview cards when you share them!",
+    "summary": "Set run_worker_first to true in the Cloudflare worker configuration to fix an issue where navigation requests bypassed HTML rewriting for SEO tags.",
+    "impact": "Route-specific metadata is restored, meaning pages like /play and /apps will now display their correct titles and Open Graph preview cards when shared.",
+    "keywords": [
+      "seo",
+      "bug-fix",
+      "cloudflare",
+      "meta-tags",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee painting name tags or wooden signposts for different garden paths (representing website routes), while the chunky monitor robot inspects them with a magnifying glass (representing search engines/SEO).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot painting wooden signposts for different garden paths, with a chunky monitor robot companion holding a magnifying glass to inspect the signs. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11476.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot painting wooden signposts for different garden paths, with a chunky monitor robot companion holding a magnifying glass to inspect the signs. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-01T12:45:14.753036+00:00"
+}

@@ -1662,6 +1662,12 @@ async def tool_github_pr(
         else:
             logger.info(f"PR admin action '{action}' authorized for {context_user_name} (id={context_user_id})")
 
+    if _context and _context.get("is_http_api") and action in {"comment", "review"}:
+        logger.warning(
+            f"SECURITY: Blocked API PR write action '{action}' for user {context_user_name} (id={context_user_id})"
+        )
+        return {"error": f"The '{action}' action is not available from the HTTP API."}
+
     # READ ACTIONS
     if action == "get":
         if not pr_number:

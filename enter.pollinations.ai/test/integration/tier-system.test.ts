@@ -1,8 +1,6 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
-import {
-    atomicDeductUserBalance,
-    getUserBalances,
-} from "@shared/billing/deduction.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
@@ -458,17 +456,17 @@ describe("Tier System End-to-End", () => {
                 });
 
             await deduct();
-            let balance = await getUserBalances(db, userId);
+            let balance = await getUserBalance(db, userId);
             expect(balance.tierBalance).toBeCloseTo(0.01, 10);
             expect(balance.packBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
-            balance = await getUserBalances(db, userId);
+            balance = await getUserBalance(db, userId);
             expect(balance.tierBalance).toBeCloseTo(-0.015, 10);
             expect(balance.packBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
-            balance = await getUserBalances(db, userId);
+            balance = await getUserBalance(db, userId);
             expect(balance.tierBalance).toBeCloseTo(-0.04, 10);
             expect(balance.packBalance).toBeCloseTo(-0.015, 10);
         });

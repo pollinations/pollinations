@@ -598,7 +598,7 @@ export const CreateImageRequestSchema = z
             }),
         safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, enhance, safe, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;

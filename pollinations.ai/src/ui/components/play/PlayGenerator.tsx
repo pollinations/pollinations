@@ -147,10 +147,13 @@ export function PlayGenerator({
     );
 
     useEffect(() => {
-        if (
-            availableVoices.length > 0 &&
-            !availableVoices.includes(selectedVoice)
-        ) {
+        // Reset the voice when switching to a model whose voice list doesn't
+        // include the current selection (e.g. ElevenLabs -> Qwen3-TTS, which
+        // has no voices). Otherwise a stale voice leaks across providers and
+        // the API rejects it with "voice not available for this model".
+        if (availableVoices.length === 0) {
+            if (selectedVoice) setSelectedVoice("");
+        } else if (!availableVoices.includes(selectedVoice)) {
             setSelectedVoice(availableVoices[0]);
         }
     }, [availableVoices, selectedVoice]);

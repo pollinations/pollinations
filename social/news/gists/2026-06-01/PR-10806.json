@@ -1,0 +1,35 @@
+{
+  "pr_number": 10806,
+  "title": "feat(polly): render_visual tool — explicit AI-driven tables + charts",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10806",
+  "merged_at": "2026-06-01T11:17:25Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "The AI now calls a single `render_visual(type, title, data, options)` tool instead of writing markdown tables and hoping the post-hoc detector renders them. Internally the handler routes by type — table to a fixed PIL renderer, charts to a new matplotlib/seaborn engine, anything outside the enum (or `type=free_form`) falls through to the existing Gemini code-execution path. Up to 10 images attach to one Discord reply via a new `_images` list side-channel; the `_image` scalar still works for older callers.\n\nFixes the literal-asterisk bug from #10639 — the table renderer was calling `pilmoji.text(cell, ...)` on the raw string and ignoring its own `_parse_text_formatting` output. The rewrite does proper per-span drawing: measure each segment with its own font, dispatch the right weight, render in place, with backtick code spans rendered in IBM Plex Mono on a chip background.\n\n- New `services/chart_renderer.py` — bar / horizontal_bar / line / area / scatter / pie / donut / heatmap / histogram. Discord-dark rcParams, module-level `ThreadPoolExecutor(max_workers=2)`, NaN coercion, negative-bar red/green coloring, pie aggregates `<2%` slices into \"Other\" and caps at 20 wedges. Import-guarded so a missing matplotlib falls through to Gemini instead of crashing the bot\n- `services/charts.py` rewritten as the `render_visual` dispatcher; legacy `data_visualization` aliased for back-compat with cached AI sessions\n- `services/media_handlers.py` table renderer rewritten — per-span drawing, vendored Noto Sans VF (`wght` axis 400/700) + IBM Plex Mono, density tightened to 20pt / 14px padding / 56px header / 44px row at 150 DPI, Discord palette (`#313338` / `#2b2d31` / `#383a40` / `#40444b` / `#dcddde`), auto-pad short rows\n- Post-hoc markdown-table detector kept as fallback; failed renders now restore the raw markdown into the message instead of leaking a `__TABLE_IMG__` placeholder\n- Schema in `constants.py` replaced (type enum + structured data); system prompt mentions, keyword fi",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly paints by numbers",
+    "blurb": "Polly just got a massive visual upgrade! She can now generate beautiful charts and perfectly formatted data tables right in Discord.",
+    "summary": "Polly now uses an explicit `render_visual` tool to generate 9 types of matplotlib charts and perfectly formatted PIL data tables, supporting up to 10 images per Discord reply.",
+    "impact": "Users will see beautiful, Discord-themed charts and tables with proper bold, italic, and code-block formatting instead of raw markdown.",
+    "keywords": [
+      "polly",
+      "discord",
+      "charts",
+      "tables",
+      "visualization"
+    ],
+    "visual_concept": "Polly the bee as a data artist. She is painting charts and tables. The Monitor Robot is helping display the data. Represents the new `render_visual` tool and chart generation capabilities.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting a colorful bar chart on a wooden easel. A chunky pixel robot with a CRT monitor head stands nearby, holding a perfectly formatted data table. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-10806.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting a colorful bar chart on a wooden easel. A chunky pixel robot with a CRT monitor head stands nearby, holding a perfectly formatted data table. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-01T11:18:26.554133+00:00"
+}

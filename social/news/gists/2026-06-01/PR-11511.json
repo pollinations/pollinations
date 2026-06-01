@@ -1,0 +1,35 @@
+{
+  "pr_number": 11511,
+  "title": "fix(playground): reset TTS voice when switching to a model without it",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11511",
+  "merged_at": "2026-06-01T19:01:15Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Playground voice state leaked across TTS providers: the model-change effect only reset `selectedVoice` when the new model had voices, so ElevenLabs → Qwen3-TTS (which has no `voices` in the registry → zero voices) kept a stale voice (e.g. `rachel`), which the API rejects as \"voice not available for this model\".\n- The effect now clears `selectedVoice` to `\"\"` when the new model has no voices, and still resets to the first valid voice when it has some.\n\nRisks: UI-only React state change in `PlayGenerator.tsx`; no API/backend/registry changes. Biome clean; no new tsc errors in the edited region.\n\nFixes #10473",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Clearing the throat",
+    "blurb": "Fixed a quirky bug in the playground where switching text-to-speech models would sometimes keep the old voice selected. Now, when you switch to a model without specific voices, we properly clear the slate.",
+    "summary": "Fixed a React state leak in the playground where switching from a TTS model with voices (like ElevenLabs) to one without (like Qwen3-TTS) retained the previous voice selection, causing API rejections.",
+    "impact": "Users will no longer encounter 'voice not available' errors when switching between text-to-speech models in the playground.",
+    "keywords": [
+      "playground",
+      "tts",
+      "audio",
+      "bug-fix",
+      "ui"
+    ],
+    "visual_concept": "Polly the bee wearing tiny studio headphones, working at a retro audio mixing board, clearing out old cassette tapes (representing the stale voice state).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny studio headphones, adjusting sliders on a retro audio mixing board. A chunky pixel robot with a CRT monitor head helps by clearing away old cassette tapes. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11511.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny studio headphones, adjusting sliders on a retro audio mixing board. A chunky pixel robot with a CRT monitor head helps by clearing away old cassette tapes. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "generated_at": "2026-06-01T19:02:37.737036+00:00"
+}

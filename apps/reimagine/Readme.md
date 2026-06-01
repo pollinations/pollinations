@@ -53,7 +53,7 @@ ReImagine leverages the pollinations.ai API to transform images with AI. The int
 Example API endpoint used:
 
 ```
-https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[image-urls]&width=1024&height=1024&nologo=true
+https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[image-urls]&width=1024&height=1024
 ```
 
 ## 📱 Screenshots

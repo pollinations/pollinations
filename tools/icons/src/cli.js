@@ -26,7 +26,7 @@ const DARK = "#110518"; // pollinations splash / OG contrast
 
 const APPS = {
     react: {
-        brandColor: themeColors.amber, // #FEF3C7 — from the UI package
+        brandColor: themeColors.blue, // #DBEAFE — the showcase's blue identity
         contrastColor: DARK,
         outDir: "apps/react/public",
         og: true,

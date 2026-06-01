@@ -318,7 +318,6 @@ def render_ai_report(
         user_prompt=user_prompt,
         token=pollinations_token,
         temperature=0.4,
-        exit_on_failure=False,
     )
     if not raw:
         return None

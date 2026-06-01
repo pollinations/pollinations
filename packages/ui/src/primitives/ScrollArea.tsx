@@ -1,9 +1,9 @@
 import {
     type ComponentPropsWithoutRef,
+    forwardRef,
     type MutableRefObject,
     type PropsWithChildren,
     type Ref,
-    forwardRef,
     useCallback,
     useEffect,
     useRef,
@@ -45,14 +45,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
  */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
     (
-        {
-            theme,
-            axis = "y",
-            hideDelayMs = 2000,
-            className,
-            children,
-            ...rest
-        },
+        { theme, axis = "y", hideDelayMs = 2000, className, children, ...rest },
         externalRef,
     ) => {
         const innerRef = useRef<HTMLDivElement | null>(null);

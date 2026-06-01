@@ -3,6 +3,7 @@ import { PaidChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,
+    type PriceDefinition,
 } from "@shared/registry/registry.ts";
 import { type FC, useState } from "react";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
@@ -63,31 +64,39 @@ const DEFAULT_DIR: Record<SortKey, SortDir> = {
     output: "asc",
 };
 
-const getInputSortValue = (modelName: string): number => {
+const INPUT_PRICE_FIELDS = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptAudioTokens",
+    "promptAudioSeconds",
+    "promptImageTokens",
+    "promptVideoTokens",
+] as const satisfies (keyof PriceDefinition)[];
+
+const OUTPUT_PRICE_FIELDS = [
+    "completionTextTokens",
+    "completionAudioTokens",
+    "completionAudioSeconds",
+    "completionImageTokens",
+    "completionVideoSeconds",
+    "completionVideoTokens",
+] as const satisfies (keyof PriceDefinition)[];
+
+const sortValueFromFields = (
+    modelName: string,
+    fields: readonly (keyof PriceDefinition)[],
+): number => {
     const p = getPriceDefinition(modelName as ModelName);
     if (!p) return -1;
-    const sum =
-        (p.promptTextTokens ?? 0) +
-        (p.promptCachedTokens ?? 0) +
-        (p.promptAudioTokens ?? 0) +
-        (p.promptAudioSeconds ?? 0) +
-        (p.promptImageTokens ?? 0) +
-        (p.promptVideoTokens ?? 0);
+    const sum = fields.reduce((total, field) => total + (p[field] ?? 0), 0);
     return sum > 0 ? sum : -1;
 };
 
-const getOutputSortValue = (modelName: string): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum =
-        (p.completionTextTokens ?? 0) +
-        (p.completionAudioTokens ?? 0) +
-        (p.completionAudioSeconds ?? 0) +
-        (p.completionImageTokens ?? 0) +
-        (p.completionVideoSeconds ?? 0) +
-        (p.completionVideoTokens ?? 0);
-    return sum > 0 ? sum : -1;
-};
+const getInputSortValue = (modelName: string): number =>
+    sortValueFromFields(modelName, INPUT_PRICE_FIELDS);
+
+const getOutputSortValue = (modelName: string): number =>
+    sortValueFromFields(modelName, OUTPUT_PRICE_FIELDS);
 
 const sortModels = (
     models: ModelPrice[],

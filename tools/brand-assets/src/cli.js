@@ -4,7 +4,12 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { themeColors } from "@pollinations_ai/ui";
-import { renderFavicon, renderOg, renderPaddedIcon } from "./render.js";
+import {
+    renderFavicon,
+    renderOg,
+    renderPaddedIcon,
+    renderSolidIcon,
+} from "./render.js";
 
 const require = createRequire(import.meta.url);
 
@@ -60,8 +65,24 @@ function manifestJson(cfg) {
         short_name: cfg.manifest.short_name,
         description: cfg.manifest.description,
         icons: [
-            { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-            { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+            {
+                src: "/icon-192.png",
+                sizes: "192x192",
+                type: "image/png",
+                purpose: "any",
+            },
+            {
+                src: "/icon-512.png",
+                sizes: "512x512",
+                type: "image/png",
+                purpose: "any",
+            },
+            {
+                src: "/icon-maskable-512.png",
+                sizes: "512x512",
+                type: "image/png",
+                purpose: "maskable",
+            },
         ],
         theme_color: cfg.brandColor,
         background_color: cfg.contrastColor,
@@ -90,14 +111,30 @@ async function generate(name) {
     }
     await write("favicon.ico", await renderFavicon(svg, 32, cfg.brandColor));
 
+    // "any" PWA icons: transparent, padded brand logo.
     for (const size of PWA_SIZES) {
         await write(
             `icon-${size}.png`,
             await renderPaddedIcon(svg, size, cfg.brandColor),
         );
     }
+
+    // Apple touch icons: opaque so iOS never renders the logo on a black square.
+    const solid = {
+        bg: cfg.brandColor,
+        logoColor: cfg.contrastColor,
+        fraction: 0.65,
+    };
     for (const [size, file] of APPLE) {
-        await write(file, await renderPaddedIcon(svg, size, cfg.brandColor));
+        await write(file, await renderSolidIcon(svg, size, solid));
+    }
+
+    // Maskable PWA icon: opaque background + extra safe-zone margin (manifest apps only).
+    if (cfg.manifest) {
+        await write(
+            "icon-maskable-512.png",
+            await renderSolidIcon(svg, 512, { ...solid, fraction: 0.6 }),
+        );
     }
 
     if (cfg.og) {

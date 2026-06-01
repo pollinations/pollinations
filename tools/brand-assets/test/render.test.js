@@ -5,6 +5,7 @@ import {
     renderFavicon,
     renderOg,
     renderPaddedIcon,
+    renderSolidIcon,
     tintLogo,
 } from "../src/render.js";
 
@@ -18,27 +19,32 @@ test("tintLogo swaps currentColor for the given color", () => {
 });
 
 test("renderFavicon is a transparent PNG at the requested size", async () => {
-    const meta = await sharp(
-        await renderFavicon(SVG, 32, "#FEF3C7"),
-    ).metadata();
+    const meta = await sharp(await renderFavicon(SVG, 32, "#FEF3C7")).metadata();
     assert.equal(meta.width, 32);
     assert.equal(meta.height, 32);
     assert.equal(meta.hasAlpha, true);
 });
 
 test("renderPaddedIcon is a transparent PNG at the requested size", async () => {
-    const meta = await sharp(
-        await renderPaddedIcon(SVG, 192, "#FEF3C7"),
-    ).metadata();
+    const meta = await sharp(await renderPaddedIcon(SVG, 192, "#FEF3C7")).metadata();
     assert.equal(meta.width, 192);
     assert.equal(meta.height, 192);
     assert.equal(meta.hasAlpha, true);
 });
 
+test("renderSolidIcon has an opaque brand-colored background", async () => {
+    const png = await renderSolidIcon(SVG, 180, { bg: "#FEF3C7", logoColor: "#110518" });
+    const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const alpha = info.channels > 3 ? data[3] : 255;
+    assert.equal(alpha, 255); // top-left corner is opaque
+    // ...and matches the background #FEF3C7 = (254, 243, 199)
+    assert.ok(Math.abs(data[0] - 254) <= 2);
+    assert.ok(Math.abs(data[1] - 243) <= 2);
+    assert.ok(Math.abs(data[2] - 199) <= 2);
+});
+
 test("renderOg is a 1200x630 PNG", async () => {
-    const meta = await sharp(
-        await renderOg(SVG, { bg: "#FEF3C7", logoColor: "#110518" }),
-    ).metadata();
+    const meta = await sharp(await renderOg(SVG, { bg: "#FEF3C7", logoColor: "#110518" })).metadata();
     assert.equal(meta.width, 1200);
     assert.equal(meta.height, 630);
 });

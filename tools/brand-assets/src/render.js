@@ -17,41 +17,12 @@ function hexToRgb(hex) {
     };
 }
 
-/** Favicon: logo fills 100% of the canvas, transparent background. */
-export function renderFavicon(svg, size, color) {
-    return sharp(Buffer.from(tintLogo(svg, color)))
-        .resize(size, size, { fit: "contain", background: TRANSPARENT })
-        .png()
-        .toBuffer();
-}
-
-/** PWA/Apple icon: logo at `fraction` size, centered, transparent background. */
-export async function renderPaddedIcon(svg, size, color, fraction = 0.65) {
-    const logoSize = Math.round(size * fraction);
-    const offset = Math.floor((size - logoSize) / 2);
-    const logo = await sharp(Buffer.from(tintLogo(svg, color)))
-        .resize(logoSize, logoSize, { fit: "contain", background: TRANSPARENT })
-        .png()
-        .toBuffer();
-    return sharp({
-        create: {
-            width: size,
-            height: size,
-            channels: 4,
-            background: TRANSPARENT,
-        },
-    })
-        .composite([{ input: logo, top: offset, left: offset }])
-        .png()
-        .toBuffer();
-}
-
-/** OG card: logo centered on a solid brand-color field. */
-export async function renderOg(
-    svg,
-    { width = 1200, height = 630, bg, logoColor, fraction = 0.5 },
-) {
-    const logoSize = Math.round(height * fraction);
+/**
+ * Core: a tinted logo sized to `fraction` of the shorter side, centered on a
+ * canvas. `bg` is a hex color (opaque background) or null (transparent).
+ */
+async function compose(svg, { width, height = width, bg = null, logoColor, fraction }) {
+    const logoSize = Math.round(Math.min(width, height) * fraction);
     const logo = await sharp(Buffer.from(tintLogo(svg, logoColor)))
         .resize(logoSize, logoSize, { fit: "contain", background: TRANSPARENT })
         .png()
@@ -61,7 +32,7 @@ export async function renderOg(
             width,
             height,
             channels: 4,
-            background: { ...hexToRgb(bg), alpha: 1 },
+            background: bg ? { ...hexToRgb(bg), alpha: 1 } : TRANSPARENT,
         },
     })
         .composite([
@@ -73,4 +44,24 @@ export async function renderOg(
         ])
         .png()
         .toBuffer();
+}
+
+/** Favicon: logo fills the square, transparent background. */
+export function renderFavicon(svg, size, color) {
+    return compose(svg, { width: size, logoColor: color, fraction: 1 });
+}
+
+/** "any" PWA icon: logo with a margin (so rounding never crops), transparent. */
+export function renderPaddedIcon(svg, size, color, fraction = 0.65) {
+    return compose(svg, { width: size, logoColor: color, fraction });
+}
+
+/** apple-touch / maskable icon: padded logo on a solid (opaque) background. */
+export function renderSolidIcon(svg, size, { bg, logoColor, fraction = 0.62 }) {
+    return compose(svg, { width: size, bg, logoColor, fraction });
+}
+
+/** OG card: logo centered on a solid brand-color field. */
+export function renderOg(svg, { width = 1200, height = 630, bg, logoColor, fraction = 0.5 }) {
+    return compose(svg, { width, height, bg, logoColor, fraction });
 }

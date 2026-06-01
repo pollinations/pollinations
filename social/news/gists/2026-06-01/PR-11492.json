@@ -1,0 +1,35 @@
+{
+  "pr_number": 11492,
+  "title": "refactor(shared): delete dead modules/exports and inline single-caller billing helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11492",
+  "merged_at": "2026-06-01T15:33:23Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Delete dead files: shared/utils.ts (omit/safeRound duplicated per-service) and shared/registry/types.ts (EventType duplicated generation-event.ts; repointed model.ts import)\n- Drop dead exports: isValidModel, MARKUP_PERCENT, AudioVoice (shared/registry/text), getTierEmoji/getTierColor/TIER_COLORS + per-tier color field; un-export internal-only isVideoService, expandIPv6, getTextModels/getImageModels/getAudioModels\n- balance.ts: trim re-export barrel to UserBalance only; inline determineBalanceSource into createBalanceCheckResult and drop the unused BalanceSource type\n- deduction.ts: collapse atomicAdjustUserBalance into atomicCreditUserBalance (only ever credited positives); delete getUserBalances (test-only duplicate of balance.ts getUserBalance)\n- Migrate 3 test files from getUserBalances to getUserBalance\n\nRisks: none — pure dead-code removal and single-caller inlining; no callers or behavior change. balance/deduction logic verified by gen byop-markup+billing-deduction (22 tests) and enter tier-system (8 tests); gen typecheck clean; enter typecheck unchanged from main (79 pre-existing @pollinations/ui frontend errors, none in touched files).\n\n_~196 net lines removed · biome ✓ · gen.pollinations.ai vitest: src/byop-markup.test.ts (17) + test/billing-deduction.test.ts  ✓_",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the Weeds",
+    "blurb": "We did some spring cleaning in our shared codebase, removing dead code and streamlining our billing helpers. A lighter codebase means a healthier hive!",
+    "summary": "Removed approximately 196 lines of dead code from the shared modules, including unused billing helpers, redundant types, and obsolete exports like MARKUP_PERCENT and AudioVoice.",
+    "impact": "This internal refactor simplifies the codebase and reduces technical debt without changing any user-facing behavior.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "tech-debt",
+      "billing",
+      "shared"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, pruning dead code (leaves) from a plant, while the Nomnom creature eats the discarded code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning dead pixelated leaves off a glowing lime green (#ecf874) code-plant. The round tan nomnom creature sits below, happily eating the fallen dead code leaves with a 'NOMNOM' speech bubble. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-01/PR-11492.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, pruning dead pixelated leaves off a glowing lime green (#ecf874) code-plant. The round tan nomnom creature sits below, happily eating the fallen dead code leaves with a 'NOMNOM' speech bubble. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-06-01T15:34:37.919611+00:00"
+}

@@ -144,7 +144,7 @@ def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
     system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
     ai_response = call_pollinations_api(
         system_prompt, user_prompt, pollinations_token,
-        temperature=0.3, exit_on_failure=False,
+        temperature=0.3,
     )
     if not ai_response:
         print("  FATAL: Highlights AI generation failed")
@@ -250,7 +250,7 @@ PR Gists:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        temperature=0.3
     )
 
     if not response:

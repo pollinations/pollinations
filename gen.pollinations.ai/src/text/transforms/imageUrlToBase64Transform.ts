@@ -27,7 +27,6 @@ class ImageFetchError extends Error {
 
 /** Max image size: 20MB */
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
-const MAX_TOTAL_IMAGE_BYTES = MAX_IMAGE_SIZE;
 const MAX_IMAGES_PER_REQUEST = 8;
 
 const BLOCKED_HOSTNAMES = /^localhost$/i;
@@ -109,7 +108,7 @@ async function readImageBytes(
 ): Promise<ArrayBuffer> {
     if (maxBytes <= 0) {
         throw new ImageFetchError(
-            `Too many image bytes in request (max ${MAX_TOTAL_IMAGE_BYTES} bytes).`,
+            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
             400,
         );
     }
@@ -292,7 +291,7 @@ async function processContentPart(
         );
     }
 
-    const remainingBytes = MAX_TOTAL_IMAGE_BYTES - context.totalBytes;
+    const remainingBytes = MAX_IMAGE_SIZE - context.totalBytes;
     const { dataUrl, byteLength } = await fetchImageAsBase64(
         part.image_url.url,
         remainingBytes,

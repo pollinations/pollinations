@@ -11,7 +11,6 @@ import json
 import random
 import requests
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from pathlib import Path
 
@@ -23,7 +22,6 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
 IMAGE_MODEL = "nanobanana-2"  # Image generation model
-WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings
 MAX_SEED = 2147483647
@@ -283,23 +281,11 @@ def load_format(platform: str) -> str:
     return "\n".join(section_lines).strip()
 
 
-def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
-    """Get date range for the specified number of days back"""
-    now = datetime.now(timezone.utc)
-    end_date = now
-    start_date = end_date - timedelta(days=days_back)
-    return start_date, end_date
-
-
 def call_pollinations_api(
     system_prompt: str,
     user_prompt: str,
     token: str,
     temperature: float = 0.7,
-    max_retries: int = None,
-    model: str = None,
-    verbose: bool = False,
-    exit_on_failure: bool = False
 ) -> Optional[str]:
     """Call pollinations.ai API with retry logic and exponential backoff
 
@@ -308,42 +294,22 @@ def call_pollinations_api(
         user_prompt: User prompt for the AI
         token: pollinations.ai API token
         temperature: Temperature for generation (default 0.7)
-        max_retries: Number of retries (default MAX_RETRIES from constants)
-        model: Model to use (default MODEL from constants)
-        verbose: If True, print full prompts sent to API
-        exit_on_failure: If True, sys.exit(1) on failure instead of returning None
-    
+
     Returns:
-        Response content or None if failed (exits if exit_on_failure=True)
+        Response content or None if failed
     """
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
-    use_model = model or MODEL
-    retries = max_retries if max_retries is not None else MAX_RETRIES
     last_error = None
 
-    # Verbose logging
-    if verbose:
-        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
-        print(f"  [VERBOSE] Model: {use_model}")
-        print(f"  [VERBOSE] Temperature: {temperature}")
-        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
-        print(f"  ---BEGIN SYSTEM PROMPT---")
-        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
-        print(f"  ---END SYSTEM PROMPT---")
-        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
-        print(f"  ---BEGIN USER PROMPT---")
-        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
-        print(f"  ---END USER PROMPT---")
-
-    for attempt in range(retries):
+    for attempt in range(MAX_RETRIES):
         seed = random.randint(0, MAX_SEED)
 
         payload = {
-            "model": use_model,
+            "model": MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -352,12 +318,9 @@ def call_pollinations_api(
             "seed": seed
         }
 
-        if attempt == 0:
-            if verbose:
-                print(f"  Using seed: {seed}")
-        else:
+        if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{retries - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -372,11 +335,6 @@ def call_pollinations_api(
                 try:
                     result = response.json()
                     content = result['choices'][0]['message']['content']
-                    if verbose:
-                        print(f"  [VERBOSE] Response ({len(content)} chars):")
-                        print(f"  ---BEGIN RESPONSE---")
-                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
-                        print(f"  ---END RESPONSE---")
                     return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
@@ -393,10 +351,7 @@ def call_pollinations_api(
             last_error = f"Request failed: {e}"
             print(f"  {last_error}")
 
-    print(f"All {retries} attempts failed. Last error: {last_error}")
-    
-    if exit_on_failure:
-        sys.exit(1)
+    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
     return None
 
 
@@ -812,7 +767,7 @@ def generate_platform_post(
     if extra_context:
         task += extra_context
 
-    response = call_pollinations_api(voice, task, token, temperature=temperature, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=temperature)
     if not response:
         return None
     return parse_json_response(response)
@@ -988,53 +943,6 @@ def build_canonical_summary(
     return result
 
 
-# ── PR creation helpers ──────────────────────────────────────────────
-
-def create_branch_from_main(
-    branch: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[str]:
-    """Create a branch from main HEAD. Returns base SHA, or None on failure.
-    Tolerates 'Reference already exists' for branch reuse."""
-    headers = _github_headers(github_token)
-
-    ref_resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
-        headers=headers,
-    )
-    if ref_resp.status_code != 200:
-        print(f"Error getting ref: {ref_resp.text[:200]}")
-        return None
-    base_sha = ref_resp.json()["object"]["sha"]
-
-    create_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
-        headers=headers,
-        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
-    )
-    if create_resp.status_code not in [200, 201]:
-        if "Reference already exists" not in create_resp.text:
-            print(f"Error creating branch: {create_resp.text[:200]}")
-            return None
-        # Update existing branch to latest main
-        update_resp = github_api_request(
-            "PATCH",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs/heads/{branch}",
-            headers=headers,
-            json={"sha": base_sha, "force": True},
-        )
-        if update_resp.status_code != 200:
-            print(f"  Warning: could not update branch {branch}: {update_resp.text[:200]}")
-        else:
-            print(f"  Branch {branch} updated to main HEAD")
-
-    return base_sha
-
-
 def commit_files_to_branch(
     files: List[tuple],
     branch: str,
@@ -1085,68 +993,6 @@ def commit_files_to_branch(
             print(f"  Committed {file_path}")
         else:
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
-
-
-def create_or_update_pr(
-    title: str,
-    body: str,
-    branch: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[int]:
-    """Create a PR (or update existing). Returns PR number or None."""
-    headers = _github_headers(github_token)
-
-    pr_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
-        headers=headers,
-        json={"title": title, "body": body, "head": branch, "base": "main"},
-    )
-
-    if pr_resp.status_code in [200, 201]:
-        pr_info = pr_resp.json()
-        pr_number = pr_info["number"]
-        print(f"  Created PR #{pr_number}: {pr_info['html_url']}")
-        _apply_pr_labels(pr_number, github_token, owner, repo)
-        return pr_number
-
-    if "A pull request already exists" in pr_resp.text:
-        list_resp = github_api_request(
-            "GET",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
-            headers=headers,
-        )
-        if list_resp.status_code == 200 and list_resp.json():
-            existing = list_resp.json()[0]
-            github_api_request(
-                "PATCH",
-                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
-                headers=headers,
-                json={"title": title, "body": body},
-            )
-            print(f"  Updated existing PR #{existing['number']}")
-            return existing["number"]
-        print("  PR already exists but could not update it")
-        return None
-
-    print(f"  Error creating PR: {pr_resp.text[:200]}")
-    return None
-
-
-def _apply_pr_labels(pr_number: int, github_token: str, owner: str, repo: str) -> None:
-    """Apply PR_LABELS env var labels to a PR."""
-    pr_labels = get_env("PR_LABELS", required=False)
-    if pr_labels:
-        headers = _github_headers(github_token)
-        labels_list = [l.strip() for l in pr_labels.split(",")]
-        github_api_request(
-            "POST",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
-            headers=headers,
-            json={"labels": labels_list},
-        )
 
 
 # ── VPS deployment ───────────────────────────────────────────────────

@@ -17,7 +17,6 @@ import { resolveModelConfig } from "./utils/modelResolver.js";
 export const log = debug("pollinations:portkey");
 
 const clientConfig = {
-    additionalHeaders: {},
     defaultOptions: {
         model: "openai-fast",
         jsonMode: false,

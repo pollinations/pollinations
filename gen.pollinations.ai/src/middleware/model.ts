@@ -10,7 +10,7 @@ import {
 } from "@shared/registry/realtime.ts";
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
-import type { EventType } from "@shared/registry/types.ts";
+import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 

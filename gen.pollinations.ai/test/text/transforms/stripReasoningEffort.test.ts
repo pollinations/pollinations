@@ -35,16 +35,46 @@ describe("stripReasoningEffort", () => {
 describe("stripReasoningEffort model wiring", () => {
     // Only the non-reasoning Grok deployment (grok-4-20-non-reasoning) 500s on
     // reasoning_effort; the reasoning variants must keep accepting it.
-    it("wires stripReasoningEffort onto grok (non-reasoning)", () => {
-        expect(findModelByName("grok")?.transform).toBe(stripReasoningEffort);
+    it("wires reasoning_effort stripping onto grok while preserving cache_control stripping", async () => {
+        const transform = findModelByName("grok")?.transform;
+        if (!transform) throw new Error("grok transform missing");
+
+        const { messages: resultMessages, options } = await transform(
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "hi",
+                            cache_control: { type: "ephemeral" },
+                        },
+                    ],
+                },
+            ],
+            {
+                reasoning_effort: "high",
+                temperature: 0.5,
+            },
+        );
+
+        expect(options.reasoning_effort).toBeUndefined();
+        expect(options.temperature).toBe(0.5);
+        expect(resultMessages[0].content).toEqual([
+            { type: "text", text: "hi" },
+        ]);
     });
 
     it.each([
         "grok-large",
         "grok-4.3",
-    ])("does not strip reasoning_effort on %s (reasoning model)", (modelName) => {
-        expect(findModelByName(modelName)?.transform).not.toBe(
-            stripReasoningEffort,
-        );
+    ])("does not strip reasoning_effort on %s (reasoning model)", async (modelName) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
+
+        const { options } = await transform([{ role: "user", content: "hi" }], {
+            reasoning_effort: "high",
+        });
+        expect(options.reasoning_effort).toBe("high");
     });
 });

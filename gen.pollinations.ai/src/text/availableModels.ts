@@ -97,15 +97,17 @@ const models: ModelDefinition[] = [
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
         // Non-reasoning deployment 500s if reasoning_effort is forwarded.
-        transform: stripReasoningEffort,
+        transform: pipe(stripCacheControl, stripReasoningEffort),
     },
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+        transform: stripCacheControl,
     },
     {
         name: "grok-4.3",
         config: portkeyConfig["grok-4.3"],
+        transform: stripCacheControl,
     },
     {
         name: "openai-audio",

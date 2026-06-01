@@ -73,7 +73,7 @@ jobs:
         working-directory: packages/sdk
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-ui:
     needs: detect-changes
@@ -113,7 +113,7 @@ jobs:
         working-directory: packages/ui
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-mcp:
     needs: detect-changes
@@ -151,7 +151,7 @@ jobs:
         working-directory: packages/mcp
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-polli-cli:
     needs: detect-changes
@@ -190,4 +190,4 @@ jobs:
         working-directory: packages/polli-cli
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

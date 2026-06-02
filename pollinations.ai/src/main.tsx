@@ -1,22 +1,32 @@
+import { PolliProvider } from "@pollinations/sdk/react";
+import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import App from "./App";
-import { AuthProvider } from "./hooks/useAuth";
-import "./styles.css";
+import { POLLI_APP_KEY } from "./config.ts";
+import { routeTree } from "./routeTree.gen.ts";
+import "./style.css";
+
+const router = createRouter({
+    routeTree,
+    defaultPreload: "intent",
+});
+
+declare module "@tanstack/react-router" {
+    interface Register {
+        router: typeof router;
+    }
+}
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
-const root = createRoot(rootElement);
 
-root.render(
-    <AuthProvider>
-        <BrowserRouter
-            future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-            }}
+createRoot(rootElement).render(
+    <StrictMode>
+        <PolliProvider
+            appKey={POLLI_APP_KEY}
+            permissions={["profile", "usage"]}
         >
-            <App />
-        </BrowserRouter>
-    </AuthProvider>,
+            <RouterProvider router={router} />
+        </PolliProvider>
+    </StrictMode>,
 );

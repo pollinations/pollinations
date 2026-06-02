@@ -60,12 +60,16 @@ test("public price equals provider cost times priceMultiplier for every model", 
     }
 });
 
-test("model without explicit price falls back to cost for both values", () => {
+test("calculatePrice derives the total from cost via priceMultiplier", () => {
+    // No model carries an explicit price block — price is always derived from
+    // cost × priceMultiplier. Assert the runtime aggregation honours that for a
+    // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
+    const { priceMultiplier } = getModelDefinition("flux");
     const cost = calculateCost("flux", usage);
     const price = calculatePrice("flux", usage);
 
-    expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+    expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
 test("GPT-5.5 is available on the free tier", () => {

@@ -13,12 +13,15 @@
 - **Audio / TTS:** https://gen.pollinations.ai/audio/{text}
 - **Available Image Models:** https://gen.pollinations.ai/image/models
 - **Available Text Models:** https://gen.pollinations.ai/v1/models
+- **Media Store (uploads):** https://media.pollinations.ai
 
 ## Official Documentation
 - **API Docs (Swagger):** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
-- **React Hooks Docs:** https://react-hooks.pollinations.ai
-- **MCP Protocol:** https://mcp.sequa.ai/v1/pollinations/contribute
+- **React SDK & UI:** https://react.pollinations.ai
+- **BYOP (Bring Your Own Pollen):** https://gen.pollinations.ai/docs#tag/byop
+- **MCP Server Docs:** https://gen.pollinations.ai/docs#tag/mcp-server
+- **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 
 ## Apps & Community
 - **Community App Showcase:** https://pollinations.ai
@@ -32,7 +35,9 @@
 
 ## Packages
 - **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
+- **NPM UI (@pollinations/ui):** https://www.npmjs.com/package/@pollinations/ui
 - **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
+- **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials
 - **Discord:** https://discord.gg/pollinations-ai-885844321461485618

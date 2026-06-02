@@ -1,0 +1,35 @@
+{
+  "pr_number": 11552,
+  "title": "Add ather mini to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11552",
+  "merged_at": "2026-06-02T04:52:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ather mini](minitejas.in) to chat\n- ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching.\n\nFixes #10354",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Ather Mini joins the greenhouse",
+    "blurb": "Ather Mini just sprouted in our community greenhouse! It's a ChatGPT-like interface built to help people learn about AI, powered by Pollinations.",
+    "summary": "Added Ather Mini, a ChatGPT-like educational chat interface that uses Pollinations.ai to teach people about AI, to the community apps showcase.",
+    "impact": "Users can now discover Ather Mini in the apps directory and see how Pollinations can be used to build educational AI tools.",
+    "keywords": [
+      "community",
+      "apps",
+      "education",
+      "chat",
+      "showcase"
+    ],
+    "visual_concept": "A cozy digital greenhouse setting. The Pollinations bee (Polly) acting as a teacher, showing a small retro computer terminal (representing Ather Mini's chat interface) to the Monitor Robot. Lots of green plants, code-plants, and lime green accents.",
+    "image_prompt": "Cozy pixel art scene inside a lush digital greenhouse where the cute bee mascot, wearing tiny teacher glasses, shows a chat interface on a retro computer monitor to a chunky little robot. Code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11552.jpg",
+    "prompt": "Cozy pixel art scene inside a lush digital greenhouse where the cute bee mascot, wearing tiny teacher glasses, shows a chat interface on a retro computer monitor to a chunky little robot. Code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-02T04:53:32.704754+00:00",
+  "app_name": "ather mini",
+  "app_url": "minitejas.in"
+}

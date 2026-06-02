@@ -1,15 +1,17 @@
 # Core dependencies for Z-Image server
-# torch and torchvision should be installed separately with CUDA support
-diffusers
-accelerate
-transformers
-safetensors
-huggingface-hub
-fastapi
-uvicorn
-pydantic
-aiohttp
-pillow
-requests
-spandrel
-bitsandbytes  # required for NF4 (bnb-4bit) model variants via ZIMAGE_MODEL_ID
+# torch and torchvision must be installed separately with CUDA support, e.g.:
+#   pip install torch==2.6.0+cu124 torchvision==0.21.0+cu124 --index-url https://download.pytorch.org/whl/cu124
+# (pulls triton==3.2.0 as a dependency)
+diffusers==0.38.0
+accelerate==1.13.0
+transformers==5.8.0
+safetensors==0.8.0rc0
+huggingface-hub==1.14.0
+fastapi==0.136.1
+uvicorn==0.46.0
+pydantic==2.13.4
+aiohttp==3.13.5
+pillow==12.1.1
+requests==2.34.0
+spandrel==0.4.2
+bitsandbytes==0.49.2  # required for NF4 (bnb-4bit) model variants via ZIMAGE_MODEL_ID

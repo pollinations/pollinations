@@ -762,9 +762,6 @@ const InputsDemo: FC = () => {
                 <ControlGroup label="Textarea error">
                     <Textarea placeholder="Invalid" rows={3} error />
                 </ControlGroup>
-                <ControlGroup label="Textarea auto-grow">
-                    <Textarea placeholder="Grows as you type" autoGrow />
-                </ControlGroup>
                 <ControlGroup label="Textarea disabled">
                     <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>

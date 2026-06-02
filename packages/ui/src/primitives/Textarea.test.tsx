@@ -17,11 +17,6 @@ describe("Textarea", () => {
         expect(html).not.toContain("polli:border-gray-300");
     });
 
-    it("opts into CSS auto-grow via field-sizing", () => {
-        const html = renderToStaticMarkup(<Textarea autoGrow />);
-        expect(html).toContain("polli:field-sizing-content");
-    });
-
     it("forwards disabled and arbitrary textarea props", () => {
         const html = renderToStaticMarkup(
             <Textarea disabled rows={8} aria-label="Notes" />,

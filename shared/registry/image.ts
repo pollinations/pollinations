@@ -30,7 +30,7 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
@@ -49,7 +49,7 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.5), // per 1M tokens
@@ -70,7 +70,7 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -230,7 +230,7 @@ export const IMAGE_SERVICES = {
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             completionVideoSeconds: 0.15, // per sec
         },
@@ -346,6 +346,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
+        paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -384,6 +385,7 @@ export const IMAGE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
             completionImageTokens: 0.03, // per image

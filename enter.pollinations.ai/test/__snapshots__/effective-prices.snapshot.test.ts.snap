@@ -18,10 +18,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000033,
     },
     "price": {
-      "completionTextTokens": 0.0000165,
-      "promptCacheWriteTokens": 0.000004125,
-      "promptCachedTokens": 3.3e-7,
-      "promptTextTokens": 0.0000033,
+      "completionTextTokens": 0.00002475,
+      "promptCacheWriteTokens": 0.0000061875,
+      "promptCachedTokens": 4.95e-7,
+      "promptTextTokens": 0.00000495,
     },
   },
   "claude-fast": {
@@ -32,10 +32,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000011,
     },
     "price": {
-      "completionTextTokens": 0.0000055,
-      "promptCacheWriteTokens": 0.000001375,
-      "promptCachedTokens": 1.1e-7,
-      "promptTextTokens": 0.0000011,
+      "completionTextTokens": 0.00000825,
+      "promptCacheWriteTokens": 0.0000020625,
+      "promptCachedTokens": 1.65e-7,
+      "promptTextTokens": 0.00000165,
     },
   },
   "claude-large": {
@@ -46,10 +46,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000055,
     },
     "price": {
-      "completionTextTokens": 0.0000275,
-      "promptCacheWriteTokens": 0.000006875,
-      "promptCachedTokens": 5.5e-7,
-      "promptTextTokens": 0.0000055,
+      "completionTextTokens": 0.00004125,
+      "promptCacheWriteTokens": 0.0000103125,
+      "promptCachedTokens": 8.25e-7,
+      "promptTextTokens": 0.00000825,
     },
   },
   "claude-opus-4.7": {
@@ -60,10 +60,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000055,
     },
     "price": {
-      "completionTextTokens": 0.0000275,
-      "promptCacheWriteTokens": 0.000006875,
-      "promptCachedTokens": 5.5e-7,
-      "promptTextTokens": 0.0000055,
+      "completionTextTokens": 0.00004125,
+      "promptCacheWriteTokens": 0.0000103125,
+      "promptCachedTokens": 8.25e-7,
+      "promptTextTokens": 0.00000825,
     },
   },
   "claude-opus-4.8": {
@@ -274,8 +274,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 7e-8,
     },
     "price": {
-      "completionTextTokens": 3.4e-7,
-      "promptTextTokens": 7e-8,
+      "completionTextTokens": 5.1e-7,
+      "promptTextTokens": 1.05e-7,
     },
   },
   "glm": {
@@ -498,8 +498,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 2.5e-7,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptTextTokens": 2.5e-7,
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 3.75e-7,
     },
   },
   "llama-scout": {
@@ -599,9 +599,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 3e-7,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptImageTokens": 3e-7,
-      "promptTextTokens": 3e-7,
+      "completionImageTokens": 0.000045,
+      "promptImageTokens": 4.5e-7,
+      "promptTextTokens": 4.5e-7,
     },
   },
   "nanobanana-2": {
@@ -612,10 +612,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 5e-7,
     },
     "price": {
-      "completionImageTokens": 0.00006,
-      "completionTextTokens": 0.000003,
-      "promptImageTokens": 5e-7,
-      "promptTextTokens": 5e-7,
+      "completionImageTokens": 0.00009,
+      "completionTextTokens": 0.0000045,
+      "promptImageTokens": 7.5e-7,
+      "promptTextTokens": 7.5e-7,
     },
   },
   "nanobanana-pro": {
@@ -626,10 +626,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
     "price": {
-      "completionImageTokens": 0.00012,
-      "completionTextTokens": 0.000012,
-      "promptImageTokens": 0.00000125,
-      "promptTextTokens": 0.00000125,
+      "completionImageTokens": 0.00018,
+      "completionTextTokens": 0.000018,
+      "promptImageTokens": 0.000001875,
+      "promptTextTokens": 0.000001875,
     },
   },
   "nova": {
@@ -885,7 +885,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.000013,
     },
     "price": {
-      "completionAudioTokens": 0.000013,
+      "completionAudioTokens": 0.0000195,
     },
   },
   "qwen-vision": {
@@ -1009,7 +1009,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.15,
     },
     "price": {
-      "completionVideoSeconds": 0.15,
+      "completionVideoSeconds": 0.225,
     },
   },
   "wan": {

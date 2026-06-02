@@ -387,7 +387,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(0.07),
             completionTextTokens: perMillion(0.34),
@@ -631,7 +631,8 @@ export const TEXT_SERVICES = {
         brand: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
-        priceMultiplier: 1,
+        paidOnly: true,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(1.1),
             promptCachedTokens: perMillion(0.11),
@@ -653,7 +654,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(3.3),
             promptCachedTokens: perMillion(0.33),
@@ -675,7 +676,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
@@ -697,7 +698,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
@@ -994,7 +995,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.0),
@@ -1109,6 +1110,7 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
             promptTextTokens: perMillion(0.3), // per 1M tokens

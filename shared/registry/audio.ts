@@ -206,6 +206,7 @@ export const AUDIO_SERVICES = {
         brand: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
+        paidOnly: true,
         priceMultiplier: 1.5,
         cost: {
             // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
@@ -223,7 +224,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.5,
         cost: {
             completionAudioTokens: 0.013 / 1000,
         },

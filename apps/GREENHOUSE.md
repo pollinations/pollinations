@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **804** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **805** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |  | 🫧 |
 | [🤖 Anura Hub AI](https://meow-script.vercel.all) | Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa. | [@anuragaming1](https://github.com/anuragaming1) |  | 🫧 |
 | [🌙 Lunar AI](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) | Uses AI chat to hold conversations. Provides a simple, elegant interface that is easy to use. | [@LuquinhasAMC](https://github.com/LuquinhasAMC) |  | 🫧 |
 | [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |  | 🫧 |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
 | [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |  | 🫧 |
-| [🧩 zolio](zolio.site) | zolioapp | [@LSSHRT](https://github.com/LSSHRT) |  | 🫧 |
 
 ---
 
@@ -645,7 +645,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@Aavirash](https://github.com/Aavirash) |  | 🏵️ |
 | [🏫 Niyam School](https://niyam.school/) | Manage daily school operations with Niyam School by tracking attendance, schedules, communications, and administrative tasks. | [@ravindragit](https://github.com/ravindragit) |  | 🏵️ |
 
-<details><summary>Show all 64 apps</summary>
+<details><summary>Show all 65 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -661,6 +661,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Ecoverse AI](https://ecoverse.cc) | Identify and classify waste from user photos using multi-model analysis and Pollinations models, and return disposal guidance. | [@achyuthhq](https://github.com/achyuthhq) | 4 |  |
 | [🧭 Psy-Path-AI](https://psy-path-ai.vercel.app/) | Help engineering students determine career paths using Psy-Path-AI, combining psychological profiling (MBTI + Holland code) with AI-driven personalized chat guidance. | [@unKnownNG](https://github.com/unKnownNG) | 2 | 🫧 |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) | 1 |  |
+| [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |  | 🫧 |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menampilkan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [📚 KPSS Zamanı](https://kpsszamani.com) | KPSS is an annual exam in Türkiye for selecting candidates for government positions. KPSS Zamanı helps you study for the exam on your mobile. | [@rudde0](https://github.com/rudde0) |  | 🫧 |
 | [🧮 Primbon Jawa Modern](https://jawidigital.my.id) | Aplikasi Primbon Jawa Modern yang menghadirkan kearifan lokal budaya Jawa dan perhitungan tradisional ke dalam platform digital yang praktis. (Mas Arif bisa tambahkan info di sini, misalnya kalau apli | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |

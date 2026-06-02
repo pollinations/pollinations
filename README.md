@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |
 | [🤖 Anura Hub AI](https://meow-script.vercel.all) | Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa. | [@anuragaming1](https://github.com/anuragaming1) |
 | [🌙 Lunar AI](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) | Uses AI chat to hold conversations. Provides a simple, elegant interface that is easy to use. | [@LuquinhasAMC](https://github.com/LuquinhasAMC) |
 | [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |
@@ -29,7 +30,6 @@
 | [🛠️ PromptForge / KIRA](https://knowledgeable-interface-for-refinem.vercel.app) | PromptForge / KIRA fixes AI input by making prompts more specific and context-aware, addressing vague, context-free requests that can lead to unhelpful responses. | [@Carltonkenny](https://github.com/Carltonkenny) |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |
 | [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |
-| [🧩 zolio](zolio.site) | zolioapp | [@LSSHRT](https://github.com/LSSHRT) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

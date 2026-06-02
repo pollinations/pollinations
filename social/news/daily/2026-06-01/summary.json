@@ -1,0 +1,115 @@
+{
+  "date": "2026-06-01",
+  "period_start": "2026-06-01",
+  "period_end": "2026-06-01",
+  "title": "Polly learns to draw charts and tables",
+  "summary": "A massive day for the community greenhouse, alongside crucial fixes for audio streams, Grok API quirks, and a major visual upgrade for Polly on Discord.\n\nPolly just got a massive visual upgrade on Discord. We added an explicit `render_visual` tool that generates 9 types of matplotlib charts and perfectly formatted PIL data tables. No more raw markdown tables breaking on mobile screens—just clean, Discord-themed images.\n\nFixed a couple of nasty audio bugs. ElevenLabs TTS streams were returning placeholder RIFF header sizes, which crashed ffmpeg and Python wave. We now buffer and rewrite the byte counts before sending them back. We also fixed a 500 error in the OVH Whisper STT endpoint so you can actually get your transcripts in text, srt, or vtt formats without the server panicking.\n\nUpstream providers can be picky, so we added some middleware diplomacy. We're now stripping `reasoning_effort` from non-reasoning Grok models and `stream_options` from non-OpenAI Azure models to prevent 500 and 422 errors. We also stripped cache control annotations that were breaking multi-turn Grok chats, and fixed Grok-video to actually respect your aspect ratio instead of defaulting to a square.",
+  "pr_count": 26,
+  "prs": [
+    {
+      "number": 10806,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11431,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11457,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11458,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11476,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11501,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11505,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11508,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11509,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11511,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11512,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11514,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11516,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11517,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11518,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11520,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11523,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11524,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11528,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11529,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11530,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11532,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11535,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11537,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11539,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11540,
+      "date": "2026-06-01"
+    }
+  ],
+  "generated_at": "2026-06-02T07:34:33.015388+00:00"
+}

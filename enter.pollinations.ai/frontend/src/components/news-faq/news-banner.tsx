@@ -22,10 +22,17 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-06-02",
-        emoji: "⚡",
-        title: "Prices just dropped",
+        emoji: "🎯",
+        title: "Free Pollen moves to quests",
         description:
-            "Paid-only model prices have dropped significantly (more than 30%). Purchase bonuses on Paid Pollen have ended.",
+            "On June 22, the hourly refill for Seed, Flower and Nectar becomes a one-time Pollen bonus, and Pollen is earned through quests. Free models get a bigger price cut. [Details](https://enter.pollinations.ai)",
+    },
+    {
+        date: "2026-06-02",
+        emoji: "🌻",
+        title: "Pollen pricing update",
+        description:
+            "Paid models are now priced 1:1 with provider cost — markup removed. Purchase bonuses on Paid Pollen have ended, and free models get a price cut. [Details](https://enter.pollinations.ai)",
     },
     {
         date: "2026-05-28",

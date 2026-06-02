@@ -1,0 +1,35 @@
+{
+  "pr_number": 11564,
+  "title": "add seed:local to fix local e2e auth",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11564",
+  "merged_at": "2026-06-02T10:22:06Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "**Problem:** end-to-end curls against local `npm run dev` 401 constantly. Gen validates `Bearer` tokens against its **own local D1** `apikey` table (better-auth `verifyApiKey`), which stores keys hashed as `base64url(sha256(key))` and never stores the plaintext of secret keys. So a token in `_local/.env` only authenticates if its hash is in *that* D1 — which it usually isn't after the D1 is recreated or when it came from another clone. There was no step to guarantee a known key exists.\n\n**Fix:**\n- Adds `npm run seed:local` (gen) — inserts a key whose plaintext = `_local/.env` `POLLINATIONS_TOKEN_LOCAL`, plus a flower-tier user with large balances (so paid-only gates + spend both pass). Idempotent; re-run after any D1 reset. If no token is set it generates one and appends it to `_local/.env`.\n- Updates the `model-management` skill: boot gen with `npm run dev` (not bare `wrangler dev`, which serves a stale bundle and skips the persisted D1), run `seed:local`, and adds an e2e smoke-test snippet + root-cause note.\n\n**Verified:** bogus token → 401; seeded `_local/.env` token → real `minimax-m3` generation through `localhost:8788` (`finish:stop`, content returned, usage billed).\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Seed the local garden",
+    "blurb": "Added a new local seeding script to make end-to-end testing a breeze. No more 401s when testing the API locally!",
+    "summary": "Added a `seed:local` script to `gen.pollinations.ai` that inserts a known API key and a flower-tier user into the local D1 database, fixing 401 errors during local end-to-end testing.",
+    "impact": "Developers can now reliably run authenticated local end-to-end tests against `npm run dev` without manual database manipulation.",
+    "keywords": [
+      "dev-infra",
+      "testing",
+      "auth",
+      "d1",
+      "local-dev"
+    ],
+    "visual_concept": "Polly the bee planting a glowing seed in a small, cozy indoor pot (representing local development/seeding). A retro monitor nearby shows a green checkmark or '200 OK'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, planting a glowing digital seed into a small lime green (#ecf874) flower pot indoors. A retro computer monitor on a wooden desk nearby displays a green checkmark. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11564.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, planting a glowing digital seed into a small lime green (#ecf874) flower pot indoors. A retro computer monitor on a wooden desk nearby displays a green checkmark. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-02T10:23:18.566661+00:00"
+}

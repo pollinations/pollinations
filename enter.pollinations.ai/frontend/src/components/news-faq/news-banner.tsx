@@ -23,7 +23,7 @@ const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-06-02",
         emoji: "🎯",
-        title: "Free Pollen moves to quests",
+        title: "Quests replace hourly Pollen",
         description:
             "On June 22, the hourly refill for Seed, Flower and Nectar becomes a one-time Pollen bonus, and Pollen is earned through quests. Free models get a bigger price cut. [Details](https://enter.pollinations.ai)",
     },

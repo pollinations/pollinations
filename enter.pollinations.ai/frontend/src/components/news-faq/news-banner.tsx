@@ -10,9 +10,13 @@ const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
     date?: string;
+    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
+    dateLabel?: string;
     emoji: string;
     title: string;
     description: string;
+    /** Optional bullet list rendered under the description (pinned items only). */
+    details?: string[];
 }
 
 /**
@@ -22,24 +26,27 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-06-02",
-        emoji: "🎯",
-        title: "Quests replace hourly Pollen",
-        description:
-            "On June 22, the hourly refill for Seed, Flower and Nectar becomes a one-time Pollen bonus, and Pollen is earned through quests. Free models get a bigger price cut. [Details](https://enter.pollinations.ai)",
-    },
-    {
-        date: "2026-06-02",
+        dateLabel: "Starting Jun 2",
         emoji: "🌻",
         title: "Pollen pricing update",
-        description:
-            "Paid models are now priced 1:1 with provider cost — markup removed. Purchase bonuses on Paid Pollen have ended, and free models get a price cut. [Details](https://enter.pollinations.ai)",
+        description: "A few changes to how Pollen works, starting today.",
+        details: [
+            "Big price drops — many models are now 30–50% cheaper.",
+            "Bonus Pollen on purchases has ended.",
+            "More price cuts coming June 22.",
+        ],
     },
     {
-        date: "2026-05-28",
-        emoji: "💳",
-        title: "Local payment methods are here",
-        description:
-            "Buy Pollen your way — UPI in India, Pix in Brazil, Alipay in China, and iDEAL in Europe. More local options now show automatically based on your country.",
+        date: "2026-06-22",
+        dateLabel: "Starting Jun 22",
+        emoji: "🎯",
+        title: "Tiers & quests are changing",
+        description: "Bigger updates to tiers and how you earn Pollen.",
+        details: [
+            "Spore, Seed, Flower & Nectar: the hourly Pollen refill becomes a one-time Pollen bonus.",
+            "Earn Pollen from quests — new quest dashboard, more ways to earn.",
+            "Another round of price cuts.",
+        ],
     },
 ];
 
@@ -146,9 +153,10 @@ export const NewsBanner: FC = () => {
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     <div className="min-w-0 py-3 first:pt-0 last:pb-0">
-        {item.date && (
+        {(item.dateLabel || item.date) && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700/70">
-                {formatNewsDate(item.date)}
+                {item.dateLabel ??
+                    (item.date ? formatNewsDate(item.date) : null)}
             </div>
         )}
         <div className="flex items-baseline gap-2 font-semibold text-gray-900 text-base sm:text-lg">
@@ -159,9 +167,18 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
             )}
             <span>{item.title}</span>
         </div>
-        <p className="mt-1 text-sm text-gray-700">
-            {renderWithLinks(item.description)}
-        </p>
+        {item.description && (
+            <p className="mt-1 text-sm text-gray-700">
+                {renderWithLinks(item.description)}
+            </p>
+        )}
+        {item.details && item.details.length > 0 && (
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-gray-700 marker:text-violet-400">
+                {item.details.map((detail) => (
+                    <li key={detail}>{renderWithLinks(detail)}</li>
+                ))}
+            </ul>
+        )}
     </div>
 );
 

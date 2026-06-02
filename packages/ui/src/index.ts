@@ -71,5 +71,6 @@ export {
     TableRow,
     type TableRowProps,
 } from "./primitives/Table.tsx";
+export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export { type ThemeName, themes } from "./theme.ts";

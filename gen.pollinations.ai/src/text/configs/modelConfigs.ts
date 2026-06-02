@@ -3,7 +3,6 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
-    createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
@@ -108,10 +107,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
-    // -- DeepInfra (Gemma) ----------------------------------------------------
-    "google/gemma-4-26B-A4B-it": () =>
-        createDeepInfraModelConfig({
-            model: "google/gemma-4-26B-A4B-it",
+    // -- OpenRouter (Gemma) ---------------------------------------------------
+    // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
+    // posted vs $0.07/$0.34) and is credit-eligible.
+    "google/gemma-4-26b-a4b-it": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemma-4-26b-a4b-it",
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
@@ -227,6 +228,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
 
+    // -- OpenRouter (MiniMax M3) ---------------------------------------------
+    // M3 is not on Fireworks/Bedrock yet (Bedrock tops out at M2.5); OpenRouter
+    // is the only route and also exposes image input.
+    "minimax/minimax-m3": () =>
+        createOpenRouterModelConfig({
+            model: "minimax/minimax-m3",
+        }),
+
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
         createAzureModelConfig(
@@ -239,7 +248,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             "Llama-4-Maverick-17B-128E-Instruct-FP8",
-            undefined,
             { requiresBase64ImageUrls: true },
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not

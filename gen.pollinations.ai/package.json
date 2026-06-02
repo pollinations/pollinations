@@ -6,6 +6,7 @@
     "scripts": {
         "decrypt-vars": "sops exec-file --no-fifo secrets/dev.vars.json 'node scripts/push-generation-secrets.mjs {} local'",
         "dev": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 8788 --local --persist-to .wrangler/state --show-interactive-dev-session false",
+        "seed:local": "node scripts/seed-local-key.mjs",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
         "deploy:staging": "npm run build:staging && wrangler deploy --env staging",

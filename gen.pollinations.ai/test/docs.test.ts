@@ -224,12 +224,9 @@ describe("docs routes", () => {
         expect(apiRes.status).toBe(200);
         const apiBody = await apiRes.text();
         expect(apiBody).toContain("Base URL:");
-        expect(apiBody).toContain(
-            "browser WebSocket clients can use `?key=pk_...`",
-        );
-        expect(apiBody).toContain(
-            "Input transcription sessions are not supported yet.",
-        );
+        // Stable heading marker proves the realtime modality is composed into
+        // the api section, without pinning volatile mid-prose wording.
+        expect(apiBody).toContain("## Realtime Voice");
         expect(apiBody).not.toContain("## BYOP");
 
         const byopRes = await worker.fetch(

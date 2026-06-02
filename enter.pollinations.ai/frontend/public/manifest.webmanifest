@@ -1,6 +1,6 @@
 {
-    "name": "pollinations.ai - Developer Console",
-    "short_name": "Pollinations",
+    "name": "Console | pollinations.ai",
+    "short_name": "Console",
     "description": "Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps.",
     "icons": [{
             "src": "/icon-192.png",

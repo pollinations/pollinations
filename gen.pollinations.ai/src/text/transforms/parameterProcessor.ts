@@ -31,8 +31,23 @@ export function processParameters(
     // Non-OpenAI models on Azure (Mistral, DeepSeek, Kimi, Grok) do NOT support it
     const azureModel = (config["azure-deployment-id"] as string) || "";
     const isOpenAIModel = /^(gpt-|o[134])/i.test(azureModel);
-    const supportsMaxCompletionTokens =
-        config.provider === "azure-openai" && isOpenAIModel;
+    const isAzureOpenAI = config.provider === "azure-openai";
+    const supportsMaxCompletionTokens = isAzureOpenAI && isOpenAIModel;
+
+    // Azure Foundry only accepts stream_options for actual OpenAI deployments.
+    // Third-party deployments (Mistral, Grok, DeepSeek, Llama) reject it with a
+    // 422 extra_forbidden, so strip it for non-OpenAI Azure models.
+    if (
+        isAzureOpenAI &&
+        !isOpenAIModel &&
+        updatedOptions.stream_options !== undefined
+    ) {
+        log(
+            `Stripping stream_options for non-OpenAI Azure model: ${azureModel}`,
+        );
+        delete updatedOptions.stream_options;
+    }
+
     if (supportsMaxCompletionTokens) {
         if (updatedOptions.max_tokens !== undefined) {
             log(

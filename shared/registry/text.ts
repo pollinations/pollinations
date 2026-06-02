@@ -194,6 +194,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
     },

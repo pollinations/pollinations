@@ -1,0 +1,35 @@
+{
+  "pr_number": 11555,
+  "title": "Add Pollinations AI Text Generation API to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11555",
+  "merged_at": "2026-06-02T05:03:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) to chat\n- A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w\n\nFixes #10468",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Chatting in the greenhouse",
+    "blurb": "Someone built a slick new web interface for our text API and parked it in the Greenhouse. It handles text, vision, and speech all in one cozy place.",
+    "summary": "Added the Pollinations AI Text Generation web interface—a community-built chat app supporting multiple models, vision, and TTS—to the Greenhouse directory.",
+    "impact": "You can now find a ready-to-use, multi-model chat UI in our community apps list, perfect for testing text, vision, and audio endpoints without writing code.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "greenhouse",
+      "text-generation"
+    ],
+    "visual_concept": "The PR adds a chat web interface to the community apps (Greenhouse). Visuals should include Polly the bee in a literal greenhouse setting, interacting with a chat interface or speech bubbles alongside the Monitor Robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor robot sitting inside a lush digital greenhouse. The robot's screen displays colorful chat bubbles, while Polly waters a glowing code-plant nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11555.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor robot sitting inside a lush digital greenhouse. The robot's screen displays colorful chat bubbles, while Polly waters a glowing code-plant nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and inviting."
+  },
+  "generated_at": "2026-06-02T05:04:23.859983+00:00",
+  "app_name": "Pollinations AI Text Generation API",
+  "app_url": "https://farl.github.io/pollinations-ai-text-generation/"
+}

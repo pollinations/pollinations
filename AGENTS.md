@@ -37,8 +37,8 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 Agent skills (`SKILL.md`) follow the cross-tool [agentskills.io](https://agentskills.io) standard so non-Claude harnesses can use them.
 
-- **Source of truth: `.agents/skills/<name>/`** — the standard location read by Codex, Gemini CLI, Cursor, etc.
-- **Claude Code** only discovers `.claude/skills/`, so each shared skill is symlinked: `.claude/skills/<name>` → `../../.agents/skills/<name>`. Edit the file under `.agents/skills/`; the symlink follows.
+- **Source of truth: `.agents/skills/<name>/`** for every skill — the universal cross-tool location read by Codex, Gemini CLI, Cursor, etc. There is no internal/external split: the standard is silent on placement and secrets are kept out of git via `.gitignore`, not by directory choice.
+- **Claude Code** only discovers `.claude/skills/`, so every skill is symlinked: `.claude/skills/<name>` → `../../.agents/skills/<name>`. Edit the file under `.agents/skills/`; the symlink follows.
 - **Exception — package-owned skills** live with their package and are symlinked from both harness dirs (e.g. `polli` → `packages/polli-cli/SKILL.md` from `.claude/skills/polli/` and `.agents/skills/polli/`), so the doc versions with the code.
 - Runtime data and secrets stay out of git: `.agents/skills/**/.env` and `.agents/skills/**/data/` are gitignored. Only `SKILL.md` + `scripts/` are tracked.
 - **Windows:** run `git config --global core.symlinks true` before cloning, or the skill symlinks check out as text stubs.

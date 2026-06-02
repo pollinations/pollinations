@@ -25,7 +25,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "⚡",
         title: "Prices just dropped",
         description:
-            "Paid models are now priced 1:1 with provider cost — no markup. Purchase bonuses on Paid Pollen have ended.",
+            "Paid-only model prices have dropped significantly (more than 30%). Purchase bonuses on Paid Pollen have ended.",
     },
     {
         date: "2026-05-28",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11502,
+  "title": "feat: route flux through Fireworks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11502",
+  "merged_at": "2026-06-02T13:32:26Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Routes `flux` through Fireworks FLUX.1 schnell in `gen.pollinations.ai`.\n- Keeps non-`flux` image models on the existing backend path.\n- Sets `flux` provider to `fireworks`, cost to `0.0014`, multiplier to `1.25`, price to `0.00175` Pollen/image.\n- Resizes explicit `width`/`height` requests after Fireworks generation.\n- Updates `negative_prompt` docs to `zimage`-only; follow-up removal issue: #11506.\n- Checks: gen typecheck, focused gen VCR test, effective price snapshot, staging build.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fireworks in the Flux",
+    "blurb": "We've re-routed our Flux image generation through Fireworks FLUX.1 schnell. Blazing fast generations, precise resizing, and a fresh coat of infrastructure.",
+    "summary": "Routes the `flux` image model through Fireworks FLUX.1 schnell, setting the new price to 0.00175 Pollen per image and restricting `negative_prompt` support to `zimage` only.",
+    "impact": "Generations using the `flux` model will now process through the Fireworks backend, with explicit width and height requests automatically resized after generation.",
+    "keywords": [
+      "flux",
+      "fireworks",
+      "image-generation",
+      "api",
+      "pollen"
+    ],
+    "visual_concept": "The bee mascot and monitor robot watching a cozy pixel-art fireworks display. The fireworks represent the new Fireworks backend for the Flux model.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot sitting on a grassy hill, watching beautiful pixelated fireworks explode in the night sky. The fireworks glow in soft lime green (#ecf874) and pastel lavender. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11502.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the chunky monitor robot sitting on a grassy hill, watching beautiful pixelated fireworks explode in the night sky. The fireworks glow in soft lime green (#ecf874) and pastel lavender. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T13:33:37.541385+00:00"
+}

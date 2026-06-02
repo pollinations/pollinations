@@ -41,6 +41,20 @@ export function FileUpload({
         };
     }, [value]);
 
+    // A file dropped anywhere outside the zone otherwise triggers the browser's
+    // default action — navigating the tab to that file (a blank/file page).
+    // Suppress that document-wide so a near-miss drop is a no-op, not a page
+    // takeover. (Same intent as react-dropzone's `preventDropOnDocument`.)
+    useEffect(() => {
+        const prevent = (event: DragEvent) => event.preventDefault();
+        document.addEventListener("dragover", prevent);
+        document.addEventListener("drop", prevent);
+        return () => {
+            document.removeEventListener("dragover", prevent);
+            document.removeEventListener("drop", prevent);
+        };
+    }, []);
+
     // Only `disabled` blocks interaction. At the file limit the input stays
     // enabled so over-limit selections still flow through partitionFiles and
     // are reported as `{ reason: "count" }` via onReject (deterministic reject).

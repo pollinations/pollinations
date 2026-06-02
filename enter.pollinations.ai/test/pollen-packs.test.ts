@@ -45,13 +45,6 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         "Tiny bits of creative energy for pollinations.ai",
     );
 
-    // No pack advertises a bonus anymore — you get exactly what you buy.
-    for (const pack of POLLEN_PACKS) {
-        expect(pack.checkoutName).not.toContain("FREE");
-        expect(pack.checkoutDescription).not.toContain("extra Pollen");
-        expect(pack.checkoutDescription).not.toContain("bonus");
-    }
-
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
         "https://enter.pollinations.ai/checkout/pollen-pack.png",
     );

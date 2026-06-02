@@ -416,8 +416,6 @@ const handleCheckoutSessionCompleted = async (
 
     // Credit the pack's USD amount (1 pollen ≈ $1). Pack prices are fixed
     // constants, so the packKey from metadata is enough to look it up.
-    const creditsToAdd = pack.amountUsd;
-
     const db = drizzle(env.DB);
 
     const [user] = await db
@@ -445,7 +443,7 @@ const handleCheckoutSessionCompleted = async (
         event,
         session,
         userId,
-        creditsToAdd,
+        creditsToAdd: pack.amountUsd,
     });
 
     if (!credited) {
@@ -460,13 +458,13 @@ const handleCheckoutSessionCompleted = async (
     }
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+        `Stripe: Credited ${pack.amountUsd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
     );
 
     return {
         success: true,
-        message: `Credited ${creditsToAdd} pollen to user ${userId}`,
-        pollenCredited: creditsToAdd,
+        message: `Credited ${pack.amountUsd} pollen to user ${userId}`,
+        pollenCredited: pack.amountUsd,
         presentmentCurrency: presentment.presentmentCurrency,
         presentmentAmount: presentment.presentmentAmount,
     };

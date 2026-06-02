@@ -33,12 +33,7 @@ const PACK_KEY_SET = new Set<PollenPackKey>(
 );
 
 export const formatPollenPackValue = (value: number): string =>
-    Number.isInteger(value)
-        ? value.toLocaleString("en-US")
-        : value.toLocaleString("en-US", {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-          });
+    value.toLocaleString("en-US");
 
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ packKey, amountUsd }) => ({

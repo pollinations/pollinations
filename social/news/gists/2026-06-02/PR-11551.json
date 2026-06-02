@@ -1,0 +1,35 @@
+{
+  "pr_number": 11551,
+  "title": "Add Photo Ai to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11551",
+  "merged_at": "2026-06-02T04:47:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Photo Ai](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) to image\n- Use Pollination Api to generate or process photos in Photo Ai.\n\nFixes #10380",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Photo AI joins the greenhouse",
+    "blurb": "The iOS app Photo AI just landed in our community showcase! It's always amazing to see developers building pocket-sized magic with our image API.",
+    "summary": "Added the iOS application 'Photo AI' to the community apps showcase and greenhouse documentation.",
+    "impact": "Community members can discover Photo AI in the ecosystem, highlighting a new real-world mobile integration of the Pollinations image API.",
+    "keywords": [
+      "community",
+      "showcase",
+      "ios",
+      "app",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee in a greenhouse holding a smartphone that displays a photo, representing the new iOS app 'Photo AI' joining the community greenhouse.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny beret, holding a small smartphone that displays a glowing landscape photo. She is hovering inside a lush digital greenhouse filled with code-plants sprouting from lime green (#ecf874) flower pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11551.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny beret, holding a small smartphone that displays a glowing landscape photo. She is hovering inside a lush digital greenhouse filled with code-plants sprouting from lime green (#ecf874) flower pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-02T04:48:23.566496+00:00",
+  "app_name": "Photo Ai",
+  "app_url": "https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194"
+}

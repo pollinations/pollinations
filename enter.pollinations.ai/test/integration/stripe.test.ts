@@ -255,7 +255,7 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
-test("GET /api/stripe/checkout/p10 snapshots pack grant into session metadata", async ({
+test("GET /api/stripe/checkout/p10 snapshots pack amount into session metadata", async ({
     sessionToken,
     mocks,
 }) => {

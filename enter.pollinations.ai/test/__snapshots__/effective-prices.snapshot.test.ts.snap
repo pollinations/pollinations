@@ -138,10 +138,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "flux": {
     "cost": {
-      "completionImageTokens": 0.001,
+      "completionImageTokens": 0.0014,
     },
     "price": {
-      "completionImageTokens": 0.001,
+      "completionImageTokens": 0.00175,
     },
   },
   "gemini": {
@@ -270,12 +270,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "gemma": {
     "cost": {
-      "completionTextTokens": 3.4e-7,
-      "promptTextTokens": 7e-8,
+      "completionTextTokens": 3.3e-7,
+      "promptTextTokens": 6e-8,
     },
     "price": {
-      "completionTextTokens": 3.4e-7,
-      "promptTextTokens": 7e-8,
+      "completionTextTokens": 3.3e-7,
+      "promptTextTokens": 6e-8,
     },
   },
   "glm": {
@@ -545,6 +545,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "minimax": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 6e-8,
+      "promptTextTokens": 3e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 6e-8,
+      "promptTextTokens": 3e-7,
+    },
+  },
+  "minimax-m3": {
     "cost": {
       "completionTextTokens": 0.0000012,
       "promptCachedTokens": 6e-8,

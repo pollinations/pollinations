@@ -87,13 +87,12 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
             );
 
-            // Snapshot of pack identity + amount at session creation time. The
-            // webhook reads this back to credit exactly what the user paid,
-            // independent of how Adaptive Pricing localized the presentment.
+            // packKey identifies the pack; the webhook looks up its fixed USD
+            // amount to credit, independent of how Adaptive Pricing localized
+            // the presentment currency.
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
-                packAmountUsd: String(pack.amountUsd),
                 cohort,
             };
 

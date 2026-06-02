@@ -118,20 +118,16 @@ async function insertAutoTopUpAttempt({
             user_id,
             stripe_invoice_id,
             amount_usd,
-            pollen_grant,
             status,
             created_at,
             updated_at,
             completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
             userId,
             invoiceId,
-            amountUsd,
-            // pollen_grant: transitional duplicate of amount_usd until the
-            // column is dropped in the follow-up PR.
             amountUsd,
             status,
             createdAt,
@@ -255,7 +251,7 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
-test("GET /api/stripe/checkout/p10 snapshots pack amount into session metadata", async ({
+test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", async ({
     sessionToken,
     mocks,
 }) => {
@@ -278,17 +274,15 @@ test("GET /api/stripe/checkout/p10 snapshots pack amount into session metadata",
     expectUsdPriceData(body, 10);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
-    // Session metadata must snapshot the paid amount + pack identity so the
-    // webhook credits exactly what was displayed at checkout time. cohort
-    // identifies which routing branch was taken.
+    // Session metadata carries the pack identity so the webhook can look up
+    // the pack's fixed USD amount to credit. cohort identifies which routing
+    // branch was taken.
     expect(body?.["metadata[packKey]"]).toBe("p10");
-    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
     expect(body?.["metadata[cohort]"]).toBe("USD");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p10");
-    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("10");
 });
 
 test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
@@ -314,10 +308,8 @@ test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     expect(body?.["metadata[packKey]"]).toBe("p2");
-    expect(body?.["metadata[packAmountUsd]"]).toBe("2");
     expect(body?.["metadata[cohort]"]).toBe("USD");
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
-    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("2");
 });
 
 // Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends

@@ -921,12 +921,11 @@ async function claimAutoTopUpAttempt(
                 user_id,
                 stripe_invoice_id,
                 amount_usd,
-                pollen_grant,
                 status,
                 created_at,
                 updated_at
             )
-            SELECT ?, ?, NULL, ?, ?, ?, ?, ?
+            SELECT ?, ?, NULL, ?, ?, ?, ?
             WHERE EXISTS (
                 SELECT 1
                 FROM user
@@ -945,9 +944,6 @@ async function claimAutoTopUpAttempt(
         .bind(
             input.attemptId,
             input.userId,
-            input.amountUsd,
-            // pollen_grant: transitional duplicate of amount_usd to satisfy the
-            // NOT NULL column until it is dropped in the follow-up PR.
             input.amountUsd,
             AUTO_TOP_UP_ATTEMPT_STATUS_CLAIMED,
             now,

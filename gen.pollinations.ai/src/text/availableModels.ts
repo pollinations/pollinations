@@ -11,6 +11,7 @@ import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
+import { stripReasoningEffort } from "./transforms/stripReasoningEffort.js";
 import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
@@ -95,7 +96,8 @@ const models: ModelDefinition[] = [
     {
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
-        transform: stripCacheControl,
+        // Non-reasoning deployment 500s if reasoning_effort is forwarded.
+        transform: pipe(stripCacheControl, stripReasoningEffort),
     },
     {
         name: "grok-large",

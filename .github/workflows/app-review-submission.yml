@@ -306,13 +306,6 @@ jobs:
 
       - name: Create PR and enable auto-merge
         run: |
-          ISSUE_NUM="${{ github.event.issue.number }}"
-          BRANCH="${{ steps.branch.outputs.branch }}"
-          NAME="${{ steps.branch.outputs.name }}"
-          CATEGORY="${{ steps.branch.outputs.category }}"
-          WEB_URL="${{ steps.branch.outputs.web_url }}"
-          DESCRIPTION="${{ steps.branch.outputs.description }}"
-
           PR_URL=$(gh pr create \
             --title "Add ${NAME} to ${CATEGORY}" \
             --body "- Adds [${NAME}](${WEB_URL}) to ${CATEGORY}
@@ -327,6 +320,12 @@ jobs:
           gh pr merge "$PR_URL" --auto --squash --delete-branch
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          NAME: ${{ steps.branch.outputs.name }}
+          CATEGORY: ${{ steps.branch.outputs.category }}
+          WEB_URL: ${{ steps.branch.outputs.web_url }}
+          DESCRIPTION: ${{ steps.branch.outputs.description }}
 
       - name: Attempt to resolve merge conflicts
         if: success()

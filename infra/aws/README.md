@@ -49,3 +49,23 @@ NOT forward the viewer `Host` header (it would send `*.cloudfront.net` /
 trusted host-pair gate. A custom `allViewerAndWhitelistCloudFront` policy was
 tried first and caused the 502 because it forwards ALL viewer headers,
 including `Host`.
+
+## CloudFront distribution — enter.pollinations.ai
+
+- **Distribution Id:** `E1621Y522BHBWP`
+- **CloudFront domain:** `d161vu6omct0xx.cloudfront.net`
+- **Alias:** `enter.pollinations.ai` (no DNS pointed here yet — verified via the
+  cloudfront.net domain only; no cutover performed)
+- **Origin:** `enter.myceli.ai` (Cloudflare Worker), `https-only`, TLSv1.2
+- **Custom headers to origin:** `X-Forwarded-Host: enter.pollinations.ai`,
+  `X-Forwarded-Proto: https`
+- **Origin-request policy:** `b689b0a8-53d0-40ab-baf2-68738e2966ac`
+  (managed `AllViewerExceptHostHeader`) — same as gen
+- **Cache policy:** `4135ea2d-6df8-44a3-9df3-4b5a84be39ad` (CachingDisabled)
+- **Config:** `infra/aws/distribution-enter.json`
+
+Verified via the cloudfront.net domain: `200` on `/` (`server: cloudflare`),
+JSON error-body parity on `/api/*`, and auth-gate parity — both the
+`Authorization: Bearer` header and `?key=` query param reach enter's auth
+layer and produce identical `401` verdicts through CloudFront vs origin-direct.
+POST passthrough confirmed. No cutover performed.

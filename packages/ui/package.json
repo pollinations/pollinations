@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/ui",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Design primitives and UI modules for Pollinations apps.",
   "license": "MIT",
   "type": "module",

@@ -409,17 +409,17 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    // Prefer the grant snapshotted into session metadata at checkout creation
-    // time; this guarantees the user is credited exactly what they saw, even
-    // when bonus values change between session creation and payment.
-    const metadataGrantValue = metadata.packPollenGrant;
-    const metadataGrant = metadataGrantValue
-        ? Number.parseFloat(metadataGrantValue)
+    // Prefer the amount snapshotted into session metadata at checkout creation
+    // time; this guarantees the user is credited exactly what they paid, even
+    // if pack pricing changes between session creation and payment.
+    const metadataAmountValue = metadata.packAmountUsd;
+    const metadataAmount = metadataAmountValue
+        ? Number.parseFloat(metadataAmountValue)
         : Number.NaN;
     const creditsToAdd =
-        Number.isFinite(metadataGrant) && metadataGrant > 0
-            ? metadataGrant
-            : pack.pollenGrant;
+        Number.isFinite(metadataAmount) && metadataAmount > 0
+            ? metadataAmount
+            : pack.amountUsd;
 
     const db = drizzle(env.DB);
 

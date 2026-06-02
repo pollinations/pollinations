@@ -1,7 +1,6 @@
 import { Chip, cn, Slider } from "@pollinations/ui";
 import {
     formatPollenPackValue,
-    getPackBonusPercent,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -15,11 +14,8 @@ const pollenPackSliderStyle = {
         "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
 } as CSSProperties;
 
-const formatPackAriaLabel = (pack: PollenPack): string => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
-};
+const formatPackAriaLabel = (pack: PollenPack): string =>
+    `$${pack.amountUsd} to ${formatPollenPackValue(pack.amountUsd)} pollen`;
 
 type PollenPackSliderProps = {
     value: number;
@@ -75,8 +71,6 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                             pack.amountUsd === selectedPack?.amountUsd;
                         const isFirst = index === 0;
                         const isLast = lastIndex > 0 && index === lastIndex;
-                        const bonusPercent = getPackBonusPercent(pack);
-                        const hasBonus = pack.bonusPollen > 0;
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -124,24 +118,10 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 )}
                                             >
                                                 {formatPollenPackValue(
-                                                    pack.pollenGrant,
+                                                    pack.amountUsd,
                                                 )}{" "}
                                                 pollen
                                             </span>
-                                            {hasBonus && (
-                                                <span
-                                                    className={cn(
-                                                        "text-amber-700",
-                                                        isFirst
-                                                            ? "text-left"
-                                                            : isLast
-                                                              ? "text-right"
-                                                              : "text-center",
-                                                    )}
-                                                >
-                                                    +{bonusPercent}% bonus
-                                                </span>
-                                            )}
                                         </Chip>
                                     )}
                                 </span>

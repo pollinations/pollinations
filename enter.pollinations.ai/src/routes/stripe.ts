@@ -87,15 +87,13 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
             );
 
-            // Snapshot of pack identity + grant at session creation time. The
-            // webhook reads this back to credit exactly what the user saw,
+            // Snapshot of pack identity + amount at session creation time. The
+            // webhook reads this back to credit exactly what the user paid,
             // independent of how Adaptive Pricing localized the presentment.
             const packMetadata = {
                 userId,
                 packKey: pack.packKey,
                 packAmountUsd: String(pack.amountUsd),
-                packPollenGrant: String(pack.pollenGrant),
-                packBonusPollen: String(pack.bonusPollen),
                 cohort,
             };
 
@@ -173,8 +171,6 @@ export const stripeRoutes = new Hono<Env>()
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
-                bonusPollen: pack.bonusPollen,
-                pollenGrant: pack.pollenGrant,
                 description: describePollenPack(pack),
             })),
         });

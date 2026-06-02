@@ -56,7 +56,6 @@ type AutoTopUpAttemptRow = {
     userId: string;
     stripeInvoiceId: string | null;
     amountUsd: number;
-    pollenGrant: number;
     status: string;
 };
 
@@ -434,7 +433,6 @@ export async function processAutoTopUpForUser(
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
-        pollenGrant: pack.pollenGrant,
     });
     if (!claimed) {
         return {
@@ -631,7 +629,7 @@ export async function creditAutoTopUpInvoice(
                             AND completed_at = ?
                     )`,
         ).bind(
-            attempt.pollenGrant,
+            attempt.amountUsd,
             attempt.userId,
             invoice.id,
             attempt.userId,
@@ -645,7 +643,7 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: "invoice already credited" };
     }
 
-    return { credited: true, pollenCredited: attempt.pollenGrant };
+    return { credited: true, pollenCredited: attempt.amountUsd };
 }
 
 export async function markAutoTopUpInvoiceFailed(
@@ -913,7 +911,6 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
-        pollenGrant: number;
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -949,7 +946,9 @@ async function claimAutoTopUpAttempt(
             input.attemptId,
             input.userId,
             input.amountUsd,
-            input.pollenGrant,
+            // pollen_grant: transitional duplicate of amount_usd to satisfy the
+            // NOT NULL column until it is dropped in the follow-up PR.
+            input.amountUsd,
             AUTO_TOP_UP_ATTEMPT_STATUS_CLAIMED,
             now,
             now,
@@ -1005,7 +1004,6 @@ async function getAutoTopUpAttemptByInvoiceId(
                     user_id AS userId,
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
-                    pollen_grant AS pollenGrant,
                     status
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?

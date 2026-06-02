@@ -294,7 +294,13 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             />
                         </div>
                         <Tooltip
-                            content={`Buy ${selectedPack.amountUsd} pollen for $${selectedPack.amountUsd} · confirm on the next page`}
+                            content={
+                                <>
+                                    {`Buy ${selectedPack.amountUsd} pollen for $${selectedPack.amountUsd}`}
+                                    <br />
+                                    confirm on the next page
+                                </>
+                            }
                             displayContents
                         >
                             <Button

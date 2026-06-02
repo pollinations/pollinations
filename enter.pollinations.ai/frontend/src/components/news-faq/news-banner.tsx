@@ -21,6 +21,13 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-06-02",
+        emoji: "⚡",
+        title: "Prices just dropped",
+        description:
+            "Paid models are now priced 1:1 with provider cost — no markup. Purchase bonuses on Paid Pollen have ended.",
+    },
+    {
         date: "2026-05-28",
         emoji: "💳",
         title: "Local payment methods are here",

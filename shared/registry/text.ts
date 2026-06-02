@@ -637,10 +637,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.1),
-            promptCachedTokens: perMillion(0.11),
-            promptCacheWriteTokens: perMillion(1.375),
-            completionTextTokens: perMillion(5.5),
+            // Bedrock global.anthropic.claude-haiku-4-5 global standard rates.
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(1.25),
+            completionTextTokens: perMillion(5),
         },
         description: "Claude Haiku 4.5 - Fast & Intelligent",
         inputModalities: ["text", "image"],
@@ -659,10 +660,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(3.3),
-            promptCachedTokens: perMillion(0.33),
-            promptCacheWriteTokens: perMillion(4.125),
-            completionTextTokens: perMillion(16.5),
+            // Bedrock global.anthropic.claude-sonnet-4-6 global standard rates.
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
+            completionTextTokens: perMillion(15),
         },
         description: "Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
@@ -681,10 +683,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            promptCacheWriteTokens: perMillion(6.875),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-6 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
         description: "Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
@@ -703,10 +706,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            promptCacheWriteTokens: perMillion(6.875),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-7 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
         description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],

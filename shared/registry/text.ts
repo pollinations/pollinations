@@ -383,15 +383,17 @@ export const TEXT_SERVICES = {
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
         ],
-        modelId: "google/gemma-4-26B-A4B-it",
-        provider: "deepinfra",
+        modelId: "google/gemma-4-26b-a4b-it",
+        provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.07),
-            completionTextTokens: perMillion(0.34),
+            // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
+            // prompt $0.06/M, completion $0.33/M. No prompt caching upstream.
+            promptTextTokens: perMillion(0.06),
+            completionTextTokens: perMillion(0.33),
         },
         description:
             "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
@@ -1057,6 +1059,31 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "minimax-m3": {
+        aliases: ["minimax3", "minimax-3"],
+        modelId: "minimax/minimax-m3",
+        provider: "openrouter",
+        brand: "MiniMax",
+        category: "text",
+        addedDate: new Date("2026-06-02").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter minimax/minimax-m3 effective rates (2026-06-02):
+            // currently a temporary 50% promo — prompt $0.30/M, completion
+            // $1.20/M, cache read $0.06/M. Base (post-promo) is double:
+            // $0.60/M, $2.40/M, $0.12/M — revisit when the promo ends.
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.06),
+            completionTextTokens: perMillion(1.2),
+        },
+        description: "MiniMax M3 - Coding, agentic & 1M-context reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "mistral-large": {

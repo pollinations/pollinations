@@ -9,13 +9,10 @@ export const Route = createRootRoute({
 
 function RootLayout() {
     return (
-        <div className="polli:flex polli:h-full polli:flex-col">
+        <div className="flex h-full flex-col">
             <HeadContent />
             {/* Shell body is overflow-hidden; this <main> is the scroll owner. */}
-            <main
-                id="app-scroll"
-                className="polli:flex-1 polli:overflow-y-auto"
-            >
+            <main id="app-scroll" className="flex-1 overflow-y-auto">
                 <Outlet />
             </main>
         </div>

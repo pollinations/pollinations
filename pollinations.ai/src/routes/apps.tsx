@@ -4,7 +4,7 @@ export const Route = createFileRoute("/apps")({
     component: () => (
         <div
             data-theme="blue"
-            className="polli:flex polli:min-h-full polli:items-center polli:justify-center polli:p-8 polli:font-heading polli:text-2xl polli:text-theme-text-strong"
+            className="flex min-h-full items-center justify-center p-8 font-heading text-2xl text-theme-text-strong"
         >
             apps — coming soon
         </div>

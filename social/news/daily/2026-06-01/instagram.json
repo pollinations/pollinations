@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-01",
+  "period_start": "2026-06-01",
+  "period_end": "2026-06-01",
+  "generated_at": "2026-06-02T07:34:33.015388+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-01/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-01/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-01/images/instagram-3.jpg"
+    }
+  ],
+  "text": "26 PRs merged this week. mostly we taught Polly how to draw charts and tables, which is great if you like your data visually organized instead of just a wall of text. \n\nwe also spent some time fixing WAV RIFF headers so audio streams actually play instead of just threatening to, and smoothed out some weird API quirks with Grok and Azure. \n\nthe best part? 15 new apps got added to the ecosystem by the community. the greenhouse is officially overflowing. \n\nall open source, all at github.com/pollinations/pollinations. 🌿\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiart #softwareengineering",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

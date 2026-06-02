@@ -6,6 +6,7 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
@@ -157,7 +158,7 @@ async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
- * Calls self-hosted image generation servers (flux, zimage pools).
+ * Calls self-hosted image generation servers (zimage pool).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
  * @returns {Promise<Array>} - The generated images.
@@ -851,9 +852,14 @@ const generateImage = async (
                 requestId,
                 25,
                 "Processing",
-                "Using registered servers",
+                "Using Fireworks FLUX",
             );
-            return await callSelfHostedServer(prompt, safeParams);
+            return await callFireworksFluxSchnellAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
         default:
             // zimage and any unrecognized model fall through to self-hosted servers

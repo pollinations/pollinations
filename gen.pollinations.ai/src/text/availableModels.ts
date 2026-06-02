@@ -11,6 +11,7 @@ import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
+import { stripReasoningEffort } from "./transforms/stripReasoningEffort.js";
 import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
@@ -86,7 +87,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemma",
-        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+        config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
         name: "deepseek-pro",
@@ -95,14 +96,18 @@ const models: ModelDefinition[] = [
     {
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
+        // Non-reasoning deployment 500s if reasoning_effort is forwarded.
+        transform: pipe(stripCacheControl, stripReasoningEffort),
     },
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+        transform: stripCacheControl,
     },
     {
         name: "grok-4.3",
         config: portkeyConfig["grok-4.3"],
+        transform: stripCacheControl,
     },
     {
         name: "openai-audio",
@@ -261,6 +266,10 @@ const models: ModelDefinition[] = [
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+    },
+    {
+        name: "minimax-m3",
+        config: portkeyConfig["minimax/minimax-m3"],
     },
     {
         name: "llama",

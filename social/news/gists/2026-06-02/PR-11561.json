@@ -1,0 +1,35 @@
+{
+  "pr_number": 11561,
+  "title": "June 2 pricing: normalize all multipliers to 1×, keep paid-only gates",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11561",
+  "merged_at": "2026-06-02T18:51:24Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Sets `priceMultiplier: 1` on every model — no retail markup anywhere — and keeps the June 2 access gating. All registry-only; no cost/provider changes.\n\n**Pricing — all multipliers → 1×**\n- Every model in text/image/audio/embeddings is now `priceMultiplier: 1`. Net vs main: 39 models drop from 1.5× to 1× (price now equals provider cost).\n\n**Access — paid-only (free Pollen users lose access, paid users unaffected)**\n- `claude-fast` (Claude Haiku 4.5), `qwen-coder-large` (Qwen3 Coder Next), `qwen-image` (Qwen Image Plus), `wan-image` (Wan 2.7 Image), `qwen-tts` (Qwen3-TTS Flash)\n\n**Tests**\n- Replaced the hardcoded 1.5× markup tests with a single invariant: `price == cost × priceMultiplier` for every model, asserted per cost field (holds at any multiplier).\n- Regenerated `effective-prices.snapshot` (price == cost across the board).\n- Green: enter `pricing-data` / `aliases` / `effective-prices.snapshot`, gen `model-permissions`.\n\nMerged latest `main` (picks up `minimax-m3` + gemma modelId rename; both already 1×).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Zero markup, pure generation",
+    "blurb": "We've dropped the retail markup across the board. 39 models are now priced exactly at provider cost, making your Pollen go even further.",
+    "summary": "Normalized pricing multipliers to 1× across all text, image, audio, and embedding models, dropping the 1.5× markup on 39 models so users pay exactly the provider cost.",
+    "impact": "Pollen credits now stretch further on 39 models with at-cost pricing, while five premium models (including claude-fast and wan-image) transition to paid-only access.",
+    "keywords": [
+      "pricing",
+      "models",
+      "pollen",
+      "billing",
+      "api"
+    ],
+    "visual_concept": "The bee mascot acting as a friendly shopkeeper, stamping '1x' on price tags or managing a cozy retro cash register surrounded by plants, symbolizing the removal of markups.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shopkeeper apron, happily stamping '1x' on pixelated price tags in a warm, rustic garden shop. A retro cash register sits on a wooden counter surrounded by blooming code-plants. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11561.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shopkeeper apron, happily stamping '1x' on pixelated price tags in a warm, rustic garden shop. A retro cash register sits on a wooden counter surrounded by blooming code-plants. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T18:52:35.387530+00:00"
+}

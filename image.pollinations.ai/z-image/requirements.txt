@@ -12,3 +12,4 @@ aiohttp
 pillow
 requests
 spandrel
+bitsandbytes  # required for NF4 (bnb-4bit) model variants via ZIMAGE_MODEL_ID

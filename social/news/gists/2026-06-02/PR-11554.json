@@ -1,0 +1,35 @@
+{
+  "pr_number": 11554,
+  "title": "Add OtakuBox Bot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11554",
+  "merged_at": "2026-06-02T04:58:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [OtakuBox Bot](https://badamchuk.github.io/otakubox/) to bots\n- OtakuBox Bot is a Telegram bot for anime fans that uses the Pollinations.ai API.\n\nFixes #10234",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "OtakuBox joins the swarm",
+    "blurb": "A new Telegram bot for anime fans just landed in the community showcase. OtakuBox uses Pollinations to bring anime magic straight to your chats.",
+    "summary": "Added OtakuBox, a Telegram bot for anime fans powered by the Pollinations API, to the community apps showcase.",
+    "impact": "Users can now discover and use OtakuBox from our community directory to generate anime content directly in Telegram.",
+    "keywords": [
+      "community",
+      "bot",
+      "telegram",
+      "anime",
+      "showcase"
+    ],
+    "visual_concept": "Combine Telegram/messaging motifs (paper airplane) with anime elements and the Pollinations bee. A cozy setup where Polly the bee interacts with a cute robot (representing the bot) that displays anime-style features.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny anime headband, handing a glowing blue paper airplane to a chunky retro robot. The robot has a CRT monitor head displaying a cute pixel anime face. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11554.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny anime headband, handing a glowing blue paper airplane to a chunky retro robot. The robot has a CRT monitor head displaying a cute pixel anime face. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-02T04:59:10.859784+00:00",
+  "app_name": "OtakuBox Bot",
+  "app_url": "https://badamchuk.github.io/otakubox/"
+}

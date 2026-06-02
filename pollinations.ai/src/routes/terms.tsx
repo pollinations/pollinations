@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "../components/LegalPage.tsx";
 import { TERMS_PAGE } from "../copy/content/legal.ts";
+import { loadMarkdown } from "../lib/loadMarkdown.ts";
 
 export const Route = createFileRoute("/terms")({
-    loader: () => fetch("/legal/TERMS_OF_SERVICE.md").then((r) => r.text()),
+    loader: () => loadMarkdown("/legal/TERMS_OF_SERVICE.md"),
     head: () => ({
         meta: [
             { title: "Terms | pollinations.ai" },

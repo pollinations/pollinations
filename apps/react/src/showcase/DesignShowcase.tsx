@@ -21,6 +21,7 @@ import {
     Dropdown,
     ExternalLinkButton,
     ExternalLinkIcon,
+    FileUpload,
     GenApiIcon,
     GitHubIcon,
     IconButton,
@@ -36,6 +37,7 @@ import {
     PeriodPicker,
     type PeriodSelection,
     Section as PrimitiveSection,
+    Prose,
     ScrollArea,
     Slider,
     StatCard,
@@ -50,6 +52,7 @@ import {
     TableHeaderCell,
     TableRow,
     TerminalIcon,
+    Textarea,
     type ThemeName,
     TokensIcon,
     Tooltip,
@@ -141,6 +144,7 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
                 <main className="flex min-w-0 flex-col gap-10">
                     <CoverageDemo />
                     <TypographyDemo />
+                    <ProseDemo />
                     <ThemeDemo theme={theme} onThemeChange={setTheme} />
                     <TokensDemo />
                     <IconsDemo />
@@ -286,11 +290,13 @@ const primitiveNames = [
     "Dropdown",
     "ExternalLinkButton",
     "Field",
+    "FileUpload",
     "IconButton",
     "InfoTip",
     "Input",
     "MultiSelect",
     "PeriodPicker",
+    "Prose",
     "ScrollArea",
     "Section",
     "Slider",
@@ -304,6 +310,7 @@ const primitiveNames = [
     "TableHead",
     "TableHeaderCell",
     "TableRow",
+    "Textarea",
     "Tooltip",
 ] as const;
 
@@ -427,6 +434,34 @@ const TypographyDemo: FC = () => (
                     </span>
                 ))}
             </div>
+        </Surface>
+    </ShowcaseSection>
+);
+
+const proseSample = [
+    "# Prose primitive",
+    "",
+    "Renders **markdown** through `react-markdown` + `remark-gfm` + `rehype-slug`,",
+    "mapping every element to package theme tokens and fonts.",
+    "",
+    "- Themed headings, body, and lists",
+    "- GFM tables and inline `code`",
+    "- Links like [pollinations.ai](https://pollinations.ai)",
+    "",
+    "| Plugin      | Purpose            |",
+    "| ----------- | ------------------ |",
+    "| remark-gfm  | tables, task lists |",
+    "| rehype-slug | heading anchors    |",
+].join("\n");
+
+const ProseDemo: FC = () => (
+    <ShowcaseSection
+        id="prose"
+        title="Prose"
+        caption="Markdown rendering primitive backed by react-markdown with GFM and heading slugs, themed via package tokens."
+    >
+        <Surface variant="panel">
+            <Prose>{proseSample}</Prose>
         </Surface>
     </ShowcaseSection>
 );
@@ -696,6 +731,8 @@ const InputsDemo: FC = () => {
         on: true,
         invalid: true,
     });
+    const [files, setFiles] = useState<File[]>([]);
+    const [rejectedCount, setRejectedCount] = useState(0);
 
     return (
         <ShowcaseSection
@@ -718,6 +755,18 @@ const InputsDemo: FC = () => {
                 </ControlGroup>
                 <ControlGroup label="Disabled">
                     <Input placeholder="Disabled" disabled />
+                </ControlGroup>
+                <ControlGroup label="Textarea">
+                    <Textarea placeholder="Describe an image" rows={3} />
+                </ControlGroup>
+                <ControlGroup label="Textarea error">
+                    <Textarea placeholder="Invalid" rows={3} error />
+                </ControlGroup>
+                <ControlGroup label="Textarea auto-grow">
+                    <Textarea placeholder="Grows as you type" autoGrow />
+                </ControlGroup>
+                <ControlGroup label="Textarea disabled">
+                    <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>
                 <div className="col-span-full">
                     <ArkField.Root
@@ -786,6 +835,27 @@ const InputsDemo: FC = () => {
                             onChange={noopSwitch}
                         />
                     </div>
+                </div>
+                <div className="col-span-full">
+                    <ControlGroup label="FileUpload (max 3 images)">
+                        <FileUpload
+                            value={files}
+                            onChange={(next) => {
+                                setFiles(next);
+                                setRejectedCount(0);
+                            }}
+                            onReject={(rejected) =>
+                                setRejectedCount(rejected.length)
+                            }
+                            maxFiles={3}
+                        />
+                        {rejectedCount > 0 ? (
+                            <span className="text-xs text-intent-danger-text">
+                                {rejectedCount} file(s) rejected — wrong type,
+                                too large, or over the limit.
+                            </span>
+                        ) : null}
+                    </ControlGroup>
                 </div>
             </Surface>
         </ShowcaseSection>

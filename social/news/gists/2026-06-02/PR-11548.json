@@ -1,0 +1,35 @@
+{
+  "pr_number": 11548,
+  "title": "Add Lunar AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11548",
+  "merged_at": "2026-06-02T04:28:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lunar AI](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) to chat\n- Uses AI chat to hold conversations. Provides a simple, elegant interface that is easy to use.\n\nFixes #10166",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Lunar AI touches down",
+    "blurb": "The greenhouse just got a little more celestial! Lunar AI has landed in the community showcase, bringing a sleek new interface for your AI conversations.",
+    "summary": "Added Lunar AI, a new conversational interface with a simple and elegant design, to the community apps showcase.",
+    "impact": "Users can now discover and try out Lunar AI's chat interface directly from the community greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "chat",
+      "interface",
+      "showcase"
+    ],
+    "visual_concept": "A space/moon theme mixed with the greenhouse/growth motif. Polly the bee wearing a tiny astronaut helmet, tending to a glowing moon-shaped plant in a cozy digital greenhouse.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny astronaut helmet, watering a glowing moon-shaped plant in a digital greenhouse. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11548.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny astronaut helmet, watering a glowing moon-shaped plant in a digital greenhouse. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-02T04:29:18.012194+00:00",
+  "app_name": "Lunar AI",
+  "app_url": "https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html"
+}

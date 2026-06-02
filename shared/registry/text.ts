@@ -30,7 +30,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -50,7 +50,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.05),
             promptCachedTokens: perMillion(0.005),
@@ -97,7 +97,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -596,7 +596,7 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -973,7 +973,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),
@@ -998,7 +998,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.0),
@@ -1094,7 +1094,7 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.5),
             promptCachedTokens: perMillion(0.05),

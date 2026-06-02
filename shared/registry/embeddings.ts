@@ -79,7 +79,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "Cohere",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // Azure Cohere retail rates (Global). Image-token billing also available
         // upstream ($0.47/1M Global text-img); we only expose text input for now.
         cost: {

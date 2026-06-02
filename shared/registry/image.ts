@@ -141,7 +141,7 @@ export const IMAGE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens

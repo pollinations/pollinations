@@ -81,7 +81,12 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             : "0%",
                                 }}
                                 className={cn(
-                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
+                                    "absolute top-0 whitespace-nowrap",
+                                    isFirst
+                                        ? "-ml-[11px] translate-x-0 text-left"
+                                        : isLast
+                                          ? "ml-[11px] -translate-x-full text-right"
+                                          : "-translate-x-1/2 text-center",
                                     isSelected && "font-bold text-amber-900",
                                 )}
                             >
@@ -93,7 +98,12 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 "text-2xl leading-none text-paid-deep",
                                         )}
                                     >
-                                        ${pack.amountUsd}
+                                        {formatPollenPackValue(pack.amountUsd)}
+                                        {isSelected && (
+                                            <span className="block text-base font-normal leading-tight text-paid-deep">
+                                                pollen
+                                            </span>
+                                        )}
                                     </span>
                                     {isSelected && (
                                         <Chip
@@ -110,6 +120,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         >
                                             <span
                                                 className={cn(
+                                                    "text-sm",
                                                     isFirst
                                                         ? "text-left"
                                                         : isLast
@@ -117,10 +128,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                           : "text-center",
                                                 )}
                                             >
-                                                {formatPollenPackValue(
-                                                    pack.amountUsd,
-                                                )}{" "}
-                                                pollen
+                                                ${pack.amountUsd}
                                             </span>
                                         </Chip>
                                     )}

@@ -1,4 +1,5 @@
 export { cn } from "./lib/cn-app.ts";
+export type { RejectedFile, RejectReason } from "./lib/partition-files.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -31,6 +32,7 @@ export {
     type ExternalLinkButtonProps,
 } from "./primitives/ExternalLinkButton.tsx";
 export { Field } from "./primitives/Field.tsx";
+export { FileUpload, type FileUploadProps } from "./primitives/FileUpload.tsx";
 export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";

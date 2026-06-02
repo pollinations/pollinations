@@ -1,0 +1,35 @@
+{
+  "pr_number": 11553,
+  "title": "Add Imagio  AI image generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11553",
+  "merged_at": "2026-06-02T04:55:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Imagio  AI image generator](https://imagio-ai.vercel.app/) to image\n- Imagio  AI image generator converts text prompts into original images using AI. It generates images in seconds.\n\nFixes #10143",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Imagio joins the garden",
+    "blurb": "Another day, another app sprouting in the community greenhouse. Imagio AI turns text into pixels in seconds, and it's now officially on the showcase.",
+    "summary": "Added the Imagio AI image generator to the community app showcase in the Greenhouse.",
+    "impact": "Users can now discover Imagio AI, a fast text-to-image generator, directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "imagio",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener in a digital greenhouse, watering a new plant that blooms into a glowing picture frame (representing an image generator app).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, watering a glowing code-plant in a digital greenhouse. The plant is blooming with a beautiful glowing picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11553.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, watering a glowing code-plant in a digital greenhouse. The plant is blooming with a beautiful glowing picture frame. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T04:56:58.082444+00:00",
+  "app_name": "Imagio  AI image generator",
+  "app_url": "https://imagio-ai.vercel.app/"
+}

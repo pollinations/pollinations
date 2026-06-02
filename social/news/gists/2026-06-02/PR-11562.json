@@ -1,0 +1,35 @@
+{
+  "pr_number": 11562,
+  "title": "add minimax m3, move gemma 4 26b to openrouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11562",
+  "merged_at": "2026-06-02T11:49:40Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds **MiniMax M3** (`minimax-m3`, aliases `minimax3`/`minimax-3`) via OpenRouter — text+image input, tools, reasoning, 1M context. Verified upstream: tool calls, image input, reasoning tokens, prompt caching all work.\n- M3 priced at 1x markup using the current OpenRouter rate ($0.30/M in, $1.20/M out, $0.06/M cache). This is a temporary 50% promo; base is $0.60/$2.40 — flagged in a code comment to revisit when the promo ends.\n- Moves **Gemma 4 26B-A4B** from DeepInfra → OpenRouter (same SKU, cheaper: $0.06/$0.33 vs $0.07/$0.34), keeps 1x markup, non-paid.\n- Checked AWS Bedrock + Fireworks first: M3 isn't on either (Bedrock tops out at M2.5); Gemma 4 is OpenRouter-only (Bedrock has Gemma 3, Fireworks is on-demand only). **Voyage 4 dropped** — not served by Fireworks, Bedrock, or OpenRouter (would need Voyage's native API).\n- Tests: aliases, pricing-data, usage-headers, model-permissions pass; effective-prices snapshot updated. Local gateway lists both with correct pricing/modalities. Live local generation not run (no seeded local key in this clone); upstream responses verified directly.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Maximum MiniMax",
+    "blurb": "We've added MiniMax M3 to the text generation API, bringing reasoning, vision, and a massive 1M context window to your prompts. We also re-routed Gemma 4 26B to keep things running smoothly and affordably.",
+    "summary": "Added MiniMax M3 (minimax-m3) via OpenRouter with support for vision, tools, and reasoning, and migrated Gemma 4 26B from DeepInfra to OpenRouter for better pricing.",
+    "impact": "Users can now access MiniMax M3's 1M context window and multimodal features, while Gemma 4 26B requests will route through OpenRouter at a lower underlying cost.",
+    "keywords": [
+      "models",
+      "minimax",
+      "gemma",
+      "openrouter",
+      "api"
+    ],
+    "visual_concept": "The pollinations bee welcoming a new, powerful robot (MiniMax M3) holding a massive scroll (1M context) into the garden, with visual cues for reasoning and vision.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky, friendly robot holding a massive, unrolled paper scroll representing a large context window. The robot has a glowing eye for vision and a small brain icon on its chest for reasoning. They stand in a lush digital garden with lime green (#ecf874) and soft lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11562.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky, friendly robot holding a massive, unrolled paper scroll representing a large context window. The robot has a glowing eye for vision and a small brain icon on its chest for reasoning. They stand in a lush digital garden with lime green (#ecf874) and soft lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "generated_at": "2026-06-02T11:50:48.236275+00:00"
+}

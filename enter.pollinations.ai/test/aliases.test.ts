@@ -4,7 +4,9 @@ import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
     calculatePrice,
+    getCostDefinition,
     getModelDefinition,
+    getModels,
     getPriceDefinition,
     resolveModelName,
 } from "@shared/registry/registry.js";
@@ -40,46 +42,22 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("gemini-fast can expose a higher public price than provider cost", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        promptCachedTokens: 1_000_000,
-        promptAudioTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const priceDefinition = getPriceDefinition("gemini-fast");
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiFastPrice = calculatePrice("gemini-fast", usage);
-
-    expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.00000015, 15);
-    expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.000000015, 15);
-    expect(priceDefinition?.promptAudioTokens).toBeCloseTo(0.00000045, 15);
-    expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.0000006, 15);
-    expect(geminiFastCost.totalCost).toBeCloseTo(0.81, 8);
-    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.215, 8);
-    expect(geminiFastPrice.totalPrice).toBeGreaterThan(
-        geminiFastCost.totalCost,
-    );
-});
-
-test("image model with marked-up price bills users above provider cost", () => {
-    const usage = { completionImageTokens: 1 };
-    const cost = calculateCost("seedream", usage);
-    const price = calculatePrice("seedream", usage);
-
-    expect(cost.totalCost).toBeCloseTo(0.03, 8);
-    expect(price.totalPrice).toBeCloseTo(0.045, 8);
-    expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
-});
-
-test("video model with marked-up price bills users above provider cost", () => {
-    const usage = { completionVideoSeconds: 1, completionAudioSeconds: 1 };
-    const cost = calculateCost("wan", usage);
-    const price = calculatePrice("wan", usage);
-
-    expect(cost.totalCost).toBeCloseTo(0.1, 8);
-    expect(price.totalPrice).toBeCloseTo(0.15, 8);
-    expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
+test("public price equals provider cost times priceMultiplier for every model", () => {
+    // Invariant: price = cost × priceMultiplier, for every model, no exceptions.
+    // Asserted per cost field so it holds at any multiplier (currently all 1×).
+    for (const model of getModels()) {
+        const cost = getCostDefinition(model);
+        const price = getPriceDefinition(model);
+        if (!cost || !price) continue; // no cost block → nothing billed
+        const { priceMultiplier } = getModelDefinition(model);
+        for (const [field, rate] of Object.entries(cost)) {
+            const priceRate = price[field as keyof typeof price] as number;
+            expect(priceRate).toBeCloseTo(
+                (rate as number) * priceMultiplier,
+                15,
+            );
+        }
+    }
 });
 
 test("model without explicit price falls back to cost for both values", () => {

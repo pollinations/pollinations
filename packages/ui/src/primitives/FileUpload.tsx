@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
+import type { ThemeName } from "../theme.ts";
 import { IconButton } from "./IconButton.tsx";
 import { ImageIcon, XIcon } from "./icons/index.tsx";
 
@@ -11,7 +12,10 @@ export type FileUploadProps = {
     maxFiles?: number;
     maxSizeBytes?: number;
     accept?: string;
+    /** Fully locks the field: no add, no remove, drops ignored. */
     disabled?: boolean;
+    /** Optional cascade override; defaults to the inherited `[data-theme]`. */
+    theme?: ThemeName;
     className?: string;
 };
 
@@ -23,6 +27,7 @@ export function FileUpload({
     maxSizeBytes = 10 * 1024 * 1024,
     accept = "image/*",
     disabled = false,
+    theme,
     className,
 }: FileUploadProps) {
     const [previews, setPreviews] = useState<string[]>([]);
@@ -36,11 +41,11 @@ export function FileUpload({
         };
     }, [value]);
 
-    const atLimit = value.length >= maxFiles;
-    const blocked = disabled || atLimit;
-
+    // Only `disabled` blocks interaction. At the file limit the input stays
+    // enabled so over-limit selections still flow through partitionFiles and
+    // are reported as `{ reason: "count" }` via onReject (deterministic reject).
     function addFiles(incoming: File[]) {
-        if (incoming.length === 0) return;
+        if (disabled || incoming.length === 0) return;
         const { accepted, rejected } = partitionFiles(incoming, value, {
             maxFiles,
             maxSizeBytes,
@@ -51,24 +56,26 @@ export function FileUpload({
     }
 
     return (
-        <div className={cn("polli:flex polli:flex-col polli:gap-3", className)}>
+        <div
+            data-theme={theme}
+            className={cn("polli:flex polli:flex-col polli:gap-3", className)}
+        >
             <label
                 className={cn(
                     "polli:flex polli:flex-col polli:items-center polli:justify-center polli:gap-2",
                     "polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border",
                     "polli:bg-theme-bg-pale polli:px-4 polli:py-6 polli:text-center polli:text-sm",
                     "polli:text-theme-text-soft polli:transition-colors",
-                    blocked
+                    disabled
                         ? "polli:cursor-not-allowed polli:opacity-50"
                         : "polli:cursor-pointer polli:hover:bg-theme-bg-hover",
                 )}
-                onDragOver={(e) => {
-                    if (blocked) return;
-                    e.preventDefault();
-                }}
+                // Always prevent the browser's default file-drop navigation,
+                // even when disabled; only the file handling is gated.
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
-                    if (blocked) return;
                     e.preventDefault();
+                    if (disabled) return;
                     addFiles(Array.from(e.dataTransfer.files));
                 }}
             >
@@ -81,7 +88,7 @@ export function FileUpload({
                     type="file"
                     accept={accept}
                     multiple={maxFiles > 1}
-                    disabled={blocked}
+                    disabled={disabled}
                     className="polli:sr-only"
                     onChange={(e) => {
                         addFiles(Array.from(e.target.files ?? []));
@@ -109,19 +116,23 @@ export function FileUpload({
                             <span className="polli:max-w-16 polli:truncate polli:text-xs polli:text-theme-text-muted">
                                 {file.name}
                             </span>
-                            <div className="polli:absolute polli:-top-2 polli:-right-2">
-                                <IconButton
-                                    intent="danger"
-                                    title={`Remove ${file.name}`}
-                                    onClick={() =>
-                                        onChange(
-                                            value.filter((_, i) => i !== index),
-                                        )
-                                    }
-                                >
-                                    <XIcon className="polli:h-3 polli:w-3" />
-                                </IconButton>
-                            </div>
+                            {!disabled && (
+                                <div className="polli:absolute polli:-top-2 polli:-right-2">
+                                    <IconButton
+                                        intent="danger"
+                                        title={`Remove ${file.name}`}
+                                        onClick={() =>
+                                            onChange(
+                                                value.filter(
+                                                    (_, i) => i !== index,
+                                                ),
+                                            )
+                                        }
+                                    >
+                                        <XIcon className="polli:h-3 polli:w-3" />
+                                    </IconButton>
+                                </div>
+                            )}
                         </li>
                     ))}
                 </ul>

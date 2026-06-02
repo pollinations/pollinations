@@ -45,6 +45,7 @@ export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./primitives/PeriodPicker.tsx";
+export { Prose, type ProseProps } from "./primitives/Prose.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Section, type SectionProps } from "./primitives/Section.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";

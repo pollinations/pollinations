@@ -1,7 +1,7 @@
 # pollinations.ai Link Collection (Official Only)
 
 ## Core Websites
-- **Main Website:** https://hello.pollinations.ai
+- **Main Website:** https://pollinations.ai
 - **Dashboard & API Keys:** https://enter.pollinations.ai
 - **Interactive Playground:** https://pollinations.ai/play
 
@@ -21,7 +21,7 @@
 - **MCP Protocol:** https://mcp.sequa.ai/v1/pollinations/contribute
 
 ## Apps & Community
-- **Community App Showcase:** https://hello.pollinations.ai
+- **Community App Showcase:** https://pollinations.ai
 - **Model Monitor:** https://model-monitor.pollinations.ai
 - **Community Chat:** https://chat.pollinations.ai
 

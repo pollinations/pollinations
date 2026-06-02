@@ -1,0 +1,35 @@
+{
+  "pr_number": 11566,
+  "title": "fix: repair dead brand links + complete official link collection",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11566",
+  "merged_at": "2026-06-02T12:04:00Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Fixes dead links in the official social brand link collection (`social/prompts/brand/links.md`) and rounds it out.\n\n- Fix `hello.pollinations.ai` (DNS gone post-migration) → `pollinations.ai` — Main Website + App Showcase\n- Fix `react-hooks.pollinations.ai` (SSL cert mismatch, broken) → live `react.pollinations.ai`; same broken link also fixed in `README.md`\n- Add missing published npm packages: `@pollinations/ui`, `@pollinations/cli` (collection only had sdk + mcp)\n- Add BYOP and first-party MCP server docs links\n- Add `media.pollinations.ai` content-addressed media store\n\nVerified: pollinations.ai, react.pollinations.ai, media.pollinations.ai, both docs tags all return 200; ui/cli confirmed on the npm registry.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Signposts updated",
+    "blurb": "We've polished up our official link collection, fixing a few broken URLs and adding our UI and CLI npm packages to the map. All paths lead to the right flowers now.",
+    "summary": "Updated the official brand link collection and README to fix dead URLs (routing hello.pollinations.ai to pollinations.ai and react-hooks to react) while adding missing @pollinations/ui, @pollinations/cli, and media store links.",
+    "impact": "Developers and internal tools now have a fully accurate, 200-OK verified map of all official Pollinations resources and packages.",
+    "keywords": [
+      "docs",
+      "links",
+      "npm",
+      "readme",
+      "maintenance"
+    ],
+    "visual_concept": "The bee mascot and monitor robot repairing and updating wooden signposts in a cozy garden, representing the fixing of URLs and adding new destinations.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, hammering a new wooden signpost in a digital garden. A chunky pixel robot with a monitor head stands nearby holding a map. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11566.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, hammering a new wooden signpost in a digital garden. A chunky pixel robot with a monitor head stands nearby holding a map. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T12:05:05.145958+00:00"
+}

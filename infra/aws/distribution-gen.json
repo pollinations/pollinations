@@ -33,7 +33,7 @@
     },
     "Compress": false,
     "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
-    "OriginRequestPolicyId": "cee68e99-f3e4-4f65-811e-e5d2e050bb18"
+    "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac"
   },
   "ViewerCertificate": {
     "ACMCertificateArn": "arn:aws:acm:us-east-1:301235909293:certificate/c0f0cee5-221d-40b3-9d04-357a9f4cccaa",

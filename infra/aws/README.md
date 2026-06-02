@@ -27,14 +27,25 @@ auto-renew.
 - **Origin:** `gen.myceli.ai` (Cloudflare Worker), `https-only`, TLSv1.2
 - **Custom headers to origin:** `X-Forwarded-Host: gen.pollinations.ai`,
   `X-Forwarded-Proto: https`
-- **Origin-request policy:** `cee68e99-f3e4-4f65-811e-e5d2e050bb18`
-  (allViewerAndWhitelistCloudFront + CloudFront-Viewer-Address)
+- **Origin-request policy:** `b689b0a8-53d0-40ab-baf2-68738e2966ac`
+  (managed `AllViewerExceptHostHeader`)
 - **Cache policy:** `4135ea2d-6df8-44a3-9df3-4b5a84be39ad` (CachingDisabled)
 - **Config:** `infra/aws/distribution-gen.json`
 
-Known issue: requests through the cloudfront.net domain return `502 Bad
-Gateway` ("can't connect to the server"), while the origin `gen.myceli.ai`
-is healthy directly (301 on `/`, 200 on `/v1/models`, serves forced TLSv1.2,
-cert SAN covers `gen.myceli.ai`). This is the CloudFront -> Cloudflare egress
-quirk — Cloudflare rejecting connections from CloudFront edge ranges. Origin
-config matches spec (https-only, TLSv1.2). Resolve before DNS cutover.
+Verified via the cloudfront.net domain: `301` on `/` (redirects to
+`gen.pollinations.ai/docs`, proving `X-Forwarded-Host` is applied), `200` on
+`/v1/models`, `/image/models`, `/models` — matching origin-direct. No cutover
+performed.
+
+### Why the managed policy (not a custom one)
+
+The origin Cloudflare Worker serves only its own hostnames. CloudFront MUST
+NOT forward the viewer `Host` header (it would send `*.cloudfront.net` /
+`gen.pollinations.ai`, which Cloudflare rejects → surfaces as a CloudFront
+`502`). `AllViewerExceptHostHeader` drops viewer `Host` so CloudFront sets
+`Host = gen.myceli.ai`, AND it natively forwards the CloudFront-generated
+`CloudFront-Viewer-Address` header (real client IP as `IP:port`). The backend
+`shared/client-ip.ts` reads `CloudFront-Viewer-Address` under the existing
+trusted host-pair gate. A custom `allViewerAndWhitelistCloudFront` policy was
+tried first and caused the 502 because it forwards ALL viewer headers,
+including `Host`.

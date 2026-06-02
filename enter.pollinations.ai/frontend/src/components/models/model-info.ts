@@ -4,6 +4,7 @@
 
 import {
     getModelDefinition,
+    type ModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
@@ -37,8 +38,16 @@ const BRAND_LOGOS: Record<string, string> = {
 
 const MODEL_LOGOS: Record<string, string> = {};
 
+function getModelDefinitionOrNull(modelName: string): ModelDefinition | null {
+    try {
+        return getModelDefinition(modelName as ModelName);
+    } catch {
+        return null;
+    }
+}
+
 export const getModalities = (modelName: string): Modalities => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return {
         input: service?.inputModalities || ["text"],
         output: service?.outputModalities || ["text"],
@@ -46,12 +55,12 @@ export const getModalities = (modelName: string): Modalities => {
 };
 
 export const getModelDescription = (modelName: string): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.description;
 };
 
 export const getModelDisplayName = (modelName: string): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     const description = service?.description;
     if (!description) return undefined;
     return description.split(" - ")[0];
@@ -60,7 +69,7 @@ export const getModelDisplayName = (modelName: string): string | undefined => {
 export const getModelDescriptionWithoutName = (
     modelName: string,
 ): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     const description = service?.description;
     if (!description) return undefined;
     const parts = description.split(" - ");
@@ -71,7 +80,7 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     modelName: string,
 ): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     const logoName =
         MODEL_LOGOS[modelName] ??
         (service ? BRAND_LOGOS[service.brand] : undefined);
@@ -123,17 +132,17 @@ export const getModelCapabilityLabel = (modelName: string): string => {
 };
 
 export const hasReasoning = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.reasoning === true;
 };
 
 export const hasSearch = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.search === true;
 };
 
 export const hasCodeExecution = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.codeExecution === true;
 };
 
@@ -153,7 +162,7 @@ export const hasAudioOutput = (modelName: string): boolean => {
 };
 
 export const isPersona = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.persona === true;
 };
 
@@ -162,7 +171,7 @@ export const isPersona = (modelName: string): boolean => {
  * Uses the `addedDate` field, which is set once on creation and never updated.
  */
 export const isNewModel = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     if (!service?.addedDate) return false;
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     return service.addedDate > sevenDaysAgo;
@@ -172,7 +181,7 @@ export const isNewModel = (modelName: string): boolean => {
  * Check if a model requires paid balance only (no tier balance)
  */
 export const isPaidOnly = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.paidOnly === true;
 };
 
@@ -180,6 +189,6 @@ export const isPaidOnly = (modelName: string): boolean => {
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
+    const service = getModelDefinitionOrNull(modelName);
     return service?.alpha === true;
 };

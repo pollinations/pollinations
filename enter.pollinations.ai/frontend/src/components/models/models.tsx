@@ -6,8 +6,13 @@ import {
     TabButton,
     TokensIcon,
 } from "@pollinations/ui";
-import { type FC, useState } from "react";
-import { getModelPrices } from "./data.ts";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { apiClient } from "../../api.ts";
+import {
+    type CommunityEndpoint,
+    CommunityEndpoints,
+} from "../community-endpoints";
+import { getCommunityModelPrices, getModelPrices } from "./data.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -18,12 +23,45 @@ import { useModelStats } from "./use-model-stats.ts";
 type ModelsProps = {
     tierBalance?: number;
     packBalance?: number;
+    showCommunityEndpoints?: boolean;
 };
 
-export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
+export const Models: FC<ModelsProps> = ({
+    tierBalance,
+    packBalance,
+    showCommunityEndpoints = false,
+}) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [communityEndpoints, setCommunityEndpoints] = useState<
+        CommunityEndpoint[]
+    >([]);
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
+    const communityModels = getCommunityModelPrices(communityEndpoints);
+
+    const loadCommunityEndpoints = useCallback(async () => {
+        if (!showCommunityEndpoints) {
+            setCommunityEndpoints([]);
+            return;
+        }
+        const response = await apiClient["community-endpoints"].$get();
+        if (!response.ok) {
+            setCommunityEndpoints([]);
+            return;
+        }
+        const body = (await response.json()) as { data: CommunityEndpoint[] };
+        setCommunityEndpoints(body.data);
+    }, [showCommunityEndpoints]);
+
+    useEffect(() => {
+        void loadCommunityEndpoints();
+    }, [loadCommunityEndpoints]);
+
+    useEffect(() => {
+        if (activeTab === "community" && communityModels.length === 0) {
+            setActiveTab("text");
+        }
+    }, [activeTab, communityModels.length]);
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
@@ -37,6 +75,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
         ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
         ...(realtimeModels.length > 0 ? (["realtime"] as SectionType[]) : []),
         "text",
+        ...(communityModels.length > 0 ? (["community"] as SectionType[]) : []),
         ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
     ];
 
@@ -87,6 +126,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         realtimeModels={realtimeModels}
                         textModels={textModels}
                         embeddingModels={embeddingModels}
+                        communityModels={communityModels}
                         activeTab={activeTab}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
@@ -114,6 +154,9 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                     </p>
                 </div>
             </Section>
+            {showCommunityEndpoints && (
+                <CommunityEndpoints onChange={loadCommunityEndpoints} />
+            )}
         </div>
     );
 };

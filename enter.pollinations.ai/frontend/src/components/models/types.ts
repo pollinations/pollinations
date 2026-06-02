@@ -1,8 +1,12 @@
 import type { Category } from "@shared/registry/registry.ts";
 
+export type ModelPriceType = Category | "community";
+
 export type ModelPrice = {
     name: string;
-    type: Category;
+    displayName?: string;
+    description?: string;
+    type: ModelPriceType;
     perToken?: boolean;
     // Text pricing
     promptTextPrice?: string;

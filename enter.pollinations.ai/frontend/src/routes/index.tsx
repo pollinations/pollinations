@@ -39,6 +39,7 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
+const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 function DownloadCsvButton({
     theme,
@@ -72,6 +73,10 @@ function pageFromHash(hash: string): DashboardPage {
     // FAQ component scroll/expand the matching question.
     if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
     return "pollen";
+}
+
+function canManageCommunityEndpoints(tier: string | null | undefined): boolean {
+    return !!tier && COMMUNITY_ENDPOINT_TIERS.has(tier);
 }
 
 export const Route = createFileRoute("/")({
@@ -148,6 +153,9 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const showCommunityEndpoints = canManageCommunityEndpoints(
+        tierData?.active?.tier,
+    );
 
     const selectableKeys = useMemo(
         () =>
@@ -361,7 +369,11 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Models tierBalance={tierBalance} packBalance={packBalance} />
+                <Models
+                    tierBalance={tierBalance}
+                    packBalance={packBalance}
+                    showCommunityEndpoints={showCommunityEndpoints}
+                />
             )}
         </DashboardShell>
     );

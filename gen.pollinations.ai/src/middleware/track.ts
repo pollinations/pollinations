@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
+    type EarnedCredit,
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
@@ -11,12 +12,20 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import {
+    COMMUNITY_ENDPOINT_PAYOUT_PCT,
+    type CommunityEndpointRuntime,
+    communityCostDefinition,
+    communityEndpointPayoutAmount,
+    communityPriceDefinition,
+} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
-    calculateCost,
-    calculatePrice,
+    type CostDefinition,
+    calculateCostWithDefinition,
+    calculatePriceWithDefinition,
     getModelDefinition,
     getPriceDefinition,
     type ModelName,
@@ -70,7 +79,8 @@ import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
 type ModelVariables = {
     model: {
         requested: string;
-        resolved: ModelName;
+        resolved: string;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
 };
 
@@ -81,8 +91,9 @@ export type ModelUsage = {
 
 type RequestTrackingData = {
     modelRequested: string | null;
-    resolvedModelRequested: ModelName;
+    resolvedModelRequested: string;
     modelProvider?: string;
+    modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -103,7 +114,7 @@ type ResponseTrackingData = {
 export type TrackVariables = {
     track: {
         modelRequested: string | null;
-        resolvedModelRequested: ModelName;
+        resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -205,6 +216,11 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
+                    const earnedCredits = communityEndpointEarnedCredits(
+                        c.var.model?.communityEndpoint,
+                        responseTracking.price?.totalPrice,
+                        userTracking.userId,
+                    );
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -214,6 +230,10 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
                         modelResolved: c.var.model?.resolved,
+                        isPaidOnly: c.var.model?.communityEndpoint
+                            ? false
+                            : undefined,
+                        earnedCredits,
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
@@ -354,6 +374,27 @@ async function triggerAutoTopUp(
     }
 }
 
+function communityEndpointEarnedCredits(
+    endpoint: CommunityEndpointRuntime | undefined,
+    totalPrice: number | undefined,
+    payerUserId: string | undefined,
+): EarnedCredit[] {
+    if (!endpoint || !totalPrice || endpoint.ownerUserId === payerUserId) {
+        return [];
+    }
+    const amount = communityEndpointPayoutAmount(totalPrice);
+    if (amount <= 0) return [];
+    return [
+        {
+            recipientUserId: endpoint.ownerUserId,
+            amount,
+            rate: COMMUNITY_ENDPOINT_PAYOUT_PCT,
+            source: "community_endpoint",
+            entityId: endpoint.id,
+        },
+    ];
+}
+
 async function trackRequest(
     modelInfo: ModelVariables["model"],
     request: HonoRequest,
@@ -362,9 +403,19 @@ async function trackRequest(
     const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
-    const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getPriceDefinition(resolvedModelRequested);
-    if (!modelPriceDefinition) {
+    const staticModelDefinition = modelInfo.communityEndpoint
+        ? null
+        : getModelDefinition(resolvedModelRequested as ModelName);
+    const modelProvider = modelInfo.communityEndpoint
+        ? "community"
+        : staticModelDefinition?.provider;
+    const modelCostDefinition = modelInfo.communityEndpoint
+        ? communityCostDefinition(modelInfo.communityEndpoint)
+        : staticModelDefinition?.cost;
+    const modelPriceDefinition = modelInfo.communityEndpoint
+        ? communityPriceDefinition(modelInfo.communityEndpoint)
+        : getPriceDefinition(resolvedModelRequested as ModelName);
+    if (!modelCostDefinition || !modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,
         );
@@ -376,6 +427,7 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        modelCostDefinition,
         modelPriceDefinition,
         streamRequested,
         referrerData,
@@ -438,8 +490,16 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
-    const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
+    const cost = calculateCostWithDefinition(
+        resolvedModelRequested,
+        modelUsage.usage,
+        requestTracking.modelCostDefinition,
+    );
+    const price = calculatePriceWithDefinition(
+        resolvedModelRequested,
+        modelUsage.usage,
+        requestTracking.modelPriceDefinition,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -461,7 +521,7 @@ async function trackResponse(
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
-    resolvedModelRequested: ModelName,
+    resolvedModelRequested: string,
 ): { kind: string; isExpected: (contentType: string) => boolean } | null {
     if (eventType === "generate.image") {
         return {
@@ -480,7 +540,7 @@ function getContentTypeGuard(
     }
     if (eventType === "generate.audio") {
         const isSTTModel =
-            getModelDefinition(resolvedModelRequested)
+            getModelDefinition(resolvedModelRequested as ModelName)
                 ?.outputModalities?.[0] === "text";
         return {
             kind: "audio",

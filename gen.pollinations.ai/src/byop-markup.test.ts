@@ -151,6 +151,31 @@ describe("BYOP markup", () => {
         expect(creatorBalances.packBalance).toBe(0);
     });
 
+    it("credits earned credits without increasing billed price", async () => {
+        const { payerId, devId } = await setupPayerAndDev();
+
+        const { markup, billedPrice } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: payerId,
+            earnedCredits: [
+                {
+                    recipientUserId: devId,
+                    amount: 0.8,
+                    rate: 0.8,
+                    source: "community_endpoint",
+                    entityId: "endpoint-test",
+                },
+            ],
+        });
+
+        expect(markup).toBeNull();
+        expect(billedPrice).toBe(1);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(1);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0.8);
+    });
+
     it("credits creator pack balance when payer spends pack balance", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
         await db

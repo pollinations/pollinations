@@ -1,0 +1,165 @@
+import { roundPollenLedgerAmount } from "./billing/precision.ts";
+import type { CostDefinition, PriceDefinition } from "./registry/registry.ts";
+
+export const COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_ENDPOINT_PAYOUT_PCT = 0.8;
+const DEFAULT_MAX_COMPLETION_TOKENS = 1024;
+
+export type CommunityEndpointRuntime = {
+    id: string;
+    ownerUserId: string;
+    name: string;
+    baseUrl: string;
+    upstreamModel: string;
+    bearerTokenCiphertext: string;
+    promptTextPrice: number;
+    completionTextPrice: number;
+    contextLength: number | null;
+};
+
+type ChatRequestLike = {
+    messages?: unknown;
+    max_tokens?: unknown;
+    max_completion_tokens?: unknown;
+};
+
+export function communityModelId(endpointId: string): string {
+    return `${COMMUNITY_MODEL_PREFIX}${endpointId}`;
+}
+
+export function parseCommunityModelId(model: string): string | null {
+    if (!model.startsWith(COMMUNITY_MODEL_PREFIX)) return null;
+    const id = model.slice(COMMUNITY_MODEL_PREFIX.length).trim();
+    return id || null;
+}
+
+export function normalizeCommunityEndpointBaseUrl(value: string): string {
+    const url = new URL(value);
+    if (url.protocol !== "https:") {
+        throw new Error("Endpoint URL must use https");
+    }
+    if (isBlockedHostname(url.hostname)) {
+        throw new Error("Endpoint URL cannot target a private host");
+    }
+    url.hash = "";
+    return url.toString().replace(/\/+$/, "");
+}
+
+export function communityChatCompletionsUrl(baseUrl: string): string {
+    const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
+    return normalized.endsWith("/chat/completions")
+        ? normalized
+        : `${normalized}/chat/completions`;
+}
+
+export function communityPriceDefinition(
+    endpoint: Pick<
+        CommunityEndpointRuntime,
+        "promptTextPrice" | "completionTextPrice"
+    >,
+): PriceDefinition {
+    return {
+        promptTextTokens: endpoint.promptTextPrice,
+        completionTextTokens: endpoint.completionTextPrice,
+    };
+}
+
+export function communityCostDefinition(
+    endpoint: Pick<
+        CommunityEndpointRuntime,
+        "promptTextPrice" | "completionTextPrice"
+    >,
+): CostDefinition {
+    return {
+        promptTextTokens:
+            endpoint.promptTextPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT,
+        completionTextTokens:
+            endpoint.completionTextPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT,
+    };
+}
+
+export function communityEndpointPayoutAmount(totalPrice: number): number {
+    return roundPollenLedgerAmount(totalPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT);
+}
+
+export function estimateCommunityRequestPrice(
+    endpoint: Pick<
+        CommunityEndpointRuntime,
+        "promptTextPrice" | "completionTextPrice" | "contextLength"
+    >,
+    request: ChatRequestLike,
+): number {
+    const promptTokens = estimateTextTokens(request.messages);
+    const maxCompletionTokens = getMaxCompletionTokens(endpoint, request);
+    return (
+        promptTokens * endpoint.promptTextPrice +
+        maxCompletionTokens * endpoint.completionTextPrice
+    );
+}
+
+export function capCommunityUsage(
+    endpoint: Pick<CommunityEndpointRuntime, "contextLength">,
+    request: ChatRequestLike,
+    usage: Record<string, number> | undefined,
+): Record<string, number> | undefined {
+    if (!usage) return usage;
+    if (
+        !Number.isFinite(usage.prompt_tokens) ||
+        !Number.isFinite(usage.completion_tokens)
+    ) {
+        return undefined;
+    }
+    const promptTokens = Math.min(
+        usage.prompt_tokens,
+        estimateTextTokens(request.messages),
+    );
+    const completionTokens = Math.min(
+        usage.completion_tokens,
+        getMaxCompletionTokens(endpoint, request),
+    );
+    return {
+        ...usage,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: promptTokens + completionTokens,
+    };
+}
+
+function getMaxCompletionTokens(
+    endpoint: Pick<CommunityEndpointRuntime, "contextLength">,
+    request: ChatRequestLike,
+): number {
+    const requested =
+        numberOrNull(request.max_completion_tokens) ??
+        numberOrNull(request.max_tokens);
+    if (requested != null) return Math.max(0, requested);
+    return Math.min(
+        endpoint.contextLength ?? DEFAULT_MAX_COMPLETION_TOKENS,
+        DEFAULT_MAX_COMPLETION_TOKENS,
+    );
+}
+
+function estimateTextTokens(value: unknown): number {
+    if (value == null) return 0;
+    const text = typeof value === "string" ? value : JSON.stringify(value);
+    return Math.ceil(text.length / 4);
+}
+
+function numberOrNull(value: unknown): number | null {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function isBlockedHostname(hostname: string): boolean {
+    const host = hostname.toLowerCase();
+    if (host === "localhost" || host.endsWith(".localhost")) return true;
+    if (host.endsWith(".local")) return true;
+    if (host === "::1" || host === "[::1]") return true;
+    if (host.startsWith("127.") || host.startsWith("10.")) return true;
+    if (host.startsWith("192.168.")) return true;
+    const match172 = host.match(/^172\.(\d+)\./);
+    if (match172) {
+        const second = Number(match172[1]);
+        if (second >= 16 && second <= 31) return true;
+    }
+    return false;
+}

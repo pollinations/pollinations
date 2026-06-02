@@ -1,3 +1,8 @@
+import {
+    type CommunityEndpointRuntime,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import {
     DEFAULT_EMBEDDING_MODEL,
@@ -11,6 +16,8 @@ import {
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
@@ -36,6 +43,7 @@ export type ModelVariables = {
         requested: string;
         /** The resolved canonical model name */
         resolved: ModelName;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;
 };
@@ -66,7 +74,10 @@ export function resolveModel(
     eventType: EventType,
     options?: ResolveModelOptions,
 ) {
-    return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
+    return createMiddleware<{
+        Bindings: CloudflareBindings;
+        Variables: ModelVariables;
+    }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
 
@@ -112,6 +123,30 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
+        const communityEndpointId = parseCommunityModelId(model);
+        if (communityEndpointId) {
+            if (eventType !== "generate.text") {
+                throw new HTTPException(400, {
+                    message: "Community endpoints only support text requests",
+                });
+            }
+            const db = drizzle(c.env.DB, { schema });
+            const endpoint = await db.query.communityEndpoint.findFirst({
+                where: eq(schema.communityEndpoint.id, communityEndpointId),
+            });
+            if (!endpoint) {
+                throw new HTTPException(400, {
+                    message: `Invalid community endpoint: "${model}"`,
+                });
+            }
+            c.set("model", {
+                requested: model,
+                resolved: model as ModelName,
+                communityEndpoint: endpoint,
+            });
+            await next();
+            return;
+        }
 
         // Resolve alias to canonical model name
         // If resolution fails, throw a 400 error with the original error message

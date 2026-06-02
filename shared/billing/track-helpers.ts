@@ -21,6 +21,14 @@ export type MarkupResolution = {
     markupRate: number;
 };
 
+export type EarnedCredit = {
+    recipientUserId: string;
+    amount: number;
+    rate: number;
+    source: "byop_markup" | "community_endpoint";
+    entityId: string;
+};
+
 interface DeductionParams {
     db: DrizzleD1Database;
     isBilledUsage: boolean;
@@ -30,6 +38,8 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelResolved?: string;
+    isPaidOnly?: boolean;
+    earnedCredits?: EarnedCredit[];
 }
 
 function parseMetadata(
@@ -85,11 +95,9 @@ export async function resolveDevMarkup(
 }
 
 /**
- * Handles balance deduction and BYOP dev credit for billable requests.
- *
- * Returns `billedPrice` — the rounded amount actually debited from the payer
- * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
- * should use this for analytics/event totals so they match the ledger.
+ * Handles balance deduction plus earned credits for billable requests.
+ * BYOP markup is added to the payer charge; other earned credits are paid from
+ * the model price already present in `totalPrice`.
  */
 export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     markup: MarkupResolution | null;
@@ -106,6 +114,8 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyPollenBalance,
         byopClientKeyId,
         modelResolved,
+        isPaidOnly,
+        earnedCredits = [],
     } = params;
 
     if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
@@ -127,6 +137,27 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     const billedPrice = roundPollenLedgerAmount(
         totalPrice + (markup?.devCredit ?? 0),
     );
+    const creditsToApply = [
+        ...(markup
+            ? [
+                  {
+                      recipientUserId: markup.devUserId,
+                      amount: markup.devCredit,
+                      rate: markup.markupRate,
+                      source: "byop_markup" as const,
+                      entityId: byopClientKeyId ?? "",
+                  },
+              ]
+            : []),
+        ...earnedCredits,
+    ]
+        .map((credit) => ({
+            ...credit,
+            amount: roundPollenLedgerAmount(credit.amount),
+        }))
+        .filter(
+            (credit) => credit.amount > 0 && credit.recipientUserId !== userId,
+        );
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
 
@@ -137,6 +168,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelResolved,
+                isPaidOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -148,48 +180,49 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             await deductApiKeyBalance(db, apiKeyId, billedPrice);
         }
 
-        if (markup) {
+        if (creditsToApply.length > 0) {
             if (!payerBucket) {
-                throw new Error("BYOP markup requires a payer balance bucket");
-            }
-            const creditBucket = payerBucket;
-            const creditAmount = roundPollenLedgerAmount(markup.devCredit);
-            const { ok } = await atomicCreditUserBalance(
-                db,
-                markup.devUserId,
-                creditBucket,
-                creditAmount,
-            );
-            if (!ok) {
                 throw new Error(
-                    `Dev credit UPDATE affected 0 rows for ${markup.devUserId}`,
+                    "Earned credit requires a payer balance bucket",
                 );
             }
-            log.debug(
-                "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
-                {
-                    credit: creditAmount,
-                    devUserId: markup.devUserId,
-                    bucket: creditBucket,
-                    pct: (markup.markupRate * 100).toFixed(0),
-                },
-            );
+            for (const credit of creditsToApply) {
+                const { ok } = await atomicCreditUserBalance(
+                    db,
+                    credit.recipientUserId,
+                    payerBucket,
+                    credit.amount,
+                );
+                if (!ok) {
+                    throw new Error(
+                        `Earned credit UPDATE affected 0 rows for ${credit.recipientUserId}`,
+                    );
+                }
+                log.debug(
+                    "Credited {credit} pollen to {recipientUserId} {bucket} balance (source={source}, rate={pct}%)",
+                    {
+                        credit: credit.amount,
+                        recipientUserId: credit.recipientUserId,
+                        bucket: payerBucket,
+                        source: credit.source,
+                        pct: (credit.rate * 100).toFixed(0),
+                    },
+                );
+            }
         }
     } catch (error) {
-        if (markup) {
+        if (creditsToApply.length > 0) {
             if (
                 error instanceof Error &&
-                error.message.startsWith("Dev credit")
+                error.message.startsWith("Earned credit")
             ) {
-                log.error("Dev credit failed for {devUserId}: {error}", {
-                    devUserId: markup.devUserId,
+                log.error("Earned credit failed: {error}", {
                     error: error.message,
                 });
             } else {
                 log.error(
-                    "Failed to bill BYOP request for dev {devUserId}: {error}",
+                    "Failed to bill request with earned credit: {error}",
                     {
-                        devUserId: markup.devUserId,
                         error:
                             error instanceof Error
                                 ? error.message
@@ -240,14 +273,18 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
+    isPaidOnlyOverride?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
 }> {
     try {
-        const isPaidOnly = modelResolved
-            ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
-            : false;
+        const isPaidOnly =
+            isPaidOnlyOverride ??
+            (modelResolved
+                ? (getModelDefinition(modelResolved as ModelName).paidOnly ??
+                  false)
+                : false);
 
         const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,

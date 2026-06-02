@@ -20,6 +20,14 @@ import {
 import type { ModelPrice } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
+type CommunityEndpointModel = {
+    modelId: string;
+    name: string;
+    upstreamModel: string;
+    promptTextPrice: number;
+    completionTextPrice: number;
+};
+
 // Display-only conversion for char-billed TTS. Billing remains character-based
 // in the registry; the pricing UI shows an estimated audio-second equivalent.
 const ESTIMATED_TTS_CHARS_PER_SECOND = 15;
@@ -274,3 +282,22 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
 
     return prices;
 };
+
+export const getCommunityModelPrices = (
+    endpoints: CommunityEndpointModel[],
+): ModelPrice[] =>
+    endpoints.map((endpoint) => ({
+        name: endpoint.modelId,
+        displayName: endpoint.name,
+        description: `OpenAI-compatible endpoint for ${endpoint.upstreamModel}`,
+        type: "community",
+        perToken: true,
+        promptTextPrice: formatPrice(
+            endpoint.promptTextPrice,
+            formatPricePer1M,
+        ),
+        completionTextPrice: formatPrice(
+            endpoint.completionTextPrice,
+            formatPricePer1M,
+        ),
+    }));

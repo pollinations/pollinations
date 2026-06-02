@@ -31,7 +31,8 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
-    | "embedding";
+    | "embedding"
+    | "community";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
@@ -40,6 +41,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
+    communityModels: ModelPrice[];
     activeTab: SectionType;
     tierBalance?: number;
     packBalance?: number;
@@ -106,8 +108,16 @@ const sortModels = (
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
         if (sortKey === "name") {
-            const an = (getModelDisplayName(a.name) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b.name) ?? b.name).toLowerCase();
+            const an = (
+                a.displayName ??
+                getModelDisplayName(a.name) ??
+                a.name
+            ).toLowerCase();
+            const bn = (
+                b.displayName ??
+                getModelDisplayName(b.name) ??
+                b.name
+            ).toLowerCase();
             return an < bn ? -sign : an > bn ? sign : 0;
         }
         const av =
@@ -136,6 +146,7 @@ const unitLabels: Record<string, string> = {
     audio: "responses",
     realtime: "sessions",
     embedding: "embeddings",
+    community: "responses",
 };
 
 export const sectionLabels: Record<SectionType, string> = {
@@ -145,6 +156,7 @@ export const sectionLabels: Record<SectionType, string> = {
     realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
+    community: "Community",
 };
 
 // --- Tab content ---
@@ -249,7 +261,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const displayName = getModelDisplayName(model.name);
+    const displayName = model.displayName ?? getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
     const capabilityIcons = getModelCapabilityIcons(model.name);
@@ -361,7 +373,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             copiedTimeoutMs={900}
                             tooltip={`Copy API model name ${model.name}`}
                             aria-label={`Copy API model name ${model.name}`}
-                            className={(copied) =>
+                            className={(copied: boolean) =>
                                 cn(
                                     "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
                                     copied
@@ -370,7 +382,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 )
                             }
                         >
-                            {(copied) => (
+                            {(copied: boolean) => (
                                 <>
                                     <span className="min-w-0 truncate">
                                         {model.name}
@@ -555,6 +567,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     realtimeModels,
     embeddingModels,
+    communityModels,
     activeTab,
     tierBalance,
     packBalance,
@@ -569,6 +582,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             ? [{ type: "realtime" as const, models: realtimeModels }]
             : []),
         { type: "text", models: textModels },
+        ...(communityModels.length > 0
+            ? [{ type: "community" as const, models: communityModels }]
+            : []),
         ...(embeddingModels.length > 0
             ? [{ type: "embedding" as const, models: embeddingModels }]
             : []),

@@ -8,6 +8,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import {
     createCaptureStream,
     generateCacheKey,
@@ -16,7 +17,7 @@ import {
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
 };
 
 /**
@@ -31,6 +32,9 @@ type TextCacheEnv = {
  */
 export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     const log = c.get("log").getChild("text-cache");
+    if (c.var.model?.communityEndpoint) {
+        return next();
+    }
 
     // Read request body for POST/PUT requests (needed for cache key).
     // Hono caches body text across c.req.json()/text(), so this still works

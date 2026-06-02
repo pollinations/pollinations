@@ -7,6 +7,12 @@ import { defineConfig } from "vite";
 
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
+const rootReact = fileURLToPath(
+    new URL("../node_modules/react", import.meta.url),
+);
+const rootReactDom = fileURLToPath(
+    new URL("../node_modules/react-dom", import.meta.url),
+);
 
 export default defineConfig({
     root: "frontend",
@@ -20,8 +26,10 @@ export default defineConfig({
         alias: {
             "@frontend": frontendSrc,
             "@shared": sharedSrc,
+            react: rootReact,
+            "react-dom": rootReactDom,
         },
-        dedupe: ["zod"],
+        dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
         tanstackRouter({

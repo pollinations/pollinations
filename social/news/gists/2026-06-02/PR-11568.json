@@ -1,0 +1,35 @@
+{
+  "pr_number": 11568,
+  "title": "Remove pollen pack purchase bonuses",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11568",
+  "merged_at": "2026-06-02T18:42:00Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Removes the bonus that pack purchases granted on top of the paid amount. You now get exactly what you buy: $5 → 5 Pollen, $100 → 100 Pollen.\n\n- Drop `bonusPollen`/`pollenGrant` from the pack catalog; `amountUsd` is the single source of truth\n- Checkout metadata slimmed to `packKey` + `packAmountUsd`; the purchase webhook and auto-top-up now credit `amountUsd`\n- Remove the `+X% bonus` badge, \"FREE\" labels, and beta-bonus copy from the dashboard slider and Stripe checkout\n- Strip bonus columns (Pack Mix, Blended Burn) from the Pollen Flow dashboard and fall back to the base pack amount; historical `packPollenGrant` events stay accurate\n- Update tests\n\nFollow-up: the now-unused `pollen_grant` column is dropped in a separate PR after this deploys — prod runs migrations before deploying the worker, so dropping a NOT NULL column the old worker still uses would break auto-top-up.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Straightforward Pollen Packs",
+    "blurb": "We've simplified our Pollen packs to a straightforward 1:1 ratio. What you see is exactly what you get—no complicated math required!",
+    "summary": "Pollen pack bonuses have been removed, establishing a direct 1:1 ratio where $10 credits exactly 10 Pollen instead of the previous bonus amounts.",
+    "impact": "Users purchasing Pollen packs will now receive an exact 1:1 USD-to-Pollen conversion, and the checkout UI has been streamlined to remove bonus badges and beta labels.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "stripe",
+      "checkout",
+      "pricing"
+    ],
+    "visual_concept": "The bee mascot organizing or counting pollen coins/credits on a simple scale or abacus, representing straightforward 1:1 math. A clean, simple transaction.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, happily organizing glowing yellow pollen coins on a simple wooden scale. A chunky retro cash register sits nearby with a lime green (#ecf874) screen showing '1:1'. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11568.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, happily organizing glowing yellow pollen coins on a simple wooden scale. A chunky retro cash register sits nearby with a lime green (#ecf874) screen showing '1:1'. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-02T18:43:32.990241+00:00"
+}

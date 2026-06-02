@@ -1,0 +1,35 @@
+{
+  "pr_number": 11577,
+  "title": "fix: align UI SDK peer and React test deps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11577",
+  "merged_at": "2026-06-02T16:52:28Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Bumps `@pollinations/ui` to `0.0.2` and updates its optional `@pollinations/sdk` peer to `^5.0.0`.\n- Aligns SDK React dev/test dependencies to React 19 so UI package builds/tests do not pull a React 18 test tree.\n- Updates the root lockfile to dedupe the SDK/UI package React test dependency tree.\n\nNotes:\n- The SDK runtime React peer remains `^18.2.0 || ^19.0.0`; this changes only SDK dev/test dependencies.\n- `packages/sdk/src/react/hooks.test.tsx` passes under React 19. React 19 emits `react-test-renderer` deprecation and `act(...)` environment warnings during that test.\n\nChecks:\n- `npx biome check --write packages/sdk/package.json packages/ui/package.json package-lock.json`\n- `npm run build --prefix packages/sdk`\n- `npm run test --prefix packages/sdk`\n- `npm run build --prefix packages/ui`\n- `npm run test --prefix packages/ui`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning the SDK",
+    "blurb": "We've aligned the React test dependencies across our UI and SDK packages to keep our internal builds clean and happy.",
+    "summary": "Aligned the SDK's React dev and test dependencies to React 19 and bumped @pollinations/ui to 0.0.2 with an updated SDK peer dependency.",
+    "impact": "This dedupes the React test dependency tree and ensures UI package builds don't accidentally pull in React 18, keeping our internal tooling consistent.",
+    "keywords": [
+      "sdk",
+      "ui",
+      "react",
+      "dependencies",
+      "chore"
+    ],
+    "visual_concept": "The bee organizing boxes or tools (representing packages/dependencies) in a cozy workshop. A React logo (atom symbol) on one of the boxes represents the React 19 alignment.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing blue atom-symbol boxes on a wooden shelf in a warm workshop. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11577.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing blue atom-symbol boxes on a wooden shelf in a warm workshop. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T16:53:44.689969+00:00"
+}

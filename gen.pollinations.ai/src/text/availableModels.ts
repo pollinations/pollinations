@@ -87,7 +87,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemma",
-        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+        config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
         name: "deepseek-pro",
@@ -266,6 +266,10 @@ const models: ModelDefinition[] = [
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+    },
+    {
+        name: "minimax-m3",
+        config: portkeyConfig["minimax/minimax-m3"],
     },
     {
         name: "llama",

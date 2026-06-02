@@ -1,0 +1,35 @@
+{
+  "pr_number": 11549,
+  "title": "Add Anura Hub AI to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11549",
+  "merged_at": "2026-06-02T04:31:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Anura Hub AI](https://meow-script.vercel.all) to build\n- Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa.\n\nFixes #10367",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Anura Hub AI joins the hive",
+    "blurb": "A new sprout in the greenhouse! Anura Hub AI just joined the community, bringing a slick platform for image generation, text processing, and automation.",
+    "summary": "Added Anura Hub AI, a community-built platform integrating image generation, text processing, and automation tools, to the apps showcase.",
+    "impact": "The community can now discover and explore Anura Hub AI through the pollinations greenhouse directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "anura-hub-ai",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds 'Anura Hub AI' to the greenhouse. 'Anura' is the scientific order for frogs. The visual should feature Polly the bee welcoming a cute pixel frog into a digital greenhouse filled with code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, welcoming a cute little green frog into a glowing digital greenhouse filled with sprouting code-plants. Soft lime green (#ecf874) and warm pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11549.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, welcoming a cute little green frog into a glowing digital greenhouse filled with sprouting code-plants. Soft lime green (#ecf874) and warm pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T04:32:35.723294+00:00",
+  "app_name": "Anura Hub AI",
+  "app_url": "https://meow-script.vercel.all"
+}

@@ -57,7 +57,7 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-07").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
@@ -78,7 +78,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-05-14").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
             completionAudioTokens: 0.083 / 1000,
@@ -97,7 +97,7 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             // ElevenLabs Music: billed by output audio duration
@@ -135,7 +135,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-13").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             // ElevenLabs Scale plan: Scribe batch $0.22/hour
             promptAudioSeconds: 0.22 / 3600,
@@ -207,7 +207,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
             completionAudioTokens: 0.013 / 1000,
@@ -224,7 +224,7 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             completionAudioTokens: 0.013 / 1000,
         },

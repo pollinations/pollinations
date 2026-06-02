@@ -253,7 +253,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -277,7 +277,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
         // Non-global regions add ~10%; we route through global.
@@ -307,7 +307,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.25),
@@ -331,7 +331,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
@@ -387,7 +387,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.07),
             completionTextTokens: perMillion(0.34),
@@ -512,7 +512,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         // Vertex base rates for gemini-2.5-flash-lite. Grounding fee ($0.035/grounded
         // prompt after 1,500 RPD free) is not yet modeled; absorbed by Pollinations.
         cost: {
@@ -539,7 +539,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
         // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
         // free queries/month shared across all Gemini 3 models; absorbed by
@@ -568,7 +568,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
         // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
         cost: {
@@ -632,7 +632,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.1),
             promptCachedTokens: perMillion(0.11),
@@ -654,7 +654,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(3.3),
             promptCachedTokens: perMillion(0.33),
@@ -676,7 +676,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
@@ -698,7 +698,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(5.5),
             promptCachedTokens: perMillion(0.55),
@@ -720,7 +720,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
             promptTextTokens: perMillion(5),
@@ -745,7 +745,7 @@ export const TEXT_SERVICES = {
         // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
         // (~$5/1k at low search_context_size), which our token-based billing
         // cannot capture directly. Temporary until a per-request fee field exists.
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -771,7 +771,7 @@ export const TEXT_SERVICES = {
         // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
         // matches fast for now — they bill identically until a per-request fee
         // field lets us price the deeper search separately.
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -791,7 +791,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -811,7 +811,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
@@ -884,7 +884,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -995,7 +995,7 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.0),
@@ -1111,7 +1111,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(1.5), // per 1M tokens

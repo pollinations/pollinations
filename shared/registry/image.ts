@@ -195,15 +195,16 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "runpod",
+        provider: "fireworks",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.25,
         cost: {
-            completionImageTokens: 0.001, // per image
+            completionImageTokens: 0.0014, // per image
         },
-        description: "Flux Schnell - Fast high-quality image generation",
+        description:
+            "Flux Schnell - Fast high-quality image generation (Fireworks)",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

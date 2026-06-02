@@ -1,0 +1,35 @@
+{
+  "pr_number": 11556,
+  "title": "Add AuraForge to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11556",
+  "merged_at": "2026-06-02T05:07:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AuraForge](https://autoforge-iota.vercel.app/) to build\n- AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities.\n\nFixes #10238",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Forging new identities",
+    "blurb": "AuraForge just sprouted in the greenhouse. It's a neat little studio for generating flat 2D vector mascots for your AI agents, because even bots need a good headshot.",
+    "summary": "Added AuraForge, an identity orchestration studio for generating flat 2D vector mascots, to the community apps showcase.",
+    "impact": "Creators can now use AuraForge to quickly spin up consistent visual identities and avatars for their digital personas.",
+    "keywords": [
+      "community",
+      "apps",
+      "mascots",
+      "vectors",
+      "identity"
+    ],
+    "visual_concept": "A hybrid art studio and blacksmith forge. Polly the bee and the Monitor Robot crafting 2D character portraits. Represents the 'forge' aspect and the 'mascot/identity' aspect.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny blacksmith apron, working alongside a chunky monitor robot in a magical digital forge. They are crafting glowing 2D character portraits on a pixelated anvil. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11556.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny blacksmith apron, working alongside a chunky monitor robot in a magical digital forge. They are crafting glowing 2D character portraits on a pixelated anvil. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T05:08:20.829193+00:00",
+  "app_name": "AuraForge",
+  "app_url": "https://autoforge-iota.vercel.app/"
+}

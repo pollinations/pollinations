@@ -1,0 +1,35 @@
+{
+  "pr_number": 11550,
+  "title": "Add NebulaCraft to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11550",
+  "merged_at": "2026-06-02T04:34:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [NebulaCraft](https://nebulacraft-1c723.web.app) to learn\n- Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design.\n\nFixes #10429",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Crochet the cosmos",
+    "blurb": "NebulaCraft has sprouted in the greenhouse! This new community app uses Pollinations to generate adorable amigurumi crochet patterns, complete with a variation selector for iterative design.",
+    "summary": "Added NebulaCraft, a new community app that generates amigurumi crochet patterns using Pollinations AI, to the project showcase.",
+    "impact": "Users can now discover and use NebulaCraft to design and iterate on custom amigurumi patterns directly from the community greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "amigurumi",
+      "crochet",
+      "showcase"
+    ],
+    "visual_concept": "The PR adds an app called NebulaCraft that generates amigurumi (crochet yarn toys) patterns. The visual should feature Polly the bee interacting with cute crochet/yarn toys in a cozy setting, perhaps wearing a tiny crocheted scarf.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny crocheted scarf, happily examining a cute little amigurumi yarn creature. Balls of colorful yarn and a retro computer monitor glowing lime green (#ecf874) sit on a wooden desk. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11550.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny crocheted scarf, happily examining a cute little amigurumi yarn creature. Balls of colorful yarn and a retro computer monitor glowing lime green (#ecf874) sit on a wooden desk. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-02T04:35:18.754912+00:00",
+  "app_name": "NebulaCraft",
+  "app_url": "https://nebulacraft-1c723.web.app"
+}

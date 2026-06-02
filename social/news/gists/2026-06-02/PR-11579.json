@@ -1,0 +1,35 @@
+{
+  "pr_number": 11579,
+  "title": "feat: route Claude Bedrock models through global inference profiles",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11579",
+  "merged_at": "2026-06-02T21:55:09Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Switches all Claude models on Bedrock from US-regional (`us.`) to global (`global.`) cross-region inference profiles. Opus 4.8 was already on global; this brings the other four in line.\n\n- Routes Haiku 4.5, Sonnet 4.6, Opus 4.6 and Opus 4.7 through `global.anthropic.*` profiles\n- Drops their cost blocks to the global base rates — the `us.` profile carries a 1.1× premium AWS charges for region-pinned routing: Haiku $1/$5, Sonnet $3/$15, Opus $5/$25 per M (in/out)\n- Opus 4.7 was billing higher than 4.8 purely because of the regional premium; both are now $5/$25 and every model is ~10% cheaper\n- Fixes the `aliases.test.ts` price-fallback test — its `flux` fixture broke when #11502 set flux to a 1.25× multiplier; the assertion is now multiplier-aware\n- Regenerates the effective-prices snapshot (Opus 4.8 unchanged)\n\nVerified: all `global.*` profiles ACTIVE and invokable with prod creds; local-gen e2e for all four models returns 200 with correct usage headers; Tinybird billing rows match the global rates exactly; worker tail clean of missing-conversion-rate warnings; 206/206 pricing tests pass.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Claude gets a passport",
+    "blurb": "We've switched our Claude models on AWS Bedrock to use global inference profiles. This means better availability and a sweet 10% price drop across the board for Haiku, Sonnet, and Opus.",
+    "summary": "Switched Claude models (Haiku 4.5, Sonnet 4.6, Opus 4.6, and Opus 4.7) on AWS Bedrock from US-regional to global cross-region inference profiles, removing the 1.1x regional premium.",
+    "impact": "Users will see a ~10% price drop across these Claude models, with Haiku now at $1/$5, Sonnet at $3/$15, and Opus at $5/$25 per million tokens.",
+    "keywords": [
+      "claude",
+      "bedrock",
+      "pricing",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly the bee traveling or interacting with a globe, representing the switch to global inference profiles. A chunky robot companion (representing Claude/AI) holding a passport or a price tag with a discount.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pilot's hat, spinning a glowing digital globe alongside a chunky pixel robot companion holding a small ticket. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-02/PR-11579.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pilot's hat, spinning a glowing digital globe alongside a chunky pixel robot companion holding a small ticket. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-02T21:56:07.661936+00:00"
+}

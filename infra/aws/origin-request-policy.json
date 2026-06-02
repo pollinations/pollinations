@@ -1,0 +1,10 @@
+{
+  "Name": "pln-proxy-allviewer-plus-viewer-address",
+  "Comment": "Drops viewer Host (CloudFront sends origin Host=<sub>.myceli.ai) and forwards CloudFront-Viewer-Address for real client IP.",
+  "HeadersConfig": {
+    "HeaderBehavior": "allViewerAndWhitelistCloudFront",
+    "Headers": { "Quantity": 1, "Items": ["CloudFront-Viewer-Address"] }
+  },
+  "CookiesConfig": { "CookieBehavior": "all" },
+  "QueryStringsConfig": { "QueryStringBehavior": "all" }
+}

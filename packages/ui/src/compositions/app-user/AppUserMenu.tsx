@@ -13,7 +13,6 @@ import { Dropdown } from "../../primitives/Dropdown.tsx";
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
-    appBalance: string;
     topUpAccount: string;
     logout: string;
 };
@@ -28,7 +27,6 @@ export type AppUserMenuProps = {
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Authorize app",
     appUserMenu: "App user menu",
-    appBalance: "App balance",
     topUpAccount: "Top up account",
     logout: "Log out from this app",
 };
@@ -110,15 +108,6 @@ function AppUserMenuContent({
                             data-theme="amber"
                             className="polli:flex polli:flex-col"
                         >
-                            <div className="polli:flex polli:items-center polli:gap-2 polli:px-3 polli:pb-2 polli:pt-1.5">
-                                <UserAvatar size="md" />
-                                <UserName className="polli:min-w-0 polli:truncate polli:text-sm polli:font-semibold polli:text-theme-text-strong" />
-                            </div>
-                            <div className="polli:flex polli:items-center polli:justify-between polli:gap-3 polli:px-3 polli:pb-2 polli:text-sm polli:text-theme-text-base">
-                                <span>{labels.appBalance}</span>
-                                <Balance />
-                            </div>
-                            <div className="polli:mx-1 polli:my-1 polli:border-t polli:border-theme-border" />
                             <a
                                 href={dashboardHref}
                                 target="_blank"

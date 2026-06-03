@@ -6,7 +6,6 @@ import {
     Field,
     IconButton,
     Input,
-    Section,
     Surface,
 } from "@pollinations/ui";
 import type { ChangeEvent, ComponentPropsWithoutRef, FormEvent } from "react";
@@ -100,7 +99,7 @@ type CommunityEndpointsProps = {
 export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
-    const [isCreateExpanded, setIsCreateExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<EndpointFormState>(emptyForm);
     const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +145,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
             });
             if (!response.ok) throw new Error(await readError(response));
             setForm(emptyForm);
-            setIsCreateExpanded(false);
             await loadEndpoints();
             await onChange?.();
         } catch (thrown) {
@@ -219,11 +217,25 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
     }
 
     return (
-        <Section
-            title="Endpoints"
-            theme="blue"
-            framed
-            action={<Chip theme="blue">Community</Chip>}
+        <Collapsible
+            expanded={isExpanded}
+            onToggle={() => setIsExpanded((value) => !value)}
+            ariaLabel="Toggle community models"
+            wrapperClassName="border-blue-200 bg-white/70"
+            hoverClassName="hover:bg-blue-50"
+            panelClassName="border-t border-blue-100 px-3 pb-3 pt-3"
+            label={
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-gray-900">
+                        Community models
+                    </span>
+                    <span className="text-xs text-gray-500">
+                        {endpoints.length
+                            ? `${endpoints.length} registered model${endpoints.length === 1 ? "" : "s"}`
+                            : "Register and manage your own OpenAI-compatible endpoints."}
+                    </span>
+                </div>
+            }
         >
             <div className="flex flex-col gap-4">
                 {error && (
@@ -232,36 +244,16 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                     </p>
                 )}
 
-                <Collapsible
-                    expanded={isCreateExpanded}
-                    onToggle={() => setIsCreateExpanded((value) => !value)}
-                    ariaLabel="Toggle community model registration"
-                    wrapperClassName="border-blue-200 bg-blue-50/40"
-                    hoverClassName="hover:bg-blue-50"
-                    panelClassName="border-t border-blue-100 px-3 pb-3 pt-3"
-                    label={
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium text-gray-900">
-                                Register your own model
-                            </span>
-                            <span className="text-xs text-gray-500">
-                                Add an OpenAI-compatible endpoint and set Pollen
-                                prices.
-                            </span>
-                        </div>
+                <EndpointForm
+                    form={form}
+                    submitLabel={isSaving ? "Saving..." : "Add endpoint"}
+                    tokenRequired
+                    disabled={isSaving}
+                    onSubmit={handleCreate}
+                    onChange={(key, value) =>
+                        updateForm(setForm, form, key, value)
                     }
-                >
-                    <EndpointForm
-                        form={form}
-                        submitLabel={isSaving ? "Saving..." : "Add endpoint"}
-                        tokenRequired
-                        disabled={isSaving}
-                        onSubmit={handleCreate}
-                        onChange={(key, value) =>
-                            updateForm(setForm, form, key, value)
-                        }
-                    />
-                </Collapsible>
+                />
 
                 {isLoading ? (
                     <Surface className="text-sm text-gray-500">
@@ -304,7 +296,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                     )
                 )}
             </div>
-        </Section>
+        </Collapsible>
     );
 }
 

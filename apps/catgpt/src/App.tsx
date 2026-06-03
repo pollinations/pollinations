@@ -1,5 +1,5 @@
 import { type Message, Pollinations } from "@pollinations/sdk/client";
-import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+import { useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
     Button,
@@ -12,7 +12,6 @@ import {
     Surface,
     Textarea,
 } from "@pollinations/ui";
-import { LoginButton } from "@pollinations/ui/auth/sdk";
 import { AppHeader } from "@pollinations/ui/compositions/header";
 import { useEffect, useMemo, useState } from "react";
 import example1Url from "../images/example1.png";
@@ -155,9 +154,19 @@ function setUrlPrompt(prompt: string, model: string): void {
     window.history.replaceState({}, "", url);
 }
 
+function hubReturnUrl(): string | null {
+    if (typeof window === "undefined") return null;
+    const rawReturn = new URLSearchParams(window.location.search).get(
+        "hubReturn",
+    );
+    if (!rawReturn) return null;
+
+    const target = new URL(rawReturn, window.location.origin);
+    return target.origin === window.location.origin ? target.toString() : null;
+}
+
 export function App() {
-    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
-    const { login } = useAuthActions();
+    const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const [prompt, setPrompt] = useState("");
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [activeModel, setActiveModel] = useState(
@@ -209,6 +218,12 @@ export function App() {
         return () => window.clearInterval(timer);
     }, [isGenerating]);
 
+    useEffect(() => {
+        if (!isHydrated || (!isLoggedIn && !authError)) return;
+        const target = hubReturnUrl();
+        if (target) window.location.replace(target);
+    }, [isHydrated, isLoggedIn, authError]);
+
     async function generateMeme() {
         if (isGenerating) {
             abortController?.abort();
@@ -218,7 +233,7 @@ export function App() {
         }
 
         if (!apiKey || !client) {
-            login();
+            setError("Authorize CatGPT before generating.");
             return;
         }
 
@@ -346,25 +361,6 @@ export function App() {
                 {!isHydrated && (
                     <Surface theme="pink" variant="panel">
                         Loading CatGPT...
-                    </Surface>
-                )}
-
-                {isHydrated && !isLoggedIn && (
-                    <Surface
-                        theme="pink"
-                        variant="panel"
-                        className="flex flex-col items-start gap-4"
-                    >
-                        <div>
-                            <h2 className="font-subheading text-xl text-theme-text-strong">
-                                Authorize CatGPT
-                            </h2>
-                            <p className="mt-1 max-w-2xl text-sm text-theme-text-base">
-                                CatGPT uses its own BYOP app key so usage is
-                                attributed correctly.
-                            </p>
-                        </div>
-                        <LoginButton theme="pink">Authorize CatGPT</LoginButton>
                     </Surface>
                 )}
 

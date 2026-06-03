@@ -5,7 +5,7 @@ import {
     type ModelCatalogItem,
     Pollinations,
 } from "@pollinations/sdk/client";
-import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+import { useAuthState } from "@pollinations/sdk/react";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "../../lib/cn.ts";
 import {
@@ -442,7 +442,6 @@ export function Playground({
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
-    const { login } = useAuthActions();
     const {
         catalog,
         isLoading,
@@ -525,7 +524,7 @@ export function Playground({
 
     async function generate() {
         if (!apiKey) {
-            login();
+            setError("Authorize the app before generating.");
             return;
         }
         if (!currentModel) {
@@ -829,23 +828,22 @@ export function Playground({
                             size="large"
                             disabled={
                                 isGenerating ||
-                                (!!apiKey &&
-                                    (!prompt.trim() || !selectedModelAllowed))
+                                !apiKey ||
+                                !prompt.trim() ||
+                                !selectedModelAllowed
                             }
                             onClick={generate}
                             className="polli:w-full polli:self-auto"
                         >
-                            {!apiKey
-                                ? "Login to generate"
-                                : isGenerating
-                                  ? "Generating..."
-                                  : currentModel?.category === "video"
-                                    ? "Generate video"
-                                    : currentModel?.category === "audio"
-                                      ? "Generate audio"
-                                      : currentModel?.category === "text"
-                                        ? "Generate text"
-                                        : "Generate image"}
+                            {isGenerating
+                                ? "Generating..."
+                                : currentModel?.category === "video"
+                                  ? "Generate video"
+                                  : currentModel?.category === "audio"
+                                    ? "Generate audio"
+                                    : currentModel?.category === "text"
+                                      ? "Generate text"
+                                      : "Generate image"}
                         </Button>
                     </Surface>
                 </div>

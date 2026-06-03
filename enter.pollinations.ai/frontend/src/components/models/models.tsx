@@ -7,12 +7,13 @@ import {
     TokensIcon,
 } from "@pollinations/ui";
 import { type FC, useCallback, useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { config } from "../../config.ts";
+import { CommunityEndpoints } from "../community-endpoints";
 import {
-    type CommunityEndpoint,
-    CommunityEndpoints,
-} from "../community-endpoints";
-import { getCommunityModelPrices, getModelPrices } from "./data.ts";
+    type ApiModelInfo,
+    getCommunityModelPricesFromApiModels,
+    getModelPrices,
+} from "./data.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -32,30 +33,30 @@ export const Models: FC<ModelsProps> = ({
     showCommunityEndpoints = false,
 }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
-    const [communityEndpoints, setCommunityEndpoints] = useState<
-        CommunityEndpoint[]
-    >([]);
+    const [apiModels, setApiModels] = useState<ApiModelInfo[]>([]);
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
-    const communityModels = getCommunityModelPrices(communityEndpoints);
+    const imageModels = allModels.filter((m) => m.type === "image");
+    const videoModels = allModels.filter((m) => m.type === "video");
+    const audioModels = allModels.filter((m) => m.type === "audio");
+    const realtimeModels = allModels.filter((m) => m.type === "realtime");
+    const textModels = allModels.filter((m) => m.type === "text");
+    const communityModels = getCommunityModelPricesFromApiModels(apiModels);
+    const embeddingModels = allModels.filter((m) => m.type === "embedding");
 
-    const loadCommunityEndpoints = useCallback(async () => {
-        if (!showCommunityEndpoints) {
-            setCommunityEndpoints([]);
-            return;
+    const loadModelCatalog = useCallback(async () => {
+        try {
+            const response = await fetch(`${config.genBaseUrl}/models`);
+            if (!response.ok) throw new Error("Model catalog request failed");
+            setApiModels((await response.json()) as ApiModelInfo[]);
+        } catch {
+            setApiModels([]);
         }
-        const response = await apiClient["community-endpoints"].$get();
-        if (!response.ok) {
-            setCommunityEndpoints([]);
-            return;
-        }
-        const body = (await response.json()) as { data: CommunityEndpoint[] };
-        setCommunityEndpoints(body.data);
-    }, [showCommunityEndpoints]);
+    }, []);
 
     useEffect(() => {
-        void loadCommunityEndpoints();
-    }, [loadCommunityEndpoints]);
+        void loadModelCatalog();
+    }, [loadModelCatalog]);
 
     useEffect(() => {
         if (activeTab === "community" && communityModels.length === 0) {
@@ -63,12 +64,6 @@ export const Models: FC<ModelsProps> = ({
         }
     }, [activeTab, communityModels.length]);
 
-    const imageModels = allModels.filter((m) => m.type === "image");
-    const videoModels = allModels.filter((m) => m.type === "video");
-    const audioModels = allModels.filter((m) => m.type === "audio");
-    const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
-    const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",
         "video",
@@ -155,7 +150,7 @@ export const Models: FC<ModelsProps> = ({
                 </div>
             </Section>
             {showCommunityEndpoints && (
-                <CommunityEndpoints onChange={loadCommunityEndpoints} />
+                <CommunityEndpoints onChange={loadModelCatalog} />
             )}
         </div>
     );

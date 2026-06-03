@@ -20,13 +20,11 @@ import {
 import type { ModelPrice } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
-type CommunityEndpointModel = {
-    modelId: string;
+export type ApiModelInfo = {
     name: string;
-    description: string | null;
-    upstreamModel: string;
-    promptTextPrice: number;
-    completionTextPrice: number;
+    category?: string;
+    pricing?: Record<string, string | undefined> & { currency?: string };
+    description?: string;
 };
 
 // Display-only conversion for char-billed TTS. Billing remains character-based
@@ -39,6 +37,28 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         ? pricePerSecond.toFixed(5)
         : pricePerSecond.toFixed(4);
 };
+
+function numberPrice(
+    pricing: ApiModelInfo["pricing"],
+    key: string,
+): number | undefined {
+    const value = Number(pricing?.[key]);
+    return Number.isFinite(value) ? value : undefined;
+}
+
+function mergeModelStats(
+    prices: ModelPrice[],
+    modelStats: ModelStats | undefined,
+): ModelPrice[] {
+    if (!modelStats) return prices;
+    for (const price of prices) {
+        const stats = modelStats[price.name];
+        if (stats?.avgCost) {
+            price.realAvgCost = stats.avgCost;
+        }
+    }
+    return prices;
+}
 
 export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
@@ -271,34 +291,31 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
         }
     }
 
-    // Merge real usage stats if available
-    if (modelStats) {
-        for (const price of prices) {
-            const stats = modelStats[price.name];
-            if (stats?.avgCost) {
-                price.realAvgCost = stats.avgCost;
-            }
-        }
-    }
-
-    return prices;
+    return mergeModelStats(prices, modelStats);
 };
 
-export const getCommunityModelPrices = (
-    endpoints: CommunityEndpointModel[],
-): ModelPrice[] =>
-    endpoints.map((endpoint) => ({
-        name: endpoint.modelId,
-        displayName: endpoint.description?.trim() || endpoint.modelId,
-        brandLogoPath: "/brand-logos/community.svg",
-        type: "community",
-        perToken: true,
-        promptTextPrice: formatPrice(
-            endpoint.promptTextPrice,
-            formatPricePer1M,
-        ),
-        completionTextPrice: formatPrice(
-            endpoint.completionTextPrice,
-            formatPricePer1M,
-        ),
-    }));
+export function getCommunityModelPricesFromApiModels(
+    models: ApiModelInfo[],
+): ModelPrice[] {
+    return models
+        .filter(
+            (model) =>
+                model.category === "community" ||
+                model.name.startsWith("community/"),
+        )
+        .map((model) => ({
+            name: model.name,
+            displayName: model.description?.trim() || model.name,
+            brandLogoPath: "/brand-logos/community.svg",
+            type: "community",
+            perToken: true,
+            promptTextPrice: formatPrice(
+                numberPrice(model.pricing, "promptTextTokens"),
+                formatPricePer1M,
+            ),
+            completionTextPrice: formatPrice(
+                numberPrice(model.pricing, "completionTextTokens"),
+                formatPricePer1M,
+            ),
+        }));
+}

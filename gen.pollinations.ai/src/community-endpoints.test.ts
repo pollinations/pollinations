@@ -310,6 +310,94 @@ fixtureTest(
 );
 
 fixtureTest(
+    "lists registered community endpoints in public model catalogs",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Public community model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            contextLength: 8192,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const textResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        const allResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/models",
+        );
+        const openaiResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/models",
+        );
+
+        expect(textResponse.status).toBe(200);
+        expect(allResponse.status).toBe(200);
+        expect(openaiResponse.status).toBe(200);
+
+        const textModels = (await textResponse.json()) as {
+            name: string;
+            category?: string;
+            description?: string;
+            pricing?: Record<string, string>;
+            baseUrl?: string;
+            bearerTokenCiphertext?: string;
+        }[];
+        const allModels = (await allResponse.json()) as typeof textModels;
+        const openaiModels = (await openaiResponse.json()) as {
+            data: {
+                id: string;
+                supported_endpoints?: string[];
+                context_length?: number;
+            }[];
+        };
+
+        for (const models of [textModels, allModels]) {
+            const listed = models.find((model) => model.name === modelId);
+            expect(listed).toMatchObject({
+                name: modelId,
+                category: "community",
+                description: "Public community model",
+                pricing: {
+                    currency: "pollen",
+                    promptTextTokens: "0.0000001",
+                    completionTextTokens: "0.0000002",
+                },
+            });
+            expect(listed).not.toHaveProperty("baseUrl");
+            expect(listed).not.toHaveProperty("bearerTokenCiphertext");
+        }
+
+        expect(openaiModels.data).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: modelId,
+                    context_length: 8192,
+                    supported_endpoints: expect.arrayContaining([
+                        "/v1/chat/completions",
+                    ]),
+                }),
+            ]),
+        );
+    },
+);
+
+fixtureTest(
     "registers a Pollinations-compatible endpoint through Enter API and uses it through gen",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

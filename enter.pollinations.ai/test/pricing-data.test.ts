@@ -10,7 +10,7 @@ import {
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
 import {
-    getCommunityModelPrices,
+    getCommunityModelPricesFromApiModels,
     getModelPrices,
 } from "../frontend/src/components/models/data.ts";
 import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
@@ -47,26 +47,36 @@ test("getModelPrices formats text registry rates through formatPricePer1M", () =
     });
 });
 
-test("getCommunityModelPrices uses the registered description as the table display name", () => {
-    const [describedModel, fallbackModel] = getCommunityModelPrices([
+test("getCommunityModelPricesFromApiModels uses community descriptions as table display names", () => {
+    const models = getCommunityModelPricesFromApiModels([
         {
-            modelId: "community/voodoohop/openai",
-            name: "openai",
+            name: "community/voodoohop/openai",
+            category: "community",
             description: "Shared OpenAI endpoint",
-            upstreamModel: "openai",
-            promptTextPrice: 0.1 / 1_000_000,
-            completionTextPrice: 0.2 / 1_000_000,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: String(0.1 / 1_000_000),
+                completionTextTokens: String(0.2 / 1_000_000),
+            },
         },
         {
-            modelId: "community/voodoohop/plain",
-            name: "plain",
+            name: "community/voodoohop/plain",
+            category: "community",
             description: " ",
-            upstreamModel: "plain",
-            promptTextPrice: 0.1 / 1_000_000,
-            completionTextPrice: 0.2 / 1_000_000,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: String(0.1 / 1_000_000),
+                completionTextTokens: String(0.2 / 1_000_000),
+            },
+        },
+        {
+            name: "openai",
+            category: "text",
         },
     ]);
+    const [describedModel, fallbackModel] = models;
 
+    expect(models).toHaveLength(2);
     expect(describedModel).toMatchObject({
         name: "community/voodoohop/openai",
         displayName: "Shared OpenAI endpoint",

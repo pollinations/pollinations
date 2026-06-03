@@ -18,6 +18,7 @@ import {
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
+    category: z.string().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -65,6 +66,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
     return {
         name: modelName as string,
         aliases: service.aliases,
+        category: service.category,
         pricing,
         // User-facing metadata from service definition
         description: service.description,

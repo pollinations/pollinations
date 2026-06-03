@@ -1327,16 +1327,20 @@ const ModuleRecipesDemo: FC = () => {
                 </div>
                 <Row label="ButtonGroup">
                     <ButtonGroup aria-label="Modality options">
-                        {modalities.map((modality) => (
-                            <Button
-                                key={modality}
-                                type="button"
-                                size="small"
-                                className={getModalityColors(modality)?.filled}
-                            >
-                                {modality}
-                            </Button>
-                        ))}
+                        {modalities.map((modality) => {
+                            const colors = getModalityColors(modality);
+                            return (
+                                <Button
+                                    key={modality}
+                                    type="button"
+                                    theme={colors?.theme}
+                                    size="small"
+                                    className={colors?.filled}
+                                >
+                                    {modality}
+                                </Button>
+                            );
+                        })}
                         <Button
                             type="button"
                             size="small"

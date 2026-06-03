@@ -49,10 +49,6 @@ export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./primitives/PeriodPicker.tsx";
-export {
-    PollinationsLogo,
-    type PollinationsLogoProps,
-} from "./primitives/PollinationsLogo.tsx";
 export { Prose, type ProseProps } from "./primitives/Prose.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Section, type SectionProps } from "./primitives/Section.tsx";

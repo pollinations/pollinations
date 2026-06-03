@@ -4,7 +4,7 @@
 // Direct calls to gen.pollinations.ai. Users must log in and use their own
 // API key (sk_ / pk_ issued via enter.pollinations.ai) to generate.
 
-export const APP_KEY = "pk_5F0qxjbCjlgBODHa"; // BYOP app key for authorization flow
+export const APP_KEY = "pk_U5oBRNjy6gDeNqxT"; // BYOP app key for authorization flow
 export const API_BASE = "https://gen.pollinations.ai";
 
 export const API = {

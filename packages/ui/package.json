@@ -64,8 +64,6 @@
     "build:js": "tsup",
     "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css && cp src/modules/wallet/styles.css dist/wallet.css",
     "prepublishOnly": "npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {

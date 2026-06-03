@@ -310,6 +310,210 @@ fixtureTest(
 );
 
 fixtureTest(
+    "streams chat completions through a registered community endpoint",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Streaming community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            contextLength: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer sk_saved_token",
+                    );
+                    await expect(request.json()).resolves.toMatchObject({
+                        model: "gpt-4.1-mini",
+                        messages: [{ role: "user", content: "hello" }],
+                        max_tokens: 5,
+                        stream: true,
+                        stream_options: { include_usage: true },
+                    });
+
+                    return new Response(
+                        [
+                            'data: {"id":"upstream","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}',
+                            "",
+                            'data: {"id":"upstream","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[],"usage":{"prompt_tokens":999,"completion_tokens":999,"total_tokens":1998}}',
+                            "",
+                            "data: [DONE]",
+                            "",
+                        ].join("\n"),
+                        {
+                            headers: {
+                                "Content-Type": "text/event-stream",
+                            },
+                        },
+                    );
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                    stream: true,
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+        const body = await response.text();
+        expect(body).toContain(`"model":"${modelId}"`);
+        expect(body).not.toContain('"model":"gpt-4.1-mini"');
+        expect(body).toContain('"completion_tokens":5');
+        expect(body).not.toContain('"prompt_tokens":999');
+    },
+);
+
+fixtureTest(
+    "routes simple text requests through a registered community endpoint",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Simple text community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            contextLength: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer sk_saved_token",
+                    );
+                    await expect(request.json()).resolves.toMatchObject({
+                        model: "gpt-4.1-mini",
+                        messages: [{ role: "user", content: "hello" }],
+                        max_tokens: 5,
+                        stream: false,
+                    });
+
+                    return Response.json({
+                        id: "chatcmpl_simple",
+                        object: "chat.completion",
+                        model: "gpt-4.1-mini",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "simple ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await SELF.fetch(
+            new Request(
+                `https://gen.pollinations.ai/text/hello?model=${encodeURIComponent(
+                    modelId,
+                )}&max_tokens=5`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            ),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe("simple ok");
+    },
+);
+
+fixtureTest(
     "lists registered community endpoints in public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

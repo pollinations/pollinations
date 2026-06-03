@@ -682,7 +682,7 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.param("stream");
+        const stream = request.query("stream");
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {

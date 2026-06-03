@@ -8,19 +8,13 @@ import { decryptSecret } from "@shared/secret-encryption.ts";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
 
+const DATA_PREFIX = /^data:\s?/;
+
 export async function generateCommunityEndpointCompletion(
     endpoint: CommunityEndpointRuntime,
     requestData: RequestData,
     secret: string,
 ): Promise<ChatCompletion> {
-    if (requestData.stream) {
-        const error = new Error(
-            "Community endpoints do not support streaming yet",
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
-    }
-
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
@@ -35,7 +29,13 @@ export async function generateCommunityEndpointCompletion(
             {
                 ...requestData,
                 model: endpoint.upstreamModel,
-                stream: false,
+                stream: requestData.stream === true,
+                stream_options: requestData.stream
+                    ? {
+                          ...requestData.stream_options,
+                          include_usage: true,
+                      }
+                    : requestData.stream_options,
             },
             {
                 endpoint: communityChatCompletionsUrl(endpoint.baseUrl),
@@ -53,6 +53,15 @@ export async function generateCommunityEndpointCompletion(
     }
 
     completion.model = endpoint.modelId;
+    if (completion.stream) {
+        completion.responseStream = transformCommunityEndpointStream(
+            completion.responseStream,
+            endpoint,
+            requestData,
+        );
+        return completion;
+    }
+
     completion.usage = capCommunityUsage(
         endpoint,
         requestData,
@@ -69,4 +78,83 @@ export async function generateCommunityEndpointCompletion(
     }
 
     return completion;
+}
+
+function transformCommunityEndpointStream(
+    stream: ReadableStream | null | undefined,
+    endpoint: CommunityEndpointRuntime,
+    requestData: RequestData,
+): ReadableStream | null | undefined {
+    if (!stream) return stream;
+
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let buffer = "";
+
+    return stream.pipeThrough(
+        new TransformStream<Uint8Array, Uint8Array>({
+            transform(chunk, controller) {
+                buffer += decoder.decode(chunk, { stream: true });
+                const lines = buffer.split(/\r?\n/);
+                buffer = lines.pop() ?? "";
+                for (const line of lines) {
+                    controller.enqueue(
+                        encoder.encode(
+                            transformCommunityEndpointStreamLine(
+                                line,
+                                endpoint,
+                                requestData,
+                            ),
+                        ),
+                    );
+                }
+            },
+            flush(controller) {
+                const tail = buffer + decoder.decode();
+                if (!tail) return;
+                for (const line of tail.split(/\r?\n/)) {
+                    controller.enqueue(
+                        encoder.encode(
+                            transformCommunityEndpointStreamLine(
+                                line,
+                                endpoint,
+                                requestData,
+                            ),
+                        ),
+                    );
+                }
+            },
+        }),
+    );
+}
+
+function transformCommunityEndpointStreamLine(
+    line: string,
+    endpoint: CommunityEndpointRuntime,
+    requestData: RequestData,
+): string {
+    if (!line.startsWith("data:")) return `${line}\n`;
+
+    const data = line.replace(DATA_PREFIX, "").trim();
+    if (!data || data === "[DONE]") return `${line}\n`;
+
+    try {
+        const event = JSON.parse(data) as Record<string, unknown>;
+        event.model = endpoint.modelId;
+        if (event.usage) {
+            const usage = capCommunityUsage(
+                endpoint,
+                requestData,
+                event.usage as Record<string, number>,
+            );
+            if (usage) {
+                event.usage = usage;
+            } else {
+                delete event.usage;
+            }
+        }
+        return `data: ${JSON.stringify(event)}\n`;
+    } catch {
+        return `${line}\n`;
+    }
 }

@@ -1,5 +1,7 @@
 import { defineConfig } from "tsup";
 
+const emitDeclarations = process.env.UI_BUILD_DTS !== "false";
+
 export default defineConfig({
     entry: {
         index: "src/index.ts",
@@ -10,7 +12,7 @@ export default defineConfig({
         "wallet/sdk": "src/modules/wallet/sdk.ts",
     },
     format: ["esm", "cjs"],
-    dts: true,
+    dts: emitDeclarations,
     splitting: false,
     sourcemap: true,
     clean: true,

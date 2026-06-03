@@ -72,10 +72,10 @@ const JSON_LD_HOME = JSON.stringify({
         "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
 });
 
-const JSON_LD_PLAY = JSON.stringify({
+const JSON_LD_PLAYGROUND = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Pollinations Play",
+    name: "Pollinations Playground",
     url: "https://pollinations.ai/play",
     applicationCategory: "MultimediaApplication",
     description: "Generate images, text, audio and video with AI models",
@@ -83,7 +83,7 @@ const JSON_LD_PLAY = JSON.stringify({
 
 function getJsonLd(path: string): string | null {
     if (path === "/") return JSON_LD_HOME;
-    if (path === "/play") return JSON_LD_PLAY;
+    if (path === "/play") return JSON_LD_PLAYGROUND;
     return null;
 }
 

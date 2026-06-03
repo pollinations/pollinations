@@ -1,12 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const PLAYGROUND_EMBED_SRC = "/_apps/playground/index.html?embed=1";
+
 export const Route = createFileRoute("/play")({
-    component: () => (
-        <div
-            data-theme="violet"
-            className="flex min-h-full items-center justify-center p-8 font-heading text-2xl text-theme-text-strong"
-        >
-            play — coming soon
-        </div>
-    ),
+    component: PlayRoute,
 });
+
+function PlayRoute() {
+    return (
+        <div data-theme="violet" className="bg-theme-bg-pale">
+            <iframe
+                title="Pollinations Playground"
+                src={PLAYGROUND_EMBED_SRC}
+                className="block h-[calc(100vh-3.5rem)] min-h-[720px] w-full border-0 bg-theme-bg-pale"
+                allow="clipboard-read; clipboard-write; fullscreen"
+            />
+        </div>
+    );
+}

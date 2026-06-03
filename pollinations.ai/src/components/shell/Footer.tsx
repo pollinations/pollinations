@@ -1,10 +1,6 @@
+import { Button } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import {
-    ENTER_HREF,
-    FOOTER_BRANDING,
-    FOOTER_LEGAL,
-    SOCIAL_LINKS,
-} from "./links.ts";
+import { FOOTER_BRANDING, FOOTER_LEGAL, SOCIAL_LINKS } from "./links.ts";
 
 export function Footer() {
     return (
@@ -14,24 +10,12 @@ export function Footer() {
                     {FOOTER_BRANDING}
                 </p>
 
-                <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <nav className="flex flex-wrap items-center gap-2 text-sm">
                     {FOOTER_LEGAL.map((l) => (
-                        <Link
-                            key={l.to}
-                            to={l.to}
-                            className="font-semibold text-theme-text-soft hover:text-theme-text-strong"
-                        >
+                        <Button key={l.to} as={Link} to={l.to} size="small">
                             {l.label}
-                        </Link>
+                        </Button>
                     ))}
-                    <a
-                        href={ENTER_HREF}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-theme-text-soft hover:text-theme-text-strong"
-                    >
-                        Enter
-                    </a>
                 </nav>
 
                 <div className="flex items-center gap-3">

@@ -316,8 +316,8 @@ export function App() {
                     isEmbedded ? "pt-6" : "pt-16",
                 )}
             >
-                <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
-                    <div className="flex flex-col gap-3">
+                <section className="flex flex-wrap items-end justify-between gap-5">
+                    <div className="flex min-w-0 flex-1 basis-64 flex-col gap-3">
                         <h1 className="m-0 font-heading text-4xl leading-none text-gray-950 sm:text-5xl">
                             CatGPT
                         </h1>
@@ -339,7 +339,7 @@ export function App() {
                         href="https://www.instagram.com/missfitcomics/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full max-w-52 justify-self-end overflow-hidden rounded-lg bg-white"
+                        className="block w-full max-w-52 shrink-0 overflow-hidden rounded-lg bg-white"
                     >
                         <img
                             src={originalComicUrl}

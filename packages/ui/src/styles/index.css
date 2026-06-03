@@ -176,10 +176,10 @@
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
     .polli-playground-main-grid {
         align-items: stretch;
-        grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+        grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
     }
 
     .polli-playground-output-panel {

@@ -355,7 +355,7 @@ export function App() {
                 )}
 
                 {isHydrated && (
-                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]">
                         <Surface
                             theme="pink"
                             variant="panel"

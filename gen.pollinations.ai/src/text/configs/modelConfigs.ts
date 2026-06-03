@@ -159,17 +159,17 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6",
+            model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-6-v1",
+            model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-7",
+            model: "global.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-8": () =>
@@ -179,13 +179,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
     "nova-micro": () =>
-        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
+        createBedrockNativeConfig({ model: "us.amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 

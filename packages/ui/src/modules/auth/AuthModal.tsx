@@ -3,6 +3,7 @@ import logoUrl from "../../assets/logo.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;
+
 const authLogoMask: CSSProperties = {
     WebkitMaskImage: authLogoMaskUrl,
     WebkitMaskPosition: "center",
@@ -57,7 +58,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:block polli:shrink-0 polli:text-theme-text-strong"
+            className="polli:block polli:shrink-0 polli:text-theme-text-strong polli:focus:outline-none polli:focus-visible:outline-none"
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>

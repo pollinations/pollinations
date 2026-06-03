@@ -1,6 +1,6 @@
 import { useAuthState } from "@pollinations/sdk/react";
 import type { ThemeName } from "@pollinations/ui";
-import { AppHeader } from "@pollinations/ui/compositions/header";
+import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import { Playground } from "@pollinations/ui/compositions/playground";
 import { useEffect } from "react";
 import { ENTER_URL } from "./config";
@@ -34,15 +34,13 @@ export function App() {
     return (
         <div
             data-theme={theme}
-            className="flex min-h-dvh flex-col bg-white font-body text-theme-text-base"
+            className="relative flex min-h-dvh flex-col bg-white font-body text-theme-text-base"
         >
-            <AppHeader
-                dashboardHref={ENTER_URL}
-                theme={theme}
-                hiddenWhenEmbedded
-            />
             <HubReturnRedirect />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-5 sm:px-6">
+            <div className="fixed top-4 right-4 z-40">
+                <AppUserMenu dashboardHref={ENTER_URL} />
+            </div>
+            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pt-16 pb-5 sm:px-6">
                 <Playground theme={theme} />
             </main>
         </div>

@@ -23,15 +23,10 @@
       "import": "./dist/auth/sdk.js",
       "require": "./dist/auth/sdk.cjs"
     },
-    "./compositions/account": {
-      "types": "./dist/compositions/account.d.ts",
-      "import": "./dist/compositions/account.js",
-      "require": "./dist/compositions/account.cjs"
-    },
-    "./compositions/header": {
-      "types": "./dist/compositions/header.d.ts",
-      "import": "./dist/compositions/header.js",
-      "require": "./dist/compositions/header.cjs"
+    "./compositions/app-user": {
+      "types": "./dist/compositions/app-user.d.ts",
+      "import": "./dist/compositions/app-user.js",
+      "require": "./dist/compositions/app-user.cjs"
     },
     "./compositions/playground": {
       "types": "./dist/compositions/playground.d.ts",

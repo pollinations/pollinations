@@ -1,6 +1,5 @@
 import { cn, NavItem } from "@pollinations/ui";
 import wordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { AccountMenu } from "@pollinations/ui/compositions/account";
 import { Link, useMatchRoute } from "@tanstack/react-router";
 import { ENTER_HREF, NAV_ITEMS } from "./links.ts";
 import { useHideOnScroll } from "./useHideOnScroll.ts";
@@ -55,9 +54,12 @@ export function Header() {
                     ))}
                 </nav>
 
-                <div className="order-2 shrink-0 sm:order-3">
-                    <AccountMenu dashboardHref={ENTER_HREF} />
-                </div>
+                <a
+                    href={ENTER_HREF}
+                    className="order-2 shrink-0 rounded-full bg-amber-200 px-3 py-1.5 font-medium text-sm text-amber-900 transition-colors hover:bg-amber-300 sm:order-3"
+                >
+                    Console
+                </a>
             </div>
         </header>
     );

@@ -12,7 +12,7 @@ import {
     Surface,
     Textarea,
 } from "@pollinations/ui";
-import { AppHeader } from "@pollinations/ui/compositions/header";
+import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import { useEffect, useMemo, useState } from "react";
 import example1Url from "../images/example1.png";
 import example2Url from "../images/example2.png";
@@ -315,16 +315,13 @@ export function App() {
     return (
         <div
             data-theme="pink"
-            className="flex min-h-dvh flex-col bg-white font-body text-gray-950"
+            className="relative flex min-h-dvh flex-col bg-white font-body text-gray-950"
         >
-            <AppHeader
-                dashboardHref={ENTER_URL}
-                theme="pink"
-                width="5xl"
-                hiddenWhenEmbedded
-            />
+            <div className="fixed top-4 right-4 z-40">
+                <AppUserMenu dashboardHref={ENTER_URL} />
+            </div>
 
-            <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+            <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-16 pb-6 sm:px-6">
                 <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
                     <div className="flex flex-col gap-3">
                         <h1 className="m-0 font-heading text-4xl leading-none text-gray-950 sm:text-5xl">

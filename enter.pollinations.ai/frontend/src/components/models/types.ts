@@ -6,6 +6,7 @@ export type ModelPrice = {
     name: string;
     displayName?: string;
     description?: string;
+    brandLogoPath?: string;
     type: ModelPriceType;
     perToken?: boolean;
     // Text pricing

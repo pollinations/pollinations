@@ -70,6 +70,7 @@ test("getCommunityModelPrices uses the registered description as the table displ
     expect(describedModel).toMatchObject({
         name: "community/voodoohop/openai",
         displayName: "Shared OpenAI endpoint",
+        brandLogoPath: "/brand-logos/community.svg",
         type: "community",
     });
     expect(fallbackModel).toMatchObject({

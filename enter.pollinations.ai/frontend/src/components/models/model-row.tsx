@@ -36,7 +36,8 @@ export const ModelRow: FC<ModelRowProps> = ({
         model.displayName ?? getModelDisplayName(model.name);
     const modelDescription =
         model.description ?? getModelDescriptionWithoutName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
+    const brandLogoPath =
+        model.brandLogoPath ?? getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
     const modalityLabel = getModelModalityLabel(model.name);
     const capabilityIcons = getModelCapabilityIcons(model.name);

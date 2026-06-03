@@ -262,7 +262,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 }) => {
     const [expanded, setExpanded] = useState(false);
     const displayName = model.displayName ?? getModelDisplayName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
+    const brandLogoPath =
+        model.brandLogoPath ?? getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
     const capabilityIcons = getModelCapabilityIcons(model.name);
     const publicModelName = displayName || model.name;

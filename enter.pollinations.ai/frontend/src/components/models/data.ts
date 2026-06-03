@@ -290,6 +290,7 @@ export const getCommunityModelPrices = (
     endpoints.map((endpoint) => ({
         name: endpoint.modelId,
         displayName: endpoint.description?.trim() || endpoint.modelId,
+        brandLogoPath: "/brand-logos/community.svg",
         type: "community",
         perToken: true,
         promptTextPrice: formatPrice(

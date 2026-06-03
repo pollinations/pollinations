@@ -380,3 +380,10 @@ apps/operation/finance/secrets/input/2026-03.csv
 apps/operation/finance/secrets/input/2026-02.csv
 apps/operation/finance/secrets/input/2026-01.csv
 apps/operation/finance/config.local.json
+
+# Local agent/session artifacts (not for VCS)
+.playwright-mcp/
+skill-observations/
+infra/aws/*.png
+apex-live-cloudfront.png
+enter-cutover-live.png

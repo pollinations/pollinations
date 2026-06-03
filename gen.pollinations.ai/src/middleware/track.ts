@@ -2,7 +2,6 @@ import { getLogger } from "@logtape/logtape";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
-    type EarnedCredit,
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
@@ -13,10 +12,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import {
-    COMMUNITY_ENDPOINT_PAYOUT_PCT,
     type CommunityEndpointRuntime,
-    communityCostDefinition,
-    communityEndpointPayoutAmount,
     communityPriceDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
@@ -216,11 +212,6 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const earnedCredits = communityEndpointEarnedCredits(
-                        c.var.model?.communityEndpoint,
-                        responseTracking.price?.totalPrice,
-                        userTracking.userId,
-                    );
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -229,11 +220,9 @@ export const track = (eventType: EventType) =>
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
-                        modelResolved: c.var.model?.resolved,
-                        isPaidOnly: c.var.model?.communityEndpoint
-                            ? false
-                            : undefined,
-                        earnedCredits,
+                        modelResolved: c.var.model?.communityEndpoint
+                            ? undefined
+                            : c.var.model?.resolved,
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
@@ -374,27 +363,6 @@ async function triggerAutoTopUp(
     }
 }
 
-function communityEndpointEarnedCredits(
-    endpoint: CommunityEndpointRuntime | undefined,
-    totalPrice: number | undefined,
-    payerUserId: string | undefined,
-): EarnedCredit[] {
-    if (!endpoint || !totalPrice || endpoint.ownerUserId === payerUserId) {
-        return [];
-    }
-    const amount = communityEndpointPayoutAmount(totalPrice);
-    if (amount <= 0) return [];
-    return [
-        {
-            recipientUserId: endpoint.ownerUserId,
-            amount,
-            rate: COMMUNITY_ENDPOINT_PAYOUT_PCT,
-            source: "community_endpoint",
-            entityId: endpoint.id,
-        },
-    ];
-}
-
 async function trackRequest(
     modelInfo: ModelVariables["model"],
     request: HonoRequest,
@@ -410,7 +378,7 @@ async function trackRequest(
         ? "community"
         : staticModelDefinition?.provider;
     const modelCostDefinition = modelInfo.communityEndpoint
-        ? communityCostDefinition(modelInfo.communityEndpoint)
+        ? communityPriceDefinition(modelInfo.communityEndpoint)
         : staticModelDefinition?.cost;
     const modelPriceDefinition = modelInfo.communityEndpoint
         ? communityPriceDefinition(modelInfo.communityEndpoint)

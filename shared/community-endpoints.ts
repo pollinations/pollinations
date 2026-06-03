@@ -1,8 +1,6 @@
-import { roundPollenLedgerAmount } from "./billing/precision.ts";
-import type { CostDefinition, PriceDefinition } from "./registry/registry.ts";
+import type { PriceDefinition } from "./registry/registry.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
-export const COMMUNITY_ENDPOINT_PAYOUT_PCT = 0.8;
 export const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 export const COMMUNITY_ENDPOINT_TIERS = ["flower", "nectar", "router"] as const;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
@@ -99,24 +97,6 @@ export function communityPriceDefinition(
         promptTextTokens: endpoint.promptTextPrice,
         completionTextTokens: endpoint.completionTextPrice,
     };
-}
-
-export function communityCostDefinition(
-    endpoint: Pick<
-        CommunityEndpointRuntime,
-        "promptTextPrice" | "completionTextPrice"
-    >,
-): CostDefinition {
-    return {
-        promptTextTokens:
-            endpoint.promptTextPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT,
-        completionTextTokens:
-            endpoint.completionTextPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT,
-    };
-}
-
-export function communityEndpointPayoutAmount(totalPrice: number): number {
-    return roundPollenLedgerAmount(totalPrice * COMMUNITY_ENDPOINT_PAYOUT_PCT);
 }
 
 export function estimateCommunityRequestPrice(

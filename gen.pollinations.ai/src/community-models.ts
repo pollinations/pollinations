@@ -1,7 +1,11 @@
-import { communityModelId } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityModelId,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
-import { eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
@@ -71,4 +75,45 @@ export async function getCommunityTextModelsInfo(
 
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
+}
+
+export async function getCommunityEndpointRuntime(
+    dbBinding: CloudflareBindings["DB"] | undefined,
+    model: string,
+): Promise<CommunityEndpointRuntime | null> {
+    const communityModel = parseCommunityModelId(model);
+    if (!communityModel || !dbBinding) return null;
+
+    const db = drizzle(dbBinding, { schema });
+    const row = await db
+        .select({
+            id: schema.communityEndpoint.id,
+            ownerUserId: schema.communityEndpoint.ownerUserId,
+            name: schema.communityEndpoint.name,
+            description: schema.communityEndpoint.description,
+            baseUrl: schema.communityEndpoint.baseUrl,
+            upstreamModel: schema.communityEndpoint.upstreamModel,
+            bearerTokenCiphertext:
+                schema.communityEndpoint.bearerTokenCiphertext,
+            promptTextPrice: schema.communityEndpoint.promptTextPrice,
+            completionTextPrice: schema.communityEndpoint.completionTextPrice,
+            contextLength: schema.communityEndpoint.contextLength,
+        })
+        .from(schema.communityEndpoint)
+        .innerJoin(
+            schema.user,
+            eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+        )
+        .where(
+            and(
+                eq(
+                    schema.user.githubUsername,
+                    communityModel.ownerGithubUsername,
+                ),
+                eq(schema.communityEndpoint.name, communityModel.modelName),
+            ),
+        )
+        .limit(1);
+
+    return row[0] ? { ...row[0], modelId: model } : null;
 }

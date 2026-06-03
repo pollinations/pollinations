@@ -2,7 +2,6 @@ import {
     type CommunityEndpointRuntime,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
-import * as schema from "@shared/db/better-auth.ts";
 import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import {
     DEFAULT_EMBEDDING_MODEL,
@@ -16,10 +15,9 @@ import {
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
-import { and, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { getCommunityEndpointRuntime } from "../community-models.ts";
 
 const SERVICES_BY_EVENT_TYPE = {
     "generate.text": TEXT_SERVICES,
@@ -130,25 +128,7 @@ export function resolveModel(
                     message: "Community endpoints only support text requests",
                 });
             }
-            const db = drizzle(c.env.DB, { schema });
-            const owner = await db.query.user.findFirst({
-                columns: { id: true },
-                where: eq(
-                    schema.user.githubUsername,
-                    communityModel.ownerGithubUsername,
-                ),
-            });
-            const endpoint = owner
-                ? await db.query.communityEndpoint.findFirst({
-                      where: and(
-                          eq(schema.communityEndpoint.ownerUserId, owner.id),
-                          eq(
-                              schema.communityEndpoint.name,
-                              communityModel.modelName,
-                          ),
-                      ),
-                  })
-                : null;
+            const endpoint = await getCommunityEndpointRuntime(c.env.DB, model);
             if (!endpoint) {
                 throw new HTTPException(400, {
                     message: `Invalid community endpoint: "${model}"`,
@@ -157,7 +137,7 @@ export function resolveModel(
             c.set("model", {
                 requested: model,
                 resolved: model as ModelName,
-                communityEndpoint: { ...endpoint, modelId: model },
+                communityEndpoint: endpoint,
             });
             await next();
             return;

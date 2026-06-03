@@ -1,6 +1,7 @@
 import {
     communityChatCompletionsUrl,
     normalizeCommunityEndpointBaseUrl,
+    normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 
 type EndpointAuth = {
@@ -13,13 +14,6 @@ type EndpointTestInput = EndpointAuth & {
 };
 
 const REQUEST_TIMEOUT_MS = 10_000;
-const BEARER_PREFIX = /^Bearer\s+/i;
-
-export function normalizeCommunityEndpointBearerToken(value: string): string {
-    const token = value.trim().replace(BEARER_PREFIX, "").trim();
-    if (!token) throw new Error("API bearer token is required");
-    return token;
-}
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
@@ -53,19 +47,28 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message =
-        body &&
-        typeof body === "object" &&
+    const message = endpointBodyMessage(body);
+    return message
+        ? `Endpoint responded ${status}: ${message}`
+        : `Endpoint responded ${status}`;
+}
+
+function endpointBodyMessage(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    if (
         "error" in body &&
         body.error &&
         typeof body.error === "object" &&
         "message" in body.error &&
         typeof body.error.message === "string"
-            ? body.error.message
-            : null;
-    return message
-        ? `Endpoint responded ${status}: ${message}`
-        : `Endpoint responded ${status}`;
+    ) {
+        return body.error.message;
+    }
+    if ("error" in body && typeof body.error === "string") return body.error;
+    if ("message" in body && typeof body.message === "string") {
+        return body.message;
+    }
+    return null;
 }
 
 export async function listCommunityEndpointModels({
@@ -123,5 +126,16 @@ export async function testCommunityEndpoint({
         !Array.isArray(body.choices)
     ) {
         throw new Error("Endpoint did not return OpenAI chat choices");
+    }
+    if (
+        !("usage" in body) ||
+        !body.usage ||
+        typeof body.usage !== "object" ||
+        !("prompt_tokens" in body.usage) ||
+        !("completion_tokens" in body.usage) ||
+        typeof body.usage.prompt_tokens !== "number" ||
+        typeof body.usage.completion_tokens !== "number"
+    ) {
+        throw new Error("Endpoint did not return OpenAI token usage");
     }
 }

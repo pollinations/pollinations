@@ -1,6 +1,9 @@
 import {
+    COMMUNITY_ENDPOINT_TIER_GATE_ENABLED,
+    canManageCommunityEndpoints,
     communityModelId,
     normalizeCommunityEndpointBaseUrl,
+    normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
@@ -14,13 +17,10 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import {
     listCommunityEndpointModels,
-    normalizeCommunityEndpointBearerToken,
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
 
 const PriceSchema = z.number().finite().min(0);
-const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
-const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 const EndpointFieldsSchema = z.object({
     name: z.string().trim().min(1).max(120),
@@ -82,7 +82,7 @@ async function requireCommunityEndpointTier(
         columns: { tier: true },
         where: eq(schema.user.id, userId),
     });
-    if (user?.tier && COMMUNITY_ENDPOINT_TIERS.has(user.tier)) return;
+    if (canManageCommunityEndpoints(user?.tier)) return;
     throw new HTTPException(403, {
         message: "Community endpoints require Flower tier or higher",
     });
@@ -231,7 +231,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
         await requireCommunityEndpointTier(db, user.id);
         try {
             await testCommunityEndpoint(input);
-            return c.json({ ok: true, message: "Endpoint responded" });
+            return c.json({
+                ok: true,
+                message: "Endpoint responded with usage",
+            });
         } catch (error) {
             throwEndpointTestError(error);
         }
@@ -251,7 +254,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ),
                 model: endpoint.upstreamModel,
             });
-            return c.json({ ok: true, message: "Endpoint responded" });
+            return c.json({
+                ok: true,
+                message: "Endpoint responded with usage",
+            });
         } catch (error) {
             throwEndpointTestError(error);
         }

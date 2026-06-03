@@ -253,7 +253,11 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
-            setFormTest({ status: "success", message: "Endpoint responded" });
+            const body = (await response.json()) as { message?: string };
+            setFormTest({
+                status: "success",
+                message: body.message || "Endpoint responded",
+            });
         } catch (thrown) {
             setFormTest({
                 status: "error",
@@ -275,9 +279,13 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 ":id"
             ].test.$post({ param: { id } });
             if (!response.ok) throw new Error(await readError(response));
+            const body = (await response.json()) as { message?: string };
             setEndpointTests((current) => ({
                 ...current,
-                [id]: { status: "success", message: "Endpoint responded" },
+                [id]: {
+                    status: "success",
+                    message: body.message || "Endpoint responded",
+                },
             }));
         } catch (thrown) {
             setEndpointTests((current) => ({

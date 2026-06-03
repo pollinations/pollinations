@@ -3,6 +3,9 @@ import type { CostDefinition, PriceDefinition } from "./registry/registry.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_ENDPOINT_PAYOUT_PCT = 0.8;
+export const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
+export const COMMUNITY_ENDPOINT_TIERS = ["flower", "nectar", "router"] as const;
+const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 const DEFAULT_MAX_COMPLETION_TOKENS = 1024;
 
 export type CommunityEndpointRuntime = {
@@ -37,6 +40,21 @@ export function communityModelId(
     return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
+export function normalizeCommunityEndpointBearerToken(value: string): string {
+    const token = value.trim().replace(BEARER_PREFIX, "").trim();
+    if (!token) throw new Error("API bearer token is required");
+    return token;
+}
+
+export function canManageCommunityEndpoints(
+    tier: string | null | undefined,
+): boolean {
+    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return true;
+    return COMMUNITY_ENDPOINT_TIERS.includes(
+        tier as (typeof COMMUNITY_ENDPOINT_TIERS)[number],
+    );
+}
+
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
@@ -59,6 +77,7 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     if (isBlockedHostname(url.hostname)) {
         throw new Error("Endpoint URL cannot target a private host");
     }
+    url.search = "";
     url.hash = "";
     return url.toString().replace(/\/+$/, "");
 }

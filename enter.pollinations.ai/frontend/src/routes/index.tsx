@@ -1,4 +1,5 @@
 import { Button, DownloadIcon, Section } from "@pollinations/ui";
+import { canManageCommunityEndpoints } from "@shared/community-endpoints.ts";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -39,8 +40,6 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
-const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
-const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 function DownloadCsvButton({
     theme,
@@ -74,11 +73,6 @@ function pageFromHash(hash: string): DashboardPage {
     // FAQ component scroll/expand the matching question.
     if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
     return "pollen";
-}
-
-function canManageCommunityEndpoints(tier: string | null | undefined): boolean {
-    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return true;
-    return !!tier && COMMUNITY_ENDPOINT_TIERS.has(tier);
 }
 
 export const Route = createFileRoute("/")({

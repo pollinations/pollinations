@@ -2,6 +2,7 @@ import {
     type CommunityEndpointRuntime,
     capCommunityUsage,
     communityChatCompletionsUrl,
+    normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
@@ -24,6 +25,9 @@ export async function generateCommunityEndpointCompletion(
         endpoint.bearerTokenCiphertext,
         secret,
     );
+    const authorization = `Bearer ${normalizeCommunityEndpointBearerToken(
+        bearerToken,
+    )}`;
     const completion = await genericOpenAIClient(
         requestData.messages,
         {
@@ -34,7 +38,7 @@ export async function generateCommunityEndpointCompletion(
         {
             endpoint: communityChatCompletionsUrl(endpoint.baseUrl),
             additionalHeaders: {
-                Authorization: `Bearer ${bearerToken}`,
+                Authorization: authorization,
             },
         },
     );

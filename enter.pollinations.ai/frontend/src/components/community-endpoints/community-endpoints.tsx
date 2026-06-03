@@ -9,7 +9,7 @@ import {
     Surface,
 } from "@pollinations/ui";
 import type { ChangeEvent, ComponentPropsWithoutRef, FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { apiClient } from "../../api.ts";
 
 export type CommunityEndpoint = {
@@ -31,7 +31,6 @@ type EndpointFormState = {
     bearerToken: string;
     promptTextPrice: string;
     completionTextPrice: string;
-    contextLength: string;
 };
 
 const emptyForm: EndpointFormState = {
@@ -41,8 +40,17 @@ const emptyForm: EndpointFormState = {
     bearerToken: "",
     promptTextPrice: "",
     completionTextPrice: "",
-    contextLength: "",
 };
+
+const TOKENS_PER_MILLION = 1_000_000;
+
+function pricePerTokenToPerMillion(value: number): string {
+    return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
+}
+
+function pricePerMillionToPerToken(value: string): number {
+    return Number(value || 0) / TOKENS_PER_MILLION;
+}
 
 function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
@@ -50,11 +58,10 @@ function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        promptTextPrice: String(endpoint.promptTextPrice),
-        completionTextPrice: String(endpoint.completionTextPrice),
-        contextLength: endpoint.contextLength
-            ? String(endpoint.contextLength)
-            : "",
+        promptTextPrice: pricePerTokenToPerMillion(endpoint.promptTextPrice),
+        completionTextPrice: pricePerTokenToPerMillion(
+            endpoint.completionTextPrice,
+        ),
     };
 }
 
@@ -63,11 +70,10 @@ function toEndpointPayload(form: EndpointFormState) {
         name: form.name.trim(),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim(),
-        promptTextPrice: Number(form.promptTextPrice || 0),
-        completionTextPrice: Number(form.completionTextPrice || 0),
-        contextLength: form.contextLength.trim()
-            ? Number(form.contextLength)
-            : null,
+        promptTextPrice: pricePerMillionToPerToken(form.promptTextPrice),
+        completionTextPrice: pricePerMillionToPerToken(
+            form.completionTextPrice,
+        ),
     };
 }
 
@@ -293,61 +299,93 @@ function EndpointForm({
     onCancel?: () => void;
 }) {
     return (
-        <form className="grid gap-3" onSubmit={onSubmit}>
+        <form
+            className="grid gap-3"
+            onSubmit={onSubmit}
+            autoComplete="off"
+            data-form-type="other"
+        >
             <div className="grid gap-3 md:grid-cols-2">
                 <EndpointField
-                    label="Model name"
+                    label="Public model name"
+                    name="community-model-name"
                     value={form.name}
-                    placeholder="model-name"
+                    placeholder="my-model"
+                    helper="Used as the last segment of community/{username}/{model-name}."
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     onChange={(value) => onChange("name", value)}
                 />
                 <EndpointField
-                    label="Upstream model"
+                    label="Provider model"
+                    name="community-provider-model"
                     value={form.upstreamModel}
+                    placeholder="provider-model-name"
+                    helper="Sent to your endpoint as the OpenAI model value."
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     onChange={(value) => onChange("upstreamModel", value)}
                 />
             </div>
             <EndpointField
-                label="Base URL"
+                label="Endpoint URL"
+                name="community-endpoint-url"
                 value={form.baseUrl}
                 placeholder="https://api.example.com/v1"
+                helper="Use the OpenAI-compatible /v1 base URL or full chat completions URL."
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
                 onChange={(value) => onChange("baseUrl", value)}
             />
             <EndpointField
-                label={tokenRequired ? "Bearer token" : "New bearer token"}
+                label={
+                    tokenRequired ? "API bearer token" : "New API bearer token"
+                }
+                name="community-api-bearer-token"
                 value={form.bearerToken}
                 type="password"
+                helper="Stored encrypted and sent as Authorization: Bearer to your endpoint."
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
                 required={tokenRequired}
                 onChange={(value) => onChange("bearerToken", value)}
             />
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2">
                 <EndpointField
-                    label="Prompt price"
+                    label="Prompt price (Pollen per 1M tokens)"
+                    name="community-prompt-price"
                     value={form.promptTextPrice}
                     type="number"
-                    step="0.0000001"
+                    step="0.01"
                     min="0"
+                    placeholder="0.10"
+                    helper="Users are charged this many Pollen per million input tokens."
+                    autoComplete="off"
                     required
                     onChange={(value) => onChange("promptTextPrice", value)}
                 />
                 <EndpointField
-                    label="Completion price"
+                    label="Completion price (Pollen per 1M tokens)"
+                    name="community-completion-price"
                     value={form.completionTextPrice}
                     type="number"
-                    step="0.0000001"
+                    step="0.01"
                     min="0"
+                    placeholder="1.00"
+                    helper="Users are charged this many Pollen per million output tokens."
+                    autoComplete="off"
                     required
                     onChange={(value) => onChange("completionTextPrice", value)}
-                />
-                <EndpointField
-                    label="Context length"
-                    value={form.contextLength}
-                    type="number"
-                    min="1"
-                    onChange={(value) => onChange("contextLength", value)}
                 />
             </div>
             <div className="flex flex-wrap justify-end gap-2">
@@ -370,25 +408,40 @@ function EndpointForm({
 
 function EndpointField({
     label,
+    helper,
     value,
     onChange,
     ...inputProps
 }: {
     label: string;
+    helper?: string;
     value: string;
     onChange: (value: string) => void;
 } & Omit<ComponentPropsWithoutRef<"input">, "onChange" | "value">) {
+    const fallbackId = useId();
+    const inputId = inputProps.id ?? fallbackId;
+    const helperId = helper ? `${inputId}-helper` : undefined;
+
     return (
         <Field.Root className="flex flex-col gap-1.5">
-            <Field.Label className="text-sm font-medium">{label}</Field.Label>
+            <Field.Label htmlFor={inputId} className="text-sm font-medium">
+                {label}
+            </Field.Label>
             <Input
                 {...inputProps}
+                id={inputId}
+                aria-describedby={helperId}
                 value={value}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     onChange(event.target.value)
                 }
                 className="w-full border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200"
             />
+            {helper && (
+                <p id={helperId} className="text-xs leading-5 text-gray-500">
+                    {helper}
+                </p>
+            )}
         </Field.Root>
     );
 }
@@ -455,18 +508,14 @@ function EndpointCard({
                 </span>
                 <span>
                     <span className="text-gray-400">Prompt: </span>
-                    {endpoint.promptTextPrice} pollen/token
+                    {pricePerTokenToPerMillion(endpoint.promptTextPrice)}{" "}
+                    pollen/M
                 </span>
                 <span>
                     <span className="text-gray-400">Completion: </span>
-                    {endpoint.completionTextPrice} pollen/token
+                    {pricePerTokenToPerMillion(endpoint.completionTextPrice)}{" "}
+                    pollen/M
                 </span>
-                {endpoint.contextLength && (
-                    <span>
-                        <span className="text-gray-400">Context: </span>
-                        {endpoint.contextLength}
-                    </span>
-                )}
             </div>
         </Surface>
     );

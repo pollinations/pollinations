@@ -648,35 +648,13 @@ export function Playground({
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                <h1 className="polli:m-0 polli:font-heading polli:text-4xl polli:text-theme-text-strong">
+                <h1 className="polli:m-0 polli:font-heading polli:text-4xl polli:text-gray-950">
                     {title}
                 </h1>
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:text-theme-text-soft">
+                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:text-gray-600">
                     {subtitle}
                 </p>
             </section>
-
-            <Surface
-                theme={activeTheme}
-                variant="panel"
-                className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
-            >
-                <div className="polli-playground-control-bar">
-                    <ModalityTabs
-                        activeCategory={activeCategory}
-                        onCategoryChange={selectCategory}
-                    />
-                    <ModelDropdown
-                        models={catalog.models}
-                        activeCategory={activeCategory}
-                        selectedModel={selectedModel}
-                        allowedModelIds={catalog.allowedModelIds}
-                        isLoggedIn={isLoggedIn}
-                        isLoading={isLoading || !isHydrated}
-                        onModelChange={setSelectedModel}
-                    />
-                </div>
-            </Surface>
 
             {catalogError && (
                 <Alert intent="danger">
@@ -685,179 +663,192 @@ export function Playground({
             )}
 
             <div className="polli-playground-main-grid">
-                <Surface
-                    theme={activeTheme}
-                    variant="panel"
-                    className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
-                >
-                    <div className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3">
-                        <div>
-                            <h2 className="polli:m-0 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                                Prompt
-                            </h2>
-                            {currentModel && (
-                                <p className="polli:m-0 polli:text-sm polli:text-theme-text-soft">
-                                    {displayModelName(currentModel)}
-                                </p>
-                            )}
+                <div className="polli:flex polli:flex-col polli:gap-4">
+                    <Surface
+                        theme={activeTheme}
+                        variant="panel"
+                        className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
+                    >
+                        <div className="polli-playground-control-bar">
+                            <ModalityTabs
+                                activeCategory={activeCategory}
+                                onCategoryChange={selectCategory}
+                            />
+                            <ModelDropdown
+                                models={catalog.models}
+                                activeCategory={activeCategory}
+                                selectedModel={selectedModel}
+                                allowedModelIds={catalog.allowedModelIds}
+                                isLoggedIn={isLoggedIn}
+                                isLoading={isLoading || !isHydrated}
+                                onModelChange={setSelectedModel}
+                            />
                         </div>
-                        {currentModel && (
-                            <Chip>
-                                {CATEGORY_LABELS[currentModel.category]}
-                            </Chip>
-                        )}
-                    </div>
+                    </Surface>
 
-                    <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                        <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                            Prompt
-                        </Field.Label>
-                        <Textarea
-                            value={prompt}
-                            rows={7}
-                            onChange={(event) => setPrompt(event.target.value)}
-                            placeholder={promptPlaceholder(
-                                currentModel?.category ?? activeCategory,
-                            )}
-                            className="polli-playground-textarea polli:min-h-44"
-                        />
-                    </Field.Root>
-
-                    {supportsReferenceImages && (
+                    <Surface
+                        theme={activeTheme}
+                        variant="panel"
+                        className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
+                    >
                         <Field.Root className="polli:flex polli:flex-col polli:gap-2">
                             <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                Reference images
+                                Prompt
                             </Field.Label>
-                            <FileUpload
-                                value={referenceImages}
-                                onChange={setReferenceImages}
-                                maxFiles={4}
-                                maxSizeBytes={5 * 1024 * 1024}
-                                theme={activeTheme}
-                                onReject={(rejected) => {
-                                    const reason = rejected[0]?.reason;
-                                    if (reason === "size") {
-                                        setError(
-                                            "Images must be under 5 MB each.",
-                                        );
-                                    } else if (reason === "count") {
-                                        setError(
-                                            "Use up to 4 reference images.",
-                                        );
-                                    } else if (reason === "type") {
-                                        setError(
-                                            "Only image files are allowed.",
-                                        );
-                                    }
-                                }}
+                            <Textarea
+                                value={prompt}
+                                rows={7}
+                                onChange={(event) =>
+                                    setPrompt(event.target.value)
+                                }
+                                placeholder={promptPlaceholder(
+                                    currentModel?.category ?? activeCategory,
+                                )}
+                                className="polli-playground-textarea polli:min-h-44"
                             />
                         </Field.Root>
-                    )}
 
-                    {(currentModel?.category === "image" ||
-                        currentModel?.category === "video") && (
-                        <div className="polli-playground-settings-grid">
+                        {supportsReferenceImages && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
                                 <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Width
+                                    Reference images
                                 </Field.Label>
-                                <Input
-                                    type="number"
-                                    min={256}
-                                    max={2048}
-                                    step={64}
-                                    value={width}
-                                    onChange={(event) =>
-                                        setWidth(Number(event.target.value))
-                                    }
-                                    hideNumberSteppers
+                                <FileUpload
+                                    value={referenceImages}
+                                    onChange={setReferenceImages}
+                                    maxFiles={4}
+                                    maxSizeBytes={5 * 1024 * 1024}
+                                    theme={activeTheme}
+                                    onReject={(rejected) => {
+                                        const reason = rejected[0]?.reason;
+                                        if (reason === "size") {
+                                            setError(
+                                                "Images must be under 5 MB each.",
+                                            );
+                                        } else if (reason === "count") {
+                                            setError(
+                                                "Use up to 4 reference images.",
+                                            );
+                                        } else if (reason === "type") {
+                                            setError(
+                                                "Only image files are allowed.",
+                                            );
+                                        }
+                                    }}
                                 />
                             </Field.Root>
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Height
-                                </Field.Label>
-                                <Input
-                                    type="number"
-                                    min={256}
-                                    max={2048}
-                                    step={64}
-                                    value={height}
-                                    onChange={(event) =>
-                                        setHeight(Number(event.target.value))
-                                    }
-                                    hideNumberSteppers
-                                />
-                            </Field.Root>
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Seed
-                                </Field.Label>
-                                <Input
-                                    type="number"
-                                    value={seed}
-                                    onChange={(event) =>
-                                        setSeed(Number(event.target.value))
-                                    }
-                                    hideNumberSteppers
-                                />
-                            </Field.Root>
-                        </div>
-                    )}
+                        )}
 
-                    {currentModel && currentModel.voices.length > 0 && (
-                        <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                Voice
-                            </Field.Label>
-                            <div className="polli:flex polli:flex-wrap polli:gap-2">
-                                {currentModel.voices.map((voice) => (
-                                    <Button
-                                        key={voice}
-                                        type="button"
-                                        theme={modalityTheme("audio")}
-                                        size="small"
-                                        className={cn(
-                                            "polli:self-auto polli:rounded-lg",
-                                            selectedVoice === voice &&
-                                                modalityColors("audio").filled,
-                                        )}
-                                        onClick={() => setSelectedVoice(voice)}
-                                    >
-                                        {voice}
-                                    </Button>
-                                ))}
+                        {(currentModel?.category === "image" ||
+                            currentModel?.category === "video") && (
+                            <div className="polli-playground-settings-grid">
+                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                        Width
+                                    </Field.Label>
+                                    <Input
+                                        type="number"
+                                        min={256}
+                                        max={2048}
+                                        step={64}
+                                        value={width}
+                                        onChange={(event) =>
+                                            setWidth(Number(event.target.value))
+                                        }
+                                        hideNumberSteppers
+                                    />
+                                </Field.Root>
+                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                        Height
+                                    </Field.Label>
+                                    <Input
+                                        type="number"
+                                        min={256}
+                                        max={2048}
+                                        step={64}
+                                        value={height}
+                                        onChange={(event) =>
+                                            setHeight(
+                                                Number(event.target.value),
+                                            )
+                                        }
+                                        hideNumberSteppers
+                                    />
+                                </Field.Root>
+                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                        Seed
+                                    </Field.Label>
+                                    <Input
+                                        type="number"
+                                        value={seed}
+                                        onChange={(event) =>
+                                            setSeed(Number(event.target.value))
+                                        }
+                                        hideNumberSteppers
+                                    />
+                                </Field.Root>
                             </div>
-                        </Field.Root>
-                    )}
+                        )}
 
-                    {error && <Alert intent="danger">{error}</Alert>}
+                        {currentModel && currentModel.voices.length > 0 && (
+                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    Voice
+                                </Field.Label>
+                                <div className="polli:flex polli:flex-wrap polli:gap-2">
+                                    {currentModel.voices.map((voice) => (
+                                        <Button
+                                            key={voice}
+                                            type="button"
+                                            theme={modalityTheme("audio")}
+                                            size="small"
+                                            className={cn(
+                                                "polli:self-auto polli:rounded-lg",
+                                                selectedVoice === voice &&
+                                                    modalityColors("audio")
+                                                        .filled,
+                                            )}
+                                            onClick={() =>
+                                                setSelectedVoice(voice)
+                                            }
+                                        >
+                                            {voice}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </Field.Root>
+                        )}
 
-                    <Button
-                        type="button"
-                        theme={activeTheme}
-                        size="large"
-                        disabled={
-                            isGenerating ||
-                            (!!apiKey &&
-                                (!prompt.trim() || !selectedModelAllowed))
-                        }
-                        onClick={generate}
-                        className="polli:w-full polli:self-auto"
-                    >
-                        {!apiKey
-                            ? "Login to generate"
-                            : isGenerating
-                              ? "Generating..."
-                              : currentModel?.category === "video"
-                                ? "Generate video"
-                                : currentModel?.category === "audio"
-                                  ? "Generate audio"
-                                  : currentModel?.category === "text"
-                                    ? "Generate text"
-                                    : "Generate image"}
-                    </Button>
-                </Surface>
+                        {error && <Alert intent="danger">{error}</Alert>}
+
+                        <Button
+                            type="button"
+                            theme={activeTheme}
+                            size="large"
+                            disabled={
+                                isGenerating ||
+                                (!!apiKey &&
+                                    (!prompt.trim() || !selectedModelAllowed))
+                            }
+                            onClick={generate}
+                            className="polli:w-full polli:self-auto"
+                        >
+                            {!apiKey
+                                ? "Login to generate"
+                                : isGenerating
+                                  ? "Generating..."
+                                  : currentModel?.category === "video"
+                                    ? "Generate video"
+                                    : currentModel?.category === "audio"
+                                      ? "Generate audio"
+                                      : currentModel?.category === "text"
+                                        ? "Generate text"
+                                        : "Generate image"}
+                        </Button>
+                    </Surface>
+                </div>
 
                 <ResultPanel
                     result={result}

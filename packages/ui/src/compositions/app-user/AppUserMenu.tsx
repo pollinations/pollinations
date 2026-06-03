@@ -71,9 +71,7 @@ function AppUserMenuContent({
     return (
         <div data-theme="amber" className="polli:flex polli:justify-end">
             <WhenLoggedOut>
-                <LoginButton theme="amber" size="small">
-                    {labels.authorize}
-                </LoginButton>
+                <LoginButton theme="amber">{labels.authorize}</LoginButton>
             </WhenLoggedOut>
 
             <WhenLoggedIn>

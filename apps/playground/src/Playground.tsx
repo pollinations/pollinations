@@ -2,34 +2,28 @@ import {
     fetchModelCatalog,
     type ModelCatalog,
     type ModelCatalogCategory,
-    type ModelCatalogItem,
     Pollinations,
 } from "@pollinations/sdk/client";
 import { useAuthState } from "@pollinations/sdk/react";
-import { useEffect, useMemo, useState } from "react";
-import { cn } from "../../lib/cn.ts";
+import {
+    Alert,
+    Button,
+    ButtonGroup,
+    cn,
+    Field,
+    FileUpload,
+    Input,
+    Surface,
+    TabButton,
+    Textarea,
+    type ThemeName,
+} from "@pollinations/ui";
 import {
     getModalityColors,
     type ModalityColorSet,
-} from "../../modules/modality/colors.ts";
-import { Alert } from "../../primitives/Alert.tsx";
-import { Button } from "../../primitives/Button.tsx";
-import { ButtonGroup } from "../../primitives/ButtonGroup.tsx";
-import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Chip } from "../../primitives/Chip.tsx";
-import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { Field } from "../../primitives/Field.tsx";
-import { FileUpload } from "../../primitives/FileUpload.tsx";
-import { Input } from "../../primitives/Input.tsx";
-import {
-    BeakerIcon,
-    DownloadIcon,
-    ImageIcon,
-} from "../../primitives/icons/index.tsx";
-import { Surface } from "../../primitives/Surface.tsx";
-import { TabButton } from "../../primitives/TabButton.tsx";
-import { Textarea } from "../../primitives/Textarea.tsx";
-import type { ThemeName } from "../../theme.ts";
+} from "@pollinations/ui/modality";
+import { ModelSelector } from "@pollinations/ui/models";
+import { useEffect, useMemo, useState } from "react";
 
 const EMPTY_CATALOG: ModelCatalog = {
     models: [],
@@ -51,16 +45,6 @@ const CATEGORY_ORDER: ModelCatalogCategory[] = [
     "video",
     "text",
     "audio",
-];
-const MODEL_SKELETON_KEYS = [
-    "model-skeleton-1",
-    "model-skeleton-2",
-    "model-skeleton-3",
-    "model-skeleton-4",
-    "model-skeleton-5",
-    "model-skeleton-6",
-    "model-skeleton-7",
-    "model-skeleton-8",
 ];
 
 type PlaygroundResult =
@@ -109,10 +93,6 @@ function usePlaygroundCatalog(apiKey: string | null) {
     }, [apiKey]);
 
     return { catalog, isLoading, error };
-}
-
-function displayModelName(model: ModelCatalogItem): string {
-    return model.description?.split(" - ")[0] || model.name || model.id;
 }
 
 function promptPlaceholder(category: ModelCatalogCategory): string {
@@ -186,135 +166,6 @@ function ModalityTabs({
     );
 }
 
-function ModelDropdown({
-    models,
-    activeCategory,
-    selectedModel,
-    allowedModelIds,
-    isLoggedIn,
-    isLoading,
-    onModelChange,
-}: {
-    models: ModelCatalogItem[];
-    activeCategory: ModelCatalogCategory;
-    selectedModel: string;
-    allowedModelIds: Set<string>;
-    isLoggedIn: boolean;
-    isLoading: boolean;
-    onModelChange: (modelId: string) => void;
-}) {
-    const filteredModels = models.filter(
-        (model) => model.category === activeCategory,
-    );
-    const currentModel = models.find((model) => model.id === selectedModel);
-    const activeTheme = modalityTheme(activeCategory);
-    const modelLabel = currentModel
-        ? displayModelName(currentModel)
-        : `Select ${CATEGORY_LABELS[activeCategory].toLowerCase()} model`;
-
-    return (
-        <Dropdown
-            theme={activeTheme}
-            align="end"
-            panelClassName="polli:rounded-2xl polli:bg-surface-white polli:p-2 polli:shadow-lg polli:ring-1 polli:ring-black/10"
-            className="polli:w-[min(24rem,calc(100vw-2rem))]"
-            trigger={(open) => (
-                <button
-                    type="button"
-                    className="polli:flex polli:min-h-12 polli:min-w-64 polli:max-w-full polli:items-center polli:justify-between polli:gap-3 polli:rounded-xl polli:bg-white/80 polli:px-3 polli:py-2 polli:text-left polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-white/90"
-                >
-                    <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                        <BeakerIcon className="polli:h-4 polli:w-4 polli:shrink-0 polli:text-theme-text-soft" />
-                        <span className="polli:min-w-0">
-                            <span className="polli:block polli:text-xs polli:font-semibold polli:text-theme-text-muted">
-                                Model
-                            </span>
-                            <span className="polli:block polli:truncate polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                {modelLabel}
-                            </span>
-                        </span>
-                    </span>
-                    <ChevronIcon
-                        expanded={open}
-                        className="polli:text-theme-text-soft"
-                    />
-                </button>
-            )}
-        >
-            {(close) => (
-                <div className="polli:flex polli:max-h-96 polli:flex-col polli:gap-1 polli:overflow-y-auto">
-                    <div className="polli:flex polli:items-center polli:justify-between polli:gap-3 polli:px-2 polli:py-1.5">
-                        <div>
-                            <h2 className="polli:m-0 polli:font-subheading polli:text-base polli:text-theme-text-strong">
-                                {CATEGORY_LABELS[activeCategory]} models
-                            </h2>
-                            <p className="polli:m-0 polli:text-xs polli:text-theme-text-soft">
-                                {filteredModels.length} available
-                            </p>
-                        </div>
-                        <Chip size="sm">{CATEGORY_LABELS[activeCategory]}</Chip>
-                    </div>
-
-                    {isLoading
-                        ? MODEL_SKELETON_KEYS.slice(0, 4).map((key) => (
-                              <div
-                                  key={key}
-                                  className="polli:h-11 polli:rounded-xl polli:bg-theme-bg-pale polli:animate-pulse"
-                              />
-                          ))
-                        : filteredModels.map((model) => {
-                              const colors = modalityColors(model.category);
-                              const isAllowed =
-                                  !isLoggedIn || allowedModelIds.has(model.id);
-                              const isActive = selectedModel === model.id;
-                              return (
-                                  <button
-                                      key={model.id}
-                                      type="button"
-                                      disabled={!isAllowed}
-                                      title={model.description || model.id}
-                                      onClick={() => {
-                                          onModelChange(model.id);
-                                          close();
-                                      }}
-                                      className={cn(
-                                          "polli:flex polli:w-full polli:items-start polli:justify-between polli:gap-3 polli:rounded-xl polli:px-3 polli:py-2 polli:text-left polli:transition",
-                                          isActive
-                                              ? colors.filled
-                                              : "polli:bg-white/80 polli:text-gray-700",
-                                          isAllowed
-                                              ? cn(
-                                                    "polli:cursor-pointer",
-                                                    !isActive && colors.hover,
-                                                )
-                                              : "polli:cursor-not-allowed polli:opacity-45",
-                                      )}
-                                  >
-                                      <span className="polli:min-w-0">
-                                          <span className="polli:block polli:truncate polli:text-sm polli:font-semibold">
-                                              {displayModelName(model)}
-                                          </span>
-                                          <span className="polli:block polli:truncate polli:text-xs polli:opacity-70">
-                                              {model.id}
-                                          </span>
-                                      </span>
-                                      {model.paidOnly && (
-                                          <Chip
-                                              size="sm"
-                                              className="polli:shrink-0"
-                                          >
-                                              paid
-                                          </Chip>
-                                      )}
-                                  </button>
-                              );
-                          })}
-                </div>
-            )}
-        </Dropdown>
-    );
-}
-
 function ResultPanel({
     result,
     isLoading,
@@ -336,7 +187,7 @@ function ResultPanel({
             )}
         >
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <h2 className="polli:m-0 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                <h2 className="polli:m-0 polli:text-sm polli:font-semibold polli:text-gray-950">
                     Output
                 </h2>
                 {result && result.type !== "text" && (
@@ -349,26 +200,22 @@ function ResultPanel({
                         theme={modalityTheme(activeCategory)}
                         size="small"
                     >
-                        <DownloadIcon className="polli:mr-1 polli:h-4 polli:w-4" />
                         Save
                     </Button>
                 )}
             </div>
 
-            <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3">
+            <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3 polli:text-gray-950">
                 {isLoading && (
-                    <div className="polli:flex polli:items-center polli:gap-2 polli:text-sm polli:text-theme-text-soft">
-                        <span className="polli:h-2 polli:w-2 polli:animate-bounce polli:rounded-full polli:bg-theme-text-soft" />
-                        <span className="polli:h-2 polli:w-2 polli:animate-bounce polli:rounded-full polli:bg-theme-text-soft [animation-delay:120ms]" />
-                        <span className="polli:h-2 polli:w-2 polli:animate-bounce polli:rounded-full polli:bg-theme-text-soft [animation-delay:240ms]" />
-                    </div>
+                    <p className="polli:m-0 polli:text-gray-700">
+                        Generating...
+                    </p>
                 )}
 
                 {!isLoading && !result && (
-                    <div className="polli:flex polli:flex-col polli:items-center polli:gap-2 polli:text-center polli:text-sm polli:text-theme-text-soft">
-                        <ImageIcon className="polli:h-8 polli:w-8" />
-                        <span>Generated results appear here.</span>
-                    </div>
+                    <p className="polli:m-0 polli:text-gray-700">
+                        Generated results appear here.
+                    </p>
                 )}
 
                 {!isLoading && result?.type === "image" && (
@@ -404,7 +251,7 @@ function ResultPanel({
                 )}
 
                 {!isLoading && result?.type === "text" && (
-                    <p className="polli:m-0 polli:w-full polli:whitespace-pre-wrap polli:text-sm polli:leading-6 polli:text-theme-text-base">
+                    <p className="polli:m-0 polli:w-full polli:whitespace-pre-wrap polli:text-sm polli:leading-6 polli:text-gray-950">
                         {result.text}
                     </p>
                 )}
@@ -635,15 +482,15 @@ export function Playground({
         <div
             data-theme={theme}
             className={cn(
-                "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-theme-text-base",
+                "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-gray-950",
                 className,
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                <h1 className="polli-playground-title polli:m-0 polli:font-heading polli:text-4xl polli:leading-none polli:text-gray-950">
+                <h1 className="polli-playground-title polli:m-0 polli:font-heading polli:text-4xl polli:leading-none">
                     {title}
                 </h1>
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:text-gray-600">
+                <p className="polli-playground-subtitle polli:m-0 polli:max-w-3xl polli:text-base">
                     {subtitle}
                 </p>
             </section>
@@ -666,14 +513,14 @@ export function Playground({
                                 activeCategory={activeCategory}
                                 onCategoryChange={selectCategory}
                             />
-                            <ModelDropdown
+                            <ModelSelector
                                 models={catalog.models}
-                                activeCategory={activeCategory}
-                                selectedModel={selectedModel}
+                                category={activeCategory}
+                                value={selectedModel}
                                 allowedModelIds={catalog.allowedModelIds}
                                 isLoggedIn={isLoggedIn}
                                 isLoading={isLoading || !isHydrated}
-                                onModelChange={setSelectedModel}
+                                onChange={setSelectedModel}
                             />
                         </div>
                     </Surface>
@@ -684,7 +531,7 @@ export function Playground({
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
                         <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                 Prompt
                             </Field.Label>
                             <Textarea
@@ -702,7 +549,7 @@ export function Playground({
 
                         {supportsReferenceImages && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                     Reference images
                                 </Field.Label>
                                 <FileUpload
@@ -735,7 +582,7 @@ export function Playground({
                             currentModel?.category === "video") && (
                             <div className="polli-playground-settings-grid">
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                         Width
                                     </Field.Label>
                                     <Input
@@ -751,7 +598,7 @@ export function Playground({
                                     />
                                 </Field.Root>
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                         Height
                                     </Field.Label>
                                     <Input
@@ -769,7 +616,7 @@ export function Playground({
                                     />
                                 </Field.Root>
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                         Seed
                                     </Field.Label>
                                     <Input
@@ -786,7 +633,7 @@ export function Playground({
 
                         {currentModel && currentModel.voices.length > 0 && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
                                     Voice
                                 </Field.Label>
                                 <ButtonGroup aria-label="Voice">

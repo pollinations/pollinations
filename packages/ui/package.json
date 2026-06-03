@@ -28,15 +28,15 @@
       "import": "./dist/compositions/app-user.js",
       "require": "./dist/compositions/app-user.cjs"
     },
-    "./compositions/playground": {
-      "types": "./dist/compositions/playground.d.ts",
-      "import": "./dist/compositions/playground.js",
-      "require": "./dist/compositions/playground.cjs"
-    },
     "./modality": {
       "types": "./dist/modality/index.d.ts",
       "import": "./dist/modality/index.js",
       "require": "./dist/modality/index.cjs"
+    },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "import": "./dist/models/index.js",
+      "require": "./dist/models/index.cjs"
     },
     "./wallet": {
       "types": "./dist/wallet/index.d.ts",

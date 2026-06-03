@@ -3,8 +3,8 @@ import {
     AppUserMenu,
     isEmbeddedContext,
 } from "@pollinations/ui/compositions/app-user";
-import { Playground } from "@pollinations/ui/compositions/playground";
 import { ENTER_URL } from "./config";
+import { Playground } from "./Playground";
 
 export function App() {
     const theme: ThemeName = "violet";

@@ -148,66 +148,6 @@
     transform: scale(1.05);
 }
 
-.polli-playground-control-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.polli-playground-main-grid,
-.polli-playground-settings-grid {
-    display: grid;
-    gap: 1rem;
-}
-
-.polli-playground-title {
-    line-height: 1;
-}
-
-.polli-playground-settings-grid {
-    gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
-    .polli-playground-title {
-        font-size: 3rem;
-    }
-
-    .polli-playground-control-bar {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .polli-playground-settings-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 768px) {
-    .polli-playground-main-grid {
-        align-items: stretch;
-        grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
-    }
-
-    .polli-playground-output-panel {
-        position: sticky;
-        top: 1rem;
-        height: 100%;
-        min-height: 560px;
-    }
-
-    .polli-playground-textarea {
-        min-height: 14rem;
-    }
-}
-
-@media (min-width: 1280px) {
-    .polli-playground-settings-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
 /*
  * No `@source inline(...)` allowlist needed: Tailwind v4 content-scans
  * the package source by default, so every `polli:*` class literal in

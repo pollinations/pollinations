@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage } from "../components/LegalPage.tsx";
+import { DocumentPage } from "../components/DocumentPage.tsx";
 import { REFUNDS_PAGE } from "../copy/content/legal.ts";
 import { loadMarkdown } from "../lib/loadMarkdown.ts";
 
@@ -11,5 +11,7 @@ export const Route = createFileRoute("/refunds")({
             { name: "description", content: REFUNDS_PAGE.pageDescription },
         ],
     }),
-    component: () => <LegalPage markdown={Route.useLoaderData()} />,
+    component: () => (
+        <DocumentPage theme="green" markdown={Route.useLoaderData()} />
+    ),
 });

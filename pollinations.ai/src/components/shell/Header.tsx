@@ -1,8 +1,8 @@
 import { cn } from "@pollinations/ui";
 import wordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import { AccountMenu } from "@pollinations/ui/compositions/account";
 import { Link } from "@tanstack/react-router";
-import { NAV_ITEMS } from "./links.ts";
-import { UserMenu } from "./UserMenu.tsx";
+import { ENTER_HREF, NAV_ITEMS } from "./links.ts";
 import { useHideOnScroll } from "./useHideOnScroll.ts";
 
 export function Header() {
@@ -51,7 +51,7 @@ export function Header() {
                     ))}
                 </nav>
 
-                <UserMenu />
+                <AccountMenu dashboardHref={ENTER_HREF} theme="green" />
             </div>
         </header>
     );

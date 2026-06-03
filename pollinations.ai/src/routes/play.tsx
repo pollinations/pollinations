@@ -83,7 +83,7 @@ function PlayHub({
     selectedApp: PlayApp;
     onSelectApp: (app: PlayAppId) => void;
 }) {
-    const { apiKey, isHydrated } = useAuthState();
+    const { apiKey } = useAuthState();
 
     return (
         <div
@@ -129,7 +129,7 @@ function PlayHub({
 
             <div className="w-full bg-white">
                 <iframe
-                    key={`${selectedApp.id}:${isHydrated ? (apiKey ?? "logged-out") : "hydrating"}`}
+                    key={`${selectedApp.id}:${apiKey ?? "logged-out"}`}
                     title={selectedApp.title}
                     src={selectedApp.src}
                     className="block h-[calc(100vh-10rem)] min-h-[760px] w-full border-0 bg-white"

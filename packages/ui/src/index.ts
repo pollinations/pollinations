@@ -37,6 +37,7 @@ export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { Markdown, type MarkdownProps } from "./primitives/Markdown.tsx";
 export {
     MultiSelect,
     type MultiSelectProps,

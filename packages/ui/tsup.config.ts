@@ -5,6 +5,7 @@ export default defineConfig({
         index: "src/index.ts",
         "auth/index": "src/modules/auth/index.ts",
         "auth/sdk": "src/modules/auth/sdk.ts",
+        "compositions/account": "src/compositions/account/index.ts",
         "modality/index": "src/modules/modality/index.ts",
         "wallet/index": "src/modules/wallet/index.ts",
         "wallet/sdk": "src/modules/wallet/sdk.ts",

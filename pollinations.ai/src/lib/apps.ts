@@ -19,11 +19,7 @@ export type App = {
     github: string;
     githubId: string;
     repo: string;
-    discord: string;
-    other: string;
-    language: string;
     stars: number | null;
-    date: string;
     approvedDate: string;
     byop: boolean;
     requests24h: number;
@@ -141,16 +137,12 @@ export function parseAppsMarkdown(markdown: string): App[] {
             name,
             url,
             description: col("Description"),
-            language: col("Language"),
             category: col("Category").toLowerCase(),
             platforms: splitList(col("Platform")),
             github: col("GitHub_Username"),
             githubId: col("GitHub_UserID"),
             repo,
             stars: parseStars(col("Github_Repository_Stars")),
-            discord: col("Discord_Username"),
-            other: col("Other"),
-            date: col("Submitted_Date"),
             approvedDate: col("Approved_Date"),
             byop: col("BYOP") === "true",
             requests24h: Number.parseInt(col("Requests_24h"), 10) || 0,

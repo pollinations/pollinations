@@ -1,27 +1,11 @@
-import {
-    ExternalLinkIcon,
-    Markdown,
-    Surface,
-    type ThemeName,
-} from "@pollinations/ui";
+import { ExternalLinkIcon, Markdown, Surface } from "@pollinations/ui";
 import type { ToolboxItem } from "./copy.ts";
 
-/** Rotating accent theme so the grid alternates colors (legacy did i % 4). */
-const ACCENTS: ThemeName[] = ["green", "blue", "pink", "violet"];
-
-export function ToolboxCard({
-    item,
-    index,
-}: {
-    item: ToolboxItem;
-    index: number;
-}) {
-    const theme = ACCENTS[index % ACCENTS.length];
+export function ToolboxCard({ item }: { item: ToolboxItem }) {
     return (
         <Surface
-            theme={theme}
-            variant="card-themed"
-            className="flex flex-col gap-3 p-5"
+            variant="card"
+            className="flex flex-col gap-3 bg-white/80 p-5 transition-colors hover:bg-white/90"
         >
             <div className="flex items-center gap-2">
                 <span aria-hidden className="text-2xl">

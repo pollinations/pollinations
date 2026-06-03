@@ -1,4 +1,4 @@
-import { Button, ExternalLinkButton } from "@pollinations/ui";
+import { Button, ExternalLinkButton, Surface } from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
     CTA,
@@ -69,11 +69,13 @@ function HelloPage() {
                 <h2 className="font-subheading text-2xl text-theme-text-strong">
                     Dev kit
                 </h2>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                    {TOOLBOX.map((item, i) => (
-                        <ToolboxCard key={item.title} item={item} index={i} />
-                    ))}
-                </div>
+                <Surface theme="pink" variant="panel">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        {TOOLBOX.map((item) => (
+                            <ToolboxCard key={item.title} item={item} />
+                        ))}
+                    </div>
+                </Surface>
             </section>
 
             {/* Next */}
@@ -81,21 +83,23 @@ function HelloPage() {
                 <h2 className="font-subheading text-2xl text-theme-text-strong">
                     Next
                 </h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {ROADMAP.map((r) => (
-                        <div
-                            key={r.title}
-                            className="rounded-lg border border-theme-border bg-theme-bg-subtle p-4"
-                        >
-                            <h3 className="font-subheading text-base text-theme-text-strong">
-                                {r.title}
-                            </h3>
-                            <p className="mt-1 text-sm text-theme-text-soft">
-                                {r.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+                <Surface theme="violet" variant="panel">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {ROADMAP.map((r) => (
+                            <div
+                                key={r.title}
+                                className="rounded-lg bg-white/80 p-4 transition-colors hover:bg-white/90"
+                            >
+                                <h3 className="font-subheading text-base text-theme-text-strong">
+                                    {r.title}
+                                </h3>
+                                <p className="mt-1 text-sm text-theme-text-soft">
+                                    {r.description}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </Surface>
             </section>
 
             {/* CTA */}

@@ -14,6 +14,7 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import {
     listCommunityEndpointModels,
+    normalizeCommunityEndpointBearerToken,
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
 
@@ -55,6 +56,19 @@ function normalizeInputBaseUrl(value: string): string {
         throw new HTTPException(400, {
             message:
                 error instanceof Error ? error.message : "Invalid endpoint URL",
+        });
+    }
+}
+
+function normalizeInputBearerToken(value: string): string {
+    try {
+        return normalizeCommunityEndpointBearerToken(value);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error
+                    ? error.message
+                    : "Invalid API bearer token",
         });
     }
 }
@@ -186,7 +200,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 baseUrl: normalizeInputBaseUrl(input.baseUrl),
                 upstreamModel: input.upstreamModel ?? input.name,
                 bearerTokenCiphertext: await encryptSecret(
-                    input.bearerToken,
+                    normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 ),
                 promptTextPrice: input.promptTextPrice,
@@ -284,7 +298,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         }
         if (input.bearerToken !== undefined) {
             update.bearerTokenCiphertext = await encryptSecret(
-                input.bearerToken,
+                normalizeInputBearerToken(input.bearerToken),
                 c.env.BETTER_AUTH_SECRET,
             );
         }

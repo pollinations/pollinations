@@ -13,6 +13,19 @@ type EndpointTestInput = EndpointAuth & {
 };
 
 const REQUEST_TIMEOUT_MS = 10_000;
+const BEARER_PREFIX = /^Bearer\s+/i;
+
+export function normalizeCommunityEndpointBearerToken(value: string): string {
+    const token = value.trim().replace(BEARER_PREFIX, "").trim();
+    if (!token) throw new Error("API bearer token is required");
+    return token;
+}
+
+function authorizationHeaders(bearerToken: string): HeadersInit {
+    return {
+        Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+    };
+}
 
 function communityModelsUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
@@ -60,7 +73,7 @@ export async function listCommunityEndpointModels({
     bearerToken,
 }: EndpointAuth): Promise<string[]> {
     const body = await fetchJson(communityModelsUrl(baseUrl), {
-        headers: { Authorization: `Bearer ${bearerToken}` },
+        headers: authorizationHeaders(bearerToken),
     });
     const models =
         body &&
@@ -92,7 +105,7 @@ export async function testCommunityEndpoint({
     const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${bearerToken}`,
+            ...authorizationHeaders(bearerToken),
             "Content-Type": "application/json",
         },
         body: JSON.stringify({

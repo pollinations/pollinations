@@ -6,6 +6,7 @@ import {
     Field,
     IconButton,
     Input,
+    Section,
     Surface,
 } from "@pollinations/ui";
 import type { ChangeEvent, ComponentPropsWithoutRef, FormEvent } from "react";
@@ -217,86 +218,92 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
     }
 
     return (
-        <Collapsible
-            expanded={isExpanded}
-            onToggle={() => setIsExpanded((value) => !value)}
-            ariaLabel="Toggle community models"
-            wrapperClassName="border-blue-200 bg-white/70"
-            hoverClassName="hover:bg-blue-50"
-            panelClassName="border-t border-blue-100 px-3 pb-3 pt-3"
-            label={
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-gray-900">
-                        Community models
-                    </span>
-                    <span className="text-xs text-gray-500">
-                        {endpoints.length
-                            ? `${endpoints.length} registered model${endpoints.length === 1 ? "" : "s"}`
-                            : "Register and manage your own OpenAI-compatible endpoints."}
-                    </span>
-                </div>
-            }
-        >
-            <div className="flex flex-col gap-4">
-                {error && (
-                    <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {error}
-                    </p>
-                )}
+        <Section title="My models" theme="blue">
+            <Collapsible
+                expanded={isExpanded}
+                onToggle={() => setIsExpanded((value) => !value)}
+                ariaLabel="Toggle community models"
+                wrapperClassName="border-blue-200 bg-white/70"
+                hoverClassName="hover:bg-blue-50"
+                panelClassName="border-t border-blue-100 px-3 pb-3 pt-3"
+                label={
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-gray-900">
+                            Community models
+                        </span>
+                        <span className="text-xs text-gray-500">
+                            {endpoints.length
+                                ? `${endpoints.length} registered model${endpoints.length === 1 ? "" : "s"}`
+                                : "Register and manage your own OpenAI-compatible endpoints."}
+                        </span>
+                    </div>
+                }
+            >
+                <div className="flex flex-col gap-4">
+                    {error && (
+                        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                            {error}
+                        </p>
+                    )}
 
-                <EndpointForm
-                    form={form}
-                    submitLabel={isSaving ? "Saving..." : "Add endpoint"}
-                    tokenRequired
-                    disabled={isSaving}
-                    onSubmit={handleCreate}
-                    onChange={(key, value) =>
-                        updateForm(setForm, form, key, value)
-                    }
-                />
+                    <EndpointForm
+                        form={form}
+                        submitLabel={isSaving ? "Saving..." : "Add endpoint"}
+                        tokenRequired
+                        disabled={isSaving}
+                        onSubmit={handleCreate}
+                        onChange={(key, value) =>
+                            updateForm(setForm, form, key, value)
+                        }
+                    />
 
-                {isLoading ? (
-                    <Surface className="text-sm text-gray-500">
-                        Loading...
-                    </Surface>
-                ) : endpoints.length === 0 ? (
-                    <Surface className="text-sm text-gray-500">
-                        No endpoints yet.
-                    </Surface>
-                ) : (
-                    endpoints.map((endpoint) =>
-                        editId === endpoint.id ? (
-                            <Surface key={endpoint.id}>
-                                <EndpointForm
-                                    form={editForm}
-                                    submitLabel={
-                                        isSaving ? "Saving..." : "Save endpoint"
+                    {isLoading ? (
+                        <Surface className="text-sm text-gray-500">
+                            Loading...
+                        </Surface>
+                    ) : endpoints.length === 0 ? (
+                        <Surface className="text-sm text-gray-500">
+                            No endpoints yet.
+                        </Surface>
+                    ) : (
+                        endpoints.map((endpoint) =>
+                            editId === endpoint.id ? (
+                                <Surface key={endpoint.id}>
+                                    <EndpointForm
+                                        form={editForm}
+                                        submitLabel={
+                                            isSaving
+                                                ? "Saving..."
+                                                : "Save endpoint"
+                                        }
+                                        disabled={isSaving}
+                                        onSubmit={handleUpdate}
+                                        onChange={(key, value) =>
+                                            updateForm(
+                                                setEditForm,
+                                                editForm,
+                                                key,
+                                                value,
+                                            )
+                                        }
+                                        onCancel={() => setEditId(null)}
+                                    />
+                                </Surface>
+                            ) : (
+                                <EndpointCard
+                                    key={endpoint.id}
+                                    endpoint={endpoint}
+                                    onEdit={() => startEdit(endpoint)}
+                                    onDelete={() =>
+                                        void handleDelete(endpoint.id)
                                     }
-                                    disabled={isSaving}
-                                    onSubmit={handleUpdate}
-                                    onChange={(key, value) =>
-                                        updateForm(
-                                            setEditForm,
-                                            editForm,
-                                            key,
-                                            value,
-                                        )
-                                    }
-                                    onCancel={() => setEditId(null)}
                                 />
-                            </Surface>
-                        ) : (
-                            <EndpointCard
-                                key={endpoint.id}
-                                endpoint={endpoint}
-                                onEdit={() => startEdit(endpoint)}
-                                onDelete={() => void handleDelete(endpoint.id)}
-                            />
-                        ),
-                    )
-                )}
-            </div>
-        </Collapsible>
+                            ),
+                        )
+                    )}
+                </div>
+            </Collapsible>
+        </Section>
     );
 }
 

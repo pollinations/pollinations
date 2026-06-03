@@ -1,9 +1,5 @@
-import {
-    PolliProvider,
-    useAuthActions,
-    useAuthState,
-} from "@pollinations/sdk/react";
-import { Button, ButtonGroup, Surface, TabButton } from "@pollinations/ui";
+import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
+import { ButtonGroup, TabButton } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config.ts";
@@ -87,8 +83,7 @@ function PlayHub({
     selectedApp: PlayApp;
     onSelectApp: (app: PlayAppId) => void;
 }) {
-    const { isHydrated, isLoggedIn } = useAuthState();
-    const { login } = useAuthActions();
+    const { apiKey, isHydrated } = useAuthState();
 
     return (
         <div
@@ -107,7 +102,21 @@ function PlayHub({
                             Play workspace.
                         </p>
                     </div>
-                    <div className="shrink-0 sm:pt-1">
+                </div>
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                    <ButtonGroup aria-label="Load app">
+                        {PLAY_APPS.map((playApp) => (
+                            <TabButton
+                                key={playApp.id}
+                                active={selectedApp.id === playApp.id}
+                                onClick={() => onSelectApp(playApp.id)}
+                                theme="violet"
+                            >
+                                {playApp.label}
+                            </TabButton>
+                        ))}
+                    </ButtonGroup>
+                    <div className="shrink-0">
                         <AppUserMenu
                             dashboardHref={ENTER_URL}
                             labels={{
@@ -116,62 +125,17 @@ function PlayHub({
                         />
                     </div>
                 </div>
-                <ButtonGroup aria-label="Load app">
-                    {PLAY_APPS.map((playApp) => (
-                        <TabButton
-                            key={playApp.id}
-                            active={selectedApp.id === playApp.id}
-                            onClick={() => onSelectApp(playApp.id)}
-                            theme="violet"
-                        >
-                            {playApp.label}
-                        </TabButton>
-                    ))}
-                </ButtonGroup>
             </section>
 
-            {!isHydrated ? (
-                <Surface
-                    theme="violet"
-                    variant="panel"
-                    className="flex min-h-[22rem] items-center justify-center text-center text-theme-text-base"
-                >
-                    Loading {selectedApp.label} authorization...
-                </Surface>
-            ) : isLoggedIn ? (
-                <div className="w-full bg-white">
-                    <iframe
-                        key={selectedApp.id}
-                        title={selectedApp.title}
-                        src={selectedApp.src}
-                        className="block h-[calc(100vh-10rem)] min-h-[760px] w-full border-0 bg-white"
-                        allow="clipboard-read; clipboard-write; fullscreen"
-                    />
-                </div>
-            ) : (
-                <Surface
-                    theme="violet"
-                    variant="panel"
-                    className="flex min-h-[22rem] flex-col items-center justify-center gap-4 text-center"
-                >
-                    <div>
-                        <h2 className="font-subheading text-xl text-theme-text-strong">
-                            Authorize {selectedApp.label}
-                        </h2>
-                        <p className="mt-1 max-w-md text-sm text-theme-text-base">
-                            This app uses its own BYOP key so usage and budgets
-                            stay scoped to the selected experience.
-                        </p>
-                    </div>
-                    <Button
-                        type="button"
-                        theme="violet"
-                        onClick={() => login()}
-                    >
-                        Authorize {selectedApp.label}
-                    </Button>
-                </Surface>
-            )}
+            <div className="w-full bg-white">
+                <iframe
+                    key={`${selectedApp.id}:${isHydrated ? (apiKey ?? "logged-out") : "hydrating"}`}
+                    title={selectedApp.title}
+                    src={selectedApp.src}
+                    className="block h-[calc(100vh-10rem)] min-h-[760px] w-full border-0 bg-white"
+                    allow="clipboard-read; clipboard-write; fullscreen"
+                />
+            </div>
         </div>
     );
 }

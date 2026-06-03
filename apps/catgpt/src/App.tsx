@@ -354,7 +354,7 @@ export function App() {
                     </Surface>
                 )}
 
-                {isHydrated && isLoggedIn && (
+                {isHydrated && (
                     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]">
                         <Surface
                             theme="pink"
@@ -431,7 +431,10 @@ export function App() {
                                 type="button"
                                 theme="pink"
                                 size="large"
-                                disabled={!prompt.trim() && !isGenerating}
+                                disabled={
+                                    !isLoggedIn ||
+                                    (!prompt.trim() && !isGenerating)
+                                }
                                 onClick={generateMeme}
                                 className="w-full self-auto"
                             >

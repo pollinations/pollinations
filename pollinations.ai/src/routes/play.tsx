@@ -16,7 +16,7 @@ const PLAY_APPS = [
         label: "CatGPT",
         title: "CatGPT",
         src: "/_apps/catgpt/index.html?embed=1",
-        appKey: "pk_uWjreBEkxFAhjDHo",
+        appKey: "pk_uiTUS6epS9k5dLdr",
         permissions: ["profile", "usage"],
         models: ["gptimage", "nanobanana", "claude-fast"],
         budget: 5,

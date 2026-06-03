@@ -1,5 +1,9 @@
-import { ExternalLinkIcon, Surface, type ThemeName } from "@pollinations/ui";
-import { Markdown } from "../Markdown.tsx";
+import {
+    ExternalLinkIcon,
+    Markdown,
+    Surface,
+    type ThemeName,
+} from "@pollinations/ui";
 import type { ToolboxItem } from "./copy.ts";
 
 /** Rotating accent theme so the grid alternates colors (legacy did i % 4). */

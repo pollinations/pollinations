@@ -1,0 +1,35 @@
+{
+  "pr_number": 11592,
+  "title": "perf: reduce Tinybird vCPU pressure on developer earnings",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11592",
+  "merged_at": "2026-06-03T17:13:13Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Reduces Tinybird vCPU-budget pressure behind intermittent 429s on account endpoints (a peak minute hit 246s vs the 180s/min budget, surfacing to users as 502s).\n\n- Rewrite the `developer_earnings` pipe to a single `GROUPING SETS` pass instead of scanning `dev_events` 3×, cutting rows read ~3× (~795M → ~265M per call on a 90-day window). Output is byte-identical — validated against prod data across multiple devs (day/hour grain) and already deployed to both Tinybird workspaces.\n- Map Tinybird 429s (vCPU budget) to a typed error so `/balance/today` degrades to empty earnings instead of leaking a raw 502.\n- Cache `/balance/today` for 60s, matching the sibling usage/earnings endpoints — it was the only one uncached.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Balancing the books faster",
+    "blurb": "We've optimized how developer earnings are calculated under the hood. Your balance checks are now faster, cached, and much less likely to hit a snag during peak traffic.",
+    "summary": "Optimized the Tinybird developer_earnings query using GROUPING SETS to cut rows read by 3x, added 60s caching to /balance/today, and implemented graceful degradation for vCPU limit errors.",
+    "impact": "Developer account endpoints are now significantly faster and more reliable, gracefully returning empty earnings instead of 502 errors during peak database load.",
+    "keywords": [
+      "performance",
+      "tinybird",
+      "api",
+      "billing",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant, organizing gold coins efficiently with a tiny bird (representing Tinybird). Focus on speed, math, and smooth operations.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant visor, happily organizing shiny gold pixel coins alongside a small blue pixel bird. A retro computer monitor in the background displays a clean, fast-moving green line graph. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-03/PR-11592.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant visor, happily organizing shiny gold pixel coins alongside a small blue pixel bird. A retro computer monitor in the background displays a clean, fast-moving green line graph. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-03T17:14:14.534201+00:00"
+}

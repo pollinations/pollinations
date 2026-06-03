@@ -14,7 +14,9 @@ import {
 } from "../../modules/modality/colors.ts";
 import { Alert } from "../../primitives/Alert.tsx";
 import { Button } from "../../primitives/Button.tsx";
+import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Chip } from "../../primitives/Chip.tsx";
+import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { Field } from "../../primitives/Field.tsx";
 import { FileUpload } from "../../primitives/FileUpload.tsx";
 import { Input } from "../../primitives/Input.tsx";
@@ -23,9 +25,7 @@ import {
     DownloadIcon,
     ImageIcon,
 } from "../../primitives/icons/index.tsx";
-import { Slider } from "../../primitives/Slider.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
-import { Switch } from "../../primitives/Switch.tsx";
 import { Textarea } from "../../primitives/Textarea.tsx";
 import type { ThemeName } from "../../theme.ts";
 
@@ -160,14 +160,46 @@ function errorMessage(error: unknown): string {
     return String(error || "Something went wrong");
 }
 
-function ModelPicker({
+function ModalityTabs({
+    activeCategory,
+    onCategoryChange,
+}: {
+    activeCategory: ModelCatalogCategory;
+    onCategoryChange: (category: ModelCatalogCategory) => void;
+}) {
+    return (
+        <div className="polli:flex polli:flex-wrap polli:gap-1.5">
+            {CATEGORY_ORDER.map((category) => (
+                <Button
+                    key={category}
+                    type="button"
+                    theme={modalityTheme(category)}
+                    size="small"
+                    className={cn(
+                        "polli:self-auto polli:rounded-lg polli:px-3 polli:text-sm",
+                        activeCategory === category
+                            ? modalityColors(category).filled
+                            : cn(
+                                  "polli:bg-white/80 polli:text-gray-600",
+                                  modalityColors(category).hover,
+                              ),
+                    )}
+                    onClick={() => onCategoryChange(category)}
+                >
+                    {CATEGORY_LABELS[category]}
+                </Button>
+            ))}
+        </div>
+    );
+}
+
+function ModelDropdown({
     models,
     activeCategory,
     selectedModel,
     allowedModelIds,
     isLoggedIn,
     isLoading,
-    onCategoryChange,
     onModelChange,
 }: {
     models: ModelCatalogItem[];
@@ -176,107 +208,117 @@ function ModelPicker({
     allowedModelIds: Set<string>;
     isLoggedIn: boolean;
     isLoading: boolean;
-    onCategoryChange: (category: ModelCatalogCategory) => void;
     onModelChange: (modelId: string) => void;
 }) {
     const filteredModels = models.filter(
         (model) => model.category === activeCategory,
     );
-    const activeColors = modalityColors(activeCategory);
+    const currentModel = models.find((model) => model.id === selectedModel);
+    const activeTheme = modalityTheme(activeCategory);
+    const modelLabel = currentModel
+        ? displayModelName(currentModel)
+        : `Select ${CATEGORY_LABELS[activeCategory].toLowerCase()} model`;
 
     return (
-        <Surface
-            theme={activeColors.theme}
-            variant="panel"
-            className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
+        <Dropdown
+            theme={activeTheme}
+            align="end"
+            panelClassName="polli:rounded-2xl polli:bg-surface-white polli:p-2 polli:shadow-lg polli:ring-1 polli:ring-black/10"
+            className="polli:w-[min(24rem,calc(100vw-2rem))]"
+            trigger={(open) => (
+                <button
+                    type="button"
+                    className="polli:flex polli:min-h-12 polli:min-w-64 polli:max-w-full polli:items-center polli:justify-between polli:gap-3 polli:rounded-xl polli:bg-white/80 polli:px-3 polli:py-2 polli:text-left polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-white/90"
+                >
+                    <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                        <BeakerIcon className="polli:h-4 polli:w-4 polli:shrink-0 polli:text-theme-text-soft" />
+                        <span className="polli:min-w-0">
+                            <span className="polli:block polli:text-xs polli:font-semibold polli:text-theme-text-muted">
+                                Model
+                            </span>
+                            <span className="polli:block polli:truncate polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                {modelLabel}
+                            </span>
+                        </span>
+                    </span>
+                    <ChevronIcon
+                        expanded={open}
+                        className="polli:text-theme-text-soft"
+                    />
+                </button>
+            )}
         >
-            <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <div>
-                    <h2 className="polli:m-0 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                        Models
-                    </h2>
-                    <p className="polli:m-0 polli:text-sm polli:text-theme-text-soft">
-                        {filteredModels.length} in{" "}
-                        {CATEGORY_LABELS[activeCategory].toLowerCase()}
-                    </p>
+            {(close) => (
+                <div className="polli:flex polli:max-h-96 polli:flex-col polli:gap-1 polli:overflow-y-auto">
+                    <div className="polli:flex polli:items-center polli:justify-between polli:gap-3 polli:px-2 polli:py-1.5">
+                        <div>
+                            <h2 className="polli:m-0 polli:font-subheading polli:text-base polli:text-theme-text-strong">
+                                {CATEGORY_LABELS[activeCategory]} models
+                            </h2>
+                            <p className="polli:m-0 polli:text-xs polli:text-theme-text-soft">
+                                {filteredModels.length} available
+                            </p>
+                        </div>
+                        <Chip size="sm">{CATEGORY_LABELS[activeCategory]}</Chip>
+                    </div>
+
+                    {isLoading
+                        ? MODEL_SKELETON_KEYS.slice(0, 4).map((key) => (
+                              <div
+                                  key={key}
+                                  className="polli:h-11 polli:rounded-xl polli:bg-theme-bg-pale polli:animate-pulse"
+                              />
+                          ))
+                        : filteredModels.map((model) => {
+                              const colors = modalityColors(model.category);
+                              const isAllowed =
+                                  !isLoggedIn || allowedModelIds.has(model.id);
+                              const isActive = selectedModel === model.id;
+                              return (
+                                  <button
+                                      key={model.id}
+                                      type="button"
+                                      disabled={!isAllowed}
+                                      title={model.description || model.id}
+                                      onClick={() => {
+                                          onModelChange(model.id);
+                                          close();
+                                      }}
+                                      className={cn(
+                                          "polli:flex polli:w-full polli:items-start polli:justify-between polli:gap-3 polli:rounded-xl polli:px-3 polli:py-2 polli:text-left polli:transition",
+                                          isActive
+                                              ? colors.filled
+                                              : "polli:bg-white/80 polli:text-gray-700",
+                                          isAllowed
+                                              ? cn(
+                                                    "polli:cursor-pointer",
+                                                    !isActive && colors.hover,
+                                                )
+                                              : "polli:cursor-not-allowed polli:opacity-45",
+                                      )}
+                                  >
+                                      <span className="polli:min-w-0">
+                                          <span className="polli:block polli:truncate polli:text-sm polli:font-semibold">
+                                              {displayModelName(model)}
+                                          </span>
+                                          <span className="polli:block polli:truncate polli:text-xs polli:opacity-70">
+                                              {model.id}
+                                          </span>
+                                      </span>
+                                      {model.paidOnly && (
+                                          <Chip
+                                              size="sm"
+                                              className="polli:shrink-0"
+                                          >
+                                              paid
+                                          </Chip>
+                                      )}
+                                  </button>
+                              );
+                          })}
                 </div>
-                <BeakerIcon className="polli:h-5 polli:w-5 polli:text-theme-text-soft" />
-            </div>
-
-            <div className="polli:grid polli:grid-cols-2 polli:gap-2">
-                {CATEGORY_ORDER.map((category) => (
-                    <Button
-                        key={category}
-                        type="button"
-                        theme={modalityTheme(category)}
-                        size="small"
-                        className={cn(
-                            "polli:w-full polli:self-auto polli:rounded-lg",
-                            activeCategory === category
-                                ? modalityColors(category).filled
-                                : cn(
-                                      "polli:bg-gray-100 polli:text-gray-600",
-                                      modalityColors(category).hover,
-                                  ),
-                        )}
-                        onClick={() => onCategoryChange(category)}
-                    >
-                        {CATEGORY_LABELS[category]}
-                    </Button>
-                ))}
-            </div>
-
-            <div className="polli:flex polli:max-h-[42dvh] polli:flex-col polli:gap-2 polli:overflow-y-auto polli:pr-1">
-                {isLoading
-                    ? MODEL_SKELETON_KEYS.map((key) => (
-                          <div
-                              key={key}
-                              className="polli:h-12 polli:rounded-xl polli:bg-theme-bg-pale polli:animate-pulse"
-                          />
-                      ))
-                    : filteredModels.map((model) => {
-                          const colors = modalityColors(model.category);
-                          const isAllowed =
-                              isLoggedIn && allowedModelIds.has(model.id);
-                          const isActive = selectedModel === model.id;
-                          return (
-                              <button
-                                  key={model.id}
-                                  type="button"
-                                  disabled={!isAllowed}
-                                  title={model.description || model.id}
-                                  onClick={() => onModelChange(model.id)}
-                                  className={cn(
-                                      "polli:flex polli:w-full polli:items-start polli:justify-between polli:gap-3 polli:rounded-xl polli:px-3 polli:py-2 polli:text-left polli:transition",
-                                      isActive
-                                          ? colors.filled
-                                          : "polli:bg-gray-100 polli:text-gray-600",
-                                      isAllowed
-                                          ? cn(
-                                                "polli:cursor-pointer",
-                                                !isActive && colors.hover,
-                                            )
-                                          : "polli:cursor-not-allowed polli:opacity-45",
-                                  )}
-                              >
-                                  <span className="polli:min-w-0">
-                                      <span className="polli:block polli:truncate polli:text-sm polli:font-semibold">
-                                          {displayModelName(model)}
-                                      </span>
-                                      <span className="polli:block polli:truncate polli:text-xs polli:opacity-70">
-                                          {model.id}
-                                      </span>
-                                  </span>
-                                  {model.paidOnly && (
-                                      <Chip className="polli:shrink-0">
-                                          paid
-                                      </Chip>
-                                  )}
-                              </button>
-                          );
-                      })}
-            </div>
-        </Surface>
+            )}
+        </Dropdown>
     );
 }
 
@@ -284,16 +326,21 @@ function ResultPanel({
     result,
     isLoading,
     activeCategory,
+    className,
 }: {
     result: PlaygroundResult | null;
     isLoading: boolean;
     activeCategory: ModelCatalogCategory;
+    className?: string;
 }) {
     return (
         <Surface
             theme={modalityTheme(activeCategory)}
             variant="panel"
-            className="polli:flex polli:min-h-[420px] polli:flex-col polli:gap-4 polli:p-4"
+            className={cn(
+                "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
+                className,
+            )}
         >
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
                 <h2 className="polli:m-0 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
@@ -408,7 +455,6 @@ export function Playground({
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
     const [seed, setSeed] = useState(0);
-    const [enhance, setEnhance] = useState(false);
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [selectedVoice, setSelectedVoice] = useState("");
     const [result, setResult] = useState<PlaygroundResult | null>(null);
@@ -463,6 +509,20 @@ export function Playground({
         ? modalityTheme(currentModel.category)
         : modalityTheme(activeCategory);
 
+    function selectCategory(category: ModelCatalogCategory) {
+        setActiveCategory(category);
+        if (currentModel?.category === category) return;
+
+        const fallback =
+            catalog.models.find(
+                (model) =>
+                    model.category === category &&
+                    (!isLoggedIn || catalog.allowedModelIds.has(model.id)),
+            ) ?? catalog.models.find((model) => model.category === category);
+
+        if (fallback) setSelectedModel(fallback.id);
+    }
+
     async function generate() {
         if (!apiKey) {
             login();
@@ -500,7 +560,6 @@ export function Playground({
                     width,
                     height,
                     seed,
-                    enhance,
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
@@ -588,8 +647,8 @@ export function Playground({
                 className,
             )}
         >
-            <section className="polli:flex polli:flex-col polli:gap-2">
-                <h1 className="polli:m-0 polli:font-heading polli:text-4xl polli:text-theme-text-strong sm:polli:text-5xl">
+            <section className="polli:flex polli:flex-col polli:gap-1">
+                <h1 className="polli:m-0 polli:font-heading polli:text-4xl polli:text-theme-text-strong">
                     {title}
                 </h1>
                 <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:text-theme-text-soft">
@@ -597,28 +656,39 @@ export function Playground({
                 </p>
             </section>
 
+            <Surface
+                theme={activeTheme}
+                variant="panel"
+                className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
+            >
+                <div className="polli-playground-control-bar">
+                    <ModalityTabs
+                        activeCategory={activeCategory}
+                        onCategoryChange={selectCategory}
+                    />
+                    <ModelDropdown
+                        models={catalog.models}
+                        activeCategory={activeCategory}
+                        selectedModel={selectedModel}
+                        allowedModelIds={catalog.allowedModelIds}
+                        isLoggedIn={isLoggedIn}
+                        isLoading={isLoading || !isHydrated}
+                        onModelChange={setSelectedModel}
+                    />
+                </div>
+            </Surface>
+
             {catalogError && (
                 <Alert intent="danger">
                     Model catalog failed to load: {catalogError.message}
                 </Alert>
             )}
 
-            <div className="polli:grid polli:gap-4 xl:polli:grid-cols-[280px_minmax(0,1fr)_360px]">
-                <ModelPicker
-                    models={catalog.models}
-                    activeCategory={activeCategory}
-                    selectedModel={selectedModel}
-                    allowedModelIds={catalog.allowedModelIds}
-                    isLoggedIn={isLoggedIn}
-                    isLoading={isLoading || !isHydrated}
-                    onCategoryChange={setActiveCategory}
-                    onModelChange={setSelectedModel}
-                />
-
+            <div className="polli-playground-main-grid">
                 <Surface
                     theme={activeTheme}
                     variant="panel"
-                    className="polli:flex polli:flex-col polli:gap-5 polli:p-4"
+                    className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                 >
                     <div className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3">
                         <div>
@@ -644,11 +714,12 @@ export function Playground({
                         </Field.Label>
                         <Textarea
                             value={prompt}
-                            rows={8}
+                            rows={7}
                             onChange={(event) => setPrompt(event.target.value)}
                             placeholder={promptPlaceholder(
                                 currentModel?.category ?? activeCategory,
                             )}
+                            className="polli-playground-textarea polli:min-h-44"
                         />
                     </Field.Root>
 
@@ -685,7 +756,7 @@ export function Playground({
 
                     {(currentModel?.category === "image" ||
                         currentModel?.category === "video") && (
-                        <div className="polli:grid polli:gap-4 md:polli:grid-cols-2">
+                        <div className="polli-playground-settings-grid">
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
                                 <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                     Width
@@ -700,15 +771,6 @@ export function Playground({
                                         setWidth(Number(event.target.value))
                                     }
                                     hideNumberSteppers
-                                />
-                                <Slider
-                                    min={256}
-                                    max={2048}
-                                    step={64}
-                                    value={width}
-                                    onChange={(event) =>
-                                        setWidth(Number(event.target.value))
-                                    }
                                 />
                             </Field.Root>
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
@@ -726,15 +788,6 @@ export function Playground({
                                     }
                                     hideNumberSteppers
                                 />
-                                <Slider
-                                    min={256}
-                                    max={2048}
-                                    step={64}
-                                    value={height}
-                                    onChange={(event) =>
-                                        setHeight(Number(event.target.value))
-                                    }
-                                />
                             </Field.Root>
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
                                 <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
@@ -749,21 +802,6 @@ export function Playground({
                                     hideNumberSteppers
                                 />
                             </Field.Root>
-                            <div className="polli:flex polli:items-end polli:justify-between polli:gap-3 polli:rounded-xl polli:bg-surface-white polli:p-3">
-                                <div>
-                                    <div className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Enhance
-                                    </div>
-                                    <div className="polli:text-xs polli:text-theme-text-muted">
-                                        Refine the prompt before generation
-                                    </div>
-                                </div>
-                                <Switch
-                                    checked={enhance}
-                                    onChange={setEnhance}
-                                    ariaLabel="Enhance prompt"
-                                />
-                            </div>
                         </div>
                     )}
 
@@ -821,15 +859,12 @@ export function Playground({
                     </Button>
                 </Surface>
 
-                <div className="polli:flex polli:flex-col polli:gap-4">
-                    <ResultPanel
-                        result={result}
-                        isLoading={isGenerating}
-                        activeCategory={
-                            currentModel?.category ?? activeCategory
-                        }
-                    />
-                </div>
+                <ResultPanel
+                    result={result}
+                    isLoading={isGenerating}
+                    activeCategory={currentModel?.category ?? activeCategory}
+                    className="polli-playground-output-panel"
+                />
             </div>
         </div>
     );

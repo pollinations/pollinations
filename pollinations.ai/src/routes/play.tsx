@@ -8,11 +8,11 @@ export const Route = createFileRoute("/play")({
 
 function PlayRoute() {
     return (
-        <div data-theme="violet" className="bg-theme-bg-pale">
+        <div data-theme="violet" className="bg-white">
             <iframe
                 title="Pollinations Playground"
                 src={PLAYGROUND_EMBED_SRC}
-                className="block h-[calc(100vh-3.5rem)] min-h-[720px] w-full border-0 bg-theme-bg-pale"
+                className="block h-[calc(100vh-3.5rem)] min-h-[720px] w-full border-0 bg-white"
                 allow="clipboard-read; clipboard-write; fullscreen"
             />
         </div>

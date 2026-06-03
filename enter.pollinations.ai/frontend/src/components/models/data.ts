@@ -289,10 +289,7 @@ export const getCommunityModelPrices = (
 ): ModelPrice[] =>
     endpoints.map((endpoint) => ({
         name: endpoint.modelId,
-        displayName: endpoint.name,
-        description:
-            endpoint.description ||
-            `OpenAI-compatible endpoint for ${endpoint.upstreamModel}`,
+        displayName: endpoint.description?.trim() || endpoint.modelId,
         type: "community",
         perToken: true,
         promptTextPrice: formatPrice(

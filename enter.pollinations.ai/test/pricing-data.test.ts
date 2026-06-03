@@ -9,7 +9,10 @@ import {
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
-import { getModelPrices } from "../frontend/src/components/models/data.ts";
+import {
+    getCommunityModelPrices,
+    getModelPrices,
+} from "../frontend/src/components/models/data.ts";
 import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
 
 // getModelPrices pipes every registry rate through formatPricePer1M, so this
@@ -41,6 +44,38 @@ test("getModelPrices formats text registry rates through formatPricePer1M", () =
         promptCachedPrice: formatPricePer1M(price.promptCachedTokens ?? 0),
         promptAudioPrice: formatPricePer1M(price.promptAudioTokens ?? 0),
         completionTextPrice: formatPricePer1M(price.completionTextTokens ?? 0),
+    });
+});
+
+test("getCommunityModelPrices uses the registered description as the table display name", () => {
+    const [describedModel, fallbackModel] = getCommunityModelPrices([
+        {
+            modelId: "community/voodoohop/openai",
+            name: "openai",
+            description: "Shared OpenAI endpoint",
+            upstreamModel: "openai",
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+        },
+        {
+            modelId: "community/voodoohop/plain",
+            name: "plain",
+            description: " ",
+            upstreamModel: "plain",
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+        },
+    ]);
+
+    expect(describedModel).toMatchObject({
+        name: "community/voodoohop/openai",
+        displayName: "Shared OpenAI endpoint",
+        type: "community",
+    });
+    expect(fallbackModel).toMatchObject({
+        name: "community/voodoohop/plain",
+        displayName: "community/voodoohop/plain",
+        type: "community",
     });
 });
 

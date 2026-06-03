@@ -1,0 +1,35 @@
+{
+  "pr_number": 11597,
+  "title": "[codex] fix: repair auth modal theme and focus",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11597",
+  "merged_at": "2026-06-03T23:34:08Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds the dialog theme boundary to the positioner so auth backgrounds resolve to amber.\n- Replaces the logo mask shorthand with explicit quoted mask properties so the built SVG data URL renders correctly.\n- Suppresses default browser focus outlines on the dialog/logo containers without changing tab order or control focus.\n- Root cause: themed classes were resolving outside `data-theme`, and the inlined SVG mask URL could fail CSS parsing.\n- Verified with `biome`, `@pollinations/ui` typecheck/build, Enter typecheck, and local auth/key-dialog checks.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fresh coat of amber",
+    "blurb": "We've polished up the authentication modal! The amber theme now renders perfectly, the logo is crisp, and those pesky default focus outlines are gone.",
+    "summary": "Fixed CSS parsing and theme boundary issues in the auth modal to ensure the amber background and SVG logo mask render correctly.",
+    "impact": "Users will see a cleaner, properly themed authentication dialog without broken logos or default browser focus rings.",
+    "keywords": [
+      "ui",
+      "auth",
+      "bug-fix",
+      "css",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee acting as a painter or window-washer, polishing up a glowing amber gateway or login screen. The robot companion helps out. Represents UI polish, fixing visual bugs, and the specific amber theme mentioned in the PR.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, carefully polishing a glowing amber-colored digital gateway. A chunky robot with a CRT monitor head holds a bucket of lime green (#ecf874) paint nearby. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-03/PR-11597.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, carefully polishing a glowing amber-colored digital gateway. A chunky robot with a CRT monitor head holds a bucket of lime green (#ecf874) paint nearby. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-03T23:35:06.691816+00:00"
+}

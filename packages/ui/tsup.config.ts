@@ -6,6 +6,7 @@ export default defineConfig({
         "auth/index": "src/modules/auth/index.ts",
         "auth/sdk": "src/modules/auth/sdk.ts",
         "compositions/account": "src/compositions/account/index.ts",
+        "compositions/playground": "src/compositions/playground/index.ts",
         "modality/index": "src/modules/modality/index.ts",
         "wallet/index": "src/modules/wallet/index.ts",
         "wallet/sdk": "src/modules/wallet/sdk.ts",
@@ -16,7 +17,12 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     minify: false,
-    external: ["@pollinations/sdk", "@pollinations/sdk/react", "react"],
+    external: [
+        "@pollinations/sdk",
+        "@pollinations/sdk/client",
+        "@pollinations/sdk/react",
+        "react",
+    ],
     loader: {
         ".svg": "dataurl",
     },

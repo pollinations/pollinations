@@ -18,6 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@pollinations/sdk": ["../sdk/src/index.ts"],
+      "@pollinations/sdk/client": ["../sdk/src/index.ts"],
       "@pollinations/sdk/react": ["../sdk/src/react/index.ts"]
     },
     "forceConsistentCasingInFileNames": true

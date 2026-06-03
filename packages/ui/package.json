@@ -28,6 +28,11 @@
       "import": "./dist/compositions/account.js",
       "require": "./dist/compositions/account.cjs"
     },
+    "./compositions/playground": {
+      "types": "./dist/compositions/playground.d.ts",
+      "import": "./dist/compositions/playground.js",
+      "require": "./dist/compositions/playground.cjs"
+    },
     "./modality": {
       "types": "./dist/modality/index.d.ts",
       "import": "./dist/modality/index.js",

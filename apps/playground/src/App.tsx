@@ -20,7 +20,7 @@ export function App() {
             </div>
             <main
                 className={cn(
-                    "mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-5 sm:px-6",
+                    "mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pb-5 sm:px-6",
                     isEmbedded ? "pt-5" : "pt-16",
                 )}
             >

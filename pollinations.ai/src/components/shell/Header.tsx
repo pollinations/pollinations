@@ -55,7 +55,7 @@ export function Header() {
                     ))}
                 </nav>
 
-                <AccountMenu dashboardHref={ENTER_HREF} theme="green" />
+                <AccountMenu dashboardHref={ENTER_HREF} />
             </div>
         </header>
     );

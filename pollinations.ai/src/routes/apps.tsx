@@ -69,7 +69,7 @@ function AppsPage() {
     return (
         <div
             data-theme="blue"
-            className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-10 sm:px-6"
+            className="mx-auto flex max-w-5xl flex-col gap-10 px-4 py-10 sm:px-6"
         >
             <section className="flex flex-col gap-5">
                 <div className="flex flex-col gap-3">

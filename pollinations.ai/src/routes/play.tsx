@@ -8,7 +8,7 @@ export const Route = createFileRoute("/play")({
 
 function PlayRoute() {
     return (
-        <div data-theme="violet" className="bg-white">
+        <div data-theme="violet" className="mx-auto w-full max-w-5xl bg-white">
             <iframe
                 title="Pollinations Playground"
                 src={PLAYGROUND_EMBED_SRC}

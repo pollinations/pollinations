@@ -445,7 +445,7 @@ export function App() {
                             variant="panel"
                             className="flex min-h-[32rem] flex-col gap-4"
                         >
-                            <h2 className="font-subheading text-xl text-theme-text-strong">
+                            <h2 className="text-sm font-semibold text-theme-text-strong">
                                 Result
                             </h2>
                             <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-white p-3">
@@ -533,7 +533,7 @@ function MemeGrid({
 }) {
     return (
         <section className="flex flex-col gap-3">
-            <h2 className="font-subheading text-xl text-theme-text-strong">
+            <h2 className="text-sm font-semibold text-theme-text-strong">
                 {title}
             </h2>
             {memes.length === 0 ? (

@@ -2,7 +2,6 @@ import { createExecutionContext, env, SELF } from "cloudflare:test";
 import {
     type CommunityEndpointRuntime,
     canManageCommunityEndpoints,
-    capCommunityUsage,
     communityChatCompletionsUrl,
     communityModelId,
     normalizeCommunityEndpointBaseUrl,
@@ -124,27 +123,6 @@ describe("community endpoint helpers", () => {
         expect(() =>
             normalizeCommunityEndpointBaseUrl("https://localhost/v1"),
         ).toThrow("Endpoint URL cannot target a private host");
-    });
-
-    it("caps reported usage to the request estimate", () => {
-        expect(
-            capCommunityUsage(
-                { contextLength: null },
-                {
-                    messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 3,
-                },
-                {
-                    prompt_tokens: 100,
-                    completion_tokens: 100,
-                    total_tokens: 200,
-                },
-            ),
-        ).toEqual({
-            prompt_tokens: 9,
-            completion_tokens: 3,
-            total_tokens: 12,
-        });
     });
 
     it("clarifies upstream auth failures after sending the saved token", async () => {
@@ -409,8 +387,8 @@ fixtureTest(
         const body = await response.text();
         expect(body).toContain(`"model":"${modelId}"`);
         expect(body).not.toContain('"model":"gpt-4.1-mini"');
-        expect(body).toContain('"completion_tokens":5');
-        expect(body).not.toContain('"prompt_tokens":999');
+        expect(body).toContain('"prompt_tokens":999');
+        expect(body).toContain('"completion_tokens":999');
     },
 );
 

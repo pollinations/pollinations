@@ -220,9 +220,7 @@ export const track = (eventType: EventType) =>
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
-                        modelResolved: c.var.model?.communityEndpoint
-                            ? undefined
-                            : c.var.model?.resolved,
+                        modelResolved: c.var.model?.resolved,
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;

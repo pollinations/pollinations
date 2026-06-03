@@ -1,6 +1,5 @@
 import {
     type CommunityEndpointRuntime,
-    capCommunityUsage,
     communityChatCompletionsUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -57,16 +56,9 @@ export async function generateCommunityEndpointCompletion(
         completion.responseStream = transformCommunityEndpointStream(
             completion.responseStream,
             endpoint,
-            requestData,
         );
         return completion;
     }
-
-    completion.usage = capCommunityUsage(
-        endpoint,
-        requestData,
-        completion.usage,
-    );
 
     if (!completion.usage) {
         const error = new Error(
@@ -83,7 +75,6 @@ export async function generateCommunityEndpointCompletion(
 function transformCommunityEndpointStream(
     stream: ReadableStream | null | undefined,
     endpoint: CommunityEndpointRuntime,
-    requestData: RequestData,
 ): ReadableStream | null | undefined {
     if (!stream) return stream;
 
@@ -103,7 +94,6 @@ function transformCommunityEndpointStream(
                             transformCommunityEndpointStreamLine(
                                 line,
                                 endpoint,
-                                requestData,
                             ),
                         ),
                     );
@@ -118,7 +108,6 @@ function transformCommunityEndpointStream(
                             transformCommunityEndpointStreamLine(
                                 line,
                                 endpoint,
-                                requestData,
                             ),
                         ),
                     );
@@ -131,7 +120,6 @@ function transformCommunityEndpointStream(
 function transformCommunityEndpointStreamLine(
     line: string,
     endpoint: CommunityEndpointRuntime,
-    requestData: RequestData,
 ): string {
     if (!line.startsWith("data:")) return `${line}\n`;
 
@@ -141,18 +129,6 @@ function transformCommunityEndpointStreamLine(
     try {
         const event = JSON.parse(data) as Record<string, unknown>;
         event.model = endpoint.modelId;
-        if (event.usage) {
-            const usage = capCommunityUsage(
-                endpoint,
-                requestData,
-                event.usage as Record<string, number>,
-            );
-            if (usage) {
-                event.usage = usage;
-            } else {
-                delete event.usage;
-            }
-        }
         return `data: ${JSON.stringify(event)}\n`;
     } catch {
         return `${line}\n`;

@@ -114,34 +114,6 @@ export function estimateCommunityRequestPrice(
     );
 }
 
-export function capCommunityUsage(
-    endpoint: Pick<CommunityEndpointRuntime, "contextLength">,
-    request: ChatRequestLike,
-    usage: Record<string, number> | undefined,
-): Record<string, number> | undefined {
-    if (!usage) return usage;
-    if (
-        !Number.isFinite(usage.prompt_tokens) ||
-        !Number.isFinite(usage.completion_tokens)
-    ) {
-        return undefined;
-    }
-    const promptTokens = Math.min(
-        usage.prompt_tokens,
-        estimateTextTokens(request.messages),
-    );
-    const completionTokens = Math.min(
-        usage.completion_tokens,
-        getMaxCompletionTokens(endpoint, request),
-    );
-    return {
-        ...usage,
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: promptTokens + completionTokens,
-    };
-}
-
 function getMaxCompletionTokens(
     endpoint: Pick<CommunityEndpointRuntime, "contextLength">,
     request: ChatRequestLike,

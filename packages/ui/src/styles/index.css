@@ -117,8 +117,7 @@
     outline: none;
 }
 
-.polli-control:focus-visible,
-.polli-control:focus-within {
+.polli-control:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--polli-color-border);
 }

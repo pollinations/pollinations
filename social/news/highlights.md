@@ -1,3 +1,13 @@
+- **2026-06-02** – **🚀 MiniMax M3 arrives** Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
+- **2026-06-02** – **✨ Lunar AI** A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) <!-- app -->
+- **2026-06-02** – **🔗 Anura Hub AI** A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all) <!-- app -->
+- **2026-06-02** – **🎨 NebulaCraft** Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app) <!-- app -->
+- **2026-06-02** – **📱 Photo AI** A new iOS application leveraging the Pollinations image API for mobile generation. [Try it](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) <!-- app -->
+- **2026-06-02** – **💡 Ather Mini** An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in) <!-- app -->
+- **2026-06-02** – **🎨 Imagio AI** A fast, community-built text-to-image generator. [Try it](https://imagio-ai.vercel.app/) <!-- app -->
+- **2026-06-02** – **🤖 OtakuBox Bot** Generate anime content directly in Telegram with this new community bot. [Try it](https://badamchuk.github.io/otakubox/) <!-- app -->
+- **2026-06-02** – **✨ Multi-Model Chat UI** A ready-to-use community chat app supporting multiple models, vision, and TTS. [Try it](https://farl.github.io/pollinations-ai-text-generation/) <!-- app -->
+- **2026-06-02** – **🎨 AuraForge** An identity orchestration studio for generating flat 2D vector mascots and avatars. [Try it](https://autoforge-iota.vercel.app/) <!-- app -->
 - **2026-06-01** – **🤖 Polly Paints by Numbers** Our Discord bot now uses an explicit `render_visual` tool to generate 9 types of matplotlib charts and perfectly formatted data tables. [Join the Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - **2026-06-01** – **🚀 Moving Day on NPM** All our packages (SDK, UI, MCP, CLI) have officially migrated to the `@pollinations` scope. Time to update those `package.json` imports. [View NPM SDK](https://www.npmjs.com/package/@pollinations/sdk)
 - **2026-06-01** – **🔗 Automate the Hive with n8n** A new community-built n8n node lets you drop free-tier AI image and video generation directly into your automation pipelines. [Try it](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) <!-- app -->

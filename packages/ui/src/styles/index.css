@@ -160,11 +160,19 @@
     gap: 1rem;
 }
 
+.polli-playground-title {
+    line-height: 1;
+}
+
 .polli-playground-settings-grid {
     gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
+    .polli-playground-title {
+        font-size: 3rem;
+    }
+
     .polli-playground-control-bar {
         flex-direction: row;
         align-items: center;

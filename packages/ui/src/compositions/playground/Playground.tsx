@@ -640,7 +640,7 @@ export function Playground({
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                <h1 className="polli:m-0 polli:font-heading polli:text-4xl polli:leading-none polli:text-gray-950 sm:polli:text-5xl">
+                <h1 className="polli-playground-title polli:m-0 polli:font-heading polli:text-4xl polli:leading-none polli:text-gray-950">
                     {title}
                 </h1>
                 <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:text-gray-600">

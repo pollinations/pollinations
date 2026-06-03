@@ -6,7 +6,7 @@ import { cn } from "../lib/cn.ts";
 import type { ThemeName } from "../theme.ts";
 
 const DEFAULT_PANEL =
-    "polli:rounded-lg polli:border polli:border-theme-border polli:bg-surface-white polli:shadow-lg";
+    "polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:shadow-lg";
 
 export type DropdownProps = {
     theme: ThemeName;

@@ -3,7 +3,7 @@ import {
     normalizeCommunityEndpointBaseUrl,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
+import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -12,6 +12,10 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import {
+    listCommunityEndpointModels,
+    testCommunityEndpoint,
+} from "../services/community-endpoint-openai.ts";
 
 const PriceSchema = z.number().finite().min(0);
 const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
@@ -34,6 +38,13 @@ const CreateEndpointSchema = EndpointFieldsSchema.refine(
 );
 
 const UpdateEndpointSchema = EndpointFieldsSchema.partial();
+const ModelListSchema = z.object({
+    baseUrl: z.string().url(),
+    bearerToken: z.string().min(1),
+});
+const TestEndpointSchema = ModelListSchema.extend({
+    model: z.string().trim().min(1).max(253),
+});
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
@@ -129,6 +140,13 @@ async function ensureModelNameAvailable(
     });
 }
 
+function throwEndpointTestError(error: unknown): never {
+    throw new HTTPException(400, {
+        message:
+            error instanceof Error ? error.message : "Endpoint test failed",
+    });
+}
+
 export const communityEndpointsRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     .get("/", async (c) => {
@@ -179,6 +197,50 @@ export const communityEndpointsRoutes = new Hono<Env>()
             })
             .returning();
         return c.json(toResponse(row, ownerGithubUsername));
+    })
+    .post("/models", validator("json", ModelListSchema), async (c) => {
+        const user = c.var.auth.requireUser();
+        const input = c.req.valid("json");
+        const db = drizzle(c.env.DB, { schema });
+        await requireCommunityEndpointTier(db, user.id);
+        try {
+            const models = await listCommunityEndpointModels(input);
+            return c.json({ data: models });
+        } catch (error) {
+            throwEndpointTestError(error);
+        }
+    })
+    .post("/test", validator("json", TestEndpointSchema), async (c) => {
+        const user = c.var.auth.requireUser();
+        const input = c.req.valid("json");
+        const db = drizzle(c.env.DB, { schema });
+        await requireCommunityEndpointTier(db, user.id);
+        try {
+            await testCommunityEndpoint(input);
+            return c.json({ ok: true, message: "Endpoint responded" });
+        } catch (error) {
+            throwEndpointTestError(error);
+        }
+    })
+    .post("/:id/test", async (c) => {
+        const user = c.var.auth.requireUser();
+        const { id } = c.req.param();
+        const db = drizzle(c.env.DB, { schema });
+        await requireCommunityEndpointTier(db, user.id);
+        const endpoint = await requireOwnedEndpoint(db, id, user.id);
+        try {
+            await testCommunityEndpoint({
+                baseUrl: endpoint.baseUrl,
+                bearerToken: await decryptSecret(
+                    endpoint.bearerTokenCiphertext,
+                    c.env.BETTER_AUTH_SECRET,
+                ),
+                model: endpoint.upstreamModel,
+            });
+            return c.json({ ok: true, message: "Endpoint responded" });
+        } catch (error) {
+            throwEndpointTestError(error);
+        }
     })
     .post("/:id/update", validator("json", UpdateEndpointSchema), async (c) => {
         const user = c.var.auth.requireUser();

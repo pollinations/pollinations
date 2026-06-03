@@ -25,7 +25,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptImageTokens: perMillion(0.45),
@@ -79,7 +79,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "Cohere",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 0.75,
         // Azure Cohere retail rates (Global). Image-token billing also available
         // upstream ($0.47/1M Global text-img); we only expose text input for now.
         cost: {
@@ -98,7 +98,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         brand: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
         },

@@ -91,7 +91,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -108,7 +108,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.03, // per image
@@ -124,7 +124,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.04, // per image
@@ -141,7 +141,7 @@ export const IMAGE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -195,15 +195,16 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "runpod",
+        provider: "fireworks",
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.25,
         cost: {
-            completionImageTokens: 0.001, // per image
+            completionImageTokens: 0.0014, // per image
         },
-        description: "Flux Schnell - Fast high-quality image generation",
+        description:
+            "Flux Schnell - Fast high-quality image generation (Fireworks)",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -246,7 +247,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
         // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
@@ -267,7 +268,7 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
         cost: {
@@ -286,7 +287,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
@@ -306,7 +307,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionVideoSeconds: 0.01, // per sec
@@ -324,7 +325,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         // DashScope `wan2.7-i2v` / `wan2.7-t2v` bill bundled video+audio at
         // $0.10/s (720P) or $0.15/s (1080P). Handler currently locked to 720P
@@ -346,7 +347,8 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
-        priceMultiplier: 1.5,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.035, // per image
         },
@@ -362,7 +364,7 @@ export const IMAGE_SERVICES = {
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.075, // per image
@@ -384,7 +386,8 @@ export const IMAGE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1.5,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.03, // per image
         },
@@ -400,7 +403,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.02, // per image
@@ -416,7 +419,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.07, // per image
@@ -433,7 +436,7 @@ export const IMAGE_SERVICES = {
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionVideoSeconds: 0.05, // per sec at 720p
@@ -485,7 +488,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.005, // per image
@@ -501,7 +504,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.01, // per image
@@ -517,7 +520,7 @@ export const IMAGE_SERVICES = {
         brand: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             // $0.12 per run / 5s default = $0.024/sec

@@ -210,7 +210,7 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Flux Schnell - Fast high-quality image generation (IO.net, nunchaku-quantized)
+    // Flux Schnell - Fast high-quality image generation (Fireworks serverless)
     flux: {
         type: "flux",
         enhance: false,

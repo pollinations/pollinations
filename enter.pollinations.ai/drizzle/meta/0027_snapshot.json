@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3bb45e06-0dcc-4b7f-8beb-2a59fb10be0c",
-  "prevId": "729097f1-dc63-44a1-ba85-4b6f63969225",
+  "id": "6040b2c6-a4a1-4c8e-90c8-4a1a93d5612a",
+  "prevId": "317c099f-1214-4f19-9b28-85e140ad29a1",
   "tables": {
     "account": {
       "name": "account",
@@ -369,6 +369,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "base_url": {
@@ -787,13 +794,6 @@
         "amount_usd": {
           "name": "amount_usd",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "pollen_grant": {
-          "name": "pollen_grant",
-          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

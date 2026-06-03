@@ -187,22 +187,15 @@
     {
       "idx": 26,
       "version": "6",
-      "when": 1780353249263,
-      "tag": "0026_community_endpoints",
+      "when": 1780419641045,
+      "tag": "0026_reflective_kinsey_walden",
       "breakpoints": true
     },
     {
       "idx": 27,
       "version": "6",
-      "when": 1780452443276,
-      "tag": "0027_amazing_spitfire",
-      "breakpoints": true
-    },
-    {
-      "idx": 28,
-      "version": "6",
-      "when": 1780453875681,
-      "tag": "0028_spotty_electro",
+      "when": 1780481244086,
+      "tag": "0027_red_thunderbolts",
       "breakpoints": true
     }
   ]

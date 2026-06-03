@@ -156,7 +156,6 @@ export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", 
     .references(() => user.id, { onDelete: "cascade" }),
   stripeInvoiceId: text("stripe_invoice_id").unique(),
   amountUsd: integer("amount_usd").notNull(),
-  pollenGrant: real("pollen_grant").notNull(),
   status: text("status").notNull(),
   failureReason: text("failure_reason"),
   createdAt: integer("created_at", { mode: "timestamp" })

@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-06-01** – **🤖 Polly Paints by Numbers** Our Discord bot now uses an explicit `render_visual` tool to generate 9 types of matplotlib charts and perfectly formatted data tables. [Join the Discord](https://discord.gg/pollinations-ai-885844321461485618)
-- **2026-06-01** – **🚀 Moving Day on NPM** All our packages (SDK, UI, MCP, CLI) have officially migrated to the `@pollinations` scope. Time to update those `package.json` imports. [View NPM SDK](https://www.npmjs.com/package/@pollinations/sdk)
-- **2026-06-01** – **🔗 Automate the Hive with n8n** A new community-built n8n node lets you drop free-tier AI image and video generation directly into your automation pipelines. [Try it](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW) <!-- app -->
-- **2026-06-01** – **💡 Forging Better Prompts** Turn vague ideas into context-aware, highly specific AI inputs with PromptForge, a new community tool in the greenhouse. [Try it](https://knowledgeable-interface-for-refinem.vercel.app) <!-- app -->
-- **2026-05-31** – **🚀 React Auth & UI Packages** Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai).
-- **2026-05-29** – **🎙️ Realtime Voice API** The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)
-- **2026-05-29** – **🧠 Model Roster Expansion** Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models).
-- **2026-05-29** – **💾 Persistent Cache** The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive.
-- **2026-05-28** – **🌍 Local Currency Support** Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)
-- **2026-05-27** – **🚀 Six new brains for the hive** Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models).
+- **2026-06-02** – **🚀 MiniMax M3 arrives** Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
+- **2026-06-02** – **✨ Lunar AI** A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) <!-- app -->
+- **2026-06-02** – **🔗 Anura Hub AI** A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all) <!-- app -->
+- **2026-06-02** – **🎨 NebulaCraft** Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app) <!-- app -->
+- **2026-06-02** – **📱 Photo AI** A new iOS application leveraging the Pollinations image API for mobile generation. [Try it](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) <!-- app -->
+- **2026-06-02** – **💡 Ather Mini** An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in) <!-- app -->
+- **2026-06-02** – **🎨 Imagio AI** A fast, community-built text-to-image generator. [Try it](https://imagio-ai.vercel.app/) <!-- app -->
+- **2026-06-02** – **🤖 OtakuBox Bot** Generate anime content directly in Telegram with this new community bot. [Try it](https://badamchuk.github.io/otakubox/) <!-- app -->
+- **2026-06-02** – **✨ Multi-Model Chat UI** A ready-to-use community chat app supporting multiple models, vision, and TTS. [Try it](https://farl.github.io/pollinations-ai-text-generation/) <!-- app -->
+- **2026-06-02** – **🎨 AuraForge** An identity orchestration studio for generating flat 2D vector mascots and avatars. [Try it](https://autoforge-iota.vercel.app/) <!-- app -->
 ---
 
 ## 🌱 Introduction

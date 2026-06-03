@@ -366,10 +366,11 @@ function EndpointForm({
                     name="community-prompt-price"
                     value={form.promptTextPrice}
                     type="number"
-                    step="0.01"
+                    step="any"
                     min="0"
+                    inputMode="decimal"
                     placeholder="0.10"
-                    helper="Users are charged this many Pollen per million input tokens."
+                    helper="Decimals are allowed, e.g. 0.10 Pollen per million input tokens."
                     autoComplete="off"
                     required
                     onChange={(value) => onChange("promptTextPrice", value)}
@@ -379,10 +380,11 @@ function EndpointForm({
                     name="community-completion-price"
                     value={form.completionTextPrice}
                     type="number"
-                    step="0.01"
+                    step="any"
                     min="0"
+                    inputMode="decimal"
                     placeholder="1.00"
-                    helper="Users are charged this many Pollen per million output tokens."
+                    helper="Decimals are allowed, e.g. 1.25 Pollen per million output tokens."
                     autoComplete="off"
                     required
                     onChange={(value) => onChange("completionTextPrice", value)}

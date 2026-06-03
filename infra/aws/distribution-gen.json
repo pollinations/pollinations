@@ -1,39 +1,77 @@
 {
   "CallerReference": "pln-gen-2026-06-02",
-  "Aliases": { "Quantity": 1, "Items": ["gen.pollinations.ai"] },
+  "Aliases": {
+    "Quantity": 2,
+    "Items": [
+      "gen.pollinations.ai",
+      "gen-aws.pollinations.ai"
+    ]
+  },
   "Comment": "Proxy for gen.pollinations.ai -> gen.myceli.ai",
   "Enabled": true,
   "Origins": {
     "Quantity": 1,
-    "Items": [{
-      "Id": "gen-myceli",
-      "DomainName": "gen.myceli.ai",
-      "CustomOriginConfig": {
-        "HTTPPort": 80, "HTTPSPort": 443,
-        "OriginProtocolPolicy": "https-only",
-        "OriginSslProtocols": { "Quantity": 1, "Items": ["TLSv1.2"] },
-        "OriginReadTimeout": 60, "OriginKeepaliveTimeout": 5
-      },
-      "CustomHeaders": {
-        "Quantity": 2,
-        "Items": [
-          { "HeaderName": "X-Forwarded-Host", "HeaderValue": "gen.pollinations.ai" },
-          { "HeaderName": "X-Forwarded-Proto", "HeaderValue": "https" }
-        ]
+    "Items": [
+      {
+        "Id": "gen-myceli",
+        "DomainName": "gen.myceli.ai",
+        "ConnectionAttempts": 1,
+        "ConnectionTimeout": 10,
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSslProtocols": {
+            "Quantity": 1,
+            "Items": [
+              "TLSv1.2"
+            ]
+          },
+          "OriginReadTimeout": 180,
+          "OriginKeepaliveTimeout": 5
+        },
+        "CustomHeaders": {
+          "Quantity": 2,
+          "Items": [
+            {
+              "HeaderName": "X-Forwarded-Host",
+              "HeaderValue": "gen.pollinations.ai"
+            },
+            {
+              "HeaderName": "X-Forwarded-Proto",
+              "HeaderValue": "https"
+            }
+          ]
+        }
       }
-    }]
+    ]
   },
   "DefaultCacheBehavior": {
     "TargetOriginId": "gen-myceli",
     "ViewerProtocolPolicy": "redirect-to-https",
     "AllowedMethods": {
       "Quantity": 7,
-      "Items": ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"],
-      "CachedMethods": { "Quantity": 2, "Items": ["GET","HEAD"] }
+      "Items": [
+        "GET",
+        "HEAD",
+        "OPTIONS",
+        "PUT",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": [
+          "GET",
+          "HEAD"
+        ]
+      }
     },
     "Compress": false,
     "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
-    "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+    "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+    "ResponseHeadersPolicyId": "b872080f-b40c-444c-af94-2a4b5a5398f7"
   },
   "ViewerCertificate": {
     "ACMCertificateArn": "arn:aws:acm:us-east-1:301235909293:certificate/c0f0cee5-221d-40b3-9d04-357a9f4cccaa",

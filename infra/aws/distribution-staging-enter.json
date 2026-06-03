@@ -1,35 +1,71 @@
 {
   "CallerReference": "pln-staging-enter-2026-06-02",
-  "Aliases": { "Quantity": 1, "Items": ["staging.enter.pollinations.ai"] },
+  "Aliases": {
+    "Quantity": 1,
+    "Items": [
+      "staging.enter.pollinations.ai"
+    ]
+  },
   "Comment": "Proxy for staging.enter.pollinations.ai -> staging.enter.myceli.ai",
   "Enabled": true,
   "Origins": {
     "Quantity": 1,
-    "Items": [{
-      "Id": "staging-enter-myceli",
-      "DomainName": "staging.enter.myceli.ai",
-      "CustomOriginConfig": {
-        "HTTPPort": 80, "HTTPSPort": 443,
-        "OriginProtocolPolicy": "https-only",
-        "OriginSslProtocols": { "Quantity": 1, "Items": ["TLSv1.2"] },
-        "OriginReadTimeout": 60, "OriginKeepaliveTimeout": 5
-      },
-      "CustomHeaders": {
-        "Quantity": 2,
-        "Items": [
-          { "HeaderName": "X-Forwarded-Host", "HeaderValue": "staging.enter.pollinations.ai" },
-          { "HeaderName": "X-Forwarded-Proto", "HeaderValue": "https" }
-        ]
+    "Items": [
+      {
+        "Id": "staging-enter-myceli",
+        "DomainName": "staging.enter.myceli.ai",
+        "ConnectionAttempts": 3,
+        "ConnectionTimeout": 10,
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSslProtocols": {
+            "Quantity": 1,
+            "Items": [
+              "TLSv1.2"
+            ]
+          },
+          "OriginReadTimeout": 60,
+          "OriginKeepaliveTimeout": 5
+        },
+        "CustomHeaders": {
+          "Quantity": 2,
+          "Items": [
+            {
+              "HeaderName": "X-Forwarded-Host",
+              "HeaderValue": "staging.enter.pollinations.ai"
+            },
+            {
+              "HeaderName": "X-Forwarded-Proto",
+              "HeaderValue": "https"
+            }
+          ]
+        }
       }
-    }]
+    ]
   },
   "DefaultCacheBehavior": {
     "TargetOriginId": "staging-enter-myceli",
     "ViewerProtocolPolicy": "redirect-to-https",
     "AllowedMethods": {
       "Quantity": 7,
-      "Items": ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"],
-      "CachedMethods": { "Quantity": 2, "Items": ["GET","HEAD"] }
+      "Items": [
+        "GET",
+        "HEAD",
+        "OPTIONS",
+        "PUT",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": [
+          "GET",
+          "HEAD"
+        ]
+      }
     },
     "Compress": false,
     "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",

@@ -1,23 +1,29 @@
-# Cloudflare proxy → AWS CloudFront migration — remaining hosts
+# Cloudflare proxy → AWS CloudFront migration
 
-Status as of 2026-06-02. Pattern proven on **gen, enter, media** (all live on CloudFront).
+Status as of 2026-06-03. **All 6 target hosts are LIVE on CloudFront.** The
+legacy Cloudflare Workers proxy is kept for rollback (not yet decommissioned;
+legacy account not yet downgraded).
 
-## Done ✅
-| Host | Dist | CloudFront domain | Origin |
-|---|---|---|---|
-| gen.pollinations.ai | E35MFLKOJK04O7 | d2w26ehy17hxt9.cloudfront.net | gen.myceli.ai |
-| enter.pollinations.ai | E1621Y522BHBWP | d161vu6omct0xx.cloudfront.net | enter.myceli.ai |
-| media.pollinations.ai | E1Z6LB9U99HNL7 | d3ohgrrttqhabo.cloudfront.net | media.myceli.ai |
+## Done ✅ — all live
+| Host | Dist | Origin |
+|---|---|---|
+| gen.pollinations.ai | E35MFLKOJK04O7 | gen.myceli.ai |
+| enter.pollinations.ai | E1621Y522BHBWP | enter.myceli.ai |
+| media.pollinations.ai | E1Z6LB9U99HNL7 | media.myceli.ai |
+| staging.enter.pollinations.ai | EWH89KR7VA1VA | staging.enter.myceli.ai |
+| staging.gen.pollinations.ai | EXPRZGSA2VOHZ | staging.gen.myceli.ai |
+| pollinations.ai (apex) | E3TC5DH134RLUG | pollinations.myceli.ai |
 
-## Remaining
-| Host | Origin (verified serving) | Cert | Special |
-|---|---|---|---|
-| staging.enter.pollinations.ai | staging.enter.myceli.ai (200) | `*.staging.pollinations.ai` ✅ ISSUED (<deleted-cert-id>) | none |
-| staging.gen.pollinations.ai | staging.gen.myceli.ai (301) | `*.staging.pollinations.ai` ✅ ISSUED (<deleted-cert-id>) | none |
-| pollinations.ai (apex) | pollinations.myceli.ai (200) | pollinations.ai exact (c0f0cee5) ✅ | **apex — CNAME-flatten** |
+Plus the legacy cache-worker hosts, also on CloudFront: image.pollinations.ai
+(E1ODE9U7PM1DCA → image.myceli.ai), text.pollinations.ai (E1N0S50MFRA845 →
+text.myceli.ai).
 
-`staging.pollinations.ai` exists but user says not meaningful → leave on legacy unless asked.
-`staging.media.pollinations.ai` does not exist → ignore.
+`staging.pollinations.ai` (single-label) and ~other out-of-scope hosts remain on
+legacy. `staging.media.pollinations.ai` does not exist → ignore.
+
+See **README.md** for per-dist config + the origin-timeout / access-logging
+operations notes. Apply config from `distribution-*.json`; enable logging with
+`setup-logging.sh`.
 
 ## Proven per-host runbook
 1. Clone `infra/aws/distribution-media.json` → swap `CallerReference`, origin `DomainName`, `X-Forwarded-Host`, `Aliases`, `ACMCertificateArn`. Keep `ResponseHeadersPolicyId b872080f-...` (header parity), `OriginRequestPolicyId b689b0a8` (AllViewerExceptHostHeader), `CachePolicyId 4135ea2d`.

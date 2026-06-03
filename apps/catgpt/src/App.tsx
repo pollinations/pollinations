@@ -4,6 +4,7 @@ import {
     Alert,
     Button,
     ButtonGroup,
+    cn,
     DownloadIcon,
     ExternalLinkButton,
     Field,
@@ -12,7 +13,10 @@ import {
     Surface,
     Textarea,
 } from "@pollinations/ui";
-import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
+import {
+    AppUserMenu,
+    isEmbeddedContext,
+} from "@pollinations/ui/compositions/app-user";
 import { useEffect, useMemo, useState } from "react";
 import example1Url from "../images/example1.png";
 import example2Url from "../images/example2.png";
@@ -154,19 +158,9 @@ function setUrlPrompt(prompt: string, model: string): void {
     window.history.replaceState({}, "", url);
 }
 
-function hubReturnUrl(): string | null {
-    if (typeof window === "undefined") return null;
-    const rawReturn = new URLSearchParams(window.location.search).get(
-        "hubReturn",
-    );
-    if (!rawReturn) return null;
-
-    const target = new URL(rawReturn, window.location.origin);
-    return target.origin === window.location.origin ? target.toString() : null;
-}
-
 export function App() {
-    const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
+    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const isEmbedded = isEmbeddedContext();
     const [prompt, setPrompt] = useState("");
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [activeModel, setActiveModel] = useState(
@@ -217,12 +211,6 @@ export function App() {
         }, 2200);
         return () => window.clearInterval(timer);
     }, [isGenerating]);
-
-    useEffect(() => {
-        if (!isHydrated || (!isLoggedIn && !authError)) return;
-        const target = hubReturnUrl();
-        if (target) window.location.replace(target);
-    }, [isHydrated, isLoggedIn, authError]);
 
     async function generateMeme() {
         if (isGenerating) {
@@ -318,10 +306,15 @@ export function App() {
             className="relative flex min-h-dvh flex-col bg-white font-body text-gray-950"
         >
             <div className="fixed top-4 right-4 z-40">
-                <AppUserMenu dashboardHref={ENTER_URL} />
+                <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
             </div>
 
-            <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-16 pb-6 sm:px-6">
+            <main
+                className={cn(
+                    "mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-6 sm:px-6",
+                    isEmbedded ? "pt-6" : "pt-16",
+                )}
+            >
                 <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
                     <div className="flex flex-col gap-3">
                         <h1 className="m-0 font-heading text-4xl leading-none text-gray-950 sm:text-5xl">

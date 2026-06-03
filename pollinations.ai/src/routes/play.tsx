@@ -1,4 +1,10 @@
+import {
+    PolliProvider,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
 import { Button, ButtonGroup, Surface, TabButton } from "@pollinations/ui";
+import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config.ts";
 
@@ -33,49 +39,12 @@ function isPlayAppId(value: unknown): value is PlayAppId {
     return PLAY_APPS.some((app) => app.id === value);
 }
 
-function appTokenStorageKey(appKey: string): string {
-    return `polli:${appKey}:token`;
+function appModels(app: PlayApp): string[] | undefined {
+    return "models" in app ? [...app.models] : undefined;
 }
 
-function appStateStorageKey(appKey: string): string {
-    return `polli:${appKey}:oauth_state`;
-}
-
-function hasAppToken(app: PlayApp): boolean {
-    if (typeof window === "undefined") return false;
-    return !!window.localStorage.getItem(appTokenStorageKey(app.appKey));
-}
-
-function authorizeApp(app: PlayApp): void {
-    if (typeof window === "undefined") return;
-
-    const state = crypto.randomUUID();
-    window.localStorage.setItem(appStateStorageKey(app.appKey), state);
-
-    const hubReturnUrl = new URL("/play", window.location.origin);
-    hubReturnUrl.searchParams.set("app", app.id);
-
-    const redirectUrl = new URL(app.src, window.location.origin);
-    redirectUrl.searchParams.set(
-        "hubReturn",
-        `${hubReturnUrl.pathname}${hubReturnUrl.search}`,
-    );
-
-    const authorizeUrl = new URL("/authorize", ENTER_URL);
-    authorizeUrl.searchParams.set("redirect_uri", redirectUrl.toString());
-    authorizeUrl.searchParams.set("client_id", app.appKey);
-    authorizeUrl.searchParams.set("state", state);
-    if (app.permissions.length > 0) {
-        authorizeUrl.searchParams.set("scope", app.permissions.join(" "));
-    }
-    if ("models" in app && app.models.length > 0) {
-        authorizeUrl.searchParams.set("models", app.models.join(","));
-    }
-    if ("budget" in app) {
-        authorizeUrl.searchParams.set("budget", String(app.budget));
-    }
-
-    window.location.href = authorizeUrl.toString();
+function appBudget(app: PlayApp): number | undefined {
+    return "budget" in app ? app.budget : undefined;
 }
 
 export const Route = createFileRoute("/play")({
@@ -92,17 +61,34 @@ function PlayRoute() {
     const selectedApp =
         PLAY_APPS.find((candidate) => candidate.id === selectedAppId) ??
         PLAY_APPS[0];
-    const selectedAppAuthorized = hasAppToken(selectedApp);
 
     const selectApp = (nextApp: PlayAppId) => {
-        const next = PLAY_APPS.find((candidate) => candidate.id === nextApp);
-        if (!next) return;
-        if (!hasAppToken(next)) {
-            authorizeApp(next);
-            return;
-        }
         navigate({ search: { app: nextApp } });
     };
+
+    return (
+        <PolliProvider
+            key={selectedApp.appKey}
+            appKey={selectedApp.appKey}
+            enterUrl={ENTER_URL}
+            permissions={[...selectedApp.permissions]}
+            models={appModels(selectedApp)}
+            budget={appBudget(selectedApp)}
+        >
+            <PlayHub selectedApp={selectedApp} onSelectApp={selectApp} />
+        </PolliProvider>
+    );
+}
+
+function PlayHub({
+    selectedApp,
+    onSelectApp,
+}: {
+    selectedApp: PlayApp;
+    onSelectApp: (app: PlayAppId) => void;
+}) {
+    const { isHydrated, isLoggedIn } = useAuthState();
+    const { login } = useAuthActions();
 
     return (
         <div
@@ -110,22 +96,32 @@ function PlayRoute() {
             className="mx-auto flex max-w-5xl flex-col gap-5 bg-white px-4 py-10 sm:px-6"
         >
             <section className="flex flex-col gap-5">
-                <div className="flex flex-col gap-3">
-                    <h1 className="flex flex-wrap gap-x-3 font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
-                        <span>Load</span>
-                        <span>app</span>
-                    </h1>
-                    <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                        Open a focused Pollinations experience inside the Play
-                        workspace.
-                    </p>
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                    <div className="flex flex-col gap-3">
+                        <h1 className="flex flex-wrap gap-x-3 font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
+                            <span>Load</span>
+                            <span>app</span>
+                        </h1>
+                        <p className="max-w-2xl font-body text-lg text-theme-text-base">
+                            Open a focused Pollinations experience inside the
+                            Play workspace.
+                        </p>
+                    </div>
+                    <div className="shrink-0 sm:pt-1">
+                        <AppUserMenu
+                            dashboardHref={ENTER_URL}
+                            labels={{
+                                authorize: `Authorize ${selectedApp.label}`,
+                            }}
+                        />
+                    </div>
                 </div>
                 <ButtonGroup aria-label="Load app">
                     {PLAY_APPS.map((playApp) => (
                         <TabButton
                             key={playApp.id}
                             active={selectedApp.id === playApp.id}
-                            onClick={() => selectApp(playApp.id)}
+                            onClick={() => onSelectApp(playApp.id)}
                             theme="violet"
                         >
                             {playApp.label}
@@ -134,7 +130,15 @@ function PlayRoute() {
                 </ButtonGroup>
             </section>
 
-            {selectedAppAuthorized ? (
+            {!isHydrated ? (
+                <Surface
+                    theme="violet"
+                    variant="panel"
+                    className="flex min-h-[22rem] items-center justify-center text-center text-theme-text-base"
+                >
+                    Loading {selectedApp.label} authorization...
+                </Surface>
+            ) : isLoggedIn ? (
                 <div className="w-full bg-white">
                     <iframe
                         key={selectedApp.id}
@@ -162,7 +166,7 @@ function PlayRoute() {
                     <Button
                         type="button"
                         theme="violet"
-                        onClick={() => authorizeApp(selectedApp)}
+                        onClick={() => login()}
                     >
                         Authorize {selectedApp.label}
                     </Button>

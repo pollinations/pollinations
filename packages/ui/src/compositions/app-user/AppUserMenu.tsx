@@ -21,6 +21,8 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
+    hiddenWhenEmbedded?: boolean;
+    embedQueryParam?: string;
 };
 
 const defaultLabels: AppUserMenuLabels = {
@@ -34,10 +36,37 @@ const defaultLabels: AppUserMenuLabels = {
 const rowClass =
     "polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-bg-hover polli:focus:outline-none polli:focus-visible:bg-theme-bg-hover";
 
+export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
+    if (typeof window === "undefined") return false;
+    const search = new URLSearchParams(window.location.search);
+    if (search.get(embedQueryParam) === "1") return true;
+    try {
+        return window.self !== window.top;
+    } catch {
+        return true;
+    }
+}
+
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
+    hiddenWhenEmbedded = false,
+    embedQueryParam = "embed",
 }: AppUserMenuProps) {
+    if (hiddenWhenEmbedded && isEmbeddedContext(embedQueryParam)) return null;
+
+    return (
+        <AppUserMenuContent
+            dashboardHref={dashboardHref}
+            labels={labelOverrides}
+        />
+    );
+}
+
+function AppUserMenuContent({
+    dashboardHref,
+    labels: labelOverrides,
+}: Pick<AppUserMenuProps, "dashboardHref" | "labels">) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout } = useAuthActions();
 

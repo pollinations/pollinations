@@ -14,6 +14,7 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 
 const PriceSchema = z.number().finite().min(0);
+const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 const EndpointFieldsSchema = z.object({
@@ -48,6 +49,7 @@ async function requireCommunityEndpointTier(
     db: ReturnType<typeof drizzle<typeof schema>>,
     userId: string,
 ): Promise<void> {
+    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return;
     const user = await db.query.user.findFirst({
         columns: { tier: true },
         where: eq(schema.user.id, userId),

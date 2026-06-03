@@ -39,6 +39,7 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
+const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 function DownloadCsvButton({
@@ -76,6 +77,7 @@ function pageFromHash(hash: string): DashboardPage {
 }
 
 function canManageCommunityEndpoints(tier: string | null | undefined): boolean {
+    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return true;
     return !!tier && COMMUNITY_ENDPOINT_TIERS.has(tier);
 }
 

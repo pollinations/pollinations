@@ -208,7 +208,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
             title="Endpoints"
             theme="blue"
             framed
-            action={<Chip theme="blue">Flower+</Chip>}
+            action={<Chip theme="blue">Community</Chip>}
         >
             <div className="flex flex-col gap-4">
                 {error && (

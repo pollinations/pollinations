@@ -409,20 +409,31 @@ log.warn("Chat completions error {status}: {body}", {
 
 ## Tinybird Analytics (Alternative)
 
-For aggregated model health stats, query Tinybird directly:
+For aggregated model health stats, query Tinybird directly.
+
+> **⚠️ Use the prod read token from SOPS — do NOT use `.tinyb`.** The `.tinyb` in `enter.pollinations.ai/observability/` points to the **staging** workspace (`pollinations_enter_staging`), which has ~no real traffic, so prod queries come back empty. Get the prod token instead:
+> ```bash
+> TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
+> ```
+> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public read token in `apps/model-monitor/src/hooks/useModelMonitor.js` also works for pipes but is rotated periodically — pull it live, never hardcode (the one previously pinned in this skill went stale).
 
 ```bash
-# Get model health stats (last 5 minutes)
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
+H="https://api.europe-west2.gcp.tinybird.co"
 
-# Get detailed error breakdown
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_errors.json?token=$TINYBIRD_TOKEN" | jq '.data'
+# Get model health stats — pass minutes (default pipe window is short; use 240 for last 4h)
+curl -s "$H/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
+
+# Detailed server-side error breakdown (full messages, upstream status/body, user attribution)
+curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" -o /tmp/errs.json
 ```
 
-The Tinybird token is a read-only public token found in:
-- `apps/model-monitor/src/hooks/useModelMonitor.js`
+**`model_health` columns** (note: NOT `error_count`/`error_rate`): `model`, `event_type`, `provider`, `model_used`, `total_requests`, `status_2xx`, `errors_4xx`, `errors_5xx`, `last_error_at`, `latency_p50_ms`, `latency_p95_ms`, `avg_latency_ms`, `last_request_at`. Sort by `errors_5xx` to find backend issues.
 
-> **Workspace**: The hardcoded `TINYBIRD_TOKEN` below and the public token in `useModelMonitor.js` both target the **prod workspace** (`pollinations_enter`). For debugging staging-only issues, swap in a read token from the staging workspace (`pollinations_enter_staging`) — same URL, same pipe name, different data.
+**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
+
+> **JSON quirk**: `recent_server_errors` rows contain raw newlines in `stack`/`message`, which break `jq`. Parse with Python instead: `python3 -c "import json; d=json.load(open('/tmp/errs.json'),strict=False); ..."`.
+
+> **Reading 5xx**: `upstream_status` reveals the true cause. `502 (up 429)` = provider throttle (e.g. Bedrock "Too many tokens" — account-level TPM quota, often a peak-traffic spike across many users, not one abuser). `502 (up 403)` from `api.openai.com` with `unsupported_country_region_territory` = Cloudflare egress PoP in an OpenAI-blocked country. `500 (up 500)` from Vertex/xAI = provider-side transient ("high load"/"Internal error") — no action.
 
 ---
 
@@ -498,29 +509,27 @@ Tinybird provides pre-aggregated model health stats and raw event data.
 
 ### Token Locations
 
-1. **Public read-only token** (for pipes only): `apps/model-monitor/src/hooks/useModelMonitor.js`
-2. **Admin token** (for raw SQL queries): `enter.pollinations.ai/observability/.tinyb` (in `token` field)
+- **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
+- **Public read token** (pipes only, rotates): `apps/model-monitor/src/hooks/useModelMonitor.js`.
+- **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
 
-### Basic Queries (Public Token)
+### Basic Queries
 
 ```bash
-# Public read-only token from apps/model-monitor
-TINYBIRD_TOKEN="p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g"
+# Prod read token from SOPS — works for pipes AND raw SQL
+TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 
-# Get model health (last 5 min)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
+# Get model health (last 4h)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
 ```
 
-### Raw SQL Queries (Admin Token)
+### Raw SQL Queries
 
-For querying the raw `generation_event` datasource, use the admin token from `.tinyb`:
+The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
 
 ```bash
-# Get admin token from .tinyb file
-TINYBIRD_ADMIN_TOKEN=$(jq -r '.token' enter.pollinations.ai/observability/.tinyb)
-
 # Find users with frequent 403 errors (last 24 hours)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count 
 FROM generation_event 
 WHERE response_status = 403 
@@ -532,7 +541,7 @@ ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_github_username, model_requested, error_message, count() as error_count 
 FROM generation_event 
 WHERE response_status >= 500 
@@ -542,7 +551,7 @@ ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message 
 FROM generation_event 
 WHERE user_github_username = 'USERNAME_HERE' 

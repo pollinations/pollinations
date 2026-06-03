@@ -389,11 +389,16 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
-    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
+    // Localized presentment subtotal (Adaptive Pricing), used only to confirm
+    // the session was actually paid — never as a credit source. Pollen credited
+    // is the pack's fixed USD amount, looked up from packKey below.
+    const presentmentSubtotal = Math.round(
+        (session.amount_subtotal || 0) / 100,
+    );
     const packKey = metadata.packKey;
     const pack = packKey ? getPollenPackByKey(packKey) : undefined;
 
-    if (amountPaid <= 0) {
+    if (presentmentSubtotal <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
         return { success: false, message: "Invalid payment amount" };
     }
@@ -409,18 +414,8 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    // Prefer the grant snapshotted into session metadata at checkout creation
-    // time; this guarantees the user is credited exactly what they saw, even
-    // when bonus values change between session creation and payment.
-    const metadataGrantValue = metadata.packPollenGrant;
-    const metadataGrant = metadataGrantValue
-        ? Number.parseFloat(metadataGrantValue)
-        : Number.NaN;
-    const creditsToAdd =
-        Number.isFinite(metadataGrant) && metadataGrant > 0
-            ? metadataGrant
-            : pack.pollenGrant;
-
+    // Credit the pack's USD amount (1 pollen ≈ $1). Pack prices are fixed
+    // constants, so the packKey from metadata is enough to look it up.
     const db = drizzle(env.DB);
 
     const [user] = await db
@@ -448,7 +443,7 @@ const handleCheckoutSessionCompleted = async (
         event,
         session,
         userId,
-        creditsToAdd,
+        creditsToAdd: pack.amountUsd,
     });
 
     if (!credited) {
@@ -463,13 +458,13 @@ const handleCheckoutSessionCompleted = async (
     }
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
+        `Stripe: Credited ${pack.amountUsd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: ${sessionAmountTotal} ${sessionCurrency}, presentment: ${presentment.presentmentAmount} ${presentment.presentmentCurrency}, session: ${session.id})`,
     );
 
     return {
         success: true,
-        message: `Credited ${creditsToAdd} pollen to user ${userId}`,
-        pollenCredited: creditsToAdd,
+        message: `Credited ${pack.amountUsd} pollen to user ${userId}`,
+        pollenCredited: pack.amountUsd,
         presentmentCurrency: presentment.presentmentCurrency,
         presentmentAmount: presentment.presentmentAmount,
     };

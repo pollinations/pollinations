@@ -1,4 +1,4 @@
-import { env, SELF } from "cloudflare:test";
+import { createExecutionContext, env, SELF } from "cloudflare:test";
 import {
     type CommunityEndpointRuntime,
     canManageCommunityEndpoints,
@@ -9,22 +9,65 @@ import {
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
-import { communityEndpoint as communityEndpointTable } from "@shared/db/better-auth.ts";
+import {
+    communityEndpoint as communityEndpointTable,
+    session as sessionTable,
+} from "@shared/db/better-auth.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateCommunityEndpointCompletion } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
+const testLog = { getChild: () => testLog };
 
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
+
+async function createEnterCommunityApi(): Promise<Hono> {
+    const routePath =
+        "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
+    const { communityEndpointsRoutes } = (await import(routePath)) as {
+        communityEndpointsRoutes: Hono;
+    };
+    return new Hono()
+        .use("*", async (c, next) => {
+            c.set("log" as never, testLog);
+            await next();
+        })
+        .route("/api/community-endpoints", communityEndpointsRoutes);
+}
+
+async function fetchEnterApi(app: Hono, request: Request): Promise<Response> {
+    const ctx = createExecutionContext();
+    return app.fetch(request, env, ctx);
+}
+
+async function signedSessionCookie(token: string): Promise<string> {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(env.BETTER_AUTH_SECRET),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+    );
+    const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        new TextEncoder().encode(token),
+    );
+    const encodedSignature = btoa(
+        String.fromCharCode(...new Uint8Array(signature)),
+    );
+    return `better-auth.session_token=${encodeURIComponent(`${token}.${encodedSignature}`)}`;
+}
 
 describe("community endpoint helpers", () => {
     it("keeps the MVP tier gate disabled", () => {
@@ -263,5 +306,137 @@ fixtureTest(
                 "https://api.example.com/v1/chat/completions",
         );
         expect(upstreamCalls).toHaveLength(1);
+    },
+);
+
+fixtureTest(
+    "registers a Pollinations-compatible endpoint through Enter API and uses it through gen",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (
+                request.url ===
+                "https://gen.pollinations.ai/v1/chat/completions"
+            ) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_pollinations_upstream",
+                );
+                await expect(request.json()).resolves.toMatchObject({
+                    model: "openai",
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                    stream: false,
+                });
+
+                return Response.json({
+                    id: "chatcmpl_pollinations_upstream",
+                    object: "chat.completion",
+                    model: "openai",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+
+            if (
+                request.url.startsWith(
+                    "https://api.europe-west2.gcp.tinybird.co/",
+                ) ||
+                request.url.startsWith("http://localhost:7181/")
+            ) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    description: "Pollinations upstream through community API",
+                    baseUrl: "https://gen.pollinations.ai/v1",
+                    upstreamModel: "openai",
+                    bearerToken: "Bearer sk_pollinations_upstream",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+        );
+
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            modelId: string;
+            baseUrl: string;
+            upstreamModel: string;
+            tokenConfigured: boolean;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            baseUrl: "https://gen.pollinations.ai/v1",
+            upstreamModel: "openai",
+            tokenConfigured: true,
+        });
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: registered.modelId,
+            choices: [{ message: { content: "ok" } }],
+        });
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input, init]) =>
+                    new Request(input, init).url ===
+                    "https://gen.pollinations.ai/v1/chat/completions",
+            ),
+        ).toHaveLength(1);
     },
 );

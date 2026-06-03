@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-02",
+  "period_start": "2026-06-02",
+  "period_end": "2026-06-02",
+  "generated_at": "2026-06-03T07:37:11.683117+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-02/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 13 PRs: Fireworks backend for Flux, cheaper Claude, MiniMax M3",
+  "text": "Merged 13 PRs today. Most of the work was on the routing and infrastructure side to get costs down and improve stability.\n\nFirst, we routed Claude Bedrock models through global inference profiles. This dropped our overhead enough that we could normalize all pricing multipliers back to 1x across the board. The paid-only gates are still there to prevent abuse, but standard inference is now essentially running at cost.\n\nFor image generation, we switched the Flux backend to route through Fireworks. It handles the load much better. On the text side, we added MiniMax M3 to the available models and shifted Gemma 4 26b over to OpenRouter to balance the text endpoints.\n\nWe also merged 9 new community apps into the Greenhouse ecosystem today. It's a mix of chat clients (Lunar AI, ather mini), image tools (Photo Ai, Imagio AI), and build environments (Anura Hub, AuraForge, NebulaCraft). It's always interesting to see the API getting pushed in different directions by the community.\n\nAll the routing logic and new app integrations are live. You can check the exact implementation details or submit your own app over at github.com/pollinations/pollinations."
+}

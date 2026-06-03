@@ -4,7 +4,6 @@ import {
     GitHubIcon,
     Markdown,
     Surface,
-    type ThemeName,
 } from "@pollinations/ui";
 import {
     type App,
@@ -15,8 +14,6 @@ import {
     getRepoName,
 } from "../../lib/apps.ts";
 import { APPS_COPY, type BadgeFilterId, PLATFORM_LABELS } from "./copy.ts";
-
-const CARD_THEMES: ThemeName[] = ["blue", "teal", "violet", "green", "pink"];
 
 const BADGE_LABELS: Record<BadgeFilterId, string> = {
     new: APPS_COPY.newBadge,
@@ -36,8 +33,7 @@ function appBadgeIds(app: App): BadgeFilterId[] {
     );
 }
 
-export function AppCard({ app, index }: { app: App; index: number }) {
-    const theme = CARD_THEMES[index % CARD_THEMES.length];
+export function AppCard({ app }: { app: App }) {
     const repoName = getRepoName(app.repo);
     const githubUsername = getGitHubUsername(app.github);
     const githubProfileUrl = getGitHubProfileUrl(app.github);
@@ -46,21 +42,21 @@ export function AppCard({ app, index }: { app: App; index: number }) {
 
     return (
         <Surface
-            theme={theme}
+            theme="blue"
             variant="card-themed"
-            className="flex h-full flex-col gap-4 p-5"
+            className="flex h-full flex-col gap-4 bg-theme-bg-subtle p-5"
         >
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+            <div className="flex min-w-0 flex-col gap-3">
+                <div className="min-w-0 pr-1">
                     <h3 className="font-subheading text-lg text-theme-text-strong">
                         {app.url ? (
                             <a
                                 href={app.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 hover:underline"
+                                className="inline-flex max-w-full items-center gap-1 underline decoration-theme-border decoration-2 underline-offset-3 hover:decoration-theme-text-soft"
                             >
-                                <span className="truncate">
+                                <span className="min-w-0 truncate">
                                     {app.emoji && (
                                         <span aria-hidden className="mr-1.5">
                                             {app.emoji}
@@ -93,7 +89,7 @@ export function AppCard({ app, index }: { app: App; index: number }) {
                 </div>
 
                 {badges.length > 0 && (
-                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                    <div className="flex flex-wrap gap-1">
                         {badges.map((badge) => (
                             <Chip
                                 key={badge}
@@ -113,13 +109,13 @@ export function AppCard({ app, index }: { app: App; index: number }) {
                 </Markdown>
             )}
 
-            <div className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs">
+            <div className="mt-auto flex min-w-0 flex-wrap items-center gap-2 pt-1 text-xs">
                 {repoName ? (
                     <a
                         href={app.repo}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex min-w-0 items-center gap-1.5 rounded-md bg-surface-white px-2 py-1 font-mono font-medium text-theme-text-strong hover:underline"
+                        className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md bg-surface-white px-2 py-1 font-mono font-medium text-theme-text-strong underline decoration-theme-border underline-offset-2 hover:decoration-theme-text-soft"
                         title={APPS_COPY.viewOnGithub}
                     >
                         <GitHubIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
@@ -136,7 +132,7 @@ export function AppCard({ app, index }: { app: App; index: number }) {
                             href={githubProfileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex min-w-0 items-center gap-1.5 rounded-md bg-surface-white px-2 py-1 font-mono font-medium text-theme-text-strong hover:underline"
+                            className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md bg-surface-white px-2 py-1 font-mono font-medium text-theme-text-strong underline decoration-theme-border underline-offset-2 hover:decoration-theme-text-soft"
                         >
                             <span className="text-theme-text-muted">
                                 {APPS_COPY.authorPrefix}

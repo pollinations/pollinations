@@ -1,4 +1,4 @@
-import { Surface } from "@pollinations/ui";
+import { InlineLink, Section } from "@pollinations/ui";
 import { useEffect, useState } from "react";
 import { CONTRIBUTORS } from "./copy.ts";
 
@@ -103,54 +103,43 @@ export function Contributors() {
     if (contributors.length === 0) return null;
 
     return (
-        <section className="flex flex-col gap-4">
-            <h2 className="font-subheading text-2xl text-theme-text-strong">
-                {CONTRIBUTORS.title}
-            </h2>
-
-            <Surface theme="blue" variant="panel" className="flex flex-col gap-5">
-                <p className="max-w-2xl text-theme-text-base">
-                    {CONTRIBUTORS.description} {CONTRIBUTORS.ctaPre}
+        <Section title={CONTRIBUTORS.title} theme="pink" framed>
+            <p className="max-w-2xl text-theme-text-base">
+                {CONTRIBUTORS.description} {CONTRIBUTORS.ctaPre}
+                <InlineLink href={CONTRIBUTORS.ctaHref} className="text-sm">
+                    {CONTRIBUTORS.ctaLink}
+                </InlineLink>
+                {CONTRIBUTORS.ctaPost}
+            </p>
+            <div className="grid grid-cols-3 gap-5 sm:grid-cols-4 md:grid-cols-6">
+                {contributors.map((contributor) => (
                     <a
-                        href={CONTRIBUTORS.ctaHref}
+                        key={contributor.login}
+                        href={contributor.profileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-theme-text-strong hover:underline"
+                        title={`${contributor.contributions} ${
+                            contributor.contributions === 1
+                                ? CONTRIBUTORS.commitLabel
+                                : CONTRIBUTORS.commitsLabel
+                        }`}
+                        className="group flex flex-col items-center gap-2 text-center"
                     >
-                        {CONTRIBUTORS.ctaLink}
+                        <img
+                            src={contributor.avatarUrl}
+                            alt={contributor.login}
+                            width={56}
+                            height={56}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-14 w-14 rounded-full bg-surface-white object-cover ring-2 ring-theme-border transition group-hover:ring-theme-bg-hover"
+                        />
+                        <span className="min-w-0 max-w-full truncate text-xs font-medium text-theme-text-soft">
+                            {contributor.login}
+                        </span>
                     </a>
-                    {CONTRIBUTORS.ctaPost}
-                </p>
-                <div className="grid grid-cols-3 gap-5 sm:grid-cols-4 md:grid-cols-6">
-                    {contributors.map((contributor) => (
-                        <a
-                            key={contributor.login}
-                            href={contributor.profileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={`${contributor.contributions} ${
-                                contributor.contributions === 1
-                                    ? CONTRIBUTORS.commitLabel
-                                    : CONTRIBUTORS.commitsLabel
-                            }`}
-                            className="group flex flex-col items-center gap-2 text-center"
-                        >
-                            <img
-                                src={contributor.avatarUrl}
-                                alt={contributor.login}
-                                width={56}
-                                height={56}
-                                loading="lazy"
-                                decoding="async"
-                                className="h-14 w-14 rounded-full bg-surface-white object-cover ring-2 ring-theme-border transition group-hover:ring-theme-bg-hover"
-                            />
-                            <span className="min-w-0 max-w-full truncate text-xs font-medium text-theme-text-soft">
-                                {contributor.login}
-                            </span>
-                        </a>
-                    ))}
-                </div>
-            </Surface>
-        </section>
+                ))}
+            </div>
+        </Section>
     );
 }

@@ -73,7 +73,7 @@ function AppsPage() {
         >
             <section className="flex flex-col gap-5">
                 <div className="flex flex-col gap-3">
-                    <h1 className="font-heading text-4xl text-theme-text-strong sm:text-5xl">
+                    <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                         {APPS_COPY.title}
                     </h1>
                     <p className="max-w-2xl font-body text-lg text-theme-text-base">
@@ -89,7 +89,7 @@ function AppsPage() {
                     <Surface
                         theme="blue"
                         variant="card-themed"
-                        className="flex items-center justify-between gap-4 p-5"
+                        className="flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center"
                     >
                         <div>
                             <h2 className="font-subheading text-lg text-theme-text-strong">
@@ -112,7 +112,7 @@ function AppsPage() {
                     <Surface
                         theme="amber"
                         variant="card-themed"
-                        className="flex items-center justify-between gap-4 p-5"
+                        className="flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center"
                     >
                         <div>
                             <h2 className="font-subheading text-lg text-theme-text-strong">
@@ -134,7 +134,12 @@ function AppsPage() {
                 </div>
             </section>
 
-            <section id="apps-filters" className="flex flex-col gap-4">
+            <Surface
+                id="apps-filters"
+                theme="blue"
+                variant="panel"
+                className="flex flex-col gap-5"
+            >
                 <div className="flex flex-col gap-2">
                     <div className="font-body text-sm font-semibold text-theme-text-soft">
                         {APPS_COPY.categoryLabel}
@@ -189,21 +194,27 @@ function AppsPage() {
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 text-sm text-theme-text-soft">
-                    <Chip intent="warning" size="sm">
-                        {APPS_COPY.pollenBadge}
-                    </Chip>
-                    <span>{APPS_COPY.pollenLegendDesc}</span>
-                    <Chip intent="success" size="sm">
-                        {APPS_COPY.buzzBadge}
-                    </Chip>
-                    <span>{APPS_COPY.buzzLegendDesc}</span>
-                    <Chip intent="alpha" size="sm">
-                        {APPS_COPY.newBadge}
-                    </Chip>
-                    <span>{APPS_COPY.newLegendDesc}</span>
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-theme-text-soft">
+                    <span className="inline-flex items-center gap-1.5">
+                        <Chip intent="warning" size="sm">
+                            {APPS_COPY.pollenBadge}
+                        </Chip>
+                        <span>{APPS_COPY.pollenLegendDesc}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                        <Chip intent="success" size="sm">
+                            {APPS_COPY.buzzBadge}
+                        </Chip>
+                        <span>{APPS_COPY.buzzLegendDesc}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                        <Chip intent="alpha" size="sm">
+                            {APPS_COPY.newBadge}
+                        </Chip>
+                        <span>{APPS_COPY.newLegendDesc}</span>
+                    </span>
                 </div>
-            </section>
+            </Surface>
 
             {error ? (
                 <Surface
@@ -219,7 +230,6 @@ function AppsPage() {
                         <AppCard
                             key={`${app.name}-${app.githubId || index}`}
                             app={app}
-                            index={index}
                         />
                     ))}
                 </section>

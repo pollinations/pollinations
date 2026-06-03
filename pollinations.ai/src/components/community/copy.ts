@@ -13,10 +13,10 @@ export const COMMUNITY_META = {
 
 export const HERO = {
     title: "Contribute",
-    subtitlePrefix: "🌸 pollinations.ai is open source. ",
+    subtitlePrefix: "pollinations.ai is open source. ",
     subtitleBold: "Builders shape the platform directly.",
     subtitleSuffix:
-        " Share what you need, meet the people using it, and help build what comes next. 🌿",
+        " Share what you need, meet the people using it, and help build what comes next.",
 };
 
 export const HERO_STATS: { value: string; label: string; href?: string }[] = [

@@ -1,4 +1,4 @@
-import { cn, Prose, type ThemeName } from "@pollinations/ui";
+import { cn, Prose, Surface, type ThemeName } from "@pollinations/ui";
 
 export type DocumentPageProps = {
     markdown: string;
@@ -19,7 +19,13 @@ export function DocumentPage({
                 className,
             )}
         >
-            <Prose>{markdown}</Prose>
+            <Surface
+                theme={theme}
+                variant="panel"
+                className="p-5 sm:p-8 md:p-10"
+            >
+                <Prose>{markdown}</Prose>
+            </Surface>
         </div>
     );
 }

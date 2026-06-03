@@ -25,9 +25,9 @@ export const HERO: {
     ctas: { label: string; href: string; theme: ThemeName }[];
 } = {
     title: "Build an AI app.",
-    bodyPrefix: "⚡ Build with one API for text, image, audio, and video. ",
+    bodyPrefix: "Build with one API for text, image, audio, and video. ",
     bodyBold: "We handle the models and infrastructure.",
-    bodySuffix: " Users spend across apps. Earn rewards. 🌱",
+    bodySuffix: " Users spend across apps. Earn rewards.",
     ctas: [
         { label: "Register", href: ENTER_URL, theme: "green" },
         { label: "Join the Discord", href: DISCORD, theme: "blue" },
@@ -52,7 +52,7 @@ export const TOOLBOX: ToolboxItem[] = [
     {
         emoji: "👛",
         title: "Wallets & earnings",
-        desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰",
+        desc: "- Users **sign in** and spend from their **own wallet**\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app",
         link: { text: "Add Pollen to your app", href: BYOP_DOCS },
     },
     {
@@ -64,13 +64,13 @@ export const TOOLBOX: ToolboxItem[] = [
     {
         emoji: "⌨️",
         title: "CLI for humans & agents",
-        desc: '- `polli gen image "cat in space"` — **text, image, audio, video** in one CLI 🎛️\n- **Agent-friendly**: `--json` output, stdin context, clear exit codes\n- Point Claude Code, Cursor, or Codex at the **shipped SKILL.md**',
+        desc: '- `polli gen image "cat in space"` — **text, image, audio, video** in one CLI\n- **Agent-friendly**: `--json` output, stdin context, clear exit codes\n- Point Claude Code, Cursor, or Codex at the **shipped SKILL.md**',
         link: { text: "Install polli CLI", href: POLLI_CLI },
     },
     {
         emoji: "🌱",
         title: "Free Credits",
-        desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests** 🎯\n- More activity unlocks more room 📈",
+        desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests**\n- More activity unlocks more room",
         link: { text: "How tiers work", href: ENTER_TIERS_FAQ },
     },
     {
@@ -86,22 +86,31 @@ export const TOOLBOX: ToolboxItem[] = [
     },
 ];
 
-export const ROADMAP: { title: string; description: string }[] = [
-    {
-        title: "Pollinations Login",
-        description: "Drop-in sign-in for your users. Token handling included.",
-    },
-    {
-        title: "App Hosting",
-        description:
-            "Push your app to our infra. No deploy setup, no separate bill.",
-    },
-    { title: "App Discovery", description: "Where users find your app." },
-    {
-        title: "Ads SDK",
-        description: "Optional ad slots. Earnings go to your wallet.",
-    },
-];
+export const ROADMAP: { emoji: string; title: string; description: string }[] =
+    [
+        {
+            emoji: "🔐",
+            title: "Pollinations Login",
+            description:
+                "Drop-in sign-in for your users. Token handling included.",
+        },
+        {
+            emoji: "🚢",
+            title: "App Hosting",
+            description:
+                "Push your app to our infra. No deploy setup, no separate bill.",
+        },
+        {
+            emoji: "🧭",
+            title: "App Discovery",
+            description: "Where users find your app.",
+        },
+        {
+            emoji: "📣",
+            title: "Ads SDK",
+            description: "Optional ad slots. Earnings go to your wallet.",
+        },
+    ];
 
 export const CTA = {
     title: "Start building",

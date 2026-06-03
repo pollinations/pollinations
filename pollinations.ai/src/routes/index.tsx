@@ -1,4 +1,4 @@
-import { Button, ExternalLinkButton, Surface } from "@pollinations/ui";
+import { Button, ExternalLinkButton, Section, Surface } from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
     CTA,
@@ -23,12 +23,12 @@ export const Route = createFileRoute("/")({
 function HelloPage() {
     return (
         <div
-            data-theme="green"
+            data-theme="teal"
             className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-10 sm:px-6"
         >
             {/* Hero */}
             <section className="flex flex-col gap-5">
-                <h1 className="font-heading text-4xl text-theme-text-strong sm:text-5xl">
+                <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                     {HERO.title}
                 </h1>
                 <p className="max-w-2xl font-body text-lg text-theme-text-base">
@@ -55,7 +55,7 @@ function HelloPage() {
                             {i > 0 && (
                                 <span className="text-theme-text-muted">·</span>
                             )}
-                            <strong className="font-heading text-base text-theme-text-strong">
+                            <strong className="font-subheading text-base text-theme-text-strong">
                                 {s.value}
                             </strong>
                             {s.label}
@@ -65,46 +65,42 @@ function HelloPage() {
             </section>
 
             {/* Dev kit */}
-            <section className="flex flex-col gap-5">
-                <h2 className="font-subheading text-2xl text-theme-text-strong">
-                    Dev kit
-                </h2>
-                <Surface theme="pink" variant="panel">
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        {TOOLBOX.map((item) => (
-                            <ToolboxCard key={item.title} item={item} />
-                        ))}
-                    </div>
-                </Surface>
-            </section>
+            <Section title="Dev kit" theme="teal" framed>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {TOOLBOX.map((item) => (
+                        <ToolboxCard key={item.title} item={item} />
+                    ))}
+                </div>
+            </Section>
 
             {/* Next */}
-            <section className="flex flex-col gap-5">
-                <h2 className="font-subheading text-2xl text-theme-text-strong">
-                    Next
-                </h2>
-                <Surface theme="violet" variant="panel">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {ROADMAP.map((r) => (
-                            <div
-                                key={r.title}
-                                className="rounded-lg bg-white/80 p-4 transition-colors hover:bg-white/90"
-                            >
+            <Section title="Next" theme="teal" framed>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {ROADMAP.map((r) => (
+                        <Surface
+                            key={r.title}
+                            variant="card"
+                            className="rounded-lg bg-white/80 p-4 transition-colors hover:bg-white/90"
+                        >
+                            <div className="flex items-center gap-2">
+                                <span aria-hidden className="text-xl">
+                                    {r.emoji}
+                                </span>
                                 <h3 className="font-subheading text-base text-theme-text-strong">
                                     {r.title}
                                 </h3>
-                                <p className="mt-1 text-sm text-theme-text-soft">
-                                    {r.description}
-                                </p>
                             </div>
-                        ))}
-                    </div>
-                </Surface>
-            </section>
+                            <p className="mt-1 text-sm text-theme-text-soft">
+                                {r.description}
+                            </p>
+                        </Surface>
+                    ))}
+                </div>
+            </Section>
 
             {/* CTA */}
             <section className="flex flex-col gap-4 border-t border-theme-border pt-8">
-                <h2 className="font-heading text-3xl text-theme-text-strong">
+                <h2 className="font-subheading text-2xl text-theme-text-strong">
                     {CTA.title}
                 </h2>
                 <p className="max-w-2xl text-theme-text-base">{CTA.body}</p>

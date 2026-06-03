@@ -8,7 +8,7 @@ import { ENTER_URL } from "../../config.ts";
  * `theme` gives each section its own color (dot + active fill via `NavItem`).
  */
 export const NAV_ITEMS = [
-    { to: "/", label: "hello", exact: true, theme: "green" },
+    { to: "/", label: "hello", exact: true, theme: "teal" },
     { to: "/play", label: "play", exact: false, theme: "violet" },
     { to: "/apps", label: "apps", exact: false, theme: "blue" },
     { to: "/community", label: "community", exact: false, theme: "pink" },

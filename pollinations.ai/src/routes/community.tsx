@@ -1,4 +1,11 @@
-import { ExternalLinkButton, Surface, type ThemeName } from "@pollinations/ui";
+import {
+    ExternalLinkButton,
+    InlineLink,
+    LinkCard,
+    Section,
+    Surface,
+    type ThemeName,
+} from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { Contributors } from "../components/community/Contributors.tsx";
 import {
@@ -46,7 +53,7 @@ function CommunityPage() {
         >
             {/* Hero */}
             <section className="flex flex-col gap-5">
-                <h1 className="font-heading text-4xl text-theme-text-strong sm:text-5xl">
+                <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                     {HERO.title}
                 </h1>
                 <p className="max-w-2xl font-body text-lg text-theme-text-base">
@@ -60,7 +67,7 @@ function CommunityPage() {
                     {HERO_STATS.map((stat, i) => {
                         const inner = (
                             <>
-                                <strong className="font-heading text-base text-theme-text-strong">
+                                <strong className="font-subheading text-base text-theme-text-strong">
                                     {stat.value}
                                 </strong>
                                 {stat.label}
@@ -77,14 +84,12 @@ function CommunityPage() {
                                     </span>
                                 )}
                                 {stat.href ? (
-                                    <a
+                                    <InlineLink
                                         href={stat.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 hover:underline"
+                                        className="gap-2 text-sm"
                                     >
                                         {inner}
-                                    </a>
+                                    </InlineLink>
                                 ) : (
                                     <span className="flex items-center gap-2">
                                         {inner}
@@ -99,38 +104,34 @@ function CommunityPage() {
             {/* Build with the community */}
             <Section
                 title={CONTRIBUTE.title}
-                theme="blue"
-                intro={CONTRIBUTE.body}
+                theme="pink"
+                framed
+                intro={<p>{CONTRIBUTE.body}</p>}
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {CONTRIBUTE_CARDS.map((card) => (
-                        <CardLink key={card.title} href={card.href}>
+                        <LinkCard key={card.title} href={card.href}>
                             <h3 className="font-subheading text-base text-theme-text-strong">
                                 {card.title}
                             </h3>
                             <p className="text-sm text-theme-text-base">
                                 {card.body}
                             </p>
-                        </CardLink>
+                        </LinkCard>
                     ))}
                 </div>
 
                 <p className="max-w-2xl text-sm text-theme-text-soft">
                     {CONTRIBUTE.notePre}
-                    <a
-                        href={CONTRIBUTE.noteHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-theme-text-strong hover:underline"
-                    >
+                    <InlineLink href={CONTRIBUTE.noteHref} className="text-sm">
                         {CONTRIBUTE.noteLink}
-                    </a>
+                    </InlineLink>
                     {CONTRIBUTE.notePost}
                 </p>
 
                 <ExternalLinkButton
                     href={CONTRIBUTE.ctaHref}
-                    theme="blue"
+                    theme="pink"
                     size="medium"
                     className="self-start"
                 >
@@ -139,15 +140,15 @@ function CommunityPage() {
             </Section>
 
             {/* Where to start */}
-            <Section title={START.title} theme="violet">
+            <Section title={START.title} theme="pink" framed>
                 <div className="flex flex-col gap-4">
-                    <StartCard card={START_DISCORD} theme="violet" />
+                    <StartCard card={START_DISCORD} theme="pink" />
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {START_CARDS.map((card) => (
                             <StartCard
                                 key={card.title}
                                 card={card}
-                                theme="violet"
+                                theme="pink"
                             />
                         ))}
                     </div>
@@ -155,10 +156,10 @@ function CommunityPage() {
             </Section>
 
             {/* Have your say */}
-            <Section title={VOTING.title} theme="pink">
+            <Section title={VOTING.title} theme="pink" framed>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {VOTING_ISSUES.map((issue) => (
-                        <CardLink key={issue.url} href={issue.url}>
+                        <LinkCard key={issue.url} href={issue.url}>
                             <div className="flex items-center justify-between">
                                 <span aria-hidden className="text-2xl">
                                     {issue.emoji}
@@ -170,7 +171,7 @@ function CommunityPage() {
                             <p className="font-subheading text-sm text-theme-text-strong">
                                 {issue.title}
                             </p>
-                        </CardLink>
+                        </LinkCard>
                     ))}
                 </div>
             </Section>
@@ -181,88 +182,28 @@ function CommunityPage() {
             {/* Supporters */}
             <Section
                 title={SUPPORTERS.title}
-                theme="violet"
-                intro={SUPPORTERS.subtitle}
+                theme="pink"
+                framed
+                intro={<p>{SUPPORTERS.subtitle}</p>}
             >
                 <div className="grid grid-cols-3 gap-x-6 gap-y-8 sm:grid-cols-4 md:grid-cols-6">
                     {SUPPORTERS_LIST.map((supporter) => (
-                        <a
+                        <LinkCard
                             key={supporter.name}
                             href={supporter.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex flex-col items-center gap-2 text-center"
+                            surfaceClassName="items-center gap-2 p-3 pr-8 text-center"
                         >
-                            <Surface
-                                variant="card"
-                                className="flex h-16 w-16 items-center justify-center bg-white/80 p-0 font-heading text-lg text-theme-text-strong transition group-hover:-translate-y-0.5 group-hover:bg-white/90"
-                            >
+                            <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-theme-bg-active font-heading text-lg text-theme-text-strong">
                                 {initials(supporter.name)}
-                            </Surface>
+                            </span>
                             <span className="text-[10px] font-medium leading-tight text-theme-text-soft">
                                 {supporter.name}
                             </span>
-                        </a>
+                        </LinkCard>
                     ))}
                 </div>
             </Section>
         </div>
-    );
-}
-
-/** A section: heading (+ optional intro) above a themed panel that frames its content. */
-function Section({
-    title,
-    theme,
-    intro,
-    children,
-}: {
-    title: string;
-    theme: ThemeName;
-    intro?: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <section className="flex flex-col gap-4">
-            <h2 className="font-subheading text-2xl text-theme-text-strong">
-                {title}
-            </h2>
-            <Surface
-                theme={theme}
-                variant="panel"
-                className="flex flex-col gap-5"
-            >
-                {intro && (
-                    <p className="max-w-2xl text-theme-text-base">{intro}</p>
-                )}
-                {children}
-            </Surface>
-        </section>
-    );
-}
-
-/** A whole-card link rendered as a white inner card on the section panel. */
-function CardLink({
-    href,
-    children,
-}: {
-    href: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block"
-        >
-            <Surface
-                variant="card"
-                className="flex h-full flex-col gap-1 bg-white/80 p-5 transition group-hover:-translate-y-0.5 group-hover:bg-white/90"
-            >
-                {children}
-            </Surface>
-        </a>
     );
 }
 

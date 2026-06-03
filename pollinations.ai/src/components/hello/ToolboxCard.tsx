@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, Markdown, Surface } from "@pollinations/ui";
+import { InlineLink, Markdown, Surface } from "@pollinations/ui";
 import type { ToolboxItem } from "./copy.ts";
 
 export function ToolboxCard({ item }: { item: ToolboxItem }) {
@@ -19,15 +19,9 @@ export function ToolboxCard({ item }: { item: ToolboxItem }) {
                 {item.desc}
             </Markdown>
             {item.link && (
-                <a
-                    href={item.link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-theme-text-strong hover:underline"
-                >
+                <InlineLink href={item.link.href} className="mt-auto text-sm">
                     {item.link.text}
-                    <ExternalLinkIcon className="h-3.5 w-3.5" />
-                </a>
+                </InlineLink>
             )}
         </Surface>
     );

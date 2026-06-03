@@ -11,13 +11,16 @@ export const Route = createRootRoute({
 
 function RootLayout() {
     return (
-        <div data-theme="green" className="flex h-full flex-col">
+        <div data-theme="green" className="flex h-full min-w-0 flex-col">
             <HeadContent />
             {/* Shell body is overflow-hidden; this <main> is the scroll owner. */}
-            <main id="app-scroll" className="flex-1 overflow-y-auto">
+            <main
+                id="app-scroll"
+                className="flex-1 overflow-x-hidden overflow-y-auto"
+            >
                 <Header />
-                <div className="flex min-h-full flex-col">
-                    <div className="flex-1">
+                <div className="flex min-h-full min-w-0 flex-col">
+                    <div className="min-w-0 flex-1">
                         <Outlet />
                     </div>
                     <Footer />

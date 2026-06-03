@@ -11,18 +11,18 @@ export function Header() {
     return (
         <header
             className={cn(
-                "sticky top-0 z-30 border-b border-theme-border bg-theme-bg-pale/90 backdrop-blur transition-transform duration-300",
+                "sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur transition-transform duration-300",
                 hidden && "-translate-y-full",
             )}
         >
-            <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+            <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:px-6 sm:py-0">
                 <Link
                     to="/"
                     aria-label="pollinations.ai home"
-                    className="flex items-center"
+                    className="order-1 flex items-center"
                 >
                     <span
-                        className="block h-5 w-44 bg-current text-theme-text-strong"
+                        className="block h-5 w-44 bg-current text-gray-950"
                         style={{
                             maskImage: `url(${wordmarkUrl})`,
                             WebkitMaskImage: `url(${wordmarkUrl})`,
@@ -36,7 +36,7 @@ export function Header() {
                     />
                 </Link>
 
-                <nav className="flex items-center gap-1">
+                <nav className="order-3 -mx-1 flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 pb-1 sm:order-2 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0 sm:pb-0">
                     {NAV_ITEMS.map((item) => (
                         <NavItem
                             key={item.to}
@@ -55,7 +55,9 @@ export function Header() {
                     ))}
                 </nav>
 
-                <AccountMenu dashboardHref={ENTER_HREF} />
+                <div className="order-2 shrink-0 sm:order-3">
+                    <AccountMenu dashboardHref={ENTER_HREF} />
+                </div>
             </div>
         </header>
     );

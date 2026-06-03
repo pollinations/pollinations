@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `idx_community_endpoint_owner_name` ON `community_endpoint` (`owner_user_id`,`name`);

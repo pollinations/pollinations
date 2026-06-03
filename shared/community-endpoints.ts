@@ -8,6 +8,7 @@ const DEFAULT_MAX_COMPLETION_TOKENS = 1024;
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;
+    modelId: string;
     name: string;
     baseUrl: string;
     upstreamModel: string;
@@ -17,20 +18,36 @@ export type CommunityEndpointRuntime = {
     contextLength: number | null;
 };
 
+export type CommunityModelParts = {
+    ownerGithubUsername: string;
+    modelName: string;
+};
+
 type ChatRequestLike = {
     messages?: unknown;
     max_tokens?: unknown;
     max_completion_tokens?: unknown;
 };
 
-export function communityModelId(endpointId: string): string {
-    return `${COMMUNITY_MODEL_PREFIX}${endpointId}`;
+export function communityModelId(
+    ownerGithubUsername: string,
+    modelName: string,
+): string {
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
-export function parseCommunityModelId(model: string): string | null {
+export function parseCommunityModelId(
+    model: string,
+): CommunityModelParts | null {
     if (!model.startsWith(COMMUNITY_MODEL_PREFIX)) return null;
-    const id = model.slice(COMMUNITY_MODEL_PREFIX.length).trim();
-    return id || null;
+    const value = model.slice(COMMUNITY_MODEL_PREFIX.length).trim();
+    const separator = value.indexOf("/");
+    if (separator <= 0) return null;
+
+    const ownerGithubUsername = value.slice(0, separator).trim();
+    const modelName = value.slice(separator + 1).trim();
+    if (!ownerGithubUsername || !modelName) return null;
+    return { ownerGithubUsername, modelName };
 }
 
 export function normalizeCommunityEndpointBaseUrl(value: string): string {

@@ -2,7 +2,6 @@ import {
     type CommunityEndpointRuntime,
     capCommunityUsage,
     communityChatCompletionsUrl,
-    communityModelId,
 } from "@shared/community-endpoints.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
@@ -40,7 +39,7 @@ export async function generateCommunityEndpointCompletion(
         },
     );
 
-    completion.model = communityModelId(endpoint.id);
+    completion.model = endpoint.modelId;
     completion.usage = capCommunityUsage(
         endpoint,
         requestData,

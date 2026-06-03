@@ -296,8 +296,9 @@ function EndpointForm({
         <form className="grid gap-3" onSubmit={onSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
                 <EndpointField
-                    label="Name"
+                    label="Model name"
                     value={form.name}
+                    placeholder="model-name"
                     required
                     onChange={(value) => onChange("name", value)}
                 />

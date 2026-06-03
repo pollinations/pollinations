@@ -16,7 +16,7 @@ import {
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -123,17 +123,32 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
-        const communityEndpointId = parseCommunityModelId(model);
-        if (communityEndpointId) {
+        const communityModel = parseCommunityModelId(model);
+        if (communityModel) {
             if (eventType !== "generate.text") {
                 throw new HTTPException(400, {
                     message: "Community endpoints only support text requests",
                 });
             }
             const db = drizzle(c.env.DB, { schema });
-            const endpoint = await db.query.communityEndpoint.findFirst({
-                where: eq(schema.communityEndpoint.id, communityEndpointId),
+            const owner = await db.query.user.findFirst({
+                columns: { id: true },
+                where: eq(
+                    schema.user.githubUsername,
+                    communityModel.ownerGithubUsername,
+                ),
             });
+            const endpoint = owner
+                ? await db.query.communityEndpoint.findFirst({
+                      where: and(
+                          eq(schema.communityEndpoint.ownerUserId, owner.id),
+                          eq(
+                              schema.communityEndpoint.name,
+                              communityModel.modelName,
+                          ),
+                      ),
+                  })
+                : null;
             if (!endpoint) {
                 throw new HTTPException(400, {
                     message: `Invalid community endpoint: "${model}"`,
@@ -142,7 +157,7 @@ export function resolveModel(
             c.set("model", {
                 requested: model,
                 resolved: model as ModelName,
-                communityEndpoint: endpoint,
+                communityEndpoint: { ...endpoint, modelId: model },
             });
             await next();
             return;

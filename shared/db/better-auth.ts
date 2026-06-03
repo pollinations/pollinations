@@ -6,7 +6,14 @@
 // and re-generating the schema including the indexes.
 
 import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -186,6 +193,10 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull(),
 }, (table) => [
   index("idx_community_endpoint_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_community_endpoint_owner_name").on(
+    table.ownerUserId,
+    table.name,
+  ),
 ]);
 
 // Drizzle relations for query builder joins

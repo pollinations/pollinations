@@ -18,9 +18,9 @@ const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 const EndpointFieldsSchema = z.object({
-    name: z.string().min(1).max(120),
+    name: z.string().trim().min(1).max(120),
     baseUrl: z.string().url(),
-    upstreamModel: z.string().min(1).max(253),
+    upstreamModel: z.string().trim().min(1).max(253),
     bearerToken: z.string().min(1),
     promptTextPrice: PriceSchema,
     completionTextPrice: PriceSchema,
@@ -33,6 +33,8 @@ const CreateEndpointSchema = EndpointFieldsSchema.refine(
 );
 
 const UpdateEndpointSchema = EndpointFieldsSchema.partial();
+type Db = ReturnType<typeof drizzle<typeof schema>>;
+type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -46,7 +48,7 @@ function normalizeInputBaseUrl(value: string): string {
 }
 
 async function requireCommunityEndpointTier(
-    db: ReturnType<typeof drizzle<typeof schema>>,
+    db: Db,
     userId: string,
 ): Promise<void> {
     if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return;
@@ -60,10 +62,25 @@ async function requireCommunityEndpointTier(
     });
 }
 
-function toResponse(row: typeof schema.communityEndpoint.$inferSelect) {
+async function requireOwnerGithubUsername(
+    db: Db,
+    userId: string,
+): Promise<string> {
+    const owner = await db.query.user.findFirst({
+        columns: { githubUsername: true },
+        where: eq(schema.user.id, userId),
+    });
+    if (owner?.githubUsername) return owner.githubUsername;
+    throw new HTTPException(400, {
+        message:
+            "A GitHub username is required to register community endpoints",
+    });
+}
+
+function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
     return {
         id: row.id,
-        modelId: communityModelId(row.id),
+        modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
@@ -76,11 +93,7 @@ function toResponse(row: typeof schema.communityEndpoint.$inferSelect) {
     };
 }
 
-async function requireOwnedEndpoint(
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    id: string,
-    ownerUserId: string,
-) {
+async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
     const row = await db.query.communityEndpoint.findFirst({
         where: and(
             eq(schema.communityEndpoint.id, id),
@@ -95,23 +108,53 @@ async function requireOwnedEndpoint(
     return row;
 }
 
+async function ensureModelNameAvailable(
+    db: Db,
+    ownerUserId: string,
+    name: string,
+    currentId?: string,
+): Promise<void> {
+    const existing = await db.query.communityEndpoint.findFirst({
+        columns: { id: true },
+        where: and(
+            eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+            eq(schema.communityEndpoint.name, name),
+        ),
+    });
+    if (!existing || existing.id === currentId) return;
+    throw new HTTPException(400, {
+        message: "Community model name is already registered",
+    });
+}
+
 export const communityEndpointsRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     .get("/", async (c) => {
         const user = c.var.auth.requireUser();
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointTier(db, user.id);
+        const ownerGithubUsername = await requireOwnerGithubUsername(
+            db,
+            user.id,
+        );
         const rows = await db.query.communityEndpoint.findMany({
             where: eq(schema.communityEndpoint.ownerUserId, user.id),
             orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
         });
-        return c.json({ data: rows.map(toResponse) });
+        return c.json({
+            data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+        });
     })
     .post("/", validator("json", CreateEndpointSchema), async (c) => {
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointTier(db, user.id);
+        const ownerGithubUsername = await requireOwnerGithubUsername(
+            db,
+            user.id,
+        );
+        await ensureModelNameAvailable(db, user.id, input.name);
         const id = crypto.randomUUID();
         const [row] = await db
             .insert(schema.communityEndpoint)
@@ -132,7 +175,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 updatedAt: new Date(),
             })
             .returning();
-        return c.json(toResponse(row));
+        return c.json(toResponse(row, ownerGithubUsername));
     })
     .post("/:id/update", validator("json", UpdateEndpointSchema), async (c) => {
         const user = c.var.auth.requireUser();
@@ -140,6 +183,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointTier(db, user.id);
+        const ownerGithubUsername = await requireOwnerGithubUsername(
+            db,
+            user.id,
+        );
         const endpoint = await requireOwnedEndpoint(db, id, user.id);
         const nextPromptTextPrice =
             input.promptTextPrice ?? endpoint.promptTextPrice;
@@ -150,6 +197,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 message: "At least one price must be greater than 0",
             });
         }
+        await ensureModelNameAvailable(
+            db,
+            user.id,
+            input.name ?? endpoint.name,
+            id,
+        );
 
         const update: Partial<typeof schema.communityEndpoint.$inferInsert> = {
             updatedAt: new Date(),
@@ -187,7 +240,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ),
             )
             .returning();
-        return c.json(toResponse(row));
+        return c.json(toResponse(row, ownerGithubUsername));
     })
     .delete("/:id", async (c) => {
         const user = c.var.auth.requireUser();

@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-02",
+  "period_start": "2026-06-02",
+  "period_end": "2026-06-02",
+  "title": "At-cost pricing and cheaper Claude inference",
+  "summary": "A massive influx of community apps, at-cost pricing for 39 models, and new multimodal capabilities with MiniMax M3.\n\nWe dropped the 1.5x markup on 39 models across text, image, audio, and embeddings, meaning your Pollen credits now stretch exactly as far as the underlying provider costs. We also switched Claude models on AWS Bedrock to global cross-region profiles, shaving about 10% off the price for Haiku, Sonnet, and Opus.\n\nAdded MiniMax M3 to the roster, bringing a 1M context window, vision, and tool use. We also re-routed the `flux` image model through Fireworks FLUX.1 schnell for better performance, and migrated Gemma 4 26B to OpenRouter to keep underlying costs down.\n\nThe community showcase had a massive day. We merged nine new projects, including an iOS photo app, a Telegram bot for anime fans, an identity orchestration studio for 2D mascots, and—because the internet is wonderful—an AI generator specifically for amigurumi crochet patterns.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 11502,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11548,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11549,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11550,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11551,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11552,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11553,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11554,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11555,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11556,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11561,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11562,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11579,
+      "date": "2026-06-02"
+    }
+  ],
+  "generated_at": "2026-06-03T07:37:11.683117+00:00"
+}

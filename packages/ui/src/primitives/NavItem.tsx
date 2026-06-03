@@ -13,7 +13,7 @@ type BaseNavItemProps = {
 // Same recipe as the enter dashboard sidebar item: neutral/quiet when inactive,
 // section-colored dot always, filled with the section color when active.
 const base =
-    "polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:transition-colors";
+    "polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
 const activeClasses = "polli:bg-theme-bg-active polli:text-theme-text-strong";
 const inactiveClasses =
     "polli:text-gray-800 polli:hover:bg-white/60 polli:hover:text-gray-950";

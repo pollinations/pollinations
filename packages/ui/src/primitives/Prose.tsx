@@ -11,19 +11,19 @@ export type ProseProps = {
 const components: Components = {
     h1: ({ node, ...props }) => (
         <h1
-            className="polli:mt-8 polli:mb-4 polli:font-heading polli:text-4xl polli:text-theme-text-strong"
+            className="polli:mt-0 polli:mb-5 polli:break-words polli:font-heading polli:text-4xl polli:leading-none polli:text-theme-text-strong"
             {...props}
         />
     ),
     h2: ({ node, ...props }) => (
         <h2
-            className="polli:mt-8 polli:mb-3 polli:font-subheading polli:text-2xl polli:tracking-tight polli:text-theme-text-strong"
+            className="polli:mt-8 polli:mb-3 polli:break-words polli:font-subheading polli:text-2xl polli:leading-tight polli:text-theme-text-strong"
             {...props}
         />
     ),
     h3: ({ node, ...props }) => (
         <h3
-            className="polli:mt-6 polli:mb-2 polli:font-subheading polli:text-xl polli:text-theme-text-strong"
+            className="polli:mt-6 polli:mb-2 polli:break-words polli:font-subheading polli:text-xl polli:leading-tight polli:text-theme-text-strong"
             {...props}
         />
     ),
@@ -32,7 +32,7 @@ const components: Components = {
     ),
     a: ({ node, ...props }) => (
         <a
-            className="polli:text-theme-text-strong polli:underline polli:underline-offset-2"
+            className="polli:font-semibold polli:text-theme-text-strong polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3 polli:hover:decoration-theme-text-soft"
             {...props}
         />
     ),

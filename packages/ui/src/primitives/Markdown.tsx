@@ -10,13 +10,13 @@ export type MarkdownProps = {
 const components: Components = {
     ul: ({ node, ...props }) => (
         <ul
-            className="polli:flex polli:list-disc polli:flex-col polli:gap-1 polli:pl-5 polli:marker:text-theme-text-muted"
+            className="polli:flex polli:min-w-0 polli:list-disc polli:flex-col polli:gap-1 polli:pl-5 polli:marker:text-theme-text-muted"
             {...props}
         />
     ),
     ol: ({ node, ...props }) => (
         <ol
-            className="polli:flex polli:list-decimal polli:flex-col polli:gap-1 polli:pl-5 polli:marker:text-theme-text-muted"
+            className="polli:flex polli:min-w-0 polli:list-decimal polli:flex-col polli:gap-1 polli:pl-5 polli:marker:text-theme-text-muted"
             {...props}
         />
     ),
@@ -31,7 +31,7 @@ const components: Components = {
     ),
     code: ({ node, ...props }) => (
         <code
-            className="polli:rounded polli:bg-theme-bg-subtle polli:px-1 polli:py-0.5 polli:font-mono polli:text-xs"
+            className="polli:break-words polli:rounded polli:bg-theme-bg-subtle polli:px-1 polli:py-0.5 polli:font-mono polli:text-xs"
             {...props}
         />
     ),
@@ -48,7 +48,12 @@ const components: Components = {
 /** Compact markdown for cards and snippets. Use Prose for document-style content. */
 export function Markdown({ children, className }: MarkdownProps) {
     return (
-        <div className={cn("polli:font-body polli:leading-relaxed", className)}>
+        <div
+            className={cn(
+                "polli:min-w-0 polli:font-body polli:leading-relaxed",
+                className,
+            )}
+        >
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
                 {children}
             </ReactMarkdown>

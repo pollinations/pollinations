@@ -35,8 +35,10 @@ export { Field } from "./primitives/Field.tsx";
 export { FileUpload, type FileUploadProps } from "./primitives/FileUpload.tsx";
 export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
+export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LinkCard, type LinkCardProps } from "./primitives/LinkCard.tsx";
 export { Markdown, type MarkdownProps } from "./primitives/Markdown.tsx";
 export {
     MultiSelect,

@@ -48,9 +48,11 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
 
 function endpointErrorMessage(status: number, body: unknown): string {
     const message = endpointBodyMessage(body);
-    return message
-        ? `Endpoint responded ${status}: ${message}`
-        : `Endpoint responded ${status}`;
+    const prefix =
+        status === 401
+            ? "Endpoint responded 401 after we sent Authorization"
+            : `Endpoint responded ${status}`;
+    return message ? `${prefix}: ${message}` : prefix;
 }
 
 function endpointBodyMessage(body: unknown): string | null {

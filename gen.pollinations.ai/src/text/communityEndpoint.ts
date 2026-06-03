@@ -28,20 +28,29 @@ export async function generateCommunityEndpointCompletion(
     const authorization = `Bearer ${normalizeCommunityEndpointBearerToken(
         bearerToken,
     )}`;
-    const completion = await genericOpenAIClient(
-        requestData.messages,
-        {
-            ...requestData,
-            model: endpoint.upstreamModel,
-            stream: false,
-        },
-        {
-            endpoint: communityChatCompletionsUrl(endpoint.baseUrl),
-            additionalHeaders: {
-                Authorization: authorization,
+    let completion: ChatCompletion;
+    try {
+        completion = await genericOpenAIClient(
+            requestData.messages,
+            {
+                ...requestData,
+                model: endpoint.upstreamModel,
+                stream: false,
             },
-        },
-    );
+            {
+                endpoint: communityChatCompletionsUrl(endpoint.baseUrl),
+                additionalHeaders: {
+                    Authorization: authorization,
+                },
+            },
+        );
+    } catch (thrown) {
+        const error = thrown as ServiceError;
+        if (error.upstreamStatus === 401) {
+            error.message = `Community endpoint rejected the saved bearer token after we sent it: ${error.message}`;
+        }
+        throw error;
+    }
 
     completion.model = endpoint.modelId;
     completion.usage = capCommunityUsage(

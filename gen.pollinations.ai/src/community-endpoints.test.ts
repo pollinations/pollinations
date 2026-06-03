@@ -1,4 +1,6 @@
+import { env, SELF } from "cloudflare:test";
 import {
+    type CommunityEndpointRuntime,
     canManageCommunityEndpoints,
     capCommunityUsage,
     communityChatCompletionsUrl,
@@ -7,7 +9,22 @@ import {
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
-import { describe, expect, it } from "vitest";
+import { communityEndpoint as communityEndpointTable } from "@shared/db/better-auth.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
+import {
+    createTestUser,
+    test as fixtureTest,
+} from "@shared/test/fixtures/index.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { generateCommunityEndpointCompletion } from "./text/communityEndpoint.ts";
+
+const db = drizzle(env.DB);
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+});
 
 describe("community endpoint helpers", () => {
     it("keeps the MVP tier gate disabled", () => {
@@ -86,4 +103,165 @@ describe("community endpoint helpers", () => {
             total_tokens: 12,
         });
     });
+
+    it("clarifies upstream auth failures after sending the saved token", async () => {
+        const secret = "test-secret";
+        const endpoint: CommunityEndpointRuntime = {
+            id: "community-endpoint-id",
+            ownerUserId: "owner-id",
+            modelId: "community/voodoohop/openai",
+            name: "openai",
+            description: null,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                secret,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            contextLength: null,
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (_input, init) => {
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                return Response.json(
+                    {
+                        error: {
+                            message: "Authentication required",
+                        },
+                    },
+                    { status: 401, statusText: "Unauthorized" },
+                );
+            }),
+        );
+
+        await expect(
+            generateCommunityEndpointCompletion(
+                endpoint,
+                {
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                },
+                secret,
+            ),
+        ).rejects.toThrow(
+            "Community endpoint rejected the saved bearer token after we sent it: 401 Unauthorized: Authentication required",
+        );
+    });
 });
+
+fixtureTest(
+    "routes chat completions through a registered community endpoint with its saved token",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "OpenAI via community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            contextLength: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (request.url === "https://api.example.com/v1/chat/completions") {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                await expect(request.json()).resolves.toMatchObject({
+                    model: "gpt-4.1-mini",
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                    stream: false,
+                });
+
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+
+            if (
+                request.url.startsWith(
+                    "https://api.europe-west2.gcp.tinybird.co/",
+                ) ||
+                request.url.startsWith("http://localhost:7181/")
+            ) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: modelId,
+            choices: [
+                {
+                    message: { content: "ok" },
+                },
+            ],
+            usage: {
+                prompt_tokens: 2,
+                completion_tokens: 3,
+                total_tokens: 5,
+            },
+        });
+
+        const upstreamCalls = fetchMock.mock.calls.filter(
+            ([input, init]) =>
+                new Request(input, init).url ===
+                "https://api.example.com/v1/chat/completions",
+        );
+        expect(upstreamCalls).toHaveLength(1);
+    },
+);

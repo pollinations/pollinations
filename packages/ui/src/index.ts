@@ -42,6 +42,7 @@ export {
     MultiSelect,
     type MultiSelectProps,
 } from "./primitives/MultiSelect.tsx";
+export { NavItem, type NavItemProps } from "./primitives/NavItem.tsx";
 export {
     PeriodPicker,
     type PeriodPickerProps,

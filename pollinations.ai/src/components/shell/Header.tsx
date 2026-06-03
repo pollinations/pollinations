@@ -1,12 +1,13 @@
-import { cn } from "@pollinations/ui";
+import { cn, NavItem } from "@pollinations/ui";
 import wordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import { AccountMenu } from "@pollinations/ui/compositions/account";
-import { Link } from "@tanstack/react-router";
+import { Link, useMatchRoute } from "@tanstack/react-router";
 import { ENTER_HREF, NAV_ITEMS } from "./links.ts";
 import { useHideOnScroll } from "./useHideOnScroll.ts";
 
 export function Header() {
     const hidden = useHideOnScroll("app-scroll");
+    const matchRoute = useMatchRoute();
     return (
         <header
             className={cn(
@@ -37,17 +38,20 @@ export function Header() {
 
                 <nav className="flex items-center gap-1">
                     {NAV_ITEMS.map((item) => (
-                        <Link
+                        <NavItem
                             key={item.to}
+                            as={Link}
                             to={item.to}
-                            activeOptions={{ exact: item.exact }}
-                            className="rounded-md px-2 py-1.5 font-body text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong sm:px-3"
-                            activeProps={{
-                                className: "text-theme-text-strong",
-                            }}
+                            theme={item.theme}
+                            active={Boolean(
+                                matchRoute({
+                                    to: item.to,
+                                    fuzzy: !item.exact,
+                                }),
+                            )}
                         >
                             {item.label}
-                        </Link>
+                        </NavItem>
                     ))}
                 </nav>
 

@@ -14,6 +14,7 @@ import {
 } from "../../modules/modality/colors.ts";
 import { Alert } from "../../primitives/Alert.tsx";
 import { Button } from "../../primitives/Button.tsx";
+import { ButtonGroup } from "../../primitives/ButtonGroup.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
@@ -26,6 +27,7 @@ import {
     ImageIcon,
 } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
+import { TabButton } from "../../primitives/TabButton.tsx";
 import { Textarea } from "../../primitives/Textarea.tsx";
 import type { ThemeName } from "../../theme.ts";
 
@@ -168,28 +170,19 @@ function ModalityTabs({
     onCategoryChange: (category: ModelCatalogCategory) => void;
 }) {
     return (
-        <div className="polli:flex polli:flex-wrap polli:gap-1.5">
+        <ButtonGroup aria-label="Modality">
             {CATEGORY_ORDER.map((category) => (
-                <Button
+                <TabButton
                     key={category}
-                    type="button"
+                    active={activeCategory === category}
                     theme={modalityTheme(category)}
                     size="small"
-                    className={cn(
-                        "polli:self-auto polli:rounded-lg polli:px-3 polli:text-sm",
-                        activeCategory === category
-                            ? modalityColors(category).filled
-                            : cn(
-                                  "polli:bg-white/80 polli:text-gray-600",
-                                  modalityColors(category).hover,
-                              ),
-                    )}
                     onClick={() => onCategoryChange(category)}
                 >
                     {CATEGORY_LABELS[category]}
-                </Button>
+                </TabButton>
             ))}
-        </div>
+        </ButtonGroup>
     );
 }
 
@@ -796,27 +789,21 @@ export function Playground({
                                 <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                     Voice
                                 </Field.Label>
-                                <div className="polli:flex polli:flex-wrap polli:gap-2">
+                                <ButtonGroup aria-label="Voice">
                                     {currentModel.voices.map((voice) => (
-                                        <Button
+                                        <TabButton
                                             key={voice}
-                                            type="button"
+                                            active={selectedVoice === voice}
                                             theme={modalityTheme("audio")}
                                             size="small"
-                                            className={cn(
-                                                "polli:self-auto polli:rounded-lg",
-                                                selectedVoice === voice &&
-                                                    modalityColors("audio")
-                                                        .filled,
-                                            )}
                                             onClick={() =>
                                                 setSelectedVoice(voice)
                                             }
                                         >
                                             {voice}
-                                        </Button>
+                                        </TabButton>
                                     ))}
-                                </div>
+                                </ButtonGroup>
                             </Field.Root>
                         )}
 

@@ -11,6 +11,7 @@ import {
     FileUpload,
     InlineLink,
     Surface,
+    TabButton,
     Textarea,
 } from "@pollinations/ui";
 import {
@@ -398,25 +399,20 @@ export function App() {
                             </Field.Root>
 
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <ButtonGroup>
+                                <ButtonGroup aria-label="Image model">
                                     {[FALLBACK_MODEL, PREFERRED_MODEL].map(
                                         (model) => (
-                                            <Button
+                                            <TabButton
                                                 key={model}
-                                                type="button"
+                                                active={activeModel === model}
                                                 theme="pink"
                                                 size="small"
-                                                className={
-                                                    activeModel === model
-                                                        ? "bg-theme-bg-active text-theme-text-strong"
-                                                        : ""
-                                                }
                                                 onClick={() =>
                                                     setActiveModel(model)
                                                 }
                                             >
                                                 {model}
-                                            </Button>
+                                            </TabButton>
                                         ),
                                     )}
                                 </ButtonGroup>

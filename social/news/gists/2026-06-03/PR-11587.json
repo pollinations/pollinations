@@ -1,0 +1,35 @@
+{
+  "pr_number": 11587,
+  "title": "use bedrock us cross-region profile for nova-fast",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11587",
+  "merged_at": "2026-06-03T11:10:31Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Switches nova-fast (nova-micro) to the US cross-region inference profile `us.amazon.nova-micro-v1:0`, matching `nova-2-lite` and `claude-haiku`.\n- Fixes Bedrock throttling: a single peak burst on Jun 3 (07:00–07:30 UTC) produced ~200 `429 Too many tokens` 5xx because nova-micro was pinned to one region. Cross-region inference distributes load across US regions, raising the effective token-per-minute ceiling. No pricing change — Bedrock bills by the calling region.\n- Verified end-to-end: real `/v1/chat/completions` call through the gen worker (Portkey → Bedrock) returns 200 with resolved model `us.amazon.nova-micro-v1:0`; 8-way concurrent burst returned 0 5xx; billing path clean (no missing conversion-rate warnings). Resolver unit test updated.\n- Also fixes stale references in the model-debugging skill doc: rotated-out Tinybird token, `.tinyb` pointing at staging, and the non-existent `model_errors` pipe (now `recent_server_errors`); adds correct `model_health` columns.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Nova Fast gets a wider lane",
+    "blurb": "We've switched Nova Fast to use cross-region routing on AWS Bedrock. This means fewer bottlenecks, zero rate-limit hiccups, and smoother chatting all around.",
+    "summary": "Switched the nova-fast model to use Bedrock's US cross-region inference profile (us.amazon.nova-micro-v1:0) to eliminate 429 throttling errors during peak loads.",
+    "impact": "Users will experience significantly improved reliability and fewer failed requests when generating text with nova-fast.",
+    "keywords": [
+      "nova-fast",
+      "bedrock",
+      "reliability",
+      "api",
+      "models"
+    ],
+    "visual_concept": "The bee mascot and monitor robot in a cozy server room, looking at a glowing network map that spreads across multiple regions, representing cross-region routing and improved traffic flow.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot standing in a warm server room. The robot's screen shows a glowing map of connected nodes spreading across regions. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-03/PR-11587.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot standing in a warm server room. The robot's screen shows a glowing map of connected nodes spreading across regions. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-03T11:11:39.485542+00:00"
+}

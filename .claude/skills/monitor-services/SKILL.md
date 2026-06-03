@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Oracle Cloud). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux on Fireworks serverless, Z-Image on 3x RunPod community pods, LTX-2 + ACE-Step + Sana on GH200, Klein on RunPod, legacy image on OVH). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -140,58 +140,83 @@ Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.s
 
 ---
 
-### 5. Flux + Z-Image Workers (RunPod 4x RTX 4090)
+### 5. Z-Image Workers (RunPod — 3 single-GPU community pods, NF4)
 
-| Property | Value |
-|----------|-------|
-| **Pod** | `hsl3ksl31lvrcc` |
-| **Provider** | RunPod (4x RTX 4090, community cloud) |
-| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17` |
+Z-Image runs on **three independent single-GPU pods**, each one worker. All run the
+NF4-quantized model `unsloth/Z-Image-Turbo-unsloth-bnb-4bit` (~8.7 GB VRAM). flux
+is NOT here anymore — it's on Fireworks (see section 5b). The old 4-GPU pod
+`hsl3ksl31lvrcc` is stopped.
 
-**Workers:**
+| Pod ID | Name | GPU | Port | Proxy URL | SSH |
+|--------|------|-----|------|-----------|-----|
+| `8ikeaa96szx665` | zimage-a4500-a | RTX A4500 | 8767 | `https://8ikeaa96szx665-8767.proxy.runpod.net` | `ssh -i ~/.ssh/id_ed25519 -p 10859 root@213.144.200.205` |
+| `ft8emi5vavb7hr` | zimage-a4500-b | RTX A4500 | 8768 | `https://ft8emi5vavb7hr-8768.proxy.runpod.net` | `ssh -i ~/.ssh/id_ed25519 -p 11608 root@213.144.200.205` |
+| `lrrdd9jggqg9su` | zimage-3090 | RTX 3090 | 8767 | `https://lrrdd9jggqg9su-8767.proxy.runpod.net` | RunPod relay (dashboard "Connect") |
 
-| GPU | Port | Proxy URL | Service |
-|-----|------|-----------|---------|
-| 0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4) |
-| 1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4) |
-| 2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image |
-| 3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image |
+> Pod IDs / SSH ports rotate on recreate/restart. Re-check with `runpodctl get pod`
+> and the GraphQL `runtime.ports` query (below). These pods use the local
+> `~/.ssh/id_ed25519` key, NOT the SOPS `SSH_RUNPOD_FLUX_ZIMAGE` key.
 
-**Health check (per worker):**
+**Health check (per pod):**
 ```bash
-curl -s --connect-timeout 5 --max-time 15 https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate \
-  -X POST -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
+curl -s --connect-timeout 5 --max-time 10 https://8ikeaa96szx665-8767.proxy.runpod.net/health
 ```
-Expected: HTTP 200
+Expected: `{"status":"healthy","model":"unsloth/Z-Image-Turbo-unsloth-bnb-4bit"}`
 
 **Registry check (all image workers at once):**
 ```bash
 curl -s --connect-timeout 5 --max-time 10 https://gen.pollinations.ai/register
 ```
-Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`. The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
+Expected: 3 zimage workers (`8ikeaa96szx665-8767`, `ft8emi5vavb7hr-8768`,
+`lrrdd9jggqg9su-8767`), 0% error rate. No flux workers (flux is on Fireworks). The
+registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL);
+workers heartbeat to `gen.pollinations.ai/register`. Dispatch picks a live worker
+at random, so a stopped pod can still get traffic (→ errors) for up to ~180s until
+it ages out.
 
 **Restart a worker** (fresh containers don't have `screen`; use `nohup`):
 ```bash
-ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p <runtime-port> root@<runtime-ip>
-pkill -f 'nunchaku/server.py'  # or pkill -f 'z-image/server.py'
-mkdir -p /workspace/logs
-cd /opt/pollinations/pollinations/image.pollinations.ai/nunchaku
-nohup bash -c "source venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux HF_TOKEN=<SOPS:HF_TOKEN or .testingtokens> PLN_GPU_TOKEN=<SOPS> \
-  python server.py" > /workspace/logs/flux-gpu0.log 2>&1 &
+ssh -i ~/.ssh/id_ed25519 -p 10859 root@213.144.200.205
+pkill -f 'z-image/server.py'
+bash /root/launch.sh      # re-exports env (incl. ZIMAGE_MODEL_ID, expandable_segments) + relaunches via nohup
+tail -f /root/logs/zimage.log   # wait for "Application startup complete" + first heartbeat
 ```
 
-**Pod stop/start wipes the container overlay disk** — `/opt/pollinations/` is gone after every restart. Only `/workspace/` persists. Full rebuild = clone repo → `bash setup.sh` (~5 min: prebuilt nunchaku wheel + HF model download).
+**Pod stop/start wipes the container overlay disk** — only `/workspace/` (or the
+mounted volume) persists. Full rebuild = clone repo → install pinned
+`z-image/requirements.txt` (incl. `bitsandbytes`) → download SPAN model + HF model
+→ launch with `ZIMAGE_MODEL_ID=unsloth/Z-Image-Turbo-unsloth-bnb-4bit` and
+`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
 
-**SSH port rotates on stop/start.** Get current host/port via the RunPod GraphQL API:
+**SSH port rotates on stop/start.** Get current host/port via the RunPod GraphQL API
+(repeat per pod ID):
 ```bash
 RUNPOD_TOKEN=$(cat ~/.runpod/config.toml | grep apikey | cut -d\' -f2)
-curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Content-Type: application/json" \
-  -d '{"query":"{pod(input:{podId:\"hsl3ksl31lvrcc\"}){runtime{ports{ip privatePort publicPort type}}}}"}' \
-  | python3 -c "import sys,json;[print(p) for p in json.load(sys.stdin)['data']['pod']['runtime']['ports'] if p['privatePort']==22]"
+for PID in 8ikeaa96szx665 ft8emi5vavb7hr lrrdd9jggqg9su; do
+  curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Content-Type: application/json" \
+    -d "{\"query\":\"{pod(input:{podId:\\\"$PID\\\"}){runtime{ports{ip privatePort publicPort type}}}}\"}" \
+    | python3 -c "import sys,json;[print('$PID', p['ip'], p['publicPort']) for p in json.load(sys.stdin)['data']['pod']['runtime']['ports'] if p['privatePort']==22]"
+done
 ```
+
+---
+
+### 5b. Flux (Fireworks serverless)
+
+flux is served by **Fireworks FLUX serverless** — no GPU pod to manage, no health
+check to SSH into. Auth via `FIREWORKS_API_KEY` in
+`gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` (sops). Billed
+pay-per-image.
+
+**E2E test (through prod):**
+```bash
+curl -s -o /dev/null -w "HTTP %{http_code}, %{size_download}B, %{time_total}s" \
+  --max-time 60 \
+  "https://gen.pollinations.ai/image/flux_health_$(date +%s)?model=flux&width=512&height=512&nologo=true" \
+  -H "Authorization: Bearer $TEST_TOKEN"
+```
+Expected: HTTP 200, a valid JPEG. If this fails, check the Fireworks dashboard /
+`FIREWORKS_API_KEY`, not a GPU pod.
 
 ---
 
@@ -249,15 +274,16 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 When invoked, run checks in this order:
 
 1. **gen.pollinations.ai registry** - `curl https://gen.pollinations.ai/register` (KV-backed), check worker count and error rates
-2. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
-3. **LTX-2 health** - curl health endpoint
-4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
-5. **ACE-Step health** - curl health endpoint on port 8189
-6. **Klein health** - curl RunPod proxy health endpoint
-7. **Legacy image service** - check systemctl status on OVH
-8. **Sana worker** - curl health on GH200 port 8766
-9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
-10. **Disk space** - check OVH disk usage
+2. **Z-Image RunPod** - verify 3 zimage workers registered with 0% error rate (no flux workers — flux is on Fireworks)
+3. **Flux (Fireworks) e2e** - test `model=flux` through gen.pollinations.ai (serverless, no pod)
+4. **LTX-2 health** - curl health endpoint
+5. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
+6. **ACE-Step health** - curl health endpoint on port 8189
+7. **Klein health** - curl RunPod proxy health endpoint
+8. **Legacy image service** - check systemctl status on OVH
+9. **Sana worker** - curl health on GH200 port 8766
+10. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
+11. **Disk space** - check OVH disk usage
 
 For each:
 - If healthy: report OK with latency
@@ -266,11 +292,11 @@ For each:
 ## Auth
 
 - **Test token**: Read from `enter.pollinations.ai/.testingtokens` (ENTER_API_TOKEN_REMOTE)
-- **SSH keys**: Stored in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`):
-  - `SSH_RUNPOD_FLUX_ZIMAGE` — RunPod Flux+Z-Image pod
-  - `SSH_LAMBDA_SANA_LTX2_ACESTEP` — Lambda GH200 (LTX-2, ACE-Step, Sana)
-  - Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — get the full command from the dashboard "Connect" tab
-  - Extract: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.KEY_NAME' > /tmp/key && chmod 600 /tmp/key`
+- **SSH keys**:
+  - **Z-Image pods (3x RunPod) + Klein** — local `~/.ssh/id_ed25519`. A4500 pods accept it directly (`root@213.144.200.205`); the 3090 zimage pod and Klein use the RunPod relay (`ssh.runpod.io`) — full command from dashboard "Connect" tab.
+  - `SSH_LAMBDA_SANA_LTX2_ACESTEP` (SOPS) — Lambda GH200 (LTX-2, ACE-Step, Sana). Extract: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.SSH_LAMBDA_SANA_LTX2_ACESTEP' > /tmp/key && chmod 600 /tmp/key`
+  - `SSH_RUNPOD_FLUX_ZIMAGE` (SOPS) — **DEPRECATED**, was the old 4-GPU pod (stopped).
+- **Flux**: no SSH — served by Fireworks serverless (`FIREWORKS_API_KEY` in gen secrets).
 - **OVH**: `~/.ssh/id_rsa_ovh` (not in SOPS)
 
 ## Output
@@ -280,11 +306,11 @@ Report a brief status table:
 ```
 | Service | Status | Latency | Notes |
 |---------|--------|---------|-------|
-| gen registry | OK | 0.1s | 4 workers, 0% errors |
-| Flux RunPod (gpu0) | OK | 2.9s | hsl3ksl31lvrcc-8765 |
-| Flux RunPod (gpu1) | OK | 2.9s | hsl3ksl31lvrcc-8766 |
-| Z-Image RunPod (gpu2) | OK | 1.5s | hsl3ksl31lvrcc-8767 |
-| Z-Image RunPod (gpu3) | OK | 1.5s | hsl3ksl31lvrcc-8768 |
+| gen registry | OK | 0.1s | 3 zimage workers, 0% errors |
+| Z-Image (a4500-a) | OK | 2.8s | 8ikeaa96szx665-8767 (NF4) |
+| Z-Image (a4500-b) | OK | 2.8s | ft8emi5vavb7hr-8768 (NF4) |
+| Z-Image (3090) | OK | 2.9s | lrrdd9jggqg9su-8767 (NF4) |
+| Flux (Fireworks) | OK | ~2s | serverless e2e via gen |
 | LTX-2 health | OK | 0.2s | |
 | LTX-2 e2e | OK | 11.3s | 682KB |
 | ACE-Step | OK | 0.1s | |

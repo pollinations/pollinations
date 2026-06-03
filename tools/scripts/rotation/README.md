@@ -9,7 +9,7 @@ No CI workflows — operators run scripts from their own machine with admin cred
 | Token | Trust boundary | SOPS files | Fan-out targets |
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
-| `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
+| `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (3× Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
 | `TINYBIRD_INGEST_TOKEN` | enter+gen runtime → Tinybird append | enter+gen `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
@@ -105,11 +105,11 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Aspect | Choice |
 |---|---|
 | Dry-run | Shows plan, exits 0 with no mutations |
-| Pre-flight | git clean, gh, wrangler, SOPS with 3 SSH keys, SSH reachable to all 3 GPU hosts |
-| Rotation mechanism | `openssl rand -hex 32` + SSH fan-out to RunPod (Flux+Z-Image, Klein) + Lambda Labs (LTX-2+ACE-Step+Sana) |
+| Pre-flight | git clean, gh, wrangler, local `id_ed25519` key, SOPS Lambda key, SSH reachable to the 2 A4500 Z-Image pods + Lambda GH200 |
+| Rotation mechanism | `openssl rand -hex 32` + SSH fan-out to the 2 A4500 Z-Image pods (token inline in `/root/launch.sh`) + Lambda GH200; relay-only hosts (3090 Z-Image, Klein) restarted manually |
 | Create-before-delete | n/a |
 | Branch naming | `rotate/gpu-token-<timestamp>` |
-| PR body | Mentions automation, new token prefix, 3 GPU hosts updated |
+| PR body | Mentions automation, new token prefix, GPU hosts updated |
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
@@ -402,25 +402,46 @@ Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 
 ## GPU workers
 
-Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`) and extracted into a temp file at rotation time.
+Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys for Lambda are
+stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`); the
+RunPod pods use the local `~/.ssh/id_ed25519` key.
 
-| Worker | Pod / Host | SSH key (SOPS) | SSH target | `.env` path | Restart |
-|---|---|---|---|---|---|
-| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `root@38.65.239.17 -p 19489` | `$HOME/.env` | screen sessions |
-| Klein 4B | RunPod `lqh6weiexk4sth` | RunPod relay | `<pod-id>-<key-id>@ssh.runpod.io` (interactive only) | `/workspace/restart.sh` reads `PLN_GPU_TOKEN` from process env | `/workspace/restart.sh` |
-| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
+> **Updated for the 2026-06-02 GPU migration.** The script now fans out to the 2
+> A4500 Z-Image pods (token lives inline in `/root/launch.sh`) + Lambda GH200, and
+> skips flux (now Fireworks serverless). The 3090 Z-Image pod and Klein are RunPod
+> **relay-only** (no non-interactive SSH) — the script prints manual restart steps
+> for them and the operator must update those two by hand, then re-run the health
+> check. Pod IDs/ports change on recreate; re-verify before `--execute`.
 
-Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `gen.pollinations.ai/secrets/prod.vars.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
+**Current GPU hosts:**
+
+| Worker | Pod / Host | SSH key | SSH target | restart |
+|---|---|---|---|---|
+| Z-Image a4500-a | RunPod `8ikeaa96szx665` | `~/.ssh/id_ed25519` | `root@213.144.200.205 -p 10859` | `bash /root/launch.sh` |
+| Z-Image a4500-b | RunPod `ft8emi5vavb7hr` | `~/.ssh/id_ed25519` | `root@213.144.200.205 -p 11608` | `bash /root/launch.sh` |
+| Z-Image 3090 | RunPod `lrrdd9jggqg9su` | `~/.ssh/id_ed25519` (relay) | `ssh.runpod.io` (interactive) | `bash /root/launch.sh` |
+| Klein 4B | RunPod `lqh6weiexk4sth` | `~/.ssh/id_ed25519` (relay) | `ssh.runpod.io` (interactive) | `bash /workspace/restart.sh` |
+| LTX-2 + ACE-Step + Sana | Lambda GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` (SOPS) | `ubuntu@192.222.51.105` | `systemctl restart ltx2 acestep sana` |
+| ~~Flux~~ | Fireworks serverless | — | no SSH | redeploy gen worker (token in SOPS) |
+
+Pod IDs + SSH ports change if recreated/restarted — verify with `runpodctl get pod`
+and the GraphQL `runtime.ports` query. The RunPod relay (3090 zimage + Klein) does
+not support non-interactive command execution, so those two currently require a
+manual restart inside an interactive SSH session.
 
 `MUSIC_SERVICE_URL` in enter's SOPS points at the ACE-Step endpoint on the Lambda GH200 host. It is configuration (not an auth token) and is not rotated — but if the Lambda host changes, this URL has to move with it.
 
 Ad-hoc SSH for debugging a GPU host:
 
 ```bash
-# Flux + Z-Image
-sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.SSH_RUNPOD_FLUX_ZIMAGE' > /tmp/key && chmod 600 /tmp/key
-ssh -i /tmp/key root@38.65.239.17 -p 19489
+# Z-Image A4500 pods (direct SSH, local key)
+ssh -i ~/.ssh/id_ed25519 root@213.144.200.205 -p 10859   # zimage-a4500-a
+ssh -i ~/.ssh/id_ed25519 root@213.144.200.205 -p 11608   # zimage-a4500-b
 
-# Klein — get full SSH command from RunPod dashboard "Connect" tab (relay)
+# Z-Image 3090 + Klein — get full SSH command from RunPod dashboard "Connect" tab (relay)
 ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519
+
+# Lambda GH200
+sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.SSH_LAMBDA_SANA_LTX2_ACESTEP' > /tmp/key && chmod 600 /tmp/key
+ssh -i /tmp/key ubuntu@192.222.51.105
 ```

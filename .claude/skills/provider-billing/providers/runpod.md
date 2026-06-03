@@ -8,7 +8,15 @@ Pair with [lambda-labs.md](lambda-labs.md) — these two providers are both "cre
 
 ## Why this exists
 
-RunPod runs two Pollinations workloads: `gpu-worker` (Flux / Z-Image image generation, 4× RTX 4090) and `klein-worker` (Klein model, 1× RTX 3090). Both bill against a credit pool, so our Stripe history and bank statements will NEVER show RunPod charges — making all "how much do we spend on GPU" analysis blind without this skill.
+RunPod runs the Pollinations image workloads: **3 Z-Image pods** (2× RTX A4500 + 1× RTX 3090, NF4 quantized) and **1 Klein pod** (1× RTX 3090). They bill against a credit pool, so our Stripe history and bank statements will NEVER show RunPod charges — making all "how much do we spend on GPU" analysis blind without this skill.
+
+> **Fleet changed 2026-06-02.** flux moved off RunPod onto Fireworks serverless;
+> Z-Image moved off the shared 4× RTX 4090 pod (`gpu-worker` / `hsl3ksl31lvrcc`,
+> **terminated 2026-06-03**) onto the 3 single-GPU pods above. RunPod GPU burn
+> dropped from ~$1.58/hr to ~$0.82/hr. The pre-2026-06-02 numbers below are a
+> historical snapshot — always re-query the live API (the burn-rate /
+> pod-inventory queries in this skill are still correct). Current fleet detail:
+> `image.pollinations.ai/GPU_INSTANCES.md`.
 
 The question this skill answers is: **"How fast are we burning the RunPod credit pool, what's left, and when does it run out?"**
 
@@ -52,7 +60,22 @@ Runway at this burn: $2,071.80 / $1.648 ≈ 1,257 hours ≈ 52 days
                         new workers spin up, runway shrinks proportionally
 ```
 
-### Active pods (2026-04-11)
+### Active pods (current — 2026-06-03)
+
+| Pod name | GPU | $/hr | Status | Role |
+|---|---|---|---|---|
+| `zimage-a4500-a` | 1× RTX A4500 | $0.19 | RUNNING | Z-Image (NF4) |
+| `zimage-a4500-b` | 1× RTX A4500 | $0.19 | RUNNING | Z-Image (NF4) |
+| `zimage-3090` | 1× RTX 3090 | $0.22 | RUNNING | Z-Image (NF4) |
+| `klein-worker-v2` | 1× RTX 3090 | $0.22 | RUNNING | Klein 4B |
+
+(`gpu-worker` / `hsl3ksl31lvrcc`, the old 4× RTX 4090 Flux+Z-Image pod, was
+**terminated 2026-06-03** and no longer appears in the inventory.)
+
+The 4 RUNNING pods sum to **~$0.82/hr**. flux is no longer on RunPod (Fireworks
+serverless). Always reconcile against the live `currentSpendPerHr` query.
+
+### Historical snapshot (2026-04-11, pre-migration)
 
 | Pod name | GPU | Status | Role |
 |---|---|---|---|
@@ -61,7 +84,8 @@ Runway at this burn: $2,071.80 / $1.648 ≈ 1,257 hours ≈ 52 days
 | `plastic_peach_flyingfish` | 1× RTX 5090 | EXITED | legacy |
 | `gpu_zimage` | 1× RTX 5090 | EXITED | legacy (pre-worker consolidation) |
 
-Only the two RUNNING pods contribute to `currentSpendPerHr`.
+Burn rate then was $1.648/hr (the figures in "Known identifiers" above reflect
+this pre-migration state).
 
 ---
 

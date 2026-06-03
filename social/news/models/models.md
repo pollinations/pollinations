@@ -1,5 +1,27 @@
 # Pollinations Model Changelog
 
+## 2026-06-03
+
+### Text
+- `claude-opus-4.8` (Claude) — added as paid-only.
+- `perplexity-deep` (Perplexity).
+- `perplexity` (Perplexity).
+- `minimax-m3` (MiniMax) — includes reasoning support.
+- `step-flash` (StepFun) — includes reasoning support.
+- `step-3.5-flash` (StepFun) — includes reasoning support.
+- `mistral-4` — added reasoning support.
+- `claude-fast` — now paid-only.
+- `perplexity-fast` — removed vision support.
+- `perplexity-reasoning` — removed vision support.
+- `qwen-coder-large` — now paid-only.
+
+### Image
+- `wan-image` — now paid-only.
+- `qwen-image` — now paid-only.
+
+### Audio
+- `qwen-tts` — now paid-only.
+
 ## 2026-05-27
 
 ### Text

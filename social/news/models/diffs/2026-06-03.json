@@ -1,0 +1,532 @@
+{
+  "added": {
+    "text": [
+      {
+        "name": "claude-opus-4.8",
+        "aliases": [],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000005",
+          "promptCachedTokens": "0.0000005",
+          "promptCacheWriteTokens": "0.00000625",
+          "completionTextTokens": "0.000025"
+        },
+        "description": "Claude Opus 4.8 - Most Intelligent Model",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "context_length": 1000000,
+        "is_specialized": false,
+        "paid_only": true
+      },
+      {
+        "name": "perplexity-deep",
+        "aliases": [
+          "sonar-deep"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000001",
+          "completionTextTokens": "0.000001"
+        },
+        "description": "Perplexity Sonar - Deep web search with broad grounding",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": false,
+        "context_length": 128000,
+        "is_specialized": false
+      },
+      {
+        "name": "perplexity",
+        "aliases": [
+          "sonar-pro",
+          "perplexity-pro"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.000003",
+          "completionTextTokens": "0.000015"
+        },
+        "description": "Perplexity Sonar Pro - Advanced multi-source web search",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": false,
+        "context_length": 200000,
+        "is_specialized": false
+      },
+      {
+        "name": "minimax-m3",
+        "aliases": [
+          "minimax3",
+          "minimax-3"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000003",
+          "promptCachedTokens": "0.00000006",
+          "completionTextTokens": "0.0000012"
+        },
+        "description": "MiniMax M3 - Coding, agentic & 1M-context reasoning",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 1048576,
+        "is_specialized": false
+      },
+      {
+        "name": "step-flash",
+        "aliases": [
+          "stepfun-flash",
+          "step-3.7-flash",
+          "step-flash-3.7"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.0000002",
+          "promptCachedTokens": "0.00000004",
+          "completionTextTokens": "0.00000115"
+        },
+        "description": "StepFun Step 3.7 Flash - Fast multimodal reasoning model",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 256000,
+        "is_specialized": false
+      },
+      {
+        "name": "step-3.5-flash",
+        "aliases": [
+          "stepfun-3.5-flash",
+          "step-flash-3.5"
+        ],
+        "pricing": {
+          "currency": "pollen",
+          "promptTextTokens": "0.00000009",
+          "promptCachedTokens": "0.00000002",
+          "completionTextTokens": "0.0000003"
+        },
+        "description": "StepFun Step 3.5 Flash - Fast text reasoning model",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tools": true,
+        "reasoning": true,
+        "context_length": 262144,
+        "is_specialized": false
+      }
+    ],
+    "image": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "removed": {
+    "text": [],
+    "image": [],
+    "audio": [],
+    "embeddings": []
+  },
+  "changed": {
+    "text": [
+      {
+        "before": {
+          "name": "mistral-4",
+          "aliases": [
+            "mistral-small-4",
+            "mistral-small-2603"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          },
+          "description": "Mistral Small 4 - Unified Reasoning & Multimodal",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 262144,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "mistral-4",
+          "aliases": [
+            "mistral-small-4",
+            "mistral-small-2603"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          },
+          "description": "Mistral Small 4 - Unified Reasoning & Multimodal",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "reasoning": true,
+          "context_length": 262144,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "claude-fast",
+          "aliases": [
+            "claude-haiku-4.5",
+            "claude-haiku"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000011",
+            "promptCachedTokens": "0.00000011",
+            "completionTextTokens": "0.0000055"
+          },
+          "description": "Claude Haiku 4.5 - Fast & Intelligent",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 200000,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "claude-fast",
+          "aliases": [
+            "claude-haiku-4.5",
+            "claude-haiku"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "promptCachedTokens": "0.0000001",
+            "promptCacheWriteTokens": "0.00000125",
+            "completionTextTokens": "0.000005"
+          },
+          "description": "Claude Haiku 4.5 - Fast & Intelligent",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 200000,
+          "is_specialized": false,
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "perplexity-fast",
+          "aliases": [
+            "sonar"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000001"
+          },
+          "description": "Perplexity Sonar - Fast & Affordable with Web Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 127072,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "perplexity-fast",
+          "aliases": [
+            "sonar"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000001"
+          },
+          "description": "Perplexity Sonar - Fast & affordable web search",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "context_length": 128000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "perplexity-reasoning",
+          "aliases": [
+            "sonar-reasoning",
+            "sonar-reasoning-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "completionTextTokens": "0.000008"
+          },
+          "description": "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "reasoning": true,
+          "context_length": 128000,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "perplexity-reasoning",
+          "aliases": [
+            "sonar-reasoning",
+            "sonar-reasoning-pro"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "completionTextTokens": "0.000008"
+          },
+          "description": "Perplexity Sonar Reasoning - Step-by-step reasoning with web search",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": false,
+          "reasoning": true,
+          "context_length": 128000,
+          "is_specialized": false
+        }
+      },
+      {
+        "before": {
+          "name": "qwen-coder-large",
+          "aliases": [
+            "qwen3-coder-next"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000045",
+            "completionTextTokens": "0.00000225"
+          },
+          "description": "Qwen3 Coder Next - Advanced Code Generation",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 262144,
+          "is_specialized": false
+        },
+        "after": {
+          "name": "qwen-coder-large",
+          "aliases": [
+            "qwen3-coder-next"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "completionTextTokens": "0.0000015"
+          },
+          "description": "Qwen3 Coder Next - Advanced Code Generation",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tools": true,
+          "context_length": 262144,
+          "is_specialized": false,
+          "paid_only": true
+        }
+      }
+    ],
+    "image": [
+      {
+        "before": {
+          "name": "wan-image",
+          "aliases": [
+            "wan2.7-image",
+            "wan-img"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.0525"
+          },
+          "description": "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ]
+        },
+        "after": {
+          "name": "wan-image",
+          "aliases": [
+            "wan2.7-image",
+            "wan-img"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.035"
+          },
+          "description": "Wan 2.7 Image - Alibaba text-to-image and image editing (up to 2K)",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ],
+          "paid_only": true
+        }
+      },
+      {
+        "before": {
+          "name": "qwen-image",
+          "aliases": [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.045"
+          },
+          "description": "Qwen Image Plus - Alibaba text-to-image and image editing",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ]
+        },
+        "after": {
+          "name": "qwen-image",
+          "aliases": [
+            "qwen-image-plus",
+            "qwen-image-2512",
+            "qwen-image-edit",
+            "qwen-image-edit-plus"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionImageTokens": "0.03"
+          },
+          "description": "Qwen Image Plus - Alibaba text-to-image and image editing",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "image"
+          ],
+          "paid_only": true
+        }
+      }
+    ],
+    "audio": [
+      {
+        "before": {
+          "name": "qwen-tts",
+          "aliases": [
+            "qwen3-tts",
+            "qwen3-tts-flash"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000195"
+          },
+          "description": "Qwen3-TTS Flash - Fast multilingual text-to-speech",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ]
+        },
+        "after": {
+          "name": "qwen-tts",
+          "aliases": [
+            "qwen3-tts",
+            "qwen3-tts-flash"
+          ],
+          "pricing": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000013"
+          },
+          "description": "Qwen3-TTS Flash - Fast multilingual text-to-speech",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "audio"
+          ],
+          "paid_only": true
+        }
+      }
+    ],
+    "embeddings": []
+  }
+}

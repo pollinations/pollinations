@@ -12,12 +12,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             rows={rows}
             data-error={error ? "true" : undefined}
             className={cn(
-                "polli-field-themed polli:w-full polli:rounded-lg polli:border polli:px-3 polli:py-2",
+                "polli-textarea polli:w-full polli:rounded-lg polli:border polli:px-3 polli:py-2",
                 "polli:min-h-20 polli:resize-y polli:font-body polli:text-base",
                 "polli:text-gray-950",
                 "polli:transition-colors",
                 "polli:disabled:opacity-50 polli:disabled:cursor-not-allowed",
-                "polli-textarea-themed",
                 className,
             )}
             {...props}

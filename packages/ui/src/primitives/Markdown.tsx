@@ -39,7 +39,7 @@ const components: Components = {
         <a
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:font-semibold polli:text-theme-text-strong polli:underline polli:underline-offset-2"
+            className="polli-control polli:rounded-sm polli:font-semibold polli:text-theme-text-strong polli:underline polli:underline-offset-2"
             {...props}
         />
     ),

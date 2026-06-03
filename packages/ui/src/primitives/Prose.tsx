@@ -32,7 +32,7 @@ const components: Components = {
     ),
     a: ({ node, ...props }) => (
         <a
-            className="polli:font-semibold polli:text-theme-text-strong polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3 polli:hover:decoration-theme-text-soft"
+            className="polli-control polli:rounded-sm polli:font-semibold polli:text-theme-text-strong polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3 polli:hover:decoration-theme-text-soft"
             {...props}
         />
     ),

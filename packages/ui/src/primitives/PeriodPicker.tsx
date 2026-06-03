@@ -41,7 +41,7 @@ const MONTH_LABELS = [
 ];
 
 const NAV_BUTTON =
-    "polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-subtle";
+    "polli-control polli:rounded-full polli:px-2 polli:py-1 polli:text-xs polli:font-semibold polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-subtle";
 
 function addUtcMonths(date: Date, months: number): Date {
     return new Date(
@@ -159,7 +159,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                         type="button"
                         aria-label={`Select period, current ${formatPeriodLabel(value)}`}
                         className={cn(
-                            "polli:inline-flex polli:min-w-[150px] polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-4 polli:pt-1.5 polli:pb-2 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                            "polli-control polli:inline-flex polli:min-w-[150px] polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-4 polli:pt-1.5 polli:pb-2 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
                             "polli:border-theme-border polli:bg-theme-bg-subtle polli:text-theme-text-base",
                             "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-pale",
                             isOpen &&
@@ -244,7 +244,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     disabled={!selectable}
                                     onClick={() => selectDate(date)}
                                     className={cn(
-                                        "polli:rounded-lg polli:px-3 polli:py-2 polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                        "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
                                         selected
                                             ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                             : "polli:text-gray-700 polli:hover:bg-theme-bg-subtle",
@@ -300,7 +300,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(
-                                            "polli:aspect-square polli:rounded-lg polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                            "polli-control polli:aspect-square polli:rounded-lg polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
                                                 "polli:text-gray-300",
                                             sameUtcDay(date, today) &&

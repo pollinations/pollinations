@@ -43,7 +43,7 @@ export function InlineLink<T extends React.ElementType = "a">({
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
             className={cn(
-                "polli:inline-flex polli:items-center polli:gap-1 polli:font-semibold polli:text-theme-text-strong",
+                "polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-semibold polli:text-theme-text-strong",
                 "polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3",
                 "polli:transition-colors polli:hover:text-theme-text-soft polli:hover:decoration-theme-text-soft",
                 className,

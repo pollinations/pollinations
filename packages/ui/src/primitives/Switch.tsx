@@ -20,8 +20,8 @@ export type SwitchProps = {
 //  invalid — soft red (incomplete / error / setup needed)
 const trackClasses: Record<SwitchStatus, string> = {
     off: "polli:bg-gray-200",
-    on: "polli:bg-[oklch(0.88_0.12_158)]",
-    invalid: "polli:bg-[oklch(0.88_0.12_25)]",
+    on: "polli:bg-intent-success-bg-light",
+    invalid: "polli:bg-intent-danger-bg-light",
 };
 
 /**
@@ -53,7 +53,7 @@ export const Switch: FC<SwitchProps> = ({
             onClick={() => onChange(!checked)}
             disabled={disabled}
             className={cn(
-                "polli:relative polli:inline-flex polli:h-7 polli:w-12 polli:shrink-0 polli:items-center polli:rounded-full polli:transition polli:disabled:cursor-not-allowed polli:disabled:opacity-60",
+                "polli-control polli:relative polli:inline-flex polli:h-7 polli:w-12 polli:shrink-0 polli:items-center polli:rounded-full polli:transition polli:disabled:cursor-not-allowed polli:disabled:opacity-60",
                 trackClasses[effectiveStatus],
                 className,
             )}

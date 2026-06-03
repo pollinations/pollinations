@@ -6,7 +6,7 @@ type IconButtonIntent = "danger";
 
 const intentClasses: Record<IconButtonIntent, string> = {
     danger:
-        "polli:bg-intent-danger-bg-light polli:hover:bg-[oklch(0.88_0.075_25)] " +
+        "polli:bg-intent-danger-bg-light polli:hover:bg-intent-danger-bg-hover " +
         "polli:text-intent-danger-text",
 };
 
@@ -36,7 +36,7 @@ export const IconButton: FC<IconButtonProps> = ({
         title={title}
         aria-label={title}
         className={cn(
-            "polli:inline-flex polli:h-6 polli:w-6 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded polli:transition-colors",
+            "polli-control polli:inline-flex polli:h-6 polli:w-6 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded polli:transition-colors",
             intent ? intentClasses[intent] : defaultClasses,
             className,
         )}

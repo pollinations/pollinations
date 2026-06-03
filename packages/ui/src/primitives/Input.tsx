@@ -12,7 +12,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             data-error={error ? "true" : undefined}
             className={cn(
-                "polli-field-themed polli:px-3 polli:py-2 polli:border polli:rounded-lg",
+                "polli-input polli:px-3 polli:py-2 polli:border polli:rounded-lg",
                 "polli:text-gray-950",
                 "polli:transition-colors",
                 "polli:disabled:opacity-50 polli:disabled:cursor-not-allowed",

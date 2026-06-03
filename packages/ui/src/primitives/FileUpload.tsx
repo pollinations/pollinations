@@ -76,7 +76,7 @@ export function FileUpload({
         >
             <label
                 className={cn(
-                    "polli:flex polli:flex-col polli:items-center polli:justify-center polli:gap-2",
+                    "polli-control polli:flex polli:flex-col polli:items-center polli:justify-center polli:gap-2",
                     "polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border",
                     "polli:bg-theme-bg-pale polli:px-4 polli:py-6 polli:text-center polli:text-sm",
                     "polli:text-theme-text-soft polli:transition-colors",

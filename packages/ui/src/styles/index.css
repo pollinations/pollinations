@@ -52,40 +52,46 @@
     -moz-appearance: textfield;
 }
 
-.polli-field-themed {
+.polli-input,
+.polli-textarea {
     border-color: var(--polli-color-border);
     outline: none;
     box-shadow: none;
 }
 
-.polli-field-themed:focus,
-.polli-field-themed:focus-visible {
+.polli-input:focus,
+.polli-input:focus-visible,
+.polli-textarea:focus,
+.polli-textarea:focus-visible {
     border-color: var(--polli-color-border);
     outline: none;
     box-shadow: 0 0 0 1px var(--polli-color-border);
 }
 
-.polli-field-themed[data-error="true"] {
+.polli-input[data-error="true"],
+.polli-textarea[data-error="true"] {
     border-color: var(--polli-color-danger-border);
 }
 
-.polli-field-themed[data-error="true"]:focus,
-.polli-field-themed[data-error="true"]:focus-visible {
+.polli-input[data-error="true"]:focus,
+.polli-input[data-error="true"]:focus-visible,
+.polli-textarea[data-error="true"]:focus,
+.polli-textarea[data-error="true"]:focus-visible {
     border-color: var(--polli-color-danger-border);
     box-shadow: 0 0 0 1px var(--polli-color-danger-border);
 }
 
-.polli-textarea-themed {
+.polli-textarea {
     --polli-textarea-resizer-color: var(--polli-color-border);
     scrollbar-color: var(--polli-color-border) transparent;
 }
 
-.polli-textarea-themed:focus {
+.polli-textarea:focus {
     --polli-textarea-resizer-color: var(--polli-color-border);
     scrollbar-color: var(--polli-color-border) transparent;
 }
 
-.polli-textarea-themed::-webkit-resizer {
+.polli-textarea::-webkit-resizer {
     background:
         linear-gradient(
             135deg,
@@ -105,6 +111,16 @@
             var(--polli-textarea-resizer-color) 80% 86%,
             transparent 86% 100%
         );
+}
+
+.polli-control {
+    outline: none;
+}
+
+.polli-control:focus-visible,
+.polli-control:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--polli-color-border);
 }
 
 .polli-slider {

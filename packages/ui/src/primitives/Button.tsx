@@ -21,7 +21,7 @@ const themeClasses =
 const intentClasses: Record<ButtonIntent, string> = {
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
-        "polli:hover:bg-[oklch(0.88_0.075_25)] polli:transition-colors",
+        "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
 };
 
 type BaseButtonProps = {
@@ -43,7 +43,7 @@ const buttonClasses = ({
 }: BaseButtonProps & { disabled?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     return cn(
-        "polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:self-center polli:placeholder-green-950 polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:self-center polli:font-medium polli:leading-normal polli:box-border",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",

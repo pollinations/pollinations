@@ -38,7 +38,7 @@ export const TabButton: FC<TabButtonProps> = ({
             aria-pressed={active}
             disabled={disabled}
             className={cn(
-                "polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:border polli:font-medium polli:leading-normal polli:transition-all polli:duration-200",
+                "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:border polli:font-medium polli:leading-normal polli:transition-all polli:duration-200",
                 active
                     ? "polli:bg-theme-bg-active polli:text-theme-text-strong polli:border-theme-border"
                     : "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:border-theme-border polli:hover:bg-theme-bg-active",

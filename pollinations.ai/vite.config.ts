@@ -28,6 +28,12 @@ export default defineConfig({
         dedupe: ["react", "react-dom"],
     },
     server: {
+        // Fixed dev origin — the pk_ app key's auth redirect allowlist is pinned to
+        // http://127.0.0.1:4178. Must be 127.0.0.1 (not localhost) and exactly 4178;
+        // strictPort makes vite fail rather than drift to another port and break login.
+        host: "127.0.0.1",
+        port: 4178,
+        strictPort: true,
         open: true,
     },
     build: {

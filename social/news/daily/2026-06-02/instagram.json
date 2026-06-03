@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-02",
+  "period_start": "2026-06-02",
+  "period_end": "2026-06-02",
+  "generated_at": "2026-06-03T07:37:11.683117+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-02/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-02/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-02/images/instagram-3.jpg"
+    }
+  ],
+  "text": "13 PRs merged this week. mostly we just made things cheaper and faster.\n\npricing multipliers are all normalized to 1x now (at-cost). claude inference is cheaper. flux is routing through fireworks so your pixels should arrive quicker. minimax m3 is live.\n\noh, and 9 new community apps just sprouted in the greenhouse. go build something weird. link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #llm #webdev #techupdates",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

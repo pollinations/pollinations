@@ -7,7 +7,7 @@
         "dev": "vite",
         "predev": "npm run build:ui && npm run build:embedded-apps",
         "build:ui": "npm run build --prefix ../packages/sdk && npm run build --prefix ../packages/ui",
-        "build:embedded-apps": "npm run build:app --prefix ../apps/playground && node scripts/sync-embedded-apps.mjs",
+        "build:embedded-apps": "npm run build:app --prefix ../apps/playground && npm run build:app --prefix ../apps/catgpt && node scripts/sync-embedded-apps.mjs",
         "build": "tsc --noEmit && vite build",
         "prebuild": "npm run build:ui && npm run build:embedded-apps",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",

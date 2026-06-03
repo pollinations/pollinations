@@ -1,129 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CatGPT Meme Generator | Pollinations.AI</title>
-
-    <meta property="og:title" content="CatGPT Meme Generator - Where Your Questions Meet Feline Indifference">
-    <meta property="og:description"
-        content="Ask a question, watch as CatGPT barely acknowledges your existence. Created with Tanika Godbole, powered by Pollinations.AI 🐱✨">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://catgpt.pollinations.ai">
-    <meta property="og:image"
-        content="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/public/og-image.png">
-    <meta property="og:image:width" content="600">
-    <meta property="og:image:height" content="600">
-    <meta property="og:site_name" content="CatGPT Meme Generator">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CatGPT Meme Generator - Where Your Questions Meet Feline Indifference">
-    <meta name="twitter:description" content="Ask a question, watch as CatGPT barely acknowledges your existence. 🐱✨">
-    <meta name="twitter:image"
-        content="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/public/og-image.png">
-
-    <meta name="description"
-        content="CatGPT Meme Generator - Your questions, a cat's indifference. A fun AI-powered meme generator where your human concerns are met with the perfect feline dismissal.">
-    <meta name="keywords"
-        content="CatGPT, meme generator, cat memes, AI memes, Pollinations.AI, funny cat, meme creator">
-    <meta name="author" content="Pollinations.AI & Tanika Godbole">
-
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>">
-</head>
-
-<body>
-    <div class="container">
-        <header>
-            <h1 class="emoji-title">Ask a question. Get a cat response.</h1>
-            <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener" class="original-comic-link">
-                <img src="images/original-catgpt.png" alt="Original CatGPT comic by @missfitcomics" class="original-comic" />
-            </a>
-            <p class="tagline">Original comic by <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">@missfitcomics</a> (Tanika Godbole)</p>
-        </header>
-
-        <div id="authContainer" class="auth-container">
-            <div id="authLoggedOut" class="auth-logged-out">
-                <div class="auth-info-text">
-                    <p class="auth-headline">Connect your <span class="auth-highlight">pollinations.ai</span> account</p>
-                    <p class="auth-subtext">Login with Pollinations to use</p>
-                </div>
-                <button id="authLoginBtn" class="auth-login-btn">Log In</button>
-            </div>
-            <div id="authLoggedIn" class="auth-logged-in hidden">
-                <div class="auth-bar">
-                    <div class="auth-user-pill">
-                        <img id="authAvatar" class="auth-avatar" src="" alt="avatar" />
-                        <div id="authAvatarFallback" class="auth-avatar-fallback">?</div>
-                        <span id="authUserName" class="auth-user-name">User</span>
-                    </div>
-                    <span id="authBalance" class="auth-balance-value">-</span>
-                    <span class="auth-spacer"></span>
-                    <a id="authDashboardLink" href="https://enter.pollinations.ai" target="_blank" rel="noopener" class="auth-dashboard-btn">Dashboard</a>
-                    <button id="authLogoutBtn" class="auth-logout-btn">Logout</button>
-                </div>
-                <span id="authApiKey" class="hidden">-</span>
-            </div>
-        </div>
-
-        <div class="section-card generator-section hidden">
-            <div class="input-group">
-                <label for="userInput">What do you want to ask CatGPT?</label>
-                <textarea id="userInput"
-                    placeholder="e.g., What's the weather today? How do I cook pasta? What's the meaning of life?"
-                    rows="3"></textarea>
-            </div>
-
-            <div class="input-group">
-                <div id="imageUploadContainer" class="upload-container">
-                    <label for="imageUpload" class="upload-btn">Upload Selfie (optional)</label>
-                    <input type="file" id="imageUpload" accept="image/*" class="hidden" />
-                </div>
-
-                <div id="imageThumbnailContainer" class="thumbnail-container hidden">
-                    <img id="imageThumbnail" class="image-thumbnail" alt="Uploaded image preview" />
-                    <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">✕</button>
-                </div>
-            </div>
-
-            <button id="generateBtn" class="generate-btn">Generate Meme</button>
-            <div id="modelUpsell" class="model-upsell hidden">
-                🐱 CatGPT is on the free catnip. <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">Add pollen credits</a> for the good stuff — crisper art and wittier comebacks. A share goes to the original artist, <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">Tanika Godbole</a>.
-            </div>
-            <div id="generateError" class="generate-error hidden"></div>
-
-            <div id="resultSection" class="result-section hidden">
-                <img id="generatedMeme" alt="Generated CatGPT meme" />
-                <div class="action-buttons">
-                    <button id="downloadBtn" class="action-btn">
-                        <span>Download</span> 💾
-                    </button>
-                    <button id="shareBtn" class="action-btn">
-                        <span>Share</span> 🔗
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <h2>Your Memes</h2>
-            <div class="your-memes-grid" id="yourMemesGrid"></div>
-            <h2 style="margin-top: 2rem;">Examples</h2>
-            <div class="examples-grid" id="examplesGrid"></div>
-        </div>
-
-        <footer>
-            <p>Original CatGPT by <a href="https://www.instagram.com/missfitcomics/" target="_blank" rel="noopener">@missfitcomics</a> (Tanika Godbole)</p>
-            <p>Made with 💜 by <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.AI</a></p>
-            <p class="footer-small">
-                <a href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt" target="_blank" rel="noopener">View on GitHub</a> 🐙
-            </p>
-        </footer>
-    </div>
-
-    <script type="module" src="script.js"></script>
-</body>
-
+    <meta property="og:title" content="CatGPT Meme Generator" />
+    <meta property="og:description" content="Ask a question, get a cat response." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://catgpt.pollinations.ai" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="description" content="CatGPT Meme Generator - your questions, a cat's indifference." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="polli-ui-shell">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

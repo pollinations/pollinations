@@ -13,6 +13,11 @@ const embeddedApps = [
         source: path.join(repoRoot, "apps/playground/dist"),
         target: path.join(siteRoot, "public/_apps/playground"),
     },
+    {
+        name: "catgpt",
+        source: path.join(repoRoot, "apps/catgpt/dist"),
+        target: path.join(siteRoot, "public/_apps/catgpt"),
+    },
 ];
 
 await rm(embeddedAppsRoot, { recursive: true, force: true });

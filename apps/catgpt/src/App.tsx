@@ -339,7 +339,7 @@ export function App() {
                         href="https://www.instagram.com/missfitcomics/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block overflow-hidden rounded-lg bg-white"
+                        className="block w-full max-w-52 justify-self-end overflow-hidden rounded-lg bg-white"
                     >
                         <img
                             src={originalComicUrl}

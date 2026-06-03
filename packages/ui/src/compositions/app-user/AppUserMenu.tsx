@@ -34,7 +34,7 @@ const defaultLabels: AppUserMenuLabels = {
 };
 
 const rowClass =
-    "polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-bg-hover polli:focus:outline-none polli:focus-visible:bg-theme-bg-hover";
+    "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-bg-hover polli:focus-visible:bg-theme-bg-hover";
 
 export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
     if (typeof window === "undefined") return false;
@@ -82,13 +82,13 @@ function AppUserMenuContent({
                 <Dropdown
                     theme="amber"
                     align="end"
-                    panelClassName="polli:w-64 polli:rounded-2xl polli:bg-theme-bg-active polli:p-1 polli:shadow-lg polli:ring-1 polli:ring-black/5"
+                    className="polli:w-64 polli:p-1"
                     trigger={(open) => (
                         <button
                             type="button"
                             data-theme="amber"
                             aria-label={labels.appUserMenu}
-                            className="polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:ring-1 polli:ring-black/5 polli:transition-colors polli:hover:bg-theme-bg-hover"
+                            className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:border polli:border-theme-border polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-theme-bg-hover"
                         >
                             <UserAvatar
                                 size="md"

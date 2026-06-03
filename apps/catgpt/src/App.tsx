@@ -24,7 +24,7 @@ import example2Url from "../images/example2.png";
 import example3Url from "../images/example3.png";
 import example4Url from "../images/example4.png";
 import originalComicUrl from "../images/original-catgpt.png";
-import { CATGPT_MODELS, ENTER_URL } from "./config";
+import { ENTER_URL } from "./config";
 
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
@@ -416,9 +416,6 @@ export function App() {
                                         ),
                                     )}
                                 </ButtonGroup>
-                                <span className="text-xs text-theme-text-soft">
-                                    BYOP models: {CATGPT_MODELS.join(", ")}
-                                </span>
                             </div>
 
                             {error && <Alert intent="danger">{error}</Alert>}
@@ -513,7 +510,7 @@ export function App() {
                     </span>
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt"
-                        theme="violet"
+                        theme="pink"
                         size="small"
                     >
                         GitHub

@@ -2,9 +2,8 @@
  * Worker entry point for pollinations.ai
  * Serves static assets and rewrites meta tags per route for SEO.
  *
- * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/api.config.ts), so this worker does no
- * API proxying — it only serves assets and rewrites SEO metadata.
+ * The site talks to public APIs directly from the browser, so this worker does
+ * no API proxying — it only serves assets and rewrites SEO metadata.
  */
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)

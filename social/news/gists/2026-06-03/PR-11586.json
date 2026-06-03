@@ -1,0 +1,34 @@
+{
+  "pr_number": 11586,
+  "title": "docs: update README — 2026-06-03",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11586",
+  "merged_at": "2026-06-03T08:42:02Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News + Recent Apps sections.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fresh Ink",
+    "blurb": "Our automated bot just pinned the latest news and community apps to the repository bulletin board.",
+    "summary": "Automated daily update to the README file to refresh the Latest News and Recent Apps sections.",
+    "impact": "Visitors to the GitHub repository will see the most current news and community apps on the main page.",
+    "keywords": [
+      "readme",
+      "automation",
+      "news",
+      "apps"
+    ],
+    "visual_concept": "The monitor robot acting as a newsboy or updating a community bulletin board, with Polly the bee reading a tiny newspaper.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pinning a fresh news clipping to a wooden bulletin board. The tiny bee mascot hovers nearby holding a tiny newspaper. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-03/PR-11586.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pinning a fresh news clipping to a wooden bulletin board. The tiny bee mascot hovers nearby holding a tiny newspaper. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-03T08:43:06.449781+00:00"
+}

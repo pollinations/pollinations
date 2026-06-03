@@ -10,11 +10,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
             ref={ref}
             rows={rows}
+            data-error={error ? "true" : undefined}
             className={cn(
-                "polli:w-full polli:rounded-lg polli:border polli:px-3 polli:py-2",
+                "polli-field-themed polli:w-full polli:rounded-lg polli:border polli:px-3 polli:py-2",
                 "polli:min-h-20 polli:resize-y polli:font-body polli:text-base",
+                "polli:text-gray-950",
+                "polli:transition-colors",
                 "polli:disabled:opacity-50 polli:disabled:cursor-not-allowed",
-                error ? "polli:border-red-400" : "polli:border-gray-300",
+                "polli-textarea-themed",
                 className,
             )}
             {...props}

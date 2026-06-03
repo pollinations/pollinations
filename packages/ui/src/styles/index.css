@@ -52,6 +52,61 @@
     -moz-appearance: textfield;
 }
 
+.polli-field-themed {
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: none;
+}
+
+.polli-field-themed:focus,
+.polli-field-themed:focus-visible {
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.polli-field-themed[data-error="true"] {
+    border-color: var(--polli-color-danger-border);
+}
+
+.polli-field-themed[data-error="true"]:focus,
+.polli-field-themed[data-error="true"]:focus-visible {
+    border-color: var(--polli-color-danger-border);
+    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+}
+
+.polli-textarea-themed {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea-themed:focus {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea-themed::-webkit-resizer {
+    background:
+        linear-gradient(
+            135deg,
+            transparent 0 52%,
+            var(--polli-textarea-resizer-color) 52% 58%,
+            transparent 58% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 66%,
+            var(--polli-textarea-resizer-color) 66% 72%,
+            transparent 72% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 80%,
+            var(--polli-textarea-resizer-color) 80% 86%,
+            transparent 86% 100%
+        );
+}
+
 .polli-slider {
     --polli-slider-thumb-shadow-fallback: color-mix(
         in oklab,

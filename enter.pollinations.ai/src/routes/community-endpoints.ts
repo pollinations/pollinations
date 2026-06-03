@@ -19,8 +19,9 @@ const COMMUNITY_ENDPOINT_TIERS = new Set(["flower", "nectar", "router"]);
 
 const EndpointFieldsSchema = z.object({
     name: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(240).optional(),
     baseUrl: z.string().url(),
-    upstreamModel: z.string().trim().min(1).max(253),
+    upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
     promptTextPrice: PriceSchema,
     completionTextPrice: PriceSchema,
@@ -82,6 +83,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
+        description: row.description,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         tokenConfigured: true,
@@ -162,8 +164,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 id,
                 ownerUserId: user.id,
                 name: input.name,
+                description: input.description || null,
                 baseUrl: normalizeInputBaseUrl(input.baseUrl),
-                upstreamModel: input.upstreamModel,
+                upstreamModel: input.upstreamModel ?? input.name,
                 bearerTokenCiphertext: await encryptSecret(
                     input.bearerToken,
                     c.env.BETTER_AUTH_SECRET,
@@ -208,6 +211,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             updatedAt: new Date(),
         };
         if (input.name !== undefined) update.name = input.name;
+        if (input.description !== undefined) {
+            update.description = input.description || null;
+        }
         if (input.baseUrl !== undefined) {
             update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
         }

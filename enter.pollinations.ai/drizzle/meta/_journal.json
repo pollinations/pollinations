@@ -197,6 +197,13 @@
       "when": 1780452443276,
       "tag": "0027_amazing_spitfire",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1780453875681,
+      "tag": "0028_spotty_electro",
+      "breakpoints": true
     }
   ]
 }

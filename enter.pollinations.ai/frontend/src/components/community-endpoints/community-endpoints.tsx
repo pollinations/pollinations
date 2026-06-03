@@ -17,6 +17,7 @@ export type CommunityEndpoint = {
     id: string;
     modelId: string;
     name: string;
+    description: string | null;
     baseUrl: string;
     upstreamModel: string;
     tokenConfigured: boolean;
@@ -27,6 +28,7 @@ export type CommunityEndpoint = {
 
 type EndpointFormState = {
     name: string;
+    description: string;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -36,6 +38,7 @@ type EndpointFormState = {
 
 const emptyForm: EndpointFormState = {
     name: "",
+    description: "",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -56,6 +59,7 @@ function pricePerMillionToPerToken(value: string): number {
 function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         name: endpoint.name,
+        description: endpoint.description ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -67,10 +71,12 @@ function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 }
 
 function toEndpointPayload(form: EndpointFormState) {
+    const modelName = form.name.trim();
     return {
-        name: form.name.trim(),
+        name: modelName,
+        description: form.description.trim(),
         baseUrl: form.baseUrl.trim(),
-        upstreamModel: form.upstreamModel.trim(),
+        upstreamModel: form.upstreamModel.trim() || modelName,
         promptTextPrice: pricePerMillionToPerToken(form.promptTextPrice),
         completionTextPrice: pricePerMillionToPerToken(
             form.completionTextPrice,
@@ -328,11 +334,11 @@ function EndpointForm({
         >
             <div className="grid gap-3 md:grid-cols-2">
                 <EndpointField
-                    label="Public model name"
+                    label="Model ID string"
                     name="community-model-name"
                     value={form.name}
                     placeholder="my-model"
-                    helper="Used as the last segment of community/{username}/{model-name}."
+                    helper="Public model id: community/{username}/{model-id}."
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}
@@ -340,32 +346,43 @@ function EndpointForm({
                     onChange={(value) => onChange("name", value)}
                 />
                 <EndpointField
-                    label="Provider model"
-                    name="community-provider-model"
-                    value={form.upstreamModel}
-                    placeholder="provider-model-name"
-                    helper="Sent to your endpoint as the OpenAI model value."
+                    label="Description"
+                    name="community-model-description"
+                    value={form.description}
+                    placeholder="Fast coding model with long context"
+                    helper="Shown in the Models list, like registry model descriptions."
+                    autoComplete="off"
+                    maxLength={240}
+                    onChange={(value) => onChange("description", value)}
+                />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+                <EndpointField
+                    label="Endpoint URL"
+                    name="community-endpoint-url"
+                    value={form.baseUrl}
+                    placeholder="https://api.example.com/v1"
+                    helper="Use the OpenAI-compatible /v1 base URL or full chat completions URL."
+                    type="url"
+                    inputMode="url"
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}
                     required
+                    onChange={(value) => onChange("baseUrl", value)}
+                />
+                <EndpointField
+                    label="Provider model ID"
+                    name="community-provider-model"
+                    value={form.upstreamModel}
+                    placeholder="optional-provider-model"
+                    helper="Optional. Sent as the OpenAI model value; blank uses the model ID string."
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     onChange={(value) => onChange("upstreamModel", value)}
                 />
             </div>
-            <EndpointField
-                label="Endpoint URL"
-                name="community-endpoint-url"
-                value={form.baseUrl}
-                placeholder="https://api.example.com/v1"
-                helper="Use the OpenAI-compatible /v1 base URL or full chat completions URL."
-                type="url"
-                inputMode="url"
-                autoComplete="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
-                onChange={(value) => onChange("baseUrl", value)}
-            />
             <EndpointField
                 label={
                     tokenRequired ? "API bearer token" : "New API bearer token"
@@ -505,6 +522,11 @@ function EndpointCard({
                             {(copied: boolean) => (copied ? "Copied" : "Copy")}
                         </CopyButton>
                     </div>
+                    {endpoint.description && (
+                        <p className="mt-2 text-sm text-gray-600">
+                            {endpoint.description}
+                        </p>
+                    )}
                 </div>
                 <div className="flex gap-1">
                     <IconButton title="Edit endpoint" onClick={onEdit}>
@@ -526,7 +548,7 @@ function EndpointCard({
                     {endpoint.baseUrl}
                 </span>
                 <span className="min-w-0 truncate">
-                    <span className="text-gray-400">Model: </span>
+                    <span className="text-gray-400">Provider model: </span>
                     {endpoint.upstreamModel}
                 </span>
                 <span>

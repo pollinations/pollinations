@@ -178,6 +178,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  description: text("description"),
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),

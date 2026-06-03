@@ -23,6 +23,7 @@ import type { ModelStats } from "./use-model-stats.ts";
 type CommunityEndpointModel = {
     modelId: string;
     name: string;
+    description: string | null;
     upstreamModel: string;
     promptTextPrice: number;
     completionTextPrice: number;
@@ -289,7 +290,9 @@ export const getCommunityModelPrices = (
     endpoints.map((endpoint) => ({
         name: endpoint.modelId,
         displayName: endpoint.name,
-        description: `OpenAI-compatible endpoint for ${endpoint.upstreamModel}`,
+        description:
+            endpoint.description ||
+            `OpenAI-compatible endpoint for ${endpoint.upstreamModel}`,
         type: "community",
         perToken: true,
         promptTextPrice: formatPrice(

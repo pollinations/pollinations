@@ -10,6 +10,7 @@ export type CommunityEndpointRuntime = {
     ownerUserId: string;
     modelId: string;
     name: string;
+    description: string | null;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;

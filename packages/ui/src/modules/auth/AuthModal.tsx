@@ -2,9 +2,16 @@ import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../assets/logo.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
 
+const authLogoMaskUrl = `url('${logoUrl}')`;
 const authLogoMask: CSSProperties = {
-    WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
-    mask: `url(${logoUrl}) center / contain no-repeat`,
+    WebkitMaskImage: authLogoMaskUrl,
+    WebkitMaskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskImage: authLogoMaskUrl,
+    maskPosition: "center",
+    maskRepeat: "no-repeat",
+    maskSize: "contain",
 };
 
 export type AuthModalProps = {

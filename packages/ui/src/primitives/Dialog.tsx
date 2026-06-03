@@ -69,6 +69,7 @@ export const Dialog: FC<DialogProps> = ({
                 />
             )}
             <ArkDialog.Positioner
+                data-theme={theme}
                 className={cn(
                     "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
                     positionerClassName,

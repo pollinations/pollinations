@@ -1,0 +1,35 @@
+{
+  "pr_number": 11618,
+  "title": "fix(image): point Klein at new RunPod pod after host outage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11618",
+  "merged_at": "2026-06-04T16:32:20Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Old Klein pod `lqh6weiexk4sth` became unreachable after the RunPod balance-reclaim outage (no public SSH; relay non-functional).\n- Recreated Klein on a **secure-cloud A5000** (`yd0mjovg0nx5pc`) — secure cloud gives reliable public SSH and survives balance dips, unlike community pods.\n- Updates `KLEIN_URL` secret + hardcoded fallback in `fluxKleinModel.ts` to the new pod.\n\n## Verification\n- New pod `/health`: `{\"status\":\"ok\",\"model\":\"black-forest-labs/FLUX.2-klein-4B\"}`\n- Direct `/generate`: HTTP 200, 4.6s, valid image\n- Prod e2e currently 502 (deployed worker still has old URL) → fixed by this deploy\n\nKlein was failing ~65% 5xx on production traffic. Restores it.\n\npolly",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Klein gets a new home",
+    "blurb": "Our Klein image model got a shiny new, ultra-reliable server after a host outage. It's back to generating your pixels smoothly.",
+    "summary": "Restored the FLUX.2-klein-4B image model by migrating it to a new secure-cloud A5000 RunPod instance.",
+    "impact": "Users will no longer experience 5xx errors when requesting the Klein model, with generation reliability significantly improved.",
+    "keywords": [
+      "klein",
+      "flux",
+      "bug-fix",
+      "runpod",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot carefully moving a glowing 'Klein' core into a sturdy, brand new retro server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot carefully placing a glowing blue core into a sturdy new retro server rack. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-04/PR-11618.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot carefully placing a glowing blue core into a sturdy new retro server rack. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-04T16:33:23.952253+00:00"
+}

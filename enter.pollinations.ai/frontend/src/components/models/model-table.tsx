@@ -94,11 +94,39 @@ const sortValueFromFields = (
     return sum > 0 ? sum : -1;
 };
 
-const getInputSortValue = (modelName: string): number =>
-    sortValueFromFields(modelName, INPUT_PRICE_FIELDS);
+function priceValue(value: string | undefined): number {
+    if (!value) return 0;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
 
-const getOutputSortValue = (modelName: string): number =>
-    sortValueFromFields(modelName, OUTPUT_PRICE_FIELDS);
+function getInputSortValue(model: ModelPrice): number {
+    const registryValue = sortValueFromFields(model.name, INPUT_PRICE_FIELDS);
+    if (registryValue >= 0) return registryValue;
+    const rowValue = [
+        model.promptTextPrice,
+        model.promptCachedPrice,
+        model.promptAudioPrice,
+        model.promptImagePrice,
+        model.promptVideoPrice,
+    ].reduce((sum, price) => sum + priceValue(price), 0);
+    return rowValue > 0 ? rowValue : -1;
+}
+
+function getOutputSortValue(model: ModelPrice): number {
+    const registryValue = sortValueFromFields(model.name, OUTPUT_PRICE_FIELDS);
+    if (registryValue >= 0) return registryValue;
+    const rowValue = [
+        model.completionTextPrice,
+        model.completionAudioPrice,
+        model.completionImagePrice,
+        model.perSecondPrice,
+        model.perAudioSecondPrice,
+        model.perTokenPrice,
+        model.perImagePrice,
+    ].reduce((sum, price) => sum + priceValue(price), 0);
+    return rowValue > 0 ? rowValue : -1;
+}
 
 const sortModels = (
     models: ModelPrice[],
@@ -124,14 +152,14 @@ const sortModels = (
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(a))
                 : sortKey === "input"
-                  ? getInputSortValue(a.name)
-                  : getOutputSortValue(a.name);
+                  ? getInputSortValue(a)
+                  : getOutputSortValue(a);
         const bv =
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(b))
                 : sortKey === "input"
-                  ? getInputSortValue(b.name)
-                  : getOutputSortValue(b.name);
+                  ? getInputSortValue(b)
+                  : getOutputSortValue(b);
         // Missing values always sort last regardless of direction
         if (av < 0 && bv >= 0) return 1;
         if (bv < 0 && av >= 0) return -1;

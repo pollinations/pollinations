@@ -289,9 +289,14 @@ function CopySnippetButton({
             theme="teal"
             size="sm"
             onClick={() => {
-                void navigator.clipboard.writeText(text).then(() => {
-                    setCopied(true);
-                });
+                void navigator.clipboard
+                    .writeText(text)
+                    .then(() => {
+                        setCopied(true);
+                    })
+                    .catch(() => {
+                        // Clipboard access can be denied outside secure contexts.
+                    });
             }}
         >
             {copied ? "Copied" : children}

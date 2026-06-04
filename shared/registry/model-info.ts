@@ -18,7 +18,14 @@ import {
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    category: z.enum(["text", "image", "audio", "video", "embedding", "realtime"]),
+    category: z.enum([
+        "text",
+        "image",
+        "audio",
+        "video",
+        "embedding",
+        "realtime",
+    ]),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),

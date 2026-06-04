@@ -155,4 +155,39 @@ describe("fetchModelCatalog", () => {
 
         expect(catalog.models[0]?.category).toBe("video");
     });
+
+    it("keeps the rich catalog when the OpenAI-compatible model list is unavailable", async () => {
+        fetchMock.mockImplementation((url: string) => {
+            if (url.endsWith("/v1/models")) {
+                return Promise.resolve({
+                    ok: false,
+                    status: 503,
+                    json: async () => ({ error: "unavailable" }),
+                } as Response);
+            }
+            if (url.endsWith("/models")) {
+                return Promise.resolve(
+                    jsonResponse([
+                        {
+                            name: "direct-realtime",
+                            category: "realtime",
+                            input_modalities: ["text", "audio"],
+                            output_modalities: ["text", "audio"],
+                        },
+                    ]),
+                );
+            }
+            return Promise.reject(new Error(`Unexpected URL: ${url}`));
+        });
+
+        const catalog = await fetchModelCatalog({
+            baseUrl: "https://example.test",
+        });
+
+        expect(catalog.models).toHaveLength(1);
+        expect(catalog.models[0]).toMatchObject({
+            id: "direct-realtime",
+            category: "realtime",
+        });
+    });
 });

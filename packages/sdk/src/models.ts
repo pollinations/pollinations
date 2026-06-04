@@ -120,6 +120,24 @@ async function fetchJson(
     return response.json();
 }
 
+async function fetchCompatibleModelList(
+    baseUrl: string,
+    apiKey: string | null | undefined,
+    signal?: AbortSignal,
+): Promise<ModelListResponse> {
+    try {
+        return (await fetchJson(
+            baseUrl,
+            "/v1/models",
+            apiKey,
+            signal,
+        )) as ModelListResponse;
+    } catch (error) {
+        if (signal?.aborted) throw error;
+        return { data: [] };
+    }
+}
+
 function idsForCategory(
     models: ModelCatalogItem[],
     category: ModelCatalogCategory,
@@ -138,7 +156,7 @@ async function fetchCatalogModels(
 ): Promise<ModelCatalogItem[]> {
     const [rawModels, compatibleResponse] = await Promise.all([
         fetchJson(baseUrl, "/models", apiKey, signal),
-        fetchJson(baseUrl, "/v1/models", apiKey, signal),
+        fetchCompatibleModelList(baseUrl, apiKey, signal),
     ]);
     const endpointById = new Map(
         ((compatibleResponse as ModelListResponse).data ?? []).map((model) => [

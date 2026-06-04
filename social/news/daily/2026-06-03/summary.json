@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-03",
+  "period_start": "2026-06-03",
+  "period_end": "2026-06-03",
+  "title": "Smoother scaling under load",
+  "summary": "A day of tuning the engine: better load handling for text models, faster developer endpoints, and a polished auth modal.\n\nWe routed nova-fast through Bedrock's cross-region profile to dodge 429 throttling errors, and optimized our Tinybird queries to make developer account endpoints significantly faster and more resilient during traffic spikes.\n\nSquashed some CSS bugs in the authentication dialog so the amber theme and SVG logos render correctly without default browser focus rings getting in the way.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11587,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11592,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11597,
+      "date": "2026-06-03"
+    }
+  ],
+  "generated_at": "2026-06-04T07:33:48.281024+00:00"
+}

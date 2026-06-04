@@ -48,6 +48,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-03** – **🚀 Nova-Fast Reliability** We routed `nova-fast` through a cross-region profile to stop it from hitting rate limits during peak hours. Less throttling, more generating. Check the [available models](https://gen.pollinations.ai/v1/models).
+- **2026-06-03** – **⚡ Faster Dashboard** We optimized the database queries for developer earnings. Checking your balance on the [Dashboard](https://enter.pollinations.ai) is now significantly faster and less likely to buckle under heavy load.
 - **2026-06-02** – **🚀 MiniMax M3 arrives** Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
 - **2026-06-02** – **✨ Lunar AI** A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) <!-- app -->
 - **2026-06-02** – **🔗 Anura Hub AI** A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all) <!-- app -->
@@ -56,8 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-02** – **💡 Ather Mini** An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in) <!-- app -->
 - **2026-06-02** – **🎨 Imagio AI** A fast, community-built text-to-image generator. [Try it](https://imagio-ai.vercel.app/) <!-- app -->
 - **2026-06-02** – **🤖 OtakuBox Bot** Generate anime content directly in Telegram with this new community bot. [Try it](https://badamchuk.github.io/otakubox/) <!-- app -->
-- **2026-06-02** – **✨ Multi-Model Chat UI** A ready-to-use community chat app supporting multiple models, vision, and TTS. [Try it](https://farl.github.io/pollinations-ai-text-generation/) <!-- app -->
-- **2026-06-02** – **🎨 AuraForge** An identity orchestration studio for generating flat 2D vector mascots and avatars. [Try it](https://autoforge-iota.vercel.app/) <!-- app -->
 ---
 
 ## 🌱 Introduction

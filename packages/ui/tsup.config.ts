@@ -28,7 +28,6 @@ export default defineConfig({
         "!licenses/**",
         "!styles.css",
         "!app.css",
-        "!wallet.css",
     ],
     minify: false,
     external: [

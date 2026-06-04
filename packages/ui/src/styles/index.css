@@ -11,6 +11,7 @@
 @import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
 @import "./fonts.css";
 @import "./tokens.css";
+@import "../modules/wallet/styles.css";
 
 .polli-scrollbar-subtle {
     scrollbar-width: thin;

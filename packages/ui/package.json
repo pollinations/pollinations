@@ -50,7 +50,6 @@
     },
     "./styles.css": "./dist/styles.css",
     "./app.css": "./dist/app.css",
-    "./wallet.css": "./dist/wallet.css",
     "./assets/*": "./dist/assets/*",
     "./fonts/*": "./dist/fonts/*",
     "./package.json": "./package.json"
@@ -67,7 +66,7 @@
     "build:assets": "mkdir -p dist/assets && cp src/assets/* dist/assets/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css && cp src/modules/wallet/styles.css dist/wallet.css",
+    "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit"
   },

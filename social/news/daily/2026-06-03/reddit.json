@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-03",
+  "period_start": "2026-06-03",
+  "period_end": "2026-06-03",
+  "generated_at": "2026-06-04T07:33:48.281024+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Infrastructure updates: Bedrock cross-region routing and Tinybird vCPU optimization",
+  "text": "Merged a few PRs today to handle some scaling bottlenecks and fix some UI papercuts. Nothing glamorous, but the infrastructure should feel a bit more stable under load now.\n\nFirst, we routed nova-fast through AWS Bedrock's US cross-region profile (PR #11587). If you've been hitting rate limits or seeing latency spikes with that model recently, this is why. Spreading the inference load across regions rather than pinning it to a single zone gives us a lot more breathing room when traffic spikes.\n\nSecond, we did some optimization around how we calculate developer earnings via Tinybird (PR #11592). The old queries were chewing through vCPU time unnecessarily during aggregation. We restructured the queries to reduce the compute pressure. You shouldn't notice a difference on the frontend, but our backend metrics look much healthier and scaling under load will be smoother.\n\nFinally, for anyone using Codex, we fixed the auth modal (PR #11597). The theme was rendering incorrectly and focus management was broken, which made logging in via keyboard a massive pain. It respects your theme properly now and handles focus the way it should.\n\nCode is open as always. You can check the main repo at github.com/pollinations/pollinations if you want to see the exact query changes or the Bedrock routing logic."
+}

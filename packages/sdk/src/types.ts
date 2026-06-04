@@ -799,6 +799,7 @@ export type VideoCapability =
 
 /** Model information */
 export interface ModelInfo {
+    id?: string;
     name: string;
     description?: string;
     aliases?: string[];
@@ -815,8 +816,10 @@ export interface ModelInfo {
     voices?: string[];
     maxInputChars?: number;
     context_length?: number;
+    supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
+    paid_only?: boolean;
     pricing?: {
         currency: "pollen";
         input_token_price?: number;

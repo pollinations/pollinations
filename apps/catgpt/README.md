@@ -1,114 +1,49 @@
-# 🐱 CatGPT Meme Generator
+# 🐱 CatGPT
 
-Transform your questions into sassy cat wisdom! A collaboration between [pollinations.ai](https://pollinations.ai) and [Tanika Godbole](https://www.instagram.com/tanikagodbole/), the original creator of the CatGPT comic.
+Ask a question, get a sarcastic cat comic. CatGPT pairs a withering one-liner
+from an aloof cat with a hand-drawn comic panel, in the spirit of the original
+[CatGPT comic](https://www.instagram.com/p/Cn4OLhPyDLP/) by
+[Tanika Godbole](https://www.instagram.com/missfitcomics/) (@missfitcomics).
 
-## 🌟 About
+Live at [catgpt.pollinations.ai](https://catgpt.pollinations.ai).
 
-CatGPT is an AI-powered meme generator that creates personalized cat comics in response to your questions. Just like the original CatGPT comic, our feline friend responds with lazy, sarcastic wisdom while treating humans as mere servants.
+## How it works
 
-This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through pollinations.ai to democratize access to AI-generated cat wisdom!
+1. Sign in with your Pollinations account (top-right menu) — generation uses
+   your [enter.pollinations.ai](https://enter.pollinations.ai) API key.
+2. Type a question. Optionally upload a selfie to be sketched into the panel.
+3. CatGPT writes a short reply and renders it as a comic.
+4. Download the result, or copy a share link — shared links restore the exact
+   meme. Recent generations are kept locally in your browser.
 
-### 🎨 Original Inspiration
+## Tech stack
 
-The CatGPT concept was created by Tanika Godbole. Check out the [first CatGPT comic on Instagram](https://www.instagram.com/p/Cn4OLhPyDLP/)!
+- **React 19 + Vite + Tailwind v4** single-page app.
+- **[@pollinations/sdk](../../packages/sdk)** — `chat` for the reply
+  (`claude-fast`) and `image` for the comic (`nanobanana`, falling back to
+  `gptimage`).
+- **[@pollinations/ui](../../packages/ui)** — shared design primitives and the
+  `AppUserMenu` auth/wallet menu.
 
-<div align="center">
-  <img src="images/original-catgpt.png" alt="Original CatGPT Comic" width="400">
-</div>
+## Development
 
-## ✨ Examples
+```bash
+npm install
+npm run dev        # http://127.0.0.1:4181
+npm run build      # production build to dist/
+npm run typecheck
+```
 
-Here are some AI-generated CatGPT memes created with our generator:
+This app consumes the local `@pollinations/sdk` and `@pollinations/ui`
+workspace packages via `file:` links; `dev`, `build`, and `typecheck` build
+those first (`build:deps`).
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <img src="images/example1.png" alt="Weather Forecast CatGPT" width="300"><br>
-        <em>"What's the weather today?"</em>
-      </td>
-      <td align="center">
-        <img src="images/example2.png" alt="Debugging CatGPT" width="300"><br>
-        <em>"How do I fix this bug?"</em>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <img src="images/example3.png" alt="CatGPT Example 3" width="300"><br>
-        <em>More feline wisdom</em>
-      </td>
-      <td align="center">
-        <img src="images/example4.png" alt="CatGPT Example 4" width="300"><br>
-        <em>Classic cat attitude</em>
-      </td>
-    </tr>
-  </table>
-</div>
+## Credits
 
-## 🚀 Features
+- Original CatGPT comic — [Tanika Godbole](https://www.instagram.com/missfitcomics/)
+  (@missfitcomics).
+- Idea — Dr. Julia Degen.
+- AI generation — [pollinations.ai](https://pollinations.ai).
 
-- **AI-Powered Generation**: Uses Gemini 2.5 Flash Image (nanobanana) via [gen.pollinations.ai](https://gen.pollinations.ai) API
-- **Instant Memes**: Generate custom cat wisdom in seconds
-- **Share & Download**: Save your favorite memes or share them with friends
-- **No Sign-up Required**: Completely free and open to use
-- **Gen-Z Friendly Design**: Modern, vibrant, and fun UI with animated elements
-- **Easter Eggs**: Hidden surprises for the curious (try the Konami code! 🎮)
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Pure HTML, CSS, and JavaScript (no frameworks needed!)
-- **AI Service**: [gen.pollinations.ai](https://gen.pollinations.ai) - Gemini 2.5 Flash Image (nanobanana) model
-- **Image Upload**: Cloudinary for reference image hosting
-- **Design**: Psychedelic Gen-Z aesthetic with animated elements
-
-## 🔧 API Migration (Jan 2026)
-
-This app has been migrated from the legacy `image.pollinations.ai` to the new `gen.pollinations.ai` API:
-
-- **Old**: `https://enter.pollinations.ai/image/prompt/...?model=nanobanana`
-- **New**: `https://gen.pollinations.ai/image/...?model=nanobanana`
-
-**Key Changes**:
-
-- Model remains `nanobanana` (Gemini 2.5 Flash Image - high-quality, pollen-based)
-- Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai)
-- Better rate limiting and reliability
-- Improved image quality with `enhance=true` parameter
-
-## 💡 The Story
-
-This app started from a LinkedIn post announcing the collaboration between Thomas Haferlach (pollinations.ai) and Tanika Godbole. The goal is to create a fun, viral meme generator while ensuring fair attribution and revenue sharing with the original creator - something often overlooked in the AI space.
-
-## 🐾 Support
-
-Keep your cats happy with premium pet food from our sponsor [PuraPep](https://www.purapep.de/) - because even sarcastic cats deserve the best!
-
-## 🎯 How to Use
-
-1. Visit the [CatGPT Meme Generator](https://pollinations.github.io/catgpt/)
-2. Type your question in the text box
-3. Click "Generate Meme"
-4. Watch as CatGPT responds with feline wisdom!
-5. Download or share your creation
-
-## 🤝 Credits & Collaboration
-
-- **Original CatGPT Creator**: [Tanika Godbole](https://www.instagram.com/tanikagodbole/)
-- **AI Technology**: [pollinations.ai](https://pollinations.ai)
-- **Idea Credit**: Dr. Julia Degen
-- **Sponsor**: [PuraPep](https://www.purapep.de/) - Premium pet food for happy cats 🐾
-- Developed By [Ayushman Bhattacharya](https://github.com/Circuit-Overtime) & [Thomash Haferlach](https://github.com/voodoohop)
-
-## 📝 License
-
-This app is a collaboration between pollinations.ai and Tanika Godbole. The CatGPT character and concept are the intellectual property of Tanika Godbole. AI-generated variations are created with permission and include revenue sharing with the original creator.
-
-## 🌈 Fun Facts
-
-- Try the Konami code on the website for a surprise! (↑↑↓↓←→←→BA)
-- Each generated meme has a unique seed for variety
-- The cat's responses are intentionally sarcastic - that's the CatGPT way!
-
----
-
-Made with 💜 by [pollinations.ai](https://pollinations.ai) in collaboration with [Tanika Godbole](https://www.instagram.com/tanikagodbole/)
+The CatGPT character and concept are the intellectual property of Tanika
+Godbole; AI variations are created with permission and revenue sharing.

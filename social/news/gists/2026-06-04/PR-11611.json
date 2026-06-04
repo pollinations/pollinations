@@ -1,0 +1,35 @@
+{
+  "pr_number": 11611,
+  "title": "feat(ui): design-system upgrade + alpha showcase",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11611",
+  "merged_at": "2026-06-04T14:11:33Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Summary\n- Bumps `@pollinations/ui` to `0.1.0-alpha.0` and adds the new primitives, model selector, and app-user composition.\n- Reworks `react.pollinations.ai` around Models, Primitives, and Compositions, while keeping the exhaustive showcase at `?view=showcase`.\n- Bundles wallet styles into the main UI stylesheet and updates enter/model-monitor consumers for the token-based modality themes.\n- Adds an alpha stability warning plus focused tests for file partitioning and modality theme contracts.\n\n## Validation\n- `npm test --workspace @pollinations/ui`\n- `npm run typecheck --workspace @pollinations/ui`\n- `npm run build --workspace @pollinations/ui`\n- `npm run typecheck --workspace enter.pollinations.ai`\n- `npm run build --prefix apps/react`\n- `npm run build --prefix apps/model-monitor`\n- `npm run build:frontend --prefix enter.pollinations.ai`\n- `npx biome check ...`\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh coat of pixels",
+    "blurb": "We just shipped a major upgrade to our UI design system. Expect smoother model selection, shiny new components, and a more cohesive look across the ecosystem.",
+    "summary": "Upgraded @pollinations/ui to 0.1.0-alpha.0, introducing a new model selector, app-user compositions, and fresh primitives including FileUpload and Markdown.",
+    "impact": "Developers using our React library get a richer toolkit, while users will see a cleaner, unified interface across the dashboard and model monitor.",
+    "keywords": [
+      "ui",
+      "design-system",
+      "react",
+      "frontend",
+      "components"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing glowing UI building blocks (buttons, sliders) on a workbench, representing the new design system primitives and components.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, organizing glowing UI building blocks on a wooden workbench. A chunky Monitor Robot stands nearby, its screen displaying a neat layout of buttons and sliders. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-04/PR-11611.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, organizing glowing UI building blocks on a wooden workbench. A chunky Monitor Robot stands nearby, its screen displaying a neat layout of buttons and sliders. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-04T14:12:41.745284+00:00"
+}

@@ -55,5 +55,4 @@ describe("PolliProvider setup guidance", () => {
         );
         expect(warn.mock.calls[0][0]).not.toContain("sk_secret_test");
     });
-
 });

@@ -124,7 +124,7 @@ export const TableHeaderCell: FC<TableHeaderCellProps> = ({
                 type="button"
                 onClick={onSort}
                 className={cn(
-                    "polli:inline-flex polli:w-full polli:items-center polli:gap-1 polli:bg-transparent polli:p-0 polli:font-bold polli:text-inherit",
+                    "polli-control polli:inline-flex polli:w-full polli:items-center polli:gap-1 polli:bg-transparent polli:p-0 polli:font-bold polli:text-inherit",
                     align === "right" && "polli:justify-end",
                     align === "center" && "polli:justify-center",
                 )}

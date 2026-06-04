@@ -7,7 +7,7 @@ import { ExternalLinkIcon } from "./icons/index.tsx";
 export type ExternalLinkButtonProps = {
     theme: ThemeName;
     href: string;
-    size?: "small" | "medium" | "large";
+    size?: "sm" | "md" | "lg";
     className?: string;
     children: ReactNode;
 };
@@ -15,7 +15,7 @@ export type ExternalLinkButtonProps = {
 export const ExternalLinkButton: FC<ExternalLinkButtonProps> = ({
     theme,
     href,
-    size = "medium",
+    size = "md",
     className,
     children,
 }) => (

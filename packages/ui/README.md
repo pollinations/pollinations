@@ -6,8 +6,15 @@ core primitives and display recipes stay SDK-free.
 
 ## Install
 
+> [!WARNING]
+> **The `alpha` line (`0.1.0-alpha.x`) is unstable and breakage-prone.** It ships the in-progress design-system rebuild (new `--polli-color-*` token system, new primitives, renamed size props `sm|md|lg`) and its API may change between alpha versions without notice. The stable `latest` line is `0.0.2`. Opt into the alpha deliberately, and pin an exact version.
+
 ```bash
+# stable (recommended)
 npm install @pollinations/ui
+
+# alpha (in-progress rebuild — pin exactly)
+npm install @pollinations/ui@alpha
 ```
 
 Install `@pollinations/sdk` too when using `@pollinations/ui/*/sdk`
@@ -87,11 +94,8 @@ The SVG sources use `currentColor`. Apps control the rendered color by inlining
 them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
 app-owned.
 
-Wallet-specific colors and utilities live in a separate stylesheet:
-
-```css
-@import "@pollinations/ui/wallet.css";
-```
+Wallet colors and utilities are bundled into the main stylesheet
+(`@pollinations/ui/styles.css`) — no separate import needed.
 
 ## What's exported
 
@@ -185,7 +189,7 @@ with host app tokens.
 | `--polli-text-base`           | Base text size.                               |
 | `--polli-color-surface-white` | Translucent white surface.                    |
 
-Wallet tokens are public when `@pollinations/ui/wallet.css` is imported:
+Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 
 | Token                         | Purpose                                       |
 | ----------------------------- | --------------------------------------------- |

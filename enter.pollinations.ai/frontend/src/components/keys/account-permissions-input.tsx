@@ -284,6 +284,7 @@ const ModelCategory: FC<{
     <div>
         <div className="flex items-center justify-between mb-1">
             <span
+                data-theme={getModalityColors(label)?.theme}
                 className={cn(
                     "text-sm font-semibold",
                     getModalityColors(label)?.text,
@@ -348,7 +349,8 @@ const ModelChip: FC<{
     return (
         <Button
             type="button"
-            size="small"
+            theme={colors?.theme}
+            size="sm"
             aria-pressed={selected}
             onClick={onClick}
             disabled={disabled}

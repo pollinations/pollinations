@@ -140,9 +140,11 @@ const models: ModelDefinition[] = [
     {
         name: "gemini",
         // Airforce primary, Vertex fallback (same modelId → same billing).
-        // No code_execution default-injection: Airforce returns a phantom
-        // tool_call for it; explicit code_execution requests fall back to
-        // Vertex via on_status_codes 400.
+        // No code_execution default-injection: it's a Gemini built-in tool
+        // (`{type:"code_execution"}`) that Airforce can't run, so injecting it
+        // would force every request to fall back. Requests that explicitly ask
+        // for it 400 on Airforce and fall back to Vertex (on_status_codes 400),
+        // where Gemini's real code executor runs.
         config: portkeyConfig["gemini-3-flash-airforce"],
         transform: pipe(
             sanitizeToolSchemas(),

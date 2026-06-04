@@ -52,9 +52,7 @@ function createAirforceGeminiFallbackConfig(
         model: vertexModelId,
         strategy: {
             mode: "fallback",
-            on_status_codes: [
-                400, 401, 402, 403, 404, 422, 429, 500, 502, 503,
-            ],
+            on_status_codes: [400, 401, 402, 403, 404, 422, 429, 500, 502, 503],
         },
         targets: [
             {

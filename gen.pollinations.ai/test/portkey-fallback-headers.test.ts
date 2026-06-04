@@ -62,7 +62,9 @@ describe("generatePortkeyHeaders — fallback config", () => {
         });
 
         expect(headers["x-portkey-provider"]).toBe("openai");
-        expect(headers["x-portkey-custom-host"]).toBe("https://api.airforce/v1");
+        expect(headers["x-portkey-custom-host"]).toBe(
+            "https://api.airforce/v1",
+        );
         expect(headers["x-portkey-model"]).toBe("gemini-3-flash");
         expect(headers["Authorization"]).toBe("Bearer sk-air-test");
         expect(headers["x-portkey-config"]).toBeUndefined();

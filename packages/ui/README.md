@@ -189,7 +189,7 @@ with host app tokens.
 | `--polli-text-base`           | Base text size.                               |
 | `--polli-color-surface-white` | Translucent white surface.                    |
 
-Wallet tokens are public when `@pollinations/ui/wallet.css` is imported:
+Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 
 | Token                         | Purpose                                       |
 | ----------------------------- | --------------------------------------------- |

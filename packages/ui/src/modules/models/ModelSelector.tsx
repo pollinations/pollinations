@@ -93,11 +93,7 @@ export function ModelSelector({
                         theme={theme}
                         className="polli:max-h-64 polli:pr-2"
                     >
-                        <div
-                            role="listbox"
-                            aria-label={`${CATEGORY_LABELS[category]} models`}
-                            className="polli:flex polli:flex-col polli:gap-1"
-                        >
+                        <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
                                 const isAllowed =
                                     !isLoggedIn ||

@@ -25,6 +25,7 @@ export interface ModelCatalog {
     models: ModelCatalogItem[];
     allowedModelIds: Set<string>;
     allowedImageModelIds: Set<string>;
+    allowedVideoModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
     allowedAudioModelIds: Set<string>;
 }
@@ -184,10 +185,8 @@ export async function fetchModelCatalog({
         models,
         allowedModelIds,
         allowedImageModelIds: idsForCategory(allowedModels, "image"),
+        allowedVideoModelIds: idsForCategory(allowedModels, "video"),
         allowedTextModelIds: idsForCategory(allowedModels, "text"),
-        allowedAudioModelIds: new Set([
-            ...idsForCategory(allowedModels, "audio"),
-            ...idsForCategory(allowedModels, "video"),
-        ]),
+        allowedAudioModelIds: idsForCategory(allowedModels, "audio"),
     };
 }

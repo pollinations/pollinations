@@ -28,6 +28,10 @@ export {
 } from "./primitives/Dialog.tsx";
 export { Dropdown, type DropdownProps } from "./primitives/Dropdown.tsx";
 export {
+    DropdownItem,
+    type DropdownItemProps,
+} from "./primitives/DropdownItem.tsx";
+export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
 } from "./primitives/ExternalLinkButton.tsx";

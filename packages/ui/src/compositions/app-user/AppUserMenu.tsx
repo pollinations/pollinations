@@ -9,6 +9,7 @@ import {
 import { Balance } from "../../modules/wallet/sdk.ts";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
+import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 
 export type AppUserMenuLabels = {
     authorize: string;
@@ -30,9 +31,6 @@ const defaultLabels: AppUserMenuLabels = {
     topUpAccount: "Top up account",
     logout: "Log out from this app",
 };
-
-const rowClass =
-    "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:gap-2 polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:no-underline polli:transition-colors polli:hover:bg-theme-bg-hover polli:focus-visible:bg-theme-bg-hover";
 
 export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
     if (typeof window === "undefined") return false;
@@ -106,25 +104,24 @@ function AppUserMenuContent({
                             data-theme="amber"
                             className="polli:flex polli:flex-col"
                         >
-                            <a
+                            <DropdownItem
+                                as="a"
                                 href={dashboardHref}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={close}
-                                className={rowClass}
                             >
                                 {labels.topUpAccount}
-                            </a>
-                            <button
+                            </DropdownItem>
+                            <DropdownItem
                                 type="button"
                                 onClick={() => {
                                     close();
                                     logout();
                                 }}
-                                className={rowClass}
                             >
                                 {labels.logout}
-                            </button>
+                            </DropdownItem>
                         </div>
                     )}
                 </Dropdown>

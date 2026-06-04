@@ -70,7 +70,7 @@ export const Tooltip: FC<TooltipProps> = ({
     // Universal cursor for every tooltip trigger across the app.
     // `cursor-help` = standard "?" pointer that means "more info on hover".
     const triggerClassName = cn(
-        "polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
+        "polli-control polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
         className,
     );
 

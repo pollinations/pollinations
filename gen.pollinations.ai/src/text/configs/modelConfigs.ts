@@ -185,7 +185,7 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
     "nova-micro": () =>
-        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
+        createBedrockNativeConfig({ model: "us.amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 

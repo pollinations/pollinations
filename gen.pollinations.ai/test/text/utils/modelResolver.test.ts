@@ -34,10 +34,10 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBeUndefined();
     });
 
-    it("resolves nova-fast to amazon.nova-micro-v1:0", () => {
+    it("resolves nova-fast to us.amazon.nova-micro-v1:0", () => {
         const result = resolveModelConfig(messages, { model: "nova-fast" });
 
-        expect(result.options.model).toBe("amazon.nova-micro-v1:0");
+        expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
     });
 
     it("marks missing model configs as 404 errors", () => {

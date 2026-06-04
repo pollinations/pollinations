@@ -129,10 +129,6 @@ function rowIntent(status) {
     return "default";
 }
 
-function modalityChipClass(category) {
-    return getModalityColors(category)?.filled ?? "bg-gray-200 text-gray-900";
-}
-
 function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
     if (models.length === 0) return null;
 
@@ -321,7 +317,7 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             target="_blank"
             rel="noopener noreferrer"
             title={label}
-            size="small"
+            size="sm"
             className={cn(
                 "h-9 gap-2 py-0",
                 showLabel ? "w-auto px-3" : "w-9 px-0",
@@ -363,7 +359,7 @@ function WindowTabs({ value, onChange }) {
                         key={key}
                         active={value === key}
                         onClick={() => onChange(key)}
-                        size="small"
+                        size="sm"
                     >
                         {label}
                     </TabButton>
@@ -697,6 +693,9 @@ function App() {
                                                 : null;
                                             const health =
                                                 computeHealthStatus(stats);
+                                            const modality = getModalityColors(
+                                                model.type,
+                                            );
 
                                             return (
                                                 <TableRow
@@ -705,13 +704,11 @@ function App() {
                                                 >
                                                     <TableCell>
                                                         <Chip
+                                                            theme={
+                                                                modality?.theme
+                                                            }
                                                             size="sm"
-                                                            className={cn(
-                                                                "text-micro font-bold uppercase tracking-wide",
-                                                                modalityChipClass(
-                                                                    model.type,
-                                                                ),
-                                                            )}
+                                                            className="text-micro font-bold uppercase tracking-wide"
                                                         >
                                                             {model.type}
                                                         </Chip>

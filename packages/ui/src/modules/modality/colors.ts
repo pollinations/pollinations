@@ -1,8 +1,9 @@
 /**
  * Single source of truth for modality colors.
  *
- * Each modality (text/image/video/audio/realtime/embedding) gets one
- * page-theme hue, applied at the soft `-200/-900/-400` chip recipe.
+ * Each modality (text/image/video/audio/realtime/embedding) maps to one
+ * package theme. Class recipes are token-based, so callers should pass the
+ * returned `theme` to the primitive or set `data-theme` on an ancestor.
  * Used by apps to compose model-selection buttons and static modality chips.
  * This module only owns modality color data; primitives own shape and behavior.
  */
@@ -19,51 +20,56 @@ export type Modality =
 export type ModalityColorSet = {
     /** Matching package theme for surfaces/chips that should inherit this hue. */
     theme: ThemeName;
-    /** Selected/filled state: `bg + text + border` classes. */
+    /** Selected/filled state using the active theme tokens. */
     filled: string;
-    /** Hover hint shown on the unselected button (subtle tint). */
+    /** Hover hint shown on the unselected button using the active theme. */
     hover: string;
-    /** Heading text colour for the category label. */
+    /** Heading text colour using the active theme. */
     text: string;
 };
+
+const filled = "polli:bg-theme-bg-active polli:text-theme-text-strong";
+const hover =
+    "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong";
+const text = "polli:text-theme-text-strong";
 
 // No borders — chips and buttons in this system are borderless.
 export const MODALITY_COLORS: Record<Modality, ModalityColorSet> = {
     text: {
         theme: "blue",
-        filled: "polli:bg-blue-200 polli:text-blue-900",
-        hover: "polli:hover:bg-blue-100 polli:hover:text-blue-900",
-        text: "polli:text-blue-800",
+        filled,
+        hover,
+        text,
     },
     image: {
         theme: "pink",
-        filled: "polli:bg-pink-200 polli:text-pink-900",
-        hover: "polli:hover:bg-pink-100 polli:hover:text-pink-900",
-        text: "polli:text-pink-800",
+        filled,
+        hover,
+        text,
     },
     video: {
         theme: "teal",
-        filled: "polli:bg-teal-200 polli:text-teal-900",
-        hover: "polli:hover:bg-teal-100 polli:hover:text-teal-900",
-        text: "polli:text-teal-800",
+        filled,
+        hover,
+        text,
     },
     audio: {
         theme: "violet",
-        filled: "polli:bg-violet-200 polli:text-violet-900",
-        hover: "polli:hover:bg-violet-100 polli:hover:text-violet-900",
-        text: "polli:text-violet-800",
+        filled,
+        hover,
+        text,
     },
     realtime: {
         theme: "green",
-        filled: "polli:bg-green-200 polli:text-green-900",
-        hover: "polli:hover:bg-green-100 polli:hover:text-green-900",
-        text: "polli:text-green-800",
+        filled,
+        hover,
+        text,
     },
     embedding: {
         theme: "amber",
-        filled: "polli:bg-amber-200 polli:text-amber-900",
-        hover: "polli:hover:bg-amber-100 polli:hover:text-amber-900",
-        text: "polli:text-amber-800",
+        filled,
+        hover,
+        text,
     },
 };
 

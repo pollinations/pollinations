@@ -562,6 +562,10 @@ export function Authorize() {
                                                     <Chip
                                                         key={m}
                                                         size="sm"
+                                                        theme={
+                                                            getModalityColors(m)
+                                                                ?.theme
+                                                        }
                                                         className={
                                                             getModalityColors(m)
                                                                 ?.filled ?? ""

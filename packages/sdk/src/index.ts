@@ -66,6 +66,14 @@ export {
     validateKey,
     videoUrl,
 } from "./helpers.js";
+export {
+    type FetchModelCatalogOptions,
+    fetchModelCatalog,
+    type ModelCatalog,
+    type ModelCatalogCategory,
+    type ModelCatalogItem,
+    type ModelCatalogSource,
+} from "./models.js";
 
 // Export all types
 export type {

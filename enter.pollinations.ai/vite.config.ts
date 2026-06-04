@@ -29,6 +29,10 @@ export default defineConfig({
             react: rootReact,
             "react-dom": rootReactDom,
         },
+        // react/react-dom must resolve to a single copy — enter pulls @pollinations/ui
+        // (and @shared) which resolve React from the repo-root node_modules, while
+        // enter's own code uses its local copy. Without dedupe that's two React
+        // instances → "Invalid hook call". Mirrors pollinations.ai's vite config.
         dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [

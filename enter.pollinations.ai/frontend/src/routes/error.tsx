@@ -45,7 +45,7 @@ function ErrorPage() {
                         <Button
                             as="a"
                             theme="green"
-                            size="large"
+                            size="lg"
                             href="https://github.com/pollinations/pollinations/issues/new?title=Account+deactivated&body=Hi%2C+my+account+has+been+deactivated+and+I+believe+this+may+be+a+mistake.+Could+you+please+review+it%3F"
                             target="_blank"
                             rel="noopener noreferrer"
@@ -57,7 +57,7 @@ function ErrorPage() {
                     <Button
                         as="a"
                         theme="green"
-                        size="large"
+                        size="lg"
                         href="/"
                         className="mt-2"
                     >

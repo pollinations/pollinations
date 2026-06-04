@@ -1,24 +1,13 @@
-import type { ModelInfo, RequestOptions } from "./types.js";
+import type { ModelCategory, ModelInfo, RequestOptions } from "./types.js";
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 
-export type ModelCatalogSource = "image" | "text" | "audio";
-export type ModelCatalogCategory = "image" | "video" | "text" | "audio";
+export type ModelCatalogCategory = ModelCategory;
 
-export interface ModelCatalogItem {
+export interface ModelCatalogItem extends Omit<ModelInfo, "id" | "category"> {
     id: string;
-    name: string;
-    description?: string;
-    aliases: string[];
-    source: ModelCatalogSource;
     category: ModelCatalogCategory;
-    inputModalities: string[];
-    outputModalities: string[];
-    voices: string[];
-    paidOnly: boolean;
-    tools: boolean;
-    reasoning: boolean;
 }
 
 export interface ModelCatalog {
@@ -28,6 +17,8 @@ export interface ModelCatalog {
     allowedVideoModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
     allowedAudioModelIds: Set<string>;
+    allowedEmbeddingModelIds: Set<string>;
+    allowedRealtimeModelIds: Set<string>;
 }
 
 export interface FetchModelCatalogOptions extends RequestOptions {
@@ -35,22 +26,13 @@ export interface FetchModelCatalogOptions extends RequestOptions {
     baseUrl?: string;
 }
 
-type RawModelInfo = ModelInfo & {
-    output_modalities?: string[];
-    input_modalities?: string[];
-    paid_only?: boolean;
+type RawModelInfo = ModelInfo;
+type ModelListResponse = {
+    data?: (ModelInfo & { id?: string; supported_endpoints?: string[] })[];
 };
 
 function modelId(model: RawModelInfo): string {
     return model.id || model.name;
-}
-
-function endpointFor(source: ModelCatalogSource): string {
-    return source === "image"
-        ? "/image/models"
-        : source === "text"
-          ? "/text/models"
-          : "/audio/models";
 }
 
 function isModelCatalogCategory(value: unknown): value is ModelCatalogCategory {
@@ -58,62 +40,41 @@ function isModelCatalogCategory(value: unknown): value is ModelCatalogCategory {
         value === "image" ||
         value === "video" ||
         value === "text" ||
-        value === "audio"
+        value === "audio" ||
+        value === "embedding" ||
+        value === "realtime"
     );
 }
 
-function legacyCategoryFor(
-    model: RawModelInfo,
-    source: ModelCatalogSource,
-): ModelCatalogCategory | null {
+function legacyCategoryFor(model: RawModelInfo): ModelCatalogCategory | null {
     const output = model.output_modalities ?? [];
-    const input = model.input_modalities ?? [];
+    const supportedEndpoints = model.supported_endpoints ?? [];
 
-    if (source === "image") {
-        if (output.includes("video")) return "video";
-        if (output.includes("image")) return "image";
-        return null;
-    }
-
-    if (source === "text") {
-        if (output.includes("audio")) return "audio";
-        if (output.includes("text")) return "text";
-        return null;
-    }
-
-    if (output.includes("audio") && input.includes("text")) return "audio";
+    if (supportedEndpoints.includes("/v1/realtime")) return "realtime";
+    if (supportedEndpoints.includes("/v1/embeddings")) return "embedding";
+    if (output.includes("embedding")) return "embedding";
+    if (output.includes("video")) return "video";
+    if (output.includes("image")) return "image";
+    if (output.includes("audio")) return "audio";
+    if (output.includes("text")) return "text";
     return null;
 }
 
-function categoryFor(
-    model: RawModelInfo,
-    source: ModelCatalogSource,
-): ModelCatalogCategory | null {
+function categoryFor(model: RawModelInfo): ModelCatalogCategory | null {
     if (isModelCatalogCategory(model.category)) return model.category;
-    return legacyCategoryFor(model, source);
+    return legacyCategoryFor(model);
 }
 
-function normalizeModel(
-    model: RawModelInfo,
-    source: ModelCatalogSource,
-): ModelCatalogItem | null {
+function normalizeModel(model: RawModelInfo): ModelCatalogItem | null {
     const id = modelId(model);
-    const category = categoryFor(model, source);
+    const category = categoryFor(model);
     if (!id || !category) return null;
 
     return {
+        ...model,
         id,
         name: model.name || id,
-        description: model.description,
-        aliases: model.aliases ?? [],
-        source,
         category,
-        inputModalities: model.input_modalities ?? [],
-        outputModalities: model.output_modalities ?? [],
-        voices: model.voices ?? [],
-        paidOnly: model.paid_only ?? false,
-        tools: model.tools ?? false,
-        reasoning: model.reasoning ?? false,
     };
 }
 
@@ -123,6 +84,8 @@ function sortModels(models: ModelCatalogItem[]): ModelCatalogItem[] {
         video: 1,
         text: 2,
         audio: 3,
+        embedding: 4,
+        realtime: 5,
     };
 
     return [...models].sort((a, b) => {
@@ -132,32 +95,29 @@ function sortModels(models: ModelCatalogItem[]): ModelCatalogItem[] {
     });
 }
 
-async function fetchModels(
+async function fetchJson(
     baseUrl: string,
-    source: ModelCatalogSource,
+    path: string,
     apiKey: string | null | undefined,
     signal?: AbortSignal,
-): Promise<ModelCatalogItem[]> {
+): Promise<unknown> {
     const headers: Record<string, string> = {};
     if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
-    const response = await fetch(`${baseUrl}${endpointFor(source)}`, {
+    const response = await fetch(`${baseUrl}${path}`, {
         headers,
         signal,
     });
 
     if (!response.ok) {
         throw new PollinationsError(
-            `Failed to fetch ${source} models`,
+            `Failed to fetch model catalog from ${path}`,
             "MODEL_CATALOG",
             response.status,
         );
     }
 
-    const rawModels = (await response.json()) as RawModelInfo[];
-    return rawModels
-        .map((model) => normalizeModel(model, source))
-        .filter((model): model is ModelCatalogItem => Boolean(model));
+    return response.json();
 }
 
 function idsForCategory(
@@ -176,13 +136,30 @@ async function fetchCatalogModels(
     apiKey: string | null | undefined,
     signal?: AbortSignal,
 ): Promise<ModelCatalogItem[]> {
-    const [imageModels, textModels, audioModels] = await Promise.all([
-        fetchModels(baseUrl, "image", apiKey, signal),
-        fetchModels(baseUrl, "text", apiKey, signal),
-        fetchModels(baseUrl, "audio", apiKey, signal),
+    const [rawModels, compatibleResponse] = await Promise.all([
+        fetchJson(baseUrl, "/models", apiKey, signal),
+        fetchJson(baseUrl, "/v1/models", apiKey, signal),
     ]);
+    const endpointById = new Map(
+        ((compatibleResponse as ModelListResponse).data ?? []).map((model) => [
+            model.id || model.name,
+            model.supported_endpoints,
+        ]),
+    );
 
-    return sortModels([...imageModels, ...textModels, ...audioModels]);
+    return sortModels(
+        ((Array.isArray(rawModels) ? rawModels : []) as RawModelInfo[])
+            .map((model) => {
+                const id = modelId(model);
+                return {
+                    ...model,
+                    supported_endpoints:
+                        model.supported_endpoints ?? endpointById.get(id),
+                };
+            })
+            .map((model) => normalizeModel(model))
+            .filter((model): model is ModelCatalogItem => Boolean(model)),
+    );
 }
 
 function trimTrailingSlashes(value: string): string {
@@ -213,5 +190,7 @@ export async function fetchModelCatalog({
         allowedVideoModelIds: idsForCategory(allowedModels, "video"),
         allowedTextModelIds: idsForCategory(allowedModels, "text"),
         allowedAudioModelIds: idsForCategory(allowedModels, "audio"),
+        allowedEmbeddingModelIds: idsForCategory(allowedModels, "embedding"),
+        allowedRealtimeModelIds: idsForCategory(allowedModels, "realtime"),
     };
 }

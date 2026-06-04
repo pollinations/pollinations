@@ -828,15 +828,7 @@ export interface ModelInfo {
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
     paid_only?: boolean;
-    pricing?: {
-        currency: "pollen";
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-    };
+    pricing?: Record<string, string> & { currency: "pollen" };
 }
 
 // ============================================================================

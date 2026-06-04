@@ -1,3 +1,7 @@
+import {
+    fetchModelCatalog,
+    type ModelCatalogItem,
+} from "@pollinations/sdk/models";
 import { PolliProvider, useAuthActions } from "@pollinations/sdk/react";
 import {
     Alert,
@@ -47,7 +51,6 @@ import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import {
     ModelSelector,
     type ModelSelectorCategory,
-    type ModelSelectorItem,
 } from "@pollinations/ui/models";
 import {
     Balance,
@@ -377,104 +380,49 @@ const MODEL_GROUPS = [
         examples: ["gemini-2", "openai-3-small", "openai-3-large"],
         capabilities: ["text", "image", "audio", "video"],
     },
+    {
+        id: "realtime",
+        label: "Realtime",
+        theme: "green" as ThemeName,
+        Icon: ClockIcon,
+        summary: "Low-latency voice and multimodal sessions over WebSocket.",
+        examples: ["gpt-realtime-2"],
+        capabilities: ["voice", "websocket", "tools", "reasoning"],
+    },
 ] as const;
-
-const MODEL_SELECTOR_ITEMS: ModelSelectorItem[] = [
-    {
-        id: "openai",
-        name: "OpenAI",
-        category: "text",
-        description: "Default text model - chat, streaming, JSON",
-    },
-    {
-        id: "claude",
-        name: "Claude",
-        category: "text",
-        description: "Long-form writing and reasoning",
-        paidOnly: true,
-    },
-    {
-        id: "gemini",
-        name: "Gemini",
-        category: "text",
-        description: "Multimodal text and vision input",
-    },
-    {
-        id: "minimax-m3",
-        name: "MiniMax M3",
-        category: "text",
-        description: "Large-context text with tools and reasoning",
-        paidOnly: true,
-    },
-    {
-        id: "zimage",
-        name: "Z-Image",
-        category: "image",
-        description: "Default image model",
-    },
-    {
-        id: "flux",
-        name: "Flux",
-        category: "image",
-        description: "Image generation and edits",
-    },
-    {
-        id: "kontext",
-        name: "Kontext",
-        category: "image",
-        description: "Reference-aware image generation",
-        paidOnly: true,
-    },
-    {
-        id: "veo",
-        name: "Veo",
-        category: "video",
-        description: "High quality prompt to video",
-        paidOnly: true,
-    },
-    {
-        id: "seedance",
-        name: "Seedance",
-        category: "video",
-        description: "Fast video generation",
-    },
-    {
-        id: "wan",
-        name: "Wan",
-        category: "video",
-        description: "Video generation with audio",
-    },
-    {
-        id: "elevenlabs",
-        name: "ElevenLabs",
-        category: "audio",
-        description: "Text to speech voices",
-    },
-    {
-        id: "elevenmusic",
-        name: "Eleven Music",
-        category: "audio",
-        description: "Music generation",
-        paidOnly: true,
-    },
-    {
-        id: "whisper",
-        name: "Whisper",
-        category: "audio",
-        description: "Speech to text transcription",
-    },
-];
 
 const DEFAULT_MODEL_BY_CATEGORY: Record<ModelSelectorCategory, string> = {
     text: "openai",
     image: "zimage",
     video: "veo",
     audio: "elevenlabs",
+    embedding: "openai-3-small",
+    realtime: "gpt-realtime-2",
 };
 
-const MODEL_SNIPPET = `import { getModels, generateText, generateImage } from "@pollinations/sdk";
+const MODEL_SELECTOR_CATEGORIES: ModelSelectorCategory[] = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "embedding",
+    "realtime",
+];
 
-const models = await getModels();
+const PROMPT_COMPOSER_CATEGORIES: ModelSelectorCategory[] = [
+    "image",
+    "text",
+    "video",
+    "audio",
+];
+
+const MODEL_SNIPPET = `import { generateText, generateImage } from "@pollinations/sdk";
+import { fetchModelCatalog } from "@pollinations/sdk/models";
+
+const catalog = await fetchModelCatalog();
+const textModels = catalog.models.filter((model) => model.category === "text");
+const realtimeModels = catalog.models.filter((model) => model.category === "realtime");
+const firstTextPrice = textModels[0]?.pricing?.promptTextTokens;
 
 const answer = await generateText("Summarize this file", {
     model: "openai",
@@ -486,14 +434,108 @@ const image = await generateImage("A clean product dashboard", {
     height: 1024,
 });`;
 
+function useModelCatalog() {
+    const [models, setModels] = useState<ModelCatalogItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        setIsLoading(true);
+        setError(null);
+
+        fetchModelCatalog({ signal: controller.signal })
+            .then((catalog) => setModels(catalog.models))
+            .catch((reason: unknown) => {
+                if (controller.signal.aborted) return;
+                setError(
+                    reason instanceof Error
+                        ? reason.message
+                        : "Could not load model catalog",
+                );
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setIsLoading(false);
+            });
+
+        return () => controller.abort();
+    }, []);
+
+    return { models, isLoading, error };
+}
+
+function displayCatalogName(model: ModelCatalogItem | undefined): string {
+    return model?.name || model?.id || "";
+}
+
+function formatCatalogKey(value: string): string {
+    return value.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+}
+
+function formatList(values: readonly string[] | undefined): string {
+    return values?.length ? values.join(", ") : "Not listed";
+}
+
+function formatModelLimit(model: ModelCatalogItem | undefined): string {
+    if (model?.maxInputChars) {
+        return `${model.maxInputChars.toLocaleString()} chars`;
+    }
+    if (model?.context_length) {
+        return `${model.context_length.toLocaleString()} context`;
+    }
+    return "Not listed";
+}
+
+function formatPricing(model: ModelCatalogItem | undefined): string {
+    const entries = Object.entries(model?.pricing ?? {}).filter(
+        ([key]) => key !== "currency",
+    );
+    if (!entries.length) return "Not listed";
+
+    return entries
+        .map(([key, value]) => `${formatCatalogKey(key)}: ${value} pollen`)
+        .join(", ");
+}
+
+function selectedCatalogModel(
+    models: readonly ModelCatalogItem[],
+    category: ModelSelectorCategory,
+    selectedModelId: string,
+): ModelCatalogItem | undefined {
+    return (
+        models.find((model) => model.id === selectedModelId) ??
+        models.find((model) => model.category === category)
+    );
+}
+
+function CatalogFact({ label, value }: { label: string; value: ReactNode }) {
+    return (
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                {label}
+            </p>
+            <p className="mt-1 break-words text-sm leading-6 text-slate-700">
+                {value}
+            </p>
+        </div>
+    );
+}
+
 function ModelsPage() {
+    const { models, isLoading, error } = useModelCatalog();
     const [category, setCategory] = useState<ModelSelectorCategory>("text");
     const [selectedByCategory, setSelectedByCategory] = useState(
         DEFAULT_MODEL_BY_CATEGORY,
     );
-    const selectedModelId = selectedByCategory[category];
-    const selectedModel = MODEL_SELECTOR_ITEMS.find(
-        (model) => model.id === selectedModelId,
+    const requestedModelId = selectedByCategory[category];
+    const selectedModel = selectedCatalogModel(
+        models,
+        category,
+        requestedModelId,
+    );
+    const selectedModelId = selectedModel?.id ?? requestedModelId;
+    const categoryModels = models.filter(
+        (model) => model.category === category,
     );
 
     return (
@@ -502,12 +544,38 @@ function ModelsPage() {
                 eyebrow="Catalog"
                 title="Models"
                 action={
-                    <ExternalLinkButton
-                        theme={APP_THEME}
-                        href="https://gen.pollinations.ai/v1/models"
-                    >
-                        Model endpoint
-                    </ExternalLinkButton>
+                    <div className="flex flex-wrap justify-start gap-2 md:justify-end">
+                        <ExternalLinkButton
+                            theme={APP_THEME}
+                            href="https://gen.pollinations.ai/models"
+                        >
+                            All
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
+                            theme={APP_THEME}
+                            href="https://gen.pollinations.ai/text/models"
+                        >
+                            Text
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
+                            theme={APP_THEME}
+                            href="https://gen.pollinations.ai/image/models"
+                        >
+                            Image/Video
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
+                            theme={APP_THEME}
+                            href="https://gen.pollinations.ai/audio/models"
+                        >
+                            Audio
+                        </ExternalLinkButton>
+                        <ExternalLinkButton
+                            theme={APP_THEME}
+                            href="https://gen.pollinations.ai/embeddings/models"
+                        >
+                            Embeddings
+                        </ExternalLinkButton>
+                    </div>
                 }
             >
                 A compact view of Pollinations model families and the model
@@ -569,23 +637,27 @@ function ModelsPage() {
                     </SectionHeader>
                     <QuietPanel className="flex flex-col gap-5">
                         <ButtonGroup aria-label="Model category">
-                            {(["text", "image", "video", "audio"] as const).map(
-                                (item) => (
-                                    <TabButton
-                                        key={item}
-                                        active={category === item}
-                                        theme={
-                                            MODEL_GROUPS.find(
-                                                (group) => group.id === item,
-                                            )?.theme ?? APP_THEME
-                                        }
-                                        onClick={() => setCategory(item)}
-                                    >
-                                        {item}
-                                    </TabButton>
-                                ),
-                            )}
+                            {MODEL_SELECTOR_CATEGORIES.map((item) => (
+                                <TabButton
+                                    key={item}
+                                    active={category === item}
+                                    theme={
+                                        MODEL_GROUPS.find(
+                                            (group) => group.id === item,
+                                        )?.theme ?? APP_THEME
+                                    }
+                                    onClick={() => setCategory(item)}
+                                >
+                                    {item}
+                                </TabButton>
+                            ))}
                         </ButtonGroup>
+
+                        {error ? (
+                            <Alert intent="warning">
+                                Model catalog unavailable: {error}
+                            </Alert>
+                        ) : null}
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0">
@@ -593,7 +665,8 @@ function ModelsPage() {
                                     Selected model
                                 </p>
                                 <h3 className="mt-1 text-2xl font-bold">
-                                    {selectedModel?.name ?? selectedModelId}
+                                    {displayCatalogName(selectedModel) ||
+                                        selectedModelId}
                                 </h3>
                                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
                                     {selectedModel?.description ??
@@ -601,9 +674,10 @@ function ModelsPage() {
                                 </p>
                             </div>
                             <ModelSelector
-                                models={MODEL_SELECTOR_ITEMS}
+                                models={models}
                                 category={category}
                                 value={selectedModelId}
+                                isLoading={isLoading}
                                 onChange={(modelId) =>
                                     setSelectedByCategory((current) => ({
                                         ...current,
@@ -613,34 +687,84 @@ function ModelsPage() {
                             />
                         </div>
 
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <CatalogFact
+                                label="input"
+                                value={formatList(
+                                    selectedModel?.input_modalities,
+                                )}
+                            />
+                            <CatalogFact
+                                label="output"
+                                value={formatList(
+                                    selectedModel?.output_modalities,
+                                )}
+                            />
+                            <CatalogFact
+                                label="limit"
+                                value={formatModelLimit(selectedModel)}
+                            />
+                            <CatalogFact
+                                label="pricing"
+                                value={formatPricing(selectedModel)}
+                            />
+                        </div>
+
                         <ScrollArea axis="x">
-                            <Table className="min-w-[620px]">
+                            <Table className="min-w-[860px]">
                                 <TableHead>
                                     <tr>
+                                        <TableHeaderCell>Model</TableHeaderCell>
+                                        <TableHeaderCell>Input</TableHeaderCell>
                                         <TableHeaderCell>
-                                            Family
+                                            Output
                                         </TableHeaderCell>
+                                        <TableHeaderCell>Limit</TableHeaderCell>
                                         <TableHeaderCell>
-                                            Representative slugs
+                                            Pricing
                                         </TableHeaderCell>
-                                        <TableHeaderCell>Use</TableHeaderCell>
                                     </tr>
                                 </TableHead>
                                 <TableBody>
-                                    {MODEL_GROUPS.map((group) => (
-                                        <TableRow key={group.id}>
+                                    {categoryModels.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} muted>
+                                                {isLoading
+                                                    ? "Loading catalog..."
+                                                    : "No models listed for this category."}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : null}
+                                    {categoryModels.map((model) => (
+                                        <TableRow key={model.id}>
                                             <TableCell>
                                                 <span className="font-semibold">
-                                                    {group.label}
+                                                    {displayCatalogName(model)}
                                                 </span>
+                                                {model.paid_only ? (
+                                                    <Chip
+                                                        size="sm"
+                                                        className="ml-2"
+                                                    >
+                                                        paid
+                                                    </Chip>
+                                                ) : null}
                                             </TableCell>
                                             <TableCell muted>
-                                                {group.examples.join(", ")}
+                                                {formatList(
+                                                    model.input_modalities,
+                                                )}
+                                            </TableCell>
+                                            <TableCell muted>
+                                                {formatList(
+                                                    model.output_modalities,
+                                                )}
                                             </TableCell>
                                             <TableCell>
-                                                {group.capabilities
-                                                    .slice(0, 3)
-                                                    .join(", ")}
+                                                {formatModelLimit(model)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {formatPricing(model)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -937,11 +1061,15 @@ function AccountComposition() {
 }
 
 function PromptComposerComposition() {
+    const { models, isLoading } = useModelCatalog();
     const [category, setCategory] = useState<ModelSelectorCategory>("image");
     const [selectedByCategory, setSelectedByCategory] = useState(
         DEFAULT_MODEL_BY_CATEGORY,
     );
-    const selectedModelId = selectedByCategory[category];
+    const requestedModelId = selectedByCategory[category];
+    const selectedModelId =
+        selectedCatalogModel(models, category, requestedModelId)?.id ??
+        requestedModelId;
 
     return (
         <QuietPanel className="flex flex-col gap-5">
@@ -954,9 +1082,10 @@ function PromptComposerComposition() {
                     </p>
                 </div>
                 <ModelSelector
-                    models={MODEL_SELECTOR_ITEMS}
+                    models={models}
                     category={category}
                     value={selectedModelId}
+                    isLoading={isLoading}
                     onChange={(modelId) =>
                         setSelectedByCategory((current) => ({
                             ...current,
@@ -967,7 +1096,7 @@ function PromptComposerComposition() {
             </div>
 
             <ButtonGroup aria-label="Composer media type">
-                {(["image", "text", "video", "audio"] as const).map((item) => (
+                {PROMPT_COMPOSER_CATEGORIES.map((item) => (
                     <TabButton
                         key={item}
                         active={category === item}
@@ -1086,9 +1215,12 @@ function UsageComposition() {
 }
 
 const COMPOSITION_SNIPPET = `import "@pollinations/ui/styles.css";
+import { fetchModelCatalog } from "@pollinations/sdk/models";
 import { PolliProvider } from "@pollinations/sdk/react";
 import { ModelSelector } from "@pollinations/ui/models";
 import { LoginButton, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
+
+const catalog = await fetchModelCatalog();
 
 export function App() {
     return (
@@ -1097,7 +1229,7 @@ export function App() {
                 <LoginButton>Authorize app</LoginButton>
             </WhenLoggedOut>
             <ModelSelector
-                models={models}
+                models={catalog.models}
                 category="image"
                 value={model}
                 onChange={setModel}

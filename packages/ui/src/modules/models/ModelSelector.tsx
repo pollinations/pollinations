@@ -8,14 +8,20 @@ import { TabButton } from "../../primitives/TabButton.tsx";
 import type { ThemeName } from "../../theme.ts";
 import { getModalityColors } from "../modality/colors.ts";
 
-export type ModelSelectorCategory = "image" | "video" | "text" | "audio";
+export type ModelSelectorCategory =
+    | "image"
+    | "video"
+    | "text"
+    | "audio"
+    | "embedding"
+    | "realtime";
 
 export type ModelSelectorItem = {
     id: string;
     name?: string;
     description?: string;
     category: ModelSelectorCategory;
-    paidOnly?: boolean;
+    paid_only?: boolean;
 };
 
 export type ModelSelectorProps = {
@@ -33,6 +39,8 @@ const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     video: "Video",
     text: "Text",
     audio: "Audio",
+    embedding: "Embeddings",
+    realtime: "Realtime",
 };
 
 function displayModelName(model: ModelSelectorItem): string {
@@ -117,7 +125,7 @@ export function ModelSelector({
                                         <span className="polli:truncate">
                                             {displayModelName(model)}
                                         </span>
-                                        {model.paidOnly && (
+                                        {model.paid_only && (
                                             <Chip
                                                 size="sm"
                                                 className={cn(

@@ -72,7 +72,6 @@ export {
     type ModelCatalog,
     type ModelCatalogCategory,
     type ModelCatalogItem,
-    type ModelCatalogSource,
 } from "./models.js";
 
 // Export all types

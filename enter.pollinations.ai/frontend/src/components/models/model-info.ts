@@ -1,12 +1,4 @@
-/**
- * Model metadata and information utilities
- */
-
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
-import type { Modalities } from "./types.ts";
+import type { Modalities, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
     "ACE-Step": "ace-step",
@@ -37,31 +29,36 @@ const BRAND_LOGOS: Record<string, string> = {
 
 const MODEL_LOGOS: Record<string, string> = {};
 
-export const getModalities = (modelName: string): Modalities => {
-    const service = getModelDefinition(modelName as ModelName);
+const getSourceDescription = (model: ModelPrice): string | undefined => {
+    if (!model.description) return model.displayName;
+    return model.displayName
+        ? `${model.displayName} - ${model.description}`
+        : model.description;
+};
+
+export const getModalities = (model: ModelPrice): Modalities => {
     return {
-        input: service?.inputModalities || ["text"],
-        output: service?.outputModalities || ["text"],
+        input: model.inputModalities || ["text"],
+        output: model.outputModalities || ["text"],
     };
 };
 
-export const getModelDescription = (modelName: string): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.description;
+export const getModelDescription = (model: ModelPrice): string | undefined => {
+    return getSourceDescription(model);
 };
 
-export const getModelDisplayName = (modelName: string): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
-    const description = service?.description;
+export const getModelDisplayName = (model: ModelPrice): string | undefined => {
+    if (model.displayName) return model.displayName;
+    const description = getSourceDescription(model);
     if (!description) return undefined;
     return description.split(" - ")[0];
 };
 
 export const getModelDescriptionWithoutName = (
-    modelName: string,
+    model: ModelPrice,
 ): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
-    const description = service?.description;
+    if (model.description) return model.description;
+    const description = getSourceDescription(model);
     if (!description) return undefined;
     const parts = description.split(" - ");
     if (parts.length < 2) return undefined;
@@ -69,17 +66,16 @@ export const getModelDescriptionWithoutName = (
 };
 
 export const getModelBrandLogoPath = (
-    modelName: string,
+    model: ModelPrice,
 ): string | undefined => {
-    const service = getModelDefinition(modelName as ModelName);
     const logoName =
-        MODEL_LOGOS[modelName] ??
-        (service ? BRAND_LOGOS[service.brand] : undefined);
+        MODEL_LOGOS[model.name] ??
+        (model.brand ? BRAND_LOGOS[model.brand] : undefined);
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
-export const getModelModalityIcons = (modelName: string): string[] => {
-    const modalities = getModalities(modelName);
+export const getModelModalityIcons = (model: ModelPrice): string[] => {
+    const modalities = getModalities(model);
     const icons: string[] = [];
 
     if (modalities.input.includes("text")) icons.push("💬");
@@ -90,8 +86,8 @@ export const getModelModalityIcons = (modelName: string): string[] => {
     return icons;
 };
 
-export const getModelModalityLabel = (modelName: string): string => {
-    const modalities = getModalities(modelName);
+export const getModelModalityLabel = (model: ModelPrice): string => {
+    const modalities = getModalities(model);
     const labels: string[] = [];
 
     if (modalities.input.includes("text")) labels.push("text");
@@ -102,84 +98,68 @@ export const getModelModalityLabel = (modelName: string): string => {
     return labels.length > 0 ? `Input: ${labels.join(", ")}` : "Input";
 };
 
-export const getModelCapabilityIcons = (modelName: string): string[] => {
+export const getModelCapabilityIcons = (model: ModelPrice): string[] => {
     const icons: string[] = [];
 
-    if (hasReasoning(modelName)) icons.push("🧠");
-    if (hasSearch(modelName)) icons.push("🔍");
-    if (hasCodeExecution(modelName)) icons.push("💻");
+    if (hasReasoning(model)) icons.push("🧠");
+    if (hasSearch(model)) icons.push("🔍");
+    if (hasCodeExecution(model)) icons.push("💻");
 
     return icons;
 };
 
-export const getModelCapabilityLabel = (modelName: string): string => {
+export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
-    if (hasReasoning(modelName)) labels.push("Reasoning");
-    if (hasSearch(modelName)) labels.push("Web search");
-    if (hasCodeExecution(modelName)) labels.push("Code execution");
+    if (hasReasoning(model)) labels.push("Reasoning");
+    if (hasSearch(model)) labels.push("Web search");
+    if (hasCodeExecution(model)) labels.push("Code execution");
 
     return labels.join(", ");
 };
 
-export const hasReasoning = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.reasoning === true;
-};
+export const hasReasoning = (model: ModelPrice): boolean =>
+    model.reasoning === true;
 
-export const hasSearch = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.search === true;
-};
+export const hasSearch = (model: ModelPrice): boolean => model.search === true;
 
-export const hasCodeExecution = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.codeExecution === true;
-};
+export const hasCodeExecution = (model: ModelPrice): boolean =>
+    model.codeExecution === true;
 
-export const hasVision = (modelName: string): boolean => {
-    const modalities = getModalities(modelName);
+export const hasVision = (model: ModelPrice): boolean => {
+    const modalities = getModalities(model);
     return modalities.input.includes("image");
 };
 
-export const hasAudioInput = (modelName: string): boolean => {
-    const modalities = getModalities(modelName);
+export const hasAudioInput = (model: ModelPrice): boolean => {
+    const modalities = getModalities(model);
     return modalities.input.includes("audio");
 };
 
-export const hasAudioOutput = (modelName: string): boolean => {
-    const modalities = getModalities(modelName);
+export const hasAudioOutput = (model: ModelPrice): boolean => {
+    const modalities = getModalities(model);
     return modalities.output.includes("audio");
 };
 
-export const isPersona = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.persona === true;
-};
+export const isPersona = (model: ModelPrice): boolean => model.persona === true;
 
 /**
  * Check if a model is "new" (added within the last 7 days).
  * Uses the `addedDate` field, which is set once on creation and never updated.
  */
-export const isNewModel = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    if (!service?.addedDate) return false;
+export const isNewModel = (model: ModelPrice): boolean => {
+    if (!model.addedDate) return false;
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return service.addedDate > sevenDaysAgo;
+    return model.addedDate > sevenDaysAgo;
 };
 
 /**
  * Check if a model requires paid balance only (no tier balance)
  */
-export const isPaidOnly = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.paidOnly === true;
-};
+export const isPaidOnly = (model: ModelPrice): boolean =>
+    model.paidOnly === true;
 
 /**
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
-export const isAlpha = (modelName: string): boolean => {
-    const service = getModelDefinition(modelName as ModelName);
-    return service?.alpha === true;
-};
+export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;

@@ -18,6 +18,15 @@ import {
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
+    category: z.enum([
+        "text",
+        "image",
+        "audio",
+        "video",
+        "embedding",
+        "realtime",
+    ]),
+    brand: z.string().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -27,10 +36,15 @@ export const ModelInfoSchema = z.object({
     video_capabilities: z.array(z.string()).optional(),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
+    search: z.boolean().optional(),
+    code_execution: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
+    persona: z.boolean().optional(),
     paid_only: z.boolean().optional(),
+    alpha: z.boolean().optional(),
+    added_date: z.number().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -65,6 +79,8 @@ function getModelInfo(modelName: ModelName): ModelInfo {
     return {
         name: modelName as string,
         aliases: service.aliases,
+        category: service.category,
+        brand: service.brand,
         pricing,
         // User-facing metadata from service definition
         description: service.description,
@@ -73,10 +89,15 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         video_capabilities: service.videoCapabilities,
         tools: service.tools,
         reasoning: service.reasoning,
+        search: service.search,
+        code_execution: service.codeExecution,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
+        persona: service.persona,
         paid_only: service.paidOnly,
+        alpha: service.alpha,
+        added_date: service.addedDate,
     };
 }
 

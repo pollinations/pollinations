@@ -1,9 +1,11 @@
 import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
 import { getModalityColors } from "@pollinations/ui/modality";
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchModelCatalog } from "../models/model-catalog.ts";
 import {
-    MODEL_CATEGORIES,
+    getModelCategoriesFromCatalog,
+    type ModelCategoryGroup,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
@@ -75,6 +77,9 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                   visiblePermissions.includes(p.id),
               );
     const isUnrestricted = allowedModels === null;
+    const [modelCategories, setModelCategories] = useState<
+        ModelCategoryGroup[]
+    >([]);
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;
@@ -91,8 +96,30 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         }
     };
 
-    const allModelIds = MODEL_CATEGORIES.flatMap(({ models }) =>
-        models.map((model) => model.id),
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) {
+                    setModelCategories(getModelCategoriesFromCatalog(models));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setModelCategories([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const allModelIds = useMemo(
+        () =>
+            modelCategories.flatMap(({ models }) =>
+                models.map((model) => model.id),
+            ),
+        [modelCategories],
     );
 
     const commitSelection = (next: string[]) => {
@@ -239,7 +266,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         </div>
                     }
                 >
-                    {MODEL_CATEGORIES.map(({ label, models }) => (
+                    {modelCategories.map(({ label, models }) => (
                         <ModelCategory
                             key={label}
                             label={label}

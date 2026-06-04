@@ -1,10 +1,5 @@
 import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
 import { PaidChip } from "@pollinations/ui/wallet";
-import {
-    getPriceDefinition,
-    type ModelName,
-    type PriceDefinition,
-} from "@shared/registry/registry.ts";
 import { type FC, useState } from "react";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
@@ -64,40 +59,6 @@ const DEFAULT_DIR: Record<SortKey, SortDir> = {
     output: "asc",
 };
 
-const INPUT_PRICE_FIELDS = [
-    "promptTextTokens",
-    "promptCachedTokens",
-    "promptAudioTokens",
-    "promptAudioSeconds",
-    "promptImageTokens",
-    "promptVideoTokens",
-] as const satisfies (keyof PriceDefinition)[];
-
-const OUTPUT_PRICE_FIELDS = [
-    "completionTextTokens",
-    "completionAudioTokens",
-    "completionAudioSeconds",
-    "completionImageTokens",
-    "completionVideoSeconds",
-    "completionVideoTokens",
-] as const satisfies (keyof PriceDefinition)[];
-
-const sortValueFromFields = (
-    modelName: string,
-    fields: readonly (keyof PriceDefinition)[],
-): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum = fields.reduce((total, field) => total + (p[field] ?? 0), 0);
-    return sum > 0 ? sum : -1;
-};
-
-const getInputSortValue = (modelName: string): number =>
-    sortValueFromFields(modelName, INPUT_PRICE_FIELDS);
-
-const getOutputSortValue = (modelName: string): number =>
-    sortValueFromFields(modelName, OUTPUT_PRICE_FIELDS);
-
 const sortModels = (
     models: ModelPrice[],
     sortKey: SortKey,
@@ -106,22 +67,22 @@ const sortModels = (
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
         if (sortKey === "name") {
-            const an = (getModelDisplayName(a.name) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b.name) ?? b.name).toLowerCase();
+            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
+            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
             return an < bn ? -sign : an > bn ? sign : 0;
         }
         const av =
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(a))
                 : sortKey === "input"
-                  ? getInputSortValue(a.name)
-                  : getOutputSortValue(a.name);
+                  ? (a.inputSortPrice ?? -1)
+                  : (a.outputSortPrice ?? -1);
         const bv =
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(b))
                 : sortKey === "input"
-                  ? getInputSortValue(b.name)
-                  : getOutputSortValue(b.name);
+                  ? (b.inputSortPrice ?? -1)
+                  : (b.outputSortPrice ?? -1);
         // Missing values always sort last regardless of direction
         if (av < 0 && bv >= 0) return 1;
         if (bv < 0 && av >= 0) return -1;
@@ -168,9 +129,9 @@ const TabContent: FC<TabContentProps> = ({
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
-        type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
+        type === "text" ? sorted.filter((m) => !isPersona(m)) : sorted;
     const personaModels =
-        type === "text" ? sorted.filter((m) => isPersona(m.name)) : [];
+        type === "text" ? sorted.filter((m) => isPersona(m)) : [];
 
     return (
         <>
@@ -249,14 +210,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const displayName = getModelDisplayName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const displayName = getModelDisplayName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const modalityIcons = getModelModalityIcons(model);
+    const capabilityIcons = getModelCapabilityIcons(model);
     const publicModelName = displayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
     const isSignedIn = packBalance !== undefined;
     const perPollen = calculatePerPollen(model);

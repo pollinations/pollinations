@@ -1,8 +1,28 @@
-import type { Category } from "@shared/registry/registry.ts";
+export type ModelCategory =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "realtime";
 
 export type ModelPrice = {
     name: string;
-    type: Category;
+    type: ModelCategory;
+    displayName?: string;
+    description?: string;
+    brand?: string;
+    inputModalities?: string[];
+    outputModalities?: string[];
+    reasoning?: boolean;
+    search?: boolean;
+    codeExecution?: boolean;
+    persona?: boolean;
+    paidOnly?: boolean;
+    alpha?: boolean;
+    addedDate?: number;
+    inputSortPrice?: number;
+    outputSortPrice?: number;
     perToken?: boolean;
     // Text pricing
     promptTextPrice?: string;

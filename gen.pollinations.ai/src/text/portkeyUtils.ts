@@ -3,7 +3,14 @@ import debug from "debug";
 const log = debug("pollinations:portkey-utils");
 const errorLog = debug("pollinations:portkey-utils:error");
 
+interface PortkeyTarget {
+    authKey?: string | (() => string | Promise<string>);
+    [key: string]: unknown;
+}
+
 interface PortkeyConfig {
+    strategy?: { mode: string; on_status_codes?: number[] };
+    targets?: PortkeyTarget[];
     useUserApiKey?: boolean;
     authKey?: string | (() => string | Promise<string>);
     [key: string]: unknown;
@@ -20,6 +27,16 @@ async function resolveAuthKey(
     return typeof authKey === "function" ? await authKey() : authKey;
 }
 
+/** Resolves a target's authKey into a per-target `api_key` for x-portkey-config. */
+async function resolveTargetAuth(
+    target: PortkeyTarget,
+): Promise<Record<string, unknown>> {
+    const { authKey, ...rest } = target;
+    if (!authKey) return rest;
+    const token = await resolveAuthKey(authKey);
+    return { ...rest, api_key: token };
+}
+
 const SKIPPED_CONFIG_KEYS = new Set(["authKey", "useUserApiKey"]);
 
 export async function generatePortkeyHeaders(
@@ -29,6 +46,24 @@ export async function generatePortkeyHeaders(
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");
+    }
+
+    // Fallback/loadbalance config: emit a single x-portkey-config JSON blob with
+    // per-target credentials instead of flattening into x-portkey-* headers.
+    if (config.strategy && config.targets) {
+        const resolvedTargets = await Promise.all(
+            config.targets.map(resolveTargetAuth),
+        );
+        log("Resolved fallback config targets:", {
+            targetCount: resolvedTargets.length,
+            providers: resolvedTargets.map((target) => target.provider),
+        });
+        return {
+            "x-portkey-config": JSON.stringify({
+                strategy: config.strategy,
+                targets: resolvedTargets,
+            }),
+        };
     }
 
     const headers: Record<string, string> = {

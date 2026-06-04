@@ -139,10 +139,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        // Airforce primary, Vertex fallback (same modelId → same billing).
+        // No code_execution default-injection: Airforce returns a phantom
+        // tool_call for it; explicit code_execution requests fall back to
+        // Vertex via on_status_codes 400.
+        config: portkeyConfig["gemini-3-flash-airforce"],
         transform: pipe(
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),

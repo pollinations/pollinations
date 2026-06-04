@@ -7,6 +7,8 @@ on:
     paths:
       - 'enter.pollinations.ai/**'
       - 'shared/**'
+      - 'packages/sdk/**'
+      - 'packages/ui/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-enter-cloudflare.yml'

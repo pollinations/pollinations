@@ -1,0 +1,35 @@
+{
+  "pr_number": 11608,
+  "title": "ci: redeploy consumers on package changes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11608",
+  "merged_at": "2026-06-04T11:53:39Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds `packages/sdk/**` and `packages/ui/**` to enter and website production deploy path filters.\n- Publishes SDK/UI prereleases under a version-derived npm dist-tag (`alpha` for prereleases, `latest` for stable versions); MCP/CLI publishing is unchanged.\n- Updates automatic app deploys to deploy every changed registered app instead of only the first changed app.\n\nScope note:\n- This PR intentionally does not add package README stability warnings. Those should ship in the SDK/UI package PRs together with the alpha version bumps, so npm users see the warning on the exact alpha package they install.\n\nValidation:\n- `git diff --cached --check`\n- Ruby YAML parse for all four edited workflow files\n- `gh auth status`\n\nNote: `actionlint` is not installed locally, so workflow linting was limited to YAML parse and shell/diff review.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Smarter pipelines",
+    "blurb": "Our CI pipelines just got a brain upgrade. Now, changes to the SDK or UI automatically trigger deployments for the apps that depend on them, and we're properly tagging alpha releases on npm.",
+    "summary": "Updated GitHub Actions workflows to trigger enter and website deployments on SDK/UI package changes, publish prereleases with an alpha npm tag, and deploy all changed apps simultaneously instead of just the first one.",
+    "impact": "Internal deployments are now more reliable and automated, ensuring that downstream consumers always use the latest package versions without manual intervention.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "deployments",
+      "npm",
+      "infrastructure"
+    ],
+    "visual_concept": "A robot managing a conveyor belt or pipeline of boxes (packages/apps), with Polly the bee overseeing the smooth operation, representing automated CI/CD pipelines.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head managing a glowing lime green (#ecf874) conveyor belt carrying small pixelated boxes. The cute bee mascot hovers nearby holding a tiny clipboard, checking off successful deployments. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-04/PR-11608.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head managing a glowing lime green (#ecf874) conveyor belt carrying small pixelated boxes. The cute bee mascot hovers nearby holding a tiny clipboard, checking off successful deployments. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-04T11:54:35.858430+00:00"
+}

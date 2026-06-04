@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-03",
+  "period_start": "2026-06-03",
+  "period_end": "2026-06-03",
+  "generated_at": "2026-06-04T07:33:48.281024+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-03/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-03/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-03/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped 3 updates this week to keep the infrastructure humming. We routed some cross-region traffic for nova-fast and reduced vCPU pressure on the developer earnings backend. Basically: smoother scaling when things get heavy, so your ideas come to life quicker. Also finally fixed the theme and focus states on the auth modal, because clicking a button should actually feel nice. All merged and live in the repo. 🍄🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #backend #uiux #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

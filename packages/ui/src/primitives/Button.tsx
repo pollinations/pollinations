@@ -6,9 +6,9 @@ import type { ThemeName } from "../theme.ts";
 type ButtonIntent = "danger";
 
 const sizes = {
-    small: "polli:px-2 polli:pt-0.5 polli:pb-1",
-    medium: "polli:px-4 polli:pt-1.5 polli:pb-2",
-    large: "polli:px-6 polli:py-3",
+    sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
+    md: "polli:px-4 polli:pt-1.5 polli:pb-2",
+    lg: "polli:px-6 polli:py-3",
 } as const;
 
 // Cascade-driven base — reads [data-theme] vars.
@@ -48,7 +48,7 @@ const buttonClasses = ({
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
         colorClasses,
-        sizes[size || "medium"],
+        sizes[size || "md"],
         className,
     );
 };

@@ -132,7 +132,7 @@ function CommunityPage() {
                 <ExternalLinkButton
                     href={CONTRIBUTE.ctaHref}
                     theme="pink"
-                    size="medium"
+                    size="md"
                     className="self-start"
                 >
                     {CONTRIBUTE.ctaLabel}
@@ -225,7 +225,7 @@ function StartCard({ card, theme }: { card: StartCardData; theme: ThemeName }) {
             <ExternalLinkButton
                 href={card.href}
                 theme={theme}
-                size="medium"
+                size="md"
                 className="mt-auto self-start"
             >
                 {card.buttonLabel}

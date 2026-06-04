@@ -156,7 +156,7 @@ function ModalityTabs({
                     key={category}
                     active={activeCategory === category}
                     theme={modalityTheme(category)}
-                    size="small"
+                    size="sm"
                     onClick={() => onCategoryChange(category)}
                 >
                     {CATEGORY_LABELS[category]}
@@ -198,7 +198,7 @@ function ResultPanel({
                             result,
                         )}`}
                         theme={modalityTheme(activeCategory)}
-                        size="small"
+                        size="sm"
                     >
                         Save
                     </Button>
@@ -642,7 +642,7 @@ export function Playground({
                                             key={voice}
                                             active={selectedVoice === voice}
                                             theme={modalityTheme("audio")}
-                                            size="small"
+                                            size="sm"
                                             onClick={() =>
                                                 setSelectedVoice(voice)
                                             }
@@ -659,7 +659,7 @@ export function Playground({
                         <Button
                             type="button"
                             theme={activeTheme}
-                            size="large"
+                            size="lg"
                             disabled={
                                 isGenerating ||
                                 !apiKey ||

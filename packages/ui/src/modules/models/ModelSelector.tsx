@@ -109,9 +109,10 @@ export function ModelSelector({
                                         key={model.id}
                                         active={isActive}
                                         theme={modalityTheme(model.category)}
-                                        size="small"
+                                        size="sm"
+                                        variant="ghost"
                                         disabled={!isAllowed}
-                                        className="polli:w-full polli:justify-between polli:border-transparent polli:text-left polli:hover:border-transparent"
+                                        className="polli:w-full polli:justify-between polli:text-left"
                                         onClick={() => {
                                             onChange(model.id);
                                             close();

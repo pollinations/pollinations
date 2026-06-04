@@ -102,7 +102,7 @@ function AppsPage() {
                         <ExternalLinkButton
                             href={APP_LINKS.submitApp}
                             theme="blue"
-                            size="small"
+                            size="sm"
                             className="shrink-0"
                         >
                             {APPS_COPY.submitCtaButton}
@@ -125,7 +125,7 @@ function AppsPage() {
                         <ExternalLinkButton
                             href={APP_LINKS.byopDocs}
                             theme="amber"
-                            size="small"
+                            size="sm"
                             className="shrink-0"
                         >
                             {APPS_COPY.pollenCtaButton}
@@ -151,7 +151,7 @@ function AppsPage() {
                                 active={filter === item.id}
                                 onClick={() => setFilter(item.id)}
                                 theme={item.theme}
-                                size="small"
+                                size="sm"
                             >
                                 {item.label}
                             </TabButton>
@@ -171,7 +171,7 @@ function AppsPage() {
                                     active={sort === item.id}
                                     onClick={() => setSort(item.id)}
                                     theme={item.theme}
-                                    size="small"
+                                    size="sm"
                                 >
                                     {item.label}
                                 </TabButton>

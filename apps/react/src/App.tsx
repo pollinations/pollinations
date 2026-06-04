@@ -150,7 +150,7 @@ function ThemeTabs({
                     theme={option}
                     active={theme === option}
                     onClick={() => onThemeChange(option)}
-                    size="small"
+                    size="sm"
                 >
                     <span className="capitalize">{option}</span>
                 </TabButton>
@@ -197,7 +197,7 @@ function CopyButton({
         <Button
             type="button"
             theme="teal"
-            size="small"
+            size="sm"
             onClick={() => {
                 void navigator.clipboard.writeText(text).then(() => {
                     setCopied(true);

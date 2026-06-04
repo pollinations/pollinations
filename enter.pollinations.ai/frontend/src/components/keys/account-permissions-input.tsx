@@ -348,7 +348,7 @@ const ModelChip: FC<{
     return (
         <Button
             type="button"
-            size="small"
+            size="sm"
             aria-pressed={selected}
             onClick={onClick}
             disabled={disabled}

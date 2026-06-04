@@ -406,7 +406,7 @@ export function App() {
                                                 key={model}
                                                 active={activeModel === model}
                                                 theme="pink"
-                                                size="small"
+                                                size="sm"
                                                 onClick={() =>
                                                     setActiveModel(model)
                                                 }
@@ -423,7 +423,7 @@ export function App() {
                             <Button
                                 type="button"
                                 theme="pink"
-                                size="large"
+                                size="lg"
                                 disabled={
                                     !isLoggedIn ||
                                     (!prompt.trim() && !isGenerating)
@@ -470,7 +470,7 @@ export function App() {
                                     <Button
                                         type="button"
                                         theme="pink"
-                                        size="small"
+                                        size="sm"
                                         onClick={() =>
                                             downloadImage(generatedMeme.url)
                                         }
@@ -481,7 +481,7 @@ export function App() {
                                     <Button
                                         type="button"
                                         theme="pink"
-                                        size="small"
+                                        size="sm"
                                         onClick={shareCurrentMeme}
                                     >
                                         Share
@@ -511,7 +511,7 @@ export function App() {
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt"
                         theme="pink"
-                        size="small"
+                        size="sm"
                     >
                         GitHub
                     </ExternalLinkButton>

@@ -317,7 +317,7 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             target="_blank"
             rel="noopener noreferrer"
             title={label}
-            size="small"
+            size="sm"
             className={cn(
                 "h-9 gap-2 py-0",
                 showLabel ? "w-auto px-3" : "w-9 px-0",
@@ -359,7 +359,7 @@ function WindowTabs({ value, onChange }) {
                         key={key}
                         active={value === key}
                         onClick={() => onChange(key)}
-                        size="small"
+                        size="sm"
                     >
                         {label}
                     </TabButton>

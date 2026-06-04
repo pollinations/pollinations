@@ -210,7 +210,7 @@ const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
                     active={value === option}
                     onClick={() => onChange(option)}
                     theme={option}
-                    size="small"
+                    size="sm"
                 >
                     <span className="capitalize">{option}</span>
                 </TabButton>
@@ -638,8 +638,8 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
         <div className="flex flex-col gap-3">
             <Row label="Button">
                 <Button>Default</Button>
-                <Button size="small">Small</Button>
-                <Button size="large">Large</Button>
+                <Button size="sm">Small</Button>
+                <Button size="lg">Large</Button>
                 <Button theme="blue">Theme prop</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
@@ -654,7 +654,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <ExternalLinkButton
                     theme={theme}
                     href="https://pollinations.ai"
-                    size="small"
+                    size="sm"
                 >
                     Small link
                 </ExternalLinkButton>
@@ -1006,7 +1006,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             </p>
                             <div className="mt-5 flex justify-end gap-2">
                                 <Button
-                                    size="small"
+                                    size="sm"
                                     onClick={() => setDialogOpen(false)}
                                 >
                                     Close
@@ -1044,7 +1044,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             <p className="text-sm text-theme-text-base">
                                 The same primitive works inside compact panels.
                             </p>
-                            <Button size="small">Nested action</Button>
+                            <Button size="sm">Nested action</Button>
                         </div>
                     </Collapsible>
                     <Collapsible
@@ -1101,7 +1101,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 title="Primitive section"
                 theme={theme}
                 framed
-                action={<Button size="small">Action</Button>}
+                action={<Button size="sm">Action</Button>}
             >
                 <p className="text-sm text-theme-text-soft">
                     Section owns heading layout and optional framing. The app
@@ -1334,7 +1334,7 @@ const ModuleRecipesDemo: FC = () => {
                                     key={modality}
                                     type="button"
                                     theme={colors?.theme}
-                                    size="small"
+                                    size="sm"
                                     className={colors?.filled}
                                 >
                                     {modality}
@@ -1343,12 +1343,12 @@ const ModuleRecipesDemo: FC = () => {
                         })}
                         <Button
                             type="button"
-                            size="small"
+                            size="sm"
                             className="bg-gray-100 text-gray-600"
                         >
                             unknown
                         </Button>
-                        <Button type="button" size="small" disabled>
+                        <Button type="button" size="sm" disabled>
                             disabled
                         </Button>
                     </ButtonGroup>

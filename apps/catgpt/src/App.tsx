@@ -68,19 +68,26 @@ type GeneratedMeme = SavedMeme & {
     reply: string;
 };
 
-// Meme image URLs must be Pollinations media. Reject anything else (tampered
-// localStorage, crafted share links) before using it as an <img src>.
-function isTrustedMediaUrl(value: string): boolean {
+// Resolve a meme image URL to a value safe to use as an <img src>: same-origin
+// bundled assets and Pollinations media only. Anything else (tampered
+// localStorage, crafted share links) resolves to "" and renders nothing.
+function safeImageSrc(value: string): string {
     try {
-        const { protocol, hostname } = new URL(value);
-        return (
+        const { protocol, hostname } = new URL(
+            value,
+            "https://catgpt.pollinations.ai",
+        );
+        if (
             protocol === "https:" &&
             (hostname === "pollinations.ai" ||
                 hostname.endsWith(".pollinations.ai"))
-        );
+        ) {
+            return value;
+        }
     } catch {
-        return false;
+        // invalid URL — fall through
     }
+    return "";
 }
 
 function getSavedMemes(): SavedMeme[] {
@@ -91,7 +98,7 @@ function getSavedMemes(): SavedMeme[] {
             (meme) =>
                 meme &&
                 typeof meme.url === "string" &&
-                isTrustedMediaUrl(meme.url),
+                safeImageSrc(meme.url) !== "",
         );
     } catch {
         return [];
@@ -220,11 +227,12 @@ export function App() {
         const urlImage = params.get("image");
         if (urlPrompt) setPrompt(urlPrompt);
         // Restore a shared result so the recipient sees the exact meme. Only
-        // trust Pollinations media URLs (blocks crafted share links).
-        if (urlPrompt && urlImage && isTrustedMediaUrl(urlImage)) {
+        // trust same-origin / Pollinations media URLs (blocks crafted links).
+        const safeImage = urlImage ? safeImageSrc(urlImage) : "";
+        if (urlPrompt && safeImage) {
             setGeneratedMeme({
                 prompt: urlPrompt,
-                url: urlImage,
+                url: safeImage,
                 model: params.get("model") || FALLBACK_MODEL,
                 reply: "",
             });
@@ -520,7 +528,7 @@ export function App() {
                                 )}
                                 {!isGenerating && generatedMeme && (
                                     <img
-                                        src={generatedMeme.url}
+                                        src={safeImageSrc(generatedMeme.url)}
                                         alt={generatedMeme.prompt}
                                         className="max-h-full w-full rounded-lg object-contain"
                                     />
@@ -605,7 +613,7 @@ function MemeGrid({
                             className="overflow-hidden rounded-xl bg-white"
                         >
                             <img
-                                src={meme.url}
+                                src={safeImageSrc(meme.url)}
                                 alt={meme.prompt}
                                 loading="lazy"
                                 className="aspect-square w-full object-cover"

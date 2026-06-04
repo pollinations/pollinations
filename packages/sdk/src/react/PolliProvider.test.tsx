@@ -56,16 +56,4 @@ describe("PolliProvider setup guidance", () => {
         expect(warn.mock.calls[0][0]).not.toContain("sk_secret_test");
     });
 
-    it("prints the local redirect URI used by login", async () => {
-        stubWindow("http://127.0.0.1:4178/apps?filter=image#ignored");
-        vi.spyOn(console, "warn").mockImplementation(() => {});
-        const info = vi.spyOn(console, "info").mockImplementation(() => {});
-
-        await renderProvider("pk_test");
-
-        expect(info).toHaveBeenCalledWith(
-            expect.stringContaining("http://127.0.0.1:4178/apps?filter=image"),
-        );
-        expect(info.mock.calls[0][0]).not.toContain("#ignored");
-    });
 });

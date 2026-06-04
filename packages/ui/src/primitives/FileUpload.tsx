@@ -1,9 +1,101 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import type { ThemeName } from "../theme.ts";
 import { IconButton } from "./IconButton.tsx";
 import { ImageIcon, XIcon } from "./icons/index.tsx";
+
+const PREVIEWABLE_IMAGE_TYPES = new Set([
+    "image/gif",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+]);
+const PREVIEW_SIZE = 64;
+
+function isPreviewableImage(file: File): boolean {
+    return PREVIEWABLE_IMAGE_TYPES.has(file.type);
+}
+
+function PreviewPlaceholder() {
+    return (
+        <div className="polli:flex polli:h-16 polli:w-16 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-active polli:text-theme-text-soft">
+            <ImageIcon className="polli:h-5 polli:w-5" />
+        </div>
+    );
+}
+
+function FilePreview({ file }: { file: File }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [canPreview, setCanPreview] = useState(() =>
+        isPreviewableImage(file),
+    );
+
+    useEffect(() => {
+        if (!isPreviewableImage(file)) {
+            setCanPreview(false);
+            return;
+        }
+
+        let cancelled = false;
+        setCanPreview(true);
+
+        async function drawPreview() {
+            try {
+                const bitmap = await createImageBitmap(file);
+                if (cancelled) {
+                    bitmap.close();
+                    return;
+                }
+
+                const canvas = canvasRef.current;
+                const context = canvas?.getContext("2d");
+                if (!canvas || !context) {
+                    bitmap.close();
+                    setCanPreview(false);
+                    return;
+                }
+
+                canvas.width = PREVIEW_SIZE;
+                canvas.height = PREVIEW_SIZE;
+
+                const scale = Math.max(
+                    PREVIEW_SIZE / bitmap.width,
+                    PREVIEW_SIZE / bitmap.height,
+                );
+                const width = bitmap.width * scale;
+                const height = bitmap.height * scale;
+                const x = (PREVIEW_SIZE - width) / 2;
+                const y = (PREVIEW_SIZE - height) / 2;
+
+                context.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
+                context.drawImage(bitmap, x, y, width, height);
+                bitmap.close();
+            } catch {
+                if (!cancelled) setCanPreview(false);
+            }
+        }
+
+        void drawPreview();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [file]);
+
+    if (!canPreview) return <PreviewPlaceholder />;
+
+    return (
+        <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label={file.name}
+            className="polli:h-16 polli:w-16 polli:rounded-lg"
+            width={PREVIEW_SIZE}
+            height={PREVIEW_SIZE}
+        />
+    );
+}
 
 export type FileUploadProps = {
     value: File[];
@@ -30,17 +122,6 @@ export function FileUpload({
     theme,
     className,
 }: FileUploadProps) {
-    const [previews, setPreviews] = useState<string[]>([]);
-
-    // Created after mount (never during SSR); revoked on change/unmount.
-    useEffect(() => {
-        const urls = value.map((file) => URL.createObjectURL(file));
-        setPreviews(urls);
-        return () => {
-            for (const url of urls) URL.revokeObjectURL(url);
-        };
-    }, [value]);
-
     // A file dropped anywhere outside the zone otherwise triggers the browser's
     // default action — navigating the tab to that file (a blank/file page).
     // Suppress that document-wide so a near-miss drop is a no-op, not a page
@@ -118,15 +199,7 @@ export function FileUpload({
                             key={`${file.name}-${index}`}
                             className="polli:relative polli:flex polli:list-none polli:flex-col polli:gap-1"
                         >
-                            {previews[index] ? (
-                                <img
-                                    src={previews[index]}
-                                    alt={file.name}
-                                    className="polli:h-16 polli:w-16 polli:rounded-lg polli:object-cover"
-                                />
-                            ) : (
-                                <div className="polli:h-16 polli:w-16 polli:rounded-lg polli:bg-theme-bg-active" />
-                            )}
+                            <FilePreview file={file} />
                             <span className="polli:max-w-16 polli:truncate polli:text-xs polli:text-theme-text-muted">
                                 {file.name}
                             </span>

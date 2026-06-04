@@ -35,6 +35,7 @@ export const IconButton: FC<IconButtonProps> = ({
         onClick={onClick}
         title={title}
         aria-label={title}
+        data-intent={intent}
         className={cn(
             "polli-control polli:inline-flex polli:h-6 polli:w-6 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded polli:transition-colors",
             intent ? intentClasses[intent] : defaultClasses,

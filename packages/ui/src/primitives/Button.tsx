@@ -74,6 +74,7 @@ export function Button<T extends React.ElementType = "button">({
         <Component
             // Cascade override only applies when `intent` is unset.
             data-theme={intent ? undefined : theme}
+            data-intent={intent}
             className={buttonClasses({
                 theme,
                 intent,

@@ -122,6 +122,10 @@
     box-shadow: 0 0 0 2px var(--polli-color-border);
 }
 
+.polli-control[data-intent="danger"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
+}
+
 .polli-slider {
     --polli-slider-thumb-shadow-fallback: color-mix(
         in oklab,

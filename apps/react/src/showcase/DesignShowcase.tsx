@@ -21,6 +21,7 @@ import {
     Dropdown,
     ExternalLinkButton,
     ExternalLinkIcon,
+    FileUpload,
     GenApiIcon,
     GitHubIcon,
     IconButton,
@@ -36,6 +37,7 @@ import {
     PeriodPicker,
     type PeriodSelection,
     Section as PrimitiveSection,
+    Prose,
     ScrollArea,
     Slider,
     StatCard,
@@ -50,6 +52,7 @@ import {
     TableHeaderCell,
     TableRow,
     TerminalIcon,
+    Textarea,
     type ThemeName,
     TokensIcon,
     Tooltip,
@@ -141,6 +144,7 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
                 <main className="flex min-w-0 flex-col gap-10">
                     <CoverageDemo />
                     <TypographyDemo />
+                    <ProseDemo />
                     <ThemeDemo theme={theme} onThemeChange={setTheme} />
                     <TokensDemo />
                     <IconsDemo />
@@ -206,7 +210,7 @@ const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
                     active={value === option}
                     onClick={() => onChange(option)}
                     theme={option}
-                    size="small"
+                    size="sm"
                 >
                     <span className="capitalize">{option}</span>
                 </TabButton>
@@ -286,11 +290,13 @@ const primitiveNames = [
     "Dropdown",
     "ExternalLinkButton",
     "Field",
+    "FileUpload",
     "IconButton",
     "InfoTip",
     "Input",
     "MultiSelect",
     "PeriodPicker",
+    "Prose",
     "ScrollArea",
     "Section",
     "Slider",
@@ -304,6 +310,7 @@ const primitiveNames = [
     "TableHead",
     "TableHeaderCell",
     "TableRow",
+    "Textarea",
     "Tooltip",
 ] as const;
 
@@ -427,6 +434,34 @@ const TypographyDemo: FC = () => (
                     </span>
                 ))}
             </div>
+        </Surface>
+    </ShowcaseSection>
+);
+
+const proseSample = [
+    "# Prose primitive",
+    "",
+    "Renders **markdown** through `react-markdown` + `remark-gfm` + `rehype-slug`,",
+    "mapping every element to package theme tokens and fonts.",
+    "",
+    "- Themed headings, body, and lists",
+    "- GFM tables and inline `code`",
+    "- Links like [pollinations.ai](https://pollinations.ai)",
+    "",
+    "| Plugin      | Purpose            |",
+    "| ----------- | ------------------ |",
+    "| remark-gfm  | tables, task lists |",
+    "| rehype-slug | heading anchors    |",
+].join("\n");
+
+const ProseDemo: FC = () => (
+    <ShowcaseSection
+        id="prose"
+        title="Prose"
+        caption="Markdown rendering primitive backed by react-markdown with GFM and heading slugs, themed via package tokens."
+    >
+        <Surface variant="panel">
+            <Prose>{proseSample}</Prose>
         </Surface>
     </ShowcaseSection>
 );
@@ -603,8 +638,8 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
         <div className="flex flex-col gap-3">
             <Row label="Button">
                 <Button>Default</Button>
-                <Button size="small">Small</Button>
-                <Button size="large">Large</Button>
+                <Button size="sm">Small</Button>
+                <Button size="lg">Large</Button>
                 <Button theme="blue">Theme prop</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
@@ -619,7 +654,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <ExternalLinkButton
                     theme={theme}
                     href="https://pollinations.ai"
-                    size="small"
+                    size="sm"
                 >
                     Small link
                 </ExternalLinkButton>
@@ -696,6 +731,8 @@ const InputsDemo: FC = () => {
         on: true,
         invalid: true,
     });
+    const [files, setFiles] = useState<File[]>([]);
+    const [rejectedCount, setRejectedCount] = useState(0);
 
     return (
         <ShowcaseSection
@@ -718,6 +755,15 @@ const InputsDemo: FC = () => {
                 </ControlGroup>
                 <ControlGroup label="Disabled">
                     <Input placeholder="Disabled" disabled />
+                </ControlGroup>
+                <ControlGroup label="Textarea">
+                    <Textarea placeholder="Describe an image" rows={3} />
+                </ControlGroup>
+                <ControlGroup label="Textarea error">
+                    <Textarea placeholder="Invalid" rows={3} error />
+                </ControlGroup>
+                <ControlGroup label="Textarea disabled">
+                    <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>
                 <div className="col-span-full">
                     <ArkField.Root
@@ -786,6 +832,27 @@ const InputsDemo: FC = () => {
                             onChange={noopSwitch}
                         />
                     </div>
+                </div>
+                <div className="col-span-full">
+                    <ControlGroup label="FileUpload (max 3 images)">
+                        <FileUpload
+                            value={files}
+                            onChange={(next) => {
+                                setFiles(next);
+                                setRejectedCount(0);
+                            }}
+                            onReject={(rejected) =>
+                                setRejectedCount(rejected.length)
+                            }
+                            maxFiles={3}
+                        />
+                        {rejectedCount > 0 ? (
+                            <span className="text-xs text-intent-danger-text">
+                                {rejectedCount} file(s) rejected — wrong type,
+                                too large, or over the limit.
+                            </span>
+                        ) : null}
+                    </ControlGroup>
                 </div>
             </Surface>
         </ShowcaseSection>
@@ -939,7 +1006,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             </p>
                             <div className="mt-5 flex justify-end gap-2">
                                 <Button
-                                    size="small"
+                                    size="sm"
                                     onClick={() => setDialogOpen(false)}
                                 >
                                     Close
@@ -977,7 +1044,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             <p className="text-sm text-theme-text-base">
                                 The same primitive works inside compact panels.
                             </p>
-                            <Button size="small">Nested action</Button>
+                            <Button size="sm">Nested action</Button>
                         </div>
                     </Collapsible>
                     <Collapsible
@@ -1034,7 +1101,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 title="Primitive section"
                 theme={theme}
                 framed
-                action={<Button size="small">Action</Button>}
+                action={<Button size="sm">Action</Button>}
             >
                 <p className="text-sm text-theme-text-soft">
                     Section owns heading layout and optional framing. The app
@@ -1260,24 +1327,28 @@ const ModuleRecipesDemo: FC = () => {
                 </div>
                 <Row label="ButtonGroup">
                     <ButtonGroup aria-label="Modality options">
-                        {modalities.map((modality) => (
-                            <Button
-                                key={modality}
-                                type="button"
-                                size="small"
-                                className={getModalityColors(modality)?.filled}
-                            >
-                                {modality}
-                            </Button>
-                        ))}
+                        {modalities.map((modality) => {
+                            const colors = getModalityColors(modality);
+                            return (
+                                <Button
+                                    key={modality}
+                                    type="button"
+                                    theme={colors?.theme}
+                                    size="sm"
+                                    className={colors?.filled}
+                                >
+                                    {modality}
+                                </Button>
+                            );
+                        })}
                         <Button
                             type="button"
-                            size="small"
+                            size="sm"
                             className="bg-gray-100 text-gray-600"
                         >
                             unknown
                         </Button>
-                        <Button type="button" size="small" disabled>
+                        <Button type="button" size="sm" disabled>
                             disabled
                         </Button>
                     </ButtonGroup>

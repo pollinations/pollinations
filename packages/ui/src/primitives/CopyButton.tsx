@@ -71,6 +71,7 @@ export function CopyButton({
             type="button"
             onClick={handleCopy}
             className={cn(
+                "polli-control",
                 typeof className === "function" ? className(copied) : className,
             )}
         >

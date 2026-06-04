@@ -8,8 +8,11 @@ export type SectionProps = {
     theme: ThemeName;
     id?: string;
     framed?: boolean;
+    intro?: ReactNode;
     action?: ReactNode;
     actionClassName?: string;
+    panelClassName?: string;
+    titleClassName?: string;
     children: ReactNode;
     className?: string;
 };
@@ -19,29 +22,65 @@ export const Section: FC<SectionProps> = ({
     theme,
     id,
     framed = false,
+    intro,
     action,
     actionClassName,
+    panelClassName,
+    titleClassName,
     children,
     className,
 }) => (
-    <section id={id} className={cn("scroll-mt-10 space-y-2", className)}>
-        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+    <section
+        id={id}
+        className={cn(
+            "polli:flex polli:scroll-mt-10 polli:flex-col polli:gap-4",
+            className,
+        )}
+    >
+        <div className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3 polli:px-1">
             <h2
                 data-theme={theme}
-                className="text-left text-lg font-semibold sm:text-xl text-theme-text-strong"
+                className={cn(
+                    "polli:text-left polli:font-subheading polli:text-2xl polli:leading-tight polli:text-theme-text-strong",
+                    titleClassName,
+                )}
             >
                 {title}
             </h2>
             {action && (
-                <div className={cn("shrink-0", actionClassName)}>{action}</div>
+                <div className={cn("polli:shrink-0", actionClassName)}>
+                    {action}
+                </div>
             )}
         </div>
         {framed ? (
-            <Surface variant="panel" theme={theme}>
+            <Surface
+                variant="panel"
+                theme={theme}
+                className={cn(
+                    "polli:flex polli:flex-col polli:gap-5",
+                    panelClassName,
+                )}
+            >
+                {intro && (
+                    <div className="polli:max-w-2xl polli:text-theme-text-base">
+                        {intro}
+                    </div>
+                )}
                 {children}
             </Surface>
         ) : (
-            children
+            <>
+                {intro && (
+                    <div
+                        data-theme={theme}
+                        className="polli:max-w-2xl polli:text-theme-text-base"
+                    >
+                        {intro}
+                    </div>
+                )}
+                {children}
+            </>
         )}
     </section>
 );

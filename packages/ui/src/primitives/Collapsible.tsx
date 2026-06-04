@@ -55,7 +55,7 @@ export const Collapsible: FC<CollapsibleProps> = ({
             disabled={disabled}
             onClick={onToggle}
             className={cn(
-                "polli:w-full polli:flex polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:transition-colors",
+                "polli-control polli:w-full polli:flex polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:transition-colors",
                 expanded ? "polli:rounded-t-lg" : "polli:rounded-lg",
                 !disabled && hoverClassName,
                 focusClassName,

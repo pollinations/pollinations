@@ -1,4 +1,5 @@
 export { cn } from "./lib/cn-app.ts";
+export type { RejectedFile, RejectReason } from "./lib/partition-files.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -27,22 +28,32 @@ export {
 } from "./primitives/Dialog.tsx";
 export { Dropdown, type DropdownProps } from "./primitives/Dropdown.tsx";
 export {
+    DropdownItem,
+    type DropdownItemProps,
+} from "./primitives/DropdownItem.tsx";
+export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
 } from "./primitives/ExternalLinkButton.tsx";
 export { Field } from "./primitives/Field.tsx";
+export { FileUpload, type FileUploadProps } from "./primitives/FileUpload.tsx";
 export { IconButton } from "./primitives/IconButton.tsx";
 export { InfoTip } from "./primitives/InfoTip.tsx";
+export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LinkCard, type LinkCardProps } from "./primitives/LinkCard.tsx";
+export { Markdown, type MarkdownProps } from "./primitives/Markdown.tsx";
 export {
     MultiSelect,
     type MultiSelectProps,
 } from "./primitives/MultiSelect.tsx";
+export { NavItem, type NavItemProps } from "./primitives/NavItem.tsx";
 export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./primitives/PeriodPicker.tsx";
+export { Prose, type ProseProps } from "./primitives/Prose.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Section, type SectionProps } from "./primitives/Section.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
@@ -71,5 +82,6 @@ export {
     TableRow,
     type TableRowProps,
 } from "./primitives/Table.tsx";
+export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export { type ThemeName, themes } from "./theme.ts";

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11610,
+  "title": "feat(sdk): model catalog helper + client subpath",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11610",
+  "merged_at": "2026-06-04T12:33:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `fetchModelCatalog()` for normalized image/video/text/audio model metadata and allowed-model ID sets.\n- Adds the `@pollinations/sdk/client` export subpath.\n- Bumps `@pollinations/sdk` to `5.1.0-alpha.0` so PR6 publishes it under the `alpha` npm dist-tag.\n- Adds PolliProvider setup guidance for non-`pk_` keys and local redirect URIs.\n- Marks the SDK alpha release line as unstable in the README.\n\nValidation:\n- `npm run typecheck --workspace @pollinations/sdk`\n- `npm test --workspace @pollinations/sdk`\n- `npm run build --workspace @pollinations/sdk`\n- `npm ci --dry-run` in `packages/sdk`\n- `git diff --check origin/main...HEAD`\n- Runtime import/smoke check for `@pollinations/sdk/client` and `fetchModelCatalog()`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Cataloging the hive",
+    "blurb": "We've added a new fetchModelCatalog() helper to the SDK, making it a breeze to grab normalized metadata for all our image, video, text, and audio models. Plus, a shiny new @pollinations/sdk/client export subpath is ready for testing in the latest alpha release.",
+    "summary": "Added fetchModelCatalog() to the SDK for retrieving normalized metadata across all model types, introduced the @pollinations/sdk/client export subpath, and published as 5.1.0-alpha.0.",
+    "impact": "Developers can now easily fetch and filter allowed model IDs and metadata programmatically, and access client-specific exports via the new subpath.",
+    "keywords": [
+      "sdk",
+      "models",
+      "catalog",
+      "alpha",
+      "react"
+    ],
+    "visual_concept": "Polly the bee acting as a librarian or archivist, holding a catalog or map of models, with the Monitor Robot displaying a list of models on its screen.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, holding a glowing digital catalog book. Next to her, the chunky Monitor Robot displays a neat list of colorful model icons on its CRT screen. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-04/PR-11610.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, holding a glowing digital catalog book. Next to her, the chunky Monitor Robot displays a neat list of colorful model icons on its CRT screen. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-04T12:35:19.301072+00:00"
+}

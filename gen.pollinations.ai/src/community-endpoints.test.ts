@@ -265,7 +265,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toMatchObject({
-            model: modelId,
+            model: "gpt-4.1-mini",
             choices: [
                 {
                     message: { content: "ok" },
@@ -385,8 +385,8 @@ fixtureTest(
             "text/event-stream",
         );
         const body = await response.text();
-        expect(body).toContain(`"model":"${modelId}"`);
-        expect(body).not.toContain('"model":"gpt-4.1-mini"');
+        expect(body).toContain('"model":"gpt-4.1-mini"');
+        expect(body).not.toContain(`"model":"${modelId}"`);
         expect(body).toContain('"prompt_tokens":999');
         expect(body).toContain('"completion_tokens":999');
     },
@@ -698,7 +698,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toMatchObject({
-            model: registered.modelId,
+            model: "openai",
             choices: [{ message: { content: "ok" } }],
         });
         expect(

@@ -50,6 +50,8 @@ export async function generatePortkeyHeaders(
 
     // Fallback/loadbalance config: emit a single x-portkey-config JSON blob with
     // per-target credentials instead of flattening into x-portkey-* headers.
+    // The strict-compliance header still applies request-wide (across every
+    // target), so keep it — Gemini needs it to return thinking/thought_signature.
     if (config.strategy && config.targets) {
         const resolvedTargets = await Promise.all(
             config.targets.map(resolveTargetAuth),
@@ -59,6 +61,7 @@ export async function generatePortkeyHeaders(
             providers: resolvedTargets.map((target) => target.provider),
         });
         return {
+            "x-portkey-strict-open-ai-compliance": "false",
             "x-portkey-config": JSON.stringify({
                 strategy: config.strategy,
                 targets: resolvedTargets,

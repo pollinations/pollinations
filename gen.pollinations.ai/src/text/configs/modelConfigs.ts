@@ -66,7 +66,6 @@ function createAirforceGeminiFallbackConfig(
                 authKey: googleCloudAuth.getAccessToken,
                 vertex_project_id: process.env.GOOGLE_PROJECT_ID,
                 vertex_region: vertexRegion,
-                strict_openai_compliance: false,
                 override_params: { model: vertexModelId },
             },
         ],

@@ -28,8 +28,15 @@ describe("generatePortkeyHeaders — fallback config", () => {
 
         const headers = await generatePortkeyHeaders(config);
 
-        // Fallback configs collapse to one header, not flattened x-portkey-*.
-        expect(Object.keys(headers)).toEqual(["x-portkey-config"]);
+        // Fallback configs emit the config blob plus the request-wide
+        // strict-compliance header (needed for Gemini thinking/thought_signature).
+        expect(new Set(Object.keys(headers))).toEqual(
+            new Set([
+                "x-portkey-config",
+                "x-portkey-strict-open-ai-compliance",
+            ]),
+        );
+        expect(headers["x-portkey-strict-open-ai-compliance"]).toBe("false");
 
         const payload = JSON.parse(headers["x-portkey-config"]);
         expect(payload.strategy).toEqual(config.strategy);

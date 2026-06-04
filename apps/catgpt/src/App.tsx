@@ -68,38 +68,25 @@ type GeneratedMeme = SavedMeme & {
     reply: string;
 };
 
-// Resolve a meme image URL to a value safe to use as an <img src>: same-origin
-// bundled assets and Pollinations media only. Anything else (tampered
-// localStorage, crafted share links) resolves to "" and renders nothing.
-function safeImageSrc(value: string): string {
+// A shared-link image URL must be Pollinations media — reject anything else
+// (e.g. a crafted ?image= link) before rendering it.
+function isTrustedMediaUrl(value: string): boolean {
     try {
-        const { protocol, hostname } = new URL(
-            value,
-            "https://catgpt.pollinations.ai",
-        );
-        if (
+        const { protocol, hostname } = new URL(value);
+        return (
             protocol === "https:" &&
             (hostname === "pollinations.ai" ||
                 hostname.endsWith(".pollinations.ai"))
-        ) {
-            return value;
-        }
+        );
     } catch {
-        // invalid URL — fall through
+        return false;
     }
-    return "";
 }
 
 function getSavedMemes(): SavedMeme[] {
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        if (!Array.isArray(saved)) return [];
-        return saved.filter(
-            (meme) =>
-                meme &&
-                typeof meme.url === "string" &&
-                safeImageSrc(meme.url) !== "",
-        );
+        return Array.isArray(saved) ? saved : [];
     } catch {
         return [];
     }
@@ -227,12 +214,11 @@ export function App() {
         const urlImage = params.get("image");
         if (urlPrompt) setPrompt(urlPrompt);
         // Restore a shared result so the recipient sees the exact meme. Only
-        // trust same-origin / Pollinations media URLs (blocks crafted links).
-        const safeImage = urlImage ? safeImageSrc(urlImage) : "";
-        if (urlPrompt && safeImage) {
+        // trust Pollinations media URLs (blocks crafted share links).
+        if (urlPrompt && urlImage && isTrustedMediaUrl(urlImage)) {
             setGeneratedMeme({
                 prompt: urlPrompt,
-                url: safeImage,
+                url: urlImage,
                 model: params.get("model") || FALLBACK_MODEL,
                 reply: "",
             });
@@ -528,7 +514,7 @@ export function App() {
                                 )}
                                 {!isGenerating && generatedMeme && (
                                     <img
-                                        src={safeImageSrc(generatedMeme.url)}
+                                        src={generatedMeme.url}
                                         alt={generatedMeme.prompt}
                                         className="max-h-full w-full rounded-lg object-contain"
                                     />
@@ -613,7 +599,7 @@ function MemeGrid({
                             className="overflow-hidden rounded-xl bg-white"
                         >
                             <img
-                                src={safeImageSrc(meme.url)}
+                                src={meme.url}
                                 alt={meme.prompt}
                                 loading="lazy"
                                 className="aspect-square w-full object-cover"

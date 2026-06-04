@@ -1,17 +1,37 @@
 import { PolliProvider, useAuthActions } from "@pollinations/sdk/react";
 import {
-    AppIcon,
-    BookIcon,
+    Alert,
+    BeakerIcon,
     Button,
+    ButtonGroup,
+    Chip,
+    ClipboardIcon,
+    ClockIcon,
+    currentPeriod,
     ExternalLinkButton,
-    LockIcon,
-    Surface,
+    GenApiIcon,
+    IconButton,
+    ImageIcon,
+    Input,
+    Markdown,
+    MultiSelect,
+    PeriodPicker,
+    type PeriodSelection,
+    ScrollArea,
+    Slider,
+    StatCard,
+    Switch,
     TabButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+    Textarea,
     type ThemeName,
-    TokensIcon,
+    Tooltip,
     TrendUpIcon,
-    themes,
-    WalletIcon,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import {
@@ -23,6 +43,12 @@ import {
     WhenLoggedIn,
     WhenLoggedOut,
 } from "@pollinations/ui/auth/sdk";
+import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
+import {
+    ModelSelector,
+    type ModelSelectorCategory,
+    type ModelSelectorItem,
+} from "@pollinations/ui/models";
 import {
     Balance,
     KeyBudget,
@@ -31,13 +57,10 @@ import {
     KeyPrefix,
 } from "@pollinations/ui/wallet/sdk";
 import {
-    type ComponentType,
     type CSSProperties,
-    createContext,
     lazy,
     type ReactNode,
     Suspense,
-    useContext,
     useEffect,
     useState,
 } from "react";
@@ -46,6 +69,7 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
+const APP_THEME: ThemeName = "blue";
 
 const DesignShowcase = lazy(() =>
     import("./showcase/DesignShowcase").then((module) => ({
@@ -58,23 +82,22 @@ const brandWordmarkMask: CSSProperties = {
     mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
-const ThemeContext = createContext<ThemeName>("blue");
+type PublicAppView = "models" | "primitives" | "compositions";
+type AppView = PublicAppView | "showcase";
 
-function useAppTheme() {
-    return useContext(ThemeContext);
-}
-
-type AppView = "react" | "showcase";
-
-const APP_VIEWS: { id: AppView; label: string }[] = [
-    { id: "react", label: "React" },
-    { id: "showcase", label: "Showcase" },
+const PUBLIC_VIEWS: { id: PublicAppView; label: string }[] = [
+    { id: "models", label: "Models" },
+    { id: "primitives", label: "Primitives" },
+    { id: "compositions", label: "Compositions" },
 ];
 
 function readAppView(): AppView {
-    if (typeof window === "undefined") return "react";
+    if (typeof window === "undefined") return "models";
     const view = new URLSearchParams(window.location.search).get("view");
-    return view === "showcase" || view === "primitives" ? "showcase" : "react";
+    if (view === "showcase") return "showcase";
+    if (view === "primitives" || view === "compositions") return view;
+    if (view === "react" || view === "modules") return "compositions";
+    return "models";
 }
 
 function useAppView() {
@@ -88,10 +111,10 @@ function useAppView() {
 
     const selectView = (view: AppView) => {
         const url = new URL(window.location.href);
-        if (view === "showcase") {
-            url.searchParams.set("view", "showcase");
-        } else {
+        if (view === "models") {
             url.searchParams.delete("view");
+        } else {
+            url.searchParams.set("view", view);
         }
         url.hash = "";
         window.history.pushState(null, "", url);
@@ -101,86 +124,153 @@ function useAppView() {
     return { activeView, selectView };
 }
 
-function ViewTabs({
-    activeView,
-    onSelect,
-    theme,
-}: {
-    activeView: AppView;
-    onSelect: (view: AppView) => void;
-    theme: ThemeName;
-}) {
-    return (
-        <nav
-            aria-label="React app views"
-            className="flex w-full min-w-0 max-w-full flex-wrap gap-2 sm:w-auto"
-        >
-            {APP_VIEWS.map((view) => {
-                const selected = activeView === view.id;
-                return (
-                    <TabButton
-                        key={view.id}
-                        theme={theme}
-                        active={selected}
-                        onClick={() => onSelect(view.id)}
-                    >
-                        {view.label}
-                    </TabButton>
-                );
-            })}
-        </nav>
-    );
-}
-
-function ThemeTabs({
-    theme,
-    onThemeChange,
-}: {
-    theme: ThemeName;
-    onThemeChange: (theme: ThemeName) => void;
-}) {
-    return (
-        <nav
-            aria-label="Theme"
-            className="flex max-w-full flex-wrap justify-end gap-1.5"
-        >
-            {themes.map((option) => (
-                <TabButton
-                    key={option}
-                    theme={option}
-                    active={theme === option}
-                    onClick={() => onThemeChange(option)}
-                    size="small"
-                >
-                    <span className="capitalize">{option}</span>
-                </TabButton>
-            ))}
-        </nav>
-    );
-}
-
 function BrandMark() {
     return (
         <a
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center text-current"
+            className="inline-flex shrink-0 items-center text-green-950"
             aria-label="Pollinations"
         >
             <span className="sr-only">Pollinations</span>
             <span
                 aria-hidden="true"
-                className="block h-7 w-[228px] max-w-full bg-current"
+                className="block h-7 w-[220px] max-w-full bg-current"
                 style={brandWordmarkMask}
             />
         </a>
     );
 }
 
-function CopyButton({
+function ShellHeader({
+    activeView,
+    onSelectView,
+}: {
+    activeView: AppView;
+    onSelectView: (view: AppView) => void;
+}) {
+    return (
+        <header className="sticky top-0 z-30 border-b border-green-950/10 bg-[#f7fbf5]/95 px-5 py-4 backdrop-blur">
+            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <BrandMark />
+                <nav
+                    aria-label="React app views"
+                    className="flex min-w-0 flex-wrap gap-2"
+                >
+                    {PUBLIC_VIEWS.map((view) => (
+                        <TabButton
+                            key={view.id}
+                            theme={APP_THEME}
+                            active={activeView === view.id}
+                            onClick={() => onSelectView(view.id)}
+                        >
+                            {view.label}
+                        </TabButton>
+                    ))}
+                </nav>
+            </div>
+        </header>
+    );
+}
+
+function AppShell({
+    activeView,
+    onSelectView,
+}: {
+    activeView: AppView;
+    onSelectView: (view: AppView) => void;
+}) {
+    return (
+        <div
+            data-theme={APP_THEME}
+            className="min-h-screen overflow-x-hidden bg-[#f7fbf5] text-slate-950"
+        >
+            <ShellHeader activeView={activeView} onSelectView={onSelectView} />
+            <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-12 px-5 py-8 sm:py-10">
+                {activeView === "primitives" ? (
+                    <PrimitivesPage />
+                ) : activeView === "compositions" ? (
+                    <CompositionsPage />
+                ) : (
+                    <ModelsPage />
+                )}
+            </main>
+        </div>
+    );
+}
+
+function PageIntro({
+    eyebrow,
+    title,
+    children,
+    action,
+}: {
+    eyebrow: string;
+    title: string;
+    children: ReactNode;
+    action?: ReactNode;
+}) {
+    return (
+        <section className="grid gap-5 border-b border-slate-200 pb-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <div className="max-w-3xl">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-green-700">
+                    {eyebrow}
+                </p>
+                <h1 className="font-serif text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                    {title}
+                </h1>
+                <p className="mt-4 text-base leading-7 text-slate-700">
+                    {children}
+                </p>
+            </div>
+            {action ? (
+                <div className="flex justify-start md:justify-end">
+                    {action}
+                </div>
+            ) : null}
+        </section>
+    );
+}
+
+function SectionHeader({
+    title,
+    children,
+}: {
+    title: string;
+    children?: ReactNode;
+}) {
+    return (
+        <div className="mb-4 flex max-w-3xl flex-col gap-1">
+            <h2 className="font-serif text-2xl font-black text-slate-950">
+                {title}
+            </h2>
+            {children ? (
+                <p className="text-sm leading-6 text-slate-600">{children}</p>
+            ) : null}
+        </div>
+    );
+}
+
+function QuietPanel({
+    children,
+    className = "",
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <div
+            className={`min-w-0 rounded-lg border border-slate-200 bg-white/80 p-5 ${className}`}
+        >
+            {children}
+        </div>
+    );
+}
+
+function CopySnippetButton({
     text,
-    children = "Copy module",
+    children = "Copy",
 }: {
     text: string;
     children?: ReactNode;
@@ -189,7 +279,7 @@ function CopyButton({
 
     useEffect(() => {
         if (!copied) return;
-        const timer = setTimeout(() => setCopied(false), 1500);
+        const timer = setTimeout(() => setCopied(false), 1400);
         return () => clearTimeout(timer);
     }, [copied]);
 
@@ -197,11 +287,16 @@ function CopyButton({
         <Button
             type="button"
             theme="teal"
-            size="small"
+            size="sm"
             onClick={() => {
-                void navigator.clipboard.writeText(text).then(() => {
-                    setCopied(true);
-                });
+                void navigator.clipboard
+                    .writeText(text)
+                    .then(() => {
+                        setCopied(true);
+                    })
+                    .catch(() => {
+                        // Clipboard access can be denied outside secure contexts.
+                    });
             }}
         >
             {copied ? "Copied" : children}
@@ -209,477 +304,878 @@ function CopyButton({
     );
 }
 
-function DashboardLink() {
-    const { enterUrl } = useAuthActions();
-    const theme = useAppTheme();
-    return (
-        <ExternalLinkButton theme={theme} href={enterUrl}>
-            Dashboard
-        </ExternalLinkButton>
-    );
-}
-
-function Metric({ label, children }: { label: string; children: ReactNode }) {
-    return (
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
-                {label}
-            </span>
-            {children}
-        </div>
-    );
-}
-
-const SNIPPETS = {
-    provider: `import "@pollinations/ui/styles.css";
-import { PolliProvider } from "@pollinations/sdk/react";
-
-const APP_KEY = "pk_your_key_here";
-
-export function App() {
-    return (
-        <PolliProvider appKey={APP_KEY} permissions={["profile"]}>
-            <YourApp />
-        </PolliProvider>
-    );
-}`,
-    auth: `import { useAuthActions } from "@pollinations/sdk/react";
-import { ExternalLinkButton } from "@pollinations/ui";
-import {
-    LoginButton,
-    LogoutButton,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "@pollinations/ui/auth/sdk";
-
-function DashboardLink() {
-    const { enterUrl } = useAuthActions();
-    return (
-        <ExternalLinkButton theme="blue" href={enterUrl}>
-            Dashboard
-        </ExternalLinkButton>
-    );
-}
-
-export function AuthActions() {
-    return (
-        <>
-            <WhenLoggedOut>
-                <LoginButton>Log in with Pollinations</LoginButton>
-            </WhenLoggedOut>
-            <WhenLoggedIn>
-                <DashboardLink />
-                <LogoutButton intent="danger">Log out</LogoutButton>
-            </WhenLoggedIn>
-        </>
-    );
-}`,
-    identity: `import {
-    UserAvatar,
-    UserEmail,
-    UserName,
-    WhenLoggedIn,
-} from "@pollinations/ui/auth/sdk";
-
-export function UserIdentity() {
-    return (
-        <WhenLoggedIn>
-            <UserAvatar size="md" />
-            <UserName />
-            <UserEmail />
-        </WhenLoggedIn>
-    );
-}`,
-    balance: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
-import { Balance } from "@pollinations/ui/wallet/sdk";
-
-export function WalletBalance() {
-    return (
-        <WhenLoggedIn>
-            <Balance />
-        </WhenLoggedIn>
-    );
-}`,
-    key: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
-import {
-    KeyBudget,
-    KeyExpiry,
-    KeyPrefix,
-} from "@pollinations/ui/wallet/sdk";
-
-export function AccountKeySummary() {
-    return (
-        <WhenLoggedIn>
-            <KeyPrefix />
-            <KeyExpiry />
-            <KeyBudget />
-        </WhenLoggedIn>
-    );
-}`,
-    models: `import { WhenLoggedIn } from "@pollinations/ui/auth/sdk";
-import { KeyModels } from "@pollinations/ui/wallet/sdk";
-
-export function AllowedModels() {
-    return (
-        <WhenLoggedIn>
-            <KeyModels />
-        </WhenLoggedIn>
-    );
-}`,
-} as const;
-
-type ModuleItem = {
-    id: keyof typeof SNIPPETS;
-    eyebrow: string;
+function CodePanel({
+    title,
+    code,
+    caption,
+}: {
     title: string;
-    description: string;
-    Icon: ComponentType<{ className?: string }>;
-    preview: ReactNode;
-};
-
-function SignedOutPreview({ children }: { children: ReactNode }) {
+    code: string;
+    caption?: string;
+}) {
     return (
-        <WhenLoggedOut>
-            <span className="text-sm text-theme-text-soft">{children}</span>
-        </WhenLoggedOut>
-    );
-}
-
-function ProviderPreview() {
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg bg-theme-bg-pale px-3 py-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
-                    Provider
-                </span>
-                <span className="rounded-full bg-theme-bg-active px-2 py-1 font-mono text-xs text-theme-text-strong">
-                    pk_...
-                </span>
-            </div>
-            <p className="text-sm leading-6 text-theme-text-base">
-                Wrap once, then render auth and wallet modules below it.
-            </p>
-        </div>
-    );
-}
-
-function AuthPreview() {
-    return (
-        <div className="flex flex-wrap items-center gap-2">
-            <WhenLoggedOut>
-                <LoginButton>Log in with Pollinations</LoginButton>
-            </WhenLoggedOut>
-            <WhenLoggedIn>
-                <DashboardLink />
-                <LogoutButton intent="danger">Log out</LogoutButton>
-            </WhenLoggedIn>
-        </div>
-    );
-}
-
-function IdentityPreview() {
-    return (
-        <>
-            <SignedOutPreview>
-                User identity appears here after sign in.
-            </SignedOutPreview>
-            <WhenLoggedIn>
-                <div className="flex min-w-0 items-center gap-3">
-                    <UserAvatar size="md" />
-                    <div className="flex min-w-0 flex-col">
-                        <UserName />
-                        <UserEmail />
-                    </div>
+        <div className="flex min-w-0 flex-col gap-4 rounded-lg border border-slate-800 bg-slate-950 p-5 text-white">
+            <div className="flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-sm font-semibold">{title}</p>
+                    {caption ? (
+                        <p className="mt-1 text-xs text-slate-300">{caption}</p>
+                    ) : null}
                 </div>
-            </WhenLoggedIn>
-        </>
-    );
-}
-
-function BalancePreview() {
-    return (
-        <div className="flex min-w-0 flex-col gap-3">
-            <SignedOutPreview>
-                Wallet balance appears here after sign in.
-            </SignedOutPreview>
-            <WhenLoggedIn>
-                <Metric label="Balance">
-                    <Balance />
-                </Metric>
-            </WhenLoggedIn>
+                <CopySnippetButton text={code}>Copy</CopySnippetButton>
+            </div>
+            <pre className="overflow-x-auto rounded bg-black/25 p-4 text-xs leading-6 text-slate-100">
+                <code>{code}</code>
+            </pre>
         </div>
     );
 }
 
-function KeyPreview() {
-    return (
-        <div className="flex min-w-0 flex-col gap-3">
-            <SignedOutPreview>
-                Account key details appear here after sign in.
-            </SignedOutPreview>
-            <WhenLoggedIn>
-                <Metric label="Key">
-                    <KeyPrefix />
-                </Metric>
-                <Metric label="Expires">
-                    <KeyExpiry />
-                </Metric>
-                <Metric label="Remaining">
-                    <KeyBudget />
-                </Metric>
-            </WhenLoggedIn>
-        </div>
-    );
-}
-
-function ModelsPreview() {
-    return (
-        <div className="flex min-w-0 flex-col gap-3">
-            <SignedOutPreview>
-                Model access appears here after sign in.
-            </SignedOutPreview>
-            <WhenLoggedIn>
-                <Metric label="Models">
-                    <KeyModels />
-                </Metric>
-            </WhenLoggedIn>
-        </div>
-    );
-}
-
-const MODULES: ModuleItem[] = [
+const MODEL_GROUPS = [
     {
-        id: "provider",
-        eyebrow: "Setup",
-        title: "Provider",
-        description: "Mount the SDK context once with a publishable key.",
-        Icon: AppIcon,
-        preview: <ProviderPreview />,
+        id: "text",
+        label: "Text",
+        theme: "blue" as ThemeName,
+        Icon: GenApiIcon,
+        summary: "Chat, structured output, tools, streaming, and vision input.",
+        examples: ["openai", "claude", "gemini", "minimax-m3"],
+        capabilities: ["chat", "stream", "json", "vision"],
     },
     {
-        id: "auth",
-        eyebrow: "Auth",
-        title: "Login and session actions",
-        description: "Show login when signed out and actions after sign in.",
-        Icon: LockIcon,
-        preview: <AuthPreview />,
+        id: "image",
+        label: "Image",
+        theme: "pink" as ThemeName,
+        Icon: ImageIcon,
+        summary: "Generation, editing, references, transparency, and batches.",
+        examples: ["zimage", "flux", "kontext", "nanobanana"],
+        capabilities: ["generate", "edit", "reference", "transparent"],
     },
     {
-        id: "identity",
-        eyebrow: "Auth",
-        title: "User identity",
-        description: "Render avatar, display name, and email from SDK state.",
-        Icon: BookIcon,
-        preview: <IdentityPreview />,
-    },
-    {
-        id: "balance",
-        eyebrow: "Wallet",
-        title: "Balance",
-        description:
-            "Display the account pollen balance with package formatting.",
-        Icon: WalletIcon,
-        preview: <BalancePreview />,
-    },
-    {
-        id: "key",
-        eyebrow: "Wallet",
-        title: "Account key summary",
-        description: "Expose key prefix, expiration, and remaining budget.",
-        Icon: TokensIcon,
-        preview: <KeyPreview />,
-    },
-    {
-        id: "models",
-        eyebrow: "Access",
-        title: "Allowed models",
-        description: "Show models available to the signed-in account key.",
+        id: "video",
+        label: "Video",
+        theme: "teal" as ThemeName,
         Icon: TrendUpIcon,
-        preview: <ModelsPreview />,
+        summary: "Prompt to video and image to video with duration controls.",
+        examples: ["veo", "seedance", "wan", "ltx-2"],
+        capabilities: ["prompt", "image input", "duration", "audio"],
+    },
+    {
+        id: "audio",
+        label: "Audio",
+        theme: "violet" as ThemeName,
+        Icon: ClockIcon,
+        summary: "Text to speech, music generation, voices, and transcription.",
+        examples: ["elevenlabs", "elevenmusic", "acestep", "whisper"],
+        capabilities: ["speech", "music", "voices", "transcribe"],
+    },
+    {
+        id: "embedding",
+        label: "Embeddings",
+        theme: "amber" as ThemeName,
+        Icon: BeakerIcon,
+        summary: "Vector representations for retrieval, search, and ranking.",
+        examples: ["gemini-2", "openai-3-small", "openai-3-large"],
+        capabilities: ["text", "image", "audio", "video"],
+    },
+] as const;
+
+const MODEL_SELECTOR_ITEMS: ModelSelectorItem[] = [
+    {
+        id: "openai",
+        name: "OpenAI",
+        category: "text",
+        description: "Default text model - chat, streaming, JSON",
+    },
+    {
+        id: "claude",
+        name: "Claude",
+        category: "text",
+        description: "Long-form writing and reasoning",
+        paidOnly: true,
+    },
+    {
+        id: "gemini",
+        name: "Gemini",
+        category: "text",
+        description: "Multimodal text and vision input",
+    },
+    {
+        id: "minimax-m3",
+        name: "MiniMax M3",
+        category: "text",
+        description: "Large-context text with tools and reasoning",
+        paidOnly: true,
+    },
+    {
+        id: "zimage",
+        name: "Z-Image",
+        category: "image",
+        description: "Default image model",
+    },
+    {
+        id: "flux",
+        name: "Flux",
+        category: "image",
+        description: "Image generation and edits",
+    },
+    {
+        id: "kontext",
+        name: "Kontext",
+        category: "image",
+        description: "Reference-aware image generation",
+        paidOnly: true,
+    },
+    {
+        id: "veo",
+        name: "Veo",
+        category: "video",
+        description: "High quality prompt to video",
+        paidOnly: true,
+    },
+    {
+        id: "seedance",
+        name: "Seedance",
+        category: "video",
+        description: "Fast video generation",
+    },
+    {
+        id: "wan",
+        name: "Wan",
+        category: "video",
+        description: "Video generation with audio",
+    },
+    {
+        id: "elevenlabs",
+        name: "ElevenLabs",
+        category: "audio",
+        description: "Text to speech voices",
+    },
+    {
+        id: "elevenmusic",
+        name: "Eleven Music",
+        category: "audio",
+        description: "Music generation",
+        paidOnly: true,
+    },
+    {
+        id: "whisper",
+        name: "Whisper",
+        category: "audio",
+        description: "Speech to text transcription",
     },
 ];
 
-function FloatingThemeControls({
-    theme,
-    onThemeChange,
-}: {
-    theme: ThemeName;
-    onThemeChange: (theme: ThemeName) => void;
-}) {
-    return (
-        <div
-            data-theme={theme}
-            className="sticky top-[141px] z-20 shrink-0 px-5 pt-3 sm:top-[84px]"
-        >
-            <div className="mx-auto flex w-full max-w-[1220px] justify-end">
-                <Surface
-                    theme={theme}
-                    variant="panel"
-                    className="flex w-max max-w-full p-2 backdrop-blur"
-                >
-                    <ThemeTabs theme={theme} onThemeChange={onThemeChange} />
-                </Surface>
-            </div>
-        </div>
-    );
-}
+const DEFAULT_MODEL_BY_CATEGORY: Record<ModelSelectorCategory, string> = {
+    text: "openai",
+    image: "zimage",
+    video: "veo",
+    audio: "elevenlabs",
+};
 
-function AppHeader({
-    activeView,
-    onSelectView,
-    theme,
-}: {
-    activeView: AppView;
-    onSelectView: (view: AppView) => void;
-    theme: ThemeName;
-}) {
+const MODEL_SNIPPET = `import { getModels, generateText, generateImage } from "@pollinations/sdk";
+
+const models = await getModels();
+
+const answer = await generateText("Summarize this file", {
+    model: "openai",
+});
+
+const image = await generateImage("A clean product dashboard", {
+    model: "zimage",
+    width: 1024,
+    height: 1024,
+});`;
+
+function ModelsPage() {
+    const [category, setCategory] = useState<ModelSelectorCategory>("text");
+    const [selectedByCategory, setSelectedByCategory] = useState(
+        DEFAULT_MODEL_BY_CATEGORY,
+    );
+    const selectedModelId = selectedByCategory[category];
+    const selectedModel = MODEL_SELECTOR_ITEMS.find(
+        (model) => model.id === selectedModelId,
+    );
+
     return (
-        <header
-            data-theme={theme}
-            className="sticky top-0 z-30 shrink-0 border-b border-green-950/10 bg-emerald-100 px-5 py-4 text-green-950 backdrop-blur"
-        >
-            <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-green-950">
-                    <BrandMark />
-                </h1>
-                <ViewTabs
-                    activeView={activeView}
-                    onSelect={onSelectView}
-                    theme={theme}
+        <>
+            <PageIntro
+                eyebrow="Catalog"
+                title="Models"
+                action={
+                    <ExternalLinkButton
+                        theme={APP_THEME}
+                        href="https://gen.pollinations.ai/v1/models"
+                    >
+                        Model endpoint
+                    </ExternalLinkButton>
+                }
+            >
+                A compact view of Pollinations model families and the model
+                selection primitives apps need before they generate text, image,
+                video, audio, or embeddings.
+            </PageIntro>
+
+            <section>
+                <SectionHeader title="Capabilities">
+                    Start with the media types developers actually choose
+                    between, then expose the selectors and SDK calls behind
+                    them.
+                </SectionHeader>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    {MODEL_GROUPS.map(({ Icon, ...group }) => (
+                        <QuietPanel
+                            key={group.id}
+                            className="flex h-full flex-col gap-4"
+                        >
+                            <div
+                                data-theme={group.theme}
+                                className="flex items-center gap-3"
+                            >
+                                <span className="flex h-10 w-10 items-center justify-center rounded bg-theme-bg-active text-theme-text-strong">
+                                    <Icon className="h-5 w-5" />
+                                </span>
+                                <h3 className="text-lg font-bold">
+                                    {group.label}
+                                </h3>
+                            </div>
+                            <p className="text-sm leading-6 text-slate-600">
+                                {group.summary}
+                            </p>
+                            <div className="mt-auto flex flex-wrap gap-1.5">
+                                {group.capabilities.map((capability) => (
+                                    <Chip
+                                        key={capability}
+                                        theme={group.theme}
+                                        size="sm"
+                                    >
+                                        {capability}
+                                    </Chip>
+                                ))}
+                            </div>
+                            <p className="text-xs leading-5 text-slate-500">
+                                {group.examples.join(", ")}
+                            </p>
+                        </QuietPanel>
+                    ))}
+                </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
+                <div className="min-w-0">
+                    <SectionHeader title="Selector Pattern">
+                        Use one selector component across media types. The same
+                        state shape can drive prompt composers, settings panels,
+                        and app defaults.
+                    </SectionHeader>
+                    <QuietPanel className="flex flex-col gap-5">
+                        <ButtonGroup aria-label="Model category">
+                            {(["text", "image", "video", "audio"] as const).map(
+                                (item) => (
+                                    <TabButton
+                                        key={item}
+                                        active={category === item}
+                                        theme={
+                                            MODEL_GROUPS.find(
+                                                (group) => group.id === item,
+                                            )?.theme ?? APP_THEME
+                                        }
+                                        onClick={() => setCategory(item)}
+                                    >
+                                        {item}
+                                    </TabButton>
+                                ),
+                            )}
+                        </ButtonGroup>
+
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Selected model
+                                </p>
+                                <h3 className="mt-1 text-2xl font-bold">
+                                    {selectedModel?.name ?? selectedModelId}
+                                </h3>
+                                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                                    {selectedModel?.description ??
+                                        "Choose a model for this media type."}
+                                </p>
+                            </div>
+                            <ModelSelector
+                                models={MODEL_SELECTOR_ITEMS}
+                                category={category}
+                                value={selectedModelId}
+                                onChange={(modelId) =>
+                                    setSelectedByCategory((current) => ({
+                                        ...current,
+                                        [category]: modelId,
+                                    }))
+                                }
+                            />
+                        </div>
+
+                        <ScrollArea axis="x">
+                            <Table className="min-w-[620px]">
+                                <TableHead>
+                                    <tr>
+                                        <TableHeaderCell>
+                                            Family
+                                        </TableHeaderCell>
+                                        <TableHeaderCell>
+                                            Representative slugs
+                                        </TableHeaderCell>
+                                        <TableHeaderCell>Use</TableHeaderCell>
+                                    </tr>
+                                </TableHead>
+                                <TableBody>
+                                    {MODEL_GROUPS.map((group) => (
+                                        <TableRow key={group.id}>
+                                            <TableCell>
+                                                <span className="font-semibold">
+                                                    {group.label}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell muted>
+                                                {group.examples.join(", ")}
+                                            </TableCell>
+                                            <TableCell>
+                                                {group.capabilities
+                                                    .slice(0, 3)
+                                                    .join(", ")}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </QuietPanel>
+                </div>
+                <CodePanel
+                    title="SDK first, React where it helps"
+                    caption="The catalog can show both API and React usage."
+                    code={MODEL_SNIPPET}
                 />
-            </div>
-        </header>
+            </section>
+        </>
     );
 }
 
-function SdkIntro() {
+const PRIMITIVE_GROUPS = [
+    {
+        title: "Actions",
+        description:
+            "Buttons, chips, links, icon buttons, and copy affordances.",
+    },
+    {
+        title: "Inputs",
+        description: "Text, textarea, sliders, switches, and grouped fields.",
+    },
+    {
+        title: "Selection",
+        description: "Tabs, multiselects, dropdowns, and period ranges.",
+    },
+    {
+        title: "Data",
+        description: "Tables, stats, alerts, tooltips, and scroll containers.",
+    },
+] as const;
+
+function PrimitivesPage() {
+    const [selected, setSelected] = useState(["text", "image"]);
+    const [slider, setSlider] = useState(48);
+    const [enabled, setEnabled] = useState(true);
+    const [period, setPeriod] = useState<PeriodSelection>(() =>
+        currentPeriod(),
+    );
+
     return (
-        <section className="flex flex-col gap-1">
-            <h2 className="font-serif text-2xl font-black text-theme-text-strong">
-                Modules
-            </h2>
-            <p className="max-w-3xl text-sm leading-6 text-theme-text-soft">
-                React-ready auth, wallet, and access modules with copyable
-                snippets and live package components.
-            </p>
-        </section>
+        <>
+            <PageIntro eyebrow="UI System" title="Primitives">
+                Curated building blocks for Pollinations apps: actions, inputs,
+                selection controls, feedback, and dense data surfaces.
+            </PageIntro>
+
+            <section>
+                <SectionHeader title="Primitive Families">
+                    The essentials stay grouped by workflow instead of exposed
+                    as a raw export inventory.
+                </SectionHeader>
+                <div className="grid gap-3 md:grid-cols-4">
+                    {PRIMITIVE_GROUPS.map((group) => (
+                        <QuietPanel key={group.title}>
+                            <h3 className="font-bold">{group.title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                {group.description}
+                            </p>
+                        </QuietPanel>
+                    ))}
+                </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-2">
+                <div>
+                    <SectionHeader title="Controls">
+                        The examples stay close to product screens: prompt
+                        input, model settings, and compact actions.
+                    </SectionHeader>
+                    <QuietPanel className="flex flex-col gap-5">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <label
+                                className="flex flex-col gap-1"
+                                htmlFor="primitive-prompt"
+                            >
+                                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Prompt
+                                </span>
+                                <Input
+                                    id="primitive-prompt"
+                                    placeholder="Describe an image"
+                                />
+                            </label>
+                            <label
+                                className="flex flex-col gap-1"
+                                htmlFor="primitive-seed"
+                            >
+                                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Seed
+                                </span>
+                                <Input
+                                    id="primitive-seed"
+                                    type="number"
+                                    hideNumberSteppers
+                                    placeholder="12345"
+                                />
+                            </label>
+                        </div>
+                        <label
+                            className="flex flex-col gap-1"
+                            htmlFor="primitive-system-prompt"
+                        >
+                            <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                System prompt
+                            </span>
+                            <Textarea
+                                id="primitive-system-prompt"
+                                rows={4}
+                                placeholder="You are a direct assistant."
+                            />
+                        </label>
+                        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                            <div>
+                                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                    Quality {slider}
+                                </p>
+                                <Slider
+                                    min={0}
+                                    max={100}
+                                    value={slider}
+                                    aria-label="Quality"
+                                    onChange={(event) =>
+                                        setSlider(
+                                            Number(event.currentTarget.value),
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Switch
+                                    checked={enabled}
+                                    status={enabled ? "on" : "off"}
+                                    ariaLabel="Private generation"
+                                    onChange={setEnabled}
+                                />
+                                <span className="text-sm font-medium">
+                                    Private
+                                </span>
+                            </div>
+                        </div>
+                        <ButtonGroup aria-label="Actions">
+                            <Button>Generate</Button>
+                            <Button theme="teal">Save preset</Button>
+                            <IconButton title="Copy" onClick={() => undefined}>
+                                <ClipboardIcon className="h-3.5 w-3.5" />
+                            </IconButton>
+                            <Tooltip content="Ready to run" triggerAs="span">
+                                <Chip intent="success">Ready</Chip>
+                            </Tooltip>
+                        </ButtonGroup>
+                    </QuietPanel>
+                </div>
+
+                <div>
+                    <SectionHeader title="Selection and Feedback">
+                        Dense controls should feel calm when they appear inside
+                        real generation and account surfaces.
+                    </SectionHeader>
+                    <QuietPanel className="flex flex-col gap-5">
+                        <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Modalities
+                            </p>
+                            <MultiSelect
+                                options={[
+                                    { value: "text", label: "Text" },
+                                    { value: "image", label: "Image" },
+                                    { value: "video", label: "Video" },
+                                    { value: "audio", label: "Audio" },
+                                ]}
+                                selected={selected}
+                                onChange={setSelected}
+                                label="Types"
+                                placeholder="All"
+                                theme={APP_THEME}
+                            />
+                        </div>
+                        <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Period
+                            </p>
+                            <PeriodPicker
+                                value={period}
+                                onChange={setPeriod}
+                                theme={APP_THEME}
+                            />
+                        </div>
+                        <Alert title="Synced">
+                            Model metadata and account state share the same
+                            compact feedback primitives.
+                        </Alert>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <StatCard
+                                label="Requests"
+                                value="22.1k"
+                                detail="last 7 days"
+                                className="rounded-lg bg-slate-50 p-4"
+                            />
+                            <StatCard
+                                label="Success"
+                                value="99.9%"
+                                detail="healthy"
+                                className="rounded-lg bg-slate-50 p-4"
+                            />
+                            <StatCard
+                                label="Latency"
+                                value="1.2s"
+                                detail="median"
+                                className="rounded-lg bg-slate-50 p-4"
+                            />
+                        </div>
+                    </QuietPanel>
+                </div>
+            </section>
+        </>
     );
 }
 
-function ModuleCard({ item }: { item: ModuleItem }) {
-    const Icon = item.Icon;
+function DashboardLink() {
+    const { enterUrl } = useAuthActions();
     return (
-        <Surface
-            variant="panel"
-            className="flex min-h-[300px] max-w-full flex-col gap-5 overflow-hidden"
-        >
-            <div className="flex min-w-0 items-start gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-pale text-theme-text-strong">
-                    <Icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold uppercase tracking-wide text-theme-text-soft">
-                        {item.eyebrow}
-                    </p>
-                    <h3 className="mt-1 break-words text-xl font-bold tracking-tight text-theme-text-strong">
-                        {item.title}
-                    </h3>
-                    <p className="mt-2 break-words text-sm leading-6 text-theme-text-base">
-                        {item.description}
+        <ExternalLinkButton theme={APP_THEME} href={enterUrl}>
+            Dashboard
+        </ExternalLinkButton>
+    );
+}
+
+function AccountComposition() {
+    const { enterUrl } = useAuthActions();
+
+    return (
+        <QuietPanel className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 className="font-bold">Auth and account menu</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                        Live SDK wrappers plus a compact signed-in preview.
                     </p>
                 </div>
+                <AppUserMenu dashboardHref={enterUrl} />
             </div>
-            <div className="mt-auto min-w-0 rounded-xl border border-theme-border bg-surface-white p-4">
-                {item.preview}
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Live state
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <WhenLoggedOut>
+                            <LoginButton theme={APP_THEME}>
+                                Log in with Pollinations
+                            </LoginButton>
+                        </WhenLoggedOut>
+                        <WhenLoggedIn>
+                            <DashboardLink />
+                            <LogoutButton theme={APP_THEME} intent="danger">
+                                Log out
+                            </LogoutButton>
+                        </WhenLoggedIn>
+                    </div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Signed-in shape
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <UserAvatar size="md" />
+                        <div className="min-w-0">
+                            <WhenLoggedIn>
+                                <UserName className="block truncate font-semibold" />
+                                <UserEmail className="block truncate text-sm text-slate-500" />
+                            </WhenLoggedIn>
+                            <WhenLoggedOut>
+                                <p className="font-semibold">
+                                    Pollinations user
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                    user@example.com
+                                </p>
+                            </WhenLoggedOut>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="flex justify-end">
-                <CopyButton text={SNIPPETS[item.id]} />
-            </div>
-        </Surface>
+        </QuietPanel>
     );
 }
 
-function SdkModules() {
+function PromptComposerComposition() {
+    const [category, setCategory] = useState<ModelSelectorCategory>("image");
+    const [selectedByCategory, setSelectedByCategory] = useState(
+        DEFAULT_MODEL_BY_CATEGORY,
+    );
+    const selectedModelId = selectedByCategory[category];
+
     return (
-        <section className="grid gap-4 lg:grid-cols-2">
-            {MODULES.map((item) => (
-                <ModuleCard key={item.id} item={item} />
-            ))}
-        </section>
+        <QuietPanel className="flex flex-col gap-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h3 className="font-bold">Prompt composer</h3>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
+                        A reusable composition for model selection, prompt
+                        input, settings, and generation action.
+                    </p>
+                </div>
+                <ModelSelector
+                    models={MODEL_SELECTOR_ITEMS}
+                    category={category}
+                    value={selectedModelId}
+                    onChange={(modelId) =>
+                        setSelectedByCategory((current) => ({
+                            ...current,
+                            [category]: modelId,
+                        }))
+                    }
+                />
+            </div>
+
+            <ButtonGroup aria-label="Composer media type">
+                {(["image", "text", "video", "audio"] as const).map((item) => (
+                    <TabButton
+                        key={item}
+                        active={category === item}
+                        theme={
+                            MODEL_GROUPS.find((group) => group.id === item)
+                                ?.theme ?? APP_THEME
+                        }
+                        onClick={() => setCategory(item)}
+                    >
+                        {item}
+                    </TabButton>
+                ))}
+            </ButtonGroup>
+
+            <Textarea
+                rows={5}
+                placeholder="A precise, minimal interface for exploring model output"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                    <Chip theme="pink">reference image</Chip>
+                    <Chip theme="teal">16:9</Chip>
+                    <Chip theme="amber">seeded</Chip>
+                </div>
+                <Button theme={APP_THEME}>Generate</Button>
+            </div>
+        </QuietPanel>
     );
 }
 
-function SdkDemo({
+function UsageComposition() {
+    return (
+        <QuietPanel className="flex flex-col gap-5">
+            <div>
+                <h3 className="font-bold">Wallet and access summary</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                    This is where auth, billing, access, and usage primitives
+                    become a useful product surface.
+                </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Balance
+                    </p>
+                    <WhenLoggedIn>
+                        <Balance className="mt-3" />
+                    </WhenLoggedIn>
+                    <WhenLoggedOut>
+                        <p className="mt-3 text-2xl font-bold">24.8 Pollen</p>
+                    </WhenLoggedOut>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Key
+                    </p>
+                    <WhenLoggedIn>
+                        <KeyPrefix className="mt-3" />
+                    </WhenLoggedIn>
+                    <WhenLoggedOut>
+                        <p className="mt-3 font-mono text-lg font-bold">
+                            sk_live...
+                        </p>
+                    </WhenLoggedOut>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Remaining
+                    </p>
+                    <WhenLoggedIn>
+                        <KeyBudget className="mt-3" />
+                    </WhenLoggedIn>
+                    <WhenLoggedOut>
+                        <p className="mt-3 text-2xl font-bold">183.4</p>
+                    </WhenLoggedOut>
+                </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Access
+                    </p>
+                    <WhenLoggedIn>
+                        <KeyModels />
+                    </WhenLoggedIn>
+                    <WhenLoggedOut>
+                        <div className="flex flex-wrap gap-2">
+                            {["openai", "zimage", "flux", "veo"].map(
+                                (model) => (
+                                    <Chip key={model} size="sm">
+                                        {model}
+                                    </Chip>
+                                ),
+                            )}
+                        </div>
+                    </WhenLoggedOut>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Expires
+                    </p>
+                    <WhenLoggedIn>
+                        <KeyExpiry />
+                    </WhenLoggedIn>
+                    <WhenLoggedOut>
+                        <p className="text-sm text-slate-600">
+                            No expiration on this app key.
+                        </p>
+                    </WhenLoggedOut>
+                </div>
+            </div>
+        </QuietPanel>
+    );
+}
+
+const COMPOSITION_SNIPPET = `import "@pollinations/ui/styles.css";
+import { PolliProvider } from "@pollinations/sdk/react";
+import { ModelSelector } from "@pollinations/ui/models";
+import { LoginButton, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
+
+export function App() {
+    return (
+        <PolliProvider appKey="pk_your_key" permissions={["profile"]}>
+            <WhenLoggedOut>
+                <LoginButton>Authorize app</LoginButton>
+            </WhenLoggedOut>
+            <ModelSelector
+                models={models}
+                category="image"
+                value={model}
+                onChange={setModel}
+            />
+        </PolliProvider>
+    );
+}`;
+
+function CompositionsPage() {
+    return (
+        <>
+            <PageIntro eyebrow="Product Patterns" title="Compositions">
+                Compositions show how primitives, models, auth, and wallet
+                pieces combine into real application modules. React is a code
+                path inside these modules, not a separate content silo.
+            </PageIntro>
+
+            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
+                <div className="flex min-w-0 flex-col gap-5">
+                    <AccountComposition />
+                    <PromptComposerComposition />
+                    <UsageComposition />
+                </div>
+                <div className="flex min-w-0 flex-col gap-5">
+                    <CodePanel
+                        title="React composition"
+                        caption="React usage inside the composition."
+                        code={COMPOSITION_SNIPPET}
+                    />
+                    <QuietPanel className="flex flex-col gap-3">
+                        <h3 className="font-bold">Composition Checklist</h3>
+                        <Markdown className="text-sm text-slate-600">
+                            {[
+                                "- Uses package primitives for common controls",
+                                "- Shows model selection before generation",
+                                "- Keeps account state close to spend/access UI",
+                                "- Offers copyable React and SDK code where useful",
+                            ].join("\n")}
+                        </Markdown>
+                    </QuietPanel>
+                </div>
+            </section>
+        </>
+    );
+}
+
+function DebugShowcase({
     activeView,
     onSelectView,
-    theme,
-    onThemeChange,
 }: {
     activeView: AppView;
     onSelectView: (view: AppView) => void;
-    theme: ThemeName;
-    onThemeChange: (theme: ThemeName) => void;
 }) {
     return (
         <div
-            data-theme={theme}
-            className="min-h-screen overflow-x-hidden bg-emerald-100 text-theme-text-strong"
+            data-theme={APP_THEME}
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7fbf5]"
         >
-            <AppHeader
-                activeView={activeView}
-                onSelectView={onSelectView}
-                theme={theme}
-            />
-            <FloatingThemeControls
-                theme={theme}
-                onThemeChange={onThemeChange}
-            />
-            <main className="mx-auto box-border flex w-full max-w-full flex-col gap-10 px-5 pt-8 pb-12 sm:max-w-[1220px]">
-                <ThemeContext.Provider value={theme}>
-                    <PolliProvider appKey={APP_KEY} permissions={["profile"]}>
-                        <SdkIntro />
-                        <SdkModules />
-                    </PolliProvider>
-                </ThemeContext.Provider>
-            </main>
+            <ShellHeader activeView={activeView} onSelectView={onSelectView} />
+            <Suspense fallback={null}>
+                <DesignShowcase hideHeader hideThemeTabs theme={APP_THEME} />
+            </Suspense>
         </div>
     );
 }
 
 export default function App() {
     const { activeView, selectView } = useAppView();
-    const [theme, setTheme] = useState<ThemeName>("blue");
 
     if (activeView === "showcase") {
         return (
-            <div
-                data-theme={theme}
-                className="flex h-dvh min-h-0 flex-col overflow-hidden bg-emerald-100"
-            >
-                <AppHeader
-                    activeView={activeView}
-                    onSelectView={selectView}
-                    theme={theme}
-                />
-                <FloatingThemeControls theme={theme} onThemeChange={setTheme} />
-                <Suspense fallback={null}>
-                    <DesignShowcase
-                        hideHeader
-                        hideThemeTabs
-                        theme={theme}
-                        onThemeChange={setTheme}
-                    />
-                </Suspense>
-            </div>
+            <DebugShowcase activeView={activeView} onSelectView={selectView} />
         );
     }
 
     return (
-        <SdkDemo
-            activeView={activeView}
-            onSelectView={selectView}
-            theme={theme}
-            onThemeChange={setTheme}
-        />
+        <PolliProvider appKey={APP_KEY} permissions={["profile"]}>
+            <AppShell activeView={activeView} onSelectView={selectView} />
+        </PolliProvider>
     );
 }

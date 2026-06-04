@@ -590,7 +590,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     <Dropdown
         theme="amber"
         align="end"
-        panelClassName="w-[var(--reference-width)] min-w-0 rounded-lg bg-amber-200 p-1"
+        className="w-[var(--reference-width)] min-w-0 p-1"
         trigger={(open) => (
             <button
                 type="button"

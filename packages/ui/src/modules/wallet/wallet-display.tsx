@@ -55,7 +55,12 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
     >
         <span className="polli:flex polli:items-center polli:gap-2">
             <WalletDot kind={kind} />
-            <span className="polli:text-sm polli:font-bold polli:uppercase polli:tracking-wide polli:text-amber-900">
+            <span
+                className={cn(
+                    "polli:text-sm polli:font-bold polli:uppercase polli:tracking-wide",
+                    walletTextClasses[kind],
+                )}
+            >
                 {label}
             </span>
             {info}
@@ -69,7 +74,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
             {value}
         </div>
         {footer && (
-            <div className="polli:mt-1.5 polli:text-sm polli:font-bold polli:tabular-nums polli:text-green-700">
+            <div className="polli:mt-1.5 polli:text-sm polli:font-bold polli:tabular-nums polli:text-intent-success-text">
                 {footer}
             </div>
         )}

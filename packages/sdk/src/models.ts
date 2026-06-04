@@ -168,12 +168,20 @@ async function fetchCatalogModels(
     return sortModels([...imageModels, ...textModels, ...audioModels]);
 }
 
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charCodeAt(end - 1) === 47) {
+        end -= 1;
+    }
+    return value.slice(0, end);
+}
+
 export async function fetchModelCatalog({
     apiKey,
     baseUrl = DEFAULT_BASE_URL,
     signal,
 }: FetchModelCatalogOptions = {}): Promise<ModelCatalog> {
-    const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+    const normalizedBaseUrl = trimTrailingSlashes(baseUrl);
     const models = await fetchCatalogModels(normalizedBaseUrl, null, signal);
     const allowedModels = apiKey
         ? await fetchCatalogModels(normalizedBaseUrl, apiKey, signal)

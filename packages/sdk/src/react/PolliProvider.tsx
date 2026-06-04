@@ -22,6 +22,8 @@ export type { AuthorizeRequest } from "./contexts.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
 
 export const DEFAULT_ENTER_URL = "https://enter.pollinations.ai";
+const BYOP_DOCS_URL =
+    "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md";
 
 export interface PolliProviderProps {
     /** Publishable key (`pk_...`): the app identifier, not a user's API key. */
@@ -86,6 +88,58 @@ function buildAuthorizeUrl(args: {
     return `${args.enterUrl}/authorize?${params.toString()}`;
 }
 
+function currentRedirectUrl(): string | null {
+    if (typeof window === "undefined") return null;
+    return window.location.href.split("#")[0] ?? window.location.href;
+}
+
+function isProductionRuntime(): boolean {
+    return globalThis.process?.env?.NODE_ENV === "production";
+}
+
+function isLoopbackHttpUrl(value: string): boolean {
+    try {
+        const url = new URL(value);
+        if (url.protocol !== "http:") return false;
+        const hostname = url.hostname
+            .toLowerCase()
+            .replace(/^\[(.*)\]$/, "$1")
+            .replace(/\.$/, "");
+        return (
+            hostname === "localhost" ||
+            hostname === "0.0.0.0" ||
+            hostname === "::1" ||
+            /^127\.\d+\.\d+\.\d+$/.test(hostname)
+        );
+    } catch {
+        return false;
+    }
+}
+
+function describeAppKey(appKey: string): string {
+    if (!appKey) return "<empty>";
+    if (appKey.length <= 8) return `${appKey.slice(0, 3)}...`;
+    return `${appKey.slice(0, 3)}...${appKey.slice(-4)}`;
+}
+
+function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
+    if (isProductionRuntime()) return;
+
+    if (!appKey || !appKey.startsWith("pk_")) {
+        console.warn(
+            `[PolliProvider] appKey should be a publishable pk_ App Key. Received ${describeAppKey(
+                appKey,
+            )}. Create one in Enter and pass it to <PolliProvider appKey="pk_..." />. ${BYOP_DOCS_URL}`,
+        );
+    }
+
+    if (redirectUrl && isLoopbackHttpUrl(redirectUrl)) {
+        console.info(
+            `[PolliProvider] Local auth redirect URI: ${redirectUrl}\nAdd this URI to your App Key redirectUris in Enter. ${BYOP_DOCS_URL}`,
+        );
+    }
+}
+
 /**
  * Provides Pollinations auth state to descendants. Wrap your app once at the
  * root. Holds the delegated API key, handles the OAuth callback, and exposes
@@ -120,6 +174,10 @@ export function PolliProvider({
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        warnAuthSetup(appKey, currentRedirectUrl());
+    }, [appKey]);
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
@@ -178,8 +236,8 @@ export function PolliProvider({
     const login = useCallback(
         (request?: AuthorizeRequest) => {
             if (typeof window === "undefined") return;
-            const currentUrl =
-                window.location.href.split("#")[0] ?? window.location.href;
+            const currentUrl = currentRedirectUrl();
+            if (!currentUrl) return;
             const extraPermissions = request?.permissions;
             const perms: AccountPermission[] =
                 extraPermissions && extraPermissions.length > 0

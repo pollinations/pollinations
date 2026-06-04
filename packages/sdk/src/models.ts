@@ -53,7 +53,16 @@ function endpointFor(source: ModelCatalogSource): string {
           : "/audio/models";
 }
 
-function categoryFor(
+function isModelCatalogCategory(value: unknown): value is ModelCatalogCategory {
+    return (
+        value === "image" ||
+        value === "video" ||
+        value === "text" ||
+        value === "audio"
+    );
+}
+
+function legacyCategoryFor(
     model: RawModelInfo,
     source: ModelCatalogSource,
 ): ModelCatalogCategory | null {
@@ -74,6 +83,14 @@ function categoryFor(
 
     if (output.includes("audio") && input.includes("text")) return "audio";
     return null;
+}
+
+function categoryFor(
+    model: RawModelInfo,
+    source: ModelCatalogSource,
+): ModelCatalogCategory | null {
+    if (isModelCatalogCategory(model.category)) return model.category;
+    return legacyCategoryFor(model, source);
 }
 
 function normalizeModel(

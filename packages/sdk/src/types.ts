@@ -789,6 +789,13 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
+export type ModelCategory =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "realtime";
 
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
@@ -801,6 +808,7 @@ export type VideoCapability =
 export interface ModelInfo {
     id?: string;
     name: string;
+    category?: ModelCategory;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;

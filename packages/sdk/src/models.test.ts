@@ -13,23 +13,6 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
     fetchMock = vi.fn((url: string) => {
-        if (url.endsWith("/v1/models")) {
-            return Promise.resolve(
-                jsonResponse({
-                    object: "list",
-                    data: [
-                        {
-                            id: "realtime-voice",
-                            supported_endpoints: ["/v1/realtime"],
-                        },
-                        {
-                            id: "embedding-small",
-                            supported_endpoints: ["/v1/embeddings"],
-                        },
-                    ],
-                }),
-            );
-        }
         if (url.endsWith("/models")) {
             return Promise.resolve(
                 jsonResponse([
@@ -73,6 +56,7 @@ beforeEach(() => {
                     },
                     {
                         name: "realtime-voice",
+                        category: "realtime",
                         input_modalities: ["text", "audio", "image"],
                         output_modalities: ["text", "audio"],
                     },
@@ -95,6 +79,11 @@ describe("fetchModelCatalog", () => {
             baseUrl: "https://example.test",
         });
 
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://example.test/models",
+            expect.any(Object),
+        );
         expect(
             catalog.models.map((model) => [model.id, model.category]),
         ).toEqual([
@@ -130,11 +119,6 @@ describe("fetchModelCatalog", () => {
 
     it("keeps a modality fallback for older model endpoints without category", async () => {
         fetchMock.mockImplementation((url: string) => {
-            if (url.endsWith("/v1/models")) {
-                return Promise.resolve(
-                    jsonResponse({ object: "list", data: [] }),
-                );
-            }
             if (url.endsWith("/models")) {
                 return Promise.resolve(
                     jsonResponse([
@@ -146,7 +130,7 @@ describe("fetchModelCatalog", () => {
                     ]),
                 );
             }
-            return Promise.resolve(jsonResponse([]));
+            return Promise.reject(new Error(`Unexpected URL: ${url}`));
         });
 
         const catalog = await fetchModelCatalog({
@@ -156,25 +140,34 @@ describe("fetchModelCatalog", () => {
         expect(catalog.models[0]?.category).toBe("video");
     });
 
-    it("keeps the rich catalog when the OpenAI-compatible model list is unavailable", async () => {
-        fetchMock.mockImplementation((url: string) => {
-            if (url.endsWith("/v1/models")) {
-                return Promise.resolve({
-                    ok: false,
-                    status: 503,
-                    json: async () => ({ error: "unavailable" }),
-                } as Response);
-            }
+    it("fetches allowed models from the rich catalog endpoint only", async () => {
+        fetchMock.mockImplementation((url: string, init?: RequestInit) => {
             if (url.endsWith("/models")) {
+                const headers = init?.headers as
+                    | Record<string, string>
+                    | undefined;
+                const isAuthenticated =
+                    headers?.Authorization === "Bearer test-key";
                 return Promise.resolve(
-                    jsonResponse([
-                        {
-                            name: "direct-realtime",
-                            category: "realtime",
-                            input_modalities: ["text", "audio"],
-                            output_modalities: ["text", "audio"],
-                        },
-                    ]),
+                    jsonResponse(
+                        isAuthenticated
+                            ? [
+                                  {
+                                      name: "paid-image",
+                                      category: "image",
+                                      input_modalities: ["text"],
+                                      output_modalities: ["image"],
+                                  },
+                              ]
+                            : [
+                                  {
+                                      name: "free-text",
+                                      category: "text",
+                                      input_modalities: ["text"],
+                                      output_modalities: ["text"],
+                                  },
+                              ],
+                    ),
                 );
             }
             return Promise.reject(new Error(`Unexpected URL: ${url}`));
@@ -182,12 +175,24 @@ describe("fetchModelCatalog", () => {
 
         const catalog = await fetchModelCatalog({
             baseUrl: "https://example.test",
+            apiKey: "test-key",
         });
 
-        expect(catalog.models).toHaveLength(1);
-        expect(catalog.models[0]).toMatchObject({
-            id: "direct-realtime",
-            category: "realtime",
-        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            1,
+            "https://example.test/models",
+            { headers: {}, signal: undefined },
+        );
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            2,
+            "https://example.test/models",
+            {
+                headers: { Authorization: "Bearer test-key" },
+                signal: undefined,
+            },
+        );
+        expect(catalog.models.map((model) => model.id)).toEqual(["free-text"]);
+        expect([...catalog.allowedModelIds]).toEqual(["paid-image"]);
     });
 });

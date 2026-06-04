@@ -21,7 +21,7 @@ export type ModelSelectorItem = {
     name?: string;
     description?: string;
     category: ModelSelectorCategory;
-    paid_only?: boolean;
+    paidOnly?: boolean;
 };
 
 export type ModelSelectorProps = {
@@ -125,7 +125,7 @@ export function ModelSelector({
                                         <span className="polli:truncate">
                                             {displayModelName(model)}
                                         </span>
-                                        {model.paid_only && (
+                                        {model.paidOnly && (
                                             <Chip
                                                 size="sm"
                                                 className={cn(

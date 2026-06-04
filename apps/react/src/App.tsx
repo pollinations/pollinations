@@ -1,7 +1,4 @@
-import {
-    fetchModelCatalog,
-    type ModelCatalogItem,
-} from "@pollinations/sdk/models";
+import { fetchModelCatalog, type ModelCatalogItem } from "@pollinations/sdk";
 import { PolliProvider, useAuthActions } from "@pollinations/sdk/react";
 import {
     Alert,
@@ -51,6 +48,7 @@ import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
 import {
     ModelSelector,
     type ModelSelectorCategory,
+    type ModelSelectorItem,
 } from "@pollinations/ui/models";
 import {
     Balance,
@@ -416,8 +414,7 @@ const PROMPT_COMPOSER_CATEGORIES: ModelSelectorCategory[] = [
     "audio",
 ];
 
-const MODEL_SNIPPET = `import { generateText, generateImage } from "@pollinations/sdk";
-import { fetchModelCatalog } from "@pollinations/sdk/models";
+const MODEL_SNIPPET = `import { fetchModelCatalog, generateText, generateImage } from "@pollinations/sdk";
 
 const catalog = await fetchModelCatalog();
 const textModels = catalog.models.filter((model) => model.category === "text");
@@ -466,6 +463,16 @@ function useModelCatalog() {
 
 function displayCatalogName(model: ModelCatalogItem | undefined): string {
     return model?.name || model?.id || "";
+}
+
+function toModelSelectorItem(model: ModelCatalogItem): ModelSelectorItem {
+    return {
+        id: model.id,
+        name: model.name,
+        description: model.description,
+        category: model.category,
+        paidOnly: model.paid_only,
+    };
 }
 
 function formatCatalogKey(value: string): string {
@@ -537,6 +544,7 @@ function ModelsPage() {
     const categoryModels = models.filter(
         (model) => model.category === category,
     );
+    const selectorModels = models.map(toModelSelectorItem);
 
     return (
         <>
@@ -674,7 +682,7 @@ function ModelsPage() {
                                 </p>
                             </div>
                             <ModelSelector
-                                models={models}
+                                models={selectorModels}
                                 category={category}
                                 value={selectedModelId}
                                 isLoading={isLoading}
@@ -1070,6 +1078,7 @@ function PromptComposerComposition() {
     const selectedModelId =
         selectedCatalogModel(models, category, requestedModelId)?.id ??
         requestedModelId;
+    const selectorModels = models.map(toModelSelectorItem);
 
     return (
         <QuietPanel className="flex flex-col gap-5">
@@ -1082,7 +1091,7 @@ function PromptComposerComposition() {
                     </p>
                 </div>
                 <ModelSelector
-                    models={models}
+                    models={selectorModels}
                     category={category}
                     value={selectedModelId}
                     isLoading={isLoading}
@@ -1215,12 +1224,19 @@ function UsageComposition() {
 }
 
 const COMPOSITION_SNIPPET = `import "@pollinations/ui/styles.css";
-import { fetchModelCatalog } from "@pollinations/sdk/models";
+import { fetchModelCatalog } from "@pollinations/sdk";
 import { PolliProvider } from "@pollinations/sdk/react";
 import { ModelSelector } from "@pollinations/ui/models";
 import { LoginButton, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
 
 const catalog = await fetchModelCatalog();
+const models = catalog.models.map((model) => ({
+    id: model.id,
+    name: model.name,
+    description: model.description,
+    category: model.category,
+    paidOnly: model.paid_only,
+}));
 
 export function App() {
     return (
@@ -1229,7 +1245,7 @@ export function App() {
                 <LoginButton>Authorize app</LoginButton>
             </WhenLoggedOut>
             <ModelSelector
-                models={catalog.models}
+                models={models}
                 category="image"
                 value={model}
                 onChange={setModel}

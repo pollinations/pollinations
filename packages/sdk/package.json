@@ -26,11 +26,6 @@
       "import": "./dist/react/index.js",
       "require": "./dist/react/index.cjs"
     },
-    "./models": {
-      "types": "./dist/models.d.ts",
-      "import": "./dist/models.js",
-      "require": "./dist/models.cjs"
-    },
     "./package.json": "./package.json"
   },
   "files": [

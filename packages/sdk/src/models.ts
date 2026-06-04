@@ -13,12 +13,6 @@ export interface ModelCatalogItem extends Omit<ModelInfo, "id" | "category"> {
 export interface ModelCatalog {
     models: ModelCatalogItem[];
     allowedModelIds: Set<string>;
-    allowedImageModelIds: Set<string>;
-    allowedVideoModelIds: Set<string>;
-    allowedTextModelIds: Set<string>;
-    allowedAudioModelIds: Set<string>;
-    allowedEmbeddingModelIds: Set<string>;
-    allowedRealtimeModelIds: Set<string>;
 }
 
 export interface FetchModelCatalogOptions extends RequestOptions {
@@ -26,12 +20,7 @@ export interface FetchModelCatalogOptions extends RequestOptions {
     baseUrl?: string;
 }
 
-type RawModelInfo = ModelInfo;
-type ModelListResponse = {
-    data?: (ModelInfo & { id?: string; supported_endpoints?: string[] })[];
-};
-
-function modelId(model: RawModelInfo): string {
+function modelId(model: ModelInfo): string {
     return model.id || model.name;
 }
 
@@ -46,12 +35,9 @@ function isModelCatalogCategory(value: unknown): value is ModelCatalogCategory {
     );
 }
 
-function legacyCategoryFor(model: RawModelInfo): ModelCatalogCategory | null {
+function legacyCategoryFor(model: ModelInfo): ModelCatalogCategory | null {
     const output = model.output_modalities ?? [];
-    const supportedEndpoints = model.supported_endpoints ?? [];
 
-    if (supportedEndpoints.includes("/v1/realtime")) return "realtime";
-    if (supportedEndpoints.includes("/v1/embeddings")) return "embedding";
     if (output.includes("embedding")) return "embedding";
     if (output.includes("video")) return "video";
     if (output.includes("image")) return "image";
@@ -60,12 +46,12 @@ function legacyCategoryFor(model: RawModelInfo): ModelCatalogCategory | null {
     return null;
 }
 
-function categoryFor(model: RawModelInfo): ModelCatalogCategory | null {
+function categoryFor(model: ModelInfo): ModelCatalogCategory | null {
     if (isModelCatalogCategory(model.category)) return model.category;
     return legacyCategoryFor(model);
 }
 
-function normalizeModel(model: RawModelInfo): ModelCatalogItem | null {
+function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     const id = modelId(model);
     const category = categoryFor(model);
     if (!id || !category) return null;
@@ -120,61 +106,15 @@ async function fetchJson(
     return response.json();
 }
 
-async function fetchCompatibleModelList(
-    baseUrl: string,
-    apiKey: string | null | undefined,
-    signal?: AbortSignal,
-): Promise<ModelListResponse> {
-    try {
-        return (await fetchJson(
-            baseUrl,
-            "/v1/models",
-            apiKey,
-            signal,
-        )) as ModelListResponse;
-    } catch (error) {
-        if (signal?.aborted) throw error;
-        return { data: [] };
-    }
-}
-
-function idsForCategory(
-    models: ModelCatalogItem[],
-    category: ModelCatalogCategory,
-): Set<string> {
-    return new Set(
-        models
-            .filter((model) => model.category === category)
-            .map((model) => model.id),
-    );
-}
-
 async function fetchCatalogModels(
     baseUrl: string,
     apiKey: string | null | undefined,
     signal?: AbortSignal,
 ): Promise<ModelCatalogItem[]> {
-    const [rawModels, compatibleResponse] = await Promise.all([
-        fetchJson(baseUrl, "/models", apiKey, signal),
-        fetchCompatibleModelList(baseUrl, apiKey, signal),
-    ]);
-    const endpointById = new Map(
-        ((compatibleResponse as ModelListResponse).data ?? []).map((model) => [
-            model.id || model.name,
-            model.supported_endpoints,
-        ]),
-    );
+    const rawModels = await fetchJson(baseUrl, "/models", apiKey, signal);
 
     return sortModels(
-        ((Array.isArray(rawModels) ? rawModels : []) as RawModelInfo[])
-            .map((model) => {
-                const id = modelId(model);
-                return {
-                    ...model,
-                    supported_endpoints:
-                        model.supported_endpoints ?? endpointById.get(id),
-                };
-            })
+        ((Array.isArray(rawModels) ? rawModels : []) as ModelInfo[])
             .map((model) => normalizeModel(model))
             .filter((model): model is ModelCatalogItem => Boolean(model)),
     );
@@ -204,11 +144,5 @@ export async function fetchModelCatalog({
     return {
         models,
         allowedModelIds,
-        allowedImageModelIds: idsForCategory(allowedModels, "image"),
-        allowedVideoModelIds: idsForCategory(allowedModels, "video"),
-        allowedTextModelIds: idsForCategory(allowedModels, "text"),
-        allowedAudioModelIds: idsForCategory(allowedModels, "audio"),
-        allowedEmbeddingModelIds: idsForCategory(allowedModels, "embedding"),
-        allowedRealtimeModelIds: idsForCategory(allowedModels, "realtime"),
     };
 }

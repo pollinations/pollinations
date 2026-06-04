@@ -68,10 +68,31 @@ type GeneratedMeme = SavedMeme & {
     reply: string;
 };
 
+// Meme image URLs must be Pollinations media. Reject anything else (tampered
+// localStorage, crafted share links) before using it as an <img src>.
+function isTrustedMediaUrl(value: string): boolean {
+    try {
+        const { protocol, hostname } = new URL(value);
+        return (
+            protocol === "https:" &&
+            (hostname === "pollinations.ai" ||
+                hostname.endsWith(".pollinations.ai"))
+        );
+    } catch {
+        return false;
+    }
+}
+
 function getSavedMemes(): SavedMeme[] {
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        return Array.isArray(saved) ? saved : [];
+        if (!Array.isArray(saved)) return [];
+        return saved.filter(
+            (meme) =>
+                meme &&
+                typeof meme.url === "string" &&
+                isTrustedMediaUrl(meme.url),
+        );
     } catch {
         return [];
     }
@@ -198,9 +219,9 @@ export function App() {
         const urlPrompt = params.get("prompt");
         const urlImage = params.get("image");
         if (urlPrompt) setPrompt(urlPrompt);
-        // Restore a shared result so the recipient sees the exact meme.
-        // Only trust https image URLs (blocks data:/javascript: in shared links).
-        if (urlPrompt && urlImage?.startsWith("https://")) {
+        // Restore a shared result so the recipient sees the exact meme. Only
+        // trust Pollinations media URLs (blocks crafted share links).
+        if (urlPrompt && urlImage && isTrustedMediaUrl(urlImage)) {
             setGeneratedMeme({
                 prompt: urlPrompt,
                 url: urlImage,

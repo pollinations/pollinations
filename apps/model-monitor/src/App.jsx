@@ -6,6 +6,7 @@ import {
     DiscordIcon,
     ExternalLinkIcon,
     GitHubIcon,
+    Heading,
     ScrollArea,
     Surface,
     TabButton,
@@ -336,13 +337,13 @@ function BrandMark() {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex text-theme-text-strong"
+            className="inline-flex shrink-0 items-center text-theme-text-strong"
             aria-label="Pollinations"
         >
             <span className="sr-only">Pollinations</span>
             <span
                 aria-hidden="true"
-                className="block h-9 w-[292px] max-w-[70vw] shrink-0 bg-current"
+                className="block h-7 w-[220px] max-w-full bg-current"
                 style={brandWordmarkMask}
             />
         </a>
@@ -505,59 +506,63 @@ function App() {
             data-theme={APP_THEME}
         >
             <ScrollArea axis="y" className="h-full">
+                <header className="sticky top-0 z-30 border-b border-theme-border bg-surface-white px-5 py-4 backdrop-blur">
+                    <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <BrandMark />
+                        <nav
+                            aria-label="Model Monitor links"
+                            className="flex min-w-0 flex-wrap gap-2"
+                        >
+                            {EXTERNAL_LINKS.map((link) => (
+                                <HeaderLink key={link.href} {...link} />
+                            ))}
+                        </nav>
+                    </div>
+                </header>
                 <main
                     className={cn(
                         "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",
                         adminMode ? "max-w-6xl" : "max-w-5xl",
                     )}
                 >
-                    <header className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <BrandMark />
-                            <div className="flex items-center gap-2">
-                                {EXTERNAL_LINKS.map((link) => (
-                                    <HeaderLink key={link.href} {...link} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div className="min-w-0">
-                                <h1 className="font-serif text-2xl font-black text-theme-text-strong">
-                                    Model Monitor
-                                </h1>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm leading-6 text-theme-text-soft">
-                                    <span>
-                                        Real-time health monitoring for models.
-                                    </span>
-                                    <span>
-                                        Last update:{" "}
-                                        {lastUpdated?.toLocaleTimeString(
-                                            "en-GB",
-                                            {
-                                                timeZone: "UTC",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                                second: "2-digit",
-                                            },
-                                        ) || "-"}{" "}
-                                        UTC
-                                    </span>
+                    <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <Heading
+                                as="h1"
+                                size="title"
+                                className="polli-model-monitor-title polli:m-0 polli:text-ink-950"
+                            >
+                                Model Monitor
+                            </Heading>
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-ink-700">
+                                Real-time health monitoring for Pollinations AI
+                                models.
+                            </p>
+                            {!tinybirdConfigured && (
+                                <div className="mt-2">
+                                    <Chip intent="warning" size="sm">
+                                        Tinybird not configured
+                                    </Chip>
                                 </div>
-                                {!tinybirdConfigured && (
-                                    <div className="mt-2">
-                                        <Chip intent="warning" size="sm">
-                                            Tinybird not configured
-                                        </Chip>
-                                    </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-start gap-2 sm:items-end">
                             <WindowTabs
                                 value={aggregationWindow}
                                 onChange={setAggregationWindow}
                             />
+                            <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                                Last update:{" "}
+                                {lastUpdated?.toLocaleTimeString("en-GB", {
+                                    timeZone: "UTC",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                }) || "-"}{" "}
+                                UTC
+                            </p>
                         </div>
-                    </header>
+                    </section>
 
                     {error && (
                         <Alert intent="danger" title="Monitor error">

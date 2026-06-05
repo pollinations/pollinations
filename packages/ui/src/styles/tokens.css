@@ -117,11 +117,9 @@
 
     --polli-color-success-bg-light: oklch(0.94 0.055 150);
     --polli-color-success-text:     oklch(0.38 0.12 150);
-    --polli-color-success-border:   oklch(0.78 0.13 150);
 
     --polli-color-warning-bg-light: oklch(0.94 0.06 75);
     --polli-color-warning-text:     oklch(0.45 0.13 65);
-    --polli-color-warning-border:   oklch(0.82 0.14 75);
 
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
@@ -158,11 +156,9 @@
 
     --color-intent-success-bg-light: var(--polli-color-success-bg-light);
     --color-intent-success-text:     var(--polli-color-success-text);
-    --color-intent-success-border:   var(--polli-color-success-border);
 
     --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
     --color-intent-warning-text:     var(--polli-color-warning-text);
-    --color-intent-warning-border:   var(--polli-color-warning-border);
 
     --color-intent-news-bg-light:    var(--polli-color-news-bg-light);
     --color-intent-news-text:        var(--polli-color-news-text);

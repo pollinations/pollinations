@@ -1,9 +1,8 @@
 import type { FC } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import {
     addUtcDays,
-    formatPeriodLabel,
     isPeriodSelectable,
     type PeriodGranularity,
     type PeriodSelection,
@@ -11,10 +10,10 @@ import {
     periodToWindow,
     startOfUtcDay,
 } from "../lib/period.ts";
+import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { Dropdown } from "../primitives/Dropdown.tsx";
+import { TabButton } from "../primitives/TabButton.tsx";
 import type { ThemeName } from "../theme.ts";
-import { ChevronIcon } from "./ChevronIcon.tsx";
-import { Dropdown } from "./Dropdown.tsx";
-import { TabButton } from "./TabButton.tsx";
 
 export type PeriodPickerProps = {
     value: PeriodSelection;
@@ -66,6 +65,51 @@ function periodDate(value: PeriodSelection): Date {
     return periodToWindow(value).start;
 }
 
+function selectionKey(value: PeriodSelection): string {
+    return `${value.granularity}:${value.period}`;
+}
+
+function formatMonthYear(date: Date, month: "short" | "long" = "short") {
+    return date.toLocaleDateString("en-US", {
+        timeZone: "UTC",
+        month,
+        year: "numeric",
+    });
+}
+
+function formatFullDate(date: Date) {
+    return date.toLocaleDateString("en-US", {
+        timeZone: "UTC",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function formatWeekSummary(start: Date, end: Date) {
+    const weekEnd = addUtcDays(end, -1);
+    const sameMonth =
+        start.getUTCFullYear() === weekEnd.getUTCFullYear() &&
+        start.getUTCMonth() === weekEnd.getUTCMonth();
+
+    if (sameMonth) {
+        const month = start.toLocaleDateString("en-US", {
+            timeZone: "UTC",
+            month: "short",
+        });
+        return `${month} ${start.getUTCDate()}-${weekEnd.getUTCDate()}, ${weekEnd.getUTCFullYear()}`;
+    }
+
+    return `${formatFullDate(start)} - ${formatFullDate(weekEnd)}`;
+}
+
+function formatPeriodSummary(value: PeriodSelection): string {
+    const { start, end } = periodToWindow(value);
+    if (value.granularity === "day") return formatFullDate(start);
+    if (value.granularity === "week") return formatWeekSummary(start, end);
+    return formatMonthYear(start, "long");
+}
+
 function viewBounds(
     viewDate: Date,
     granularity: PeriodGranularity,
@@ -90,10 +134,19 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
+    const [anchorDate, setAnchorDate] = useState<Date>(() => periodDate(value));
+    const emittedSelectionRef = useRef<string | null>(null);
     const { granularity, period } = value;
 
     useEffect(() => {
-        setViewDate(periodDate({ granularity, period }));
+        const currentSelectionKey = selectionKey({ granularity, period });
+        if (emittedSelectionRef.current === currentSelectionKey) {
+            emittedSelectionRef.current = null;
+            return;
+        }
+        const nextAnchorDate = periodDate({ granularity, period });
+        setAnchorDate(nextAnchorDate);
+        setViewDate(nextAnchorDate);
     }, [granularity, period]);
 
     const dates = useMemo(() => monthGridDates(viewDate), [viewDate]);
@@ -111,24 +164,28 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
     const nextBounds = viewBounds(nextViewDate, value.granularity);
     const previousDisabled = previousBounds.end <= minDate;
     const nextDisabled = nextBounds.start > today;
+    const summaryLabel = formatPeriodSummary(value);
+
+    const commitSelection = (selection: PeriodSelection, anchor: Date) => {
+        emittedSelectionRef.current = selectionKey(selection);
+        setAnchorDate(anchor);
+        setViewDate(anchor);
+        onChange(selection);
+    };
 
     const setGranularity = (granularity: PeriodGranularity) => {
-        onChange(periodFromDate(granularity, periodDate(value)));
+        commitSelection(periodFromDate(granularity, anchorDate), anchorDate);
     };
 
     const selectDate = (date: Date) => {
-        onChange(periodFromDate(value.granularity, date));
+        commitSelection(periodFromDate(value.granularity, date), date);
         setOpen(false);
     };
 
     const viewLabel =
         value.granularity === "month"
             ? String(viewDate.getUTCFullYear())
-            : viewDate.toLocaleDateString("en-US", {
-                  timeZone: "UTC",
-                  month: "long",
-                  year: "numeric",
-              });
+            : formatMonthYear(viewDate, "long");
 
     return (
         <div
@@ -153,20 +210,20 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 theme={theme}
                 open={open}
                 onOpenChange={setOpen}
-                className="polli:w-[304px] polli:rounded-xl polli:p-3"
+                className="polli:w-[320px] polli:rounded-xl polli:p-3.5"
                 trigger={(isOpen) => (
                     <button
                         type="button"
-                        aria-label={`Select period, current ${formatPeriodLabel(value)}`}
+                        aria-label={`Select period, current ${summaryLabel}`}
                         className={cn(
-                            "polli-control polli:inline-flex polli:min-w-[150px] polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-4 polli:pt-1.5 polli:pb-2 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                            "polli-control polli:inline-flex polli:w-[19rem] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-5 polli:pt-2 polli:pb-2.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
                             "polli:border-theme-border polli:bg-theme-bg-subtle polli:text-theme-text-base",
                             "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-pale",
                             isOpen &&
                                 "polli:bg-theme-bg-active polli:text-theme-text-strong polli:shadow-sm",
                         )}
                     >
-                        <span>{formatPeriodLabel(value)}</span>
+                        <span className="polli:truncate">{summaryLabel}</span>
                         <ChevronIcon expanded={isOpen} />
                     </button>
                 )}
@@ -174,11 +231,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 <div className="polli:mb-3 polli:flex polli:items-center polli:justify-between">
                     <button
                         type="button"
-                        aria-label={
-                            value.granularity === "month"
-                                ? "Previous year"
-                                : "Previous month"
-                        }
+                        aria-label="Previous"
                         disabled={previousDisabled}
                         onClick={() => setViewDate(previousViewDate)}
                         className={cn(
@@ -189,16 +242,12 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     >
                         {"<"}
                     </button>
-                    <div className="polli:text-sm polli:font-bold polli:text-theme-text-base">
+                    <div className="polli:text-base polli:font-bold polli:text-theme-text-base">
                         {viewLabel}
                     </div>
                     <button
                         type="button"
-                        aria-label={
-                            value.granularity === "month"
-                                ? "Next year"
-                                : "Next month"
-                        }
+                        aria-label="Next"
                         disabled={nextDisabled}
                         onClick={() => setViewDate(nextViewDate)}
                         className={cn(
@@ -244,7 +293,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     disabled={!selectable}
                                     onClick={() => selectDate(date)}
                                     className={cn(
-                                        "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                        "polli-control polli:rounded-lg polli:px-3 polli:py-2 polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                         selected
                                             ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                             : "polli:text-gray-700 polli:hover:bg-theme-bg-subtle",
@@ -259,7 +308,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     </div>
                 ) : (
                     <>
-                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-micro polli:font-bold polli:uppercase polli:text-gray-400">
+                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-xs polli:font-bold polli:uppercase polli:text-gray-400">
                             {WEEKDAY_LABELS.map((label) => (
                                 <div key={label}>{label}</div>
                             ))}
@@ -276,7 +325,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                 );
                                 const ariaLabel =
                                     value.granularity === "week"
-                                        ? `Select week ${formatPeriodLabel(periodFromDate("week", date))}`
+                                        ? `Select ${formatPeriodSummary(periodFromDate("week", date))}`
                                         : `Select ${date.toLocaleDateString(
                                               "en-US",
                                               {
@@ -300,7 +349,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(
-                                            "polli-control polli:aspect-square polli:rounded-lg polli:text-xs polli:font-medium polli:transition-colors polli:duration-150",
+                                            "polli-control polli:aspect-square polli:rounded-lg polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
                                                 "polli:text-gray-300",
                                             sameUtcDay(date, today) &&

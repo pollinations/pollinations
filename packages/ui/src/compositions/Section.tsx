@@ -1,7 +1,8 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
+import { Surface } from "../primitives/Surface.tsx";
+import { Heading, Text } from "../primitives/Typography.tsx";
 import type { ThemeName } from "../theme.ts";
-import { Surface } from "./Surface.tsx";
 
 export type SectionProps = {
     title: string;
@@ -37,22 +38,21 @@ export const Section: FC<SectionProps> = ({
             className,
         )}
     >
-        <div className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3 polli:px-1">
-            <h2
+        <header className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3 polli:px-1">
+            <Heading
+                as="h2"
                 data-theme={theme}
-                className={cn(
-                    "polli:text-left polli:font-subheading polli:text-2xl polli:leading-tight polli:text-theme-text-strong",
-                    titleClassName,
-                )}
+                size="section"
+                className={cn("polli:text-left", titleClassName)}
             >
                 {title}
-            </h2>
+            </Heading>
             {action && (
                 <div className={cn("polli:shrink-0", actionClassName)}>
                     {action}
                 </div>
             )}
-        </div>
+        </header>
         {framed ? (
             <Surface
                 variant="panel"
@@ -63,21 +63,22 @@ export const Section: FC<SectionProps> = ({
                 )}
             >
                 {intro && (
-                    <div className="polli:max-w-2xl polli:text-theme-text-base">
+                    <Text as="div" className="polli:max-w-2xl">
                         {intro}
-                    </div>
+                    </Text>
                 )}
                 {children}
             </Surface>
         ) : (
             <>
                 {intro && (
-                    <div
+                    <Text
+                        as="div"
                         data-theme={theme}
-                        className="polli:max-w-2xl polli:text-theme-text-base"
+                        className="polli:max-w-2xl"
                     >
                         {intro}
-                    </div>
+                    </Text>
                 )}
                 {children}
             </>

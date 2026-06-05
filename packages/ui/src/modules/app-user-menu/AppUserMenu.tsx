@@ -1,15 +1,15 @@
 import { useAuthActions } from "@pollinations/sdk/react";
+import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
+import { Dropdown } from "../../primitives/Dropdown.tsx";
+import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     LoginButton,
     UserAvatar,
     UserName,
     WhenLoggedIn,
     WhenLoggedOut,
-} from "../../modules/auth/sdk.ts";
-import { Balance } from "../../modules/wallet/sdk.ts";
-import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { DropdownItem } from "../../primitives/DropdownItem.tsx";
+} from "../auth/sdk.ts";
+import { Balance } from "../wallet/sdk.ts";
 
 export type AppUserMenuLabels = {
     authorize: string;

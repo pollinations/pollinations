@@ -1,8 +1,9 @@
 # @pollinations/ui
 
-Internal UI primitives for Pollinations apps. SDK-backed subpaths consume auth
-state from [`@pollinations/sdk/react`](../sdk/README.md#react-auth-provider);
-core primitives and display recipes stay SDK-free.
+Internal UI primitives, compositions, and modules for Pollinations apps.
+SDK-backed subpaths consume auth state from
+[`@pollinations/sdk/react`](../sdk/README.md#react-auth-provider); core
+primitives and display recipes stay SDK-free.
 
 ## Install
 
@@ -119,15 +120,21 @@ Wallet colors and utilities are bundled into the main stylesheet
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
   `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
-- `@pollinations/ui/modality` exports model-modality color recipes.
+- `@pollinations/ui/app-user-menu/sdk` exports the SDK-backed app account
+  menu module.
+- `@pollinations/ui/gen` exports the generation UI — `ModelSelector`,
+  category labels, and the model-modality theme mapping.
 - `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
-- **Design primitives** — `Alert`, `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
-  `Collapsible`, `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`,
-  `IconButton`, `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`,
-  `ScrollArea`, `Section`, `Slider`, `StatCard`, `Surface`, `Switch`,
-  `Table`, `TableBody`, `TableCell`, `TableHead`, `TableHeaderCell`,
-  `TableRow`, `TabButton`, `Tooltip`.
+- **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
+  `Dialog`, `DialogTitle`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
+  `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
+  `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
+  `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
+- **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
+  `CopyButton`, `ExternalLinkButton`, `FileUpload`, `InfoTip`, `LinkCard`,
+  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
+  `Prose`, `Section`, `StatCard`.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 - **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
@@ -139,12 +146,14 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 ## Source Layout
 
 - `src/primitives/*` contains generic, SDK-free building blocks.
+- `src/compositions/*` contains SDK-free recipes that compose primitives.
 - `src/modules/*` contains package-owned recipes with domain assumptions
-  such as auth, wallet, and modality.
+  such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
-  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`) are built
-  directly from those modules.
+  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/gen`,
+  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
+  layers.
 
 ## Theming
 

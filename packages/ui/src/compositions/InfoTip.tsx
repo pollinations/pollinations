@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from "react";
-import { Tooltip } from "./Tooltip.tsx";
+import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type InfoTipProps = {
     text?: ReactNode;

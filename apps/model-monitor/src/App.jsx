@@ -17,7 +17,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
@@ -178,7 +178,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                 const isActive = typeFilter === key;
                 const isDimmed = typeFilter !== null && !isActive;
                 const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-                const colors = getModalityColors(key);
+                const theme = getModalityTheme(key);
 
                 return (
                     <button
@@ -192,10 +192,10 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                         aria-pressed={isActive}
                     >
                         <Surface
-                            theme={colors?.theme}
+                            theme={theme ?? undefined}
                             variant="card-themed"
                             className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 border border-theme-border sm:min-h-48",
+                                "flex h-full min-h-24 flex-col gap-3 sm:min-h-48",
                                 isActive && "ring-2 ring-theme-bg-active",
                             )}
                         >
@@ -693,9 +693,8 @@ function App() {
                                                 : null;
                                             const health =
                                                 computeHealthStatus(stats);
-                                            const modality = getModalityColors(
-                                                model.type,
-                                            );
+                                            const modalityTheme =
+                                                getModalityTheme(model.type);
 
                                             return (
                                                 <TableRow
@@ -705,7 +704,8 @@ function App() {
                                                     <TableCell>
                                                         <Chip
                                                             theme={
-                                                                modality?.theme
+                                                                modalityTheme ??
+                                                                undefined
                                                             }
                                                             size="sm"
                                                             className="text-micro font-bold uppercase tracking-wide"

@@ -19,7 +19,7 @@ import {
 import {
     AppUserMenu,
     isEmbeddedContext,
-} from "@pollinations/ui/compositions/app-user";
+} from "@pollinations/ui/app-user-menu/sdk";
 import { useEffect, useMemo, useState } from "react";
 import example1Url from "../images/example1.png";
 import example2Url from "../images/example2.png";

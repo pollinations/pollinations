@@ -1,0 +1,35 @@
+{
+  "pr_number": 11644,
+  "title": "fix: redeploy shared package app consumers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11644",
+  "merged_at": "2026-06-05T21:58:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Redeploy registered app subdomains when `packages/sdk/**` or `packages/ui/**` changes by detecting apps that declare those package dependencies.\n- Keep direct `apps/**` deploy behavior and `workflow_dispatch` unchanged.\n- Move package-consumer detection into `.github/scripts/detect-package-consumers.js` so it can be linted and tested outside the workflow YAML.\n- Add a fixture test for changed-files in -> app-list out, including missing `package.json` and non-package app changes.\n- Run `.github/scripts/*.test.js` in the existing Biome Check workflow whenever `.github/scripts/*.js` changes.\n- Keep the script minimal: CLI input is only the workflow-provided `CHANGED` env var; tests use the exported function.\n\nChecks:\n- `PATH=/opt/homebrew/bin:$PATH npx biome check --write .github/scripts/detect-package-consumers.js .github/scripts/detect-package-consumers.test.js .github/workflows/biome-check.yml .github/workflows/app-deploy-automatic.yml`\n- `PATH=/opt/homebrew/bin:$PATH node --test .github/scripts/*.test.js`\n- `git diff --check`\n- Ruby YAML parse for changed workflow files\n- Simulated package-change detection returns `model-monitor`, `playground`, `react`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Ripple effect deployments",
+    "blurb": "Apps now automatically redeploy when their shared UI or SDK dependencies are updated. Keeping the whole garden perfectly in sync!",
+    "summary": "Updated the automatic deployment workflow to detect and redeploy apps whenever their shared dependencies in `packages/sdk` or `packages/ui` are modified.",
+    "impact": "Ensures that downstream applications always reflect the latest changes from shared internal packages without requiring manual redeploys.",
+    "keywords": [
+      "ci/cd",
+      "github-actions",
+      "deployments",
+      "monorepo",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee watering a central 'package' plant that causes a network of smaller 'app' plants to bloom simultaneously, representing the automated dependency redeployments.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot watering a large central glowing code-plant, causing several smaller connected plants in lime green (#ecf874) pots to bloom simultaneously. A chunky robot with a CRT monitor head watches happily, screen displaying a network graph. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11644.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot watering a large central glowing code-plant, causing several smaller connected plants in lime green (#ecf874) pots to bloom simultaneously. A chunky robot with a CRT monitor head watches happily, screen displaying a network graph. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-05T21:59:55.114282+00:00"
+}

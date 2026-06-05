@@ -1,26 +1,59 @@
-import { fetchModelCatalog, type ModelCatalogItem } from "@pollinations/sdk";
-import { PolliProvider, useAuthActions } from "@pollinations/sdk/react";
+import { type ModelCatalogItem, pricingEntries } from "@pollinations/sdk";
+import {
+    PolliProvider,
+    useAuthActions,
+    useModelCatalog,
+} from "@pollinations/sdk/react";
 import {
     Alert,
+    AppIcon,
     BeakerIcon,
+    BookIcon,
     Button,
     ButtonGroup,
+    CheckIcon,
+    ChevronIcon,
     Chip,
     ClipboardIcon,
     ClockIcon,
+    CodeBlock,
+    Collapsible,
+    CopyButton,
     currentPeriod,
+    Dialog,
+    DiscordIcon,
+    DownloadIcon,
+    Dropdown,
+    DropdownItem,
     ExternalLinkButton,
+    ExternalLinkIcon,
+    Field,
+    FileUpload,
     GenApiIcon,
+    GitHubIcon,
+    Heading,
     IconButton,
     ImageIcon,
+    InfoTip,
+    InlineLink,
     Input,
+    LinkCard,
+    LockIcon,
+    MailIcon,
     Markdown,
+    McpIcon,
+    MediaPlaceholder,
+    MenuIcon,
     MultiSelect,
+    NavItem,
     PeriodPicker,
     type PeriodSelection,
+    Prose,
     ScrollArea,
+    Section,
     Slider,
     StatCard,
+    Surface,
     Switch,
     TabButton,
     Table,
@@ -29,26 +62,24 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    TerminalIcon,
+    Text,
     Textarea,
     type ThemeName,
+    TokensIcon,
     Tooltip,
     TrendUpIcon,
+    WalletIcon,
+    XIcon,
 } from "@pollinations/ui";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import { WhenLoggedIn, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
+import { modalityTheme } from "@pollinations/ui/modality";
 import {
-    LoginButton,
-    LogoutButton,
-    UserAvatar,
-    UserEmail,
-    UserName,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "@pollinations/ui/auth/sdk";
-import { AppUserMenu } from "@pollinations/ui/compositions/app-user";
-import {
+    categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
-    type ModelSelectorItem,
 } from "@pollinations/ui/models";
 import {
     Balance,
@@ -71,6 +102,9 @@ import {
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
 const APP_THEME: ThemeName = "blue";
+// Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
+// Unset falls back to the SDK default (production gen.pollinations.ai).
+const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;
 
 const DesignShowcase = lazy(() =>
     import("./showcase/DesignShowcase").then((module) => ({
@@ -83,22 +117,30 @@ const brandWordmarkMask: CSSProperties = {
     mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
-type PublicAppView = "models" | "primitives" | "compositions";
+type PublicAppView = "primitives" | "compositions" | "modules";
 type AppView = PublicAppView | "showcase";
 
 const PUBLIC_VIEWS: { id: PublicAppView; label: string }[] = [
-    { id: "models", label: "Models" },
     { id: "primitives", label: "Primitives" },
     { id: "compositions", label: "Compositions" },
+    { id: "modules", label: "Modules" },
 ];
 
 function readAppView(): AppView {
-    if (typeof window === "undefined") return "models";
+    if (typeof window === "undefined") return "primitives";
     const view = new URLSearchParams(window.location.search).get("view");
     if (view === "showcase") return "showcase";
-    if (view === "primitives" || view === "compositions") return view;
-    if (view === "react" || view === "modules") return "compositions";
-    return "models";
+    if (
+        view === "primitives" ||
+        view === "compositions" ||
+        view === "modules"
+    ) {
+        return view;
+    }
+    if (view === "models" || view === "react") {
+        return "modules";
+    }
+    return "primitives";
 }
 
 function useAppView() {
@@ -112,7 +154,7 @@ function useAppView() {
 
     const selectView = (view: AppView) => {
         const url = new URL(window.location.href);
-        if (view === "models") {
+        if (view === "primitives") {
             url.searchParams.delete("view");
         } else {
             url.searchParams.set("view", view);
@@ -131,7 +173,7 @@ function BrandMark() {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center text-green-950"
+            className="inline-flex shrink-0 items-center text-theme-text-strong"
             aria-label="Pollinations"
         >
             <span className="sr-only">Pollinations</span>
@@ -152,7 +194,7 @@ function ShellHeader({
     onSelectView: (view: AppView) => void;
 }) {
     return (
-        <header className="sticky top-0 z-30 border-b border-green-950/10 bg-[#f7fbf5]/95 px-5 py-4 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-theme-border bg-theme-bg-subtle px-5 py-4 backdrop-blur">
             <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <BrandMark />
                 <nav
@@ -185,7 +227,7 @@ function AppShell({
     return (
         <div
             data-theme={APP_THEME}
-            className="min-h-screen overflow-x-hidden bg-[#f7fbf5] text-slate-950"
+            className="min-h-screen overflow-x-hidden bg-theme-bg-subtle text-theme-text-strong"
         >
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-12 px-5 py-8 sm:py-10">
@@ -193,43 +235,20 @@ function AppShell({
                     <PrimitivesPage />
                 ) : activeView === "compositions" ? (
                     <CompositionsPage />
-                ) : (
-                    <ModelsPage />
-                )}
+                ) : activeView === "modules" ? (
+                    <ModulesPage />
+                ) : null}
             </main>
         </div>
     );
 }
 
-function PageIntro({
-    eyebrow,
-    title,
-    children,
-    action,
-}: {
-    eyebrow: string;
-    title: string;
-    children: ReactNode;
-    action?: ReactNode;
-}) {
+function PageTitle({ children }: { children: ReactNode }) {
     return (
-        <section className="grid gap-5 border-b border-slate-200 pb-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <div className="max-w-3xl">
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-green-700">
-                    {eyebrow}
-                </p>
-                <h1 className="font-serif text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                    {title}
-                </h1>
-                <p className="mt-4 text-base leading-7 text-slate-700">
-                    {children}
-                </p>
-            </div>
-            {action ? (
-                <div className="flex justify-start md:justify-end">
-                    {action}
-                </div>
-            ) : null}
+        <section className="border-b border-theme-border pb-5">
+            <h1 className="font-serif text-3xl font-black tracking-tight text-theme-text-strong">
+                {children}
+            </h1>
         </section>
     );
 }
@@ -243,240 +262,16 @@ function SectionHeader({
 }) {
     return (
         <div className="mb-4 flex max-w-3xl flex-col gap-1">
-            <h2 className="font-serif text-2xl font-black text-slate-950">
+            <h2 className="font-serif text-2xl font-black text-theme-text-strong">
                 {title}
             </h2>
             {children ? (
-                <p className="text-sm leading-6 text-slate-600">{children}</p>
+                <p className="text-sm leading-6 text-theme-text-soft">
+                    {children}
+                </p>
             ) : null}
         </div>
     );
-}
-
-function QuietPanel({
-    children,
-    className = "",
-}: {
-    children: ReactNode;
-    className?: string;
-}) {
-    return (
-        <div
-            className={`min-w-0 rounded-lg border border-slate-200 bg-white/80 p-5 ${className}`}
-        >
-            {children}
-        </div>
-    );
-}
-
-function CopySnippetButton({
-    text,
-    children = "Copy",
-}: {
-    text: string;
-    children?: ReactNode;
-}) {
-    const [copied, setCopied] = useState(false);
-
-    useEffect(() => {
-        if (!copied) return;
-        const timer = setTimeout(() => setCopied(false), 1400);
-        return () => clearTimeout(timer);
-    }, [copied]);
-
-    return (
-        <Button
-            type="button"
-            theme="teal"
-            size="sm"
-            onClick={() => {
-                void navigator.clipboard
-                    .writeText(text)
-                    .then(() => {
-                        setCopied(true);
-                    })
-                    .catch(() => {
-                        // Clipboard access can be denied outside secure contexts.
-                    });
-            }}
-        >
-            {copied ? "Copied" : children}
-        </Button>
-    );
-}
-
-function CodePanel({
-    title,
-    code,
-    caption,
-}: {
-    title: string;
-    code: string;
-    caption?: string;
-}) {
-    return (
-        <div className="flex min-w-0 flex-col gap-4 rounded-lg border border-slate-800 bg-slate-950 p-5 text-white">
-            <div className="flex items-center justify-between gap-3">
-                <div>
-                    <p className="text-sm font-semibold">{title}</p>
-                    {caption ? (
-                        <p className="mt-1 text-xs text-slate-300">{caption}</p>
-                    ) : null}
-                </div>
-                <CopySnippetButton text={code}>Copy</CopySnippetButton>
-            </div>
-            <pre className="overflow-x-auto rounded bg-black/25 p-4 text-xs leading-6 text-slate-100">
-                <code>{code}</code>
-            </pre>
-        </div>
-    );
-}
-
-const MODEL_GROUPS = [
-    {
-        id: "text",
-        label: "Text",
-        theme: "blue" as ThemeName,
-        Icon: GenApiIcon,
-        summary: "Chat, structured output, tools, streaming, and vision input.",
-        examples: ["openai", "claude", "gemini", "minimax-m3"],
-        capabilities: ["chat", "stream", "json", "vision"],
-    },
-    {
-        id: "image",
-        label: "Image",
-        theme: "pink" as ThemeName,
-        Icon: ImageIcon,
-        summary: "Generation, editing, references, transparency, and batches.",
-        examples: ["zimage", "flux", "kontext", "nanobanana"],
-        capabilities: ["generate", "edit", "reference", "transparent"],
-    },
-    {
-        id: "video",
-        label: "Video",
-        theme: "teal" as ThemeName,
-        Icon: TrendUpIcon,
-        summary: "Prompt to video and image to video with duration controls.",
-        examples: ["veo", "seedance", "wan", "ltx-2"],
-        capabilities: ["prompt", "image input", "duration", "audio"],
-    },
-    {
-        id: "audio",
-        label: "Audio",
-        theme: "violet" as ThemeName,
-        Icon: ClockIcon,
-        summary: "Text to speech, music generation, voices, and transcription.",
-        examples: ["elevenlabs", "elevenmusic", "acestep", "whisper"],
-        capabilities: ["speech", "music", "voices", "transcribe"],
-    },
-    {
-        id: "embedding",
-        label: "Embeddings",
-        theme: "amber" as ThemeName,
-        Icon: BeakerIcon,
-        summary: "Vector representations for retrieval, search, and ranking.",
-        examples: ["gemini-2", "openai-3-small", "openai-3-large"],
-        capabilities: ["text", "image", "audio", "video"],
-    },
-    {
-        id: "realtime",
-        label: "Realtime",
-        theme: "green" as ThemeName,
-        Icon: ClockIcon,
-        summary: "Low-latency voice and multimodal sessions over WebSocket.",
-        examples: ["gpt-realtime-2"],
-        capabilities: ["voice", "websocket", "tools", "reasoning"],
-    },
-] as const;
-
-const DEFAULT_MODEL_BY_CATEGORY: Record<ModelSelectorCategory, string> = {
-    text: "openai",
-    image: "zimage",
-    video: "veo",
-    audio: "elevenlabs",
-    embedding: "openai-3-small",
-    realtime: "gpt-realtime-2",
-};
-
-const MODEL_SELECTOR_CATEGORIES: ModelSelectorCategory[] = [
-    "text",
-    "image",
-    "video",
-    "audio",
-    "embedding",
-    "realtime",
-];
-
-const PROMPT_COMPOSER_CATEGORIES: ModelSelectorCategory[] = [
-    "image",
-    "text",
-    "video",
-    "audio",
-];
-
-const MODEL_SNIPPET = `import { fetchModelCatalog, generateText, generateImage } from "@pollinations/sdk";
-
-const catalog = await fetchModelCatalog();
-const textModels = catalog.models.filter((model) => model.category === "text");
-const realtimeModels = catalog.models.filter((model) => model.category === "realtime");
-const firstTextPrice = textModels[0]?.pricing?.promptTextTokens;
-
-const answer = await generateText("Summarize this file", {
-    model: "openai",
-});
-
-const image = await generateImage("A clean product dashboard", {
-    model: "zimage",
-    width: 1024,
-    height: 1024,
-});`;
-
-function useModelCatalog() {
-    const [models, setModels] = useState<ModelCatalogItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        setIsLoading(true);
-        setError(null);
-
-        fetchModelCatalog({ signal: controller.signal })
-            .then((catalog) => setModels(catalog.models))
-            .catch((reason: unknown) => {
-                if (controller.signal.aborted) return;
-                setError(
-                    reason instanceof Error
-                        ? reason.message
-                        : "Could not load model catalog",
-                );
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setIsLoading(false);
-            });
-
-        return () => controller.abort();
-    }, []);
-
-    return { models, isLoading, error };
-}
-
-function displayCatalogName(model: ModelCatalogItem | undefined): string {
-    return model?.name || model?.id || "";
-}
-
-function toModelSelectorItem(model: ModelCatalogItem): ModelSelectorItem {
-    return {
-        id: model.id,
-        name: model.name,
-        description: model.description,
-        category: model.category,
-        paidOnly: model.paid_only,
-    };
-}
-
-function formatCatalogKey(value: string): string {
-    return value.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 }
 
 function formatList(values: readonly string[] | undefined): string {
@@ -484,808 +279,1047 @@ function formatList(values: readonly string[] | undefined): string {
 }
 
 function formatModelLimit(model: ModelCatalogItem | undefined): string {
-    if (model?.maxInputChars) {
-        return `${model.maxInputChars.toLocaleString()} chars`;
-    }
-    if (model?.context_length) {
-        return `${model.context_length.toLocaleString()} context`;
+    if (model?.contextLength) {
+        return `${model.contextLength.toLocaleString()} context`;
     }
     return "Not listed";
 }
 
 function formatPricing(model: ModelCatalogItem | undefined): string {
-    const entries = Object.entries(model?.pricing ?? {}).filter(
-        ([key]) => key !== "currency",
-    );
+    const entries = pricingEntries(model?.pricing);
     if (!entries.length) return "Not listed";
 
     return entries
-        .map(([key, value]) => `${formatCatalogKey(key)}: ${value} pollen`)
+        .map(([label, value]) => `${label}: ${value} pollen`)
         .join(", ");
 }
 
 function selectedCatalogModel(
     models: readonly ModelCatalogItem[],
     category: ModelSelectorCategory,
-    selectedModelId: string,
+    selectedModelId: string | undefined,
 ): ModelCatalogItem | undefined {
     return (
-        models.find((model) => model.id === selectedModelId) ??
-        models.find((model) => model.category === category)
+        (selectedModelId
+            ? models.find((model) => model.id === selectedModelId)
+            : undefined) ?? models.find((model) => model.category === category)
     );
 }
 
-function CatalogFact({ label, value }: { label: string; value: ReactNode }) {
-    return (
-        <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                {label}
-            </p>
-            <p className="mt-1 break-words text-sm leading-6 text-slate-700">
-                {value}
-            </p>
-        </div>
-    );
-}
-
-function ModelsPage() {
-    const { models, isLoading, error } = useModelCatalog();
-    const [category, setCategory] = useState<ModelSelectorCategory>("text");
-    const [selectedByCategory, setSelectedByCategory] = useState(
-        DEFAULT_MODEL_BY_CATEGORY,
-    );
-    const requestedModelId = selectedByCategory[category];
-    const selectedModel = selectedCatalogModel(
+function ModulesPage() {
+    const {
         models,
-        category,
-        requestedModelId,
+        allowedModelIds,
+        allowedCategories,
+        isLoggedIn,
+        isLoading,
+        error,
+    } = useModelCatalog({
+        baseUrl: GEN_BASE_URL,
+    });
+    const { enterUrl } = useAuthActions();
+    const [category, setCategory] = useState<ModelSelectorCategory | null>(
+        null,
     );
-    const selectedModelId = selectedModel?.id ?? requestedModelId;
-    const categoryModels = models.filter(
-        (model) => model.category === category,
-    );
-    const selectorModels = models.map(toModelSelectorItem);
+    const [selectedByCategory, setSelectedByCategory] = useState<
+        Partial<Record<ModelSelectorCategory, string>>
+    >({});
+    // Categories come only from the catalog the key can actually see. No
+    // hardcoded fallback list — an empty catalog renders an empty state.
+    const categories = allowedCategories;
+    const activeCategory =
+        category && categories.includes(category) ? category : categories[0];
+    const categoryTheme = activeCategory
+        ? modalityTheme(activeCategory)
+        : APP_THEME;
+    const visibleModels = isLoggedIn
+        ? models.filter((model) => allowedModelIds.has(model.id))
+        : models;
+    const selectedModel = activeCategory
+        ? selectedCatalogModel(
+              visibleModels,
+              activeCategory,
+              selectedByCategory[activeCategory],
+          )
+        : undefined;
+    const selectedModelId = selectedModel?.id ?? "";
+    const selectedModelAccess = !isLoggedIn
+        ? "Public catalog"
+        : selectedModel && allowedModelIds.has(selectedModel.id)
+          ? "Allowed by key"
+          : "Not allowed";
 
     return (
         <>
-            <PageIntro
-                eyebrow="Catalog"
-                title="Models"
-                action={
-                    <div className="flex flex-wrap justify-start gap-2 md:justify-end">
-                        <ExternalLinkButton
-                            theme={APP_THEME}
-                            href="https://gen.pollinations.ai/models"
-                        >
-                            All
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            theme={APP_THEME}
-                            href="https://gen.pollinations.ai/text/models"
-                        >
-                            Text
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            theme={APP_THEME}
-                            href="https://gen.pollinations.ai/image/models"
-                        >
-                            Image/Video
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            theme={APP_THEME}
-                            href="https://gen.pollinations.ai/audio/models"
-                        >
-                            Audio
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            theme={APP_THEME}
-                            href="https://gen.pollinations.ai/embeddings/models"
-                        >
-                            Embeddings
-                        </ExternalLinkButton>
-                    </div>
-                }
-            >
-                A compact view of Pollinations model families and the model
-                selection primitives apps need before they generate text, image,
-                video, audio, or embeddings.
-            </PageIntro>
-
-            <section>
-                <SectionHeader title="Capabilities">
-                    Start with the media types developers actually choose
-                    between, then expose the selectors and SDK calls behind
-                    them.
-                </SectionHeader>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                    {MODEL_GROUPS.map(({ Icon, ...group }) => (
-                        <QuietPanel
-                            key={group.id}
-                            className="flex h-full flex-col gap-4"
-                        >
-                            <div
-                                data-theme={group.theme}
-                                className="flex items-center gap-3"
-                            >
-                                <span className="flex h-10 w-10 items-center justify-center rounded bg-theme-bg-active text-theme-text-strong">
-                                    <Icon className="h-5 w-5" />
-                                </span>
-                                <h3 className="text-lg font-bold">
-                                    {group.label}
-                                </h3>
-                            </div>
-                            <p className="text-sm leading-6 text-slate-600">
-                                {group.summary}
-                            </p>
-                            <div className="mt-auto flex flex-wrap gap-1.5">
-                                {group.capabilities.map((capability) => (
-                                    <Chip
-                                        key={capability}
-                                        theme={group.theme}
-                                        size="sm"
-                                    >
-                                        {capability}
-                                    </Chip>
-                                ))}
-                            </div>
-                            <p className="text-xs leading-5 text-slate-500">
-                                {group.examples.join(", ")}
-                            </p>
-                        </QuietPanel>
-                    ))}
-                </div>
+            <section className="border-b border-theme-border pb-7">
+                <p className="max-w-3xl text-base leading-7 text-theme-text-base">
+                    A compact pass through the SDK-backed UI modules:
+                    authenticate, inspect access, choose a modality and model,
+                    then prepare a generation.
+                </p>
             </section>
 
-            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
-                <div className="min-w-0">
-                    <SectionHeader title="Selector Pattern">
-                        Use one selector component across media types. The same
-                        state shape can drive prompt composers, settings panels,
-                        and app defaults.
-                    </SectionHeader>
-                    <QuietPanel className="flex flex-col gap-5">
-                        <ButtonGroup aria-label="Model category">
-                            {MODEL_SELECTOR_CATEGORIES.map((item) => (
-                                <TabButton
-                                    key={item}
-                                    active={category === item}
-                                    theme={
-                                        MODEL_GROUPS.find(
-                                            (group) => group.id === item,
-                                        )?.theme ?? APP_THEME
-                                    }
-                                    onClick={() => setCategory(item)}
-                                >
-                                    {item}
-                                </TabButton>
-                            ))}
-                        </ButtonGroup>
-
-                        {error ? (
-                            <Alert intent="warning">
-                                Model catalog unavailable: {error}
-                            </Alert>
-                        ) : null}
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Selected model
-                                </p>
-                                <h3 className="mt-1 text-2xl font-bold">
-                                    {displayCatalogName(selectedModel) ||
-                                        selectedModelId}
-                                </h3>
-                                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-                                    {selectedModel?.description ??
-                                        "Choose a model for this media type."}
-                                </p>
+            <section>
+                <SectionHeader title="Auth + Wallet" />
+                <Surface
+                    variant="panel"
+                    className="flex flex-col items-start gap-4"
+                >
+                    <AppUserMenu dashboardHref={enterUrl} />
+                    <div className="w-full">
+                        <WhenLoggedOut>
+                            <Chip>Authorize first</Chip>
+                        </WhenLoggedOut>
+                        <WhenLoggedIn>
+                            <div className="grid w-full gap-3 sm:grid-cols-5">
+                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                    <Text
+                                        size="micro"
+                                        tone="muted"
+                                        weight="bold"
+                                    >
+                                        Balance
+                                    </Text>
+                                    <Balance className="mt-2" />
+                                </div>
+                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                    <Text
+                                        size="micro"
+                                        tone="muted"
+                                        weight="bold"
+                                    >
+                                        Key
+                                    </Text>
+                                    <KeyPrefix className="mt-2" />
+                                </div>
+                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                    <Text
+                                        size="micro"
+                                        tone="muted"
+                                        weight="bold"
+                                    >
+                                        Budget
+                                    </Text>
+                                    <KeyBudget className="mt-2" />
+                                </div>
+                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                    <Text
+                                        size="micro"
+                                        tone="muted"
+                                        weight="bold"
+                                    >
+                                        Models
+                                    </Text>
+                                    <KeyModels className="mt-2" />
+                                </div>
+                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                    <Text
+                                        size="micro"
+                                        tone="muted"
+                                        weight="bold"
+                                    >
+                                        Expires
+                                    </Text>
+                                    <KeyExpiry className="mt-2" />
+                                </div>
                             </div>
+                        </WhenLoggedIn>
+                    </div>
+                </Surface>
+            </section>
+
+            {activeCategory ? (
+                <>
+                    <section>
+                        <SectionHeader title="Modality + Models" />
+                        <Surface
+                            variant="panel"
+                            theme={categoryTheme}
+                            className="flex flex-col gap-5"
+                        >
+                            <ButtonGroup aria-label="Modality">
+                                {categories.map((item) => (
+                                    <TabButton
+                                        key={item}
+                                        active={activeCategory === item}
+                                        theme={modalityTheme(item)}
+                                        onClick={() => setCategory(item)}
+                                    >
+                                        {categoryLabel(item)}
+                                    </TabButton>
+                                ))}
+                            </ButtonGroup>
+
                             <ModelSelector
-                                models={selectorModels}
-                                category={category}
+                                models={visibleModels}
+                                category={activeCategory}
                                 value={selectedModelId}
                                 isLoading={isLoading}
                                 onChange={(modelId) =>
                                     setSelectedByCategory((current) => ({
                                         ...current,
-                                        [category]: modelId,
+                                        [activeCategory]: modelId,
                                     }))
                                 }
                             />
-                        </div>
 
-                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                            <CatalogFact
-                                label="input"
-                                value={formatList(
-                                    selectedModel?.input_modalities,
-                                )}
-                            />
-                            <CatalogFact
-                                label="output"
-                                value={formatList(
-                                    selectedModel?.output_modalities,
-                                )}
-                            />
-                            <CatalogFact
-                                label="limit"
-                                value={formatModelLimit(selectedModel)}
-                            />
-                            <CatalogFact
-                                label="pricing"
-                                value={formatPricing(selectedModel)}
-                            />
-                        </div>
+                            {error ? (
+                                <Alert intent="warning">
+                                    Model catalog unavailable: {error.message}
+                                </Alert>
+                            ) : null}
 
-                        <ScrollArea axis="x">
-                            <Table className="min-w-[860px]">
-                                <TableHead>
-                                    <tr>
-                                        <TableHeaderCell>Model</TableHeaderCell>
-                                        <TableHeaderCell>Input</TableHeaderCell>
-                                        <TableHeaderCell>
+                            {selectedModel ? (
+                                <div className="grid gap-3 md:grid-cols-3">
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
+                                            ID
+                                        </Text>
+                                        <p className="mt-1 break-all font-mono text-sm">
+                                            {selectedModel.id}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
+                                            Input
+                                        </Text>
+                                        <p className="mt-1 text-sm">
+                                            {formatList(
+                                                selectedModel.inputModalities,
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
                                             Output
-                                        </TableHeaderCell>
-                                        <TableHeaderCell>Limit</TableHeaderCell>
-                                        <TableHeaderCell>
+                                        </Text>
+                                        <p className="mt-1 text-sm">
+                                            {formatList(
+                                                selectedModel.outputModalities,
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
+                                            Limit
+                                        </Text>
+                                        <p className="mt-1 text-sm">
+                                            {formatModelLimit(selectedModel)}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3 md:col-span-2">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
+                                            Access
+                                        </Text>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            <Chip
+                                                intent={
+                                                    selectedModelAccess ===
+                                                    "Not allowed"
+                                                        ? "warning"
+                                                        : "success"
+                                                }
+                                                theme={categoryTheme}
+                                            >
+                                                {selectedModelAccess}
+                                            </Chip>
+                                            {selectedModel.paidOnly ? (
+                                                <Chip theme={categoryTheme}>
+                                                    paid
+                                                </Chip>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3 md:col-span-3">
+                                        <Text
+                                            size="micro"
+                                            tone="muted"
+                                            weight="bold"
+                                        >
                                             Pricing
-                                        </TableHeaderCell>
-                                    </tr>
-                                </TableHead>
-                                <TableBody>
-                                    {categoryModels.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} muted>
-                                                {isLoading
-                                                    ? "Loading catalog..."
-                                                    : "No models listed for this category."}
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : null}
-                                    {categoryModels.map((model) => (
-                                        <TableRow key={model.id}>
-                                            <TableCell>
-                                                <span className="font-semibold">
-                                                    {displayCatalogName(model)}
-                                                </span>
-                                                {model.paid_only ? (
-                                                    <Chip
-                                                        size="sm"
-                                                        className="ml-2"
-                                                    >
-                                                        paid
-                                                    </Chip>
-                                                ) : null}
-                                            </TableCell>
-                                            <TableCell muted>
-                                                {formatList(
-                                                    model.input_modalities,
-                                                )}
-                                            </TableCell>
-                                            <TableCell muted>
-                                                {formatList(
-                                                    model.output_modalities,
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatModelLimit(model)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatPricing(model)}
-                                            </TableCell>
-                                        </TableRow>
+                                        </Text>
+                                        <p className="mt-1 text-sm">
+                                            {formatPricing(selectedModel)}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Text size="sm" tone="soft">
+                                    {isLoading
+                                        ? "Loading models..."
+                                        : "No model available for this modality."}
+                                </Text>
+                            )}
+                        </Surface>
+                    </section>
+
+                    <section>
+                        <SectionHeader title="Try It Out" />
+                        <Surface
+                            variant="panel"
+                            theme={categoryTheme}
+                            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"
+                        >
+                            <div className="flex flex-col gap-4">
+                                <Textarea
+                                    rows={5}
+                                    placeholder={`Describe a ${categoryLabel(activeCategory).toLowerCase()} output`}
+                                />
+                                <div className="flex justify-end">
+                                    <Button theme={categoryTheme}>
+                                        Generate
+                                    </Button>
+                                </div>
+                            </div>
+                            <MediaPlaceholder
+                                icon={<ImageIcon className="h-5 w-5" />}
+                                label={`${categoryLabel(activeCategory)} output`}
+                                detail={
+                                    selectedModel
+                                        ? selectedModel.id
+                                        : "Select a model"
+                                }
+                            />
+                        </Surface>
+                    </section>
+                </>
+            ) : (
+                <section>
+                    <SectionHeader title="Modality + Models" />
+                    <Surface variant="panel" className="flex flex-col gap-3">
+                        {error ? (
+                            <Alert intent="warning">
+                                Model catalog unavailable: {error.message}
+                            </Alert>
+                        ) : (
+                            <Text size="sm" tone="soft">
+                                {isLoading
+                                    ? "Loading models..."
+                                    : "No models available for your key."}
+                            </Text>
+                        )}
+                    </Surface>
+                </section>
+            )}
+        </>
+    );
+}
+
+const CONTROL_SIZES = ["sm", "md", "lg"] as const;
+const TAB_SIZES = ["sm", "md"] as const;
+const NAV_ITEM_OPTIONS = ["Models", "Usage", "Keys", "Billing"] as const;
+const SCROLL_AREA_ITEMS = [
+    "Text prompt",
+    "Image prompt",
+    "Video prompt",
+    "Audio prompt",
+    "Realtime session",
+    "Embedding request",
+    "Batch output",
+    "Webhook event",
+    "Usage row",
+    "Billing row",
+] as const;
+const ICON_PREVIEWS = [
+    { label: "App", Icon: AppIcon },
+    { label: "Beaker", Icon: BeakerIcon },
+    { label: "Book", Icon: BookIcon },
+    { label: "Check", Icon: CheckIcon },
+    { label: "Chevron", Icon: ChevronIcon },
+    { label: "Clipboard", Icon: ClipboardIcon },
+    { label: "Clock", Icon: ClockIcon },
+    { label: "Discord", Icon: DiscordIcon },
+    { label: "Download", Icon: DownloadIcon },
+    { label: "External", Icon: ExternalLinkIcon },
+    { label: "Gen API", Icon: GenApiIcon },
+    { label: "GitHub", Icon: GitHubIcon },
+    { label: "Image", Icon: ImageIcon },
+    { label: "Lock", Icon: LockIcon },
+    { label: "Mail", Icon: MailIcon },
+    { label: "MCP", Icon: McpIcon },
+    { label: "Menu", Icon: MenuIcon },
+    { label: "Terminal", Icon: TerminalIcon },
+    { label: "Tokens", Icon: TokensIcon },
+    { label: "Trend", Icon: TrendUpIcon },
+    { label: "Wallet", Icon: WalletIcon },
+    { label: "X", Icon: XIcon },
+] as const;
+
+function PrimitiveExample({
+    name,
+    description,
+    children,
+}: {
+    name: string;
+    description: string;
+    children: ReactNode;
+}) {
+    return (
+        <Surface
+            variant="panel"
+            className="grid gap-4 md:grid-cols-[minmax(0,0.85fr)_minmax(220px,1.15fr)] md:items-center"
+        >
+            <div>
+                <h3 className="font-bold">{name}</h3>
+                <p className="mt-1 text-sm leading-6 text-theme-text-soft">
+                    {description}
+                </p>
+            </div>
+            <div className="min-w-0">{children}</div>
+        </Surface>
+    );
+}
+
+function PrimitivesPage() {
+    const [activePrimitiveTab, setActivePrimitiveTab] = useState("md-image");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogSize, setDialogSize] =
+        useState<(typeof CONTROL_SIZES)[number]>("md");
+    const [switchOn, setSwitchOn] = useState(true);
+    const [sliderValue, setSliderValue] = useState(60);
+
+    return (
+        <>
+            <PageTitle>Primitives</PageTitle>
+
+            <section>
+                <div className="grid gap-3">
+                    <PrimitiveExample
+                        name="Typography"
+                        description="Minimal type roles: section headings, readable body/help text, and compact metadata labels."
+                    >
+                        <div className="flex flex-col gap-3">
+                            <Heading as="h3" size="section">
+                                Section heading
+                            </Heading>
+                            <Text size="sm" tone="soft">
+                                Use body or small text for explanatory copy.
+                                Keep labels rare and compact.
+                            </Text>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Text as="span" size="xs" tone="muted">
+                                    Metadata label
+                                </Text>
+                                <Text as="span" size="xs" tone="strong">
+                                    1,284 requests
+                                </Text>
+                            </div>
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Button"
+                        description="Primary command element with theme and size variants."
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {CONTROL_SIZES.map((size) => (
+                                <Button
+                                    key={size}
+                                    theme={APP_THEME}
+                                    size={size}
+                                >
+                                    {size}
+                                </Button>
+                            ))}
+                            <Button intent="danger" size="md">
+                                danger
+                            </Button>
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="IconButton"
+                        description="Compact icon-only command for toolbars and dense controls."
+                    >
+                        <IconButton title="Copy" onClick={() => undefined}>
+                            <ClipboardIcon className="h-3.5 w-3.5" />
+                        </IconButton>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Icons"
+                        description="Exported UI icons, including the shared chevron used by collapsibles and menus."
+                    >
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                            {ICON_PREVIEWS.map(({ label, Icon }) => (
+                                <div
+                                    key={label}
+                                    className="flex items-center gap-2 rounded-lg bg-theme-bg-pale px-2 py-2 text-sm text-theme-text-soft"
+                                >
+                                    <Icon className="h-4 w-4 shrink-0 text-theme-text-strong" />
+                                    <span className="truncate">{label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Chip"
+                        description="Short status, tag, or metadata label."
+                    >
+                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {CONTROL_SIZES.map((size) => (
+                                    <Chip
+                                        key={size}
+                                        size={size}
+                                        theme={APP_THEME}
+                                    >
+                                        {size}
+                                    </Chip>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Chip intent="neutral">neutral</Chip>
+                                <Chip intent="success">success</Chip>
+                                <Chip intent="warning">warning</Chip>
+                                <Chip intent="danger">danger</Chip>
+                            </div>
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="InlineLink"
+                        description="Text link with Pollinations underline, focus, and external icon rules."
+                    >
+                        <p className="text-sm text-theme-text-soft">
+                            Read the{" "}
+                            <InlineLink
+                                href="https://pollinations.ai"
+                                theme={APP_THEME}
+                            >
+                                API guide
+                            </InlineLink>
+                            .
+                        </p>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Input"
+                        description="Single-line text entry with the app's control styling."
+                    >
+                        <Input placeholder="Describe an image" />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Field"
+                        description="Accessible field wrapper for labels, helper text, and validation text."
+                    >
+                        <Field.Root className="flex flex-col gap-1">
+                            <Field.Label className="text-xs font-bold uppercase tracking-wide text-theme-text-muted">
+                                Endpoint
+                                <Field.RequiredIndicator className="ml-1 text-intent-danger-text">
+                                    *
+                                </Field.RequiredIndicator>
+                            </Field.Label>
+                            <Input placeholder="/v1/chat/completions" />
+                            <Field.HelperText className="text-xs text-theme-text-soft">
+                                Used for API calls.
+                            </Field.HelperText>
+                        </Field.Root>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Textarea"
+                        description="Multi-line prompt, message, and note entry."
+                    >
+                        <Textarea
+                            rows={4}
+                            placeholder="A precise, minimal interface for exploring model output"
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Slider"
+                        description="Range input with themed progress styling."
+                    >
+                        <div className="flex items-center gap-3">
+                            <Slider
+                                min={0}
+                                max={100}
+                                value={sliderValue}
+                                onChange={(event) =>
+                                    setSliderValue(
+                                        Number(event.currentTarget.value),
+                                    )
+                                }
+                            />
+                            <span className="w-10 text-sm tabular-nums text-theme-text-soft">
+                                {sliderValue}
+                            </span>
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Switch"
+                        description="Theme-independent binary toggle with on, off, and invalid states."
+                    >
+                        <div className="flex items-center gap-3">
+                            <Switch
+                                checked={switchOn}
+                                onChange={setSwitchOn}
+                                ariaLabel="Toggle preview"
+                            />
+                            <Switch
+                                checked
+                                status="invalid"
+                                onChange={() => undefined}
+                                ariaLabel="Invalid toggle preview"
+                            />
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="ButtonGroup + TabButton"
+                        description="ButtonGroup and TabButton used together for mutually-exclusive modes."
+                    >
+                        <div className="flex flex-col gap-2">
+                            {TAB_SIZES.map((size) => (
+                                <ButtonGroup
+                                    key={size}
+                                    aria-label={`${size} primitive media type`}
+                                >
+                                    {["image", "text", "audio"].map((item) => (
+                                        <TabButton
+                                            key={item}
+                                            active={
+                                                activePrimitiveTab ===
+                                                `${size}-${item}`
+                                            }
+                                            theme={APP_THEME}
+                                            size={size}
+                                            onClick={() =>
+                                                setActivePrimitiveTab(
+                                                    `${size}-${item}`,
+                                                )
+                                            }
+                                        >
+                                            {item}
+                                        </TabButton>
                                     ))}
-                                </TableBody>
-                            </Table>
+                                </ButtonGroup>
+                            ))}
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Dropdown + DropdownItem"
+                        description="Small menu surface anchored to a trigger."
+                    >
+                        <Dropdown
+                            theme={APP_THEME}
+                            trigger={(open) => (
+                                <Button type="button" theme={APP_THEME}>
+                                    {open ? "Close menu" : "Open menu"}
+                                </Button>
+                            )}
+                        >
+                            {(close) => (
+                                <div className="min-w-40 p-2">
+                                    <DropdownItem onClick={close}>
+                                        Text model
+                                    </DropdownItem>
+                                    <DropdownItem onClick={close}>
+                                        Image model
+                                    </DropdownItem>
+                                </div>
+                            )}
+                        </Dropdown>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Dialog + DialogTitle"
+                        description="Modal shell for focused confirmation or setup tasks."
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {CONTROL_SIZES.map((size) => (
+                                <Button
+                                    key={size}
+                                    type="button"
+                                    size={size}
+                                    theme={APP_THEME}
+                                    onClick={() => {
+                                        setDialogSize(size);
+                                        setDialogOpen(true);
+                                    }}
+                                >
+                                    {size}
+                                </Button>
+                            ))}
+                        </div>
+                        <Dialog
+                            open={dialogOpen}
+                            onOpenChange={setDialogOpen}
+                            title={`Primitive dialog (${dialogSize})`}
+                            theme={APP_THEME}
+                            size={dialogSize}
+                        >
+                            <div className="flex flex-col gap-4 p-6">
+                                <p className="text-sm leading-6 text-theme-text-soft">
+                                    Dialog content stays focused and short.
+                                </p>
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        theme={APP_THEME}
+                                        onClick={() => setDialogOpen(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                </div>
+                            </div>
+                        </Dialog>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Table primitives"
+                        description="Structured rows for comparison and compact data scans."
+                    >
+                        <Table>
+                            <TableHead>
+                                <tr>
+                                    <TableHeaderCell>Type</TableHeaderCell>
+                                    <TableHeaderCell>Status</TableHeaderCell>
+                                </tr>
+                            </TableHead>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell>Image</TableCell>
+                                    <TableCell muted>Ready</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Surface"
+                        description="Theme-aware container primitive for panels and cards."
+                    >
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <Surface variant="card" className="text-sm">
+                                Card surface
+                            </Surface>
+                            <Surface
+                                variant="card-themed"
+                                theme={APP_THEME}
+                                className="text-sm"
+                            >
+                                Themed card
+                            </Surface>
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="ScrollArea"
+                        description="Subtle themed scrolling for overflow content."
+                    >
+                        <ScrollArea
+                            axis="y"
+                            theme={APP_THEME}
+                            className="h-40 rounded-lg border border-theme-border bg-theme-bg-pale p-3"
+                        >
+                            <div className="flex flex-col gap-2">
+                                {SCROLL_AREA_ITEMS.map((item, index) => (
+                                    <div
+                                        key={item}
+                                        className="flex items-center justify-between rounded-lg bg-theme-bg-subtle px-3 py-2 text-sm"
+                                    >
+                                        <span>{item}</span>
+                                        <Chip size="sm" theme={APP_THEME}>
+                                            {String(index + 1).padStart(2, "0")}
+                                        </Chip>
+                                    </div>
+                                ))}
+                            </div>
                         </ScrollArea>
-                    </QuietPanel>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Tooltip"
+                        description="Small contextual detail attached to a focused control."
+                    >
+                        <Tooltip
+                            content="Copied values stay local."
+                            triggerAs="span"
+                        >
+                            <Button size="sm" theme={APP_THEME}>
+                                Hover
+                            </Button>
+                        </Tooltip>
+                    </PrimitiveExample>
                 </div>
-                <CodePanel
-                    title="SDK first, React where it helps"
-                    caption="The catalog can show both API and React usage."
-                    code={MODEL_SNIPPET}
-                />
             </section>
         </>
     );
 }
 
-const PRIMITIVE_GROUPS = [
-    {
-        title: "Actions",
-        description:
-            "Buttons, chips, links, icon buttons, and copy affordances.",
-    },
-    {
-        title: "Inputs",
-        description: "Text, textarea, sliders, switches, and grouped fields.",
-    },
-    {
-        title: "Selection",
-        description: "Tabs, multiselects, dropdowns, and period ranges.",
-    },
-    {
-        title: "Data",
-        description: "Tables, stats, alerts, tooltips, and scroll containers.",
-    },
-] as const;
-
-function PrimitivesPage() {
-    const [selected, setSelected] = useState(["text", "image"]);
-    const [slider, setSlider] = useState(48);
-    const [enabled, setEnabled] = useState(true);
+function CompositionsPage() {
+    const [activeNavItem, setActiveNavItem] =
+        useState<(typeof NAV_ITEM_OPTIONS)[number]>("Models");
+    const [collapsibleOpen, setCollapsibleOpen] = useState(true);
+    const [selectedModalities, setSelectedModalities] = useState([
+        "text",
+        "image",
+    ]);
     const [period, setPeriod] = useState<PeriodSelection>(() =>
         currentPeriod(),
     );
+    const [files, setFiles] = useState<File[]>([]);
 
     return (
         <>
-            <PageIntro eyebrow="UI System" title="Primitives">
-                Curated building blocks for Pollinations apps: actions, inputs,
-                selection controls, feedback, and dense data surfaces.
-            </PageIntro>
+            <PageTitle>Compositions</PageTitle>
 
             <section>
-                <SectionHeader title="Primitive Families">
-                    The essentials stay grouped by workflow instead of exposed
-                    as a raw export inventory.
-                </SectionHeader>
-                <div className="grid gap-3 md:grid-cols-4">
-                    {PRIMITIVE_GROUPS.map((group) => (
-                        <QuietPanel key={group.title}>
-                            <h3 className="font-bold">{group.title}</h3>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                                {group.description}
-                            </p>
-                        </QuietPanel>
-                    ))}
-                </div>
-            </section>
-
-            <section className="grid gap-5 lg:grid-cols-2">
-                <div>
-                    <SectionHeader title="Controls">
-                        The examples stay close to product screens: prompt
-                        input, model settings, and compact actions.
-                    </SectionHeader>
-                    <QuietPanel className="flex flex-col gap-5">
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <label
-                                className="flex flex-col gap-1"
-                                htmlFor="primitive-prompt"
-                            >
-                                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Prompt
-                                </span>
-                                <Input
-                                    id="primitive-prompt"
-                                    placeholder="Describe an image"
-                                />
-                            </label>
-                            <label
-                                className="flex flex-col gap-1"
-                                htmlFor="primitive-seed"
-                            >
-                                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Seed
-                                </span>
-                                <Input
-                                    id="primitive-seed"
-                                    type="number"
-                                    hideNumberSteppers
-                                    placeholder="12345"
-                                />
-                            </label>
-                        </div>
-                        <label
-                            className="flex flex-col gap-1"
-                            htmlFor="primitive-system-prompt"
-                        >
-                            <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                System prompt
-                            </span>
-                            <Textarea
-                                id="primitive-system-prompt"
-                                rows={4}
-                                placeholder="You are a direct assistant."
-                            />
-                        </label>
-                        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                            <div>
-                                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Quality {slider}
-                                </p>
-                                <Slider
-                                    min={0}
-                                    max={100}
-                                    value={slider}
-                                    aria-label="Quality"
-                                    onChange={(event) =>
-                                        setSlider(
-                                            Number(event.currentTarget.value),
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Switch
-                                    checked={enabled}
-                                    status={enabled ? "on" : "off"}
-                                    ariaLabel="Private generation"
-                                    onChange={setEnabled}
-                                />
-                                <span className="text-sm font-medium">
-                                    Private
-                                </span>
-                            </div>
-                        </div>
-                        <ButtonGroup aria-label="Actions">
-                            <Button>Generate</Button>
-                            <Button theme="teal">Save preset</Button>
-                            <IconButton title="Copy" onClick={() => undefined}>
-                                <ClipboardIcon className="h-3.5 w-3.5" />
-                            </IconButton>
-                            <Tooltip content="Ready to run" triggerAs="span">
-                                <Chip intent="success">Ready</Chip>
-                            </Tooltip>
-                        </ButtonGroup>
-                    </QuietPanel>
-                </div>
-
-                <div>
-                    <SectionHeader title="Selection and Feedback">
-                        Dense controls should feel calm when they appear inside
-                        real generation and account surfaces.
-                    </SectionHeader>
-                    <QuietPanel className="flex flex-col gap-5">
-                        <div>
-                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Modalities
-                            </p>
-                            <MultiSelect
-                                options={[
-                                    { value: "text", label: "Text" },
-                                    { value: "image", label: "Image" },
-                                    { value: "video", label: "Video" },
-                                    { value: "audio", label: "Audio" },
-                                ]}
-                                selected={selected}
-                                onChange={setSelected}
-                                label="Types"
-                                placeholder="All"
-                                theme={APP_THEME}
-                            />
-                        </div>
-                        <div>
-                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Period
-                            </p>
-                            <PeriodPicker
-                                value={period}
-                                onChange={setPeriod}
-                                theme={APP_THEME}
-                            />
-                        </div>
-                        <Alert title="Synced">
-                            Model metadata and account state share the same
-                            compact feedback primitives.
-                        </Alert>
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            <StatCard
-                                label="Requests"
-                                value="22.1k"
-                                detail="last 7 days"
-                                className="rounded-lg bg-slate-50 p-4"
-                            />
-                            <StatCard
-                                label="Success"
-                                value="99.9%"
-                                detail="healthy"
-                                className="rounded-lg bg-slate-50 p-4"
-                            />
-                            <StatCard
-                                label="Latency"
-                                value="1.2s"
-                                detail="median"
-                                className="rounded-lg bg-slate-50 p-4"
-                            />
-                        </div>
-                    </QuietPanel>
-                </div>
-            </section>
-        </>
-    );
-}
-
-function DashboardLink() {
-    const { enterUrl } = useAuthActions();
-    return (
-        <ExternalLinkButton theme={APP_THEME} href={enterUrl}>
-            Dashboard
-        </ExternalLinkButton>
-    );
-}
-
-function AccountComposition() {
-    const { enterUrl } = useAuthActions();
-
-    return (
-        <QuietPanel className="flex flex-col gap-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h3 className="font-bold">Auth and account menu</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                        Live SDK wrappers plus a compact signed-in preview.
-                    </p>
-                </div>
-                <AppUserMenu dashboardHref={enterUrl} />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Live state
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <WhenLoggedOut>
-                            <LoginButton theme={APP_THEME}>
-                                Log in with Pollinations
-                            </LoginButton>
-                        </WhenLoggedOut>
-                        <WhenLoggedIn>
-                            <DashboardLink />
-                            <LogoutButton theme={APP_THEME} intent="danger">
-                                Log out
-                            </LogoutButton>
-                        </WhenLoggedIn>
-                    </div>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Signed-in shape
-                    </p>
-                    <div className="flex items-center gap-3">
-                        <UserAvatar size="md" />
-                        <div className="min-w-0">
-                            <WhenLoggedIn>
-                                <UserName className="block truncate font-semibold" />
-                                <UserEmail className="block truncate text-sm text-slate-500" />
-                            </WhenLoggedIn>
-                            <WhenLoggedOut>
-                                <p className="font-semibold">
-                                    Pollinations user
-                                </p>
-                                <p className="text-sm text-slate-500">
-                                    user@example.com
-                                </p>
-                            </WhenLoggedOut>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </QuietPanel>
-    );
-}
-
-function PromptComposerComposition() {
-    const { models, isLoading } = useModelCatalog();
-    const [category, setCategory] = useState<ModelSelectorCategory>("image");
-    const [selectedByCategory, setSelectedByCategory] = useState(
-        DEFAULT_MODEL_BY_CATEGORY,
-    );
-    const requestedModelId = selectedByCategory[category];
-    const selectedModelId =
-        selectedCatalogModel(models, category, requestedModelId)?.id ??
-        requestedModelId;
-    const selectorModels = models.map(toModelSelectorItem);
-
-    return (
-        <QuietPanel className="flex flex-col gap-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <h3 className="font-bold">Prompt composer</h3>
-                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
-                        A reusable composition for model selection, prompt
-                        input, settings, and generation action.
-                    </p>
-                </div>
-                <ModelSelector
-                    models={selectorModels}
-                    category={category}
-                    value={selectedModelId}
-                    isLoading={isLoading}
-                    onChange={(modelId) =>
-                        setSelectedByCategory((current) => ({
-                            ...current,
-                            [category]: modelId,
-                        }))
-                    }
-                />
-            </div>
-
-            <ButtonGroup aria-label="Composer media type">
-                {PROMPT_COMPOSER_CATEGORIES.map((item) => (
-                    <TabButton
-                        key={item}
-                        active={category === item}
-                        theme={
-                            MODEL_GROUPS.find((group) => group.id === item)
-                                ?.theme ?? APP_THEME
-                        }
-                        onClick={() => setCategory(item)}
+                <div className="grid gap-3">
+                    <PrimitiveExample
+                        name="ExternalLinkButton"
+                        description="Button-styled link for leaving the current app surface."
                     >
-                        {item}
-                    </TabButton>
-                ))}
-            </ButtonGroup>
-
-            <Textarea
-                rows={5}
-                placeholder="A precise, minimal interface for exploring model output"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                    <Chip theme="pink">reference image</Chip>
-                    <Chip theme="teal">16:9</Chip>
-                    <Chip theme="amber">seeded</Chip>
-                </div>
-                <Button theme={APP_THEME}>Generate</Button>
-            </div>
-        </QuietPanel>
-    );
-}
-
-function UsageComposition() {
-    return (
-        <QuietPanel className="flex flex-col gap-5">
-            <div>
-                <h3 className="font-bold">Wallet and access summary</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                    This is where auth, billing, access, and usage primitives
-                    become a useful product surface.
-                </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Balance
-                    </p>
-                    <WhenLoggedIn>
-                        <Balance className="mt-3" />
-                    </WhenLoggedIn>
-                    <WhenLoggedOut>
-                        <p className="mt-3 text-2xl font-bold">24.8 Pollen</p>
-                    </WhenLoggedOut>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Key
-                    </p>
-                    <WhenLoggedIn>
-                        <KeyPrefix className="mt-3" />
-                    </WhenLoggedIn>
-                    <WhenLoggedOut>
-                        <p className="mt-3 font-mono text-lg font-bold">
-                            sk_live...
-                        </p>
-                    </WhenLoggedOut>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Remaining
-                    </p>
-                    <WhenLoggedIn>
-                        <KeyBudget className="mt-3" />
-                    </WhenLoggedIn>
-                    <WhenLoggedOut>
-                        <p className="mt-3 text-2xl font-bold">183.4</p>
-                    </WhenLoggedOut>
-                </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Access
-                    </p>
-                    <WhenLoggedIn>
-                        <KeyModels />
-                    </WhenLoggedIn>
-                    <WhenLoggedOut>
                         <div className="flex flex-wrap gap-2">
-                            {["openai", "zimage", "flux", "veo"].map(
-                                (model) => (
-                                    <Chip key={model} size="sm">
-                                        {model}
-                                    </Chip>
-                                ),
-                            )}
+                            {CONTROL_SIZES.map((size) => (
+                                <ExternalLinkButton
+                                    key={size}
+                                    href="https://pollinations.ai"
+                                    theme={APP_THEME}
+                                    size={size}
+                                >
+                                    {size}
+                                </ExternalLinkButton>
+                            ))}
                         </div>
-                    </WhenLoggedOut>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Expires
-                    </p>
-                    <WhenLoggedIn>
-                        <KeyExpiry />
-                    </WhenLoggedIn>
-                    <WhenLoggedOut>
-                        <p className="text-sm text-slate-600">
-                            No expiration on this app key.
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="CopyButton"
+                        description="Clipboard helper with copied state and caller-owned visual styling."
+                    >
+                        <CopyButton
+                            value="pollinations"
+                            className={(copied) =>
+                                `rounded-full px-3 py-1.5 text-sm font-medium ${
+                                    copied
+                                        ? "bg-intent-success-bg-light text-intent-success-text"
+                                        : "bg-theme-bg-active text-theme-text-strong"
+                                }`
+                            }
+                        >
+                            {(copied) => (copied ? "Copied" : "Copy value")}
+                        </CopyButton>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="LinkCard"
+                        description="Clickable card composition for grouped navigation targets."
+                    >
+                        <LinkCard
+                            href="https://pollinations.ai"
+                            theme={APP_THEME}
+                        >
+                            <p className="font-semibold">Documentation</p>
+                            <p className="text-sm text-theme-text-soft">
+                                Open the public docs.
+                            </p>
+                        </LinkCard>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="NavItem"
+                        description="Themed pill for navigation and section lists."
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {NAV_ITEM_OPTIONS.map((item) => (
+                                <NavItem
+                                    key={item}
+                                    type="button"
+                                    active={activeNavItem === item}
+                                    theme={
+                                        item === "Billing" ? "teal" : APP_THEME
+                                    }
+                                    onClick={() => setActiveNavItem(item)}
+                                >
+                                    {item}
+                                </NavItem>
+                            ))}
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="MultiSelect"
+                        description="Compact multi-choice control for tags and filters."
+                    >
+                        <MultiSelect
+                            options={[
+                                { value: "text", label: "Text" },
+                                { value: "image", label: "Image" },
+                                { value: "video", label: "Video" },
+                                { value: "audio", label: "Audio" },
+                            ]}
+                            selected={selectedModalities}
+                            onChange={setSelectedModalities}
+                            label="Types"
+                            placeholder="All"
+                            theme={APP_THEME}
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="PeriodPicker"
+                        description="Preset time-window selector for dashboards and usage views."
+                    >
+                        <PeriodPicker
+                            value={period}
+                            onChange={setPeriod}
+                            theme={APP_THEME}
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Collapsible"
+                        description="Inline disclosure for optional nested content."
+                    >
+                        <Collapsible
+                            label={
+                                <span className="font-semibold">
+                                    Advanced settings
+                                </span>
+                            }
+                            expanded={collapsibleOpen}
+                            onToggle={() =>
+                                setCollapsibleOpen((current) => !current)
+                            }
+                            wrapperClassName="border-theme-border bg-theme-bg-pale"
+                        >
+                            <p className="text-sm text-theme-text-soft">
+                                Optional controls can live behind this row.
+                            </p>
+                        </Collapsible>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Alert"
+                        description="Inline feedback for informational, warning, and error states."
+                    >
+                        <Alert title="Synced">Settings are up to date.</Alert>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="StatCard"
+                        description="Labeled value display for dense metrics and facts."
+                    >
+                        <StatCard
+                            label="Requests"
+                            value="1,284"
+                            detail="last 24 hours"
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Section"
+                        description="Reusable page section wrapper with optional framed content and action slot."
+                    >
+                        <Section
+                            title="Section title"
+                            theme={APP_THEME}
+                            framed
+                            intro="Intro copy belongs to the section API."
+                            action={
+                                <Button size="sm" theme={APP_THEME}>
+                                    Action
+                                </Button>
+                            }
+                        >
+                            <Text size="sm" tone="soft">
+                                Framed section content.
+                            </Text>
+                        </Section>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="InfoTip"
+                        description="Small information badge backed by the tooltip primitive."
+                    >
+                        <p className="inline-flex items-center text-sm text-theme-text-soft">
+                            Request cost
+                            <InfoTip text="Costs vary by selected model." />
                         </p>
-                    </WhenLoggedOut>
-                </div>
-            </div>
-        </QuietPanel>
-    );
-}
+                    </PrimitiveExample>
 
-const COMPOSITION_SNIPPET = `import "@pollinations/ui/styles.css";
-import { fetchModelCatalog } from "@pollinations/sdk";
-import { PolliProvider } from "@pollinations/sdk/react";
-import { ModelSelector } from "@pollinations/ui/models";
-import { LoginButton, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
-
-const catalog = await fetchModelCatalog();
-const models = catalog.models.map((model) => ({
-    id: model.id,
-    name: model.name,
-    description: model.description,
-    category: model.category,
-    paidOnly: model.paid_only,
-}));
-
-export function App() {
-    return (
-        <PolliProvider appKey="pk_your_key" permissions={["profile"]}>
-            <WhenLoggedOut>
-                <LoginButton>Authorize app</LoginButton>
-            </WhenLoggedOut>
-            <ModelSelector
-                models={models}
-                category="image"
-                value={model}
-                onChange={setModel}
-            />
-        </PolliProvider>
-    );
-}`;
-
-function CompositionsPage() {
-    return (
-        <>
-            <PageIntro eyebrow="Product Patterns" title="Compositions">
-                Compositions show how primitives, models, auth, and wallet
-                pieces combine into real application modules. React is a code
-                path inside these modules, not a separate content silo.
-            </PageIntro>
-
-            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
-                <div className="flex min-w-0 flex-col gap-5">
-                    <AccountComposition />
-                    <PromptComposerComposition />
-                    <UsageComposition />
-                </div>
-                <div className="flex min-w-0 flex-col gap-5">
-                    <CodePanel
-                        title="React composition"
-                        caption="React usage inside the composition."
-                        code={COMPOSITION_SNIPPET}
-                    />
-                    <QuietPanel className="flex flex-col gap-3">
-                        <h3 className="font-bold">Composition Checklist</h3>
-                        <Markdown className="text-sm text-slate-600">
-                            {[
-                                "- Uses package primitives for common controls",
-                                "- Shows model selection before generation",
-                                "- Keeps account state close to spend/access UI",
-                                "- Offers copyable React and SDK code where useful",
-                            ].join("\n")}
+                    <PrimitiveExample
+                        name="Markdown"
+                        description="Compact markdown rendering for cards and snippets."
+                    >
+                        <Markdown className="text-sm text-theme-text-soft">
+                            {
+                                '**Generation note**\n\n- Use `model: "openai"` for text\n- Add **image input** when available\n- See [API docs](https://pollinations.ai)'
+                            }
                         </Markdown>
-                    </QuietPanel>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="Prose"
+                        description="Document-style markdown rendering for longer content."
+                    >
+                        <Prose className="text-sm">
+                            {"### Heading\nParagraph text with **emphasis**."}
+                        </Prose>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="CodeBlock"
+                        description="Themed code surface; copy actions stay separate."
+                    >
+                        <CodeBlock
+                            code={
+                                'await generateText("Hello", { model: "openai" });'
+                            }
+                            theme={APP_THEME}
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="FileUpload"
+                        description="File import recipe with validation, rejected file feedback, and remove actions."
+                    >
+                        <FileUpload
+                            value={files}
+                            onChange={setFiles}
+                            maxFiles={2}
+                            theme={APP_THEME}
+                        />
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="MediaPlaceholder"
+                        description="Empty output state for generated image, video, or audio surfaces."
+                    >
+                        <MediaPlaceholder
+                            icon={<ImageIcon className="h-5 w-5" />}
+                            label="Output preview"
+                            detail="Generated media appears here."
+                        />
+                    </PrimitiveExample>
                 </div>
             </section>
         </>
@@ -1302,7 +1336,7 @@ function DebugShowcase({
     return (
         <div
             data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7fbf5]"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-theme-bg-subtle"
         >
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <Suspense fallback={null}>

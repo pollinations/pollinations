@@ -13,6 +13,7 @@ const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export interface ModelCatalogItem {
     id: string;
     name: string;
+    title: string;
     category: ModelCategory;
     brand?: string;
     description?: string;
@@ -66,6 +67,7 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     return {
         id,
         name: model.name,
+        title: model.title,
         category: model.category,
         brand: model.brand,
         description: model.description,

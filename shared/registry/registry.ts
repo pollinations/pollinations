@@ -112,8 +112,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
-    maxReferenceImages?: number; // Models with image input: effective accepted reference images
-    maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    maxReferenceImages?: number; // Image/video generation models: max reference images accepted for image-to-image/edit (omit on non-generation models, e.g. vision/embedding)
+    maxReferenceVideos?: number; // Video generation models: max reference videos accepted for video-to-video (omit on non-generation models)
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

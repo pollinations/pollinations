@@ -813,6 +813,7 @@ export type VideoCapability =
 export interface ModelInfo {
     id?: string;
     name: string;
+    title: string;
     category?: ModelCategory;
     brand?: string;
     description?: string;

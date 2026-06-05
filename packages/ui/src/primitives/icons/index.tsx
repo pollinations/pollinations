@@ -127,6 +127,16 @@ export function ImageIcon(props: IconProps) {
     );
 }
 
+export function AudioIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+        </svg>
+    );
+}
+
 export function LockIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -159,6 +169,14 @@ export function MenuIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+    );
+}
+
+export function PlusIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 5v14M5 12h14" />
         </svg>
     );
 }

@@ -10,6 +10,13 @@
         "title": "Pollinations React",
         "description": "Drop-in wallet, hooks, and primitives for Pollinations apps"
     },
+    "playground": {
+        "subdomain": "playground",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "Pollinations Playground",
+        "description": "Generate images, text, audio and video with Pollinations AI"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": "npm run build",

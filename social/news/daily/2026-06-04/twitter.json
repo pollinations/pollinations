@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-04",
+  "period_start": "2026-06-04",
+  "period_end": "2026-06-04",
+  "generated_at": "2026-06-05T07:25:14.248122+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-04/images/twitter.jpg"
+    }
+  ],
+  "text": "sdk now has a model catalog helper. ui design system got an upgrade (alphas for both). also the klein model host vanished into the ether today, so we pointed it at a new runpod pod. it's back online."
+}

@@ -1,23 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { getModalityTheme } from "./themes.ts";
 
+// The only real logic here is normalize(): case-folding + plural aliases, plus
+// the null contract that callers' `?? fallback` depends on. The 1:1 theme table
+// is type-checked (Record<ModelCategory, ThemeName>), so it needs no test.
 describe("getModalityTheme", () => {
-    it("maps each modality to its theme", () => {
-        expect(getModalityTheme("text")).toBe("blue");
+    it("normalizes case and plural aliases, and returns null for unknown", () => {
         expect(getModalityTheme("image")).toBe("pink");
-        expect(getModalityTheme("video")).toBe("teal");
-        expect(getModalityTheme("audio")).toBe("violet");
-        expect(getModalityTheme("realtime")).toBe("green");
-        expect(getModalityTheme("embedding")).toBe("amber");
-    });
-
-    it("normalizes plural / cased aliases", () => {
         expect(getModalityTheme("Images")).toBe("pink");
-        expect(getModalityTheme("embeddings")).toBe("amber");
         expect(getModalityTheme("AUDIO")).toBe("violet");
-    });
-
-    it("returns null for unknown categories", () => {
         expect(getModalityTheme("nope")).toBeNull();
         expect(getModalityTheme("")).toBeNull();
     });

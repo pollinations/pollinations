@@ -11,6 +11,8 @@ on:
     branches: [main]
     paths:
       - 'apps/**'
+      - 'packages/sdk/**'
+      - 'packages/ui/**'
 
 jobs:
   deploy:
@@ -33,9 +35,32 @@ jobs:
             CANDIDATES="${{ github.event.inputs.app_name }}"
           else
             git fetch origin main --depth=2
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^apps/[^/]*/' || \
-                      git diff --name-only origin/main~1 HEAD | grep '^apps/[^/]*/')
-            CANDIDATES=$(echo "$CHANGED" | sed 's|^apps/\([^/]*\)/.*|\1|' | sort -u)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || \
+                      git diff --name-only origin/main~1 HEAD)
+            APP_CANDIDATES=$(echo "$CHANGED" | grep '^apps/[^/]*/' | sed 's|^apps/\([^/]*\)/.*|\1|' || true)
+            PACKAGE_CANDIDATES=$(CHANGED="$CHANGED" node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const changed = (process.env.CHANGED || "").split(/\n+/).filter(Boolean);
+            const changedPackages = new Set();
+            if (changed.some((file) => file.startsWith("packages/sdk/"))) changedPackages.add("@pollinations/sdk");
+            if (changed.some((file) => file.startsWith("packages/ui/"))) changedPackages.add("@pollinations/ui");
+            if (changedPackages.size === 0) process.exit(0);
+            const apps = JSON.parse(fs.readFileSync("apps/apps.json", "utf8"));
+            for (const app of Object.keys(apps).filter((name) => name !== "_defaults").sort()) {
+              const packagePath = path.join("apps", app, "package.json");
+              if (!fs.existsSync(packagePath)) continue;
+              const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+              const dependencies = {
+                ...pkg.dependencies,
+                ...pkg.devDependencies,
+                ...pkg.peerDependencies,
+                ...pkg.optionalDependencies,
+              };
+              if ([...changedPackages].some((packageName) => dependencies[packageName])) console.log(app);
+            }
+            ')
+            CANDIDATES=$(printf "%s\n%s\n" "$APP_CANDIDATES" "$PACKAGE_CANDIDATES" | sort -u)
           fi
           
           # Keep only apps registered in apps.json (source of truth)

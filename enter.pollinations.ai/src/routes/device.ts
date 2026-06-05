@@ -42,9 +42,7 @@ async function requireDeviceApiKey(opts: {
     db: ReturnType<typeof drizzle<typeof schema>>;
     authClient: {
         api: {
-            verifyApiKey: (args: {
-                body: { key: string };
-            }) => Promise<{
+            verifyApiKey: (args: { body: { key: string } }) => Promise<{
                 valid: boolean;
                 key?: { id?: string | null } | null;
             }>;

@@ -175,6 +175,16 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                         aria-hidden="true"
                                     />
                                 ) : null}
+                                <span className="piece-label">
+                                    <span className="piece-label-name">
+                                        {game.nextPiece.name}
+                                    </span>
+                                    {game.nextPiece.pending ? (
+                                        <span className="piece-label-status">
+                                            Generating
+                                        </span>
+                                    ) : null}
+                                </span>
                             </div>
                             {game.pieces.map((piece) => (
                                 <button

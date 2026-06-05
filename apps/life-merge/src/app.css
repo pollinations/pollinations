@@ -314,9 +314,19 @@ select {
  * Pieces near the top would have their label clipped by the board's
  * overflow:hidden — flip the label below the token instead.
  */
-.life-piece.is-high .piece-label {
+.life-piece.is-high .piece-label,
+.drop-preview .piece-label {
     top: calc(100% + 9px);
     bottom: auto;
+}
+
+/*
+ * The drop preview sits at the top and is dimmed; keep its label crisp,
+ * upright, and above the dashed token so you can read what you're aiming.
+ */
+.drop-preview .piece-label {
+    opacity: 1;
+    transform: translateX(-50%);
 }
 
 .piece-label-name {

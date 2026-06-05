@@ -789,13 +789,18 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
-export type ModelCategory =
-    | "text"
-    | "image"
-    | "audio"
-    | "video"
-    | "embedding"
-    | "realtime";
+/** All model categories, in catalog display order. Single source of truth. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =

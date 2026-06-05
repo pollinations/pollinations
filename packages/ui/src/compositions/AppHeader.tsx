@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useEffect, useState } from "react";
 import logoWordmarkUrl from "../assets/logo-wordmark.svg";
 import { cn } from "../lib/cn.ts";
@@ -17,9 +17,17 @@ export type AppHeaderProps = {
     navClassName?: string;
 };
 
-const brandWordmarkMask = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+const brandWordmarkMaskUrl = `url('${logoWordmarkUrl}')`;
+
+const brandWordmarkMask: CSSProperties = {
+    WebkitMaskImage: brandWordmarkMaskUrl,
+    WebkitMaskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskImage: brandWordmarkMaskUrl,
+    maskPosition: "center",
+    maskRepeat: "no-repeat",
+    maskSize: "contain",
 };
 
 function scrollTopFor(target: HTMLElement | Window) {

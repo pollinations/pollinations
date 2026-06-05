@@ -718,12 +718,10 @@ function App() {
                                                             <span className="font-medium text-theme-text-strong">
                                                                 {model.name}
                                                             </span>
-                                                            {model.description && (
+                                                            {model.title && (
                                                                 <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
                                                                     {
-                                                                        model.description.split(
-                                                                            " - ",
-                                                                        )[0]
+                                                                        model.title
                                                                     }
                                                                 </span>
                                                             )}

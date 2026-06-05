@@ -52,20 +52,15 @@ export const getModelDescription = (modelName: string): string | undefined => {
 
 export const getModelDisplayName = (modelName: string): string | undefined => {
     const service = getModelDefinition(modelName as ModelName);
-    const description = service?.description;
-    if (!description) return undefined;
-    return description.split(" - ")[0];
+    return service?.title;
 };
 
 export const getModelDescriptionWithoutName = (
     modelName: string,
 ): string | undefined => {
+    // Descriptions are already name-free in the registry.
     const service = getModelDefinition(modelName as ModelName);
-    const description = service?.description;
-    if (!description) return undefined;
-    const parts = description.split(" - ");
-    if (parts.length < 2) return undefined;
-    return parts.slice(1).join(" - ").trim() || undefined;
+    return service?.description;
 };
 
 export const getModelBrandLogoPath = (

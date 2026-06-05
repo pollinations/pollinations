@@ -195,7 +195,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                             theme={theme ?? undefined}
                             variant="card-themed"
                             className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 border border-theme-border sm:min-h-48",
+                                "flex h-full min-h-24 flex-col gap-3 sm:min-h-48",
                                 isActive && "ring-2 ring-theme-bg-active",
                             )}
                         >

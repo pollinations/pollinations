@@ -46,6 +46,7 @@ beforeEach(() => {
                         name: "still",
                         aliases: ["stable"],
                         category: "image",
+                        brand: "Stability",
                         pricing: {
                             currency: "pollen",
                             completionImageTokens: "0.04",
@@ -105,6 +106,7 @@ describe("fetchModelCatalog", () => {
             id: "still",
             name: "still",
             category: "image",
+            brand: "Stability",
             aliases: ["stable"],
             inputModalities: ["text"],
             outputModalities: ["image"],

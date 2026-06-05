@@ -814,6 +814,7 @@ export interface ModelInfo {
     id?: string;
     name: string;
     category?: ModelCategory;
+    brand?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;

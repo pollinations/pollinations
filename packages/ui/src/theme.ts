@@ -1,7 +1,7 @@
 import paletteData from "./theme-palette.json";
 
 /**
- * The six chrome themes exposed by the CSS-var cascade. Apply via
+ * The seven chrome themes exposed by the CSS-var cascade. Apply via
  * `data-theme="<name>"` on any ancestor — primitives and `--polli-*`
  * tokens in that subtree restyle accordingly.
  */
@@ -9,6 +9,7 @@ export const themes = [
     "amber",
     "blue",
     "pink",
+    "coral",
     "teal",
     "violet",
     "emerald",

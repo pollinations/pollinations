@@ -211,7 +211,7 @@ function AppShell({
                     onSelectView={onSelectView}
                     scrollTargetRef={scrollTargetRef}
                 />
-                <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-5 py-8 sm:py-10">
+                <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 py-8 sm:px-6 sm:py-10">
                     {activeView === "primitives" ? (
                         <PrimitivesPage />
                     ) : activeView === "compositions" ? (

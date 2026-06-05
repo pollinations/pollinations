@@ -76,6 +76,21 @@
     --polli-color-scrollbar-thumb: oklch(0.718 0.202 349.761 / 0.7);
 }
 
+[data-theme="coral"] {
+    --polli-color-text-base:    oklch(0.408 0.123 38.172);
+    --polli-color-text-strong:  oklch(0.266 0.079 36.259);
+    --polli-color-text-soft:    oklch(0.553 0.195 38.402);
+    --polli-color-text-muted:   oklch(0.62 0.049 38.172);
+
+    --polli-color-border:       oklch(0.837 0.128 66.29);
+
+    --polli-color-bg-subtle:    oklch(0.98 0.016 73.684 / 0.7);
+    --polli-color-bg-active:    oklch(0.901 0.076 70.697);
+    --polli-color-bg-hover:     oklch(0.837 0.128 66.29);
+    --polli-color-bg-pale:      oklch(0.954 0.038 75.164);
+    --polli-color-scrollbar-thumb: oklch(0.75 0.183 55.934 / 0.7);
+}
+
 [data-theme="teal"] {
     --polli-color-text-base:    oklch(0.386 0.063 188.416);
     --polli-color-text-strong:  oklch(0.277 0.046 192.524);

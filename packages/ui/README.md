@@ -157,7 +157,7 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 
 ## Theming
 
-Set `data-theme="amber" | "blue" | "pink" | "teal" | "violet" | "emerald"`
+Set `data-theme="amber" | "blue" | "pink" | "coral" | "teal" | "violet" | "emerald"`
 on any ancestor (or per-component via the `theme` prop on Button-family
 components) to switch the cascade. Theme variables are defined in
 `styles.css` — import it once at your app entry.

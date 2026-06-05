@@ -8,7 +8,9 @@ describe("getModalityTheme", () => {
     it("normalizes case and plural aliases, and returns null for unknown", () => {
         expect(getModalityTheme("image")).toBe("pink");
         expect(getModalityTheme("Images")).toBe("pink");
-        expect(getModalityTheme("AUDIO")).toBe("violet");
+        expect(getModalityTheme("AUDIO")).toBe("amber");
+        expect(getModalityTheme("realtime")).toBe("coral");
+        expect(getModalityTheme("Embeddings")).toBe("violet");
         expect(getModalityTheme("nope")).toBeNull();
         expect(getModalityTheme("")).toBeNull();
     });

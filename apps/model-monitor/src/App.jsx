@@ -37,6 +37,7 @@ const MODEL_TYPES = [
     { key: "image", title: "Image" },
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
+    { key: "realtime", title: "Realtime" },
     { key: "embedding", title: "Embedding" },
 ];
 
@@ -165,7 +166,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
     };
 
     return (
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-5">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-3">
             {MODEL_TYPES.map(({ key, title }) => {
                 const group = models.filter((model) => model.type === key);
                 if (group.length === 0) return null;
@@ -182,7 +183,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                         type="button"
                         onClick={() => onTypeFilter(isActive ? null : key)}
                         className={cn(
-                            "min-w-0 h-full w-full rounded-xl text-left transition",
+                            "group min-w-0 h-full w-full rounded-xl text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-bg-active",
                             isDimmed && "opacity-40",
                         )}
                         aria-pressed={isActive}
@@ -191,35 +192,28 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                             theme={theme ?? undefined}
                             variant="card-themed"
                             className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 sm:min-h-48",
+                                "flex h-full min-h-28 flex-col gap-3 transition-colors group-hover:bg-theme-bg-hover sm:min-h-32",
                                 isActive && "ring-2 ring-theme-bg-active",
                             )}
                         >
-                            <div className="flex min-w-0 items-start justify-between gap-3">
-                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-col sm:items-start">
-                                    <h2 className="min-w-0 truncate font-serif text-2xl font-black leading-none text-theme-text-strong">
-                                        {title}
-                                    </h2>
-                                    <Chip intent="neutral" size="sm">
-                                        {stats.totalModels} models
-                                    </Chip>
-                                </div>
-                                <div className="shrink-0 text-right sm:hidden">
-                                    <div className="text-2xl font-bold leading-none tabular-nums text-theme-text-strong">
+                            <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2">
+                                <h2 className="shrink-0 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
+                                    {title}
+                                </h2>
+                                <Chip
+                                    intent="neutral"
+                                    size="sm"
+                                    className="shrink-0"
+                                >
+                                    {stats.totalModels} models
+                                </Chip>
+                                <div className="flex min-w-max shrink-0 items-baseline gap-1.5 text-theme-text-strong">
+                                    <span className="text-3xl font-bold leading-none tabular-nums">
                                         {stats.successRate.toFixed(1)}%
-                                    </div>
-                                    <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
+                                    </span>
+                                    <span className="text-xs font-bold tracking-wide">
                                         success
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block">
-                                <div className="text-4xl font-bold leading-none tabular-nums text-theme-text-strong md:text-3xl lg:text-4xl">
-                                    {stats.successRate.toFixed(1)}%
-                                </div>
-                                <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
-                                    success
+                                    </span>
                                 </div>
                             </div>
 
@@ -495,7 +489,7 @@ function App() {
                 </AppHeader>
                 <main
                     className={cn(
-                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",
+                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
                         adminMode ? "max-w-6xl" : "max-w-5xl",
                     )}
                 >

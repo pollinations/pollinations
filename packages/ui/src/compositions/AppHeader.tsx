@@ -90,7 +90,7 @@ export function AppHeader({
     return (
         <header
             className={cn(
-                "polli:sticky polli:top-0 polli:z-30 polli:border-b polli:border-theme-border polli:bg-surface-white polli:px-5 polli:py-4 polli:backdrop-blur",
+                "polli:sticky polli:top-0 polli:z-30 polli:border-b polli:border-theme-border polli:bg-surface-white polli:py-4 polli:backdrop-blur",
                 "polli:transition-transform polli:duration-200 polli:ease-out",
                 autoHide && "polli:will-change-transform",
                 hidden ? "polli:-translate-y-full" : "polli:translate-y-0",
@@ -100,7 +100,7 @@ export function AppHeader({
         >
             <div
                 className={cn(
-                    "polli:mx-auto polli:flex polli:w-full polli:max-w-5xl polli:flex-col polli:gap-4 polli:sm:flex-row polli:sm:items-center polli:sm:justify-between",
+                    "polli:mx-auto polli:flex polli:w-full polli:max-w-5xl polli:flex-col polli:gap-4 polli:px-4 polli:sm:flex-row polli:sm:items-center polli:sm:justify-between polli:sm:px-6",
                     innerClassName,
                 )}
             >

@@ -1,8 +1,8 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
+import { Button } from "../primitives/Button.tsx";
+import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 import type { ThemeName } from "../theme.ts";
-import { Button } from "./Button.tsx";
-import { ExternalLinkIcon } from "./icons/index.tsx";
 
 export type ExternalLinkButtonProps = {
     theme: ThemeName;

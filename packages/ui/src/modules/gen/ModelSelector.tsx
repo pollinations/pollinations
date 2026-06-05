@@ -1,3 +1,4 @@
+import type { ModelCategory } from "@pollinations/sdk";
 import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
@@ -5,14 +6,13 @@ import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
-import type { ThemeName } from "../../theme.ts";
-import { getModalityColors } from "../modality/colors.ts";
+import { modalityTheme } from "./themes.ts";
 
-export type ModelSelectorCategory = "image" | "video" | "text" | "audio";
+export type ModelSelectorCategory = ModelCategory;
 
 export type ModelSelectorItem = {
     id: string;
-    name?: string;
+    name: string;
     description?: string;
     category: ModelSelectorCategory;
     paidOnly?: boolean;
@@ -22,37 +22,32 @@ export type ModelSelectorProps = {
     models: readonly ModelSelectorItem[];
     category: ModelSelectorCategory;
     value: string;
-    allowedModelIds?: ReadonlySet<string>;
-    isLoggedIn?: boolean;
     isLoading?: boolean;
     onChange: (modelId: string) => void;
 };
 
-const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
+export const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     image: "Image",
     video: "Video",
     text: "Text",
     audio: "Audio",
+    embedding: "Embeddings",
+    realtime: "Realtime",
 };
 
-function displayModelName(model: ModelSelectorItem): string {
-    return model.description?.split(" - ")[0] || model.name || model.id;
+/** Human-readable label for a model category, e.g. "embedding" -> "Embeddings". */
+export function categoryLabel(category: ModelSelectorCategory): string {
+    return CATEGORY_LABELS[category];
 }
 
-function modalityTheme(category: ModelSelectorCategory): ThemeName {
-    const colors = getModalityColors(category) ?? getModalityColors("text");
-    if (!colors) {
-        throw new Error(`Missing modality colors for ${category}`);
-    }
-    return colors.theme;
+function displayModelName(model: ModelSelectorItem): string {
+    return model.description?.split(" - ")[0] || model.name;
 }
 
 export function ModelSelector({
     models,
     category,
     value,
-    allowedModelIds,
-    isLoggedIn = false,
     isLoading = false,
     onChange,
 }: ModelSelectorProps) {
@@ -95,10 +90,6 @@ export function ModelSelector({
                     >
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
-                                const isAllowed =
-                                    !isLoggedIn ||
-                                    !allowedModelIds ||
-                                    allowedModelIds.has(model.id);
                                 const isActive = value === model.id;
                                 return (
                                     <TabButton
@@ -107,7 +98,6 @@ export function ModelSelector({
                                         theme={modalityTheme(model.category)}
                                         size="sm"
                                         variant="ghost"
-                                        disabled={!isAllowed}
                                         className="polli:w-full polli:justify-between polli:text-left"
                                         onClick={() => {
                                             onChange(model.id);

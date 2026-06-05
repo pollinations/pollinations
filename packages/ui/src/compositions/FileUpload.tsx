@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
+import { IconButton } from "../primitives/IconButton.tsx";
+import { ImageIcon, XIcon } from "../primitives/icons/index.tsx";
 import type { ThemeName } from "../theme.ts";
-import { IconButton } from "./IconButton.tsx";
-import { ImageIcon, XIcon } from "./icons/index.tsx";
 
 const PREVIEWABLE_IMAGE_TYPES = new Set([
     "image/gif",

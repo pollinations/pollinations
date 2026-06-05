@@ -1,0 +1,34 @@
+{
+  "pr_number": 11645,
+  "title": "fix: update playground app key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11645",
+  "merged_at": "2026-06-05T22:10:34Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Updates the standalone Playground app publishable key to `pk_YKOUHB80IUJYfwCB`.\n\nChecks:\n- `PATH=/opt/homebrew/bin:$PATH npx biome check --write apps/playground/src/config.ts`\n- `PATH=/opt/homebrew/bin:$PATH npm run build --prefix apps/playground`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New keys for the playground",
+    "blurb": "Swapped out the publishable key for the standalone Playground app. Just routine maintenance to keep the sand in the sandbox.",
+    "summary": "Updated the publishable key for the standalone Playground app to pk_YKOUHB80IUJYfwCB.",
+    "impact": "Ensures the Playground app continues to authenticate and function correctly without interruption.",
+    "keywords": [
+      "playground",
+      "config",
+      "authentication",
+      "keys"
+    ],
+    "visual_concept": "Polly the bee holding a shiny new golden key next to a digital sandbox or playground equipment made of glowing code blocks.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, holding a glowing golden key next to a digital sandbox made of lime green (#ecf874) code blocks. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11645.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, holding a glowing golden key next to a digital sandbox made of lime green (#ecf874) code blocks. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-05T22:11:50.158182+00:00"
+}

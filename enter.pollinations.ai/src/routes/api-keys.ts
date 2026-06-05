@@ -55,6 +55,17 @@ function applyPermissionField(
     }
 }
 
+function stripAccountPermissions(
+    permissions: Record<string, string[]>,
+): Record<string, string[]> {
+    const { account: _account, ...rest } = permissions;
+    return rest;
+}
+
+function isPublishableKeyMetadata(rawMetadata: string | null | undefined) {
+    return parseMetadata(rawMetadata).keyType === "publishable";
+}
+
 /**
  * Parse permissions JSON, returning null for empty objects or invalid JSON.
  */
@@ -318,16 +329,22 @@ export const apiKeysRoutes = new Hono<Env>()
             const existingPermissions = existingKey.permissions
                 ? JSON.parse(existingKey.permissions as string)
                 : {};
+            const isPublishableKey = isPublishableKeyMetadata(
+                existingKey.metadata,
+            );
 
             // Whitelist to known scopes (drops unknown / legacy names like "balance").
             // Dashboard-only endpoint, so "keys" is allowed here.
-            const sanitizedAccountPerms =
-                accountPermissions === undefined
-                    ? undefined
-                    : sanitizeAuthorizeAccountPermissions(accountPermissions);
+            const sanitizedAccountPerms = isPublishableKey
+                ? null
+                : accountPermissions === undefined
+                  ? undefined
+                  : sanitizeAuthorizeAccountPermissions(accountPermissions);
 
             const updatedPermissions = buildUpdatedPermissions(
-                existingPermissions,
+                isPublishableKey
+                    ? stripAccountPermissions(existingPermissions)
+                    : existingPermissions,
                 allowedModels,
                 sanitizedAccountPerms,
             );

@@ -1,4 +1,7 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
@@ -93,5 +96,47 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("nextResetAt");
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
+    });
+
+    test("publishable key with stored profile scope does not return name or email", async ({
+        auth,
+        sessionToken,
+    }) => {
+        const createResult = await auth.apiKey.create({
+            name: "publishable-profile-scoped-key",
+            prefix: "pk",
+            metadata: { keyType: "publishable" },
+            fetchOptions: {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createResult.data) throw new Error("Failed to create key");
+        const db = drizzle(env.DB, { schema });
+        await db
+            .update(schema.apikey)
+            .set({
+                permissions: JSON.stringify({ account: ["profile"] }),
+            })
+            .where(eq(schema.apikey.id, createResult.data.id));
+
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/profile",
+            {
+                headers: {
+                    Authorization: `Bearer ${createResult.data.key}`,
+                },
+            },
+        );
+
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as Record<string, unknown>;
+        expect(data).toHaveProperty("githubUsername");
+        expect(data).toHaveProperty("image");
+        expect(data).toHaveProperty("tier");
+        expect(data).toHaveProperty("nextResetAt");
+        expect(data).not.toHaveProperty("name");
+        expect(data).not.toHaveProperty("email");
     });
 });

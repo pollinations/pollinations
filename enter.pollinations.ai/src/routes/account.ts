@@ -101,6 +101,23 @@ function requireKeysPermission(apiKey?: {
     }
 }
 
+function hasSecretKeyAccountPermission(
+    apiKey:
+        | {
+              permissions?: Record<string, string[]>;
+              metadata?: Record<string, unknown>;
+          }
+        | undefined,
+    permission: string,
+): boolean {
+    if (!apiKey) return true;
+    const keyType = (apiKey.metadata?.keyType as string) || "secret";
+    return (
+        keyType === "secret" &&
+        !!apiKey.permissions?.account?.includes(permission)
+    );
+}
+
 // Schema for creating an API key via the API
 const CreateKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -810,8 +827,10 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
-            const includeProfilePII =
-                !apiKey || !!apiKey.permissions?.account?.includes("profile");
+            const includeProfilePII = hasSecretKeyAccountPermission(
+                apiKey,
+                "profile",
+            );
 
             const db = drizzle(c.env.DB);
             const users = await db
@@ -877,7 +896,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // Beyond that, reading account balance requires the `usage` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            if (!hasSecretKeyAccountPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
@@ -935,7 +954,7 @@ export const accountRoutes = new Hono<Env>()
             const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            if (!hasSecretKeyAccountPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message: "API key does not have 'account:usage' permission",
                 });
@@ -1015,7 +1034,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            if (!hasSecretKeyAccountPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message: "API key does not have 'account:usage' permission",
                 });
@@ -1164,7 +1183,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            if (!hasSecretKeyAccountPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message: "API key does not have 'account:usage' permission",
                 });

@@ -8,6 +8,7 @@
     "packages/sdk",
     "packages/ui",
     "apps/react",
+    "apps/life-merge",
     "tools/icons"
   ],
   "scripts": {

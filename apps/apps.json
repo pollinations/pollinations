@@ -10,6 +10,13 @@
         "title": "Pollinations React",
         "description": "Drop-in wallet, hooks, and primitives for Pollinations apps"
     },
+    "life-merge": {
+        "subdomain": "life-merge",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "Life Merge",
+        "description": "A physics merge game about generated biological categories"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": null,

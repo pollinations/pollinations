@@ -136,7 +136,8 @@ export async function generateSpecimen(args: {
                         "Good names: moss frog, copper wire, reef shell, moon sensor.",
                         "Bad names: buddy sproutbug, glimmerkin, sugarwhirl, tiny blob.",
                         "The description must be one concise sentence with no fluff.",
-                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","imagePrompt":"the named object, centered circular game token matching the visual style, no text"}',
+                        "The imagePrompt must plainly describe the physical object itself (shape, material, key features) so it is recognizable — not a person, character, or mascot. Do not mention game tokens, icons, circles, or style; those are added separately.",
+                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
                     ].join("\n"),
                 },
             ],
@@ -178,16 +179,21 @@ export async function generateImageSpecimen(args: {
     style: LifeStylePreset;
     targetRung: LifeRung;
 }): Promise<Specimen> {
+    // Lead with the SUBJECT so the diffusion model anchors on the concept,
+    // not the style boilerplate. Without this the model defaults to a generic
+    // "game token / avatar" prior and renders a person pictogram for
+    // everything (e.g. wood, fiber, plywood all became little human figures).
+    const subject = args.specimen.imagePrompt || args.specimen.name;
     const imagePrompt = [
-        args.style.prompt,
-        args.specimen.imagePrompt,
-        args.specimen.name,
-        "circular game token",
-        "subject fills 94 percent of the circle",
-        "large centered subject",
-        "very tight crop",
-        "minimal empty border",
+        subject,
+        `a depiction of ${args.specimen.name}`,
+        "single inanimate object, the thing itself",
+        "no people, no human figure, no face, no character, no mascot",
+        "large centered subject filling the frame",
+        "very tight crop, minimal empty border",
         "no text",
+        // Style is a modifier on the subject, not the primary subject.
+        `rendered as ${args.style.prompt}`,
     ].join(", ");
 
     const imageParams = new URLSearchParams({

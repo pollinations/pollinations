@@ -1,0 +1,35 @@
+{
+  "pr_number": 11631,
+  "title": "feat(registry): add model titles while preserving descriptions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11631",
+  "merged_at": "2026-06-05T15:18:50Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds required `title` metadata to model registry entries and exposes it through model catalog surfaces.\n- Preserves existing title-prefixed `description` strings for backward compatibility; internal display helpers strip the prefix where needed.\n- Adds/exports `maxReferenceImages`, `maxReferenceVideos`, and video capability metadata for registry-driven UI limits.\n- Updates SDK/UI consumers to read `title`; SDK catalog entries require registry `title` instead of falling back to `name`.\n- Keeps Mistral routing on `mistral-small-2503`; follow-up verification is tracked in #11633.\n\nChecks:\n- `packages/sdk`: `npm test -- --run src/models.test.ts`, `npm run typecheck`\n- `gen.pollinations.ai`: `npm run typecheck`\n- Biome on touched files",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Name tags for the hive",
+    "blurb": "We've added proper titles and capability metadata to all our models in the registry. Now your favorite AI models have clean, readable names in the UI without breaking any existing descriptions.",
+    "summary": "Added a dedicated `title` field and capability metadata like `maxReferenceImages` and `maxReferenceVideos` to the model registry, updating the SDK and UI components to display clean model names.",
+    "impact": "Developers using the SDK and users browsing the UI will now see cleaner, properly formatted model titles and accurate capability limits for image and video references.",
+    "keywords": [
+      "registry",
+      "models",
+      "metadata",
+      "sdk",
+      "ui"
+    ],
+    "visual_concept": "Polly the bee acting as a librarian or archivist, putting clean new name tags on jars or books (representing models), with the Robot helping out by holding a clipboard.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny librarian's cardigan, carefully placing neat, glowing name tags onto a row of colorful glass jars on a wooden shelf. A chunky pixel robot with a CRT monitor head stands nearby holding a clipboard, its screen showing a lime green (#ecf874) checklist. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11631.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny librarian's cardigan, carefully placing neat, glowing name tags onto a row of colorful glass jars on a wooden shelf. A chunky pixel robot with a CRT monitor head stands nearby holding a clipboard, its screen showing a lime green (#ecf874) checklist. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-05T15:19:59.639722+00:00"
+}

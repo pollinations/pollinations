@@ -1,11 +1,12 @@
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { parseMetadata } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
@@ -35,6 +36,68 @@ async function requirePendingDevice(
         throw new HTTPException(400, { message: "Device code expired" });
     }
     return device;
+}
+
+async function requireDeviceApiKey(opts: {
+    db: ReturnType<typeof drizzle<typeof schema>>;
+    authClient: {
+        api: {
+            verifyApiKey: (args: {
+                body: { key: string };
+            }) => Promise<{
+                valid: boolean;
+                key?: { id?: string | null } | null;
+            }>;
+        };
+    };
+    keyId: string;
+    plaintextKey: string;
+    userId: string;
+    device: typeof schema.deviceCode.$inferSelect;
+}) {
+    const key = await opts.db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, opts.keyId),
+            eq(schema.apikey.userId, opts.userId),
+        ),
+    });
+    if (!key || key.enabled === false) {
+        throw new HTTPException(400, {
+            message: "Invalid API key for device approval",
+        });
+    }
+    if (key.expiresAt && key.expiresAt <= new Date()) {
+        throw new HTTPException(400, {
+            message: "Expired API key for device approval",
+        });
+    }
+    if (!key.start || !opts.plaintextKey.startsWith(key.start)) {
+        throw new HTTPException(400, {
+            message: "API key does not match key id",
+        });
+    }
+
+    const metadata = parseMetadata(key.metadata);
+    if (metadata.deviceUserCode !== opts.device.userCode) {
+        throw new HTTPException(400, {
+            message: "API key was not created for this device code",
+        });
+    }
+
+    if (opts.device.clientId?.startsWith("pk_")) {
+        const clientResult = await opts.authClient.api.verifyApiKey({
+            body: { key: opts.device.clientId },
+        });
+        if (
+            !clientResult.valid ||
+            !clientResult.key?.id ||
+            key.byopClientKeyId !== clientResult.key.id
+        ) {
+            throw new HTTPException(400, {
+                message: "API key client attribution does not match device",
+            });
+        }
+    }
 }
 
 /** Generate a cryptographically random alphanumeric string. */
@@ -147,6 +210,14 @@ export const deviceRoutes = new Hono<Env>()
 
             const db = drizzle(c.env.DB, { schema });
             const device = await requirePendingDevice(db, body.userCode);
+            await requireDeviceApiKey({
+                db,
+                authClient: c.var.auth.client,
+                keyId: body.apiKeyId,
+                plaintextKey: body.apiKey,
+                userId: user.id,
+                device,
+            });
 
             // KV store and D1 update are independent — run concurrently
             await Promise.all([

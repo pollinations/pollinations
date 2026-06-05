@@ -152,7 +152,8 @@ const CreateKeySchema = z.object({
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
-    const str = String(val);
+    const raw = String(val);
+    const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
         return `"${str.replace(/"/g, '""')}"`;
     }

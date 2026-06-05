@@ -8,6 +8,8 @@ const PACKAGE_PATHS = [
     ["packages/ui/", "@pollinations/ui"],
 ];
 
+const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..", "..");
+
 function readChangedFiles() {
     const args = process.argv.slice(2).filter(Boolean);
     if (args.length > 0) return args;
@@ -23,32 +25,51 @@ function readChangedFiles() {
     return [];
 }
 
-const changedFiles = readChangedFiles();
-const changedPackages = new Set(
-    PACKAGE_PATHS.filter(([prefix]) =>
-        changedFiles.some((file) => file.startsWith(prefix)),
-    ).map(([, packageName]) => packageName),
-);
+function detectPackageConsumers(changedFiles, repoRoot = DEFAULT_REPO_ROOT) {
+    const changedPackages = new Set(
+        PACKAGE_PATHS.filter(([prefix]) =>
+            changedFiles.some((file) => file.startsWith(prefix)),
+        ).map(([, packageName]) => packageName),
+    );
 
-if (changedPackages.size === 0) process.exit(0);
+    if (changedPackages.size === 0) return [];
 
-const apps = JSON.parse(fs.readFileSync("apps/apps.json", "utf8"));
+    const appsPath = path.join(repoRoot, "apps", "apps.json");
+    const apps = JSON.parse(fs.readFileSync(appsPath, "utf8"));
 
-for (const app of Object.keys(apps)
-    .filter((name) => name !== "_defaults")
-    .sort()) {
-    const packagePath = path.join("apps", app, "package.json");
-    if (!fs.existsSync(packagePath)) continue;
+    return Object.keys(apps)
+        .filter((name) => name !== "_defaults")
+        .sort()
+        .filter((app) => {
+            const packagePath = path.join(
+                repoRoot,
+                "apps",
+                app,
+                "package.json",
+            );
+            if (!fs.existsSync(packagePath)) return false;
 
-    const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-    const dependencies = {
-        ...pkg.dependencies,
-        ...pkg.devDependencies,
-        ...pkg.peerDependencies,
-        ...pkg.optionalDependencies,
-    };
+            const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+            const dependencies = {
+                ...pkg.dependencies,
+                ...pkg.devDependencies,
+                ...pkg.peerDependencies,
+                ...pkg.optionalDependencies,
+            };
 
-    if ([...changedPackages].some((packageName) => dependencies[packageName])) {
+            return [...changedPackages].some(
+                (packageName) => dependencies[packageName],
+            );
+        });
+}
+
+if (require.main === module) {
+    for (const app of detectPackageConsumers(
+        readChangedFiles(),
+        process.env.REPO_ROOT || DEFAULT_REPO_ROOT,
+    )) {
         console.log(app);
     }
 }
+
+module.exports = { detectPackageConsumers };

@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-04",
+  "period_start": "2026-06-04",
+  "period_end": "2026-06-04",
+  "title": "Fresh alpha releases for the SDK and UI libraries",
+  "summary": "New alpha releases for the SDK and UI libraries, plus a quick migration to get the Klein image model back online.\n\nWe pushed new alpha versions for the React ecosystem. The SDK now includes a fetchModelCatalog() helper to programmatically pull model metadata, alongside a new client subpath. The UI library gets a design system bump with fresh primitives for file uploads, markdown, and a unified model selector.\n\nA host outage knocked the FLUX.2-klein-4B model offline. We migrated it to a fresh A5000 instance on RunPod and updated the routing. The 5xx errors are gone and generation is stable again.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11610,
+      "date": "2026-06-04"
+    },
+    {
+      "number": 11611,
+      "date": "2026-06-04"
+    },
+    {
+      "number": 11618,
+      "date": "2026-06-04"
+    }
+  ],
+  "generated_at": "2026-06-05T07:25:14.248122+00:00"
+}

@@ -17,7 +17,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { getModalityTheme } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 

@@ -64,7 +64,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
-import { getModalityTheme } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import {
     formatPollen,
     PaidChip,

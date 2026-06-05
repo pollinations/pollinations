@@ -77,13 +77,12 @@ import {
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { WhenLoggedIn, WhenLoggedOut } from "@pollinations/ui/auth/sdk";
-import { modalityTheme } from "@pollinations/ui/modality";
 import {
     categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
-} from "@pollinations/ui/models";
+    modalityTheme,
+} from "@pollinations/ui/gen";
 import {
     type CSSProperties,
     lazy,
@@ -101,47 +100,6 @@ const APP_THEME: ThemeName = "amber";
 // Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
 // Unset falls back to the SDK default (production gen.pollinations.ai).
 const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;
-const MODULES_CODE_SNIPPET = `import { useState } from "react";
-import { PolliProvider, useModelCatalog } from "@pollinations/sdk/react";
-import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
-import { ModelSelector } from "@pollinations/ui/models";
-
-export function App() {
-  return (
-    <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
-      <Modules />
-    </PolliProvider>
-  );
-}
-
-function Modules() {
-  const [modelId, setModelId] = useState("");
-  const { models, allowedModelIds, allowedCategories, isLoggedIn, isLoading } =
-    useModelCatalog();
-
-  const visibleModels = isLoggedIn
-    ? models.filter((model) => allowedModelIds.has(model.id))
-    : models;
-  const category = allowedCategories[0];
-  const selectedModel =
-    visibleModels.find((model) => model.id === modelId) ??
-    visibleModels.find((model) => model.category === category);
-
-  if (!category) return null;
-
-  return (
-    <>
-      <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
-      <ModelSelector
-        models={visibleModels}
-        category={category}
-        value={selectedModel?.id ?? ""}
-        isLoading={isLoading}
-        onChange={setModelId}
-      />
-    </>
-  );
-}`;
 
 const DesignShowcase = lazy(() =>
     import("./showcase/DesignShowcase").then((module) => ({
@@ -280,12 +238,14 @@ function AppShell({
     );
 }
 
-function PageTitle({ children }: { children: ReactNode }) {
+// Short intro at the top of each page. No title — the header tabs already say
+// which layer you're on; this just explains what that layer is.
+function PageIntro({ children }: { children: ReactNode }) {
     return (
-        <section className="border-b border-theme-border pb-5">
-            <h1 className="font-serif text-3xl font-black tracking-tight text-theme-text-strong">
+        <section className="border-b border-theme-border pb-7">
+            <p className="max-w-3xl text-base leading-7 text-theme-text-base">
                 {children}
-            </h1>
+            </p>
         </section>
     );
 }
@@ -488,87 +448,132 @@ function ModulesPage() {
 
     return (
         <>
-            <section className="border-b border-theme-border pb-7">
-                <p className="max-w-3xl text-base leading-7 text-theme-text-base">
-                    A compact pass through the SDK-backed UI modules:
-                    authenticate, inspect access, choose a modality and model,
-                    then prepare a generation.
-                </p>
-            </section>
+            <PageIntro>
+                Modules are domain features wired to the SDK and live data —
+                authentication, model selection, wallet — assembled from
+                primitives and compositions.
+            </PageIntro>
 
             <section>
-                <SectionHeader title="Auth + Wallet" />
+                <SectionHeader title="Auth" />
                 <Surface
                     variant="panel"
-                    className="flex flex-col items-start gap-4"
+                    className="flex flex-col items-start gap-5"
                 >
                     <AppUserMenu dashboardHref={enterUrl} />
-                    <div className="w-full">
-                        <WhenLoggedOut>
-                            <Chip>Authorize first</Chip>
-                        </WhenLoggedOut>
-                        <WhenLoggedIn>
-                            <div className="grid w-full gap-2 lg:grid-cols-2">
-                                <AccountSummaryItem label="Username">
+                    {!isLoggedIn ? (
+                        <Alert intent="warning" className="w-full">
+                            Authorize the app to load your account and per-key
+                            access.
+                        </Alert>
+                    ) : null}
+                    <div className="flex w-full flex-col gap-5">
+                        <div className="w-full">
+                            <Text as="h3" size="sm" weight="bold">
+                                Account
+                            </Text>
+                            <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
+                                <AccountSummaryItem label="GitHub Username">
                                     <AccountSummaryText
                                         value={
-                                            profile.data?.githubUsername ?? null
+                                            isLoggedIn
+                                                ? (profile.data
+                                                      ?.githubUsername ?? null)
+                                                : "—"
                                         }
                                         isLoading={profile.isLoading}
                                         fallback="Not available"
                                     />
                                 </AccountSummaryItem>
+                                <AccountSummaryItem label="GitHub Name">
+                                    <AccountSummaryText
+                                        value={
+                                            isLoggedIn
+                                                ? profile.data?.name
+                                                : "—"
+                                        }
+                                        isLoading={profile.isLoading}
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Email">
+                                    <AccountSummaryText
+                                        value={
+                                            isLoggedIn
+                                                ? profile.data?.email
+                                                : "—"
+                                        }
+                                        isLoading={profile.isLoading}
+                                    />
+                                </AccountSummaryItem>
+                            </div>
+                        </div>
+
+                        <div className="w-full">
+                            <Text as="h3" size="sm" weight="bold">
+                                App access (per key)
+                            </Text>
+                            <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
                                 <AccountSummaryItem label="Key budget">
                                     <AccountSummaryText
-                                        value={formatPollenAmount(
-                                            accountKey.data?.pollenBudget,
-                                        )}
+                                        value={
+                                            isLoggedIn
+                                                ? formatPollenAmount(
+                                                      accountKey.data
+                                                          ?.pollenBudget,
+                                                  )
+                                                : "—"
+                                        }
                                         isLoading={accountKey.isLoading}
                                         fallback="No cap"
                                     />
                                 </AccountSummaryItem>
                                 <AccountSummaryItem label="Key expires">
                                     <AccountSummaryText
-                                        value={formatExpiry(
-                                            accountKey.data?.expiresAt,
-                                        )}
+                                        value={
+                                            isLoggedIn
+                                                ? formatExpiry(
+                                                      accountKey.data
+                                                          ?.expiresAt,
+                                                  )
+                                                : "—"
+                                        }
                                         isLoading={accountKey.isLoading}
                                         fallback="No expiry"
                                     />
                                 </AccountSummaryItem>
-                                <AccountSummaryItem label="Name">
-                                    <AccountSummaryText
-                                        value={profile.data?.name}
-                                        isLoading={profile.isLoading}
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="Email">
-                                    <AccountSummaryText
-                                        value={profile.data?.email}
-                                        isLoading={profile.isLoading}
-                                    />
-                                </AccountSummaryItem>
                                 <AccountSummaryItem label="Usage">
                                     <AccountSummaryText
-                                        value={formatUsageCount(
-                                            keyUsage.data?.count,
-                                        )}
+                                        value={
+                                            isLoggedIn
+                                                ? formatUsageCount(
+                                                      keyUsage.data?.count,
+                                                  )
+                                                : "—"
+                                        }
                                         isLoading={keyUsage.isLoading}
                                     />
                                 </AccountSummaryItem>
                                 <AccountSummaryItem label="Models and Modalities">
-                                    <ModelCountChips
-                                        counts={modelCounts}
-                                        isLoading={isLoading}
-                                    />
+                                    {isLoggedIn ? (
+                                        <ModelCountChips
+                                            counts={modelCounts}
+                                            isLoading={isLoading}
+                                        />
+                                    ) : (
+                                        <AccountSummaryText value="—" />
+                                    )}
                                 </AccountSummaryItem>
-                                <AccountSummaryItem label="Earn">
-                                    <Chip intent="success" size="sm">
-                                        20% of pollen spent in-app
-                                    </Chip>
+                                <AccountSummaryItem label="App Earnings">
+                                    {isLoggedIn ? (
+                                        <Chip intent="success" size="sm">
+                                            20% of pollen spent in-app
+                                        </Chip>
+                                    ) : (
+                                        <AccountSummaryText value="—" />
+                                    )}
                                 </AccountSummaryItem>
                             </div>
-                        </WhenLoggedIn>
+                        </div>
                     </div>
                 </Surface>
             </section>
@@ -576,181 +581,165 @@ function ModulesPage() {
             {activeCategory ? (
                 <>
                     <section>
-                        <SectionHeader title="Modality + Models" />
+                        <SectionHeader title="Gen" />
                         <Surface
                             variant="panel"
                             theme={categoryTheme}
                             className="flex flex-col gap-5"
                         >
-                            <ButtonGroup aria-label="Modality">
-                                {categories.map((item) => (
-                                    <TabButton
-                                        key={item}
-                                        active={activeCategory === item}
-                                        theme={modalityTheme(item)}
-                                        onClick={() => setCategory(item)}
-                                    >
-                                        {categoryLabel(item)}
-                                    </TabButton>
-                                ))}
-                            </ButtonGroup>
-
-                            <ModelSelector
-                                models={visibleModels}
-                                category={activeCategory}
-                                value={selectedModelId}
-                                isLoading={isLoading}
-                                onChange={(modelId) =>
-                                    setSelectedByCategory((current) => ({
-                                        ...current,
-                                        [activeCategory]: modelId,
-                                    }))
-                                }
-                            />
-
-                            {error ? (
-                                <Alert intent="warning">
-                                    Model catalog unavailable: {error.message}
-                                </Alert>
-                            ) : null}
-
-                            {selectedModel ? (
-                                <div className="grid gap-3 md:grid-cols-3">
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            ID
-                                        </Text>
-                                        <p className="mt-1 break-all font-mono text-sm">
-                                            {selectedModel.id}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            Input
-                                        </Text>
-                                        <p className="mt-1 text-sm">
-                                            {formatList(
-                                                selectedModel.inputModalities,
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            Output
-                                        </Text>
-                                        <p className="mt-1 text-sm">
-                                            {formatList(
-                                                selectedModel.outputModalities,
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            Limit
-                                        </Text>
-                                        <p className="mt-1 text-sm">
-                                            {formatModelLimit(selectedModel)}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3 md:col-span-2">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            Access
-                                        </Text>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            <Chip
-                                                intent={
-                                                    selectedModelAccess ===
-                                                    "Not allowed"
-                                                        ? "warning"
-                                                        : "success"
-                                                }
-                                                theme={categoryTheme}
-                                            >
-                                                {selectedModelAccess}
-                                            </Chip>
-                                            {selectedModel.paidOnly ? (
-                                                <Chip theme={categoryTheme}>
-                                                    paid
-                                                </Chip>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                    <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3 md:col-span-3">
-                                        <Text
-                                            size="micro"
-                                            tone="muted"
-                                            weight="bold"
-                                        >
-                                            Pricing
-                                        </Text>
-                                        <p className="mt-1 text-sm">
-                                            {formatPricing(selectedModel)}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <Text size="sm" tone="soft">
-                                    {isLoading
-                                        ? "Loading models..."
-                                        : "No model available for this modality."}
+                            <div className="w-full">
+                                <Text as="h3" size="sm" weight="bold">
+                                    Modality
                                 </Text>
-                            )}
-                        </Surface>
-                    </section>
-
-                    <section>
-                        <SectionHeader title="Try It Out" />
-                        <Surface
-                            variant="panel"
-                            theme={categoryTheme}
-                            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"
-                        >
-                            <div className="flex flex-col gap-4">
-                                <Textarea
-                                    rows={5}
-                                    placeholder={`Describe a ${categoryLabel(activeCategory).toLowerCase()} output`}
-                                />
-                                <div className="flex justify-end">
-                                    <Button theme={categoryTheme}>
-                                        Generate
-                                    </Button>
+                                <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
+                                    <AccountSummaryItem label="Category">
+                                        <ButtonGroup aria-label="Modality">
+                                            {categories.map((item) => (
+                                                <TabButton
+                                                    key={item}
+                                                    active={
+                                                        activeCategory === item
+                                                    }
+                                                    theme={modalityTheme(item)}
+                                                    onClick={() =>
+                                                        setCategory(item)
+                                                    }
+                                                >
+                                                    {categoryLabel(item)}
+                                                </TabButton>
+                                            ))}
+                                        </ButtonGroup>
+                                    </AccountSummaryItem>
                                 </div>
                             </div>
-                            <MediaPlaceholder
-                                icon={<ImageIcon className="h-5 w-5" />}
-                                label={`${categoryLabel(activeCategory)} output`}
-                                detail={
-                                    selectedModel
-                                        ? selectedModel.id
-                                        : "Select a model"
-                                }
-                            />
+
+                            <div className="w-full">
+                                <Text as="h3" size="sm" weight="bold">
+                                    Models
+                                </Text>
+                                <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
+                                    <AccountSummaryItem label="Model">
+                                        <ModelSelector
+                                            models={visibleModels}
+                                            category={activeCategory}
+                                            value={selectedModelId}
+                                            isLoading={isLoading}
+                                            onChange={(modelId) =>
+                                                setSelectedByCategory(
+                                                    (current) => ({
+                                                        ...current,
+                                                        [activeCategory]:
+                                                            modelId,
+                                                    }),
+                                                )
+                                            }
+                                        />
+                                    </AccountSummaryItem>
+                                    {selectedModel ? (
+                                        <>
+                                            <AccountSummaryItem label="Brand">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {selectedModel.brand ??
+                                                        "Not listed"}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Description">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {selectedModel.description ??
+                                                        "Not listed"}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="ID">
+                                                <span className="min-w-0 break-all font-mono text-sm text-theme-text-base sm:text-right">
+                                                    {selectedModel.id}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Input">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {formatList(
+                                                        selectedModel.inputModalities,
+                                                    )}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Output">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {formatList(
+                                                        selectedModel.outputModalities,
+                                                    )}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Limit">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {formatModelLimit(
+                                                        selectedModel,
+                                                    )}
+                                                </span>
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Access">
+                                                <Chip
+                                                    intent={
+                                                        selectedModelAccess ===
+                                                        "Not allowed"
+                                                            ? "warning"
+                                                            : "success"
+                                                    }
+                                                    theme={categoryTheme}
+                                                    size="sm"
+                                                >
+                                                    {selectedModelAccess}
+                                                </Chip>
+                                                {selectedModel.paidOnly ? (
+                                                    <Chip
+                                                        theme={categoryTheme}
+                                                        size="sm"
+                                                    >
+                                                        paid
+                                                    </Chip>
+                                                ) : null}
+                                            </AccountSummaryItem>
+                                            <AccountSummaryItem label="Pricing">
+                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                                    {formatPricing(
+                                                        selectedModel,
+                                                    )}
+                                                </span>
+                                            </AccountSummaryItem>
+                                        </>
+                                    ) : null}
+                                </div>
+                                {error ? (
+                                    <div className="mt-3">
+                                        <Alert intent="warning">
+                                            Model catalog unavailable:{" "}
+                                            {error.message}
+                                        </Alert>
+                                    </div>
+                                ) : !selectedModel ? (
+                                    <Text
+                                        size="sm"
+                                        tone="soft"
+                                        className="mt-3"
+                                    >
+                                        {isLoading
+                                            ? "Loading models..."
+                                            : "No model available for this modality."}
+                                    </Text>
+                                ) : null}
+                            </div>
                         </Surface>
                     </section>
+
+                    <ExternalLinkButton
+                        href="https://playground.pollinations.ai"
+                        theme={categoryTheme}
+                        className="self-start"
+                    >
+                        Try it out in Playground
+                    </ExternalLinkButton>
                 </>
             ) : (
                 <section>
-                    <SectionHeader title="Modality + Models" />
+                    <SectionHeader title="Gen" />
                     <Surface variant="panel" className="flex flex-col gap-3">
                         {error ? (
                             <Alert intent="warning">
@@ -766,44 +755,6 @@ function ModulesPage() {
                     </Surface>
                 </section>
             )}
-
-            <section>
-                <SectionHeader title="Code" />
-                <Surface
-                    variant="panel"
-                    theme={APP_THEME}
-                    className="flex flex-col gap-3"
-                >
-                    <div className="flex justify-end">
-                        <CopyButton
-                            value={MODULES_CODE_SNIPPET}
-                            data-theme={APP_THEME}
-                            className={(copied) =>
-                                `inline-flex items-center gap-2 rounded-full px-3 pt-1.5 pb-2 text-sm font-medium transition-colors ${
-                                    copied
-                                        ? "bg-intent-success-bg-light text-intent-success-text"
-                                        : "bg-theme-bg-active text-theme-text-base hover:bg-theme-bg-hover"
-                                }`
-                            }
-                        >
-                            {(copied) =>
-                                copied ? (
-                                    <>
-                                        <CheckIcon className="h-4 w-4" />
-                                        Copied
-                                    </>
-                                ) : (
-                                    <>
-                                        <ClipboardIcon className="h-4 w-4" />
-                                        Copy code
-                                    </>
-                                )
-                            }
-                        </CopyButton>
-                    </div>
-                    <CodeBlock code={MODULES_CODE_SNIPPET} theme={APP_THEME} />
-                </Surface>
-            </section>
         </>
     );
 }
@@ -883,7 +834,11 @@ function PrimitivesPage() {
 
     return (
         <>
-            <PageTitle>Primitives</PageTitle>
+            <PageIntro>
+                Primitives are the smallest building blocks — single-purpose
+                elements like buttons, inputs, chips, and text. They carry no
+                app logic; everything else is built from them.
+            </PageIntro>
 
             <section>
                 <div className="grid gap-3">
@@ -1272,7 +1227,11 @@ function CompositionsPage() {
 
     return (
         <>
-            <PageTitle>Compositions</PageTitle>
+            <PageIntro>
+                Compositions combine primitives into reusable patterns with
+                their own state and behavior — a copy button, a file uploader, a
+                period picker.
+            </PageIntro>
 
             <section>
                 <div className="grid gap-3">

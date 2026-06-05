@@ -1,0 +1,843 @@
+@import "@pollinations/ui/app.css";
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: #edf7ef;
+    color: #182317;
+    font-family:
+        "Uncut Sans",
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.app-shell {
+    min-height: 100vh;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.72), transparent 34%),
+        radial-gradient(circle at 12% 8%, rgba(94, 199, 178, 0.18), transparent 28%),
+        linear-gradient(180deg, #f5fbf4 0%, #e8f3ec 100%);
+}
+
+/* ---- Topbar ---------------------------------------------------------- */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(29, 74, 33, 0.12);
+    background: rgba(247, 251, 245, 0.92);
+    backdrop-filter: blur(14px);
+}
+
+.brand-mark {
+    display: inline-flex;
+    min-width: 0;
+    color: #173d22;
+}
+
+.brand-mark span {
+    display: block;
+    width: 200px;
+    max-width: 42vw;
+    height: 26px;
+    background: currentColor;
+}
+
+.topbar-actions {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ---- Layout ---------------------------------------------------------- */
+
+.game-layout {
+    display: grid;
+    /* Fixed side column: selecting a piece changes the inspector text but must
+       never reflow the 1fr play column (that caused the board to resize). */
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding: 22px 24px 28px;
+}
+
+.play-column,
+.side-panel {
+    min-width: 0;
+}
+
+.play-column {
+    /* dvh (not vh) so the board doesn't jump when a mobile URL bar shows/hides.
+       Only the topbar (~64px) + page padding sits outside the board now. */
+    --board-max-height: calc(100dvh - 120px);
+
+    display: grid;
+    min-height: 0;
+}
+
+/* The board centres itself; the frame just reserves the column space. */
+.board-frame {
+    display: flex;
+    justify-content: center;
+    min-height: 0;
+}
+
+.board-stack {
+    position: relative;
+    width: min(100%, var(--board-max-width), var(--board-width-from-height));
+    min-height: 0;
+    aspect-ratio: var(--board-aspect-ratio);
+    overflow: visible;
+}
+
+.merge-board {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid rgba(29, 74, 33, 0.18);
+    border-radius: 18px;
+    background:
+        linear-gradient(90deg, rgba(25, 58, 48, 0.045) 1px, transparent 1px),
+        linear-gradient(rgba(25, 58, 48, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 50% 18%, rgba(137, 209, 127, 0.2), transparent 38%),
+        linear-gradient(180deg, #f9fcf6, #e0eddf);
+    background-size:
+        44px 44px,
+        44px 44px,
+        auto,
+        auto;
+    box-shadow:
+        0 24px 60px rgba(24, 35, 23, 0.1),
+        inset 0 -16px 0 rgba(29, 74, 33, 0.06);
+    cursor: crosshair;
+    touch-action: manipulation;
+}
+
+.merge-board.is-crowded {
+    border-color: rgba(178, 111, 47, 0.6);
+    box-shadow:
+        0 24px 60px rgba(178, 111, 47, 0.16),
+        inset 0 -16px 0 rgba(178, 111, 47, 0.12);
+}
+
+.loss-line {
+    position: absolute;
+    right: 18px;
+    left: 18px;
+    z-index: 1;
+    height: 1px;
+    border-top: 1px dashed rgba(100, 28, 56, 0.4);
+    pointer-events: none;
+}
+
+.aim-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 1px;
+    background: linear-gradient(
+        180deg,
+        rgba(29, 74, 33, 0.34),
+        rgba(29, 74, 33, 0)
+    );
+    pointer-events: none;
+}
+
+/* ---- Pieces ---------------------------------------------------------- */
+
+.life-piece {
+    position: absolute;
+    z-index: 8;
+    left: var(--piece-x);
+    top: var(--piece-y);
+    width: var(--piece-size);
+    height: var(--piece-size);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    transform: translate(-50%, -50%) rotate(var(--piece-rotate));
+    transform-origin: center;
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+}
+
+/*
+ * Each .life-piece is its own stacking context, so a later sibling piece can
+ * paint over an earlier piece's label. Lift hovered/focused/pending pieces
+ * above every other piece so their label is never covered.
+ */
+.life-piece:hover,
+.life-piece:focus-visible,
+.life-piece.is-pending,
+.life-piece.is-labeled {
+    z-index: 50;
+}
+
+.drop-preview {
+    position: absolute;
+    z-index: 6;
+    left: var(--piece-x);
+    top: var(--piece-y);
+    width: var(--piece-size);
+    height: var(--piece-size);
+    opacity: 0.7;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity 120ms ease;
+    user-select: none;
+}
+
+.drop-preview.is-waiting {
+    opacity: 0.34;
+}
+
+.life-piece::before {
+    position: absolute;
+    inset: 0;
+    display: block;
+    border: 2px solid var(--piece-ink);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.46), transparent 26%),
+        var(--piece-color);
+    box-shadow:
+        0 14px 28px rgba(24, 35, 23, 0.18),
+        inset 0 -10px 18px rgba(0, 0, 0, 0.12);
+    content: "";
+}
+
+.drop-preview::before {
+    position: absolute;
+    inset: 0;
+    display: block;
+    border: 2px dashed var(--piece-ink);
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.46), transparent 26%),
+        var(--piece-color);
+    box-shadow: 0 10px 24px rgba(24, 35, 23, 0.14);
+    content: "";
+}
+
+.life-piece img,
+.drop-preview img {
+    position: absolute;
+    inset: 3%;
+    z-index: 2;
+    width: 94%;
+    height: 94%;
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+.life-piece.is-generated::after {
+    position: absolute;
+    right: 9%;
+    bottom: 9%;
+    z-index: 3;
+    width: 16%;
+    height: 16%;
+    border: 2px solid rgba(255, 255, 255, 0.82);
+    border-radius: 999px;
+    background: #5ec7b2;
+    box-shadow: 0 2px 8px rgba(22, 76, 68, 0.3);
+    content: "";
+}
+
+.piece-spinner {
+    position: absolute;
+    inset: 16%;
+    z-index: 5;
+    border: 3px solid rgba(255, 255, 255, 0.44);
+    border-top-color: var(--piece-ink);
+    border-radius: 999px;
+    animation: spin 0.8s linear infinite;
+}
+
+.piece-label {
+    position: absolute;
+    top: var(--label-y);
+    left: var(--label-x);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: max-content;
+    max-width: 220px;
+    overflow: visible;
+    padding: 4px 11px 5px;
+    border: 1px solid rgba(20, 32, 22, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 16px rgba(24, 35, 23, 0.16);
+    color: #142016;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    transform: translate(-50%, -100%);
+    white-space: normal;
+    pointer-events: none;
+    /* Reveal-on-demand: landed labels stay hidden so the board doesn't fill
+       with overlapping pills. Only the just-landed/hovered piece (is-active)
+       or one mid-generation (is-pending) shows its label. */
+    opacity: 0;
+    transition: opacity 130ms ease;
+}
+
+.piece-label.is-active,
+.piece-label.is-pending {
+    z-index: 2;
+    opacity: 1;
+}
+
+.piece-label-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.piece-label-name {
+    display: block;
+    max-width: 100%;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
+.piece-label-status {
+    color: rgba(20, 32, 22, 0.6);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.board-empty {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: grid;
+    place-content: center;
+    gap: 10px;
+    color: rgba(20, 32, 22, 0.4);
+    font-weight: 700;
+    text-align: center;
+    pointer-events: none;
+}
+
+.board-empty svg {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+}
+
+.drop-preview.is-hidden {
+    display: none;
+}
+
+/* ---- Start screen (pre-game world chooser, on the empty board) ------- */
+
+.board-start {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    /* Clicks fall through to the board so the first click can start the
+       game — only the buttons inside the card capture pointer events. */
+    pointer-events: none;
+}
+
+.board-start-card {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    width: min(320px, 100%);
+    padding: 22px 20px;
+    border: 1px solid rgba(29, 74, 33, 0.14);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 44px rgba(24, 35, 23, 0.16);
+    text-align: center;
+}
+
+.board-start-card svg {
+    width: 34px;
+    height: 34px;
+    color: #2f6b3e;
+}
+
+.board-start-card > strong {
+    color: #142016;
+    font-size: 17px;
+}
+
+.board-start-presets {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+    pointer-events: auto;
+}
+
+.board-start-preset {
+    display: grid;
+    gap: 2px;
+    padding: 9px 12px;
+    border: 1px solid rgba(29, 74, 33, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #142016;
+    cursor: pointer;
+    text-align: left;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease;
+}
+
+.board-start-preset strong {
+    font-size: 14px;
+}
+
+.board-start-preset small {
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+.board-start-preset:hover:not(:disabled) {
+    border-color: #2f6b3e;
+    background: rgba(47, 107, 62, 0.1);
+}
+
+.board-start-preset:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.board-start-hint {
+    color: #4e6253;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* ---- Generation focus (only while generating) ------------------------ */
+
+.generation-focus {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    z-index: 90;
+    display: grid;
+    width: min(360px, calc(100% - 24px));
+    gap: 9px;
+    padding: 12px;
+    border: 1px solid rgba(20, 32, 22, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 16px 42px rgba(24, 35, 23, 0.18);
+    transform: translateX(-50%);
+}
+
+.generation-focus-head span {
+    color: #3c6c45;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.generation-parents {
+    display: grid;
+    gap: 6px;
+}
+
+.generation-parent {
+    position: relative;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+
+.generation-plus {
+    position: absolute;
+    top: -10px;
+    left: 13px;
+    color: #3c6c45;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.generation-parent img {
+    width: 38px;
+    height: 38px;
+    border: 1.5px solid rgba(29, 74, 33, 0.2);
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+.generation-parent-text {
+    min-width: 0;
+}
+
+.generation-parent-text strong {
+    display: block;
+    overflow: hidden;
+    color: #142016;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.generation-parent-text p {
+    display: -webkit-box;
+    margin: 1px 0 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+.generation-result {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(29, 74, 33, 0.12);
+}
+
+.generation-arrow {
+    position: absolute;
+    align-self: start;
+    margin-top: -16px;
+    color: #3c6c45;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.generation-result img {
+    width: 48px;
+    height: 48px;
+    border: 2px solid rgba(29, 74, 33, 0.28);
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+.generation-result-text strong {
+    display: block;
+    color: #142016;
+    font-size: 14px;
+}
+
+.generation-result-text p {
+    margin: 1px 0 0;
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.generation-result-text .generation-mechanism {
+    margin-top: 5px;
+    color: #2f6b3e;
+}
+
+.generation-mechanism span {
+    display: inline-block;
+    margin-right: 6px;
+    color: #142016;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.generation-pulse {
+    position: relative;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(94, 199, 178, 0.2);
+}
+
+.generation-pulse span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -35%;
+    width: 35%;
+    border-radius: inherit;
+    background: #5ec7b2;
+    animation: progress-sweep 1s ease-in-out infinite;
+}
+
+/* ---- Topbar score (score + progress, beside Reset) ------------------- */
+
+.topbar-score {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.topbar-score strong {
+    color: #142016;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.topbar-score small {
+    color: #4e6253;
+    font-size: 12px;
+}
+
+/* ---- Sidebar cards --------------------------------------------------- */
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.selected-card,
+.legend-card {
+    padding: 14px;
+    border: 1px solid rgba(29, 74, 33, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+/* ---- Selected piece inspector (icon + name + description) ------------ */
+
+/* Stacked: a large image on its own line, name + description underneath. */
+.selected-card {
+    display: grid;
+    gap: 12px;
+}
+
+.selected-icon {
+    position: relative;
+    /* A big square that fills the card width — the image gets real space. */
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: 2px solid var(--piece-ink);
+    border-radius: 18px;
+    background: var(--piece-color);
+}
+
+.selected-icon img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.selected-text {
+    min-width: 0;
+    text-align: center;
+}
+
+.selected-text strong {
+    display: block;
+    color: #142016;
+    font-size: 17px;
+}
+
+.selected-text p {
+    margin: 5px 0 0;
+    color: #4e6253;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.selected-text .selected-mechanism {
+    padding-top: 8px;
+    border-top: 1px solid rgba(29, 74, 33, 0.12);
+    color: #2f6b3e;
+}
+
+.selected-mechanism span {
+    display: block;
+    margin-bottom: 3px;
+    color: #142016;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+/* ---- Legend (icon → name for the objects in play) ------------------- */
+
+.legend-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.legend-card header strong {
+    color: #142016;
+    font-size: 15px;
+}
+
+.legend-card header small {
+    color: #4e6253;
+    font-size: 12px;
+}
+
+.legend-list {
+    display: grid;
+    gap: 2px;
+    max-height: 240px;
+    margin: 0;
+    overflow: auto;
+    padding: 0;
+    list-style: none;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #142016;
+    cursor: pointer;
+    text-align: left;
+}
+
+.legend-row:hover,
+.legend-row:focus-visible {
+    background: rgba(47, 107, 62, 0.1);
+}
+
+.legend-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    border: 1.5px solid var(--piece-ink);
+    border-radius: 999px;
+    background: var(--piece-color);
+}
+
+.legend-icon img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.legend-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---- Animations ------------------------------------------------------ */
+
+@keyframes spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+@keyframes progress-sweep {
+    to {
+        left: 100%;
+    }
+}
+
+/* ---- Responsive ------------------------------------------------------ */
+
+/* Same layout at every width — board left, cards right. The side column
+   just gets narrower; nothing reflows or stacks. */
+@media (max-width: 1040px) {
+    .game-layout {
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .topbar {
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    .topbar-actions {
+        gap: 6px;
+    }
+
+    /* Drop the least-essential topbar items so it doesn't crowd on phones —
+       Reset, balance and the user menu stay. */
+    .topbar-score {
+        display: none;
+    }
+
+    .game-layout {
+        grid-template-columns: minmax(0, 1fr) 180px;
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .piece-label {
+        max-width: 140px;
+        font-size: 13px;
+    }
+}

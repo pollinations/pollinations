@@ -88,9 +88,11 @@ select {
 
 .game-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    /* Fixed side column: selecting a piece changes the inspector text but must
+       never reflow the 1fr play column (that caused the board to resize). */
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: 24px;
-    width: min(1320px, 100%);
+    width: min(1240px, 100%);
     margin: 0 auto;
     padding: 22px 24px 28px;
 }
@@ -101,7 +103,8 @@ select {
 }
 
 .play-column {
-    --board-max-height: calc(100vh - 196px);
+    /* dvh (not vh) so the board doesn't jump when a mobile URL bar shows/hides. */
+    --board-max-height: calc(100dvh - 196px);
 
     display: grid;
     grid-template-rows: 1fr auto;
@@ -115,11 +118,19 @@ select {
     min-height: 0;
 }
 
-.merge-board {
+.board-stack {
     position: relative;
     width: min(100%, var(--board-max-width), var(--board-width-from-height));
     min-height: 0;
     aspect-ratio: var(--board-aspect-ratio);
+    overflow: visible;
+}
+
+.merge-board {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     overflow: hidden;
     border: 1px solid rgba(29, 74, 33, 0.18);
     border-radius: 18px;
@@ -286,15 +297,15 @@ select {
 
 .piece-label {
     position: absolute;
-    bottom: calc(100% + 10px);
-    left: 50%;
-    z-index: 30;
+    top: var(--label-y);
+    left: var(--label-x);
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 1px;
     width: max-content;
     max-width: 220px;
-    overflow: hidden;
+    overflow: visible;
     padding: 4px 11px 5px;
     border: 1px solid rgba(20, 32, 22, 0.1);
     border-radius: 999px;
@@ -305,55 +316,28 @@ select {
     font-weight: 700;
     line-height: 1.15;
     text-align: center;
-    text-overflow: ellipsis;
-    transform: translateX(-50%) rotate(calc(-1 * var(--piece-rotate)));
-    white-space: nowrap;
+    transform: translate(-50%, -100%);
+    white-space: normal;
     pointer-events: none;
 }
 
-/*
- * Landed-piece labels are reveal-on-demand to avoid the overlap mess when
- * pieces cluster: hidden by default, shown only for the hovered/focused
- * piece, a piece mid-generation, or one that just landed/merged
- * (is-labeled). The drop preview and full names in the lineage card carry
- * identity the rest of the time.
- */
-.life-piece .piece-label {
-    opacity: 0;
-    transition: opacity 130ms ease;
+.piece-label-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    overflow: visible;
+    pointer-events: none;
 }
 
-.life-piece:hover .piece-label,
-.life-piece:focus-visible .piece-label,
-.life-piece.is-pending .piece-label,
-.life-piece.is-labeled .piece-label {
-    opacity: 1;
-}
-
-/*
- * Pieces near the top would have their label clipped by the board's
- * overflow:hidden — flip the label below the token instead.
- */
-.life-piece.is-high .piece-label,
-.drop-preview .piece-label {
-    top: calc(100% + 9px);
-    bottom: auto;
-}
-
-/*
- * The drop preview sits at the top and is dimmed; keep its label crisp,
- * upright, and above the dashed token so you can read what you're aiming.
- */
-.drop-preview .piece-label {
-    opacity: 1;
-    transform: translateX(-50%);
+.piece-label.is-active {
+    z-index: 2;
 }
 
 .piece-label-name {
     display: block;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    overflow-wrap: anywhere;
 }
 
 .piece-label-status {
@@ -478,7 +462,7 @@ select {
     position: absolute;
     top: 16px;
     left: 50%;
-    z-index: 42;
+    z-index: 90;
     display: grid;
     width: min(360px, calc(100% - 24px));
     gap: 9px;
@@ -689,13 +673,57 @@ select {
     gap: 14px;
 }
 
-.preset-card,
-.legend-card,
-.lineage-card {
+.selected-card,
+.legend-card {
     padding: 14px;
     border: 1px solid rgba(29, 74, 33, 0.12);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.78);
+}
+
+/* ---- Selected piece inspector (icon + name + description) ------------ */
+
+.selected-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.selected-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border: 2px solid var(--piece-ink);
+    border-radius: 999px;
+    background: var(--piece-color);
+}
+
+.selected-icon img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.selected-text {
+    min-width: 0;
+}
+
+.selected-text strong {
+    display: block;
+    color: #142016;
+    font-size: 15px;
+}
+
+.selected-text p {
+    margin: 4px 0 0;
+    color: #4e6253;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 /* ---- Legend (icon → name for the objects in play) ------------------- */
@@ -775,192 +803,6 @@ select {
     white-space: nowrap;
 }
 
-/* ---- Preset card (axis + style, collapsed by default) ---------------- */
-
-.preset-card-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.preset-card-head > div {
-    display: grid;
-    gap: 1px;
-    min-width: 0;
-}
-
-.preset-card-kicker {
-    color: #3c6c45;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.preset-card-head strong {
-    color: #142016;
-    font-size: 17px;
-    line-height: 1.1;
-}
-
-.preset-card-head small {
-    color: #4e6253;
-    font-size: 12px;
-}
-
-.preset-toggle {
-    flex: 0 0 auto;
-    padding: 5px 12px;
-    border: 1px solid rgba(29, 74, 33, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    color: #2c4a31;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 750;
-}
-
-.preset-toggle:hover {
-    background: rgba(137, 209, 127, 0.16);
-}
-
-.preset-axis-desc {
-    margin: 12px 0 0;
-    color: #4e6253;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-.preset-editor {
-    margin-top: 12px;
-    display: grid;
-    gap: 8px;
-}
-
-.preset-editor label {
-    display: grid;
-    gap: 4px;
-}
-
-.preset-editor label span {
-    color: #536255;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.preset-editor textarea {
-    width: 100%;
-    min-width: 0;
-    resize: vertical;
-    padding: 7px 8px;
-    border: 1px solid rgba(29, 74, 33, 0.16);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.72);
-    color: #142016;
-    font-size: 12px;
-    line-height: 1.28;
-}
-
-.preset-editor textarea:disabled {
-    cursor: not-allowed;
-    opacity: 0.58;
-}
-
-.rung-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 12px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.rung-row {
-    display: grid;
-    width: 22px;
-    height: 22px;
-    place-items: center;
-    border-radius: 999px;
-}
-
-.rung-row span {
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid var(--piece-ink);
-    border-radius: 999px;
-    background: var(--piece-color);
-}
-
-.rung-row:not(.is-active) span {
-    opacity: 0.34;
-}
-
-/* ---- Lineage card ---------------------------------------------------- */
-
-.lineage-card header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.lineage-card header strong {
-    color: #142016;
-    font-size: 15px;
-}
-
-.lineage-card header small {
-    color: #4e6253;
-    font-size: 12px;
-}
-
-.lineage-tree {
-    display: grid;
-    gap: 6px;
-    max-height: 280px;
-    margin-top: 10px;
-    overflow: auto;
-    padding-right: 2px;
-}
-
-.lineage-node {
-    display: grid;
-    gap: 3px;
-    padding: 5px 0 5px calc(var(--lineage-depth) * 10px);
-    border-left: 1px solid rgba(29, 74, 33, 0.16);
-}
-
-.lineage-node-row {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 6px;
-}
-
-.lineage-node-row strong {
-    min-width: 0;
-    overflow: hidden;
-    color: #142016;
-    font-size: 13px;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.lineage-node p {
-    margin: 0;
-    color: #536255;
-    font-size: 11px;
-    line-height: 1.28;
-}
-
-.lineage-parents {
-    display: grid;
-    gap: 2px;
-    margin-top: 2px;
-}
-
 /* ---- Animations ------------------------------------------------------ */
 
 @keyframes spin {
@@ -977,23 +819,12 @@ select {
 
 /* ---- Responsive ------------------------------------------------------ */
 
+/* Same layout at every width — board left, cards right. The side column
+   just gets narrower; nothing reflows or stacks. */
 @media (max-width: 1040px) {
     .game-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .play-column {
-        --board-max-height: 70vh;
-    }
-
-    .side-panel {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: start;
-    }
-
-    .lineage-card {
-        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
     }
 }
 
@@ -1003,20 +834,13 @@ select {
     }
 
     .game-layout {
+        grid-template-columns: minmax(0, 1fr) 180px;
         padding: 14px;
-        gap: 16px;
-    }
-
-    .play-column {
-        --board-max-height: 64vh;
+        gap: 12px;
     }
 
     .play-footer {
         flex-wrap: wrap;
-    }
-
-    .side-panel {
-        grid-template-columns: 1fr;
     }
 
     .piece-label {

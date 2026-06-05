@@ -3,7 +3,7 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
-import { Alert, BeakerIcon, Button, Chip } from "@pollinations/ui";
+import { BeakerIcon, Button, Chip } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import { Balance } from "@pollinations/ui/wallet/sdk";
@@ -379,29 +379,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                             </Button>
                         </div>
                     ) : null}
-
-                    <div className="status-row" aria-live="polite">
-                        <Alert
-                            intent={
-                                game.gameWon
-                                    ? "success"
-                                    : game.isCrowded
-                                      ? "warning"
-                                      : "info"
-                            }
-                            title={
-                                game.gameWon
-                                    ? `${game.peakName} reached`
-                                    : game.isCrowded
-                                      ? "Board crowded"
-                                      : game.activeGenerations > 0
-                                        ? "Generating…"
-                                        : "Ready"
-                            }
-                        >
-                            {game.lastEvent}
-                        </Alert>
-                    </div>
 
                     {/* Preset = axis + style, collapsed to a selector by default. */}
                     <section

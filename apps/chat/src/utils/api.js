@@ -100,7 +100,7 @@ export const loadModels = async () => {
         if (Array.isArray(arr)) {
             textModels = arr.map((m) => ({
                 id: m.id || m.name || m,
-                name: m.description || getRealModelName(m.id || m.name || m),
+                name: m.title || getRealModelName(m.id || m.name || m),
                 description: m.description || m.id || m.name || m,
                 type: "text",
                 ownedBy: m.owned_by || "unknown",
@@ -127,8 +127,8 @@ export const loadModels = async () => {
                 return {
                     id,
                     name:
-                        typeof m === "object" && m.description
-                            ? m.description
+                        typeof m === "object" && m.title
+                            ? m.title
                             : getRealModelName(id),
                     description: m.description || id,
                     type: outputMods.includes("video") ? "video" : "image",
@@ -154,8 +154,8 @@ export const loadModels = async () => {
                 return {
                     id,
                     name:
-                        typeof m === "object" && m.description
-                            ? m.description
+                        typeof m === "object" && m.title
+                            ? m.title
                             : getRealModelName(id),
                     description: m.description || id,
                     type: "audio",

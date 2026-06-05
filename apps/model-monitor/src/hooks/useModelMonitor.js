@@ -49,6 +49,7 @@ function registryServicesToModels(services, endpointType) {
     return Object.entries(services).map(([name, service]) => ({
         name,
         aliases: service.aliases,
+        title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,

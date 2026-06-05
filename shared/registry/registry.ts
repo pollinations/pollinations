@@ -96,6 +96,9 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
+    title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    // Backward compatibility: public descriptions currently include the title
+    // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];
@@ -111,6 +114,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    maxReferenceImages?: number; // Effective cap on input/reference images the model accepts (vision chat, image-to-image, edits)
+    maxReferenceVideos?: number; // Effective cap on input/reference videos the model accepts
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

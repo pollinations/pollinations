@@ -122,7 +122,8 @@ Wallet colors and utilities are bundled into the main stylesheet
   `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
 - `@pollinations/ui/app-user-menu/sdk` exports the SDK-backed app account
   menu module.
-- `@pollinations/ui/modality` exports the model-modality theme mapping.
+- `@pollinations/ui/gen` exports the generation UI — `ModelSelector`,
+  category labels, and the model-modality theme mapping.
 - `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
 - **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
@@ -147,10 +148,10 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 - `src/primitives/*` contains generic, SDK-free building blocks.
 - `src/compositions/*` contains SDK-free recipes that compose primitives.
 - `src/modules/*` contains package-owned recipes with domain assumptions
-  such as auth, wallet, app-user-menu, models, and modality.
+  such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
-  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`,
+  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/gen`,
   `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
   layers.
 

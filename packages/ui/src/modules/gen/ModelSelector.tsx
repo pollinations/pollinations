@@ -6,7 +6,7 @@ import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
-import { modalityTheme } from "../modality/themes.ts";
+import { modalityTheme } from "./themes.ts";
 
 export type ModelSelectorCategory = ModelCategory;
 

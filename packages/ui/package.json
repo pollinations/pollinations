@@ -28,15 +28,10 @@
       "import": "./dist/app-user-menu/sdk.js",
       "require": "./dist/app-user-menu/sdk.cjs"
     },
-    "./modality": {
-      "types": "./dist/modality/index.d.ts",
-      "import": "./dist/modality/index.js",
-      "require": "./dist/modality/index.cjs"
-    },
-    "./models": {
-      "types": "./dist/models/index.d.ts",
-      "import": "./dist/models/index.js",
-      "require": "./dist/models/index.cjs"
+    "./gen": {
+      "types": "./dist/gen/index.d.ts",
+      "import": "./dist/gen/index.js",
+      "require": "./dist/gen/index.cjs"
     },
     "./wallet": {
       "types": "./dist/wallet/index.d.ts",

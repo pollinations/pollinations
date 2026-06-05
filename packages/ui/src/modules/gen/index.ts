@@ -6,3 +6,8 @@ export {
     type ModelSelectorItem,
     type ModelSelectorProps,
 } from "./ModelSelector.tsx";
+export {
+    getModalityTheme,
+    type Modality,
+    modalityTheme,
+} from "./themes.ts";

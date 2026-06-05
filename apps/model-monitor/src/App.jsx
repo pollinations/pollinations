@@ -487,6 +487,7 @@ function App() {
                     navLabel="Model Monitor links"
                     autoHide
                     scrollTargetRef={scrollAreaRef}
+                    innerClassName={adminMode ? "polli:max-w-6xl" : undefined}
                 >
                     {EXTERNAL_LINKS.map((link) => (
                         <HeaderLink key={link.href} {...link} />

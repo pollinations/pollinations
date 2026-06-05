@@ -91,7 +91,8 @@ export function AppHeader({
         <header
             className={cn(
                 "polli:sticky polli:top-0 polli:z-30 polli:border-b polli:border-theme-border polli:bg-surface-white polli:px-5 polli:py-4 polli:backdrop-blur",
-                "polli:transition-transform polli:duration-200 polli:ease-out polli:will-change-transform",
+                "polli:transition-transform polli:duration-200 polli:ease-out",
+                autoHide && "polli:will-change-transform",
                 hidden ? "polli:-translate-y-full" : "polli:translate-y-0",
                 className,
             )}

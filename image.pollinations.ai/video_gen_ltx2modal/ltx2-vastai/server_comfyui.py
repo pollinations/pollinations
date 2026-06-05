@@ -7,7 +7,7 @@ import base64, json, os, random, subprocess, threading, time, urllib.request, ur
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
@@ -104,10 +104,15 @@ BACKEND_TOKEN = os.environ.get("PLN_GPU_TOKEN", "")
 
 @app.middleware("http")
 async def verify_backend_token(request: Request, call_next):
-    if BACKEND_TOKEN and request.url.path not in ("/health",):
+    if request.url.path not in ("/health",):
+        if not BACKEND_TOKEN:
+            log.error("PLN_GPU_TOKEN not configured - refusing request")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Backend token is not configured"},
+            )
         token = request.headers.get("x-backend-token", "")
         if token != BACKEND_TOKEN:
-            from fastapi.responses import JSONResponse
             return JSONResponse(status_code=403, content={"error": "Unauthorized"})
     return await call_next(request)
 

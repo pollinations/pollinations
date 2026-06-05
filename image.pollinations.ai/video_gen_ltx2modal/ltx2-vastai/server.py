@@ -78,7 +78,13 @@ app = FastAPI(title="LTX-2 Video Server", lifespan=lifespan)
 
 @app.middleware("http")
 async def verify_backend_token(request: Request, call_next):
-    if PLN_TOKEN and request.url.path not in ("/health",):
+    if request.url.path not in ("/health",):
+        if not PLN_TOKEN:
+            log.error("PLN_GPU_TOKEN not configured - refusing request")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Backend token is not configured"},
+            )
         token = request.headers.get("x-backend-token", "")
         if token != PLN_TOKEN:
             return JSONResponse(status_code=403, content={"error": "Unauthorized"})

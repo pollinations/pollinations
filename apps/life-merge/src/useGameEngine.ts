@@ -999,6 +999,19 @@ export function useGameEngine({
             })),
         [highestTier, rungs],
     );
+    // Minimal legend: the distinct objects currently on the board (icon → name),
+    // collapsed by name and ordered biggest-tier first.
+    const legendEntries = useMemo(() => {
+        const seen = new Map<string, GamePiece>();
+        for (const piece of pieces) {
+            if (piece.pending) continue;
+            const existing = seen.get(piece.name);
+            if (!existing || piece.tier > existing.tier) {
+                seen.set(piece.name, piece);
+            }
+        }
+        return Array.from(seen.values()).sort((a, b) => b.tier - a.tier);
+    }, [pieces]);
     const activeEdit = presetEdits[resolvedPresetId];
     const dropPreviewX = Math.min(
         Math.max(aimX, nextPiece.radius + 8),
@@ -1029,6 +1042,7 @@ export function useGameEngine({
         presetsLocked,
         activeGenerations,
         rungRows,
+        legendEntries,
         activeEdit,
         dropPreviewX,
         setLineageView,

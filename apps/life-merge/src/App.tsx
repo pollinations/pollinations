@@ -507,6 +507,57 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                         </section>
                     ) : null}
 
+                    {game.legendEntries.length > 0 ? (
+                        <section className="legend-card">
+                            <header>
+                                <strong>In play</strong>
+                                <small>{game.legendEntries.length}</small>
+                            </header>
+                            <ul className="legend-list">
+                                {game.legendEntries.map((entry) => (
+                                    <li key={entry.name}>
+                                        <button
+                                            type="button"
+                                            className="legend-row"
+                                            title={pieceTitle(entry)}
+                                            onPointerEnter={() =>
+                                                game.setLineageView(
+                                                    entry.lineage,
+                                                )
+                                            }
+                                            onClick={() =>
+                                                game.setLineageView(
+                                                    entry.lineage,
+                                                )
+                                            }
+                                        >
+                                            <span
+                                                className="legend-icon"
+                                                style={
+                                                    {
+                                                        "--piece-color":
+                                                            entry.color,
+                                                        "--piece-ink":
+                                                            entry.ink,
+                                                    } as CSSProperties
+                                                }
+                                            >
+                                                <img
+                                                    src={entry.imageUrl}
+                                                    alt=""
+                                                    draggable={false}
+                                                />
+                                            </span>
+                                            <span className="legend-name">
+                                                {entry.name}
+                                            </span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    ) : null}
+
                     <section className="lineage-card">
                         <header>
                             <strong>Lineage</strong>

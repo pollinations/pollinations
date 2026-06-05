@@ -689,11 +689,89 @@ select {
 }
 
 .preset-card,
+.legend-card,
 .lineage-card {
     padding: 14px;
     border: 1px solid rgba(29, 74, 33, 0.12);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.78);
+}
+
+/* ---- Legend (icon → name for the objects in play) ------------------- */
+
+.legend-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.legend-card header strong {
+    color: #142016;
+    font-size: 15px;
+}
+
+.legend-card header small {
+    color: #4e6253;
+    font-size: 12px;
+}
+
+.legend-list {
+    display: grid;
+    gap: 2px;
+    max-height: 240px;
+    margin: 0;
+    overflow: auto;
+    padding: 0;
+    list-style: none;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #142016;
+    cursor: pointer;
+    text-align: left;
+}
+
+.legend-row:hover,
+.legend-row:focus-visible {
+    background: rgba(47, 107, 62, 0.1);
+}
+
+.legend-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    border: 1.5px solid var(--piece-ink);
+    border-radius: 999px;
+    background: var(--piece-color);
+}
+
+.legend-icon img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.legend-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ---- Preset card (axis + style, collapsed by default) ---------------- */

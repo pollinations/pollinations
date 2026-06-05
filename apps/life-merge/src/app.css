@@ -286,22 +286,22 @@ select {
 
 .piece-label {
     position: absolute;
-    bottom: calc(100% + 9px);
+    bottom: calc(100% + 10px);
     left: 50%;
     z-index: 30;
     display: flex;
     flex-direction: column;
     gap: 1px;
     width: max-content;
-    max-width: 180px;
+    max-width: 220px;
     overflow: hidden;
-    padding: 2px 7px 3px;
+    padding: 4px 11px 5px;
     border: 1px solid rgba(20, 32, 22, 0.1);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 4px 12px rgba(24, 35, 23, 0.12);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 16px rgba(24, 35, 23, 0.16);
     color: #142016;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 700;
     line-height: 1.15;
     text-align: center;
@@ -358,7 +358,7 @@ select {
 
 .piece-label-status {
     color: rgba(20, 32, 22, 0.6);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -456,13 +456,14 @@ select {
     line-height: 1.25;
 }
 
-.board-start-preset:hover {
-    border-color: rgba(29, 74, 33, 0.32);
-}
-
-.board-start-preset.is-active {
+.board-start-preset:hover:not(:disabled) {
     border-color: #2f6b3e;
     background: rgba(47, 107, 62, 0.1);
+}
+
+.board-start-preset:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .board-start-hint {
@@ -1019,7 +1020,7 @@ select {
     }
 
     .piece-label {
-        max-width: 96px;
-        font-size: 10px;
+        max-width: 140px;
+        font-size: 13px;
     }
 }

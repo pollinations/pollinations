@@ -225,9 +225,7 @@ export function useGameEngine({
     const [presetEdits, setPresetEdits] =
         useState<PresetEdits>(initialPresetEdits);
     const [generatedPoolSize, setGeneratedPoolSize] = useState(0);
-    const [lastEvent, setLastEvent] = useState(
-        "Pick a world, then click the board to begin.",
-    );
+    const [lastEvent, setLastEvent] = useState("Choose a world to begin.");
     const [isCrowded, setIsCrowded] = useState(false);
     const [peakName, setPeakName] = useState("Seeds");
     // The most-recently created/changed piece — its label is revealed briefly
@@ -305,7 +303,7 @@ export function useGameEngine({
 
     useEffect(() => {
         if (!activeLabelId) return undefined;
-        const timeout = window.setTimeout(() => setActiveLabelId(null), 2600);
+        const timeout = window.setTimeout(() => setActiveLabelId(null), 4000);
         return () => window.clearTimeout(timeout);
     }, [activeLabelId]);
 
@@ -706,9 +704,9 @@ export function useGameEngine({
         hasStartedRef.current = false;
         setHasStarted(false);
         // Build a placeholder aim piece but DON'T generate — wait for the
-        // next board click so the (possibly changed) preset drives the seed.
+        // chosen world (startWithPreset) so its seed drives the first piece.
         createNextDrop(0);
-        setLastEvent("Pick a world, then click the board to begin.");
+        setLastEvent("Choose a world to begin.");
     };
 
     const selectPreset = (nextPresetId: LifePresetId) => {
@@ -727,6 +725,15 @@ export function useGameEngine({
         setPresetId(nextPreset.id);
         resetGame();
         setLastEvent(`${editedPreset.label} world loaded.`);
+    };
+
+    // Start-screen button: pick the world and start in one click. selectPreset
+    // updates every ref synchronously (presetRef/styleRef/rungsRef), so the
+    // first seed startGame() builds is already driven by the chosen world.
+    const startWithPreset = (nextPresetId: LifePresetId) => {
+        if (hasStartedRef.current || piecesRef.current.length > 0) return;
+        selectPreset(nextPresetId);
+        startGame();
     };
 
     const updateActivePresetEdit = (field: keyof PresetEdit, value: string) => {
@@ -1046,9 +1053,10 @@ export function useGameEngine({
         activeEdit,
         dropPreviewX,
         setLineageView,
+        showDiscovery,
         dropNextPiece,
         resetGame,
-        selectPreset,
+        startWithPreset,
         updateActivePresetEdit,
         applyPresetEdit,
         updateAim,

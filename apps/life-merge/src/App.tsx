@@ -197,9 +197,7 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                     onPointerEnter={() =>
                                         game.setLineageView(piece.lineage)
                                     }
-                                    onClick={() =>
-                                        game.setLineageView(piece.lineage)
-                                    }
+                                    onClick={() => game.showDiscovery(piece)}
                                     style={
                                         {
                                             "--piece-x": `${piece.x}px`,
@@ -238,20 +236,16 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                 <div className="board-start">
                                     <div className="board-start-card">
                                         <BeakerIcon />
-                                        <strong>Choose a world</strong>
+                                        <strong>Choose a world to start</strong>
                                         <div className="board-start-presets">
                                             {LIFE_PRESETS.map((preset) => (
                                                 <button
                                                     key={preset.id}
                                                     type="button"
-                                                    className={`board-start-preset ${
-                                                        preset.id ===
-                                                        game.presetId
-                                                            ? "is-active"
-                                                            : ""
-                                                    }`}
+                                                    className="board-start-preset"
+                                                    disabled={!game.canUseAi}
                                                     onClick={() =>
-                                                        game.selectPreset(
+                                                        game.startWithPreset(
                                                             preset.id,
                                                         )
                                                     }
@@ -263,13 +257,11 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                                 </button>
                                             ))}
                                         </div>
-                                        <span className="board-start-hint">
-                                            {game.canUseAi
-                                                ? game.presetId
-                                                    ? "Click the board to start"
-                                                    : "Pick a world above"
-                                                : "Authorize above to start"}
-                                        </span>
+                                        {!game.canUseAi ? (
+                                            <span className="board-start-hint">
+                                                Authorize above to start
+                                            </span>
+                                        ) : null}
                                     </div>
                                 </div>
                             ) : game.pieces.length === 0 ? (
@@ -526,9 +518,7 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                                 )
                                             }
                                             onClick={() =>
-                                                game.setLineageView(
-                                                    entry.lineage,
-                                                )
+                                                game.showDiscovery(entry)
                                             }
                                         >
                                             <span

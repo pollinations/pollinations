@@ -58,9 +58,13 @@ export const getModelDisplayName = (modelName: string): string | undefined => {
 export const getModelDescriptionWithoutName = (
     modelName: string,
 ): string | undefined => {
-    // Descriptions are already name-free in the registry.
     const service = getModelDefinition(modelName as ModelName);
-    return service?.description;
+    const description = service?.description;
+    if (!service || !description) return undefined;
+    const prefix = `${service.title} - `;
+    return description.startsWith(prefix)
+        ? description.slice(prefix.length).trim() || undefined
+        : description;
 };
 
 export const getModelBrandLogoPath = (

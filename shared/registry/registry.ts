@@ -97,6 +97,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     addedDate: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    // Backward compatibility: public descriptions currently include the title
+    // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];

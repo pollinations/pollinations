@@ -20,30 +20,38 @@ beforeEach(() => {
                 jsonResponse([
                     {
                         name: "realtime-voice",
+                        title: "Realtime Voice",
                         category: "realtime",
                         input_modalities: ["text", "audio", "image"],
                         output_modalities: ["text", "audio"],
                     },
                     {
                         name: "tts",
+                        title: "Text To Speech",
                         category: "audio",
                         input_modalities: ["text"],
                         output_modalities: ["audio"],
                     },
                     {
                         name: "movie",
+                        title: "Movie",
                         category: "video",
-                        input_modalities: ["text"],
-                        output_modalities: ["image"],
+                        input_modalities: ["text", "image", "video"],
+                        output_modalities: ["video"],
+                        video_capabilities: ["start_frame", "end_frame"],
+                        max_reference_images: 2,
+                        max_reference_videos: 10,
                     },
                     {
                         name: "embedding-small",
+                        title: "Embedding Small",
                         category: "embedding",
                         input_modalities: ["text"],
                         output_modalities: ["embedding"],
                     },
                     {
                         name: "still",
+                        title: "Still",
                         aliases: ["stable"],
                         category: "image",
                         brand: "Stability",
@@ -58,6 +66,7 @@ beforeEach(() => {
                     },
                     {
                         name: "speech-from-chat",
+                        title: "Speech From Chat",
                         category: "audio",
                         input_modalities: ["text"],
                         output_modalities: ["text"],
@@ -105,11 +114,13 @@ describe("fetchModelCatalog", () => {
         expect(stillModel).toMatchObject({
             id: "still",
             name: "still",
+            title: "Still",
             category: "image",
             brand: "Stability",
             aliases: ["stable"],
             inputModalities: ["text"],
             outputModalities: ["image"],
+            videoCapabilities: [],
             voices: [],
             paidOnly: true,
             tools: false,
@@ -120,23 +131,34 @@ describe("fetchModelCatalog", () => {
                 completionImageTokens: "0.04",
             },
         });
+
+        const movieModel = catalog.models.find((model) => model.id === "movie");
+        expect(movieModel).toMatchObject({
+            videoCapabilities: ["start_frame", "end_frame"],
+            maxReferenceImages: 2,
+            maxReferenceVideos: 10,
+        });
         // Curated catalog item — raw ModelInfo wire fields don't leak through.
         expect(stillModel).not.toHaveProperty("input_modalities");
         expect(stillModel).not.toHaveProperty("output_modalities");
+        expect(movieModel).not.toHaveProperty("video_capabilities");
+        expect(movieModel).not.toHaveProperty("max_reference_images");
+        expect(movieModel).not.toHaveProperty("max_reference_videos");
         expect(stillModel).not.toHaveProperty("paid_only");
         expect(stillModel).not.toHaveProperty("context_length");
         expect(stillModel).not.toHaveProperty("maxInputChars");
         expect(stillModel).not.toHaveProperty("source");
     });
 
-    it("drops models with a missing or unknown category", async () => {
+    it("drops models with a missing title or category", async () => {
         fetchMock.mockImplementation((url: string) => {
             if (url.endsWith("/models")) {
                 return Promise.resolve(
                     jsonResponse([
                         { name: "no-category", output_modalities: ["video"] },
                         { name: "bad-category", category: "hologram" },
-                        { name: "good", category: "text" },
+                        { name: "no-title", category: "text" },
+                        { name: "good", title: "Good", category: "text" },
                     ]),
                 );
             }
@@ -164,6 +186,7 @@ describe("fetchModelCatalog", () => {
                             ? [
                                   {
                                       name: "paid-image",
+                                      title: "Paid Image",
                                       category: "image",
                                       input_modalities: ["text"],
                                       output_modalities: ["image"],
@@ -172,6 +195,7 @@ describe("fetchModelCatalog", () => {
                             : [
                                   {
                                       name: "free-text",
+                                      title: "Free Text",
                                       category: "text",
                                       input_modalities: ["text"],
                                       output_modalities: ["text"],

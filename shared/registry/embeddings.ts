@@ -34,7 +34,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         },
         title: "Gemini Embedding 2",
         description:
-            "Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
+            "Gemini Embedding 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -52,7 +52,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         },
         title: "Text Embedding 3 Small",
         description:
-            "Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
+            "Text Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -70,7 +70,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         },
         title: "Text Embedding 3 Large",
         description:
-            "High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
+            "Text Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -90,7 +90,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         },
         title: "Cohere Embed v4",
         description:
-            "Multilingual text embeddings. 1536 dimensions, 128K context.",
+            "Cohere Embed v4 - Multilingual text embeddings. 1536 dimensions, 128K context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 128000,
@@ -107,7 +107,8 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             promptTextTokens: perMillion(0.1),
         },
         title: "Qwen3 Embedding 8B",
-        description: "Multilingual text embeddings. 4096 dimensions.",
+        description:
+            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 32768,

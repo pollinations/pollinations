@@ -65,12 +65,12 @@ function isModelCategory(value: unknown): value is ModelCategory {
 
 function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     const id = model.id ?? model.name;
-    if (!id || !isModelCategory(model.category)) return null;
+    if (!id || !model.title || !isModelCategory(model.category)) return null;
 
     return {
         id,
         name: model.name,
-        title: model.title ?? model.name,
+        title: model.title,
         category: model.category,
         brand: model.brand,
         description: model.description,

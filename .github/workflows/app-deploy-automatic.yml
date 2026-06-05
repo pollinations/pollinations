@@ -32,47 +32,27 @@ jobs:
         id: app
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            CANDIDATES="${{ github.event.inputs.app_name }}"
+            APP_CANDIDATES="${{ github.event.inputs.app_name }}"
+            PACKAGE_CANDIDATES=""
           else
             git fetch origin main --depth=2
             CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || \
                       git diff --name-only origin/main~1 HEAD)
             APP_CANDIDATES=$(echo "$CHANGED" | grep '^apps/[^/]*/' | sed 's|^apps/\([^/]*\)/.*|\1|' || true)
-            PACKAGE_CANDIDATES=$(CHANGED="$CHANGED" node -e '
-            const fs = require("fs");
-            const path = require("path");
-            const changed = (process.env.CHANGED || "").split(/\n+/).filter(Boolean);
-            const changedPackages = new Set();
-            if (changed.some((file) => file.startsWith("packages/sdk/"))) changedPackages.add("@pollinations/sdk");
-            if (changed.some((file) => file.startsWith("packages/ui/"))) changedPackages.add("@pollinations/ui");
-            if (changedPackages.size === 0) process.exit(0);
-            const apps = JSON.parse(fs.readFileSync("apps/apps.json", "utf8"));
-            for (const app of Object.keys(apps).filter((name) => name !== "_defaults").sort()) {
-              const packagePath = path.join("apps", app, "package.json");
-              if (!fs.existsSync(packagePath)) continue;
-              const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-              const dependencies = {
-                ...pkg.dependencies,
-                ...pkg.devDependencies,
-                ...pkg.peerDependencies,
-                ...pkg.optionalDependencies,
-              };
-              if ([...changedPackages].some((packageName) => dependencies[packageName])) console.log(app);
-            }
-            ')
-            CANDIDATES=$(printf "%s\n%s\n" "$APP_CANDIDATES" "$PACKAGE_CANDIDATES" | sort -u)
+            PACKAGE_CANDIDATES=$(CHANGED="$CHANGED" node .github/scripts/detect-package-consumers.js)
           fi
           
-          # Keep only apps registered in apps.json (source of truth)
+          # Keep only directly changed apps registered in apps.json (source of truth).
+          # Package consumers are already emitted from apps.json by detect-package-consumers.js.
           APPS=""
-          for app in $CANDIDATES; do
+          for app in $APP_CANDIDATES; do
             if [ -n "$app" ] && node -e "const c=require('./apps/apps.json'); if(!c['$app']) process.exit(1);" 2>/dev/null; then
               APPS="$APPS $app"
             else
               echo "⏭️ $app not in apps.json, skipping"
             fi
           done
-          APPS=$(echo $APPS | xargs)
+          APPS=$(printf "%s\n%s\n" "$APPS" "$PACKAGE_CANDIDATES" | xargs -n1 | sort -u | xargs)
 
           if [ -z "$APPS" ]; then
             echo "No registered apps changed, nothing to deploy"

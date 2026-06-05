@@ -109,7 +109,6 @@ export function AppHeader({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="polli:inline-flex polli:shrink-0 polli:items-center polli:text-theme-text-strong"
-                    aria-label={brandLabel}
                 >
                     <span className="polli:sr-only">{brandLabel}</span>
                     <span

@@ -104,7 +104,7 @@ function LifeMergeApp() {
                 </a>
                 <div className="topbar-actions">
                     <Chip theme="teal" size="sm">
-                        Life Merge
+                        SuikaCraft
                     </Chip>
                     {game.hasStarted ? (
                         <Chip theme="amber" size="sm">

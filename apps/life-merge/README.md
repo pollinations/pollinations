@@ -1,4 +1,4 @@
-# Life Merge
+# SuikaCraft
 
 A small Pollinations demo game that combines Suika-style falling physics with a constrained biological grammar.
 
@@ -8,11 +8,11 @@ The physics engine only sees circles. Pollinations text and image generation upg
 
 Each preset picks an axis and a set of small starting seeds, then asks the model to stay in that lane. The Bio preset starts from water, sugar, mineral, spore, yeast, algae, and pollen; Inventions starts from raw materials like stone, wood, clay, and fire; Future moves each merge one step toward more advanced technology.
 
-Visual style presets keep tokens legible at small sizes:
+Each world owns one visual style (there is no separate style picker) to keep tokens legible at small sizes:
 
-- Blueprint: white contour on a tier-tinted technical ground
-- Risograph: two-color overprint with warm grain
-- Ink Wash: minimal sumi-e brushwork on warm tinted paper
+- Bio → Blueprint: white contour on a tier-tinted technical ground
+- Inventions → Risograph: two-color overprint with warm grain
+- Future → Ink Wash: minimal sumi-e brushwork on warm tinted paper
 
 ## Stack
 

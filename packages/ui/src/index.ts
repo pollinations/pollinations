@@ -1,4 +1,5 @@
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,

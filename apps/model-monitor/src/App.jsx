@@ -1,5 +1,6 @@
 import {
     Alert,
+    AppHeader,
     Button,
     Chip,
     cn,
@@ -17,17 +18,11 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import { getModalityTheme } from "@pollinations/ui/gen";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
 const APP_THEME = "violet";
-
-const brandWordmarkMask = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
@@ -331,25 +326,6 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
     );
 }
 
-function BrandMark() {
-    return (
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center text-theme-text-strong"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <span
-                aria-hidden="true"
-                className="block h-7 w-[220px] max-w-full bg-current"
-                style={brandWordmarkMask}
-            />
-        </a>
-    );
-}
-
 function WindowTabs({ value, onChange }) {
     return (
         <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
@@ -378,6 +354,7 @@ function App() {
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
+    const scrollAreaRef = useRef(null);
     const failedCatalogEndpoints = Object.entries(endpointStatus)
         .filter(([, ok]) => ok === false)
         .map(([name]) => name);
@@ -505,20 +482,16 @@ function App() {
             className="h-dvh bg-theme-bg-subtle text-theme-text-base"
             data-theme={APP_THEME}
         >
-            <ScrollArea axis="y" className="h-full">
-                <header className="sticky top-0 z-30 border-b border-theme-border bg-surface-white px-5 py-4 backdrop-blur">
-                    <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <BrandMark />
-                        <nav
-                            aria-label="Model Monitor links"
-                            className="flex min-w-0 flex-wrap gap-2"
-                        >
-                            {EXTERNAL_LINKS.map((link) => (
-                                <HeaderLink key={link.href} {...link} />
-                            ))}
-                        </nav>
-                    </div>
-                </header>
+            <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
+                <AppHeader
+                    navLabel="Model Monitor links"
+                    autoHide
+                    scrollTargetRef={scrollAreaRef}
+                >
+                    {EXTERNAL_LINKS.map((link) => (
+                        <HeaderLink key={link.href} {...link} />
+                    ))}
+                </AppHeader>
                 <main
                     className={cn(
                         "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",

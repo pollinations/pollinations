@@ -9,6 +9,7 @@ import {
 } from "@pollinations/sdk/react";
 import {
     Alert,
+    AppHeader,
     AppIcon,
     BeakerIcon,
     BookIcon,
@@ -76,21 +77,13 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import {
     categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
     modalityTheme,
 } from "@pollinations/ui/gen";
-import {
-    type CSSProperties,
-    lazy,
-    type ReactNode,
-    Suspense,
-    useEffect,
-    useState,
-} from "react";
+import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
 
 // Publishable key for this showcase (pk_* is safe to commit).
 // Created via `polli keys create --type publishable` with redirect URIs
@@ -106,11 +99,6 @@ const DesignShowcase = lazy(() =>
         default: module.DesignShowcase,
     })),
 );
-
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
 
 type PublicAppView = "primitives" | "compositions" | "modules";
 type AppView = PublicAppView | "showcase";
@@ -162,25 +150,6 @@ function useAppView() {
     return { activeView, selectView };
 }
 
-function BrandMark() {
-    return (
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center text-theme-text-strong"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <span
-                aria-hidden="true"
-                className="block h-7 w-[220px] max-w-full bg-current"
-                style={brandWordmarkMask}
-            />
-        </a>
-    );
-}
-
 function ShellHeader({
     activeView,
     onSelectView,
@@ -189,26 +158,18 @@ function ShellHeader({
     onSelectView: (view: AppView) => void;
 }) {
     return (
-        <header className="sticky top-0 z-30 border-b border-theme-border bg-surface-white px-5 py-4 backdrop-blur">
-            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <BrandMark />
-                <nav
-                    aria-label="React app views"
-                    className="flex min-w-0 flex-wrap gap-2"
+        <AppHeader navLabel="React app views" autoHide>
+            {PUBLIC_VIEWS.map((view) => (
+                <TabButton
+                    key={view.id}
+                    theme={APP_THEME}
+                    active={activeView === view.id}
+                    onClick={() => onSelectView(view.id)}
                 >
-                    {PUBLIC_VIEWS.map((view) => (
-                        <TabButton
-                            key={view.id}
-                            theme={APP_THEME}
-                            active={activeView === view.id}
-                            onClick={() => onSelectView(view.id)}
-                        >
-                            {view.label}
-                        </TabButton>
-                    ))}
-                </nav>
-            </div>
-        </header>
+                    {view.label}
+                </TabButton>
+            ))}
+        </AppHeader>
     );
 }
 

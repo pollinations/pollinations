@@ -291,7 +291,8 @@ export const deviceRoutes = new Hono<Env>()
             const apiKey = c.var.auth.apiKey;
             if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
                 throw new HTTPException(403, {
-                    message: "API key does not have 'account:profile' permission",
+                    message:
+                        "API key does not have 'account:profile' permission",
                 });
             }
 

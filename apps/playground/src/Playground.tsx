@@ -1,12 +1,14 @@
 import {
     fetchModelCatalog,
     type ModelCatalog,
+    type ModelCatalogItem,
     type ModelCategory,
     Pollinations,
 } from "@pollinations/sdk/client";
 import { useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
+    AudioIcon,
     Button,
     ButtonGroup,
     cn,
@@ -29,12 +31,25 @@ import {
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
 
+type ViteImportMeta = ImportMeta & {
+    env?: {
+        VITE_POLLINATIONS_API_BASE_URL?: string;
+    };
+};
+
+const API_BASE_URL = (
+    (import.meta as ViteImportMeta).env?.VITE_POLLINATIONS_API_BASE_URL ||
+    "https://gen.pollinations.ai"
+).replace(/\/$/, "");
+
 const EMPTY_CATALOG: ModelCatalog = {
     models: [],
     allowedModelIds: new Set(),
 };
 
 const CATEGORY_ORDER: ModelCategory[] = ["image", "video", "text", "audio"];
+const AUDIO_UPLOAD_ACCEPT = "audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm";
+const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
 type PlaygroundResult =
     | {
@@ -64,7 +79,11 @@ function usePlaygroundCatalog(apiKey: string | null) {
         setIsLoading(true);
         setError(null);
 
-        fetchModelCatalog({ apiKey, signal: controller.signal })
+        fetchModelCatalog({
+            apiKey,
+            baseUrl: API_BASE_URL,
+            signal: controller.signal,
+        })
             .then((nextCatalog) => {
                 setCatalog(nextCatalog);
                 setIsLoading(false);
@@ -84,11 +103,16 @@ function usePlaygroundCatalog(apiKey: string | null) {
     return { catalog, isLoading, error };
 }
 
-function promptPlaceholder(category: ModelCategory): string {
+function promptPlaceholder(
+    category: ModelCategory,
+    isAudioTranscription = false,
+): string {
     if (category === "image")
         return "A luminous greenhouse full of tiny AI tools";
     if (category === "video")
         return "A slow cinematic orbit around a glass workshop";
+    if (category === "audio" && isAudioTranscription)
+        return "Optional vocabulary, names, or context for the transcript";
     if (category === "audio")
         return "A calm voice introducing a new creative tool";
     return "Explain how to build a tiny AI app with Pollinations";
@@ -108,6 +132,33 @@ function bytesToObjectUrl(buffer: ArrayBuffer, contentType: string): string {
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
     return String(error || "Something went wrong");
+}
+
+function isAudioTranscriptionModel(
+    model: ModelCatalogItem | undefined,
+): boolean {
+    return (
+        model?.category === "audio" &&
+        model.inputModalities.includes("audio") &&
+        model.outputModalities.includes("text")
+    );
+}
+
+function isTextToAudioModel(model: ModelCatalogItem | undefined): boolean {
+    return (
+        model?.category === "audio" &&
+        model.inputModalities.includes("text") &&
+        model.outputModalities.includes("audio")
+    );
+}
+
+function referenceImageLimit(model: ModelCatalogItem | undefined): number {
+    if (!model?.inputModalities.includes("image")) return 0;
+    return model.maxReferenceImages ?? 0;
+}
+
+function pluralizeImages(count: number): string {
+    return count === 1 ? "1 image" : `${count} images`;
 }
 
 function ModalityTabs({
@@ -189,6 +240,16 @@ function ResultPanel({
                     detail="Generated results appear here."
                     className="polli:flex-1"
                 />
+            ) : result.type === "text" ? (
+                <div className="polli:min-h-0 polli:flex-1 polli:overflow-auto polli:rounded-xl polli:bg-surface-white polli:p-4 polli:text-theme-text-strong">
+                    <Text
+                        as="p"
+                        size="sm"
+                        className="polli:m-0 polli:w-full polli:whitespace-pre-wrap polli:break-words polli:leading-relaxed"
+                    >
+                        {result.text}
+                    </Text>
+                </div>
             ) : (
                 <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3 polli:text-theme-text-strong">
                     {result.type === "image" && (
@@ -221,16 +282,6 @@ function ResultPanel({
                         >
                             <track kind="captions" />
                         </audio>
-                    )}
-
-                    {result.type === "text" && (
-                        <Text
-                            as="p"
-                            size="sm"
-                            className="polli:w-full polli:whitespace-pre-wrap"
-                        >
-                            {result.text}
-                        </Text>
                     )}
                 </div>
             )}
@@ -273,6 +324,7 @@ export function Playground({
     const [height, setHeight] = useState(1024);
     const [seed, setSeed] = useState(0);
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
+    const [audioFiles, setAudioFiles] = useState<File[]>([]);
     const [selectedVoice, setSelectedVoice] = useState("");
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -286,13 +338,13 @@ export function Playground({
     useEffect(() => {
         if (catalog.models.length === 0) return;
         if (catalog.models.some((model) => model.id === selectedModel)) return;
-        const fallback =
+        const nextModel =
             catalog.models.find((model) => model.id === "flux") ??
             catalog.models.find((model) => model.category === "image") ??
             catalog.models[0];
-        if (fallback) {
-            setSelectedModel(fallback.id);
-            setActiveCategory(fallback.category);
+        if (nextModel) {
+            setSelectedModel(nextModel.id);
+            setActiveCategory(nextModel.category);
         }
     }, [catalog.models, selectedModel]);
 
@@ -316,8 +368,20 @@ export function Playground({
         };
     }, [result]);
 
-    const supportsReferenceImages =
-        currentModel?.inputModalities.includes("image") ?? false;
+    const maxReferenceImages = referenceImageLimit(currentModel);
+    const supportsReferenceImages = maxReferenceImages > 0;
+    const isVideoReferenceMode =
+        currentModel?.category === "video" && supportsReferenceImages;
+    const isReferenceImageListMode =
+        supportsReferenceImages && !isVideoReferenceMode;
+    const supportsLastFrame =
+        isVideoReferenceMode &&
+        (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
+        maxReferenceImages >= 2;
+    const firstFrameFiles = referenceImages[0] ? [referenceImages[0]] : [];
+    const lastFrameFiles = referenceImages[1] ? [referenceImages[1]] : [];
+    const isAudioTranscription = isAudioTranscriptionModel(currentModel);
+    const isTextToAudio = isTextToAudioModel(currentModel);
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
@@ -326,21 +390,40 @@ export function Playground({
         ? modalityTheme(currentModel.category)
         : modalityTheme(activeCategory);
 
+    useEffect(() => {
+        setReferenceImages((current) => {
+            if (current.length <= maxReferenceImages) return current;
+            return current.slice(0, maxReferenceImages);
+        });
+    }, [maxReferenceImages]);
+
     function selectCategory(category: ModelCategory) {
         setActiveCategory(category);
         if (currentModel?.category === category) return;
 
-        const fallback =
+        const nextModel =
             catalog.models.find(
                 (model) =>
                     model.category === category &&
                     (!isLoggedIn || catalog.allowedModelIds.has(model.id)),
             ) ?? catalog.models.find((model) => model.category === category);
 
-        if (fallback) setSelectedModel(fallback.id);
+        if (nextModel) setSelectedModel(nextModel.id);
+    }
+
+    function setFrameImage(index: 0 | 1, files: File[]) {
+        setReferenceImages((current) => {
+            const next: Array<File | undefined> = [current[0], current[1]];
+            next[index] = files[0];
+            if (index === 0 && !files[0]) next[1] = undefined;
+            return next.filter((file): file is File => !!file);
+        });
     }
 
     async function generate() {
+        const trimmedPrompt = prompt.trim();
+        const audioFile = audioFiles[0];
+
         if (!apiKey) {
             setError("Authorize the app before generating.");
             return;
@@ -353,7 +436,11 @@ export function Playground({
             setError("This key cannot use the selected model.");
             return;
         }
-        if (!prompt.trim()) {
+        if (isAudioTranscription && !audioFile) {
+            setError("Upload an audio file first.");
+            return;
+        }
+        if (!isAudioTranscription && !trimmedPrompt) {
             setError("Enter a prompt first.");
             return;
         }
@@ -363,7 +450,10 @@ export function Playground({
         setResult(null);
 
         try {
-            const client = new Pollinations({ apiKey });
+            const client = new Pollinations({
+                apiKey,
+                baseUrl: API_BASE_URL,
+            });
             const referenceUrls = supportsReferenceImages
                 ? await uploadReferenceImages(client, referenceImages)
                 : [];
@@ -372,7 +462,7 @@ export function Playground({
                 currentModel.category === "image" ||
                 currentModel.category === "video"
             ) {
-                const response = await client.image(prompt.trim(), {
+                const response = await client.image(trimmedPrompt, {
                     model: currentModel.id,
                     width,
                     height,
@@ -395,7 +485,26 @@ export function Playground({
             }
 
             if (currentModel.category === "audio") {
-                const response = await client.audio(prompt.trim(), {
+                if (isAudioTranscription && audioFile) {
+                    const response = await client.transcribe(audioFile, {
+                        model: currentModel.id,
+                        prompt: trimmedPrompt || undefined,
+                    });
+                    setResult({
+                        type: "text",
+                        text: response.text || "No transcript",
+                    });
+                    return;
+                }
+
+                if (!isTextToAudio) {
+                    setError(
+                        "This audio model is not supported in the playground yet.",
+                    );
+                    return;
+                }
+
+                const response = await client.audio(trimmedPrompt, {
                     model: currentModel.id,
                     voice: selectedVoice || undefined,
                 });
@@ -413,13 +522,13 @@ export function Playground({
             const content =
                 referenceUrls.length > 0
                     ? [
-                          { type: "text" as const, text: prompt.trim() },
+                          { type: "text" as const, text: trimmedPrompt },
                           ...referenceUrls.map((url) => ({
                               type: "image_url" as const,
                               image_url: { url },
                           })),
                       ]
-                    : prompt.trim();
+                    : trimmedPrompt;
             const response = await client.chat([{ role: "user", content }], {
                 model: currentModel.id,
             });
@@ -443,21 +552,19 @@ export function Playground({
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
+                {/* Neutral black, not theme-tinted: the package has no neutral
+                    text token yet, so we use raw gray utilities here. Replace with
+                    the shared neutral "ink" scale in the follow-up PR. */}
                 <Heading
                     as="h1"
                     size="title"
-                    className="polli-playground-title polli:m-0"
+                    className="polli-playground-title polli:m-0 polli:text-gray-950"
                 >
                     {title}
                 </Heading>
-                <Text
-                    as="p"
-                    size="body"
-                    tone="soft"
-                    className="polli:m-0 polli:max-w-3xl"
-                >
+                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-gray-700">
                     {subtitle}
-                </Text>
+                </p>
             </section>
 
             {catalogError && (
@@ -505,21 +612,79 @@ export function Playground({
                                 }
                                 placeholder={promptPlaceholder(
                                     currentModel?.category ?? activeCategory,
+                                    isAudioTranscription,
                                 )}
                                 className="polli-playground-textarea polli:min-h-44"
                             />
                         </Field.Root>
 
-                        {supportsReferenceImages && (
+                        {isAudioTranscription && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
                                 <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Reference images
+                                    Audio file
+                                </Field.Label>
+                                <FileUpload
+                                    value={audioFiles}
+                                    onChange={setAudioFiles}
+                                    maxFiles={1}
+                                    maxSizeBytes={AUDIO_UPLOAD_MAX_SIZE_BYTES}
+                                    accept={AUDIO_UPLOAD_ACCEPT}
+                                    icon={
+                                        <AudioIcon className="polli:h-6 polli:w-6" />
+                                    }
+                                    previewIcon={
+                                        <AudioIcon className="polli:h-5 polli:w-5" />
+                                    }
+                                    label={
+                                        <>
+                                            Drag audio here or{" "}
+                                            <span className="polli:underline">
+                                                browse
+                                            </span>
+                                        </>
+                                    }
+                                    theme={activeTheme}
+                                    onReject={(rejected) => {
+                                        const reason = rejected[0]?.reason;
+                                        if (reason === "size") {
+                                            setError(
+                                                "Audio files must be under 20 MB.",
+                                            );
+                                        } else if (reason === "count") {
+                                            setError("Use one audio file.");
+                                        } else if (reason === "type") {
+                                            setError(
+                                                "Use MP3, MP4, MPEG, MPGA, M4A, WAV, or WebM audio.",
+                                            );
+                                        }
+                                    }}
+                                />
+                            </Field.Root>
+                        )}
+
+                        {isReferenceImageListMode && (
+                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    Reference images (up to{" "}
+                                    {pluralizeImages(maxReferenceImages)})
                                 </Field.Label>
                                 <FileUpload
                                     value={referenceImages}
                                     onChange={setReferenceImages}
-                                    maxFiles={4}
+                                    maxFiles={maxReferenceImages}
                                     maxSizeBytes={5 * 1024 * 1024}
+                                    label={
+                                        <>
+                                            Drag up to{" "}
+                                            {pluralizeImages(
+                                                maxReferenceImages,
+                                            )}{" "}
+                                            here or{" "}
+                                            <span className="polli:underline">
+                                                browse
+                                            </span>
+                                        </>
+                                    }
                                     theme={activeTheme}
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
@@ -529,7 +694,9 @@ export function Playground({
                                             );
                                         } else if (reason === "count") {
                                             setError(
-                                                "Use up to 4 reference images.",
+                                                `Use up to ${pluralizeImages(
+                                                    maxReferenceImages,
+                                                )}.`,
                                             );
                                         } else if (reason === "type") {
                                             setError(
@@ -539,6 +706,98 @@ export function Playground({
                                     }}
                                 />
                             </Field.Root>
+                        )}
+
+                        {isVideoReferenceMode && (
+                            <div className="polli-playground-frame-grid">
+                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                        First frame
+                                    </Field.Label>
+                                    <FileUpload
+                                        value={firstFrameFiles}
+                                        onChange={(files) =>
+                                            setFrameImage(0, files)
+                                        }
+                                        maxFiles={1}
+                                        maxSizeBytes={5 * 1024 * 1024}
+                                        label={
+                                            <>
+                                                Drag first frame here or{" "}
+                                                <span className="polli:underline">
+                                                    browse
+                                                </span>
+                                            </>
+                                        }
+                                        theme={activeTheme}
+                                        onReject={(rejected) => {
+                                            const reason = rejected[0]?.reason;
+                                            if (reason === "size") {
+                                                setError(
+                                                    "Images must be under 5 MB each.",
+                                                );
+                                            } else if (reason === "count") {
+                                                setError(
+                                                    "Use one first frame.",
+                                                );
+                                            } else if (reason === "type") {
+                                                setError(
+                                                    "Only image files are allowed.",
+                                                );
+                                            }
+                                        }}
+                                    />
+                                </Field.Root>
+
+                                {supportsLastFrame && (
+                                    <Field.Root className="polli:flex polli:flex-col polli:gap-2">
+                                        <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                            Last frame
+                                        </Field.Label>
+                                        <FileUpload
+                                            value={lastFrameFiles}
+                                            onChange={(files) =>
+                                                setFrameImage(1, files)
+                                            }
+                                            maxFiles={1}
+                                            maxSizeBytes={5 * 1024 * 1024}
+                                            disabled={
+                                                firstFrameFiles.length === 0
+                                            }
+                                            label={
+                                                firstFrameFiles.length === 0 ? (
+                                                    "Add first frame before last frame"
+                                                ) : (
+                                                    <>
+                                                        Drag last frame here or{" "}
+                                                        <span className="polli:underline">
+                                                            browse
+                                                        </span>
+                                                    </>
+                                                )
+                                            }
+                                            theme={activeTheme}
+                                            onReject={(rejected) => {
+                                                const reason =
+                                                    rejected[0]?.reason;
+                                                if (reason === "size") {
+                                                    setError(
+                                                        "Images must be under 5 MB each.",
+                                                    );
+                                                } else if (reason === "count") {
+                                                    setError(
+                                                        "Use one last frame.",
+                                                    );
+                                                } else if (reason === "type") {
+                                                    setError(
+                                                        "Only image files are allowed.",
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                    </Field.Root>
+                                )}
+                            </div>
                         )}
 
                         {(currentModel?.category === "image" ||
@@ -626,7 +885,9 @@ export function Playground({
                             disabled={
                                 isGenerating ||
                                 !apiKey ||
-                                !prompt.trim() ||
+                                (isAudioTranscription
+                                    ? audioFiles.length === 0
+                                    : !prompt.trim()) ||
                                 !selectedModelAllowed
                             }
                             onClick={generate}
@@ -637,7 +898,9 @@ export function Playground({
                                 : currentModel?.category === "video"
                                   ? "Generate video"
                                   : currentModel?.category === "audio"
-                                    ? "Generate audio"
+                                    ? isAudioTranscription
+                                        ? "Transcribe audio"
+                                        : "Generate audio"
                                     : currentModel?.category === "text"
                                       ? "Generate text"
                                       : "Generate image"}

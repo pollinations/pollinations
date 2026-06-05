@@ -1,0 +1,35 @@
+{
+  "pr_number": 11635,
+  "title": "Add app-owned theme colors",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11635",
+  "merged_at": "2026-06-05T21:20:42Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Adds a package-owned theme palette and exports it for app/icon tooling.\n- Renames the chrome `green` theme to `emerald`, keeping green for semantic success states.\n- Moves app icon generation to `pollinations.theme` declarations and regenerates React, Enter, Playground, and Model Monitor assets.\n- Aligns React app naming to `React UI | pollinations.ai`.\n\n## Checks\n\n- `biome check --write` on touched text files\n- `/opt/homebrew/bin/node --test tools/icons/test/*.test.js`\n- `jq empty` on touched JSON manifests\n- `git diff --check`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh coat of paint",
+    "blurb": "We've polished up our UI themes and regenerated our app icons for a cleaner, more consistent look across the pollinations ecosystem. The classic green theme is now 'emerald', making way for proper semantic success states.",
+    "summary": "Added a centralized theme palette, renamed the chrome green theme to emerald, and regenerated app icons across the React UI, Playground, and Enter dashboard.",
+    "impact": "Users will notice more consistent colors and sharper icons across all pollinations.ai apps, with better visual distinction for success messages.",
+    "keywords": [
+      "ui",
+      "theme",
+      "icons",
+      "frontend",
+      "design"
+    ],
+    "visual_concept": "Polly the bee as an artist, wearing a painter's beret and holding a palette, painting a glowing app icon. Represents the UI and theme updates.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, holding a wooden palette and paintbrush, painting a glowing emerald green app icon on a wooden easel. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11635.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, holding a wooden palette and paintbrush, painting a glowing emerald green app icon on a wooden easel. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-05T21:21:44.844853+00:00"
+}

@@ -71,7 +71,9 @@ function buildAuthorizeUrl(args: {
 }): string {
     const params = new URLSearchParams();
     params.set("redirect_uri", args.redirectUrl);
-    params.set("client_id", args.appKey);
+    if (args.appKey.trim()) {
+        params.set("client_id", args.appKey.trim());
+    }
     params.set("state", args.state);
     if (args.permissions.length > 0) {
         params.set("scope", args.permissions.join(" "));
@@ -125,7 +127,7 @@ function describeAppKey(appKey: string): string {
 function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
     if (isProductionRuntime()) return;
 
-    if (!appKey || !appKey.startsWith("pk_")) {
+    if (appKey && !appKey.startsWith("pk_")) {
         console.warn(
             `[PolliProvider] appKey should be a publishable pk_ App Key. Received ${describeAppKey(
                 appKey,
@@ -133,7 +135,13 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
         );
     }
 
-    if (redirectUrl && isLoopbackHttpUrl(redirectUrl)) {
+    if (!appKey) {
+        console.info(
+            `[PolliProvider] No appKey provided. Auth will use redirect_uri without app attribution. ${BYOP_DOCS_URL}`,
+        );
+    }
+
+    if (appKey && redirectUrl && isLoopbackHttpUrl(redirectUrl)) {
         console.info(
             `[PolliProvider] Local auth redirect URI: ${redirectUrl}\nAdd this URI to your App Key redirectUris in Enter. ${BYOP_DOCS_URL}`,
         );

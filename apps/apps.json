@@ -10,7 +10,7 @@
         "subdomain": "playground",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "title": "Pollinations Playground",
+        "title": "Playground | pollinations.ai",
         "description": "Generate images, text, audio and video with Pollinations AI"
     },
     "catgpt": {

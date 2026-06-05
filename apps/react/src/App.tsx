@@ -83,7 +83,15 @@ import {
     type ModelSelectorCategory,
     modalityTheme,
 } from "@pollinations/ui/gen";
-import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
+import {
+    lazy,
+    type ReactNode,
+    type RefObject,
+    Suspense,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 // Publishable key for this showcase (pk_* is safe to commit).
 // Created via `polli keys create --type publishable` with redirect URIs
@@ -153,12 +161,18 @@ function useAppView() {
 function ShellHeader({
     activeView,
     onSelectView,
+    scrollTargetRef,
 }: {
     activeView: AppView;
     onSelectView: (view: AppView) => void;
+    scrollTargetRef?: RefObject<HTMLElement | null>;
 }) {
     return (
-        <AppHeader navLabel="React app views" autoHide>
+        <AppHeader
+            navLabel="React app views"
+            autoHide
+            scrollTargetRef={scrollTargetRef}
+        >
             {PUBLIC_VIEWS.map((view) => (
                 <TabButton
                     key={view.id}
@@ -180,21 +194,33 @@ function AppShell({
     activeView: AppView;
     onSelectView: (view: AppView) => void;
 }) {
+    const scrollTargetRef = useRef<HTMLDivElement | null>(null);
+
     return (
         <div
             data-theme={APP_THEME}
-            className="min-h-screen overflow-x-hidden bg-surface-white text-theme-text-strong"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-surface-white text-theme-text-strong"
         >
-            <ShellHeader activeView={activeView} onSelectView={onSelectView} />
-            <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-12 px-5 py-8 sm:py-10">
-                {activeView === "primitives" ? (
-                    <PrimitivesPage />
-                ) : activeView === "compositions" ? (
-                    <CompositionsPage />
-                ) : activeView === "modules" ? (
-                    <ModulesPage />
-                ) : null}
-            </main>
+            <ScrollArea
+                ref={scrollTargetRef}
+                axis="y"
+                className="min-h-0 flex-1"
+            >
+                <ShellHeader
+                    activeView={activeView}
+                    onSelectView={onSelectView}
+                    scrollTargetRef={scrollTargetRef}
+                />
+                <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-5 py-8 sm:py-10">
+                    {activeView === "primitives" ? (
+                        <PrimitivesPage />
+                    ) : activeView === "compositions" ? (
+                        <CompositionsPage />
+                    ) : activeView === "modules" ? (
+                        <ModulesPage />
+                    ) : null}
+                </main>
+            </ScrollArea>
         </div>
     );
 }

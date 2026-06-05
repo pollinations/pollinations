@@ -99,7 +99,7 @@ export function AppHeader({
         >
             <div
                 className={cn(
-                    "polli:mx-auto polli:flex polli:w-full polli:max-w-[1180px] polli:flex-col polli:gap-4 polli:sm:flex-row polli:sm:items-center polli:sm:justify-between",
+                    "polli:mx-auto polli:flex polli:w-full polli:max-w-5xl polli:flex-col polli:gap-4 polli:sm:flex-row polli:sm:items-center polli:sm:justify-between",
                     innerClassName,
                 )}
             >

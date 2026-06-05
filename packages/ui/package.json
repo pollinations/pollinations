@@ -23,10 +23,10 @@
       "import": "./dist/auth/sdk.js",
       "require": "./dist/auth/sdk.cjs"
     },
-    "./compositions/app-user": {
-      "types": "./dist/compositions/app-user.d.ts",
-      "import": "./dist/compositions/app-user.js",
-      "require": "./dist/compositions/app-user.cjs"
+    "./app-user-menu/sdk": {
+      "types": "./dist/app-user-menu/sdk.d.ts",
+      "import": "./dist/app-user-menu/sdk.js",
+      "require": "./dist/app-user-menu/sdk.cjs"
     },
     "./modality": {
       "types": "./dist/modality/index.d.ts",

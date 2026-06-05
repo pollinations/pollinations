@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
+import { Text } from "../primitives/Typography.tsx";
 
 type AlertIntent = "info" | "success" | "warning" | "danger";
 
@@ -34,9 +35,15 @@ export const Alert: FC<AlertProps> = ({
         )}
     >
         {title && (
-            <div className="polli:mb-1 polli:text-xs polli:font-bold polli:uppercase polli:tracking-wide">
+            <Text
+                as="div"
+                size="xs"
+                tone="strong"
+                weight="bold"
+                className="polli:mb-1 polli:uppercase polli:tracking-wide"
+            >
                 {title}
-            </div>
+            </Text>
         )}
         <div>{children}</div>
     </div>

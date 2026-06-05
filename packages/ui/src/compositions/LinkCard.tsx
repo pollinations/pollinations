@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
+import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
+import { Surface } from "../primitives/Surface.tsx";
 import type { ThemeName } from "../theme.ts";
-import { ExternalLinkIcon } from "./icons/index.tsx";
-import { Surface } from "./Surface.tsx";
 
 type BaseLinkCardProps = {
     /** Override the cascade theme for this card's subtree. */

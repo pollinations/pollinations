@@ -13,12 +13,16 @@ const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export interface ModelCatalogItem {
     id: string;
     name: string;
+    title: string;
     category: ModelCategory;
     brand?: string;
     description?: string;
     aliases: string[];
     inputModalities: string[];
     outputModalities: string[];
+    videoCapabilities: string[];
+    maxReferenceImages?: number;
+    maxReferenceVideos?: number;
     voices: string[];
     paidOnly: boolean;
     tools: boolean;
@@ -61,17 +65,21 @@ function isModelCategory(value: unknown): value is ModelCategory {
 
 function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     const id = model.id ?? model.name;
-    if (!id || !isModelCategory(model.category)) return null;
+    if (!id || !model.title || !isModelCategory(model.category)) return null;
 
     return {
         id,
         name: model.name,
+        title: model.title,
         category: model.category,
         brand: model.brand,
         description: model.description,
         aliases: model.aliases ?? [],
         inputModalities: model.input_modalities ?? [],
         outputModalities: model.output_modalities ?? [],
+        videoCapabilities: model.video_capabilities ?? [],
+        maxReferenceImages: model.max_reference_images,
+        maxReferenceVideos: model.max_reference_videos,
         voices: model.voices ?? [],
         paidOnly: model.paid_only ?? false,
         tools: model.tools ?? false,

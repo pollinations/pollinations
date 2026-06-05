@@ -1,0 +1,35 @@
+{
+  "pr_number": 11617,
+  "title": "fix(sdk): use model catalog category field",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11617",
+  "merged_at": "2026-06-05T03:40:54Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds `category` to model endpoint metadata from the registry.\n- Updates SDK model metadata typing to include category.\n- Makes `fetchModelCatalog` use endpoint `category` as the source of truth, with legacy modality fallback only when category is absent.\n- Adds focused SDK tests for category handling.\n\nChecks:\n- `npx biome check --write shared/registry/model-info.ts packages/sdk/src/types.ts packages/sdk/src/models.ts packages/sdk/src/models.test.ts`\n- `npm run test --prefix packages/sdk -- models.test.ts`\n- `npm run typecheck --prefix packages/sdk`\n- `npm run build --prefix packages/sdk`\n- `npm run test --prefix packages/sdk`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Categorically speaking",
+    "blurb": "We've updated the SDK to use a proper category field for models instead of the legacy modality system. Cleaner types, better model sorting, and a fresh coat of paint for the UI components.",
+    "summary": "The SDK's fetchModelCatalog now uses the registry's category field as the source of truth for model metadata, replacing the legacy modality system, alongside a major refactor of the UI package components.",
+    "impact": "Developers using the SDK will see a new category field in model metadata, and the React UI components have been streamlined with new Typography, CodeBlock, and StatCard primitives.",
+    "keywords": [
+      "sdk",
+      "ui",
+      "models",
+      "metadata",
+      "refactor"
+    ],
+    "visual_concept": "The bee mascot acting as a librarian or organizer, sorting glowing orbs (models) into neatly labeled categories. The robot helper assisting with the new labeling system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing pixelated orbs into neatly labeled wooden cubbies. A chunky robot with a CRT monitor head holds a lime green (#ecf874) label reading 'CATEGORY'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11617.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing pixelated orbs into neatly labeled wooden cubbies. A chunky robot with a CRT monitor head holds a lime green (#ecf874) label reading 'CATEGORY'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-05T03:41:52.475760+00:00"
+}

@@ -1,13 +1,29 @@
-import type { ModelCategory, ModelInfo, RequestOptions } from "./types.js";
-import { PollinationsError } from "./types.js";
+import {
+    MODEL_CATEGORIES,
+    type ModelCategory,
+    type ModelInfo,
+    PollinationsError,
+    type RequestOptions,
+} from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 
-export type ModelCatalogCategory = ModelCategory;
-
-export interface ModelCatalogItem extends Omit<ModelInfo, "id" | "category"> {
+/** A single entry in the public model catalog. Curated, camelCase, and stable —
+ * intentionally a small subset of the raw `ModelInfo` wire shape. */
+export interface ModelCatalogItem {
     id: string;
-    category: ModelCatalogCategory;
+    name: string;
+    category: ModelCategory;
+    description?: string;
+    aliases: string[];
+    inputModalities: string[];
+    outputModalities: string[];
+    voices: string[];
+    paidOnly: boolean;
+    tools: boolean;
+    reasoning: boolean;
+    contextLength?: number;
+    pricing?: Record<string, string> & { currency: "pollen" };
 }
 
 export interface ModelCatalog {
@@ -20,63 +36,55 @@ export interface FetchModelCatalogOptions extends RequestOptions {
     baseUrl?: string;
 }
 
-function modelId(model: ModelInfo): string {
-    return model.id || model.name;
+/** Humanize a camelCase pricing key, e.g. "promptTextTokens" -> "prompt text tokens". */
+function humanizePricingKey(key: string): string {
+    return key.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 }
 
-function isModelCatalogCategory(value: unknown): value is ModelCatalogCategory {
-    return (
-        value === "image" ||
-        value === "video" ||
-        value === "text" ||
-        value === "audio" ||
-        value === "embedding" ||
-        value === "realtime"
-    );
+/**
+ * Pricing as display-ready `[label, value]` pairs, with the `currency` marker
+ * dropped and keys humanized. Every consumer rendering pricing needs this, so it
+ * lives here rather than being re-derived per app.
+ */
+export function pricingEntries(
+    pricing: ModelCatalogItem["pricing"],
+): Array<[label: string, value: string]> {
+    return Object.entries(pricing ?? {})
+        .filter(([key]) => key !== "currency")
+        .map(([key, value]) => [humanizePricingKey(key), value]);
 }
 
-function legacyCategoryFor(model: ModelInfo): ModelCatalogCategory | null {
-    const output = model.output_modalities ?? [];
-
-    if (output.includes("embedding")) return "embedding";
-    if (output.includes("video")) return "video";
-    if (output.includes("image")) return "image";
-    if (output.includes("audio")) return "audio";
-    if (output.includes("text")) return "text";
-    return null;
-}
-
-function categoryFor(model: ModelInfo): ModelCatalogCategory | null {
-    if (isModelCatalogCategory(model.category)) return model.category;
-    return legacyCategoryFor(model);
+function isModelCategory(value: unknown): value is ModelCategory {
+    return MODEL_CATEGORIES.includes(value as ModelCategory);
 }
 
 function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
-    const id = modelId(model);
-    const category = categoryFor(model);
-    if (!id || !category) return null;
+    const id = model.id ?? model.name;
+    if (!id || !isModelCategory(model.category)) return null;
 
     return {
-        ...model,
         id,
-        name: model.name || id,
-        category,
+        name: model.name,
+        category: model.category,
+        description: model.description,
+        aliases: model.aliases ?? [],
+        inputModalities: model.input_modalities ?? [],
+        outputModalities: model.output_modalities ?? [],
+        voices: model.voices ?? [],
+        paidOnly: model.paid_only ?? false,
+        tools: model.tools ?? false,
+        reasoning: model.reasoning ?? false,
+        contextLength: model.context_length,
+        pricing: model.pricing,
     };
 }
 
 function sortModels(models: ModelCatalogItem[]): ModelCatalogItem[] {
-    const order: Record<ModelCatalogCategory, number> = {
-        image: 0,
-        video: 1,
-        text: 2,
-        audio: 3,
-        embedding: 4,
-        realtime: 5,
-    };
-
     return [...models].sort((a, b) => {
-        const categoryDelta = order[a.category] - order[b.category];
-        if (categoryDelta !== 0) return categoryDelta;
+        const delta =
+            MODEL_CATEGORIES.indexOf(a.category) -
+            MODEL_CATEGORIES.indexOf(b.category);
+        if (delta !== 0) return delta;
         return a.id.localeCompare(b.id);
     });
 }
@@ -90,10 +98,7 @@ async function fetchJson(
     const headers: Record<string, string> = {};
     if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
-    const response = await fetch(`${baseUrl}${path}`, {
-        headers,
-        signal,
-    });
+    const response = await fetch(`${baseUrl}${path}`, { headers, signal });
 
     if (!response.ok) {
         throw new PollinationsError(
@@ -112,11 +117,21 @@ async function fetchCatalogModels(
     signal?: AbortSignal,
 ): Promise<ModelCatalogItem[]> {
     const rawModels = await fetchJson(baseUrl, "/models", apiKey, signal);
+    // A 2xx response with a non-array body means the endpoint returned
+    // something unexpected (e.g. an error envelope). Surface it instead of
+    // silently treating it as an empty catalog.
+    if (!Array.isArray(rawModels)) {
+        throw new PollinationsError(
+            "Model catalog endpoint /models returned a non-array response",
+            "MODEL_CATALOG",
+            502,
+        );
+    }
 
     return sortModels(
-        ((Array.isArray(rawModels) ? rawModels : []) as ModelInfo[])
-            .map((model) => normalizeModel(model))
-            .filter((model): model is ModelCatalogItem => Boolean(model)),
+        (rawModels as ModelInfo[])
+            .map(normalizeModel)
+            .filter((model): model is ModelCatalogItem => model !== null),
     );
 }
 
@@ -134,15 +149,18 @@ export async function fetchModelCatalog({
     signal,
 }: FetchModelCatalogOptions = {}): Promise<ModelCatalog> {
     const normalizedBaseUrl = trimTrailingSlashes(baseUrl);
+
+    // Two calls to the same /models endpoint, on purpose: the anonymous call
+    // returns the full public catalog (`models`); the authenticated call returns
+    // only the models this key may use (`allowedModelIds`). They're different
+    // lists — don't collapse this into one request.
     const models = await fetchCatalogModels(normalizedBaseUrl, null, signal);
     const allowedModels = apiKey
         ? await fetchCatalogModels(normalizedBaseUrl, apiKey, signal)
         : [];
 
-    const allowedModelIds = new Set(allowedModels.map((model) => model.id));
-
     return {
         models,
-        allowedModelIds,
+        allowedModelIds: new Set(allowedModels.map((model) => model.id)),
     };
 }

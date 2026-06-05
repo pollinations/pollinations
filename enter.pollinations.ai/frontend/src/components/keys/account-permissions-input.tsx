@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -284,11 +284,8 @@ const ModelCategory: FC<{
     <div>
         <div className="flex items-center justify-between mb-1">
             <span
-                data-theme={getModalityColors(label)?.theme}
-                className={cn(
-                    "text-sm font-semibold",
-                    getModalityColors(label)?.text,
-                )}
+                data-theme={getModalityTheme(label)}
+                className="text-sm font-semibold text-theme-text-strong"
             >
                 {label}
             </span>
@@ -338,18 +335,22 @@ const ModelChip: FC<{
     showApiName = true,
     category,
 }) => {
-    const colors = getModalityColors(category ?? "");
+    const theme = getModalityTheme(category ?? "");
     const colorClasses = selected
-        ? (colors?.filled ?? "polli:bg-gray-200 polli:text-gray-900")
+        ? theme
+            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+            : "polli:bg-gray-200 polli:text-gray-900"
         : cn(
               "polli:bg-gray-100 polli:text-gray-600",
-              !disabled && colors?.hover,
+              theme &&
+                  !disabled &&
+                  "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
           );
 
     return (
         <Button
             type="button"
-            theme={colors?.theme}
+            theme={theme ?? undefined}
             size="sm"
             aria-pressed={selected}
             onClick={onClick}

@@ -13,7 +13,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
@@ -563,12 +563,9 @@ export function Authorize() {
                                                         key={m}
                                                         size="sm"
                                                         theme={
-                                                            getModalityColors(m)
-                                                                ?.theme
-                                                        }
-                                                        className={
-                                                            getModalityColors(m)
-                                                                ?.filled ?? ""
+                                                            getModalityTheme(
+                                                                m,
+                                                            ) ?? undefined
                                                         }
                                                     >
                                                         {m}

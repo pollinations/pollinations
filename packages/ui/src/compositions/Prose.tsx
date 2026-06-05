@@ -2,6 +2,7 @@ import Markdown, { type Components } from "react-markdown";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
+import { headingClassName } from "../primitives/Typography.tsx";
 
 export type ProseProps = {
     children: string;
@@ -11,19 +12,19 @@ export type ProseProps = {
 const components: Components = {
     h1: ({ node, ...props }) => (
         <h1
-            className="polli:mt-0 polli:mb-5 polli:break-words polli:font-heading polli:text-4xl polli:leading-none polli:text-theme-text-strong"
+            className={headingClassName("title", "polli:mt-0 polli:mb-5")}
             {...props}
         />
     ),
     h2: ({ node, ...props }) => (
         <h2
-            className="polli:mt-8 polli:mb-3 polli:break-words polli:font-subheading polli:text-2xl polli:leading-tight polli:text-theme-text-strong"
+            className={headingClassName("section", "polli:mt-8 polli:mb-3")}
             {...props}
         />
     ),
     h3: ({ node, ...props }) => (
         <h3
-            className="polli:mt-6 polli:mb-2 polli:break-words polli:font-subheading polli:text-xl polli:leading-tight polli:text-theme-text-strong"
+            className={headingClassName("subsection", "polli:mt-6 polli:mb-2")}
             {...props}
         />
     ),

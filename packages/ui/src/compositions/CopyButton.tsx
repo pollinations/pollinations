@@ -7,7 +7,7 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
-import { Tooltip } from "./Tooltip.tsx";
+import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type CopyValue = string | (() => string | Promise<string>);
 

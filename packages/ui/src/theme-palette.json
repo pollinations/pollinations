@@ -1,0 +1,11 @@
+{
+    "bgPale": {
+        "amber": "#fef3c7",
+        "blue": "#dbeafe",
+        "pink": "#fce7f3",
+        "teal": "#ccfbf1",
+        "violet": "#ede9fe",
+        "emerald": "#d1fae5"
+    },
+    "brandDark": "#110518"
+}

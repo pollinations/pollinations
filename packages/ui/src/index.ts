@@ -107,4 +107,4 @@ export {
     type TextWeight,
     textClassName,
 } from "./primitives/Typography.tsx";
-export { type ThemeName, themes } from "./theme.ts";
+export { type ThemeName, themePalette, themes } from "./theme.ts";

@@ -10,7 +10,7 @@ export const MODALITY_THEMES: Record<ModelCategory, ThemeName> = {
     image: "pink",
     video: "teal",
     audio: "violet",
-    realtime: "green",
+    realtime: "emerald",
     embedding: "amber",
 };
 

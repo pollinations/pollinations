@@ -1,13 +1,9 @@
 {
-    "_defaults": {
-        "themeColor": "#a3e635",
-        "backgroundColor": "#110518"
-    },
     "react": {
         "subdomain": "react",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "title": "Pollinations React",
+        "title": "React UI | pollinations.ai",
         "description": "Drop-in wallet, hooks, and primitives for Pollinations apps"
     },
     "playground": {

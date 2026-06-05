@@ -174,7 +174,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            theme={earningsEnabled ? "green" : undefined}
+                            intent={earningsEnabled ? "success" : undefined}
                             size="sm"
                             className={
                                 earningsEnabled

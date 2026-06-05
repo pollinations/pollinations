@@ -151,7 +151,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     useScrollLock(isDrawerOpen);
 
     const activeTheme =
-        navItems.find((item) => item.id === activePage)?.theme ?? "green";
+        navItems.find((item) => item.id === activePage)?.theme ?? "emerald";
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;

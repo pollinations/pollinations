@@ -46,7 +46,7 @@
 
     body.polli-ui-body {
         max-width: 800px;
-        @apply mx-auto min-h-screen overflow-x-hidden bg-emerald-100 px-4 pt-4 pb-8 font-body font-medium text-base text-green-950 sm:px-6 md:px-8;
+        @apply mx-auto min-h-screen overflow-x-hidden bg-theme-bg-pale px-4 pt-4 pb-8 font-body font-medium text-base text-theme-text-strong sm:px-6 md:px-8;
     }
 
     html.polli-ui-shell,

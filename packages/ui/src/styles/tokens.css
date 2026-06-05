@@ -90,22 +90,22 @@
     --polli-color-scrollbar-thumb: oklch(0.702 0.183 293.541 / 0.7);
 }
 
-/* Green is also the chrome default — :root fallback so unwrapped routes
+/* Emerald is also the chrome default — :root fallback so unwrapped routes
    resolve --polli-color-* vars. */
 :root,
-[data-theme="green"] {
-    --polli-color-text-base:    oklch(0.393 0.095 152.535);
-    --polli-color-text-strong:  oklch(0.266 0.065 152.934);
-    --polli-color-text-soft:    oklch(0.527 0.154 150.069);
-    --polli-color-text-muted:   oklch(0.62 0.038 152.535);
+[data-theme="emerald"] {
+    --polli-color-text-base:    oklch(0.378 0.077 168.94);
+    --polli-color-text-strong:  oklch(0.262 0.051 172.552);
+    --polli-color-text-soft:    oklch(0.508 0.118 165.612);
+    --polli-color-text-muted:   oklch(0.62 0.031 168.94);
 
-    --polli-color-border:       oklch(0.871 0.15 154.449);
+    --polli-color-border:       oklch(0.845 0.143 164.978);
 
-    --polli-color-bg-subtle:    oklch(0.982 0.018 155.826 / 0.7);
-    --polli-color-bg-active:    oklch(0.925 0.084 155.995);
-    --polli-color-bg-hover:     oklch(0.871 0.15 154.449);
-    --polli-color-bg-pale:      oklch(0.962 0.044 156.743);
-    --polli-color-scrollbar-thumb: oklch(0.792 0.209 151.711 / 0.7);
+    --polli-color-bg-subtle:    oklch(0.979 0.021 166.113 / 0.7);
+    --polli-color-bg-active:    oklch(0.905 0.093 164.15);
+    --polli-color-bg-hover:     oklch(0.845 0.143 164.978);
+    --polli-color-bg-pale:      oklch(0.95 0.052 163.051);
+    --polli-color-scrollbar-thumb: oklch(0.765 0.177 163.223 / 0.7);
 }
 
 /* Intent tokens (semantic, theme-independent). Public. */

@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { ChevronIcon } from "./ChevronIcon.tsx";
+import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 
 export type CollapsibleProps = {
     /** Header content (label, hint, etc). */
@@ -22,7 +22,7 @@ export type CollapsibleProps = {
 };
 
 /**
- * Collapsible row primitive. One chevron, one hover/rounded behaviour for
+ * Collapsible row composition. One chevron, one hover/rounded behaviour for
  * every collapsible in the UI. Use this for any "click to reveal nested
  * content" UI — nested settings, grouped controls, optional details.
  *

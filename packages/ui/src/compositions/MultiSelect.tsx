@@ -1,9 +1,9 @@
 import type { FC } from "react";
 import { cn } from "../lib/cn.ts";
+import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { Dropdown } from "../primitives/Dropdown.tsx";
+import { ScrollArea } from "../primitives/ScrollArea.tsx";
 import type { ThemeName } from "../theme.ts";
-import { ChevronIcon } from "./ChevronIcon.tsx";
-import { Dropdown } from "./Dropdown.tsx";
-import { ScrollArea } from "./ScrollArea.tsx";
 
 export type MultiSelectOption = {
     value: string;

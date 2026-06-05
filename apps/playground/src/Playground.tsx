@@ -558,11 +558,11 @@ export function Playground({
                 <Heading
                     as="h1"
                     size="title"
-                    className="polli-playground-title polli:m-0 polli:text-gray-950"
+                    className="polli-playground-title polli:m-0 polli:text-ink-950"
                 >
                     {title}
                 </Heading>
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-gray-700">
+                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-ink-700">
                     {subtitle}
                 </p>
             </section>

@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
-    grid: "#e5e7eb", // gray-200
+    grid: "var(--polli-color-ink-200)",
 } as const;
 
 type ChartProps = {
@@ -167,10 +167,10 @@ export const Chart: FC<ChartProps> = ({
         return (
             <div className="flex items-center justify-center h-[180px]">
                 <div className="text-center">
-                    <p className="text-sm text-gray-400 font-medium">
+                    <p className="text-sm text-ink-400 font-medium">
                         No usage data available
                     </p>
-                    <p className="text-xs text-gray-300 mt-1">
+                    <p className="text-xs text-ink-300 mt-1">
                         Make some API requests to see your analytics
                     </p>
                 </div>
@@ -205,7 +205,7 @@ export const Chart: FC<ChartProps> = ({
                             y={t.y}
                             textAnchor="end"
                             alignmentBaseline="middle"
-                            className="text-micro fill-gray-400 font-medium"
+                            className="text-micro fill-ink-400 font-medium"
                         >
                             {formatVal(t.value)}
                         </text>
@@ -219,7 +219,7 @@ export const Chart: FC<ChartProps> = ({
                             x={bars[0].x + bars[0].width / 2}
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-gray-400"
+                            className="text-micro fill-ink-400"
                         >
                             {bars[0].label}
                         </text>
@@ -231,7 +231,7 @@ export const Chart: FC<ChartProps> = ({
                                 }
                                 y={height - 8}
                                 textAnchor="middle"
-                                className="text-micro fill-gray-400"
+                                className="text-micro fill-ink-400"
                             >
                                 {bars[Math.floor(bars.length / 2)].label}
                             </text>
@@ -243,7 +243,7 @@ export const Chart: FC<ChartProps> = ({
                             }
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-gray-400"
+                            className="text-micro fill-ink-400"
                         >
                             {bars[bars.length - 1].label}
                         </text>

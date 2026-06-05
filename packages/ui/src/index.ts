@@ -1,4 +1,5 @@
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,
@@ -107,4 +108,4 @@ export {
     type TextWeight,
     textClassName,
 } from "./primitives/Typography.tsx";
-export { type ThemeName, themes } from "./theme.ts";
+export { type ThemeName, themePalette, themes } from "./theme.ts";

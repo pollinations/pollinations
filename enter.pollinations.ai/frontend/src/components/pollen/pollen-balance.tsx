@@ -40,10 +40,10 @@ const TooltipList: FC<{
     earned?: number;
 }> = ({ title, emoji, items, earned }) => (
     <span className="block leading-snug">
-        <span className="block font-semibold text-gray-900">
+        <span className="block font-semibold text-ink-900">
             {title} <span aria-hidden="true">{emoji}</span>
         </span>
-        <ul className="mt-1.5 space-y-1 text-gray-700">
+        <ul className="mt-1.5 space-y-1 text-ink-700">
             {items.map((item) => (
                 <li key={item} className="flex gap-1.5">
                     <span aria-hidden="true">•</span>
@@ -52,11 +52,9 @@ const TooltipList: FC<{
             ))}
         </ul>
         {earned !== undefined && earned > 0 && (
-            <span className="mt-2 block border-t border-gray-200 pt-1.5 text-green-700 font-semibold">
+            <span className="mt-2 block border-t border-ink-200 pt-1.5 text-intent-success-700 font-semibold">
                 +{formatPollen(earned)}{" "}
-                <span className="font-medium text-gray-600">
-                    earned past 7d
-                </span>
+                <span className="font-medium text-ink-600">earned past 7d</span>
             </span>
         )}
     </span>
@@ -112,7 +110,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         paidWeek > 0 ? (
                             <>
                                 +{formatPollen(paidWeek)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-accent-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -145,7 +143,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             tierWeek > 0 ? (
                                 <>
                                     +{formatPollen(tierWeek)}{" "}
-                                    <span className="font-medium text-amber-800/70">
+                                    <span className="font-medium text-accent-amber-800/70">
                                         / 7d
                                     </span>
                                 </>
@@ -157,22 +155,22 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
             {/* Total + 7d earnings below */}
             <div className="flex items-start justify-between gap-3 pt-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-amber-900 pt-1">
+                <span className="text-sm font-bold uppercase tracking-wide text-accent-amber-900 pt-1">
                     Total
                 </span>
                 <div className="flex flex-col items-end leading-tight">
                     <span className="flex items-baseline gap-1.5">
-                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-amber-950">
+                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-accent-amber-950">
                             {formatPollen(totalPollen)}
                         </span>
-                        <span className="text-xs font-bold text-amber-900">
+                        <span className="text-xs font-bold text-accent-amber-900">
                             pollen
                         </span>
                     </span>
                     {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-green-700">
+                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-700">
                             +{formatPollen(totalWeek)}{" "}
-                            <span className="font-medium text-amber-800/70">
+                            <span className="font-medium text-accent-amber-800/70">
                                 / 7d
                             </span>
                         </span>
@@ -181,7 +179,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="mt-5 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+            <div className="mt-5 border-t border-accent-amber-300/70 pt-5 text-[13px] leading-snug text-accent-amber-950/45">
                 <button
                     type="button"
                     onClick={() => {
@@ -194,7 +192,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             window.location.hash = slug;
                         }
                     }}
-                    className="flex items-start gap-1.5 underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                    className="flex items-start gap-1.5 underline decoration-accent-amber-700/25 underline-offset-2 transition-colors hover:text-accent-amber-950"
                 >
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>Learn more</span>
@@ -227,16 +225,16 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     return (
         <div className="px-3 py-1 flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-accent-amber-900">
                     <WalletDot kind="paid" />
                     Paid
                 </span>
                 <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                    <span className="text-sm font-bold tabular-nums text-accent-amber-950 leading-none">
                         {formatPollen(displayPaidBalance)}
                     </span>
                     {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-green-700">
+                        <span className="text-micro font-bold tabular-nums text-intent-success-700">
                             +{formatPollen(paidWeek)}
                         </span>
                     )}
@@ -244,16 +242,16 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             </div>
             {!hideTierSegment && (
                 <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-accent-amber-900">
                         <WalletDot kind="tier" />
                         Tier
                     </span>
                     <span className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                        <span className="text-sm font-bold tabular-nums text-accent-amber-950 leading-none">
                             {formatPollen(displayTierBalance)}
                         </span>
                         {tierWeek > 0 && (
-                            <span className="text-micro font-bold tabular-nums text-green-700">
+                            <span className="text-micro font-bold tabular-nums text-intent-success-700">
                                 +{formatPollen(tierWeek)}
                             </span>
                         )}
@@ -315,10 +313,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     </div>
                 )}
             </div>
-            <div className="mt-5 border-t border-amber-300/70 pt-5">
+            <div className="mt-5 border-t border-accent-amber-300/70 pt-5">
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </div>
-            <div className="mt-5 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+            <div className="mt-5 space-y-2 border-t border-accent-amber-300/70 pt-5 text-[13px] leading-snug text-accent-amber-950/45">
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -327,7 +325,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             href={REFUND_POLICY_URL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                            className="underline decoration-accent-amber-700/25 underline-offset-2 transition-colors hover:text-accent-amber-950"
                         >
                             Refund Policy
                         </a>
@@ -340,7 +338,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         Payment issue or missing pollen?{" "}
                         <CopyButton
                             value="billing@pollinations.ai"
-                            className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                            className="underline decoration-accent-amber-700/25 underline-offset-2 transition-colors hover:text-accent-amber-950"
                         >
                             {(copied) =>
                                 copied ? "Copied!" : "billing@pollinations.ai"

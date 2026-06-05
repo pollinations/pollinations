@@ -64,7 +64,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     style={pollenPackSliderStyle}
                 />
             </div>
-            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-amber-700/80 tabular-nums">
+            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-accent-amber-700/80 tabular-nums">
                 <div className="relative">
                     {packs.map((pack, index) => {
                         const isSelected =
@@ -87,7 +87,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         : isLast
                                           ? "ml-[11px] -translate-x-full text-right"
                                           : "-translate-x-1/2 text-center",
-                                    isSelected && "font-bold text-amber-900",
+                                    isSelected &&
+                                        "font-bold text-accent-amber-900",
                                 )}
                             >
                                 <span className="relative inline-block">

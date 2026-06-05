@@ -9,6 +9,7 @@ import {
 } from "@pollinations/sdk/react";
 import {
     Alert,
+    AppHeader,
     AppIcon,
     BeakerIcon,
     BookIcon,
@@ -76,7 +77,6 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import {
     categoryLabel,
     ModelSelector,
@@ -84,11 +84,12 @@ import {
     modalityTheme,
 } from "@pollinations/ui/gen";
 import {
-    type CSSProperties,
     lazy,
     type ReactNode,
+    type RefObject,
     Suspense,
     useEffect,
+    useRef,
     useState,
 } from "react";
 
@@ -106,11 +107,6 @@ const DesignShowcase = lazy(() =>
         default: module.DesignShowcase,
     })),
 );
-
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
 
 type PublicAppView = "primitives" | "compositions" | "modules";
 type AppView = PublicAppView | "showcase";
@@ -162,53 +158,32 @@ function useAppView() {
     return { activeView, selectView };
 }
 
-function BrandMark() {
-    return (
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center text-theme-text-strong"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <span
-                aria-hidden="true"
-                className="block h-7 w-[220px] max-w-full bg-current"
-                style={brandWordmarkMask}
-            />
-        </a>
-    );
-}
-
 function ShellHeader({
     activeView,
     onSelectView,
+    scrollTargetRef,
 }: {
     activeView: AppView;
     onSelectView: (view: AppView) => void;
+    scrollTargetRef?: RefObject<HTMLElement | null>;
 }) {
     return (
-        <header className="sticky top-0 z-30 border-b border-theme-border bg-surface-white px-5 py-4 backdrop-blur">
-            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <BrandMark />
-                <nav
-                    aria-label="React app views"
-                    className="flex min-w-0 flex-wrap gap-2"
+        <AppHeader
+            navLabel="React app views"
+            autoHide
+            scrollTargetRef={scrollTargetRef}
+        >
+            {PUBLIC_VIEWS.map((view) => (
+                <TabButton
+                    key={view.id}
+                    theme={APP_THEME}
+                    active={activeView === view.id}
+                    onClick={() => onSelectView(view.id)}
                 >
-                    {PUBLIC_VIEWS.map((view) => (
-                        <TabButton
-                            key={view.id}
-                            theme={APP_THEME}
-                            active={activeView === view.id}
-                            onClick={() => onSelectView(view.id)}
-                        >
-                            {view.label}
-                        </TabButton>
-                    ))}
-                </nav>
-            </div>
-        </header>
+                    {view.label}
+                </TabButton>
+            ))}
+        </AppHeader>
     );
 }
 
@@ -219,21 +194,33 @@ function AppShell({
     activeView: AppView;
     onSelectView: (view: AppView) => void;
 }) {
+    const scrollTargetRef = useRef<HTMLDivElement | null>(null);
+
     return (
         <div
             data-theme={APP_THEME}
-            className="min-h-screen overflow-x-hidden bg-surface-white text-theme-text-strong"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-surface-white text-theme-text-strong"
         >
-            <ShellHeader activeView={activeView} onSelectView={onSelectView} />
-            <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-12 px-5 py-8 sm:py-10">
-                {activeView === "primitives" ? (
-                    <PrimitivesPage />
-                ) : activeView === "compositions" ? (
-                    <CompositionsPage />
-                ) : activeView === "modules" ? (
-                    <ModulesPage />
-                ) : null}
-            </main>
+            <ScrollArea
+                ref={scrollTargetRef}
+                axis="y"
+                className="min-h-0 flex-1"
+            >
+                <ShellHeader
+                    activeView={activeView}
+                    onSelectView={onSelectView}
+                    scrollTargetRef={scrollTargetRef}
+                />
+                <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 py-8 sm:px-6 sm:py-10">
+                    {activeView === "primitives" ? (
+                        <PrimitivesPage />
+                    ) : activeView === "compositions" ? (
+                        <CompositionsPage />
+                    ) : activeView === "modules" ? (
+                        <ModulesPage />
+                    ) : null}
+                </main>
+            </ScrollArea>
         </div>
     );
 }

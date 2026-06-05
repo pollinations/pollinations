@@ -60,7 +60,13 @@ import {
 const APP_KEY = import.meta.env.VITE_POLLINATIONS_APP_KEY?.trim() ?? "";
 const HAS_APP_KEY = APP_KEY.startsWith("pk_");
 const APP_THEME = "green";
-const BOARD_FALLBACK = { width: 600, height: 800 };
+const BOARD_LOGICAL_SIZE = { width: 600, height: 900 };
+const BOARD_FALLBACK = BOARD_LOGICAL_SIZE;
+const BOARD_ASPECT_RATIO = `${BOARD_LOGICAL_SIZE.width} / ${BOARD_LOGICAL_SIZE.height}`;
+const BOARD_MAX_WIDTH = `${BOARD_LOGICAL_SIZE.width}px`;
+const BOARD_WIDTH_FROM_HEIGHT = `calc(var(--board-max-height) * ${
+    BOARD_LOGICAL_SIZE.width / BOARD_LOGICAL_SIZE.height
+})`;
 const LOSS_LINE = 100;
 const DROP_Y = 70;
 const MAX_PIECES = 50;
@@ -1053,6 +1059,14 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                         className={`merge-board ${isCrowded ? "is-crowded" : ""}`}
                         onPointerMove={updateAim}
                         onPointerDown={handleBoardPointerDown}
+                        style={
+                            {
+                                "--board-aspect-ratio": BOARD_ASPECT_RATIO,
+                                "--board-max-width": BOARD_MAX_WIDTH,
+                                "--board-width-from-height":
+                                    BOARD_WIDTH_FROM_HEIGHT,
+                            } as CSSProperties
+                        }
                     >
                         <div className="loss-line" style={{ top: LOSS_LINE }}>
                             <span />

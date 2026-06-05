@@ -97,8 +97,10 @@ select {
 }
 
 .play-column {
+    --board-max-height: calc(100vh - 180px);
+
     display: grid;
-    grid-template-rows: auto minmax(500px, calc(100vh - 180px)) auto;
+    grid-template-rows: auto auto auto;
     gap: 12px;
 }
 
@@ -182,7 +184,10 @@ select {
 
 .merge-board {
     position: relative;
-    min-height: 500px;
+    width: min(100%, var(--board-max-width), var(--board-width-from-height));
+    min-height: 0;
+    aspect-ratio: var(--board-aspect-ratio);
+    justify-self: center;
     overflow: hidden;
     border: 1px solid rgba(29, 74, 33, 0.2);
     border-radius: 8px;
@@ -920,7 +925,7 @@ select {
     }
 
     .play-column {
-        grid-template-rows: auto minmax(500px, 64vh) auto;
+        --board-max-height: 64vh;
     }
 
     .side-panel {
@@ -963,7 +968,7 @@ select {
     }
 
     .play-column {
-        grid-template-rows: auto minmax(460px, 62vh) auto;
+        --board-max-height: 62vh;
     }
 
     .side-panel {

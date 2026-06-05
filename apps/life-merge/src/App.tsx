@@ -1115,7 +1115,9 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                 key={piece.id}
                                 className={`life-piece ${
                                     piece.pending ? "is-pending" : ""
-                                } ${piece.generated ? "is-generated" : ""}`}
+                                } ${piece.generated ? "is-generated" : ""} ${
+                                    piece.y < piece.radius + 48 ? "is-high" : ""
+                                }`}
                                 title={pieceTitle(piece)}
                                 onPointerEnter={() =>
                                     setLineageView(piece.lineage)

@@ -262,6 +262,12 @@ select {
     user-select: none;
 }
 
+.life-piece:hover,
+.life-piece:focus-visible,
+.life-piece.is-pending {
+    z-index: 50;
+}
+
 .drop-preview {
     position: absolute;
     z-index: 6;
@@ -368,6 +374,7 @@ select {
     bottom: calc(100% + 10px);
     left: 50%;
     z-index: 30;
+    pointer-events: none;
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -387,6 +394,11 @@ select {
     text-overflow: ellipsis;
     transform: translateX(-50%) rotate(calc(-1 * var(--piece-rotate)));
     white-space: nowrap;
+}
+
+.life-piece.is-high .piece-label {
+    top: calc(100% + 10px);
+    bottom: auto;
 }
 
 .piece-label-name,

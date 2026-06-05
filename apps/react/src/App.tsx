@@ -460,13 +460,15 @@ function ModulesPage() {
                     variant="panel"
                     className="flex flex-col items-start gap-5"
                 >
-                    <AppUserMenu dashboardHref={enterUrl} />
-                    {!isLoggedIn ? (
-                        <Alert intent="warning" className="w-full">
-                            Authorize the app to load your account and per-key
-                            access.
-                        </Alert>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <AppUserMenu dashboardHref={enterUrl} />
+                        {!isLoggedIn ? (
+                            <span className="text-sm font-medium text-intent-danger-text">
+                                Authorize the app to load your account and
+                                per-key access.
+                            </span>
+                        ) : null}
+                    </div>
                     <div className="flex w-full flex-col gap-5">
                         <div className="w-full">
                             <Text as="h3" size="sm" weight="bold">

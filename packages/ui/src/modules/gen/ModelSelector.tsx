@@ -13,6 +13,7 @@ export type ModelSelectorCategory = ModelCategory;
 export type ModelSelectorItem = {
     id: string;
     name: string;
+    title: string;
     description?: string;
     category: ModelSelectorCategory;
     paidOnly?: boolean;
@@ -41,7 +42,7 @@ export function categoryLabel(category: ModelSelectorCategory): string {
 }
 
 function displayModelName(model: ModelSelectorItem): string {
-    return model.description?.split(" - ")[0] || model.name;
+    return model.title;
 }
 
 export function ModelSelector({

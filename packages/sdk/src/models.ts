@@ -20,6 +20,9 @@ export interface ModelCatalogItem {
     aliases: string[];
     inputModalities: string[];
     outputModalities: string[];
+    videoCapabilities: string[];
+    maxReferenceImages?: number;
+    maxReferenceVideos?: number;
     voices: string[];
     paidOnly: boolean;
     tools: boolean;
@@ -67,13 +70,16 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     return {
         id,
         name: model.name,
-        title: model.title,
+        title: model.title ?? model.name,
         category: model.category,
         brand: model.brand,
         description: model.description,
         aliases: model.aliases ?? [],
         inputModalities: model.input_modalities ?? [],
         outputModalities: model.output_modalities ?? [],
+        videoCapabilities: model.video_capabilities ?? [],
+        maxReferenceImages: model.max_reference_images,
+        maxReferenceVideos: model.max_reference_videos,
         voices: model.voices ?? [],
         paidOnly: model.paid_only ?? false,
         tools: model.tools ?? false,

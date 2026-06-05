@@ -813,7 +813,8 @@ export type VideoCapability =
 export interface ModelInfo {
     id?: string;
     name: string;
-    title: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
     category?: ModelCategory;
     brand?: string;
     description?: string;
@@ -823,6 +824,8 @@ export interface ModelInfo {
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    max_reference_images?: number;
+    max_reference_videos?: number;
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;

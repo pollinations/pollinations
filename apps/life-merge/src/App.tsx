@@ -15,12 +15,7 @@ import {
 } from "./useGameEngine";
 
 const APP_KEY = import.meta.env.VITE_POLLINATIONS_APP_KEY?.trim() ?? "";
-const HAS_APP_KEY = APP_KEY.startsWith("pk_");
 const APP_THEME = "green";
-
-type LifeMergeAppProps = {
-    hasAppKey: boolean;
-};
 
 const brandWordmarkMask: CSSProperties = {
     WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
@@ -85,12 +80,12 @@ function App() {
             budget={6}
             expiry={7}
         >
-            <LifeMergeApp hasAppKey={HAS_APP_KEY} />
+            <LifeMergeApp />
         </PolliProvider>
     );
 }
 
-function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
+function LifeMergeApp() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const game = useGameEngine({ apiKey, isLoggedIn, isHydrated });
 
@@ -116,10 +111,23 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                             {game.activePreset.label}
                         </Chip>
                     ) : null}
-                    {!hasAppKey ? (
-                        <Chip theme="blue" size="sm">
-                            Redirect auth
-                        </Chip>
+                    {game.hasStarted ? (
+                        <span className="topbar-score" aria-live="polite">
+                            <strong>{game.score}</strong>
+                            <small>
+                                {game.highestTier + 1}/{game.rungs.length} ·{" "}
+                                {game.pieces.length} in play
+                            </small>
+                        </span>
+                    ) : null}
+                    {game.hasStarted ? (
+                        <Button
+                            theme="amber"
+                            size="sm"
+                            onClick={game.resetGame}
+                        >
+                            Reset
+                        </Button>
                     ) : null}
                     <Balance />
                     <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
@@ -208,7 +216,7 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                         }`}
                                         title={pieceTitle(piece)}
                                         onPointerEnter={() =>
-                                            game.selectPiece(piece)
+                                            game.showDiscovery(piece)
                                         }
                                         onClick={() =>
                                             game.showDiscovery(piece)
@@ -393,56 +401,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                     />
                                 ))}
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="play-footer">
-                        <button
-                            type="button"
-                            className="next-orb"
-                            title={pieceTitle(game.nextPiece)}
-                            onClick={() => game.selectPiece(game.nextPiece)}
-                            style={
-                                {
-                                    "--piece-color": game.nextPiece.color,
-                                    "--piece-ink": game.nextPiece.ink,
-                                } as CSSProperties
-                            }
-                        >
-                            {game.nextPiece.pending ? (
-                                <span
-                                    className="piece-spinner"
-                                    aria-hidden="true"
-                                />
-                            ) : realImage(game.nextPiece.imageUrl) ? (
-                                <img
-                                    src={realImage(game.nextPiece.imageUrl)}
-                                    alt=""
-                                />
-                            ) : null}
-                            <span className="next-orb-caption">
-                                {game.nextPiece.pending
-                                    ? "…"
-                                    : game.nextPiece.name}
-                            </span>
-                        </button>
-                        <div className="play-footer-status" aria-live="polite">
-                            <strong>{game.score}</strong>
-                            <span>
-                                {game.highestTier + 1}/{game.rungs.length} sizes
-                                · {game.pieces.length} on board
-                            </span>
-                        </div>
-                        <div className="toolbar-buttons">
-                            <Button
-                                onClick={() => game.dropNextPiece()}
-                                disabled={!game.canDrop}
-                            >
-                                Drop
-                            </Button>
-                            <Button theme="amber" onClick={game.resetGame}>
-                                Reset
-                            </Button>
                         </div>
                     </div>
                 </section>

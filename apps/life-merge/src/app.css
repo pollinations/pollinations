@@ -103,12 +103,12 @@ select {
 }
 
 .play-column {
-    /* dvh (not vh) so the board doesn't jump when a mobile URL bar shows/hides. */
-    --board-max-height: calc(100dvh - 196px);
+    /* dvh (not vh) so the board doesn't jump when a mobile URL bar shows/hides.
+       Only the topbar (~64px) + page padding sits outside the board now. */
+    --board-max-height: calc(100dvh - 120px);
 
     display: grid;
-    grid-template-rows: 1fr auto;
-    gap: 14px;
+    min-height: 0;
 }
 
 /* The board centres itself; the frame just reserves the column space. */
@@ -319,6 +319,17 @@ select {
     transform: translate(-50%, -100%);
     white-space: normal;
     pointer-events: none;
+    /* Reveal-on-demand: landed labels stay hidden so the board doesn't fill
+       with overlapping pills. Only the just-landed/hovered piece (is-active)
+       or one mid-generation (is-pending) shows its label. */
+    opacity: 0;
+    transition: opacity 130ms ease;
+}
+
+.piece-label.is-active,
+.piece-label.is-pending {
+    z-index: 2;
+    opacity: 1;
 }
 
 .piece-label-layer {
@@ -327,10 +338,6 @@ select {
     z-index: 70;
     overflow: visible;
     pointer-events: none;
-}
-
-.piece-label.is-active {
-    z-index: 2;
 }
 
 .piece-label-name {
@@ -595,74 +602,24 @@ select {
     animation: progress-sweep 1s ease-in-out infinite;
 }
 
-/* ---- Play footer (next + score + actions) ---------------------------- */
+/* ---- Topbar score (score + progress, beside Reset) ------------------- */
 
-.play-footer {
+.topbar-score {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 12px;
-    border: 1px solid rgba(29, 74, 33, 0.12);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.78);
-}
-
-.next-orb {
-    display: grid;
-    grid-template-columns: 48px auto;
-    align-items: center;
-    gap: 10px;
-    flex: 0 0 auto;
-    max-width: 220px;
-    padding: 4px 12px 4px 4px;
-    border: 1px solid rgba(29, 74, 33, 0.14);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-}
-
-.next-orb img {
-    width: 48px;
-    height: 48px;
-    border: 2px solid var(--piece-ink);
-    border-radius: 999px;
-    background: var(--piece-color);
-    object-fit: cover;
-}
-
-.next-orb-caption {
-    min-width: 0;
-    overflow: hidden;
-    color: #142016;
-    font-size: 14px;
-    font-weight: 700;
-    text-align: left;
-    text-overflow: ellipsis;
+    align-items: baseline;
+    gap: 6px;
     white-space: nowrap;
 }
 
-.play-footer-status {
-    display: grid;
-    gap: 1px;
-    min-width: 0;
-    margin-right: auto;
-}
-
-.play-footer-status strong {
+.topbar-score strong {
     color: #142016;
-    font-size: 20px;
+    font-size: 16px;
     line-height: 1;
 }
 
-.play-footer-status span {
+.topbar-score small {
     color: #4e6253;
     font-size: 12px;
-}
-
-.toolbar-buttons {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 8px;
 }
 
 /* ---- Sidebar cards --------------------------------------------------- */
@@ -830,17 +787,24 @@ select {
 
 @media (max-width: 640px) {
     .topbar {
-        padding: 12px;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    .topbar-actions {
+        gap: 6px;
+    }
+
+    /* Drop the least-essential topbar items so it doesn't crowd on phones —
+       Reset, balance and the user menu stay. */
+    .topbar-score {
+        display: none;
     }
 
     .game-layout {
         grid-template-columns: minmax(0, 1fr) 180px;
         padding: 14px;
         gap: 12px;
-    }
-
-    .play-footer {
-        flex-wrap: wrap;
     }
 
     .piece-label {

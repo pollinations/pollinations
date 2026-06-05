@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import {
     assertAllowedRemoteMediaUrl,
-    assertNoRemoteMediaRedirect,
     assertRemoteMediaContentLength,
+    fetchRemoteMedia,
     readRemoteMediaBytes,
 } from "@/utils/remoteMedia.ts";
 import { HttpError } from "../httpError.ts";
@@ -95,9 +95,8 @@ export async function downloadUserImage(
 
     let imageResponse: Response;
     try {
-        imageResponse = await fetch(validatedUrl, {
+        imageResponse = await fetchRemoteMedia(validatedUrl.toString(), {
             signal,
-            redirect: "manual",
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -109,7 +108,6 @@ export async function downloadUserImage(
     }
 
     try {
-        assertNoRemoteMediaRedirect(imageUrl, imageResponse);
         assertRemoteMediaContentLength(imageUrl, imageResponse);
     } catch (error) {
         if (error instanceof Error) {

@@ -3,8 +3,8 @@ import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import {
     assertAllowedRemoteMediaUrl,
-    assertNoRemoteMediaRedirect,
     assertRemoteMediaContentLength,
+    fetchRemoteMedia,
     readRemoteMediaBytes,
 } from "@/utils/remoteMedia.ts";
 import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
@@ -20,12 +20,11 @@ async function fetchMedia(
     const parsed = assertAllowedRemoteMediaUrl(url);
     let response: Response;
     try {
-        response = await fetch(parsed, { redirect: "manual" });
+        response = await fetchRemoteMedia(parsed.toString());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         badRequest(`Failed to fetch media: ${message}`);
     }
-    assertNoRemoteMediaRedirect(url, response);
     if (!response.ok) {
         badRequest(
             `Failed to fetch media: ${response.status} ${response.statusText}`,

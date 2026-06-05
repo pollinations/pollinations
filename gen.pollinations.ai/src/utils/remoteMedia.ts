@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 // Cap remote media so a user-supplied URL can't make the worker buffer an
 // unbounded download (DoS / amplification).
 export const MAX_REMOTE_MEDIA_BYTES = 50 * 1024 * 1024;
+export const MAX_REMOTE_MEDIA_REDIRECTS = 3;
 
 export function badRemoteMediaRequest(message: string): never {
     throw new HTTPException(400, { message });
@@ -13,8 +14,8 @@ export function badRemoteMediaRequest(message: string): never {
 // via fetch, and there's no connect-time DNS re-resolution to pin against — so
 // an exhaustive private-IP blocklist buys little and is bypassable anyway
 // (decimal/hex/short-form literals). Reject the obvious footguns — non-HTTP(S)
-// schemes, credentialed URLs, localhost — and rely on the redirect block +
-// size cap below for the rest.
+// schemes, credentialed URLs, localhost — and rely on bounded manual redirects
+// plus the size cap below for the rest.
 export function assertAllowedRemoteMediaUrl(value: string): URL {
     let url: URL;
     try {
@@ -46,12 +47,48 @@ export function assertAllowedRemoteMediaUrl(value: string): URL {
     return url;
 }
 
-export function assertNoRemoteMediaRedirect(url: string, response: Response) {
-    if (response.status >= 300 && response.status < 400) {
-        badRemoteMediaRequest(
-            `Media URL ${url} redirects. Please provide a direct public media URL.`,
+function isRedirect(response: Response): boolean {
+    return response.status >= 300 && response.status < 400;
+}
+
+export async function fetchRemoteMedia(
+    url: string,
+    opts: { signal?: AbortSignal; maxRedirects?: number } = {},
+): Promise<Response> {
+    let currentUrl = assertAllowedRemoteMediaUrl(url);
+    const maxRedirects = opts.maxRedirects ?? MAX_REMOTE_MEDIA_REDIRECTS;
+
+    for (
+        let redirectCount = 0;
+        redirectCount <= maxRedirects;
+        redirectCount++
+    ) {
+        const response = await fetch(currentUrl, {
+            redirect: "manual",
+            signal: opts.signal,
+        });
+        if (!isRedirect(response)) return response;
+
+        const location = response.headers.get("location");
+        if (!location) {
+            badRemoteMediaRequest(
+                `Media URL ${currentUrl.toString()} redirects without a Location header.`,
+            );
+        }
+        if (redirectCount === maxRedirects) {
+            badRemoteMediaRequest(
+                `Media URL ${url} exceeded ${maxRedirects} redirects.`,
+            );
+        }
+
+        currentUrl = assertAllowedRemoteMediaUrl(
+            new URL(location, currentUrl).toString(),
         );
     }
+
+    badRemoteMediaRequest(
+        `Media URL ${url} exceeded ${maxRedirects} redirects.`,
+    );
 }
 
 export function assertRemoteMediaContentLength(

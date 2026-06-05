@@ -13,7 +13,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { getModalityTheme } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,

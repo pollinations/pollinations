@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { getModalityTheme } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {

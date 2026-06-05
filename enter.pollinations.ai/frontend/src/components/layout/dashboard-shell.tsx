@@ -208,24 +208,24 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         {
             label: "API",
             href: `${genDocsUrl()}`,
-            icon: <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />,
+            icon: <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
         },
         {
             label: "BYOP",
             href: `${genDocsUrl()}#tag/byop`,
-            icon: <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />,
+            icon: <WalletIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
         },
         {
             label: "CLI",
             href: `${genDocsUrl()}#tag/cli`,
             icon: (
-                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />
             ),
         },
         {
             label: "MCP Server",
             href: `${genDocsUrl()}#tag/mcp-server`,
-            icon: <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />,
+            icon: <McpIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
         },
     ];
 
@@ -244,11 +244,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const supportAction: SupportAction = {
         label: "Docs",
         title: "Copy full docs for LLMs",
-        icon: <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />,
+        icon: <BookIcon className="h-4 w-4 shrink-0 text-ink-500" />,
         idleIcon: (
-            <ClipboardIcon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+            <ClipboardIcon className="h-4 w-4 shrink-0 text-ink-400 transition-colors group-hover:text-ink-600" />
         ),
-        successIcon: <CheckIcon className="h-4 w-4 shrink-0 text-green-700" />,
+        successIcon: (
+            <CheckIcon className="h-4 w-4 shrink-0 text-intent-success-700" />
+        ),
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
             return res.text();
@@ -268,7 +270,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-emerald-100 text-green-950">
+        <div className="flex h-dvh overflow-hidden bg-theme-bg-pale text-theme-text-strong">
             <div className="hidden md:block">{rail}</div>
             <div
                 ref={drawerRef}
@@ -284,7 +286,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-green-950/25 transition-opacity ease-out",
+                        "absolute inset-0 bg-theme-text-strong/25 transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
@@ -293,17 +295,17 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-green-950/10 bg-emerald-100 shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-theme-bg-pale shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-green-950/10 px-4 py-3">
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
                             <BrandMark size="mobile" />
                             <button
                                 type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                                 onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
@@ -369,10 +371,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
     onPageChange,
 }) => (
     <aside
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -397,7 +399,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 flex-col gap-2 border-t border-green-950/10 pt-4">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
             <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
@@ -417,13 +419,13 @@ const DashboardNavButton: FC<{
             "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
             active
                 ? "bg-theme-bg-active text-theme-text-strong"
-                : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
+                : "text-ink-800 hover:bg-surface-opaque/60 hover:text-ink-950",
         )}
         onClick={onClick}
         aria-current={active ? "page" : undefined}
     >
         <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full bg-theme-bg-hover shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
+            className="h-2.5 w-2.5 shrink-0 rounded-full bg-theme-bg-hover ring-1 ring-inset ring-ink-950/10"
             aria-hidden="true"
         />
         {item.label}
@@ -434,11 +436,11 @@ const MobileHeader: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
     onOpen: () => void;
 }> = ({ buttonRef, onOpen }) => (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-green-950/10 bg-emerald-100 px-4 py-3 md:hidden">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-theme-text-strong/10 bg-theme-bg-pale px-4 py-3 md:hidden">
         <button
             ref={buttonRef}
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
             onClick={onOpen}
             aria-label="Open navigation"
         >
@@ -485,12 +487,12 @@ const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-micro text-green-950/55">
+            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-strong/55">
                 {count}
             </span>
         )}
@@ -501,7 +503,7 @@ const DashboardSupport: FC<{
     action: SupportAction;
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
-    <div className="mt-2 border-t border-green-950/10 pt-3">
+    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
         <CopyButton
             value={action.copyValue}
             copiedTimeoutMs={1200}
@@ -509,7 +511,7 @@ const DashboardSupport: FC<{
             copiedTooltip="Copied!"
             tooltipClassName="w-full"
             title={action.title}
-            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
         >
             {(copied) => (
                 <>
@@ -523,7 +525,7 @@ const DashboardSupport: FC<{
                 </>
             )}
         </CopyButton>
-        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
+        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />
             ))}
@@ -536,13 +538,13 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-white/60 hover:text-gray-950"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
     >
         <span className="flex items-center gap-2">
             {icon}
             {label}
         </span>
-        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-ink-400 transition-colors group-hover:text-ink-600" />
     </a>
 );
 
@@ -551,21 +553,21 @@ const DashboardFooter: FC<{
     note?: ReactNode;
 }> = ({ links, note }) => (
     <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
+        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-strong/55">
             {links.map((link) => (
                 <a
                     key={link.href}
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors hover:text-green-950"
+                    className="transition-colors hover:text-theme-text-strong"
                 >
                     {link.label}
                 </a>
             ))}
         </div>
         {note && (
-            <div className="px-3 text-xs leading-none text-green-950/45">
+            <div className="px-3 text-xs leading-none text-theme-text-strong/45">
                 {note}
             </div>
         )}
@@ -595,7 +597,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
             <button
                 type="button"
                 className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-amber-200 p-1 pr-3 transition-colors hover:bg-amber-300",
+                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-accent-amber-200 p-1 pr-3 transition-colors hover:bg-accent-amber-300",
                     className,
                 )}
             >
@@ -604,12 +606,12 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     alt={`${username} avatar`}
                     className="h-8 shrink-0 rounded-full"
                 />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-amber-900">
+                <span className="min-w-0 flex-1 truncate text-left font-medium text-accent-amber-900">
                     {username}
                 </span>
                 <ChevronIcon
                     expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-amber-900 transition-transform duration-200 ease-out"
+                    className="ml-auto h-4 w-4 shrink-0 text-accent-amber-900 transition-transform duration-200 ease-out"
                 />
             </button>
         )}
@@ -620,7 +622,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     <AccountMenuLinkRow key={link.href} {...link} />
                 ))}
                 {links.length > 0 && (
-                    <div className="my-1 border-t border-amber-300" />
+                    <div className="my-1 border-t border-accent-amber-300" />
                 )}
                 <button
                     type="button"
@@ -628,7 +630,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-accent-amber-900 hover:bg-accent-amber-300 focus:outline-none focus-visible:bg-accent-amber-300"
                 >
                     Sign Out
                 </button>
@@ -648,7 +650,7 @@ const AccountMenuLinkRow: FC<AccountMenuLink> = ({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent-amber-900 transition-colors hover:bg-accent-amber-300 focus:outline-none focus-visible:bg-accent-amber-300"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

@@ -57,7 +57,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     placeholder="Never"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500 w-12">days</span>
+                <span className="text-sm text-ink-500 w-12">days</span>
             </div>
         </Field.Root>
     );

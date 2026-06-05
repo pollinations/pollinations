@@ -183,7 +183,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
                                     isChecked
                                         ? rowTheme.selectedClasses
-                                        : "border-gray-200",
+                                        : "border-ink-200",
                                     rowTheme.focusRingClasses,
                                     !disabled &&
                                         (isChecked
@@ -208,7 +208,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             permission.label
                                         )}
                                     </span>
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-ink-500">
                                         – {permission.tooltip}
                                     </span>
                                 </div>
@@ -226,11 +226,11 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                     wrapperClassName={rowTheme.selectedClasses}
                     hoverClassName={rowTheme.selectedHoverClasses}
                     focusClassName={rowTheme.focusRingClasses}
-                    panelClassName="border-t border-gray-200 px-3 pb-3 pt-3 space-y-3"
+                    panelClassName="border-t border-ink-200 px-3 pb-3 pt-3 space-y-3"
                     label={
                         <div className="flex items-baseline gap-1">
                             <span className="text-sm font-medium">Models</span>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-ink-500">
                                 –{" "}
                                 {isUnrestricted
                                     ? "all models allowed"
@@ -339,9 +339,9 @@ const ModelChip: FC<{
     const colorClasses = selected
         ? theme
             ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-            : "polli:bg-gray-200 polli:text-gray-900"
+            : "polli:bg-ink-200 polli:text-ink-900"
         : cn(
-              "polli:bg-gray-100 polli:text-gray-600",
+              "polli:bg-ink-100 polli:text-ink-600",
               theme &&
                   !disabled &&
                   "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",

@@ -57,7 +57,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                     placeholder="Unlimited"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500 w-12">pollen</span>
+                <span className="text-sm text-ink-500 w-12">pollen</span>
             </div>
         </Field.Root>
     );

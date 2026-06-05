@@ -13,7 +13,7 @@ export function App() {
     return (
         <div
             data-theme={theme}
-            className="relative flex min-h-dvh flex-col bg-white font-body text-theme-text-base"
+            className="relative flex min-h-dvh flex-col bg-surface-opaque font-body text-theme-text-base"
         >
             <div className="fixed top-4 right-4 z-40">
                 <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />

@@ -38,15 +38,15 @@ export const LimitsBadge: FC<{
     return (
         <>
             <span>
-                <span className="text-gray-400">Expires: </span>
-                <span className="text-gray-500">{expiryStr}</span>
+                <span className="text-ink-400">Expires: </span>
+                <span className="text-ink-500">{expiryStr}</span>
             </span>
             <span>
-                <span className="text-gray-400">Budget: </span>
+                <span className="text-ink-400">Budget: </span>
                 <span
                     className={cn(
-                        "text-gray-500",
-                        isExhausted && "text-red-500 font-medium",
+                        "text-ink-500",
+                        isExhausted && "text-intent-danger-500 font-medium",
                     )}
                 >
                     {budgetStr}

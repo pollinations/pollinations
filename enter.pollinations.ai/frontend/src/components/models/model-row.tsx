@@ -137,7 +137,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 "flex items-center rounded-xl p-4",
                 isDisabled
                     ? "bg-transparent"
-                    : "bg-white/80 hover:bg-white/90 transition-colors",
+                    : "bg-surface-opaque/80 hover:bg-surface-opaque/90 transition-colors",
             )}
         >
             {/* Brand logo — fixed width column */}
@@ -145,7 +145,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 {brandLogoPath && (
                     <span
                         aria-hidden="true"
-                        className="h-8 w-8 bg-current opacity-55 text-gray-900"
+                        className="h-8 w-8 bg-current opacity-55 text-ink-900"
                         style={{
                             maskImage: `url(${brandLogoPath})`,
                             WebkitMaskImage: `url(${brandLogoPath})`,
@@ -176,10 +176,10 @@ export const ModelRow: FC<ModelRowProps> = ({
                         aria-label={`Copy API model name ${model.name}`}
                         className={(copied) =>
                             cn(
-                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-gray-500 transition-colors",
+                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-ink-500 transition-colors",
                                 copied
-                                    ? "text-teal-700"
-                                    : "hover:text-gray-700",
+                                    ? "text-accent-teal-700"
+                                    : "hover:text-ink-700",
                             )
                         }
                     >
@@ -187,7 +187,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <>
                                 <span>{model.name}</span>
                                 {copied && (
-                                    <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                                    <span className="rounded-lg bg-accent-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-teal-700">
                                         copied
                                     </span>
                                 )}

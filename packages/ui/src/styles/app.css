@@ -5,12 +5,32 @@
 /* Tailwind utility surface for Pollinations UI app classes.
    Values stay anchored to package-owned `--polli-*` tokens. */
 @theme inline {
+    --color-*: initial;
+
     --font-heading:                 var(--polli-font-heading);
     --font-subheading:              var(--polli-font-subheading);
     --font-body:                    var(--polli-font-body);
     --font-pixel:                   var(--polli-font-pixel);
     --text-micro:                   var(--polli-text-micro);
     --text-base:                    var(--polli-text-base);
+
+    --color-transparent:            transparent;
+    --color-current:                currentColor;
+    --color-inherit:                inherit;
+
+    --color-brand-dark:             var(--polli-color-brand-dark);
+
+    --color-ink-50:                 var(--polli-color-ink-50);
+    --color-ink-100:                var(--polli-color-ink-100);
+    --color-ink-200:                var(--polli-color-ink-200);
+    --color-ink-300:                var(--polli-color-ink-300);
+    --color-ink-400:                var(--polli-color-ink-400);
+    --color-ink-500:                var(--polli-color-ink-500);
+    --color-ink-600:                var(--polli-color-ink-600);
+    --color-ink-700:                var(--polli-color-ink-700);
+    --color-ink-800:                var(--polli-color-ink-800);
+    --color-ink-900:                var(--polli-color-ink-900);
+    --color-ink-950:                var(--polli-color-ink-950);
 
     --color-theme-text-base:        var(--polli-color-text-base);
     --color-theme-text-strong:      var(--polli-color-text-strong);
@@ -23,9 +43,80 @@
     --color-theme-bg-pale:          var(--polli-color-bg-pale);
 
     --color-intent-danger-bg-light: var(--polli-color-danger-bg-light);
+    --color-intent-danger-bg-hover: var(--polli-color-danger-bg-hover);
     --color-intent-danger-text:     var(--polli-color-danger-text);
     --color-intent-danger-border:   var(--polli-color-danger-border);
-    --color-surface-white:          var(--polli-color-surface-white);
+    --color-intent-danger-50:       var(--polli-color-danger-bg-light);
+    --color-intent-danger-200:      var(--polli-color-danger-border);
+    --color-intent-danger-500:      var(--polli-color-danger-text);
+    --color-intent-danger-600:      var(--polli-color-danger-text);
+    --color-intent-danger-700:      var(--polli-color-danger-text);
+    --color-intent-danger-800:      var(--polli-color-danger-text);
+
+    --color-intent-success-bg-light: var(--polli-color-success-bg-light);
+    --color-intent-success-text:    var(--polli-color-success-text);
+    --color-intent-success-100:     var(--polli-color-success-bg-light);
+    --color-intent-success-600:     var(--polli-color-success-text);
+    --color-intent-success-700:     var(--polli-color-success-text);
+    --color-intent-success-800:     var(--polli-color-success-text);
+
+    --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
+    --color-intent-warning-text:    var(--polli-color-warning-text);
+
+    --color-intent-news-bg-light:   var(--polli-color-news-bg-light);
+    --color-intent-news-text:       var(--polli-color-news-text);
+
+    --color-intent-alpha-bg-light:  var(--polli-color-alpha-bg-light);
+    --color-intent-alpha-text:      var(--polli-color-alpha-text);
+
+    --color-surface-opaque:         var(--polli-color-surface-opaque);
+    --color-surface-translucent:    var(--polli-color-surface-translucent);
+    --color-surface-white:          var(--polli-color-surface-translucent);
+
+    --color-accent-amber-50:        var(--polli-color-accent-amber-50);
+    --color-accent-amber-100:       var(--polli-color-accent-amber-100);
+    --color-accent-amber-200:       var(--polli-color-accent-amber-200);
+    --color-accent-amber-300:       var(--polli-color-accent-amber-300);
+    --color-accent-amber-400:       var(--polli-color-accent-amber-400);
+    --color-accent-amber-500:       var(--polli-color-accent-amber-500);
+    --color-accent-amber-600:       var(--polli-color-accent-amber-600);
+    --color-accent-amber-700:       var(--polli-color-accent-amber-700);
+    --color-accent-amber-800:       var(--polli-color-accent-amber-800);
+    --color-accent-amber-900:       var(--polli-color-accent-amber-900);
+    --color-accent-amber-950:       var(--polli-color-accent-amber-950);
+
+    --color-accent-blue-50:         var(--polli-color-accent-blue-50);
+    --color-accent-blue-100:        var(--polli-color-accent-blue-100);
+    --color-accent-blue-200:        var(--polli-color-accent-blue-200);
+    --color-accent-blue-300:        var(--polli-color-accent-blue-300);
+    --color-accent-blue-400:        var(--polli-color-accent-blue-400);
+    --color-accent-blue-500:        var(--polli-color-accent-blue-500);
+    --color-accent-blue-600:        var(--polli-color-accent-blue-600);
+    --color-accent-blue-700:        var(--polli-color-accent-blue-700);
+    --color-accent-blue-800:        var(--polli-color-accent-blue-800);
+    --color-accent-blue-900:        var(--polli-color-accent-blue-900);
+    --color-accent-blue-950:        var(--polli-color-accent-blue-950);
+
+    --color-accent-emerald-100:     var(--polli-color-accent-emerald-100);
+    --color-accent-emerald-600:     var(--polli-color-accent-emerald-600);
+
+    --color-accent-teal-100:        var(--polli-color-accent-teal-100);
+    --color-accent-teal-200:        var(--polli-color-accent-teal-200);
+    --color-accent-teal-700:        var(--polli-color-accent-teal-700);
+
+    --color-accent-violet-100:      var(--polli-color-accent-violet-100);
+    --color-accent-violet-300:      var(--polli-color-accent-violet-300);
+    --color-accent-violet-400:      var(--polli-color-accent-violet-400);
+    --color-accent-violet-600:      var(--polli-color-accent-violet-600);
+    --color-accent-violet-700:      var(--polli-color-accent-violet-700);
+    --color-accent-violet-800:      var(--polli-color-accent-violet-800);
+    --color-accent-violet-950:      var(--polli-color-accent-violet-950);
+
+    --color-accent-purple-600:      var(--polli-color-accent-purple-600);
+    --color-accent-purple-700:      var(--polli-color-accent-purple-700);
+    --color-accent-purple-800:      var(--polli-color-accent-purple-800);
+
+    --color-accent-pink-500:        var(--polli-color-accent-pink-500);
 }
 
 @layer base {
@@ -41,7 +132,7 @@
     }
 
     html.polli-ui-root * {
-        @apply border-gray-800;
+        @apply border-ink-800;
     }
 
     body.polli-ui-body {

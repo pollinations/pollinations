@@ -120,7 +120,7 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
         <ScrollArea
             theme={theme}
             data-theme={theme}
-            className={`w-full overflow-x-hidden bg-emerald-100 text-theme-text-base ${
+            className={`w-full overflow-x-hidden bg-theme-bg-pale text-theme-text-base ${
                 hideHeader ? "min-h-0 flex-1" : "h-dvh"
             }`}
         >
@@ -170,7 +170,7 @@ type HeaderProps = {
 };
 
 const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
-    <header className="sticky top-0 z-20 border-b border-green-950/10 bg-emerald-100 px-5 py-4 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-theme-text-strong/10 bg-theme-bg-pale px-5 py-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4">
             <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
@@ -707,7 +707,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     className={(copied) =>
                         `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
                             copied
-                                ? "bg-green-100 text-green-800"
+                                ? "bg-intent-success-100 text-intent-success-800"
                                 : "bg-theme-bg-active text-theme-text-strong"
                         }`
                     }
@@ -807,7 +807,7 @@ const InputsDemo: FC = () => {
                         </ArkField.Label>
                         <ArkField.Input
                             placeholder="email@example.com"
-                            className="rounded-lg border border-intent-danger-border bg-white px-3 py-2 text-sm"
+                            className="rounded-lg border border-intent-danger-border bg-surface-opaque px-3 py-2 text-sm"
                         />
                         <ArkField.HelperText className="text-xs text-theme-text-soft">
                             Exported Ark field namespace with package styling.
@@ -1334,7 +1334,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(2.1)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-accent-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1348,7 +1348,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(8)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-accent-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1374,7 +1374,7 @@ const ModuleRecipesDemo: FC = () => {
                         <Button
                             type="button"
                             size="sm"
-                            className="bg-gray-100 text-gray-600"
+                            className="bg-ink-100 text-ink-600"
                         >
                             unknown
                         </Button>

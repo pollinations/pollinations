@@ -79,7 +79,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         return (
             <Surface
                 key={apiKey.id}
-                className="transition-colors hover:bg-white/90"
+                className="transition-colors hover:bg-surface-opaque/90"
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Chip size="sm">
@@ -99,7 +99,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             start={apiKey.start ?? ""}
                         />
                     ) : (
-                        <span className="font-mono text-xs text-gray-500 shrink-0">
+                        <span className="font-mono text-xs text-ink-500 shrink-0">
                             {apiKey.start}...
                         </span>
                     )}
@@ -122,8 +122,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                     <span>
-                        <span className="text-gray-400">Created: </span>
-                        <span className="text-gray-500">
+                        <span className="text-ink-400">Created: </span>
+                        <span className="text-ink-500">
                             {formatDistanceToNowStrict(apiKey.createdAt, {
                                 addSuffix: false,
                                 locale: shortLocale,
@@ -131,8 +131,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </span>
                     <span>
-                        <span className="text-gray-400">Used: </span>
-                        <span className="text-gray-500">
+                        <span className="text-ink-400">Used: </span>
+                        <span className="text-ink-500">
                             {apiKey.lastRequest
                                 ? formatDistanceToNowStrict(
                                       new Date(apiKey.lastRequest),
@@ -146,12 +146,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </span>
                     {isPublishable && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
-                            <span className="text-gray-400">Redirect: </span>
+                            <span className="text-ink-400">Redirect: </span>
                             <a
                                 href={primaryRedirectUri}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-blue-600"
+                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-accent-blue-600"
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
@@ -179,7 +179,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             className={
                                 earningsEnabled
                                     ? undefined
-                                    : "bg-gray-100 text-gray-500"
+                                    : "bg-ink-100 text-ink-500"
                             }
                             title="Developer earnings"
                         >
@@ -197,7 +197,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 pollenBudget={apiKey.pollenBalance}
                             />
                             <span className="flex items-center gap-1">
-                                <span className="text-gray-400">
+                                <span className="text-ink-400">
                                     Permissions:
                                 </span>
                                 <ModelsBadge permissions={apiKey.permissions} />
@@ -228,10 +228,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
-                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first API key
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-ink-600">
                                     Use API keys for your own private
                                     server-side integrations.
                                 </p>
@@ -239,7 +239,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
@@ -265,7 +265,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             variant="card-themed"
                             className="w-fit text-theme-text-strong"
                         >
-                            <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                            <span className="font-body text-xs font-bold uppercase tracking-wide text-intent-danger-600 mr-1.5">
                                 New!
                             </span>
                             Turn on earnings to receive a share of pollen users
@@ -274,7 +274,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 href={genDocsUrl("#tag/bring-your-own-pollen")}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-medium text-blue-700 hover:text-blue-900"
+                                className="font-medium text-accent-blue-700 hover:text-accent-blue-900"
                             >
                                 <span className="underline underline-offset-2">
                                     Read the guide
@@ -290,10 +290,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
-                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first app key
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-ink-600">
                                     Use app keys when your users bring their own
                                     Pollinations account.
                                 </p>
@@ -301,7 +301,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
                         <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For apps where users sign in with their own

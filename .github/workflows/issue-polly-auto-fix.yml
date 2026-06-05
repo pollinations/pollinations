@@ -24,13 +24,28 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
     steps:
+      - name: Check bot secrets
+        id: bot-secrets
+        env:
+          POLLY_BOT_APP_ID: ${{ secrets.POLLY_BOT_APP_ID }}
+          POLLY_BOT_PRIVATE_KEY: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -n "$POLLY_BOT_APP_ID" ] && [ -n "$POLLY_BOT_PRIVATE_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Polly bot app secrets are not available; skipping auto-fix."
+          fi
+
       - uses: actions/create-github-app-token@v1
+        if: steps.bot-secrets.outputs.configured == 'true'
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
       - name: Check Authorization
+        if: steps.bot-secrets.outputs.configured == 'true'
         id: whitelist
         uses: actions/github-script@v7
         with:

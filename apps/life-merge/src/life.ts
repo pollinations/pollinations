@@ -29,12 +29,16 @@ export type LifeStylePreset = {
 export type LineageNode = {
     name: string;
     description: string;
+    relation?: string;
+    mechanism?: string;
     parents?: [LineageNode, LineageNode];
 };
 
 export type Specimen = {
     name: string;
     description: string;
+    relation?: string;
+    mechanism?: string;
     imagePrompt: string;
     imageUrl?: string;
     lineage?: LineageNode;
@@ -96,115 +100,129 @@ const LADDER_COLORS = [
 export const BIO_SEEDS: Specimen[] = [
     {
         name: "Water",
-        description: "A simple liquid that lets life and reactions move.",
+        description: "A liquid medium where life can move and react.",
         imagePrompt: "a clear water droplet",
     },
     {
-        name: "Sugar",
-        description: "A small store of energy for cells and cultures.",
-        imagePrompt: "a sugar crystal",
+        name: "Sunlight",
+        description: "Energy that helps green life grow.",
+        imagePrompt: "a narrow beam of sunlight",
     },
     {
         name: "Mineral",
-        description:
-            "A tiny nutrient that helps living things build structure.",
+        description: "Nutrients and hard matter for living structures.",
         imagePrompt: "a small mineral crystal",
     },
     {
+        name: "Air",
+        description: "Gases for breathing, wind, and plant growth.",
+        imagePrompt: "a clear air bubble",
+    },
+    {
+        name: "Cell",
+        description: "A tiny living unit that can grow and divide.",
+        imagePrompt: "a simple living cell",
+    },
+    {
         name: "Spore",
-        description: "A tiny starting point for fungi and simple plants.",
+        description: "A hardy start for fungi, mosses, and ferns.",
         imagePrompt: "a round biological spore",
     },
     {
-        name: "Yeast",
-        description: "A tiny living fungus that eats sugar and bubbles.",
-        imagePrompt: "a budding yeast cell",
+        name: "Seed",
+        description: "A protected plant start ready to root and grow.",
+        imagePrompt: "a small plant seed",
     },
     {
-        name: "Algae",
-        description: "A simple green life form that turns light into growth.",
-        imagePrompt: "a small algae cell",
-    },
-    {
-        name: "Pollen",
-        description: "A tiny plant grain that carries new growth.",
-        imagePrompt: "a simple pollen grain",
+        name: "Egg",
+        description: "A protected animal start ready to develop.",
+        imagePrompt: "a small animal egg",
     },
 ];
 
 export const INVENTION_SEEDS: Specimen[] = [
     {
         name: "Stone",
-        description: "A hard natural material for edges and weight.",
-        imagePrompt: "a simple stone pebble",
+        description: "A hard mass for edges, weight, and grinding.",
+        imagePrompt: "a small worked stone blank",
     },
     {
         name: "Wood",
-        description: "A light plant material that can be shaped.",
-        imagePrompt: "a small piece of wood",
+        description: "A light structural material for frames and levers.",
+        imagePrompt: "a straight wooden stick",
     },
     {
         name: "Clay",
-        description: "A soft earth material that holds a form.",
+        description: "A moldable earth material for vessels and molds.",
         imagePrompt: "a small lump of clay",
     },
     {
-        name: "Fire",
-        description: "Heat that changes materials and powers tools.",
-        imagePrompt: "a small flame",
+        name: "Cord",
+        description: "A flexible line for binding and tension.",
+        imagePrompt: "a short coiled cord",
     },
     {
-        name: "Fiber",
-        description: "A flexible strand that can bind parts together.",
-        imagePrompt: "a simple plant fiber strand",
-    },
-    {
-        name: "Copper",
-        description: "A soft metal that carries heat and electricity.",
-        imagePrompt: "a small copper nugget",
+        name: "Metal",
+        description: "A strong conductive material for parts and edges.",
+        imagePrompt: "a small metal ingot",
     },
     {
         name: "Glass",
-        description: "A clear hard material made from melted sand.",
+        description: "A clear hard material for lenses and containers.",
         imagePrompt: "a small clear glass shard",
+    },
+    {
+        name: "Flame",
+        description: "Controlled heat for shaping and power.",
+        imagePrompt: "a small controlled flame",
+    },
+    {
+        name: "Mark",
+        description: "A deliberate sign for measuring and recording.",
+        imagePrompt: "a single engraved notch",
     },
 ];
 
 export const FUTURE_SEEDS: Specimen[] = [
     {
-        name: "Silicon",
-        description: "A tiny base material for computation.",
-        imagePrompt: "a small silicon crystal",
+        name: "Energy",
+        description: "Power that can move, compute, or transform.",
+        imagePrompt: "a small glowing charge",
     },
     {
-        name: "Code",
-        description: "A simple instruction that can guide a machine.",
-        imagePrompt: "a minimal code glyph on a circular token",
+        name: "Signal",
+        description: "A moving message that can be sent or received.",
+        imagePrompt: "a simple radio wave signal",
     },
     {
-        name: "Sensor",
-        description: "A small device that notices the world.",
-        imagePrompt: "a tiny sensor lens",
+        name: "Logic",
+        description: "A simple rule for decisions and control.",
+        imagePrompt: "a simple branching logic gate with no text",
     },
     {
-        name: "Battery",
-        description: "Stored energy for portable systems.",
-        imagePrompt: "a small battery cell",
+        name: "Memory",
+        description: "A trace that can store information.",
+        imagePrompt: "a tiny memory crystal",
     },
     {
-        name: "Lens",
-        description: "A curved surface that bends light into signal.",
-        imagePrompt: "a small clear lens",
+        name: "Light",
+        description: "A beam for seeing, sensing, and communication.",
+        imagePrompt: "a narrow focused light beam",
     },
     {
-        name: "Antenna",
-        description: "A thin part that sends and receives signals.",
-        imagePrompt: "a tiny antenna",
+        name: "Molecule",
+        description: "A tiny structure for materials and medicine.",
+        imagePrompt: "a simple molecular cluster",
     },
     {
-        name: "Circuit",
-        description: "A small path that lets signals move.",
-        imagePrompt: "a simple circuit trace",
+        name: "Cell",
+        description: "A living unit that can sense, grow, and repair.",
+        imagePrompt: "a simple living cell",
+    },
+    {
+        name: "Magnet",
+        description: "A force source for motion and electric systems.",
+        imagePrompt: "a small horseshoe magnet",
     },
 ];
 
@@ -223,7 +241,7 @@ export const LIFE_PRESETS: LifePreset[] = [
         label: "Bio",
         axis: "grow natural life and organic forms from simple seed materials",
         evolutionPrompt:
-            "Make a more complex natural life-form, colony, ecosystem object, or organic structure from the two parents. Keep it biological and understandable. Avoid tools, machines, prepared foods, and human-made inventions.",
+            "Create one natural biological result as a single emergent step from the two parents. Use real organisms, life stages, colonies, habitats, or ecosystems. Plain common nouns only.",
         stylePrompt:
             "natural-history specimen token, clear organic silhouette, biological field-guide clarity",
         seeds: BIO_SEEDS,
@@ -234,7 +252,7 @@ export const LIFE_PRESETS: LifePreset[] = [
         label: "Inventions",
         axis: "combine basic materials into useful human-made objects",
         evolutionPrompt:
-            "Make a more advanced human invention, tool, device, material, or useful object from the two parents. Keep it plausible from first principles. Do not introduce animals or living creatures.",
+            "Create one plausible human-made object as a single emergent step from the two parents. Build from material, structure, heat, tension, measurement, or signal. Plain common nouns only.",
         stylePrompt:
             "clean patent drawing token, simple engineered silhouette, visible material logic",
         seeds: INVENTION_SEEDS,
@@ -245,7 +263,7 @@ export const LIFE_PRESETS: LifePreset[] = [
         label: "Future",
         axis: "move each merge one step toward future technology",
         evolutionPrompt:
-            "Make the result feel like the next future iteration of the two parents: smarter, more connected, more autonomous, or more space-age. Keep names plain and concrete. Avoid animals and fantasy creatures.",
+            "Create one plausible future artifact as a single emergent step from the two parents. Advance one capability: sense, store, compute, transmit, power, actuate, repair, grow, or shield. Concrete common nouns only.",
         stylePrompt:
             "minimal future-lab token, precise luminous edges, clean readable technology icon",
         seeds: FUTURE_SEEDS,
@@ -313,6 +331,8 @@ export function lineageLeaf(specimen: Specimen): LineageNode {
     return {
         name: specimen.name,
         description: specimen.description,
+        relation: specimen.relation,
+        mechanism: specimen.mechanism,
     };
 }
 
@@ -323,6 +343,8 @@ export function mergeLineage(
     return {
         name: specimen.name,
         description: specimen.description,
+        relation: specimen.relation,
+        mechanism: specimen.mechanism,
         parents: [parents[0].lineage, parents[1].lineage],
     };
 }

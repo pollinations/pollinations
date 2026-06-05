@@ -1,12 +1,15 @@
 import type { LifeRung, LifeStylePreset, Specimen } from "./life";
 
 const API_BASE = "https://gen.pollinations.ai";
-const TEXT_MODEL = "claude-large";
+const TEXT_MODEL = "claude";
 const IMAGE_MODEL = "zimage";
+const TEXT_THINKING_BUDGET = 1024;
 
 type GeneratedPayload = {
     name?: unknown;
     description?: unknown;
+    relation?: unknown;
+    mechanism?: unknown;
     imagePrompt?: unknown;
 };
 
@@ -98,11 +101,14 @@ async function apiError(response: Response) {
 export async function generateSpecimen(args: {
     apiKey: string;
     targetRung: LifeRung;
-    parentNames: [string, string];
+    parents: [
+        Pick<Specimen, "name" | "description">,
+        Pick<Specimen, "name" | "description">,
+    ];
     evolutionPrompt: string;
     style: LifeStylePreset;
 }): Promise<Specimen> {
-    const [left, right] = args.parentNames;
+    const [left, right] = args.parents;
 
     const textResponse = await fetch(`${API_BASE}/v1/chat/completions`, {
         method: "POST",
@@ -113,31 +119,43 @@ export async function generateSpecimen(args: {
         body: JSON.stringify({
             model: TEXT_MODEL,
             response_format: { type: "json_object" },
-            temperature: 0.55,
-            max_tokens: 220,
+            temperature: 0,
+            max_tokens: 1800,
+            thinking: {
+                type: "enabled",
+                budget_tokens: TEXT_THINKING_BUDGET,
+            },
+            thinking_budget: TEXT_THINKING_BUDGET,
             messages: [
                 {
                     role: "system",
                     content:
-                        "You name generated objects for a physics merge game. Return only valid JSON.",
+                        "You create concise causal results for a physics merge game. Return only valid JSON.",
                 },
                 {
                     role: "user",
                     content: [
-                        `Parents: ${left} + ${right}.`,
+                        `Parent A: ${left.name} — ${left.description}`,
+                        `Parent B: ${right.name} — ${right.description}`,
                         `Evolution prompt: ${args.evolutionPrompt}.`,
                         `Visual style: ${args.style.label}. ${args.style.prompt}.`,
                         "The new token will be physically larger, but size is not a semantic category.",
-                        "Make the result larger or more complex than the parents.",
-                        "Make the result feel understandable from both parents.",
+                        "Choose one emergent step, not a leap.",
+                        "Choose the simplest real result caused by combining the parents.",
+                        "Use only properties present in the parent names or descriptions. Do not add a major new force, material, or process unless a parent provides it.",
+                        "If a key cause is missing, choose a smaller intermediate result.",
+                        "Prefer known mechanisms over associations: mixture, phase change, growth, colony, habitat, tool, signal, energy transfer, containment.",
                         "Follow the evolution prompt exactly and keep the result inside that world.",
                         "Do not introduce unrelated domains unless the evolution prompt asks for that.",
+                        "No puns, brands, pop culture, metaphors, or coined names.",
                         "Use real common English nouns only. Do not coin words. Do not use cute nonsense names.",
                         "Good names: moss frog, copper wire, reef shell, moon sensor.",
                         "Bad names: buddy sproutbug, glimmerkin, sugarwhirl, tiny blob.",
                         "The description must be one concise sentence with no fluff.",
+                        "The relation must be the mechanism type in 1-3 plain words.",
+                        "The mechanism must be one short cause-and-effect sentence explaining the bridge.",
                         "The imagePrompt must plainly describe the physical object itself (shape, material, key features) so it is recognizable — not a person, character, or mascot. Do not mention game tokens, icons, circles, or style; those are added separately.",
-                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
+                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","relation":"mechanism type, 1-3 words","mechanism":"one short causal bridge under 110 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
                     ].join("\n"),
                 },
             ],
@@ -156,8 +174,10 @@ export async function generateSpecimen(args: {
     );
     const name = nameValue(payload.name);
     const description = textValue(payload.description, 80);
+    const relation = textValue(payload.relation, 40);
+    const mechanism = textValue(payload.mechanism, 110);
     const imagePrompt = textValue(payload.imagePrompt, 360);
-    if (!name || !description || !imagePrompt) {
+    if (!name || !description || !relation || !mechanism || !imagePrompt) {
         throw new Error("Model returned incomplete object details.");
     }
 
@@ -166,6 +186,8 @@ export async function generateSpecimen(args: {
         specimen: {
             name,
             description,
+            relation,
+            mechanism,
             imagePrompt,
         },
         style: args.style,

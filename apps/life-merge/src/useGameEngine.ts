@@ -50,6 +50,9 @@ export const BOARD_WIDTH_FROM_HEIGHT = `calc(var(--board-max-height) * ${
 export const LOSS_LINE = 100;
 export const DROP_Y = 70;
 const MAX_PIECES = 50;
+const MAX_SPAWN_TIER = 4;
+const MIN_SPAWN_VARIANTS_PER_TIER = 2;
+const SPAWN_TIER_WEIGHTS = [55, 30, 12, 3, 1] as const;
 
 const PRESET_IDS = LIFE_PRESETS.map((preset) => preset.id);
 
@@ -70,11 +73,68 @@ function styleForPresetId(presetId: LifePresetId): LifeStylePreset {
     );
 }
 
+function uniqueSpecimensByName(specimens: Specimen[]) {
+    const seen = new Set<string>();
+    return specimens.filter((specimen) => {
+        const key = specimen.name.trim().toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function weightedTierSample(tiers: number[]) {
+    const total = tiers.reduce(
+        (sum, tier) => sum + (SPAWN_TIER_WEIGHTS[tier] ?? 1),
+        0,
+    );
+    let roll = Math.random() * total;
+    for (const tier of tiers) {
+        roll -= SPAWN_TIER_WEIGHTS[tier] ?? 1;
+        if (roll <= 0) return tier;
+    }
+    return tiers[0] ?? 0;
+}
+
+function cacheText(value: string) {
+    return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function mergeCacheKey(args: {
+    presetId: LifePresetId;
+    styleId: LifeStylePresetId;
+    targetTier: number;
+    parents: [
+        Pick<Specimen, "name" | "description">,
+        Pick<Specimen, "name" | "description">,
+    ];
+    evolutionPrompt: string;
+    stylePrompt: string;
+}) {
+    const parentInputs = args.parents
+        .map((parent) => [
+            cacheText(parent.name),
+            cacheText(parent.description),
+        ])
+        .sort(([leftName], [rightName]) => leftName.localeCompare(rightName));
+    return JSON.stringify([
+        "merge-v3",
+        args.presetId,
+        args.styleId,
+        args.targetTier,
+        cacheText(args.evolutionPrompt),
+        cacheText(args.stylePrompt),
+        parentInputs,
+    ]);
+}
+
 type PieceBody = Body & { plugin: { pieceId: string } };
 
 export type GenerationResult = {
     name: string;
     description: string;
+    relation?: string;
+    mechanism?: string;
     imageUrl?: string;
 };
 
@@ -91,6 +151,8 @@ export type GenerationFocus = {
 export type SelectedView = {
     name: string;
     description: string;
+    relation?: string;
+    mechanism?: string;
     imageUrl?: string;
     color: string;
     ink: string;
@@ -100,12 +162,21 @@ export type SelectedView = {
 function toSelectedView(
     piece: Pick<
         GamePiece,
-        "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
+        | "name"
+        | "description"
+        | "relation"
+        | "mechanism"
+        | "imageUrl"
+        | "color"
+        | "ink"
+        | "lineage"
     >,
 ): SelectedView {
     return {
         name: piece.name,
         description: piece.description,
+        relation: piece.relation,
+        mechanism: piece.mechanism,
         imageUrl: piece.imageUrl,
         color: piece.color,
         ink: piece.ink,
@@ -479,7 +550,14 @@ export function useGameEngine({
     const selectPiece = (
         piece: Pick<
             GamePiece,
-            "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
+            | "name"
+            | "description"
+            | "relation"
+            | "mechanism"
+            | "imageUrl"
+            | "color"
+            | "ink"
+            | "lineage"
         >,
     ) => {
         setSelectedView(toSelectedView(piece));
@@ -493,6 +571,8 @@ export function useGameEngine({
             | "id"
             | "name"
             | "description"
+            | "relation"
+            | "mechanism"
             | "imageUrl"
             | "color"
             | "ink"
@@ -624,20 +704,25 @@ export function useGameEngine({
     // the player's first board click (startGame), so preset choice drives it.
 
     const createNextDrop = (currentHighestTier = highestTierRef.current) => {
-        const maxSpawnTier = Math.min(4, Math.max(0, currentHighestTier));
+        const maxSpawnTier = Math.min(
+            MAX_SPAWN_TIER,
+            Math.max(0, currentHighestTier),
+        );
         const availableTiers = [0];
+        const eligiblePools = new Map<number, Specimen[]>();
         for (let tier = 1; tier <= maxSpawnTier; tier += 1) {
             const pool =
                 generatedPoolRef.current.get(
                     `${presetIdRef.current}:${styleIdRef.current}:${tier}`,
                 ) ?? [];
-            if (pool.length > 0) availableTiers.push(tier);
+            const uniquePool = uniqueSpecimensByName(pool);
+            if (uniquePool.length >= MIN_SPAWN_VARIANTS_PER_TIER) {
+                availableTiers.push(tier);
+                eligiblePools.set(tier, uniquePool);
+            }
         }
-        const tier = sample(availableTiers);
-        const pool =
-            generatedPoolRef.current.get(
-                `${presetIdRef.current}:${styleIdRef.current}:${tier}`,
-            ) ?? [];
+        const tier = weightedTierSample(availableTiers);
+        const pool = eligiblePools.get(tier) ?? [];
         const specimen =
             tier === 0
                 ? createSeedSpecimen(
@@ -797,6 +882,8 @@ export function useGameEngine({
                       result: {
                           name: result.name,
                           description: result.description,
+                          relation: result.relation,
+                          mechanism: result.mechanism,
                           imageUrl: result.imageUrl,
                       },
                   }
@@ -825,16 +912,16 @@ export function useGameEngine({
             return;
         }
 
-        const parentKey = [parents[0].name, parents[1].name]
-            .map((name) => name.toLowerCase())
-            .sort()
-            .join("+");
-        const cacheKey = [
-            presetIdRef.current,
-            styleIdRef.current,
+        const evolutionPrompt = presetRef.current.evolutionPrompt;
+        const style = styleRef.current;
+        const cacheKey = mergeCacheKey({
+            presetId: presetIdRef.current,
+            styleId: styleIdRef.current,
             targetTier,
-            parentKey,
-        ].join(":");
+            parents,
+            evolutionPrompt,
+            stylePrompt: style.prompt,
+        });
         const cached = generatedCacheRef.current.get(cacheKey);
         if (cached) {
             const enriched = {
@@ -843,7 +930,12 @@ export function useGameEngine({
             };
             applyGeneratedSpecimen(pieceId, enriched, targetTier);
             setLastEvent(`${cached.name} reused from the local cache.`);
-            showDiscovery({ ...parents[0], ...enriched });
+            showDiscovery({
+                id: pieceId,
+                ...enriched,
+                color: rungsRef.current[targetTier].color,
+                ink: rungsRef.current[targetTier].ink,
+            });
             revealResult(pieceId, enriched, "cached");
             return;
         }
@@ -852,9 +944,9 @@ export function useGameEngine({
             const generated = await generateSpecimen({
                 apiKey,
                 targetRung: rungsRef.current[targetTier],
-                parentNames: [parents[0].name, parents[1].name],
-                evolutionPrompt: presetRef.current.evolutionPrompt,
-                style: styleRef.current,
+                parents,
+                evolutionPrompt,
+                style,
             });
             rememberObjectUrl(generated);
             generatedCacheRef.current.set(cacheKey, generated);
@@ -878,7 +970,12 @@ export function useGameEngine({
             setGeneratedPoolSize(generatedPoolCount());
             applyGeneratedSpecimen(pieceId, enriched, targetTier);
             setLastEvent(`${generated.name}: ${generated.description}`);
-            showDiscovery({ ...parents[0], ...enriched });
+            showDiscovery({
+                id: pieceId,
+                ...enriched,
+                color: rungsRef.current[targetTier].color,
+                ink: rungsRef.current[targetTier].ink,
+            });
             revealResult(pieceId, enriched, "generated");
         } catch (error) {
             const message =

@@ -23,12 +23,20 @@ const brandWordmarkMask: CSSProperties = {
 };
 
 function pieceTitle(
-    piece: Pick<GamePiece, "name" | "description" | "lineage">,
+    piece: Pick<
+        GamePiece,
+        "name" | "description" | "relation" | "mechanism" | "lineage"
+    >,
 ) {
     const parents = piece.lineage.parents
         ? ` Parents: ${piece.lineage.parents[0].name} + ${piece.lineage.parents[1].name}.`
         : "";
-    return `${piece.name}: ${piece.description}.${parents}`;
+    const mechanism = piece.mechanism
+        ? ` Mechanism: ${piece.relation ? `${piece.relation}: ` : ""}${
+              piece.mechanism
+          }.`
+        : "";
+    return `${piece.name}: ${piece.description}.${mechanism}${parents}`;
 }
 
 // Only a real generated image (a blob:/http URL) is rendered. The data: SVG
@@ -76,7 +84,7 @@ function App() {
         <PolliProvider
             appKey={APP_KEY}
             permissions={["profile", "usage"]}
-            models={["claude-large", "zimage"]}
+            models={["claude", "zimage"]}
             budget={6}
             expiry={7}
         >
@@ -367,6 +375,30 @@ function LifeMergeApp() {
                                                                 .description
                                                         }
                                                     </p>
+                                                    {game.generationFocus.result
+                                                        .mechanism ? (
+                                                        <p className="generation-mechanism">
+                                                            {game
+                                                                .generationFocus
+                                                                .result
+                                                                .relation ? (
+                                                                <span>
+                                                                    {
+                                                                        game
+                                                                            .generationFocus
+                                                                            .result
+                                                                            .relation
+                                                                    }
+                                                                </span>
+                                                            ) : null}
+                                                            {
+                                                                game
+                                                                    .generationFocus
+                                                                    .result
+                                                                    .mechanism
+                                                            }
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         ) : (
@@ -429,6 +461,16 @@ function LifeMergeApp() {
                         <div className="selected-text">
                             <strong>{game.selectedView.name}</strong>
                             <p>{game.selectedView.description}</p>
+                            {game.selectedView.mechanism ? (
+                                <p className="selected-mechanism">
+                                    {game.selectedView.relation ? (
+                                        <span>
+                                            {game.selectedView.relation}
+                                        </span>
+                                    ) : null}
+                                    {game.selectedView.mechanism}
+                                </p>
+                            ) : null}
                         </div>
                     </section>
 

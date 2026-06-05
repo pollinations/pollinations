@@ -10,21 +10,6 @@ const PACKAGE_PATHS = [
 
 const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..", "..");
 
-function readChangedFiles() {
-    const args = process.argv.slice(2).filter(Boolean);
-    if (args.length > 0) return args;
-
-    if (process.env.CHANGED) {
-        return process.env.CHANGED.split(/\n+/).filter(Boolean);
-    }
-
-    if (!process.stdin.isTTY) {
-        return fs.readFileSync(0, "utf8").split(/\n+/).filter(Boolean);
-    }
-
-    return [];
-}
-
 function detectPackageConsumers(changedFiles, repoRoot = DEFAULT_REPO_ROOT) {
     const changedPackages = new Set(
         PACKAGE_PATHS.filter(([prefix]) =>
@@ -64,10 +49,10 @@ function detectPackageConsumers(changedFiles, repoRoot = DEFAULT_REPO_ROOT) {
 }
 
 if (require.main === module) {
-    for (const app of detectPackageConsumers(
-        readChangedFiles(),
-        process.env.REPO_ROOT || DEFAULT_REPO_ROOT,
-    )) {
+    const changedFiles = (process.env.CHANGED || "")
+        .split(/\n+/)
+        .filter(Boolean);
+    for (const app of detectPackageConsumers(changedFiles)) {
         console.log(app);
     }
 }

@@ -1,6 +1,9 @@
 import { type ModelCatalogItem, pricingEntries } from "@pollinations/sdk";
 import {
     PolliProvider,
+    useAccountKey,
+    useAccountKeyUsage,
+    useAccountProfile,
     useAuthActions,
     useModelCatalog,
 } from "@pollinations/sdk/react";
@@ -82,13 +85,6 @@ import {
     type ModelSelectorCategory,
 } from "@pollinations/ui/models";
 import {
-    Balance,
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
-} from "@pollinations/ui/wallet/sdk";
-import {
     type CSSProperties,
     lazy,
     type ReactNode,
@@ -101,10 +97,51 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
-const APP_THEME: ThemeName = "blue";
+const APP_THEME: ThemeName = "amber";
 // Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
 // Unset falls back to the SDK default (production gen.pollinations.ai).
 const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;
+const MODULES_CODE_SNIPPET = `import { useState } from "react";
+import { PolliProvider, useModelCatalog } from "@pollinations/sdk/react";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
+import { ModelSelector } from "@pollinations/ui/models";
+
+export function App() {
+  return (
+    <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
+      <Modules />
+    </PolliProvider>
+  );
+}
+
+function Modules() {
+  const [modelId, setModelId] = useState("");
+  const { models, allowedModelIds, allowedCategories, isLoggedIn, isLoading } =
+    useModelCatalog();
+
+  const visibleModels = isLoggedIn
+    ? models.filter((model) => allowedModelIds.has(model.id))
+    : models;
+  const category = allowedCategories[0];
+  const selectedModel =
+    visibleModels.find((model) => model.id === modelId) ??
+    visibleModels.find((model) => model.category === category);
+
+  if (!category) return null;
+
+  return (
+    <>
+      <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+      <ModelSelector
+        models={visibleModels}
+        category={category}
+        value={selectedModel?.id ?? ""}
+        isLoading={isLoading}
+        onChange={setModelId}
+      />
+    </>
+  );
+}`;
 
 const DesignShowcase = lazy(() =>
     import("./showcase/DesignShowcase").then((module) => ({
@@ -194,7 +231,7 @@ function ShellHeader({
     onSelectView: (view: AppView) => void;
 }) {
     return (
-        <header className="sticky top-0 z-30 border-b border-theme-border bg-theme-bg-subtle px-5 py-4 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-theme-border bg-surface-white px-5 py-4 backdrop-blur">
             <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <BrandMark />
                 <nav
@@ -227,7 +264,7 @@ function AppShell({
     return (
         <div
             data-theme={APP_THEME}
-            className="min-h-screen overflow-x-hidden bg-theme-bg-subtle text-theme-text-strong"
+            className="min-h-screen overflow-x-hidden bg-surface-white text-theme-text-strong"
         >
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-12 px-5 py-8 sm:py-10">
@@ -274,6 +311,92 @@ function SectionHeader({
     );
 }
 
+function AccountSummaryItem({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="grid min-w-0 gap-1 rounded-lg bg-theme-bg-pale px-3 py-2 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center">
+            <Text
+                as="span"
+                size="micro"
+                tone="muted"
+                weight="bold"
+                className="shrink-0"
+            >
+                {label}
+            </Text>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function AccountSummaryText({
+    value,
+    isLoading,
+    fallback = "Not shared",
+}: {
+    value: string | null | undefined;
+    isLoading?: boolean;
+    fallback?: string;
+}) {
+    return (
+        <span className="min-w-0 truncate text-sm font-medium text-theme-text-base">
+            {isLoading ? "Loading..." : value || fallback}
+        </span>
+    );
+}
+
+function formatPollenAmount(value: number | null | undefined): string {
+    if (value == null) return "No cap";
+    return `${value.toLocaleString(undefined, {
+        maximumFractionDigits: 4,
+    })} pollen`;
+}
+
+function formatUsageCount(count: number | null | undefined): string {
+    if (count == null) return "No usage";
+    return `${count.toLocaleString()} request${count === 1 ? "" : "s"} / 30d`;
+}
+
+function formatExpiry(value: string | null | undefined): string {
+    if (!value) return "No expiry";
+    return value.slice(0, 10);
+}
+
+function ModelCountChips({
+    counts,
+    isLoading,
+}: {
+    counts: readonly { category: ModelSelectorCategory; count: number }[];
+    isLoading: boolean;
+}) {
+    if (isLoading) {
+        return (
+            <Chip intent="neutral" size="sm">
+                Loading
+            </Chip>
+        );
+    }
+    if (!counts.length) {
+        return (
+            <Chip intent="neutral" size="sm">
+                No model
+            </Chip>
+        );
+    }
+    return counts.map(({ category, count }) => (
+        <Chip key={category} theme={modalityTheme(category)} size="sm">
+            {categoryLabel(category)} {count}
+        </Chip>
+    ));
+}
+
 function formatList(values: readonly string[] | undefined): string {
     return values?.length ? values.join(", ") : "Not listed";
 }
@@ -318,6 +441,13 @@ function ModulesPage() {
         baseUrl: GEN_BASE_URL,
     });
     const { enterUrl } = useAuthActions();
+    const profile = useAccountProfile({ enabled: isLoggedIn });
+    const accountKey = useAccountKey({ enabled: isLoggedIn });
+    const keyUsage = useAccountKeyUsage({
+        enabled: isLoggedIn,
+        days: 30,
+        limit: 1,
+    });
     const [category, setCategory] = useState<ModelSelectorCategory | null>(
         null,
     );
@@ -348,6 +478,13 @@ function ModulesPage() {
         : selectedModel && allowedModelIds.has(selectedModel.id)
           ? "Allowed by key"
           : "Not allowed";
+    const modelCounts = categories
+        .map((item) => ({
+            category: item,
+            count: visibleModels.filter((model) => model.category === item)
+                .length,
+        }))
+        .filter(({ count }) => count > 0);
 
     return (
         <>
@@ -371,57 +508,65 @@ function ModulesPage() {
                             <Chip>Authorize first</Chip>
                         </WhenLoggedOut>
                         <WhenLoggedIn>
-                            <div className="grid w-full gap-3 sm:grid-cols-5">
-                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                    <Text
-                                        size="micro"
-                                        tone="muted"
-                                        weight="bold"
-                                    >
-                                        Balance
-                                    </Text>
-                                    <Balance className="mt-2" />
-                                </div>
-                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                    <Text
-                                        size="micro"
-                                        tone="muted"
-                                        weight="bold"
-                                    >
-                                        Key
-                                    </Text>
-                                    <KeyPrefix className="mt-2" />
-                                </div>
-                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                    <Text
-                                        size="micro"
-                                        tone="muted"
-                                        weight="bold"
-                                    >
-                                        Budget
-                                    </Text>
-                                    <KeyBudget className="mt-2" />
-                                </div>
-                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                    <Text
-                                        size="micro"
-                                        tone="muted"
-                                        weight="bold"
-                                    >
-                                        Models
-                                    </Text>
-                                    <KeyModels className="mt-2" />
-                                </div>
-                                <div className="rounded-lg border border-theme-border bg-theme-bg-pale p-3">
-                                    <Text
-                                        size="micro"
-                                        tone="muted"
-                                        weight="bold"
-                                    >
-                                        Expires
-                                    </Text>
-                                    <KeyExpiry className="mt-2" />
-                                </div>
+                            <div className="grid w-full gap-2 lg:grid-cols-2">
+                                <AccountSummaryItem label="Username">
+                                    <AccountSummaryText
+                                        value={
+                                            profile.data?.githubUsername ?? null
+                                        }
+                                        isLoading={profile.isLoading}
+                                        fallback="Not available"
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Key budget">
+                                    <AccountSummaryText
+                                        value={formatPollenAmount(
+                                            accountKey.data?.pollenBudget,
+                                        )}
+                                        isLoading={accountKey.isLoading}
+                                        fallback="No cap"
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Key expires">
+                                    <AccountSummaryText
+                                        value={formatExpiry(
+                                            accountKey.data?.expiresAt,
+                                        )}
+                                        isLoading={accountKey.isLoading}
+                                        fallback="No expiry"
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Name">
+                                    <AccountSummaryText
+                                        value={profile.data?.name}
+                                        isLoading={profile.isLoading}
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Email">
+                                    <AccountSummaryText
+                                        value={profile.data?.email}
+                                        isLoading={profile.isLoading}
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Usage">
+                                    <AccountSummaryText
+                                        value={formatUsageCount(
+                                            keyUsage.data?.count,
+                                        )}
+                                        isLoading={keyUsage.isLoading}
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Models and Modalities">
+                                    <ModelCountChips
+                                        counts={modelCounts}
+                                        isLoading={isLoading}
+                                    />
+                                </AccountSummaryItem>
+                                <AccountSummaryItem label="Earn">
+                                    <Chip intent="success" size="sm">
+                                        20% of pollen spent in-app
+                                    </Chip>
+                                </AccountSummaryItem>
                             </div>
                         </WhenLoggedIn>
                     </div>
@@ -621,6 +766,44 @@ function ModulesPage() {
                     </Surface>
                 </section>
             )}
+
+            <section>
+                <SectionHeader title="Code" />
+                <Surface
+                    variant="panel"
+                    theme={APP_THEME}
+                    className="flex flex-col gap-3"
+                >
+                    <div className="flex justify-end">
+                        <CopyButton
+                            value={MODULES_CODE_SNIPPET}
+                            data-theme={APP_THEME}
+                            className={(copied) =>
+                                `inline-flex items-center gap-2 rounded-full px-3 pt-1.5 pb-2 text-sm font-medium transition-colors ${
+                                    copied
+                                        ? "bg-intent-success-bg-light text-intent-success-text"
+                                        : "bg-theme-bg-active text-theme-text-base hover:bg-theme-bg-hover"
+                                }`
+                            }
+                        >
+                            {(copied) =>
+                                copied ? (
+                                    <>
+                                        <CheckIcon className="h-4 w-4" />
+                                        Copied
+                                    </>
+                                ) : (
+                                    <>
+                                        <ClipboardIcon className="h-4 w-4" />
+                                        Copy code
+                                    </>
+                                )
+                            }
+                        </CopyButton>
+                    </div>
+                    <CodeBlock code={MODULES_CODE_SNIPPET} theme={APP_THEME} />
+                </Surface>
+            </section>
         </>
     );
 }
@@ -1336,7 +1519,7 @@ function DebugShowcase({
     return (
         <div
             data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-theme-bg-subtle"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-surface-white"
         >
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <Suspense fallback={null}>

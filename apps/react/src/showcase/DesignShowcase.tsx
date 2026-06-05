@@ -671,7 +671,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <Button>Default</Button>
                 <Button size="sm">Small</Button>
                 <Button size="lg">Large</Button>
-                <Button theme="blue">Theme prop</Button>
+                <Button theme="amber">Theme prop</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
             </Row>

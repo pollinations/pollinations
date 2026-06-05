@@ -56,13 +56,6 @@ const STYLE_IDS = LIFE_STYLE_PRESETS.map((style) => style.id);
 
 type PieceBody = Body & { plugin: { pieceId: string } };
 
-export type Discovery = {
-    id: string;
-    name: string;
-    description: string;
-    lineage: LineageNode;
-};
-
 export type GenerationResult = {
     name: string;
     description: string;
@@ -215,7 +208,9 @@ export function useGameEngine({
     );
     const [isCrowded, setIsCrowded] = useState(false);
     const [peakName, setPeakName] = useState("Seeds");
-    const [discovery, setDiscovery] = useState<Discovery | null>(null);
+    // The most-recently created/changed piece — its label is revealed briefly
+    // so you can read what just landed/merged without hovering.
+    const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
     const [generationFocus, setGenerationFocus] =
         useState<GenerationFocus | null>(null);
     const [lineageView, setLineageView] = useState<LineageNode>(
@@ -280,10 +275,10 @@ export function useGameEngine({
     }, [styleId, promptStyle]);
 
     useEffect(() => {
-        if (!discovery) return undefined;
-        const timeout = window.setTimeout(() => setDiscovery(null), 5200);
+        if (!activeLabelId) return undefined;
+        const timeout = window.setTimeout(() => setActiveLabelId(null), 2600);
         return () => window.clearTimeout(timeout);
-    }, [discovery]);
+    }, [activeLabelId]);
 
     const setPieceList = (nextPieces: GamePiece[]) => {
         piecesRef.current = nextPieces;
@@ -426,15 +421,12 @@ export function useGameEngine({
         bodiesRef.current.delete(pieceId);
     };
 
+    // Reveal a freshly created piece: briefly show its label and focus the
+    // lineage inspector on it.
     const showDiscovery = (
         piece: Pick<GamePiece, "id" | "name" | "description" | "lineage">,
     ) => {
-        setDiscovery({
-            id: piece.id,
-            name: piece.name,
-            description: piece.description,
-            lineage: piece.lineage,
-        });
+        setActiveLabelId(piece.id);
         setLineageView(piece.lineage);
     };
 
@@ -659,6 +651,7 @@ export function useGameEngine({
             size.width - nextPieceRef.current.radius - 8,
         );
         addPieceToWorld(nextPieceRef.current, clampedX, DROP_Y);
+        setActiveLabelId(nextPieceRef.current.id);
         setLastEvent(`${nextPieceRef.current.name} entered the vessel.`);
         createNextDrop();
     };
@@ -1000,7 +993,7 @@ export function useGameEngine({
         lastEvent,
         isCrowded,
         peakName,
-        discovery,
+        activeLabelId,
         generationFocus,
         lineageView,
         activePreset,

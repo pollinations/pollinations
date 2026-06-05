@@ -193,6 +193,10 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                         piece.y < piece.radius + 48
                                             ? "is-high"
                                             : ""
+                                    } ${
+                                        piece.id === game.activeLabelId
+                                            ? "is-labeled"
+                                            : ""
                                     }`}
                                     title={pieceTitle(piece)}
                                     onPointerEnter={() =>

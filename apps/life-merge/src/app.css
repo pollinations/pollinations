@@ -198,7 +198,8 @@ select {
  */
 .life-piece:hover,
 .life-piece:focus-visible,
-.life-piece.is-pending {
+.life-piece.is-pending,
+.life-piece.is-labeled {
     z-index: 50;
 }
 
@@ -308,6 +309,25 @@ select {
     transform: translateX(-50%) rotate(calc(-1 * var(--piece-rotate)));
     white-space: nowrap;
     pointer-events: none;
+}
+
+/*
+ * Landed-piece labels are reveal-on-demand to avoid the overlap mess when
+ * pieces cluster: hidden by default, shown only for the hovered/focused
+ * piece, a piece mid-generation, or one that just landed/merged
+ * (is-labeled). The drop preview and full names in the lineage card carry
+ * identity the rest of the time.
+ */
+.life-piece .piece-label {
+    opacity: 0;
+    transition: opacity 130ms ease;
+}
+
+.life-piece:hover .piece-label,
+.life-piece:focus-visible .piece-label,
+.life-piece.is-pending .piece-label,
+.life-piece.is-labeled .piece-label {
+    opacity: 1;
 }
 
 /*

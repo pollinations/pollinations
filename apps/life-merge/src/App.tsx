@@ -241,36 +241,80 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                 </div>
                             ) : null}
                             {game.generationFocus ? (
-                                <output className="generation-focus">
+                                <output
+                                    className={`generation-focus is-${game.generationFocus.status}`}
+                                >
                                     <div className="generation-focus-head">
                                         <span>
                                             {game.generationFocus.status ===
-                                            "cached"
-                                                ? "Cached"
-                                                : "Generating"}
+                                            "result"
+                                                ? "New discovery"
+                                                : game.generationFocus
+                                                        .status === "cached"
+                                                  ? "From cache"
+                                                  : "Combining"}
                                         </span>
                                     </div>
                                     <div className="generation-parents">
                                         {game.generationFocus.parents.map(
-                                            (parent) => (
+                                            (parent, index) => (
                                                 <div
                                                     className="generation-parent"
                                                     key={parent.id}
                                                 >
+                                                    {index === 1 ? (
+                                                        <span className="generation-plus">
+                                                            +
+                                                        </span>
+                                                    ) : null}
                                                     <img
                                                         src={parent.imageUrl}
                                                         alt=""
                                                     />
-                                                    <strong>
-                                                        {parent.name}
-                                                    </strong>
+                                                    <div className="generation-parent-text">
+                                                        <strong>
+                                                            {parent.name}
+                                                        </strong>
+                                                        <p>
+                                                            {parent.description}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             ),
                                         )}
                                     </div>
-                                    <div className="generation-pulse">
-                                        <span />
-                                    </div>
+                                    {game.generationFocus.result ? (
+                                        <div className="generation-result">
+                                            <span className="generation-arrow">
+                                                ↓
+                                            </span>
+                                            <img
+                                                src={
+                                                    game.generationFocus.result
+                                                        .imageUrl
+                                                }
+                                                alt=""
+                                            />
+                                            <div className="generation-result-text">
+                                                <strong>
+                                                    {
+                                                        game.generationFocus
+                                                            .result.name
+                                                    }
+                                                </strong>
+                                                <p>
+                                                    {
+                                                        game.generationFocus
+                                                            .result.description
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="generation-pulse">
+                                            <span />
+                                        </div>
+                                    )}
                                 </output>
                             ) : null}
                         </div>

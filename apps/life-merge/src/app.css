@@ -360,7 +360,7 @@ select {
     left: 50%;
     z-index: 42;
     display: grid;
-    width: min(320px, calc(100% - 28px));
+    width: min(360px, calc(100% - 24px));
     gap: 9px;
     padding: 12px;
     border: 1px solid rgba(20, 32, 22, 0.1);
@@ -378,34 +378,98 @@ select {
 }
 
 .generation-parents {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    display: grid;
+    gap: 6px;
 }
 
 .generation-parent {
+    position: relative;
     display: grid;
-    justify-items: center;
-    gap: 4px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
     min-width: 0;
 }
 
+.generation-plus {
+    position: absolute;
+    top: -10px;
+    left: 13px;
+    color: #3c6c45;
+    font-size: 13px;
+    font-weight: 800;
+}
+
 .generation-parent img {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border: 1.5px solid rgba(29, 74, 33, 0.2);
     border-radius: 999px;
     object-fit: cover;
 }
 
-.generation-parent strong {
-    max-width: 84px;
+.generation-parent-text {
+    min-width: 0;
+}
+
+.generation-parent-text strong {
+    display: block;
     overflow: hidden;
     color: #142016;
-    font-size: 12px;
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.generation-parent-text p {
+    display: -webkit-box;
+    margin: 1px 0 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+.generation-result {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(29, 74, 33, 0.12);
+}
+
+.generation-arrow {
+    position: absolute;
+    align-self: start;
+    margin-top: -16px;
+    color: #3c6c45;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.generation-result img {
+    width: 48px;
+    height: 48px;
+    border: 2px solid rgba(29, 74, 33, 0.28);
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+.generation-result-text strong {
+    display: block;
+    color: #142016;
+    font-size: 14px;
+}
+
+.generation-result-text p {
+    margin: 1px 0 0;
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.3;
 }
 
 .generation-pulse {

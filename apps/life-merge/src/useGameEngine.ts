@@ -63,11 +63,18 @@ export type Discovery = {
     lineage: LineageNode;
 };
 
+export type GenerationResult = {
+    name: string;
+    description: string;
+    imageUrl?: string;
+};
+
 export type GenerationFocus = {
     id: string;
     parents: [GamePiece, GamePiece];
     targetLabel: string;
-    status: "generating" | "cached";
+    status: "generating" | "cached" | "result";
+    result?: GenerationResult;
 };
 
 export type PresetEdit = {
@@ -694,6 +701,34 @@ export function useGameEngine({
         setLastEvent(`${activePreset.label} preset applied.`);
     };
 
+    // Briefly reveal the freshly-created object in the generation popover,
+    // then dismiss it. Replaces the "generating" state for that piece.
+    const revealResult = (
+        pieceId: string,
+        result: GenerationResult,
+        origin: "generated" | "cached",
+    ) => {
+        setGenerationFocus((current) =>
+            current?.id === pieceId
+                ? {
+                      ...current,
+                      status: "result",
+                      result: {
+                          name: result.name,
+                          description: result.description,
+                          imageUrl: result.imageUrl,
+                      },
+                  }
+                : current,
+        );
+        const holdMs = origin === "cached" ? 2200 : 3200;
+        window.setTimeout(() => {
+            setGenerationFocus((current) =>
+                current?.id === pieceId ? null : current,
+            );
+        }, holdMs);
+    };
+
     const hydrateGeneratedPiece = async (
         pieceId: string,
         targetTier: number,
@@ -721,11 +756,6 @@ export function useGameEngine({
         ].join(":");
         const cached = generatedCacheRef.current.get(cacheKey);
         if (cached) {
-            setGenerationFocus((current) =>
-                current?.id === pieceId
-                    ? { ...current, status: "cached" }
-                    : current,
-            );
             const enriched = {
                 ...cached,
                 lineage: mergeLineage(cached, parents),
@@ -733,11 +763,7 @@ export function useGameEngine({
             applyGeneratedSpecimen(pieceId, enriched, targetTier);
             setLastEvent(`${cached.name} reused from the local cache.`);
             showDiscovery({ ...parents[0], ...enriched });
-            window.setTimeout(() => {
-                setGenerationFocus((current) =>
-                    current?.id === pieceId ? null : current,
-                );
-            }, 1200);
+            revealResult(pieceId, enriched, "cached");
             return;
         }
 
@@ -772,9 +798,7 @@ export function useGameEngine({
             applyGeneratedSpecimen(pieceId, enriched, targetTier);
             setLastEvent(`${generated.name}: ${generated.description}`);
             showDiscovery({ ...parents[0], ...enriched });
-            setGenerationFocus((current) =>
-                current?.id === pieceId ? null : current,
-            );
+            revealResult(pieceId, enriched, "generated");
         } catch (error) {
             const message =
                 error instanceof Error ? error.message : "Generation failed.";

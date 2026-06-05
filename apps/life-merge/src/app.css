@@ -640,21 +640,20 @@ select {
 
 /* ---- Selected piece inspector (icon + name + description) ------------ */
 
+/* Stacked: a large image on its own line, name + description underneath. */
 .selected-card {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
     gap: 12px;
-    align-items: start;
 }
 
 .selected-icon {
     position: relative;
-    flex: 0 0 auto;
-    width: 56px;
-    height: 56px;
+    /* A big square that fills the card width — the image gets real space. */
+    width: 100%;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
     border: 2px solid var(--piece-ink);
-    border-radius: 999px;
+    border-radius: 18px;
     background: var(--piece-color);
 }
 
@@ -668,19 +667,20 @@ select {
 
 .selected-text {
     min-width: 0;
+    text-align: center;
 }
 
 .selected-text strong {
     display: block;
     color: #142016;
-    font-size: 15px;
+    font-size: 17px;
 }
 
 .selected-text p {
-    margin: 4px 0 0;
+    margin: 5px 0 0;
     color: #4e6253;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 /* ---- Legend (icon → name for the objects in play) ------------------- */

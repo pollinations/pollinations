@@ -1,7 +1,7 @@
 import {
     fetchModelCatalog,
     type ModelCatalog,
-    type ModelCatalogCategory,
+    type ModelCategory,
     Pollinations,
 } from "@pollinations/sdk/client";
 import { useAuthState } from "@pollinations/sdk/react";
@@ -19,34 +19,18 @@ import {
     type ThemeName,
 } from "@pollinations/ui";
 import {
-    getModalityColors,
-    type ModalityColorSet,
-} from "@pollinations/ui/modality";
-import { ModelSelector } from "@pollinations/ui/models";
+    categoryLabel,
+    ModelSelector,
+    modalityTheme,
+} from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
 
 const EMPTY_CATALOG: ModelCatalog = {
     models: [],
     allowedModelIds: new Set(),
-    allowedImageModelIds: new Set(),
-    allowedTextModelIds: new Set(),
-    allowedAudioModelIds: new Set(),
-    allowedVideoModelIds: new Set(),
 };
 
-const CATEGORY_LABELS: Record<ModelCatalogCategory, string> = {
-    image: "Image",
-    video: "Video",
-    text: "Text",
-    audio: "Audio",
-};
-
-const CATEGORY_ORDER: ModelCatalogCategory[] = [
-    "image",
-    "video",
-    "text",
-    "audio",
-];
+const CATEGORY_ORDER: ModelCategory[] = ["image", "video", "text", "audio"];
 
 type PlaygroundResult =
     | {
@@ -96,7 +80,7 @@ function usePlaygroundCatalog(apiKey: string | null) {
     return { catalog, isLoading, error };
 }
 
-function promptPlaceholder(category: ModelCatalogCategory): string {
+function promptPlaceholder(category: ModelCategory): string {
     if (category === "image")
         return "A luminous greenhouse full of tiny AI tools";
     if (category === "video")
@@ -104,18 +88,6 @@ function promptPlaceholder(category: ModelCatalogCategory): string {
     if (category === "audio")
         return "A calm voice introducing a new creative tool";
     return "Explain how to build a tiny AI app with Pollinations";
-}
-
-function modalityColors(category: ModelCatalogCategory): ModalityColorSet {
-    const colors = getModalityColors(category) ?? getModalityColors("text");
-    if (!colors) {
-        throw new Error(`Missing modality colors for ${category}`);
-    }
-    return colors;
-}
-
-function modalityTheme(category: ModelCatalogCategory): ThemeName {
-    return modalityColors(category).theme;
 }
 
 function getResultExtension(result: PlaygroundResult): string {
@@ -129,15 +101,6 @@ function bytesToObjectUrl(buffer: ArrayBuffer, contentType: string): string {
     return URL.createObjectURL(new Blob([buffer], { type: contentType }));
 }
 
-function base64ToObjectUrl(data: string, contentType: string): string {
-    const binary = atob(data);
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-        bytes[index] = binary.charCodeAt(index);
-    }
-    return bytesToObjectUrl(bytes.buffer, contentType);
-}
-
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
     return String(error || "Something went wrong");
@@ -147,8 +110,8 @@ function ModalityTabs({
     activeCategory,
     onCategoryChange,
 }: {
-    activeCategory: ModelCatalogCategory;
-    onCategoryChange: (category: ModelCatalogCategory) => void;
+    activeCategory: ModelCategory;
+    onCategoryChange: (category: ModelCategory) => void;
 }) {
     return (
         <ButtonGroup aria-label="Modality">
@@ -160,7 +123,7 @@ function ModalityTabs({
                     size="sm"
                     onClick={() => onCategoryChange(category)}
                 >
-                    {CATEGORY_LABELS[category]}
+                    {categoryLabel(category)}
                 </TabButton>
             ))}
         </ButtonGroup>
@@ -175,7 +138,7 @@ function ResultPanel({
 }: {
     result: PlaygroundResult | null;
     isLoading: boolean;
-    activeCategory: ModelCatalogCategory;
+    activeCategory: ModelCategory;
     className?: string;
 }) {
     return (
@@ -289,7 +252,7 @@ export function Playground({
         error: catalogError,
     } = usePlaygroundCatalog(apiKey);
     const [activeCategory, setActiveCategory] =
-        useState<ModelCatalogCategory>("image");
+        useState<ModelCategory>("image");
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
     const [width, setWidth] = useState(1024);
@@ -349,7 +312,7 @@ export function Playground({
         ? modalityTheme(currentModel.category)
         : modalityTheme(activeCategory);
 
-    function selectCategory(category: ModelCatalogCategory) {
+    function selectCategory(category: ModelCategory) {
         setActiveCategory(category);
         if (currentModel?.category === category) return;
 
@@ -418,28 +381,6 @@ export function Playground({
             }
 
             if (currentModel.category === "audio") {
-                if (currentModel.source === "text") {
-                    const response = await client.chat(
-                        [{ role: "user", content: prompt.trim() }],
-                        {
-                            model: currentModel.id,
-                            modalities: ["text", "audio"],
-                            audio: {
-                                voice: selectedVoice || "alloy",
-                                format: "wav",
-                            },
-                        },
-                    );
-                    const audio = response.choices[0]?.message.audio?.data;
-                    if (!audio) throw new Error("No audio response");
-                    setResult({
-                        type: "audio",
-                        url: base64ToObjectUrl(audio, "audio/wav"),
-                        contentType: "audio/wav",
-                    });
-                    return;
-                }
-
                 const response = await client.audio(prompt.trim(), {
                     model: currentModel.id,
                     voice: selectedVoice || undefined,
@@ -518,8 +459,6 @@ export function Playground({
                                 models={catalog.models}
                                 category={activeCategory}
                                 value={selectedModel}
-                                allowedModelIds={catalog.allowedModelIds}
-                                isLoggedIn={isLoggedIn}
                                 isLoading={isLoading || !isHydrated}
                                 onChange={setSelectedModel}
                             />

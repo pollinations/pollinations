@@ -2,7 +2,7 @@ import { cn, type ThemeName } from "@pollinations/ui";
 import {
     AppUserMenu,
     isEmbeddedContext,
-} from "@pollinations/ui/compositions/app-user";
+} from "@pollinations/ui/app-user-menu/sdk";
 import { ENTER_URL } from "./config";
 import { Playground } from "./Playground";
 

@@ -465,34 +465,6 @@ select {
     background: rgba(47, 107, 62, 0.1);
 }
 
-.board-start-styles {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    width: 100%;
-    pointer-events: auto;
-}
-
-.board-start-styles button {
-    display: grid;
-    justify-items: center;
-    gap: 4px;
-    padding: 7px 4px;
-    border: 1px solid rgba(29, 74, 33, 0.14);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
-    color: #5d6b60;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.board-start-styles button.is-active {
-    border-color: #2f6b3e;
-    background: rgba(47, 107, 62, 0.1);
-    color: #142016;
-}
-
 .board-start-hint {
     color: #4e6253;
     font-size: 12px;
@@ -773,152 +745,15 @@ select {
     background: rgba(137, 209, 127, 0.16);
 }
 
-.preset-axis-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 12px;
-}
-
-.preset-axis {
-    min-width: 0;
-    overflow: hidden;
-    padding: 8px 4px;
-    border: 1px solid rgba(23, 58, 88, 0.14);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
-    color: #385166;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 750;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.preset-axis.is-active {
-    border-color: rgba(23, 58, 88, 0.34);
-    background: rgba(97, 166, 216, 0.22);
-    color: #173a58;
-}
-
-.preset-axis:disabled,
-.style-tabs button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.preset-details {
-    display: grid;
-    gap: 12px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(29, 74, 33, 0.1);
-}
-
 .preset-axis-desc {
-    margin: 0;
+    margin: 12px 0 0;
     color: #4e6253;
     font-size: 13px;
     line-height: 1.4;
 }
 
-.preset-field {
-    display: grid;
-    gap: 6px;
-}
-
-.preset-field > span {
-    color: #536255;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.style-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-}
-
-.style-tabs button {
-    display: grid;
-    min-width: 0;
-    gap: 5px;
-    justify-items: center;
-    padding: 7px 5px;
-    border: 1px solid rgba(104, 31, 69, 0.14);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
-    color: #5c2a43;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 750;
-}
-
-.style-tabs button.is-active {
-    border-color: rgba(104, 31, 69, 0.34);
-    background: rgba(214, 108, 156, 0.2);
-    color: #641c38;
-}
-
-.style-swatch {
-    position: relative;
-    width: 34px;
-    height: 22px;
-    overflow: hidden;
-    border: 1px solid currentColor;
-    border-radius: 999px;
-}
-
-.style-swatch::before,
-.style-swatch::after {
-    position: absolute;
-    content: "";
-}
-
-.style-swatch-blueprint {
-    background:
-        linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px),
-        linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
-        #4f7ed4;
-    background-size: 8px 8px;
-}
-
-.style-swatch-blueprint::before {
-    inset: 7px 8px;
-    border-top: 2px solid #f6fbff;
-    border-radius: 999px;
-}
-
-.style-swatch-risograph {
-    background: #fff1cb;
-}
-
-.style-swatch-risograph::before {
-    inset: 4px 9px 5px 6px;
-    border-radius: 999px;
-    background: #ef6f5e;
-}
-
-.style-swatch-risograph::after {
-    inset: 5px 5px 4px 11px;
-    border-radius: 999px;
-    background: rgba(0, 109, 119, 0.78);
-}
-
-.style-swatch-ink-wash {
-    background: #f5ead7;
-}
-
-.style-swatch-ink-wash::before {
-    inset: 8px 6px 7px;
-    border-radius: 999px;
-    background: #173a58;
-    opacity: 0.74;
-    transform: rotate(-9deg);
-}
-
 .preset-editor {
+    margin-top: 12px;
     display: grid;
     gap: 8px;
 }
@@ -951,12 +786,6 @@ select {
 .preset-editor textarea:disabled {
     cursor: not-allowed;
     opacity: 0.58;
-}
-
-.preset-lock-note {
-    margin: 0;
-    color: #8a5a1e;
-    font-size: 12px;
 }
 
 .rung-list {

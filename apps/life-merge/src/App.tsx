@@ -4,12 +4,7 @@ import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import { Balance } from "@pollinations/ui/wallet/sdk";
 import { type CSSProperties, useState } from "react";
-import {
-    type GamePiece,
-    LIFE_PRESETS,
-    LIFE_STYLE_PRESETS,
-    type LineageNode,
-} from "./life";
+import { type GamePiece, LIFE_PRESETS, type LineageNode } from "./life";
 import {
     BOARD_ASPECT_RATIO,
     BOARD_MAX_WIDTH,
@@ -268,34 +263,11 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="board-start-styles">
-                                            {LIFE_STYLE_PRESETS.map((style) => (
-                                                <button
-                                                    key={style.id}
-                                                    type="button"
-                                                    className={
-                                                        style.id ===
-                                                        game.styleId
-                                                            ? "is-active"
-                                                            : ""
-                                                    }
-                                                    onClick={() =>
-                                                        game.selectStyle(
-                                                            style.id,
-                                                        )
-                                                    }
-                                                >
-                                                    <span
-                                                        className={`style-swatch style-swatch-${style.id}`}
-                                                        aria-hidden="true"
-                                                    />
-                                                    {style.label}
-                                                </button>
-                                            ))}
-                                        </div>
                                         <span className="board-start-hint">
                                             {game.canUseAi
-                                                ? "Click the board to start"
+                                                ? game.presetId
+                                                    ? "Click the board to start"
+                                                    : "Pick a world above"
                                                 : "Authorize above to start"}
                                         </span>
                                     </div>
@@ -443,141 +415,69 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                             <header className="preset-card-head">
                                 <div>
                                     <span className="preset-card-kicker">
-                                        Preset
+                                        World
                                     </span>
                                     <strong>{game.activePreset.label}</strong>
                                     <small>
                                         {game.activeStyle.label} style
                                     </small>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="preset-toggle"
-                                    aria-expanded={presetOpen}
-                                    onClick={() =>
-                                        setPresetOpen((open) => !open)
-                                    }
-                                >
-                                    {presetOpen ? "Done" : "Edit"}
-                                </button>
-                            </header>
-
-                            <div className="preset-axis-row">
-                                {LIFE_PRESETS.map((preset) => (
+                                {IS_DEV ? (
                                     <button
-                                        key={preset.id}
                                         type="button"
-                                        className={`preset-axis ${
-                                            preset.id === game.presetId
-                                                ? "is-active"
-                                                : ""
-                                        }`}
-                                        disabled={game.presetsLocked}
+                                        className="preset-toggle"
+                                        aria-expanded={presetOpen}
                                         onClick={() =>
-                                            game.selectPreset(preset.id)
+                                            setPresetOpen((open) => !open)
                                         }
                                     >
-                                        {preset.label}
+                                        {presetOpen ? "Done" : "Edit"}
                                     </button>
-                                ))}
-                            </div>
+                                ) : null}
+                            </header>
 
-                            {presetOpen ? (
-                                <div className="preset-details">
-                                    <p className="preset-axis-desc">
-                                        {game.activePreset.axis}
-                                    </p>
+                            <p className="preset-axis-desc">
+                                {game.activePreset.axis}
+                            </p>
 
-                                    <div className="preset-field">
-                                        <span>Style</span>
-                                        <div className="style-tabs">
-                                            {LIFE_STYLE_PRESETS.map((style) => (
-                                                <button
-                                                    key={style.id}
-                                                    type="button"
-                                                    className={
-                                                        style.id ===
-                                                        game.styleId
-                                                            ? "is-active"
-                                                            : ""
-                                                    }
-                                                    disabled={
-                                                        game.presetsLocked
-                                                    }
-                                                    onClick={() =>
-                                                        game.selectStyle(
-                                                            style.id,
-                                                        )
-                                                    }
-                                                >
-                                                    <span
-                                                        className={`style-swatch style-swatch-${style.id}`}
-                                                        aria-hidden="true"
-                                                    />
-                                                    <strong>
-                                                        {style.label}
-                                                    </strong>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {IS_DEV ? (
-                                        <div className="preset-editor">
-                                            <label>
-                                                <span>Seeds</span>
-                                                <textarea
-                                                    value={
-                                                        game.activeEdit
-                                                            .seedsText
-                                                    }
-                                                    disabled={
-                                                        game.presetsLocked
-                                                    }
-                                                    rows={4}
-                                                    onChange={(event) =>
-                                                        game.updateActivePresetEdit(
-                                                            "seedsText",
-                                                            event.currentTarget
-                                                                .value,
-                                                        )
-                                                    }
-                                                />
-                                            </label>
-                                            <label>
-                                                <span>Evolution</span>
-                                                <textarea
-                                                    value={
-                                                        game.activeEdit
-                                                            .evolutionPrompt
-                                                    }
-                                                    disabled={
-                                                        game.presetsLocked
-                                                    }
-                                                    rows={3}
-                                                    onChange={(event) =>
-                                                        game.updateActivePresetEdit(
-                                                            "evolutionPrompt",
-                                                            event.currentTarget
-                                                                .value,
-                                                        )
-                                                    }
-                                                />
-                                            </label>
-                                            <Button
-                                                onClick={game.applyPresetEdit}
-                                                disabled={game.presetsLocked}
-                                            >
-                                                Apply
-                                            </Button>
-                                        </div>
-                                    ) : null}
-
-                                    {game.presetsLocked ? (
-                                        <p className="preset-lock-note">
-                                            Reset to change the preset.
-                                        </p>
-                                    ) : null}
+                            {presetOpen && IS_DEV ? (
+                                <div className="preset-editor">
+                                    <label>
+                                        <span>Seeds</span>
+                                        <textarea
+                                            value={game.activeEdit.seedsText}
+                                            disabled={game.presetsLocked}
+                                            rows={4}
+                                            onChange={(event) =>
+                                                game.updateActivePresetEdit(
+                                                    "seedsText",
+                                                    event.currentTarget.value,
+                                                )
+                                            }
+                                        />
+                                    </label>
+                                    <label>
+                                        <span>Evolution</span>
+                                        <textarea
+                                            value={
+                                                game.activeEdit.evolutionPrompt
+                                            }
+                                            disabled={game.presetsLocked}
+                                            rows={3}
+                                            onChange={(event) =>
+                                                game.updateActivePresetEdit(
+                                                    "evolutionPrompt",
+                                                    event.currentTarget.value,
+                                                )
+                                            }
+                                        />
+                                    </label>
+                                    <Button
+                                        onClick={game.applyPresetEdit}
+                                        disabled={game.presetsLocked}
+                                    >
+                                        Apply
+                                    </Button>
                                 </div>
                             ) : null}
 

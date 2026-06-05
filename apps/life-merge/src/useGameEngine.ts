@@ -52,7 +52,23 @@ export const DROP_Y = 70;
 const MAX_PIECES = 50;
 
 const PRESET_IDS = LIFE_PRESETS.map((preset) => preset.id);
-const STYLE_IDS = LIFE_STYLE_PRESETS.map((style) => style.id);
+
+// Each world owns its visual style — there is no separate style picker.
+// (Kept here rather than on the LifePreset data so the preset registry in
+// life.ts stays purely content; this is the engine's presentation policy.)
+const PRESET_STYLE: Record<LifePresetId, LifeStylePresetId> = {
+    bio: "blueprint",
+    inventions: "risograph",
+    future: "ink-wash",
+};
+
+function styleForPresetId(presetId: LifePresetId): LifeStylePreset {
+    const id = PRESET_STYLE[presetId];
+    return (
+        LIFE_STYLE_PRESETS.find((style) => style.id === id) ??
+        DEFAULT_STYLE_PRESET
+    );
+}
 
 type PieceBody = Body & { plugin: { pieceId: string } };
 
@@ -159,11 +175,18 @@ export function useGameEngine({
     const boardSizeRef = useRef(BOARD_FALLBACK);
     const highestTierRef = useRef(0);
     const hasStartedRef = useRef(false);
+    // Whether the player has explicitly chosen a world (vs. the default that
+    // stands in internally). Gates starting the game.
+    const presetChosenRef = useRef(false);
     const presetIdRef = useRef<LifePresetId>(DEFAULT_PRESET.id);
     const presetRef = useRef<LifePreset>(DEFAULT_PRESET);
     const rungsRef = useRef(DEFAULT_PRESET.rungs);
-    const styleIdRef = useRef<LifeStylePresetId>(DEFAULT_STYLE_PRESET.id);
-    const styleRef = useRef(composeStyle(DEFAULT_STYLE_PRESET, DEFAULT_PRESET));
+    const styleIdRef = useRef<LifeStylePresetId>(
+        PRESET_STYLE[DEFAULT_PRESET.id],
+    );
+    const styleRef = useRef(
+        composeStyle(styleForPresetId(DEFAULT_PRESET.id), DEFAULT_PRESET),
+    );
     const generatedPoolRef = useRef<Map<string, Specimen[]>>(new Map());
     const generatedCacheRef = useRef<Map<string, Specimen>>(new Map());
     const nextPieceRef = useRef<GamePiece>(
@@ -172,7 +195,10 @@ export function useGameEngine({
             {
                 specimen: createSeedSpecimen(
                     DEFAULT_PRESET.rungs,
-                    composeStyle(DEFAULT_STYLE_PRESET, DEFAULT_PRESET),
+                    composeStyle(
+                        styleForPresetId(DEFAULT_PRESET.id),
+                        DEFAULT_PRESET,
+                    ),
                     DEFAULT_PRESET.seeds,
                 ),
             },
@@ -190,15 +216,11 @@ export function useGameEngine({
     const [score, setScore] = useState(0);
     const [highestTier, setHighestTier] = useState(0);
     const [hasStarted, setHasStarted] = useState(false);
+    // The URL is the source of truth: no `?preset=` means nothing chosen yet
+    // (start screen). Picking a world writes the param.
     const [presetId, setPresetId] = useQueryParam<LifePresetId>(
         "preset",
-        DEFAULT_PRESET.id,
         PRESET_IDS,
-    );
-    const [styleId, setStyleId] = useQueryParam<LifeStylePresetId>(
-        "style",
-        DEFAULT_STYLE_PRESET.id,
-        STYLE_IDS,
     );
     const [presetEdits, setPresetEdits] =
         useState<PresetEdits>(initialPresetEdits);
@@ -217,21 +239,23 @@ export function useGameEngine({
         nextPieceRef.current.lineage,
     );
 
+    // Internally we always resolve to a concrete preset (the default stands in
+    // before the player has chosen) so the inert placeholder seed and refs are
+    // well-defined; `presetId` itself stays nullable for the UI.
+    const resolvedPresetId = presetId ?? DEFAULT_PRESET.id;
     const basePreset = useMemo(
         () =>
-            LIFE_PRESETS.find((preset) => preset.id === presetId) ??
+            LIFE_PRESETS.find((preset) => preset.id === resolvedPresetId) ??
             DEFAULT_PRESET,
-        [presetId],
+        [resolvedPresetId],
     );
     const activePreset = useMemo(
-        () => editPreset(basePreset, presetEdits[presetId]),
-        [basePreset, presetEdits, presetId],
+        () => editPreset(basePreset, presetEdits[resolvedPresetId]),
+        [basePreset, presetEdits, resolvedPresetId],
     );
     const activeStyle = useMemo(
-        () =>
-            LIFE_STYLE_PRESETS.find((style) => style.id === styleId) ??
-            DEFAULT_STYLE_PRESET,
-        [styleId],
+        () => styleForPresetId(resolvedPresetId),
+        [resolvedPresetId],
     );
     const promptStyle = useMemo(
         () => composeStyle(activeStyle, activePreset),
@@ -264,15 +288,20 @@ export function useGameEngine({
     }, [highestTier]);
 
     useEffect(() => {
-        presetIdRef.current = presetId;
+        presetChosenRef.current = presetId !== null;
+        presetIdRef.current = resolvedPresetId;
         presetRef.current = activePreset;
         rungsRef.current = rungs;
-    }, [activePreset, presetId, rungs]);
-
-    useEffect(() => {
-        styleIdRef.current = styleId;
+        styleIdRef.current = activeStyle.id;
         styleRef.current = promptStyle;
-    }, [styleId, promptStyle]);
+    }, [
+        activePreset,
+        presetId,
+        resolvedPresetId,
+        rungs,
+        activeStyle,
+        promptStyle,
+    ]);
 
     useEffect(() => {
         if (!activeLabelId) return undefined;
@@ -600,6 +629,10 @@ export function useGameEngine({
     // seed from it. The seed appears at the top to aim; the next click drops.
     const startGame = () => {
         if (hasStartedRef.current) return;
+        if (!presetChosenRef.current) {
+            setLastEvent("Pick a world first.");
+            return;
+        }
         if (!apiKeyRef.current) {
             setLastEvent("Authorize with Pollinations to start.");
             return;
@@ -684,33 +717,24 @@ export function useGameEngine({
             LIFE_PRESETS.find((preset) => preset.id === nextPresetId) ??
             DEFAULT_PRESET;
         const editedPreset = editPreset(nextPreset, presetEdits[nextPreset.id]);
+        const nextStyle = styleForPresetId(nextPreset.id);
+        presetChosenRef.current = true;
         presetIdRef.current = nextPreset.id;
         presetRef.current = editedPreset;
         rungsRef.current = editedPreset.rungs;
-        styleRef.current = composeStyle(activeStyle, editedPreset);
+        styleIdRef.current = nextStyle.id;
+        styleRef.current = composeStyle(nextStyle, editedPreset);
         setPresetId(nextPreset.id);
         resetGame();
-        setLastEvent(`${editedPreset.label} axis loaded.`);
-    };
-
-    const selectStyle = (nextStyleId: LifeStylePresetId) => {
-        if (piecesRef.current.length > 0) return;
-        const nextStyle =
-            LIFE_STYLE_PRESETS.find((style) => style.id === nextStyleId) ??
-            DEFAULT_STYLE_PRESET;
-        styleIdRef.current = nextStyle.id;
-        styleRef.current = composeStyle(nextStyle, presetRef.current);
-        setStyleId(nextStyle.id);
-        resetGame();
-        setLastEvent(`${nextStyle.label} style loaded.`);
+        setLastEvent(`${editedPreset.label} world loaded.`);
     };
 
     const updateActivePresetEdit = (field: keyof PresetEdit, value: string) => {
         if (presetsLocked) return;
         setPresetEdits((current) => ({
             ...current,
-            [presetId]: {
-                ...current[presetId],
+            [resolvedPresetId]: {
+                ...current[resolvedPresetId],
                 [field]: value,
             },
         }));
@@ -975,7 +999,7 @@ export function useGameEngine({
             })),
         [highestTier, rungs],
     );
-    const activeEdit = presetEdits[presetId];
+    const activeEdit = presetEdits[resolvedPresetId];
     const dropPreviewX = Math.min(
         Math.max(aimX, nextPiece.radius + 8),
         boardSize.width - nextPiece.radius - 8,
@@ -988,7 +1012,6 @@ export function useGameEngine({
         score,
         highestTier,
         presetId,
-        styleId,
         generatedPoolSize,
         lastEvent,
         isCrowded,
@@ -1012,7 +1035,6 @@ export function useGameEngine({
         dropNextPiece,
         resetGame,
         selectPreset,
-        selectStyle,
         updateActivePresetEdit,
         applyPresetEdit,
         updateAim,

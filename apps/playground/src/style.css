@@ -26,12 +26,8 @@ body.polli-ui-shell #root {
 }
 
 .polli-playground-title {
-    color: #030712;
+    color: var(--polli-color-text-strong);
     line-height: 1;
-}
-
-.polli-playground-subtitle {
-    color: #4b5563;
 }
 
 .polli-playground-settings-grid {

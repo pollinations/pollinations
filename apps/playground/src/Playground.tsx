@@ -12,9 +12,13 @@ import {
     cn,
     Field,
     FileUpload,
+    Heading,
+    ImageIcon,
     Input,
+    MediaPlaceholder,
     Surface,
     TabButton,
+    Text,
     Textarea,
     type ThemeName,
 } from "@pollinations/ui";
@@ -141,9 +145,10 @@ function ResultPanel({
     activeCategory: ModelCategory;
     className?: string;
 }) {
+    const theme = modalityTheme(activeCategory);
     return (
         <Surface
-            theme={modalityTheme(activeCategory)}
+            theme={theme}
             variant="panel"
             className={cn(
                 "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
@@ -151,9 +156,9 @@ function ResultPanel({
             )}
         >
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <h2 className="polli:m-0 polli:text-sm polli:font-semibold polli:text-gray-950">
+                <Text as="h2" size="sm" tone="strong" weight="semibold">
                     Output
-                </h2>
+                </Text>
                 {result && result.type !== "text" && (
                     <Button
                         as="a"
@@ -161,7 +166,7 @@ function ResultPanel({
                         download={`pollinations-playground.${getResultExtension(
                             result,
                         )}`}
-                        theme={modalityTheme(activeCategory)}
+                        theme={theme}
                         size="sm"
                     >
                         Save
@@ -169,57 +174,66 @@ function ResultPanel({
                 )}
             </div>
 
-            <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3 polli:text-gray-950">
-                {isLoading && (
-                    <p className="polli:m-0 polli:text-gray-700">
-                        Generating...
-                    </p>
-                )}
+            {isLoading ? (
+                <MediaPlaceholder
+                    theme={theme}
+                    label="Generating..."
+                    detail="Hang tight while your result is created."
+                    className="polli:flex-1"
+                />
+            ) : !result ? (
+                <MediaPlaceholder
+                    theme={theme}
+                    icon={<ImageIcon className="polli:h-5 polli:w-5" />}
+                    label="Output preview"
+                    detail="Generated results appear here."
+                    className="polli:flex-1"
+                />
+            ) : (
+                <div className="polli:flex polli:min-h-0 polli:flex-1 polli:items-center polli:justify-center polli:overflow-hidden polli:rounded-xl polli:bg-surface-white polli:p-3 polli:text-theme-text-strong">
+                    {result.type === "image" && (
+                        <img
+                            src={result.url}
+                            alt="Generated"
+                            className="polli:max-h-full polli:w-full polli:rounded-lg polli:object-contain"
+                        />
+                    )}
 
-                {!isLoading && !result && (
-                    <p className="polli:m-0 polli:text-gray-700">
-                        Generated results appear here.
-                    </p>
-                )}
+                    {result.type === "video" && (
+                        <video
+                            src={result.url}
+                            controls
+                            autoPlay
+                            loop
+                            muted
+                            className="polli:max-h-full polli:w-full polli:rounded-lg"
+                        >
+                            <track kind="captions" />
+                        </video>
+                    )}
 
-                {!isLoading && result?.type === "image" && (
-                    <img
-                        src={result.url}
-                        alt="Generated"
-                        className="polli:max-h-full polli:w-full polli:rounded-lg polli:object-contain"
-                    />
-                )}
+                    {result.type === "audio" && (
+                        <audio
+                            src={result.url}
+                            controls
+                            autoPlay
+                            className="polli:w-full"
+                        >
+                            <track kind="captions" />
+                        </audio>
+                    )}
 
-                {!isLoading && result?.type === "video" && (
-                    <video
-                        src={result.url}
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        className="polli:max-h-full polli:w-full polli:rounded-lg"
-                    >
-                        <track kind="captions" />
-                    </video>
-                )}
-
-                {!isLoading && result?.type === "audio" && (
-                    <audio
-                        src={result.url}
-                        controls
-                        autoPlay
-                        className="polli:w-full"
-                    >
-                        <track kind="captions" />
-                    </audio>
-                )}
-
-                {!isLoading && result?.type === "text" && (
-                    <p className="polli:m-0 polli:w-full polli:whitespace-pre-wrap polli:text-sm polli:leading-6 polli:text-gray-950">
-                        {result.text}
-                    </p>
-                )}
-            </div>
+                    {result.type === "text" && (
+                        <Text
+                            as="p"
+                            size="sm"
+                            className="polli:w-full polli:whitespace-pre-wrap"
+                        >
+                            {result.text}
+                        </Text>
+                    )}
+                </div>
+            )}
         </Surface>
     );
 }
@@ -424,17 +438,26 @@ export function Playground({
         <div
             data-theme={theme}
             className={cn(
-                "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-gray-950",
+                "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-theme-text-base",
                 className,
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                <h1 className="polli-playground-title polli:m-0 polli:font-heading polli:text-4xl polli:leading-none">
+                <Heading
+                    as="h1"
+                    size="title"
+                    className="polli-playground-title polli:m-0"
+                >
                     {title}
-                </h1>
-                <p className="polli-playground-subtitle polli:m-0 polli:max-w-3xl polli:text-base">
+                </Heading>
+                <Text
+                    as="p"
+                    size="body"
+                    tone="soft"
+                    className="polli:m-0 polli:max-w-3xl"
+                >
                     {subtitle}
-                </p>
+                </Text>
             </section>
 
             {catalogError && (
@@ -471,7 +494,7 @@ export function Playground({
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
                         <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                 Prompt
                             </Field.Label>
                             <Textarea
@@ -489,7 +512,7 @@ export function Playground({
 
                         {supportsReferenceImages && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                     Reference images
                                 </Field.Label>
                                 <FileUpload
@@ -522,7 +545,7 @@ export function Playground({
                             currentModel?.category === "video") && (
                             <div className="polli-playground-settings-grid">
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                         Width
                                     </Field.Label>
                                     <Input
@@ -538,7 +561,7 @@ export function Playground({
                                     />
                                 </Field.Root>
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                         Height
                                     </Field.Label>
                                     <Input
@@ -556,7 +579,7 @@ export function Playground({
                                     />
                                 </Field.Root>
                                 <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                         Seed
                                     </Field.Label>
                                     <Input
@@ -573,7 +596,7 @@ export function Playground({
 
                         {currentModel && currentModel.voices.length > 0 && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-gray-950">
+                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
                                     Voice
                                 </Field.Label>
                                 <ButtonGroup aria-label="Voice">

@@ -66,7 +66,7 @@ function renderWithLinks(text: string): ReactNode[] {
                 href={match[2]}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
+                className="text-accent-violet-600 hover:text-accent-violet-800 hover:underline font-medium"
             >
                 {match[1]}
             </a>,
@@ -130,7 +130,7 @@ export const NewsBanner: FC = () => {
                 <Surface
                     variant="card-themed"
                     theme="violet"
-                    className="flex flex-col divide-y divide-violet-300/40 leading-relaxed"
+                    className="flex flex-col divide-y divide-accent-violet-300/40 leading-relaxed"
                 >
                     {PINNED_NEWS.map((item) => (
                         <PinnedNews key={item.title} item={item} />
@@ -154,12 +154,12 @@ export const NewsBanner: FC = () => {
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     <div className="min-w-0 py-3 first:pt-0 last:pb-0">
         {(item.dateLabel || item.date) && (
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700/70">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-accent-violet-700/70">
                 {item.dateLabel ??
                     (item.date ? formatNewsDate(item.date) : null)}
             </div>
         )}
-        <div className="flex items-baseline gap-2 font-semibold text-gray-900 text-base sm:text-lg">
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
             {item.emoji && (
                 <span aria-hidden="true" className="shrink-0">
                     {item.emoji}
@@ -168,12 +168,12 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
             <span>{item.title}</span>
         </div>
         {item.description && (
-            <p className="mt-1 text-sm text-gray-700">
+            <p className="mt-1 text-sm text-ink-700">
                 {renderWithLinks(item.description)}
             </p>
         )}
         {item.details && item.details.length > 0 && (
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-gray-700 marker:text-violet-400">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-accent-violet-400">
                 {item.details.map((detail) => (
                     <li key={detail}>{renderWithLinks(detail)}</li>
                 ))}
@@ -190,13 +190,13 @@ const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
         <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
             <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
             <div className="min-w-0">
-                <div className="font-semibold text-gray-900">{item.title}</div>
+                <div className="font-semibold text-ink-900">{item.title}</div>
                 {item.date && (
-                    <div className="mt-1 text-xs font-medium text-gray-400">
+                    <div className="mt-1 text-xs font-medium text-ink-400">
                         {formatNewsDate(item.date)}
                     </div>
                 )}
-                <p className="mt-1 text-gray-700">
+                <p className="mt-1 text-ink-700">
                     {renderWithLinks(item.description)}
                 </p>
             </div>

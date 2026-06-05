@@ -171,15 +171,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 cn(
                                     "font-mono text-sm cursor-pointer transition-all",
                                     copied
-                                        ? "text-blue-700 font-semibold"
-                                        : "text-blue-600 hover:text-blue-800 hover:underline",
+                                        ? "text-accent-blue-700 font-semibold"
+                                        : "text-accent-blue-600 hover:text-accent-blue-800 hover:underline",
                                 )
                             }
                         >
                             {(copied) => (copied ? "✓ Copied!" : plaintextKey)}
                         </CopyButton>
                     ) : (
-                        <span className="font-mono text-sm text-gray-500">
+                        <span className="font-mono text-sm text-ink-500">
                             {apiKey.start}...
                         </span>
                     )}
@@ -202,7 +202,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full border-blue-200 bg-blue-50 focus-visible:border-blue-300 focus-visible:ring-blue-200"
+                            className="w-full border-accent-blue-200 bg-accent-blue-50 focus-visible:border-accent-blue-300 focus-visible:ring-accent-blue-200"
                             placeholder="Enter API key name"
                             disabled={isSubmitting}
                         />

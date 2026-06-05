@@ -19,7 +19,7 @@ export type SwitchProps = {
 //  on    — soft green (universal "enabled" affordance)
 //  invalid — soft red (incomplete / error / setup needed)
 const trackClasses: Record<SwitchStatus, string> = {
-    off: "polli:bg-gray-200",
+    off: "polli:bg-ink-200",
     on: "polli:bg-intent-success-bg-light",
     invalid: "polli:bg-intent-danger-bg-light",
 };
@@ -60,7 +60,7 @@ export const Switch: FC<SwitchProps> = ({
         >
             <span
                 className={cn(
-                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-white polli:shadow-sm polli:transition-transform",
+                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-surface-opaque polli:shadow-sm polli:transition-transform",
                     checked ? "polli:translate-x-6" : "polli:translate-x-1",
                 )}
             />

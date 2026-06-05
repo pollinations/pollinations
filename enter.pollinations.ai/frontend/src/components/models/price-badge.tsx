@@ -2,9 +2,9 @@ import { cn, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
 
 const priceBadgeColors = {
-    gray: "text-gray-700",
-    purple: "text-purple-700",
-    teal: "text-teal-700",
+    gray: "text-ink-700",
+    purple: "text-accent-purple-700",
+    teal: "text-accent-teal-700",
 } as const;
 
 const TOKEN_TYPE_LABELS: Record<string, string> = {

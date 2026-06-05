@@ -283,7 +283,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     }
                 />
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center text-sm font-bold text-amber-950">
+                    <div className="flex min-w-0 items-center text-sm font-bold text-accent-amber-950">
                         Auto top-up
                         <InfoTip
                             content={AUTO_TOP_UP_TOOLTIP_CONTENT}
@@ -293,7 +293,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     <div
                         className={cn(
                             "text-xs font-medium",
-                            alertTone ? "text-red-700" : "text-amber-800/75",
+                            alertTone
+                                ? "text-intent-danger-700"
+                                : "text-accent-amber-800/75",
                         )}
                     >
                         {statusMessage}
@@ -359,7 +361,7 @@ function renderStatusMessage(
                     href={issue.invoiceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-amber-900"
+                    className="font-semibold underline underline-offset-2 hover:text-accent-amber-900"
                 >
                     complete in Stripe
                 </a>
@@ -389,7 +391,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     >
         <span>{loading ? "Opening..." : "Manage billing"}</span>
         {!loading && (
-            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-amber-700/70" />
+            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-accent-amber-700/70" />
         )}
     </Button>
 );
@@ -506,9 +508,9 @@ type SetupSnippetProps = {
 };
 
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
-    <div className="min-w-0 break-words leading-relaxed text-amber-950">
+    <div className="min-w-0 break-words leading-relaxed text-accent-amber-950">
         <span className="text-sm font-bold">{title}:</span>{" "}
-        <span className="inline-flex rounded-lg bg-white px-2 py-0.5 text-sm font-medium">
+        <span className="inline-flex rounded-lg bg-surface-opaque px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
     </div>
@@ -517,7 +519,7 @@ const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
 const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     <div
         role="alert"
-        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+        className="rounded-xl border border-intent-danger-200 bg-intent-danger-50 p-4 text-sm text-intent-danger-800"
     >
         {children}
     </div>

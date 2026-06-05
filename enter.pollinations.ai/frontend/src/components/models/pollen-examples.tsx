@@ -78,19 +78,19 @@ const CategorySection: FC<{
 
     return (
         <div className="space-y-2">
-            <div className="font-semibold text-gray-700">
+            <div className="font-semibold text-ink-700">
                 {emoji} {title}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((model) => (
                     <div
                         key={model.name}
-                        className="bg-violet-100/80 rounded-lg px-3 py-2"
+                        className="bg-accent-violet-100/80 rounded-lg px-3 py-2"
                     >
-                        <span className="font-medium text-violet-800 capitalize">
+                        <span className="font-medium text-accent-violet-800 capitalize">
                             {model.name}
                         </span>
-                        <span className="text-gray-600">
+                        <span className="text-ink-600">
                             {" "}
                             — {model.perPollen} {model.unit}/pollen
                         </span>
@@ -106,8 +106,8 @@ export const PollenExamples: FC = () => {
     const examples = getExamples(stats);
 
     return (
-        <div className="mt-4 bg-white/80 rounded-xl p-4 space-y-4">
-            <div className="text-sm text-gray-600 mb-3">
+        <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
+            <div className="text-sm text-ink-600 mb-3">
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
@@ -115,7 +115,7 @@ export const PollenExamples: FC = () => {
             <CategorySection emoji="🎨" title="Image" models={examples.image} />
             <CategorySection emoji="💬" title="Text" models={examples.text} />
 
-            <div className="text-xs text-gray-500 pt-2">
+            <div className="text-xs text-ink-500 pt-2">
                 Values are estimates based on typical usage. See{" "}
                 <strong>Pricing</strong> below for exact rates.
             </div>

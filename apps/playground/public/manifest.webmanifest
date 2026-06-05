@@ -1,27 +1,29 @@
 {
-    "name": "Pollinations Playground",
+    "name": "Playground | pollinations.ai",
     "short_name": "Playground",
     "description": "Generate images, text, and audio with the Pollinations API in one focused playground.",
     "icons": [
         {
-            "src": "./icon-192.png",
+            "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "./icon-512.png",
+            "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "./icon-512.png",
+            "src": "/icon-maskable-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#D1FAE4",
+    "theme_color": "#ede9fe",
     "background_color": "#110518",
     "display": "standalone",
-    "start_url": "./"
+    "start_url": "/"
 }

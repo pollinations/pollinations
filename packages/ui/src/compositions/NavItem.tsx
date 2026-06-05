@@ -16,9 +16,9 @@ const base =
     "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
 const activeClasses = "polli:bg-theme-bg-active polli:text-theme-text-strong";
 const inactiveClasses =
-    "polli:text-gray-800 polli:hover:bg-white/60 polli:hover:text-gray-950";
+    "polli:text-ink-800 polli:hover:bg-surface-opaque/60 polli:hover:text-ink-950";
 const dotClasses =
-    "polli:h-2.5 polli:w-2.5 polli:shrink-0 polli:rounded-full polli:bg-theme-bg-hover polli:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]";
+    "polli:h-2.5 polli:w-2.5 polli:shrink-0 polli:rounded-full polli:bg-theme-bg-hover polli:ring-1 polli:ring-inset polli:ring-ink-950/10";
 
 export type NavItemProps<T extends React.ElementType = "button"> =
     PropsWithChildren<BaseNavItemProps> & {

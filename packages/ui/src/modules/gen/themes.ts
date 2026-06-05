@@ -9,9 +9,9 @@ export const MODALITY_THEMES: Record<ModelCategory, ThemeName> = {
     text: "blue",
     image: "pink",
     video: "teal",
-    audio: "violet",
-    realtime: "green",
-    embedding: "amber",
+    audio: "amber",
+    realtime: "coral",
+    embedding: "violet",
 };
 
 /** Theme for a known model category. Total — every category has a theme. */

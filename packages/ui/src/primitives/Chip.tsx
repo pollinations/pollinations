@@ -20,7 +20,7 @@ const chipSizes = {
 const intentClasses: Record<ChipIntent, string> = {
     news: "polli:bg-intent-news-bg-light polli:text-intent-news-text",
     alpha: "polli:bg-intent-alpha-bg-light polli:text-intent-alpha-text",
-    neutral: "polli:bg-gray-100/80 polli:text-gray-900",
+    neutral: "polli:bg-ink-100/80 polli:text-ink-900",
     success: "polli:bg-intent-success-bg-light polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",

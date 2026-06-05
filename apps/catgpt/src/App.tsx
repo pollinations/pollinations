@@ -12,8 +12,12 @@ import {
     ExternalLinkButton,
     Field,
     FileUpload,
+    Heading,
+    ImageIcon,
     InlineLink,
+    MediaPlaceholder,
     Surface,
+    Text,
     Textarea,
 } from "@pollinations/ui";
 import {
@@ -392,9 +396,13 @@ export function App() {
             >
                 <section className="flex flex-wrap items-end justify-between gap-5">
                     <div className="flex min-w-0 flex-1 basis-64 flex-col gap-3">
-                        <h1 className="m-0 font-heading text-4xl leading-none text-gray-950 sm:text-5xl">
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="m-0 text-gray-950 sm:text-5xl"
+                        >
                             CatGPT
-                        </h1>
+                        </Heading>
                         <p className="max-w-2xl text-base text-gray-600">
                             Ask a question. Get a cat response.
                         </p>
@@ -497,29 +505,38 @@ export function App() {
                             variant="panel"
                             className="flex min-h-[32rem] flex-col gap-4"
                         >
-                            <h2 className="text-sm font-semibold text-theme-text-strong">
+                            <Text
+                                as="h2"
+                                size="sm"
+                                tone="strong"
+                                weight="semibold"
+                            >
                                 Result
-                            </h2>
-                            <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-white p-3">
-                                {isGenerating && (
-                                    <div
-                                        aria-hidden="true"
-                                        className="h-8 w-8 animate-spin rounded-full border-2 border-pink-200 border-t-pink-600"
-                                    />
-                                )}
-                                {!isGenerating && !generatedMeme && (
-                                    <p className="text-center text-sm text-theme-text-soft">
-                                        CatGPT will ignore you here.
-                                    </p>
-                                )}
-                                {!isGenerating && generatedMeme && (
+                            </Text>
+                            {isGenerating ? (
+                                <MediaPlaceholder
+                                    theme="pink"
+                                    label="Generating..."
+                                    detail={PROGRESS_MESSAGES[progressIndex]}
+                                    className="flex-1"
+                                />
+                            ) : !generatedMeme ? (
+                                <MediaPlaceholder
+                                    theme="pink"
+                                    icon={<ImageIcon className="h-5 w-5" />}
+                                    label="No meme yet"
+                                    detail="CatGPT will ignore you here."
+                                    className="flex-1"
+                                />
+                            ) : (
+                                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-white p-3">
                                     <img
                                         src={generatedMeme.url}
                                         alt={generatedMeme.prompt}
                                         className="max-h-full w-full rounded-lg object-contain"
                                     />
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {generatedMeme && (
                                 <div className="flex flex-wrap gap-2">
@@ -584,13 +601,18 @@ function MemeGrid({
 }) {
     return (
         <section className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold text-theme-text-strong">
+            <Text as="h2" size="sm" tone="strong" weight="semibold">
                 {title}
-            </h2>
+            </Text>
             {memes.length === 0 ? (
-                <p className="rounded-xl bg-white p-4 text-center text-sm text-theme-text-soft">
+                <Text
+                    as="p"
+                    size="sm"
+                    tone="soft"
+                    className="rounded-xl bg-white p-4 text-center"
+                >
                     No memes yet. Generate one to see it here.
-                </p>
+                </Text>
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {memes.map((meme) => (
@@ -604,9 +626,9 @@ function MemeGrid({
                                 loading="lazy"
                                 className="aspect-square w-full object-cover"
                             />
-                            <p className="p-3 text-sm text-theme-text-base">
+                            <Text as="p" size="sm" className="p-3">
                                 "{meme.prompt}"
-                            </p>
+                            </Text>
                         </article>
                     ))}
                 </div>

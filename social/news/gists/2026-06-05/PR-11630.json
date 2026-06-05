@@ -1,0 +1,35 @@
+{
+  "pr_number": 11630,
+  "title": "feat(playground): standalone playground app",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11630",
+  "merged_at": "2026-06-05T15:55:28Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Adds `apps/playground` — a standalone React 19 + Vite + Tailwind v4 SPA for image, video, text, and audio generation.\n- Uses the shared SDK/UI packages: catalog loading, BYOP auth state, model selector, themed controls, and media output rendering.\n- Improves multimodal inputs: registry-driven reference image caps, video first/last frame controls, audio upload for STT models, and filled-state file previews.\n- Keeps transcript/text output readable in a scrollable document-style output panel.\n- Registers the app in `apps/apps.json` for `app-deploy-automatic.yml`.\n- Notes: the `pk_` app key in `config.ts` is public BYOP app config; no local token/debug override is shipped.\n\nChecks:\n- `npx biome check --write apps/playground/src/Playground.tsx apps/playground/src/style.css packages/ui/src/compositions/FileUpload.tsx packages/ui/src/primitives/icons/index.tsx shared/registry/registry.ts`\n- `npm run build --prefix apps/playground`\n- `npm run test --prefix packages/ui`\n- `git diff --check`\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A playground for the hive",
+    "blurb": "We just dropped a brand new standalone playground app for all your generation needs. Whether you're spinning up images, video, text, or audio, the sandbox is officially open.",
+    "summary": "Added a standalone React 19 playground app featuring multimodal inputs, video frame controls, and audio uploads for testing all generation models in one place.",
+    "impact": "Users can now experiment with image, video, text, and audio generation through a dedicated, feature-rich UI with advanced file preview and reference controls.",
+    "keywords": [
+      "playground",
+      "app",
+      "multimodal",
+      "ui",
+      "generation"
+    ],
+    "visual_concept": "A literal digital playground or sandbox. Polly the bee and the Monitor Robot playing together. Polly building something out of code/blocks, representing the multimodal generation capabilities.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny propeller beanie, building a sandcastle out of glowing code blocks in a digital sandbox. A chunky Monitor Robot sits nearby holding a picture frame showing a generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-05/PR-11630.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny propeller beanie, building a sandcastle out of glowing code blocks in a digital sandbox. A chunky Monitor Robot sits nearby holding a picture frame showing a generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-05T15:56:37.095111+00:00"
+}

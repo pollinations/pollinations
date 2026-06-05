@@ -83,7 +83,7 @@ async def periodic_heartbeat():
             await asyncio.sleep(5)
 
 
-MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
+MODEL_ID = os.getenv("ZIMAGE_MODEL_ID", "Tongyi-MAI/Z-Image-Turbo")
 MODEL_CACHE = "model_cache"
 SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.safetensors"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
@@ -200,11 +200,14 @@ async def lifespan(app: FastAPI):
     # Load models
     load_model_time = time.time()
     try:
+        # Quantized (bnb-4bit/NF4) checkpoints require low_cpu_mem_usage=True;
+        # the full bf16 model loads faster with it False.
+        is_quantized = "4bit" in MODEL_ID or "nf4" in MODEL_ID.lower()
         pipe = ZImagePipeline.from_pretrained(
             MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
-            low_cpu_mem_usage=False,  # Faster loading
+            low_cpu_mem_usage=is_quantized,
         ).to("cuda")
         
         # Load SPAN 2x upscaler using Spandrel (if enabled)

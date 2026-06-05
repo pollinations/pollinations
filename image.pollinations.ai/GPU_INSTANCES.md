@@ -1,16 +1,22 @@
 # GPU Instances
 
-Last updated: 2026-04-13
+Last updated: 2026-06-03
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (INT4) | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
-| Z-Image | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
+| Flux | — | — | Fireworks (serverless) | pay-per-image | **ACTIVE — production** |
+| Z-Image | 3 | 2x RTX A4500 + 1x RTX 3090 | RunPod (community) | $0.60 | **ACTIVE — production** |
 | Klein 4B | 1 | 1x RTX 3090 | RunPod | $0.22 | **ACTIVE** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
-| **Total active** | **~6** | | | **~$1.58/hr** | |
+| **Total active GPU** | **~5** | | | **~$0.82/hr** | |
+
+> **Migration (2026-06-02):** flux moved off the self-hosted GPU fleet onto
+> Fireworks serverless (PR #11502); Z-Image moved off the shared 4-GPU pod onto
+> three separate single-GPU community pods running the **NF4-quantized** model
+> (PR #11576). The old 4× RTX 4090 pod `hsl3ksl31lvrcc` was **TERMINATED**
+> 2026-06-03. Fleet cost dropped from ~$1.58/hr to ~$0.82/hr.
 
 ## Provider: RunPod
 
@@ -42,50 +48,79 @@ curl -s https://lqh6weiexk4sth-8000.proxy.runpod.net/health
 
 **Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `handler.py`/`restart.sh` must be redeployed onto a fresh pod.
 
-### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
+### Z-Image — 3 single-GPU pods (NF4)
 
-- **GPU**: 4x RTX 4090 (24GB each) | **Cost**: $1.36/hr (community cloud)
-- **SSH**: `ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17`
+Z-Image runs on **three independent single-GPU community pods**, each serving one
+worker that heartbeats to the gen registry. All three run the **NF4-quantized**
+model `unsloth/Z-Image-Turbo-unsloth-bnb-4bit` (~8.7 GB VRAM) — see PR #11576 for
+the `ZIMAGE_MODEL_ID` server support. The dispatcher picks a live worker at
+random (240s TTL heartbeat), so adding/removing a pod needs no gen code change.
+
+| Pod ID | Name | GPU | Port | $/hr | Proxy URL | SSH |
+|--------|------|-----|------|------|-----------|-----|
+| `8ikeaa96szx665` | zimage-a4500-a | RTX A4500 (20GB) | 8767 | $0.19 | `https://8ikeaa96szx665-8767.proxy.runpod.net` | `ssh -i ~/.ssh/id_ed25519 -p 10859 root@213.144.200.205` |
+| `ft8emi5vavb7hr` | zimage-a4500-b | RTX A4500 (20GB) | 8768 | $0.19 | `https://ft8emi5vavb7hr-8768.proxy.runpod.net` | `ssh -i ~/.ssh/id_ed25519 -p 11608 root@213.144.200.205` |
+| `lrrdd9jggqg9su` | zimage-3090 | RTX 3090 (24GB) | 8767 | $0.22 | `https://lrrdd9jggqg9su-8767.proxy.runpod.net` | RunPod relay — get full command from dashboard "Connect" tab |
+
+> Pod IDs and SSH ports change if recreated/restarted. Re-check with
+> `runpodctl get pod` and query live SSH endpoints via the GraphQL API
+> (`{pod(input:{podId:"..."}){runtime{ports{ip privatePort publicPort type}}}}`).
+> These pods use the local `~/.ssh/id_ed25519` key (NOT the SOPS
+> `SSH_RUNPOD_FLUX_ZIMAGE` key, which was for the old 4-GPU pod).
+
 - **Image**: `runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2404`
-- **Storage**: 100GB container disk + 50GB persistent volume
-- **Repo**: `/opt/pollinations` (symlinked from `/workspace/pollinations`)
+- **Service code**: `image.pollinations.ai/z-image/server.py` (9 steps, generates at
+  reduced res then SPAN 2x upscales, MAX_FINAL_PIXELS = 1536²)
+- **Launch** (per pod, in `/root/launch.sh`): exports `CUDA_VISIBLE_DEVICES=0`,
+  `PORT`, `PUBLIC_IP=<podid>-<port>.proxy.runpod.net`, `PUBLIC_PORT=443`,
+  `SERVICE_TYPE=zimage`, `ZIMAGE_MODEL_ID=unsloth/Z-Image-Turbo-unsloth-bnb-4bit`,
+  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, then
+  `nohup python server.py > /root/logs/zimage.log 2>&1 &`
+- **NF4 requires** `low_cpu_mem_usage=True` + `bitsandbytes` (pinned in
+  `z-image/requirements.txt`). bf16 `Tongyi-MAI/Z-Image-Turbo` (~22 GB) OOMs the
+  20 GB A4500 — that's why the fleet runs NF4.
 
-| GPU | Screen Session | Port | Proxy URL | Service |
-|-----|---------------|------|-----------|---------|
-| 0 | flux-gpu0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 1 | flux-gpu1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 2 | zimage-gpu2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-| 3 | zimage-gpu3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-
-**Venvs** (separate per service):
-- Flux: `/opt/pollinations/image.pollinations.ai/nunchaku/venv` (torch 2.9.1+cu128)
-- Z-Image: `/opt/pollinations/image.pollinations.ai/z-image/venv`
-
-**Health check:**
+**Health check (per pod):**
 ```bash
-curl -s https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
+curl -s https://8ikeaa96szx665-8767.proxy.runpod.net/health
 ```
+Expected: `{"status":"healthy","model":"unsloth/Z-Image-Turbo-unsloth-bnb-4bit"}`
 
-**Registry check (all workers):**
+**Registry check (all image workers):**
 ```bash
 curl -s https://gen.pollinations.ai/register | python3 -m json.tool
 ```
+Expected: 3 zimage workers (`8ikeaa96szx665-8767`, `ft8emi5vavb7hr-8768`,
+`lrrdd9jggqg9su-8767`), 0% error rate. No flux workers (flux is on Fireworks).
 
-**Restart a worker:**
+**Restart a worker** (fresh containers lack `screen`; use `nohup`):
 ```bash
-ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17
-screen -S flux-gpu0 -X quit
-screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
+ssh -i ~/.ssh/id_ed25519 -p 10859 root@213.144.200.205
+pkill -f 'z-image/server.py'
+bash /root/launch.sh      # re-exports env + relaunches via nohup
 ```
 
-**Key notes:**
-- Uses INT4 quantization (not FP4) — RTX 4090 is Ada Lovelace, not Blackwell
-- Heartbeats register with `https://` proxy URLs (patched `server.py` line 63)
-- ~2.9s per Flux image, ~1.5s per Z-Image at 512x512
+**Throughput** (NF4, from worker logs): ~3.2 it/s (~2.8s) at 512², ~1.9–2.2 it/s
+at 768²/960×544. A4500 ≈ 3090 at 512², A4500 slightly faster at large res. Each
+worker sustains ~1100 img/hr; 3 workers ≈ 3300 img/hr ceiling. Real demand
+(Tinybird, 24h avg) ~1650 served img/hr → ~50% utilization.
+
+### Pod hsl3ksl31lvrcc — old Flux + Z-Image 4-GPU pod (TERMINATED)
+
+The original 4× RTX 4090 pod ($1.36/hr) hosted flux (GPUs 0,1, INT4 nunchaku) and
+Z-Image (GPUs 2,3, bf16). **Decommissioned 2026-06-02** (flux→Fireworks,
+Z-Image→3-pod) and **TERMINATED 2026-06-03** — pod + volume deleted, not
+recoverable. A fresh pod would be needed to revisit the 4-GPU layout.
+
+## Provider: Fireworks (serverless)
+
+### Flux
+
+flux is served by **Fireworks FLUX serverless** (PR #11502) — no GPU pod to
+manage. Auth via `FIREWORKS_API_KEY` in
+`gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` (sops). Billed
+pay-per-image. The gen worker dispatches `model=flux` straight to Fireworks; it
+no longer falls back to a self-hosted GPU worker.
 
 ## Provider: Lambda Labs
 
@@ -120,10 +155,13 @@ Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '
 
 | SOPS key | Provider | Instances |
 |----------|----------|-----------|
-| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
+| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | **DEPRECATED** — old 4-GPU pod `hsl3ksl31lvrcc` (stopped) |
 
-Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — no SOPS key. Get the full SSH command from the dashboard "Connect" tab.
+The 3 Z-Image pods and Klein use the local `~/.ssh/id_ed25519` key (not SOPS). The
+A4500 pods accept it directly (`root@213.144.200.205`); the 3090 zimage pod and
+Klein use the RunPod relay (`ssh.runpod.io`) — get the full SSH command from the
+dashboard "Connect" tab.
 
 EC2 keys (not in SOPS):
 

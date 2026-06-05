@@ -1,4 +1,6 @@
 export {
+    CATEGORY_LABELS,
+    categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
     type ModelSelectorItem,

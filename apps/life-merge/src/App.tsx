@@ -44,16 +44,13 @@ import {
     DEFAULT_PRESET,
     DEFAULT_STYLE_PRESET,
     type GamePiece,
-    LIFE_FAMILY_LABELS,
     LIFE_PRESETS,
     LIFE_STYLE_PRESETS,
-    type LifeFamily,
     type LifePreset,
     type LifePresetId,
     type LifeStylePreset,
     type LifeStylePresetId,
     type LineageNode,
-    mergedFamily,
     mergeLineage,
     type Specimen,
     sample,
@@ -97,27 +94,15 @@ type PresetEdit = {
 
 type PresetEdits = Record<LifePresetId, PresetEdit>;
 
-const LIFE_FAMILY_VALUES: LifeFamily[] = [
-    "water",
-    "food",
-    "fungus",
-    "plant",
-    "animal",
-    "hybrid",
-];
-
 const brandWordmarkMask: CSSProperties = {
     WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
     mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
 function seedLine(specimen: Specimen) {
-    return [
-        specimen.name,
-        specimen.description,
-        specimen.imagePrompt,
-        specimen.family ?? "hybrid",
-    ].join(" | ");
+    return [specimen.name, specimen.description, specimen.imagePrompt].join(
+        " | ",
+    );
 }
 
 function initialPresetEdits(): PresetEdits {
@@ -133,20 +118,13 @@ function initialPresetEdits(): PresetEdits {
     ) as PresetEdits;
 }
 
-function parseFamily(value: string): LifeFamily {
-    const clean = value.trim().toLowerCase();
-    return LIFE_FAMILY_VALUES.includes(clean as LifeFamily)
-        ? (clean as LifeFamily)
-        : "hybrid";
-}
-
 function parseSeeds(text: string, defaultSeeds: Specimen[]): Specimen[] {
     const seeds = text
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean)
         .map((line): Specimen | null => {
-            const [name, description, imagePrompt, family] = line
+            const [name, description, imagePrompt] = line
                 .split("|")
                 .map((part) => part.trim());
             if (!name || !description) return null;
@@ -154,7 +132,6 @@ function parseSeeds(text: string, defaultSeeds: Specimen[]): Specimen[] {
                 name,
                 description,
                 imagePrompt: imagePrompt || name,
-                family: family ? parseFamily(family) : "hybrid",
             } satisfies Specimen;
         })
         .filter((seed): seed is Specimen => Boolean(seed));
@@ -194,7 +171,6 @@ function LineageTree({
         >
             <div className="lineage-node-row">
                 <strong>{node.name}</strong>
-                <span>{LIFE_FAMILY_LABELS[node.family]}</span>
             </div>
             <p>{node.description}</p>
             {node.parents ? (
@@ -527,7 +503,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
             const updated: GamePiece = {
                 ...nextPieceRef.current,
                 ...specimen,
-                family: specimen.family ?? nextPieceRef.current.family,
                 lineage: specimen.lineage ?? nextPieceRef.current.lineage,
                 pending: false,
                 generated: true,
@@ -543,7 +518,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                         ? {
                               ...piece,
                               ...specimen,
-                              family: specimen.family ?? piece.family,
                               lineage: specimen.lineage ?? piece.lineage,
                               pending: false,
                               generated: true,
@@ -581,7 +555,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
         if (cached) {
             const enriched = {
                 ...cached,
-                family: piece.family,
                 lineage: piece.lineage,
             };
             applyGeneratedSpecimen(piece.id, enriched, piece.tier);
@@ -605,7 +578,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
             generatedCacheRef.current.set(cacheKey, generated);
             const enriched = {
                 ...generated,
-                family: piece.family,
                 lineage: piece.lineage,
             };
             applyGeneratedSpecimen(piece.id, enriched, piece.tier);
@@ -810,11 +782,9 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
                     ? { ...current, status: "cached" }
                     : current,
             );
-            const family = mergedFamily(parents[0].family, parents[1].family);
             const enriched = {
                 ...cached,
-                family,
-                lineage: mergeLineage({ ...cached, family }, parents),
+                lineage: mergeLineage(cached, parents),
             };
             applyGeneratedSpecimen(pieceId, enriched, targetTier);
             setLastEvent(`${cached.name} reused from the local cache.`);
@@ -846,11 +816,9 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
             }
             const poolKey = `${presetIdRef.current}:${styleIdRef.current}:${targetTier}`;
             const currentPool = generatedPoolRef.current.get(poolKey) ?? [];
-            const family = mergedFamily(parents[0].family, parents[1].family);
             const enriched = {
                 ...generated,
-                family,
-                lineage: mergeLineage({ ...generated, family }, parents),
+                lineage: mergeLineage(generated, parents),
             };
             generatedPoolRef.current.set(
                 poolKey,
@@ -921,7 +889,6 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
         const parents: [string, string] = [left.name, right.name];
         const targetRung = rungsRef.current[targetTier];
         const targetLabel = "New discovery";
-        const family = mergedFamily(left.family, right.family);
         const loadingSpecimen = createLoadingSpecimen(
             targetRung,
             `${left.name} + ${right.name}`,
@@ -930,11 +897,7 @@ function LifeMergeApp({ hasAppKey }: LifeMergeAppProps) {
         );
         const specimen = {
             ...loadingSpecimen,
-            family,
-            lineage: mergeLineage({ ...loadingSpecimen, family }, [
-                left,
-                right,
-            ]),
+            lineage: mergeLineage(loadingSpecimen, [left, right]),
         };
         const result = createGamePiece(
             targetTier,

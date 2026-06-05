@@ -6,7 +6,7 @@ Two objects of the same physical scale merge into a generated natural/organic re
 
 The physics engine only sees circles. Pollinations text and image generation upgrade the surface: names, short descriptions, and circular specimen art.
 
-The current axis starts from simple seeds such as water, sugar, yeast, moss, fish, frog, and mushroom, then asks the model to stay in a natural biology lane.
+Each preset picks an axis and a set of small starting seeds, then asks the model to stay in that lane. The Bio preset starts from water, sugar, mineral, spore, yeast, algae, and pollen; Inventions starts from raw materials like stone, wood, clay, and fire; Future moves each merge one step toward more advanced technology.
 
 Visual style presets keep tokens legible at small sizes:
 

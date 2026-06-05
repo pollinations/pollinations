@@ -362,6 +362,123 @@ select {
     margin: 0 auto;
 }
 
+.drop-preview.is-hidden {
+    display: none;
+}
+
+/* ---- Start screen (pre-game world chooser, on the empty board) ------- */
+
+.board-start {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    /* Clicks fall through to the board so the first click can start the
+       game — only the buttons inside the card capture pointer events. */
+    pointer-events: none;
+}
+
+.board-start-card {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    width: min(320px, 100%);
+    padding: 22px 20px;
+    border: 1px solid rgba(29, 74, 33, 0.14);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 44px rgba(24, 35, 23, 0.16);
+    text-align: center;
+}
+
+.board-start-card svg {
+    width: 34px;
+    height: 34px;
+    color: #2f6b3e;
+}
+
+.board-start-card > strong {
+    color: #142016;
+    font-size: 17px;
+}
+
+.board-start-presets {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+    pointer-events: auto;
+}
+
+.board-start-preset {
+    display: grid;
+    gap: 2px;
+    padding: 9px 12px;
+    border: 1px solid rgba(29, 74, 33, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #142016;
+    cursor: pointer;
+    text-align: left;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease;
+}
+
+.board-start-preset strong {
+    font-size: 14px;
+}
+
+.board-start-preset small {
+    color: #536255;
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+.board-start-preset:hover {
+    border-color: rgba(29, 74, 33, 0.32);
+}
+
+.board-start-preset.is-active {
+    border-color: #2f6b3e;
+    background: rgba(47, 107, 62, 0.1);
+}
+
+.board-start-styles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    pointer-events: auto;
+}
+
+.board-start-styles button {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 7px 4px;
+    border: 1px solid rgba(29, 74, 33, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #5d6b60;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.board-start-styles button.is-active {
+    border-color: #2f6b3e;
+    background: rgba(47, 107, 62, 0.1);
+    color: #142016;
+}
+
+.board-start-hint {
+    color: #4e6253;
+    font-size: 12px;
+    font-weight: 700;
+}
+
 /* ---- Generation focus (only while generating) ------------------------ */
 
 .generation-focus {
@@ -579,29 +696,12 @@ select {
     gap: 14px;
 }
 
-.auth-card,
 .preset-card,
 .lineage-card {
     padding: 14px;
     border: 1px solid rgba(29, 74, 33, 0.12);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.78);
-}
-
-.auth-card {
-    display: grid;
-    gap: 10px;
-}
-
-.auth-card p {
-    margin: 0;
-    color: #4e6253;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-.status-row :where(.alert, [class*="alert"]) {
-    border-radius: 12px;
 }
 
 /* ---- Preset card (axis + style, collapsed by default) ---------------- */

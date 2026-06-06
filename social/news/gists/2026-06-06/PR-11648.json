@@ -1,0 +1,35 @@
+{
+  "pr_number": 11648,
+  "title": "chore: update app metrics 2026-06-06",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11648",
+  "merged_at": "2026-06-06T05:28:12Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Greenhouse checkup",
+    "blurb": "Polly's been busy counting the flowers in the greenhouse. Daily app metrics and health checks have been automatically updated!",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status in the repository.",
+    "impact": "Keeps the app directory and greenhouse documentation current with the latest health and usage statistics.",
+    "keywords": [
+      "metrics",
+      "greenhouse",
+      "apps",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener/inspector, checking on various pixel-art plants (representing apps) in a cozy greenhouse setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, holding a small clipboard and checking on glowing code-plants in a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-06/PR-11648.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, holding a small clipboard and checking on glowing code-plants in a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-06T05:29:18.697129+00:00"
+}

@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-05** – **🚀 Standalone Playground** Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads.
 - **2026-06-04** – **📦 SDK Model Catalog** Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing.
 - **2026-06-04** – **🎨 UI Component Upgrades** The [React UI library](https://www.npmjs.com/package/@pollinations/ui) just got a fresh coat of pixels, adding a new model selector, `FileUpload`, and `Markdown` primitives for your frontend builds.
 - **2026-06-03** – **🚀 Nova-Fast Reliability** We routed `nova-fast` through a cross-region profile to stop it from hitting rate limits during peak hours. Less throttling, more generating. Check the [available models](https://gen.pollinations.ai/v1/models).
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-02** – **🔗 Anura Hub AI** A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all) <!-- app -->
 - **2026-06-02** – **🎨 NebulaCraft** Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app) <!-- app -->
 - **2026-06-02** – **📱 Photo AI** A new iOS application leveraging the Pollinations image API for mobile generation. [Try it](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) <!-- app -->
-- **2026-06-02** – **💡 Ather Mini** An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in) <!-- app -->
 ---
 
 ## 🌱 Introduction

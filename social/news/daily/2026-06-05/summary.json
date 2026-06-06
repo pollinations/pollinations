@@ -1,0 +1,27 @@
+{
+  "date": "2026-06-05",
+  "period_start": "2026-06-05",
+  "period_end": "2026-06-05",
+  "title": "A brand new standalone Playground app",
+  "summary": "A brand new standalone playground app dropped today, alongside cleaner model metadata and a fresh coat of paint across the UI.\n\nShipped a dedicated React 19 playground app to test all generation models in one place. Includes multimodal inputs, video frame controls, and audio uploads for experimenting with image, video, text, and audio generation.\n\nThe model registry and SDK dropped the legacy modality system for a cleaner category field. We also added dedicated model titles and exposed capability limits like max reference images and videos, making model metadata much easier to work with.\n\nRolled out a centralized theme palette, renamed the chrome green theme to emerald, and regenerated app icons across the ecosystem. Under the hood, the React UI package got streamlined with new Typography, CodeBlock, and StatCard primitives.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 11617,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11630,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11631,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11635,
+      "date": "2026-06-05"
+    }
+  ],
+  "generated_at": "2026-06-06T07:01:45.598172+00:00"
+}

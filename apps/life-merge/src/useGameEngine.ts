@@ -1,6 +1,6 @@
 import {
     Bodies,
-    Body,
+    type Body,
     Composite,
     Engine,
     Events,
@@ -53,6 +53,9 @@ const MAX_PIECES = 50;
 const MAX_SPAWN_TIER = 4;
 const MIN_SPAWN_VARIANTS_PER_TIER = 2;
 const SPAWN_TIER_WEIGHTS = [55, 30, 12, 3, 1] as const;
+const WALL_THICKNESS = 180;
+const FLOOR_THICKNESS = 240;
+const BOARD_EDGE_GAP = 2;
 
 const PRESET_IDS = LIFE_PRESETS.map((preset) => preset.id);
 
@@ -94,6 +97,25 @@ function weightedTierSample(tiers: number[]) {
         if (roll <= 0) return tier;
     }
     return tiers[0] ?? 0;
+}
+
+function clampCenter(value: number, radius: number, extent: number) {
+    const min = radius + BOARD_EDGE_GAP;
+    const max = extent - radius - BOARD_EDGE_GAP;
+    if (max <= min) return extent / 2;
+    return Math.min(Math.max(value, min), max);
+}
+
+function clampPieceCenter(
+    piece: Pick<GamePiece, "radius">,
+    x: number,
+    y: number,
+    size: { width: number; height: number },
+) {
+    return {
+        x: clampCenter(x, piece.radius, size.width),
+        y: clampCenter(y, piece.radius, size.height),
+    };
 }
 
 function cacheText(value: string) {
@@ -425,17 +447,23 @@ export function useGameEngine({
         const walls = [
             Bodies.rectangle(
                 width / 2,
-                height + 30,
-                width + 80,
-                60,
+                height + FLOOR_THICKNESS / 2,
+                width + WALL_THICKNESS * 2,
+                FLOOR_THICKNESS,
                 wallOptions,
             ),
-            Bodies.rectangle(-30, height / 2, 60, height + 160, wallOptions),
             Bodies.rectangle(
-                width + 30,
+                -WALL_THICKNESS / 2,
                 height / 2,
-                60,
-                height + 160,
+                WALL_THICKNESS,
+                height + FLOOR_THICKNESS * 2,
+                wallOptions,
+            ),
+            Bodies.rectangle(
+                width + WALL_THICKNESS / 2,
+                height / 2,
+                WALL_THICKNESS,
+                height + FLOOR_THICKNESS * 2,
                 wallOptions,
             ),
         ];
@@ -445,6 +473,7 @@ export function useGameEngine({
 
     useEffect(() => {
         const engine = Engine.create();
+        engine.enableSleeping = true;
         engine.gravity.y = 1.15;
         engineRef.current = engine;
         addWalls(BOARD_FALLBACK.width, BOARD_FALLBACK.height);
@@ -516,24 +545,24 @@ export function useGameEngine({
         const engine = engineRef.current;
         if (!engine) return;
         const physics = tierPhysics(piece.tier);
-        const body = Bodies.circle(x, y, piece.radius, {
+        const center = clampPieceCenter(piece, x, y, boardSizeRef.current);
+        const body = Bodies.circle(center.x, center.y, piece.radius, {
             restitution: physics.restitution,
             friction: physics.friction,
             frictionAir: 0.01,
             density: 0.0016 * physics.density,
+            sleepThreshold: 45,
             label: "life-piece",
         }) as PieceBody;
         body.plugin = { pieceId: piece.id };
-        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.03);
-        Body.setVelocity(body, { x: (Math.random() - 0.5) * 0.5, y: 0 });
         bodiesRef.current.set(piece.id, body);
         Composite.add(engine.world, body);
         setPieceList([
             ...piecesRef.current,
             {
                 ...piece,
-                x,
-                y,
+                x: center.x,
+                y: center.y,
                 angle: body.angle,
             },
         ]);

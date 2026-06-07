@@ -93,6 +93,7 @@ function App() {
 function LifeMergeApp() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const game = useGameEngine({ apiKey, isLoggedIn, isHydrated });
+    const scaled = (value: number) => `${value * game.viewScale}px`;
 
     return (
         <div data-theme={APP_THEME} className="app-shell">
@@ -162,14 +163,16 @@ function LifeMergeApp() {
                             >
                                 <div
                                     className="loss-line"
-                                    style={{ top: LOSS_LINE }}
+                                    style={{ top: scaled(LOSS_LINE) }}
                                 >
                                     <span />
                                 </div>
                                 {game.hasStarted ? (
                                     <div
                                         className="aim-line"
-                                        style={{ left: game.dropPreviewX }}
+                                        style={{
+                                            left: scaled(game.dropPreviewX),
+                                        }}
                                     />
                                 ) : null}
                                 <div
@@ -179,9 +182,13 @@ function LifeMergeApp() {
                                     title={pieceTitle(game.nextPiece)}
                                     style={
                                         {
-                                            "--piece-x": `${game.dropPreviewX}px`,
-                                            "--piece-y": `${DROP_Y}px`,
-                                            "--piece-size": `${game.nextPiece.radius * 2}px`,
+                                            "--piece-x": scaled(
+                                                game.dropPreviewX,
+                                            ),
+                                            "--piece-y": scaled(DROP_Y),
+                                            "--piece-size": scaled(
+                                                game.nextPiece.radius * 2,
+                                            ),
                                             "--piece-color":
                                                 game.nextPiece.color,
                                             "--piece-ink": game.nextPiece.ink,
@@ -227,9 +234,11 @@ function LifeMergeApp() {
                                         }
                                         style={
                                             {
-                                                "--piece-x": `${piece.x}px`,
-                                                "--piece-y": `${piece.y}px`,
-                                                "--piece-size": `${piece.radius * 2}px`,
+                                                "--piece-x": scaled(piece.x),
+                                                "--piece-y": scaled(piece.y),
+                                                "--piece-size": scaled(
+                                                    piece.radius * 2,
+                                                ),
                                                 "--piece-rotate": `${piece.angle}rad`,
                                                 "--piece-color": piece.color,
                                                 "--piece-ink": piece.ink,
@@ -304,8 +313,13 @@ function LifeMergeApp() {
                                         name={game.nextPiece.name}
                                         pending={game.nextPiece.pending}
                                         active
-                                        x={game.dropPreviewX}
-                                        y={DROP_Y - game.nextPiece.radius - 10}
+                                        x={game.dropPreviewX * game.viewScale}
+                                        y={
+                                            (DROP_Y -
+                                                game.nextPiece.radius -
+                                                10) *
+                                            game.viewScale
+                                        }
                                     />
                                 ) : null}
                                 {game.pieces.map((piece) => (
@@ -314,8 +328,11 @@ function LifeMergeApp() {
                                         name={piece.name}
                                         pending={piece.pending}
                                         active={piece.id === game.activeLabelId}
-                                        x={piece.x}
-                                        y={piece.y - piece.radius - 10}
+                                        x={piece.x * game.viewScale}
+                                        y={
+                                            (piece.y - piece.radius - 10) *
+                                            game.viewScale
+                                        }
                                     />
                                 ))}
                             </div>

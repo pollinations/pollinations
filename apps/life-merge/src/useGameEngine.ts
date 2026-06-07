@@ -38,9 +38,8 @@ import {
 } from "./life";
 import { useQueryParam } from "./useQueryParam";
 
-// Board geometry is owned here (the engine logic and the board <div> both read
-// it). App.tsx imports the JSX-facing constants from this module so the import
-// graph stays one-directional (App.tsx -> useGameEngine).
+// Matter runs in this fixed logical space. The rendered board may be smaller;
+// App.tsx scales positions/radii with `viewScale` instead of resizing physics.
 const BOARD_LOGICAL_SIZE = { width: 600, height: 900 };
 const BOARD_FALLBACK = BOARD_LOGICAL_SIZE;
 export const BOARD_ASPECT_RATIO = `${BOARD_LOGICAL_SIZE.width} / ${BOARD_LOGICAL_SIZE.height}`;
@@ -238,7 +237,6 @@ export function useGameEngine({
     const mergingIdsRef = useRef<Set<string>>(new Set());
     const objectUrlsRef = useRef<Set<string>>(new Set());
     const apiKeyRef = useRef<string | null>(apiKey);
-    const boardSizeRef = useRef(BOARD_FALLBACK);
     const highestTierRef = useRef(0);
     const hasStartedRef = useRef(false);
     // Whether the player has explicitly chosen a world (vs. the default that
@@ -278,7 +276,7 @@ export function useGameEngine({
         () => undefined,
     );
 
-    const [boardSize, setBoardSize] = useState(BOARD_FALLBACK);
+    const [viewScale, setViewScale] = useState(1);
     const [pieces, setPieces] = useState<GamePiece[]>([]);
     const [nextPiece, setNextPiece] = useState<GamePiece>(nextPieceRef.current);
     const [aimX, setAimX] = useState(BOARD_FALLBACK.width / 2);
@@ -362,12 +360,13 @@ export function useGameEngine({
         setIsCrowded(nextPieces.length >= MAX_PIECES);
     };
 
-    const addWalls = useCallback((width: number, height: number) => {
+    const addWalls = useCallback(() => {
         const engine = engineRef.current;
         if (!engine) return;
         if (wallsRef.current.length > 0) {
             Composite.remove(engine.world, wallsRef.current);
         }
+        const { width, height } = BOARD_LOGICAL_SIZE;
         const wallOptions = {
             isStatic: true,
             friction: 0.18,
@@ -405,7 +404,7 @@ export function useGameEngine({
         engine.enableSleeping = true;
         engine.gravity.y = 1.15;
         engineRef.current = engine;
-        addWalls(BOARD_FALLBACK.width, BOARD_FALLBACK.height);
+        addWalls();
 
         const runner = Runner.create();
         runnerRef.current = runner;
@@ -457,24 +456,28 @@ export function useGameEngine({
     useEffect(() => {
         const node = boardRef.current;
         if (!node) return;
+        const updateScale = (width: number, height: number) => {
+            const widthScale = width / BOARD_LOGICAL_SIZE.width;
+            const heightScale = height / BOARD_LOGICAL_SIZE.height;
+            const nextScale = Math.max(0.1, Math.min(widthScale, heightScale));
+            setViewScale(nextScale);
+            setAimX((current) =>
+                Math.min(Math.max(current, 44), BOARD_LOGICAL_SIZE.width - 44),
+            );
+        };
+        updateScale(node.clientWidth, node.clientHeight);
         const observer = new ResizeObserver(([entry]) => {
-            const width = Math.max(320, Math.floor(entry.contentRect.width));
-            const height = Math.max(460, Math.floor(entry.contentRect.height));
-            const nextSize = { width, height };
-            boardSizeRef.current = nextSize;
-            setBoardSize(nextSize);
-            setAimX((current) => Math.min(Math.max(current, 44), width - 44));
-            addWalls(width, height);
+            updateScale(entry.contentRect.width, entry.contentRect.height);
         });
         observer.observe(node);
         return () => observer.disconnect();
-    }, [addWalls]);
+    }, []);
 
     const addPieceToWorld = (piece: GamePiece, x: number, y: number) => {
         const engine = engineRef.current;
         if (!engine) return;
         const physics = tierPhysics(piece.tier);
-        const center = clampPieceCenter(piece, x, y, boardSizeRef.current);
+        const center = clampPieceCenter(piece, x, y, BOARD_LOGICAL_SIZE);
         const body = Bodies.circle(center.x, center.y, piece.radius, {
             restitution: physics.restitution,
             friction: physics.friction,
@@ -749,10 +752,9 @@ export function useGameEngine({
             return;
         }
         if (isCrowded) return;
-        const size = boardSizeRef.current;
         const clampedX = Math.min(
             Math.max(x, nextPieceRef.current.radius + 8),
-            size.width - nextPieceRef.current.radius - 8,
+            BOARD_LOGICAL_SIZE.width - nextPieceRef.current.radius - 8,
         );
         addPieceToWorld(nextPieceRef.current, clampedX, DROP_Y);
         setActiveLabelId(nextPieceRef.current.id);
@@ -1013,7 +1015,8 @@ export function useGameEngine({
 
     const updateAim = (event: ReactPointerEvent<HTMLDivElement>) => {
         const bounds = event.currentTarget.getBoundingClientRect();
-        setAimX(event.clientX - bounds.left);
+        const scale = bounds.width / BOARD_LOGICAL_SIZE.width || 1;
+        setAimX((event.clientX - bounds.left) / scale);
     };
 
     const handleBoardPointerDown = (
@@ -1022,7 +1025,8 @@ export function useGameEngine({
         if (event.button !== 0) return;
         if (event.target !== event.currentTarget) return;
         const bounds = event.currentTarget.getBoundingClientRect();
-        const x = event.clientX - bounds.left;
+        const scale = bounds.width / BOARD_LOGICAL_SIZE.width || 1;
+        const x = (event.clientX - bounds.left) / scale;
         setAimX(x);
         if (!hasStartedRef.current) {
             startGame();
@@ -1062,7 +1066,7 @@ export function useGameEngine({
     }, [pieces]);
     const dropPreviewX = Math.min(
         Math.max(aimX, nextPiece.radius + 8),
-        boardSize.width - nextPiece.radius - 8,
+        BOARD_LOGICAL_SIZE.width - nextPiece.radius - 8,
     );
 
     return {
@@ -1082,6 +1086,7 @@ export function useGameEngine({
         hasStarted,
         legendEntries,
         dropPreviewX,
+        viewScale,
         selectPiece,
         showDiscovery,
         dropNextPiece,

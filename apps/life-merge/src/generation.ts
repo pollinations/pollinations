@@ -8,8 +8,6 @@ const TEXT_THINKING_BUDGET = 1024;
 type GeneratedPayload = {
     name?: unknown;
     description?: unknown;
-    relation?: unknown;
-    mechanism?: unknown;
     imagePrompt?: unknown;
 };
 
@@ -130,7 +128,7 @@ export async function generateSpecimen(args: {
                 {
                     role: "system",
                     content:
-                        "You create concise causal results for a physics merge game. Return only valid JSON.",
+                        "You create concise merge results for a physics game. Return only valid JSON.",
                 },
                 {
                     role: "user",
@@ -144,7 +142,7 @@ export async function generateSpecimen(args: {
                         "Choose the simplest real result caused by combining the parents.",
                         "Use only properties present in the parent names or descriptions. Do not add a major new force, material, or process unless a parent provides it.",
                         "If a key cause is missing, choose a smaller intermediate result.",
-                        "Prefer known mechanisms over associations: mixture, phase change, growth, colony, habitat, tool, signal, energy transfer, containment.",
+                        "Prefer concrete causal results over loose associations.",
                         "Follow the evolution prompt exactly and keep the result inside that world.",
                         "Do not introduce unrelated domains unless the evolution prompt asks for that.",
                         "No puns, brands, pop culture, metaphors, or coined names.",
@@ -152,10 +150,8 @@ export async function generateSpecimen(args: {
                         "Good names: moss frog, copper wire, reef shell, moon sensor.",
                         "Bad names: buddy sproutbug, glimmerkin, sugarwhirl, tiny blob.",
                         "The description must be one concise sentence with no fluff.",
-                        "The relation must be the mechanism type in 1-3 plain words.",
-                        "The mechanism must be one short cause-and-effect sentence explaining the bridge.",
                         "The imagePrompt must plainly describe the physical object itself (shape, material, key features) so it is recognizable — not a person, character, or mascot. Do not mention game tokens, icons, circles, or style; those are added separately.",
-                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","relation":"mechanism type, 1-3 words","mechanism":"one short causal bridge under 110 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
+                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
                     ].join("\n"),
                 },
             ],
@@ -174,10 +170,8 @@ export async function generateSpecimen(args: {
     );
     const name = nameValue(payload.name);
     const description = textValue(payload.description, 80);
-    const relation = textValue(payload.relation, 40);
-    const mechanism = textValue(payload.mechanism, 110);
     const imagePrompt = textValue(payload.imagePrompt, 360);
-    if (!name || !description || !relation || !mechanism || !imagePrompt) {
+    if (!name || !description || !imagePrompt) {
         throw new Error("Model returned incomplete object details.");
     }
 
@@ -186,8 +180,6 @@ export async function generateSpecimen(args: {
         specimen: {
             name,
             description,
-            relation,
-            mechanism,
             imagePrompt,
         },
         style: args.style,

@@ -13,7 +13,6 @@ import {
     useGameEngine,
 } from "./useGameEngine";
 
-const APP_KEY = import.meta.env.VITE_POLLINATIONS_APP_KEY?.trim() ?? "";
 const APP_THEME = "green";
 
 const brandWordmarkMask: CSSProperties = {
@@ -22,20 +21,12 @@ const brandWordmarkMask: CSSProperties = {
 };
 
 function pieceTitle(
-    piece: Pick<
-        GamePiece,
-        "name" | "description" | "relation" | "mechanism" | "lineage"
-    >,
+    piece: Pick<GamePiece, "name" | "description" | "lineage">,
 ) {
     const parents = piece.lineage.parents
         ? ` Parents: ${piece.lineage.parents[0].name} + ${piece.lineage.parents[1].name}.`
         : "";
-    const mechanism = piece.mechanism
-        ? ` Mechanism: ${piece.relation ? `${piece.relation}: ` : ""}${
-              piece.mechanism
-          }.`
-        : "";
-    return `${piece.name}: ${piece.description}.${mechanism}${parents}`;
+    return `${piece.name}: ${piece.description}.${parents}`;
 }
 
 // Only a real generated image (a blob:/http URL) is rendered. The data: SVG
@@ -81,7 +72,7 @@ function FloatingPieceLabel({
 function App() {
     return (
         <PolliProvider
-            appKey={APP_KEY}
+            appKey=""
             permissions={["profile", "usage"]}
             models={["claude", "zimage"]}
             budget={6}
@@ -309,10 +300,7 @@ function LifeMergeApp() {
                                                 {game.generationFocus.status ===
                                                 "result"
                                                     ? "New discovery"
-                                                    : game.generationFocus
-                                                            .status === "cached"
-                                                      ? "From cache"
-                                                      : "Combining"}
+                                                    : "Combining"}
                                             </span>
                                         </div>
                                         <div className="generation-parents">
@@ -373,30 +361,6 @@ function LifeMergeApp() {
                                                                 .description
                                                         }
                                                     </p>
-                                                    {game.generationFocus.result
-                                                        .mechanism ? (
-                                                        <p className="generation-mechanism">
-                                                            {game
-                                                                .generationFocus
-                                                                .result
-                                                                .relation ? (
-                                                                <span>
-                                                                    {
-                                                                        game
-                                                                            .generationFocus
-                                                                            .result
-                                                                            .relation
-                                                                    }
-                                                                </span>
-                                                            ) : null}
-                                                            {
-                                                                game
-                                                                    .generationFocus
-                                                                    .result
-                                                                    .mechanism
-                                                            }
-                                                        </p>
-                                                    ) : null}
                                                 </div>
                                             </div>
                                         ) : (
@@ -459,16 +423,6 @@ function LifeMergeApp() {
                         <div className="selected-text">
                             <strong>{game.selectedView.name}</strong>
                             <p>{game.selectedView.description}</p>
-                            {game.selectedView.mechanism ? (
-                                <p className="selected-mechanism">
-                                    {game.selectedView.relation ? (
-                                        <span>
-                                            {game.selectedView.relation}
-                                        </span>
-                                    ) : null}
-                                    {game.selectedView.mechanism}
-                                </p>
-                            ) : null}
                         </div>
                     </section>
 

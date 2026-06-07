@@ -29,16 +29,12 @@ export type LifeStylePreset = {
 export type LineageNode = {
     name: string;
     description: string;
-    relation?: string;
-    mechanism?: string;
     parents?: [LineageNode, LineageNode];
 };
 
 export type Specimen = {
     name: string;
     description: string;
-    relation?: string;
-    mechanism?: string;
     imagePrompt: string;
     imageUrl?: string;
     lineage?: LineageNode;
@@ -331,8 +327,6 @@ export function lineageLeaf(specimen: Specimen): LineageNode {
     return {
         name: specimen.name,
         description: specimen.description,
-        relation: specimen.relation,
-        mechanism: specimen.mechanism,
     };
 }
 
@@ -343,8 +337,6 @@ export function mergeLineage(
     return {
         name: specimen.name,
         description: specimen.description,
-        relation: specimen.relation,
-        mechanism: specimen.mechanism,
         parents: [parents[0].lineage, parents[1].lineage],
     };
 }

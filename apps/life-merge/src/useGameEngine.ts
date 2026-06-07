@@ -140,7 +140,7 @@ function mergeCacheKey(args: {
         ])
         .sort(([leftName], [rightName]) => leftName.localeCompare(rightName));
     return JSON.stringify([
-        "merge-v3",
+        "merge-v4",
         args.presetId,
         args.styleId,
         args.targetTier,
@@ -155,16 +155,13 @@ type PieceBody = Body & { plugin: { pieceId: string } };
 export type GenerationResult = {
     name: string;
     description: string;
-    relation?: string;
-    mechanism?: string;
     imageUrl?: string;
 };
 
 export type GenerationFocus = {
     id: string;
     parents: [GamePiece, GamePiece];
-    targetLabel: string;
-    status: "generating" | "cached" | "result";
+    status: "generating" | "result";
     result?: GenerationResult;
 };
 
@@ -173,8 +170,6 @@ export type GenerationFocus = {
 export type SelectedView = {
     name: string;
     description: string;
-    relation?: string;
-    mechanism?: string;
     imageUrl?: string;
     color: string;
     ink: string;
@@ -184,81 +179,16 @@ export type SelectedView = {
 function toSelectedView(
     piece: Pick<
         GamePiece,
-        | "name"
-        | "description"
-        | "relation"
-        | "mechanism"
-        | "imageUrl"
-        | "color"
-        | "ink"
-        | "lineage"
+        "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
     >,
 ): SelectedView {
     return {
         name: piece.name,
         description: piece.description,
-        relation: piece.relation,
-        mechanism: piece.mechanism,
         imageUrl: piece.imageUrl,
         color: piece.color,
         ink: piece.ink,
         lineage: piece.lineage,
-    };
-}
-
-export type PresetEdit = {
-    evolutionPrompt: string;
-    stylePrompt: string;
-    seedsText: string;
-};
-
-export type PresetEdits = Record<LifePresetId, PresetEdit>;
-
-function seedLine(specimen: Specimen) {
-    return [specimen.name, specimen.description, specimen.imagePrompt].join(
-        " | ",
-    );
-}
-
-function initialPresetEdits(): PresetEdits {
-    return Object.fromEntries(
-        LIFE_PRESETS.map((preset) => [
-            preset.id,
-            {
-                evolutionPrompt: preset.evolutionPrompt,
-                stylePrompt: preset.stylePrompt,
-                seedsText: preset.seeds.map(seedLine).join("\n"),
-            },
-        ]),
-    ) as PresetEdits;
-}
-
-function parseSeeds(text: string, defaultSeeds: Specimen[]): Specimen[] {
-    const seeds = text
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line): Specimen | null => {
-            const [name, description, imagePrompt] = line
-                .split("|")
-                .map((part) => part.trim());
-            if (!name || !description) return null;
-            return {
-                name,
-                description,
-                imagePrompt: imagePrompt || name,
-            } satisfies Specimen;
-        })
-        .filter((seed): seed is Specimen => Boolean(seed));
-    return seeds.length > 0 ? seeds : defaultSeeds;
-}
-
-function editPreset(base: LifePreset, edit: PresetEdit): LifePreset {
-    return {
-        ...base,
-        evolutionPrompt: edit.evolutionPrompt.trim() || base.evolutionPrompt,
-        stylePrompt: edit.stylePrompt.trim(),
-        seeds: parseSeeds(edit.seedsText, base.seeds),
     };
 }
 
@@ -342,13 +272,7 @@ export function useGameEngine({
         "preset",
         PRESET_IDS,
     );
-    // Presets are no longer editable at runtime (the dev editor was removed),
-    // so these are effectively constant — just a stable per-preset base.
-    const [presetEdits] = useState<PresetEdits>(initialPresetEdits);
-    const [generatedPoolSize, setGeneratedPoolSize] = useState(0);
-    const [lastEvent, setLastEvent] = useState("Choose a world to begin.");
     const [isCrowded, setIsCrowded] = useState(false);
-    const [peakName, setPeakName] = useState("Seeds");
     // The most-recently created/changed piece — its label is revealed briefly
     // so you can read what just landed/merged without hovering.
     const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
@@ -364,15 +288,11 @@ export function useGameEngine({
     // before the player has chosen) so the inert placeholder seed and refs are
     // well-defined; `presetId` itself stays nullable for the UI.
     const resolvedPresetId = presetId ?? DEFAULT_PRESET.id;
-    const basePreset = useMemo(
+    const activePreset = useMemo(
         () =>
             LIFE_PRESETS.find((preset) => preset.id === resolvedPresetId) ??
             DEFAULT_PRESET,
         [resolvedPresetId],
-    );
-    const activePreset = useMemo(
-        () => editPreset(basePreset, presetEdits[resolvedPresetId]),
-        [basePreset, presetEdits, resolvedPresetId],
     );
     const activeStyle = useMemo(
         () => styleForPresetId(resolvedPresetId),
@@ -395,8 +315,6 @@ export function useGameEngine({
         activeGenerations === 0 &&
         nextPiece.generated &&
         !isCrowded;
-    const gameWon = highestTier >= rungs.length - 1;
-
     useEffect(() => {
         apiKeyRef.current = apiKey;
     }, [apiKey]);
@@ -579,14 +497,7 @@ export function useGameEngine({
     const selectPiece = (
         piece: Pick<
             GamePiece,
-            | "name"
-            | "description"
-            | "relation"
-            | "mechanism"
-            | "imageUrl"
-            | "color"
-            | "ink"
-            | "lineage"
+            "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
         >,
     ) => {
         setSelectedView(toSelectedView(piece));
@@ -600,8 +511,6 @@ export function useGameEngine({
             | "id"
             | "name"
             | "description"
-            | "relation"
-            | "mechanism"
             | "imageUrl"
             | "color"
             | "ink"
@@ -612,23 +521,13 @@ export function useGameEngine({
         setSelectedView(toSelectedView(piece));
     };
 
-    const generatedPoolCount = () =>
-        Array.from(generatedPoolRef.current.values()).reduce(
-            (total, pool) => total + pool.length,
-            0,
-        );
-
     const rememberObjectUrl = (specimen: Specimen) => {
         if (specimen.imageUrl?.startsWith("blob:")) {
             objectUrlsRef.current.add(specimen.imageUrl);
         }
     };
 
-    const applyGeneratedSpecimen = (
-        pieceId: string,
-        specimen: Specimen,
-        targetTier: number,
-    ) => {
+    const applyGeneratedSpecimen = (pieceId: string, specimen: Specimen) => {
         if (nextPieceRef.current.id === pieceId) {
             const updated: GamePiece = {
                 ...nextPieceRef.current,
@@ -656,16 +555,11 @@ export function useGameEngine({
                 ),
             );
         }
-
-        if (targetTier > 0 && targetTier >= highestTierRef.current) {
-            setPeakName(specimen.name);
-        }
     };
 
     const hydrateSeedPiece = async (piece: GamePiece) => {
         const apiKey = apiKeyRef.current;
         if (!apiKey) {
-            setLastEvent("Authorize to generate the first seed.");
             return;
         }
 
@@ -687,8 +581,7 @@ export function useGameEngine({
                 ...cached,
                 lineage: piece.lineage,
             };
-            applyGeneratedSpecimen(piece.id, enriched, piece.tier);
-            setLastEvent(`${cached.name} is ready.`);
+            applyGeneratedSpecimen(piece.id, enriched);
             showDiscovery({ ...piece, ...enriched });
             return;
         }
@@ -710,12 +603,9 @@ export function useGameEngine({
                 ...generated,
                 lineage: piece.lineage,
             };
-            applyGeneratedSpecimen(piece.id, enriched, piece.tier);
-            setLastEvent(`${generated.name} is ready.`);
+            applyGeneratedSpecimen(piece.id, enriched);
             showDiscovery({ ...piece, ...enriched });
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : "Generation failed.";
+        } catch {
             if (nextPieceRef.current.id === piece.id) {
                 const stoppedPiece = {
                     ...nextPieceRef.current,
@@ -725,7 +615,6 @@ export function useGameEngine({
                 nextPieceRef.current = stoppedPiece;
                 setNextPiece(stoppedPiece);
             }
-            setLastEvent(`Generation failed: ${message}`);
         }
     };
 
@@ -788,11 +677,9 @@ export function useGameEngine({
     const startGame = () => {
         if (hasStartedRef.current) return;
         if (!presetChosenRef.current) {
-            setLastEvent("Pick a world first.");
             return;
         }
         if (!apiKeyRef.current) {
-            setLastEvent("Authorize with Pollinations to start.");
             return;
         }
         hasStartedRef.current = true;
@@ -816,7 +703,6 @@ export function useGameEngine({
 
     const dropNextPiece = (x = aimX) => {
         if (!canUseAi) {
-            setLastEvent("Authorize with Pollinations to play.");
             return;
         }
         if (!hasStartedRef.current) {
@@ -824,15 +710,9 @@ export function useGameEngine({
             return;
         }
         if (hasPendingGeneration()) {
-            setLastEvent(
-                nextPieceRef.current.pending
-                    ? "Making the next piece…"
-                    : "Mixing the result…",
-            );
             return;
         }
         if (!nextPieceRef.current.generated) {
-            setLastEvent("Making the next piece…");
             return;
         }
         if (isCrowded) return;
@@ -843,7 +723,6 @@ export function useGameEngine({
         );
         addPieceToWorld(nextPieceRef.current, clampedX, DROP_Y);
         setActiveLabelId(nextPieceRef.current.id);
-        setLastEvent(`${nextPieceRef.current.name} entered the vessel.`);
         createNextDrop();
     };
 
@@ -853,20 +732,17 @@ export function useGameEngine({
         objectUrlsRef.current.clear();
         generatedPoolRef.current.clear();
         generatedCacheRef.current.clear();
-        setGeneratedPoolSize(0);
         setGenerationFocus(null);
         mergingIdsRef.current.clear();
         setPieceList([]);
         setScore(0);
         setHighestTier(0);
-        setPeakName("Seeds");
         highestTierRef.current = 0;
         hasStartedRef.current = false;
         setHasStarted(false);
         // Build a placeholder aim piece but DON'T generate — wait for the
         // chosen world (startWithPreset) so its seed drives the first piece.
         createNextDrop(0);
-        setLastEvent("Choose a world to begin.");
     };
 
     const selectPreset = (nextPresetId: LifePresetId) => {
@@ -874,17 +750,15 @@ export function useGameEngine({
         const nextPreset =
             LIFE_PRESETS.find((preset) => preset.id === nextPresetId) ??
             DEFAULT_PRESET;
-        const editedPreset = editPreset(nextPreset, presetEdits[nextPreset.id]);
         const nextStyle = styleForPresetId(nextPreset.id);
         presetChosenRef.current = true;
         presetIdRef.current = nextPreset.id;
-        presetRef.current = editedPreset;
-        rungsRef.current = editedPreset.rungs;
+        presetRef.current = nextPreset;
+        rungsRef.current = nextPreset.rungs;
         styleIdRef.current = nextStyle.id;
-        styleRef.current = composeStyle(nextStyle, editedPreset);
+        styleRef.current = composeStyle(nextStyle, nextPreset);
         setPresetId(nextPreset.id);
         resetGame();
-        setLastEvent(`${editedPreset.label} world loaded.`);
     };
 
     // Start-screen button: pick the world and start in one click. selectPreset
@@ -911,8 +785,6 @@ export function useGameEngine({
                       result: {
                           name: result.name,
                           description: result.description,
-                          relation: result.relation,
-                          mechanism: result.mechanism,
                           imageUrl: result.imageUrl,
                       },
                   }
@@ -937,7 +809,6 @@ export function useGameEngine({
             setPieceList(
                 piecesRef.current.filter((piece) => piece.id !== pieceId),
             );
-            setLastEvent("Authorize with Pollinations to merge objects.");
             return;
         }
 
@@ -957,8 +828,7 @@ export function useGameEngine({
                 ...cached,
                 lineage: mergeLineage(cached, parents),
             };
-            applyGeneratedSpecimen(pieceId, enriched, targetTier);
-            setLastEvent(`${cached.name} reused from the local cache.`);
+            applyGeneratedSpecimen(pieceId, enriched);
             showDiscovery({
                 id: pieceId,
                 ...enriched,
@@ -996,9 +866,7 @@ export function useGameEngine({
                 poolKey,
                 [enriched, ...currentPool].slice(0, 18),
             );
-            setGeneratedPoolSize(generatedPoolCount());
-            applyGeneratedSpecimen(pieceId, enriched, targetTier);
-            setLastEvent(`${generated.name}: ${generated.description}`);
+            applyGeneratedSpecimen(pieceId, enriched);
             showDiscovery({
                 id: pieceId,
                 ...enriched,
@@ -1006,9 +874,7 @@ export function useGameEngine({
                 ink: rungsRef.current[targetTier].ink,
             });
             revealResult(pieceId, enriched, "generated");
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : "Generation failed.";
+        } catch {
             removePieceFromWorld(pieceId);
             setPieceList(
                 piecesRef.current.filter((piece) => piece.id !== pieceId),
@@ -1016,7 +882,6 @@ export function useGameEngine({
             setGenerationFocus((current) =>
                 current?.id === pieceId ? null : current,
             );
-            setLastEvent(`Generation failed: ${message}`);
         }
     };
 
@@ -1028,7 +893,6 @@ export function useGameEngine({
         if (left.tier >= rungsRef.current.length - 1) return;
         if (left.pending || right.pending) return;
         if (!apiKeyRef.current) {
-            setLastEvent("Authorize with Pollinations to merge objects.");
             return;
         }
         if (
@@ -1063,7 +927,6 @@ export function useGameEngine({
         const targetTier = left.tier + 1;
         const parents: [string, string] = [left.name, right.name];
         const targetRung = rungsRef.current[targetTier];
-        const targetLabel = "New discovery";
         const loadingSpecimen = createLoadingSpecimen(
             targetRung,
             `${left.name} + ${right.name}`,
@@ -1089,16 +952,13 @@ export function useGameEngine({
         setGenerationFocus({
             id: result.id,
             parents: [left, right],
-            targetLabel,
             status: "generating",
         });
         setScore((current) => current + (targetTier + 1) * 10);
         if (targetTier > highestTierRef.current) {
             highestTierRef.current = targetTier;
             setHighestTier(targetTier);
-            setPeakName(`${left.name} + ${right.name}`);
         }
-        setLastEvent(`Generating from ${left.name} and ${right.name}.`);
         selectPiece(result);
 
         window.setTimeout(() => {
@@ -1173,11 +1033,7 @@ export function useGameEngine({
         nextPiece,
         score,
         highestTier,
-        presetId,
-        generatedPoolSize,
-        lastEvent,
         isCrowded,
-        peakName,
         activeLabelId,
         generationFocus,
         selectedView,
@@ -1186,8 +1042,6 @@ export function useGameEngine({
         canUseAi,
         canDrop,
         hasStarted,
-        gameWon,
-        activeGenerations,
         legendEntries,
         dropPreviewX,
         selectPiece,

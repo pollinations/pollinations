@@ -79,6 +79,12 @@ export function CopyButton({
         </button>
     );
 
+    // A copy button with its own visible label doesn't need a hover tooltip —
+    // pass tooltip={null} to opt out of the wrapper entirely.
+    if (tooltip === null) {
+        return button;
+    }
+
     return (
         <Tooltip
             triggerAs="span"

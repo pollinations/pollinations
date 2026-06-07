@@ -1,5 +1,4 @@
 import {
-    BookIcon,
     CheckIcon,
     ChevronIcon,
     ClipboardIcon,
@@ -69,10 +68,8 @@ type BrandLink = {
 
 type SupportAction = {
     label: string;
-    title?: string;
-    icon: ReactNode;
-    idleIcon?: ReactNode;
-    successIcon?: ReactNode;
+    idleIcon: ReactNode;
+    successIcon: ReactNode;
     copyValue: string | (() => string | Promise<string>);
 };
 
@@ -249,14 +246,12 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         ) : null);
 
     const supportAction: SupportAction = {
-        label: "Docs",
-        title: "📋 Copy full docs for LLMs",
-        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
+        label: "Copy docs",
         idleIcon: (
-            <ClipboardIcon className="h-4 w-4 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
+            <ClipboardIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
         ),
         successIcon: (
-            <CheckIcon className="h-4 w-4 shrink-0 text-intent-success-text" />
+            <CheckIcon className="h-3.5 w-3.5 shrink-0 text-intent-success-text" />
         ),
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
@@ -506,27 +501,21 @@ const DashboardSupport: FC<{
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
     <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
+        {/* Small labelled copy button — no tooltip (the visible label says it). */}
         <CopyButton
             value={action.copyValue}
             copiedTimeoutMs={1200}
-            tooltip={action.title}
-            copiedTooltip="✅ Copied!"
-            tooltipClassName="w-full"
-            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
+            tooltip={null}
+            className="group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-theme-text-muted transition-colors hover:bg-surface-opaque/60 hover:text-theme-text-base"
         >
             {(copied) => (
                 <>
-                    <span className="flex items-center gap-2">
-                        {action.icon}
-                        {action.label}
-                    </span>
-                    {copied
-                        ? (action.successIcon ?? null)
-                        : (action.idleIcon ?? null)}
+                    {copied ? action.successIcon : action.idleIcon}
+                    {copied ? "Copied" : action.label}
                 </>
             )}
         </CopyButton>
-        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+        <div className="ml-3.5 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />
             ))}

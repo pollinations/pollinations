@@ -3,7 +3,7 @@ import { BeakerIcon, Button, Chip } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import type { CSSProperties } from "react";
-import { type GamePiece, LIFE_PRESETS } from "./life";
+import { type GamePiece, LIFE_PRESETS, type LineageNode } from "./life";
 import {
     BOARD_ASPECT_RATIO,
     BOARD_MAX_WIDTH,
@@ -27,6 +27,13 @@ function pieceTitle(
         ? ` Parents: ${piece.lineage.parents[0].name} + ${piece.lineage.parents[1].name}.`
         : "";
     return `${piece.name}: ${piece.description}.${parents}`;
+}
+
+function parentTitle(parents: [LineageNode, LineageNode]) {
+    return [
+        `${parents[0].name}: ${parents[0].description}.`,
+        `${parents[1].name}: ${parents[1].description}.`,
+    ].join(" ");
 }
 
 // Only a real generated image (a blob:/http URL) is rendered. The data: SVG
@@ -400,8 +407,8 @@ function LifeMergeApp() {
                 </section>
 
                 <aside className="side-panel">
-                    {/* Inspector: the focused piece's icon, name and description.
-                        Its lineage tree is intentionally hidden for now. */}
+                    {/* Inspector: the focused piece's icon, name, description,
+                        and immediate parents when it was generated. */}
                     <section className="selected-card">
                         <div
                             className="selected-icon"
@@ -423,6 +430,29 @@ function LifeMergeApp() {
                         <div className="selected-text">
                             <strong>{game.selectedView.name}</strong>
                             <p>{game.selectedView.description}</p>
+                            {game.selectedView.lineage.parents ? (
+                                <small
+                                    className="selected-parents"
+                                    title={parentTitle(
+                                        game.selectedView.lineage.parents,
+                                    )}
+                                >
+                                    <span>from</span>
+                                    <b>
+                                        {
+                                            game.selectedView.lineage.parents[0]
+                                                .name
+                                        }
+                                    </b>
+                                    <span>+</span>
+                                    <b>
+                                        {
+                                            game.selectedView.lineage.parents[1]
+                                                .name
+                                        }
+                                    </b>
+                                </small>
+                            ) : null}
                         </div>
                     </section>
 

@@ -683,6 +683,28 @@ select {
     line-height: 1.45;
 }
 
+.selected-parents {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+    color: #607164;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.selected-parents b {
+    min-width: 0;
+    max-width: 42%;
+    overflow: hidden;
+    color: #2f6b3e;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ---- Legend (icon → name for the objects in play) ------------------- */
 
 .legend-card header {

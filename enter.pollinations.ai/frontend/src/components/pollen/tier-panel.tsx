@@ -17,21 +17,24 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
                     Higher tier → bigger hourly refill on your tier balance.
                     <InfoTip
                         content={
-                            <ul className="list-disc space-y-1 pl-4">
-                                <li>
-                                    Pollen refills every hour up to your tier
-                                    cap.
-                                </li>
-                                <li>
-                                    Requests that cost more than estimated can
-                                    briefly push your balance negative.
-                                </li>
-                                <li>
-                                    When negative, hourly refills bring it back
-                                    up one increment at a time until you hit
-                                    your tier cap.
-                                </li>
-                            </ul>
+                            <div className="space-y-2 text-theme-text-base">
+                                <p>🌱 Tier balance refill rules</p>
+                                <ul className="list-disc space-y-1 pl-4 text-theme-text-muted">
+                                    <li>
+                                        Pollen refills every hour up to your
+                                        tier cap.
+                                    </li>
+                                    <li>
+                                        Requests that cost more than estimated
+                                        can briefly push your balance negative.
+                                    </li>
+                                    <li>
+                                        When negative, hourly refills bring it
+                                        back up one increment at a time until
+                                        you hit your tier cap.
+                                    </li>
+                                </ul>
+                            </div>
                         }
                     />
                 </span>

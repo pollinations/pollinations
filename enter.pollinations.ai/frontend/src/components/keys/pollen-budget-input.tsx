@@ -39,7 +39,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
             >
                 Budget
                 <InfoTip
-                    text="Spending cap for this key. Leave empty for unlimited. Once the key spends its budget, requests through it are rejected."
+                    text="💸 Spending cap for this key. Leave empty for unlimited. Requests are rejected after the budget is spent."
                     label="Budget information"
                 />
             </Field.Label>

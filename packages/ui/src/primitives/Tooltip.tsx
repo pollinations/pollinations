@@ -78,13 +78,11 @@ export const Tooltip: FC<TooltipProps> = ({
         ? "polli:contents"
         : "polli:cursor-help";
 
-    // Thin theme-cascade popup. bg + border + text all follow the active
-    // page theme so the tooltip reads as "part of the page", not system
-    // chrome. Uses the pale theme bg (one step lighter than chip-bg) so
-    // it doesn't dominate. Same recipe on desktop and mobile —
-    // viewport-clamped via `tooltipPosition`.
+    // Thin theme-cascade popup. bg + border + text follow the active page
+    // theme, while typography opts out of trigger inheritance so bold labels
+    // do not make the whole tooltip shout.
     const popupClasses =
-        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-strong polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
+        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
 
     const contentNode = (
         <>

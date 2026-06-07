@@ -158,7 +158,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Tooltip
-                                            content={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
+                                            content={`💳 ${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
                                             displayContents
                                         >
                                             <PaidChip
@@ -174,7 +174,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             </PaidChip>
                                         </Tooltip>
                                         <Tooltip
-                                            content={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
+                                            content={`🌱 ${formatPollen(stats.totalTier)} pollen from tier-side spend`}
                                             displayContents
                                         >
                                             <TierChip
@@ -225,7 +225,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                     <div className="flex flex-wrap items-center gap-2">
                                         {stats.topApp.uniqueUsers > 0 && (
                                             <Tooltip
-                                                content={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
+                                                content={`👤 ${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -245,7 +245,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             </Tooltip>
                                         )}
                                         <Tooltip
-                                            content={`${formatPollen(stats.topApp.pollen)} pollen earned`}
+                                            content={`🌾 ${formatPollen(stats.topApp.pollen)} pollen earned`}
                                             displayContents
                                         >
                                             <Chip

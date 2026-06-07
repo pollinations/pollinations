@@ -159,12 +159,21 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </a>
                             {extraRedirectUriCount > 0 && (
                                 <Tooltip
-                                    content={redirectUrisMeta
-                                        .slice(1)
-                                        .map((uri) =>
-                                            uri.replace(/^https?:\/\//, ""),
-                                        )
-                                        .join("\n")}
+                                    content={
+                                        <span className="block whitespace-pre-line">
+                                            ↪️ Additional redirects
+                                            {"\n"}
+                                            {redirectUrisMeta
+                                                .slice(1)
+                                                .map((uri) =>
+                                                    uri.replace(
+                                                        /^https?:\/\//,
+                                                        "",
+                                                    ),
+                                                )
+                                                .join("\n")}
+                                        </span>
+                                    }
                                     displayContents
                                 >
                                     <Chip theme="blue" size="sm">

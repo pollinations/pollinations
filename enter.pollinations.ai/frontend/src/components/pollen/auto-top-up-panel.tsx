@@ -66,23 +66,33 @@ type AutoTopUpPanelProps = {
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
-    <div className="space-y-2">
+    <div className="space-y-2 text-theme-text-base">
         <div>
-            <strong>Auto top-up</strong> keeps your{" "}
-            <strong>paid balance</strong> topped up automatically.
+            🔁 Keeps your{" "}
+            <span className="font-semibold text-theme-text-strong">
+                paid balance
+            </span>{" "}
+            topped up automatically.
         </div>
-        <ul className="list-disc space-y-1 pl-4">
+        <ul className="list-disc space-y-1 pl-4 text-theme-text-muted">
             <li>
-                Triggers when your <strong>paid balance</strong> drops to{" "}
-                <strong>5 pollen or below</strong>
+                Runs at{" "}
+                <span className="font-semibold text-theme-text-strong">
+                    5 pollen or below
+                </span>
             </li>
             <li>
-                Charges your <strong>default Stripe card</strong> for the pack
-                size you select
+                Charges your{" "}
+                <span className="font-semibold text-theme-text-strong">
+                    default Stripe card
+                </span>{" "}
+                for the selected pack
             </li>
             <li>
-                Only your <strong>paid balance</strong> counts — tier pollen is
-                not considered
+                <span className="font-semibold text-theme-text-strong">
+                    Tier pollen is ignored
+                </span>{" "}
+                for this trigger
             </li>
         </ul>
     </div>
@@ -475,16 +485,16 @@ function canEnable(setup: SetupReadiness): boolean {
 }
 
 function getDisabledReason(setup: SetupReadiness): string | null {
-    if (setup.isSaving) return "Saving auto top-up...";
-    if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
+    if (setup.isSaving) return "⏳ Saving auto top-up...";
+    if (!setup.hasSelectedPack) return "🌾 Choose a valid pollen pack first.";
     if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
-        return "Add a default payment method and billing details in Stripe before saving changes.";
+        return "💳 Add a default payment method and billing details in Stripe before saving changes.";
     }
     if (!setup.paymentMethodReady) {
-        return "Add a default payment method in Stripe before saving changes.";
+        return "💳 Add a default payment method in Stripe before saving changes.";
     }
     if (!setup.billingDetailsReady) {
-        return "Add billing details in Stripe before saving changes.";
+        return "🧾 Add billing details in Stripe before saving changes.";
     }
     return null;
 }
@@ -497,8 +507,9 @@ function getSaveDisabledReason(
 ): string | null {
     const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
-    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
-    if (!state.hasUnsavedChanges) return "No changes to save.";
+    if (!state.showConfig)
+        return "🔁 Use the switch to enable auto top-up first.";
+    if (!state.hasUnsavedChanges) return "✅ No changes to save.";
     return null;
 }
 

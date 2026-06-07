@@ -172,7 +172,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     <CopyButton
                         value={model.name}
                         copiedTimeoutMs={900}
-                        tooltip={`Copy API model name ${model.name}`}
+                        tooltip={`📋 Copy API model name ${model.name}`}
                         aria-label={`Copy API model name ${model.name}`}
                         className={(copied) =>
                             cn(
@@ -224,7 +224,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Chip>
                             )}
                             {showAlpha && (
-                                <Tooltip content="Alpha model — experimental, may be unstable">
+                                <Tooltip content="🧪 Alpha model — experimental, may be unstable">
                                     <Chip intent="alpha" size="sm">
                                         ALPHA
                                     </Chip>
@@ -235,7 +235,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     content={
                                         isDisabled
                                             ? TOP_UP_TOOLTIP
-                                            : "This model uses paid balance only."
+                                            : "💳 This model uses paid balance only."
                                     }
                                 >
                                     <PaidChip size="sm">PAID</PaidChip>

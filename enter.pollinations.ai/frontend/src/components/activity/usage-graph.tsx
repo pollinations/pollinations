@@ -208,7 +208,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Tooltip
-                                                content={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                                content={`📨 ${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -227,7 +227,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                 </Chip>
                                             </Tooltip>
                                             <Tooltip
-                                                content={`${formatPollen(stats.topModel.pollen)} pollen`}
+                                                content={`🌾 ${formatPollen(stats.topModel.pollen)} pollen`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -275,7 +275,7 @@ const ModalityPills: FC<{
                 return (
                     <Tooltip
                         key={modality}
-                        content={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                        content={`${emoji} ${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
                         displayContents
                     >
                         <Chip

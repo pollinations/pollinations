@@ -103,9 +103,9 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     ];
     const tokenTypeLabel =
         tokenTypes.length > 1
-            ? `Token types: ${tokenTypes.join(", ")}`
+            ? `${subEmojis.join(" ")} Token types: ${tokenTypes.join(", ")}`
             : tokenTypes.length === 1
-              ? `Token type: ${tokenTypes[0]}`
+              ? `${subEmojis[0] ?? "🏷️"} Token type: ${tokenTypes[0]}`
               : undefined;
 
     // Show suffix based on pricing type

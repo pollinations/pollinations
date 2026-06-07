@@ -359,7 +359,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                         <CopyButton
                             value={model.name}
                             copiedTimeoutMs={900}
-                            tooltip={`Copy API model name ${model.name}`}
+                            tooltip={`📋 Copy API model name ${model.name}`}
                             aria-label={`Copy API model name ${model.name}`}
                             className={(copied) =>
                                 cn(
@@ -607,8 +607,11 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
-                            Based on average community usage. Actual costs vary
-                            with modality and output.
+                            📊 Based on{" "}
+                            <span className="font-semibold text-theme-text-strong">
+                                average community usage
+                            </span>
+                            . Actual costs vary with modality and output.
                         </span>
                     }
                 >

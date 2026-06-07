@@ -250,7 +250,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     const supportAction: SupportAction = {
         label: "Docs",
-        title: "Copy full docs for LLMs",
+        title: "📋 Copy full docs for LLMs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         idleIcon: (
             <ClipboardIcon className="h-4 w-4 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
@@ -510,7 +510,7 @@ const DashboardSupport: FC<{
             value={action.copyValue}
             copiedTimeoutMs={1200}
             tooltip={action.title}
-            copiedTooltip="Copied!"
+            copiedTooltip="✅ Copied!"
             tooltipClassName="w-full"
             className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
         >

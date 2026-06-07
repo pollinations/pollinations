@@ -295,11 +295,19 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         </div>
                         <Tooltip
                             content={
-                                <>
-                                    {`Buy ${selectedPack.amountUsd} pollen for $${selectedPack.amountUsd}`}
-                                    <br />
-                                    confirm on the next page
-                                </>
+                                <span className="block">
+                                    🛒 Buy{" "}
+                                    <span className="font-semibold text-theme-text-strong">
+                                        {selectedPack.amountUsd} pollen
+                                    </span>{" "}
+                                    for{" "}
+                                    <span className="font-semibold text-theme-text-strong">
+                                        ${selectedPack.amountUsd}
+                                    </span>
+                                    <span className="mt-1 block text-theme-text-muted">
+                                        Confirm on the next page.
+                                    </span>
+                                </span>
                             }
                             displayContents
                         >

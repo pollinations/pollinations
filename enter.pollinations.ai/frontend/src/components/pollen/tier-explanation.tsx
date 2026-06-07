@@ -8,7 +8,13 @@ import type { FC, ReactNode } from "react";
 
 const SeedTooltipContent = () => (
     <div className="w-72">
-        <p className="font-semibold text-ink-900 mb-2">Dev Points (need 7+)</p>
+        <p className="mb-2 text-theme-text-base">
+            🌱{" "}
+            <span className="font-semibold text-theme-text-strong">
+                Dev Points
+            </span>{" "}
+            <span className="text-theme-text-muted">(need 7+)</span>
+        </p>
         <table className="w-full text-left text-xs">
             <tbody>
                 <tr className="border-b border-divider">

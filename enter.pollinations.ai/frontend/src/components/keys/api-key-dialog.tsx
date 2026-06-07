@@ -122,15 +122,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const createDisabledReason =
         !createdKey && noModelsSelected
-            ? "Select at least one model"
+            ? "🤖 Select at least one model"
             : undefined;
 
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
             copiedTimeoutMs={500}
-            tooltip="Copy key"
-            copiedTooltip="Copied! Closing..."
+            tooltip="📋 Copy key"
+            copiedTooltip="✅ Copied! Closing..."
             onCopied={closeAfterCopy}
             onCopyError={() => {
                 onComplete();

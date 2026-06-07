@@ -1,4 +1,5 @@
 import {
+    BookIcon,
     CheckIcon,
     ChevronIcon,
     ClipboardIcon,
@@ -68,6 +69,8 @@ type BrandLink = {
 
 type SupportAction = {
     label: string;
+    icon: ReactNode;
+    copyLabel: string;
     idleIcon: ReactNode;
     successIcon: ReactNode;
     copyValue: string | (() => string | Promise<string>);
@@ -246,7 +249,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         ) : null);
 
     const supportAction: SupportAction = {
-        label: "Copy docs",
+        label: "Docs",
+        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
+        copyLabel: "Copy All",
         idleIcon: (
             <ClipboardIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
         ),
@@ -501,21 +506,28 @@ const DashboardSupport: FC<{
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
     <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
-        {/* Small labelled copy button — no tooltip (the visible label says it). */}
-        <CopyButton
-            value={action.copyValue}
-            copiedTimeoutMs={1200}
-            tooltip={null}
-            className="group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-theme-text-muted transition-colors hover:bg-surface-opaque/60 hover:text-theme-text-base"
-        >
-            {(copied) => (
-                <>
-                    {copied ? action.successIcon : action.idleIcon}
-                    {copied ? "Copied" : action.label}
-                </>
-            )}
-        </CopyButton>
-        <div className="ml-3.5 mt-1 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+        {/* "Docs" header on the left; a small labelled copy button on the right
+            (no tooltip — the visible label says what it does). */}
+        <div className="flex items-center justify-between gap-2 px-3 py-1">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
+                {action.icon}
+                {action.label}
+            </span>
+            <CopyButton
+                value={action.copyValue}
+                copiedTimeoutMs={1200}
+                tooltip={null}
+                className="group inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium text-theme-text-muted transition-colors hover:bg-surface-opaque/60 hover:text-theme-text-base"
+            >
+                {(copied) => (
+                    <>
+                        {copied ? action.successIcon : action.idleIcon}
+                        {copied ? "Copied" : action.copyLabel}
+                    </>
+                )}
+            </CopyButton>
+        </div>
+        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />
             ))}

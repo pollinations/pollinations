@@ -178,7 +178,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             cn(
                                 "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-theme-text-muted transition-colors",
                                 copied
-                                    ? "text-intent-success-600"
+                                    ? "text-intent-success-text"
                                     : "hover:text-theme-text-base",
                             )
                         }
@@ -187,7 +187,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <>
                                 <span>{model.name}</span>
                                 {copied && (
-                                    <span className="rounded-lg bg-intent-success-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-700">
+                                    <span className="rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
                                         copied
                                     </span>
                                 )}

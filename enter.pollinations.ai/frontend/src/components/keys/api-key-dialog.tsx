@@ -230,7 +230,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
                     {error && (
                         <div className="pb-2">
-                            <p className="text-sm text-intent-danger-600 bg-intent-danger-50 px-3 py-2 rounded-lg">
+                            <p className="text-sm text-intent-danger-text bg-intent-danger-bg-light px-3 py-2 rounded-lg">
                                 {error}
                             </p>
                         </div>

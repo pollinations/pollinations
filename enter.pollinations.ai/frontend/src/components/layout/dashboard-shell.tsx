@@ -256,7 +256,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             <ClipboardIcon className="h-4 w-4 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
         ),
         successIcon: (
-            <CheckIcon className="h-4 w-4 shrink-0 text-intent-success-700" />
+            <CheckIcon className="h-4 w-4 shrink-0 text-intent-success-text" />
         ),
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);

@@ -267,7 +267,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             variant="card-themed"
                             className="w-fit text-theme-text-strong"
                         >
-                            <span className="font-body text-xs font-bold uppercase tracking-wide text-intent-danger-600 mr-1.5">
+                            <span className="font-body text-xs font-bold uppercase tracking-wide text-intent-danger-text mr-1.5">
                                 New!
                             </span>
                             Turn on earnings to receive a share of pollen users

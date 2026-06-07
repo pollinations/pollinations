@@ -172,7 +172,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 cn(
                                     "font-mono text-sm cursor-pointer transition-all",
                                     copied
-                                        ? "text-intent-success-600 font-semibold"
+                                        ? "text-intent-success-text font-semibold"
                                         : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
                                 )
                             }

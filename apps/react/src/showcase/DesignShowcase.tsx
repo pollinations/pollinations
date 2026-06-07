@@ -692,7 +692,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     className={(copied) =>
                         `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
                             copied
-                                ? "bg-intent-success-100 text-intent-success-800"
+                                ? "bg-intent-success-bg-light text-intent-success-text"
                                 : "bg-theme-bg-active text-theme-text-strong"
                         }`
                     }

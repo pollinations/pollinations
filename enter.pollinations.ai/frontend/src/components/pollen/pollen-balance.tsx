@@ -52,7 +52,7 @@ const TooltipList: FC<{
             ))}
         </ul>
         {earned !== undefined && earned > 0 && (
-            <span className="mt-2 block border-t border-divider pt-1.5 text-intent-success-700 font-semibold">
+            <span className="mt-2 block border-t border-divider pt-1.5 text-intent-success-text font-semibold">
                 +{formatPollen(earned)}{" "}
                 <span className="font-medium text-theme-text-muted">
                     earned past 7d
@@ -170,7 +170,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         </span>
                     </span>
                     {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-700">
+                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(totalWeek)}{" "}
                             <span className="font-medium text-theme-text-muted">
                                 / 7d
@@ -236,7 +236,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         {formatPollen(displayPaidBalance)}
                     </span>
                     {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-700">
+                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(paidWeek)}
                         </span>
                     )}
@@ -253,7 +253,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                             {formatPollen(displayTierBalance)}
                         </span>
                         {tierWeek > 0 && (
-                            <span className="text-micro font-bold tabular-nums text-intent-success-700">
+                            <span className="text-micro font-bold tabular-nums text-intent-success-text">
                                 +{formatPollen(tierWeek)}
                             </span>
                         )}

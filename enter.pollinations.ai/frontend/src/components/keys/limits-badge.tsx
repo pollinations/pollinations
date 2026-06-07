@@ -46,7 +46,7 @@ export const LimitsBadge: FC<{
                 <span
                     className={cn(
                         "text-theme-text-muted",
-                        isExhausted && "text-intent-danger-500 font-medium",
+                        isExhausted && "text-intent-danger-text font-medium",
                     )}
                 >
                     {budgetStr}

@@ -124,13 +124,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     {error && !loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <div className="text-center">
-                                <p className="text-sm text-intent-danger-500 font-medium">
+                                <p className="text-sm text-intent-danger-text font-medium">
                                     {error}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => fetchEarnings()}
-                                    className="mt-2 text-xs text-intent-danger-600 hover:text-intent-danger-700 underline"
+                                    className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
                                 >
                                     Try again
                                 </button>

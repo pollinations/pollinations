@@ -294,7 +294,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         className={cn(
                             "text-xs font-medium",
                             alertTone
-                                ? "text-intent-danger-700"
+                                ? "text-intent-danger-text"
                                 : "text-theme-text-muted",
                         )}
                     >
@@ -519,7 +519,7 @@ const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
 const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     <div
         role="alert"
-        className="rounded-xl border border-intent-danger-200 bg-intent-danger-50 p-4 text-sm text-intent-danger-800"
+        className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text"
     >
         {children}
     </div>

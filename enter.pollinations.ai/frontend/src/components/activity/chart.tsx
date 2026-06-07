@@ -8,7 +8,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
-    grid: "var(--polli-color-ink-200)",
+    // Neutral separator line — the purpose-built mode-aware token. ink-200 was
+    // invisible in dark (0.255 < app-bg 0.265) and in light (0.928 = app-bg).
+    grid: "var(--polli-color-divider)",
 } as const;
 
 type ChartProps = {

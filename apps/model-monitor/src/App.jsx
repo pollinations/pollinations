@@ -3,6 +3,7 @@ import {
     AppHeader,
     Button,
     Chip,
+    ColorModeToggle,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
@@ -473,7 +474,7 @@ function App() {
 
     return (
         <div
-            className="h-dvh bg-theme-bg-subtle text-theme-text-base"
+            className="h-dvh bg-app-bg text-theme-text-base"
             data-theme={APP_THEME}
         >
             <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
@@ -486,6 +487,7 @@ function App() {
                     {EXTERNAL_LINKS.map((link) => (
                         <HeaderLink key={link.href} {...link} />
                     ))}
+                    <ColorModeToggle />
                 </AppHeader>
                 <main
                     className={cn(
@@ -498,11 +500,11 @@ function App() {
                             <Heading
                                 as="h1"
                                 size="title"
-                                className="polli-model-monitor-title polli:m-0 polli:text-ink-950"
+                                className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
                             >
                                 Model Monitor
                             </Heading>
-                            <p className="m-0 max-w-3xl text-base leading-relaxed text-ink-700">
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
                                 Real-time health monitoring for Pollinations AI
                                 models.
                             </p>

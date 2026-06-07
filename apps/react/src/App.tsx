@@ -74,6 +74,7 @@ import {
     TokensIcon,
     Tooltip,
     TrendUpIcon,
+    themes,
     useColorMode,
     WalletIcon,
     XIcon,
@@ -99,7 +100,7 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
-const APP_THEME: ThemeName = "amber";
+const APP_THEME: ThemeName = "neutral";
 // Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
 // Unset falls back to the SDK default (production gen.pollinations.ai).
 const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;
@@ -110,13 +111,14 @@ const DesignShowcase = lazy(() =>
     })),
 );
 
-type PublicAppView = "primitives" | "compositions" | "modules";
+type PublicAppView = "primitives" | "compositions" | "modules" | "colors";
 type AppView = PublicAppView | "showcase";
 
 const PUBLIC_VIEWS: { id: PublicAppView; label: string }[] = [
     { id: "primitives", label: "Primitives" },
     { id: "compositions", label: "Compositions" },
     { id: "modules", label: "Modules" },
+    { id: "colors", label: "Colors" },
 ];
 
 function readAppView(): AppView {
@@ -126,7 +128,8 @@ function readAppView(): AppView {
     if (
         view === "primitives" ||
         view === "compositions" ||
-        view === "modules"
+        view === "modules" ||
+        view === "colors"
     ) {
         return view;
     }
@@ -221,6 +224,8 @@ function AppShell({
                         <CompositionsPage />
                     ) : activeView === "modules" ? (
                         <ModulesPage />
+                    ) : activeView === "colors" ? (
+                        <ColorsPage />
                     ) : null}
                 </main>
             </ScrollArea>
@@ -1471,6 +1476,205 @@ function CompositionsPage() {
                         />
                     </PrimitiveExample>
                 </div>
+            </section>
+        </>
+    );
+}
+
+// --- Colors tab ------------------------------------------------------------
+// A self-contained color story. The picker sets data-theme on ONLY the themed
+// preview region, so the rest of the app stays neutral. The themed ramp + live
+// components re-resolve to the picked theme; the structural and semantic
+// colors are theme-independent and shown once. All class strings are literal
+// (the app compiles Tailwind from source, so dynamic class names won't emit).
+
+// [name, swatch fill class, canonical usage class]
+const THEMED_TOKENS = [
+    ["bg-pale", "bg-theme-bg-pale", "bg-theme-bg-pale"],
+    ["bg-subtle", "bg-theme-bg-subtle", "bg-theme-bg-subtle"],
+    ["bg-active", "bg-theme-bg-active", "bg-theme-bg-active"],
+    ["bg-hover", "bg-theme-bg-hover", "bg-theme-bg-hover"],
+    ["border", "bg-theme-border", "border-theme-border"],
+    ["text-soft", "bg-theme-text-soft", "text-theme-text-soft"],
+] as const;
+
+const STRUCTURAL_TOKENS = [
+    ["app-bg", "bg-app-bg", "bg-app-bg"],
+    ["surface-opaque", "bg-surface-opaque", "bg-surface-opaque"],
+    ["divider", "bg-divider", "border-divider"],
+    ["text-strong", "bg-theme-text-strong", "text-theme-text-strong"],
+    ["text-base", "bg-theme-text-base", "text-theme-text-base"],
+    ["text-muted", "bg-theme-text-muted", "text-theme-text-muted"],
+] as const;
+
+// [name, pill classes (literal so Tailwind emits them)]
+const INTENT_TOKENS = [
+    ["danger", "bg-intent-danger-bg-light text-intent-danger-text"],
+    ["success", "bg-intent-success-bg-light text-intent-success-text"],
+    ["warning", "bg-intent-warning-bg-light text-intent-warning-text"],
+    ["news", "bg-intent-news-bg-light text-intent-news-text"],
+    ["alpha", "bg-intent-alpha-bg-light text-intent-alpha-text"],
+] as const;
+
+function Swatch({
+    name,
+    fill,
+    usage,
+}: {
+    name: string;
+    fill: string;
+    usage: string;
+}) {
+    return (
+        <div className="flex items-center gap-3 rounded-lg bg-surface-opaque p-2.5">
+            <span
+                className={`h-9 w-9 shrink-0 rounded-md border border-divider ${fill}`}
+            />
+            <span className="min-w-0">
+                <span className="block text-sm font-semibold text-theme-text-strong">
+                    {name}
+                </span>
+                <code className="block truncate text-xs text-theme-text-muted">
+                    {usage}
+                </code>
+            </span>
+        </div>
+    );
+}
+
+function ColorsPage() {
+    const [selected, setSelected] = useState<ThemeName>("blue");
+
+    return (
+        <>
+            <PageIntro>
+                Every surface, control, and text role is a design token. Pick a
+                theme to preview its color ramp — only this panel re-themes, the
+                rest of the app stays neutral. Flip the light/dark toggle in the
+                header to see each token adapt.
+            </PageIntro>
+
+            <section className="flex flex-col gap-4">
+                <SectionHeader title="Theme">
+                    The page hue, set via data-theme on any ancestor or a
+                    component's theme prop. Includes the neutral (no-hue)
+                    member.
+                </SectionHeader>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                    {themes.map((name) => (
+                        <button
+                            key={name}
+                            type="button"
+                            data-theme={name}
+                            aria-pressed={selected === name}
+                            onClick={() => setSelected(name)}
+                            className={`flex flex-col gap-2 rounded-xl border p-3 text-left transition-colors bg-theme-bg-subtle hover:bg-theme-bg-pale ${
+                                selected === name
+                                    ? "border-theme-border"
+                                    : "border-divider"
+                            }`}
+                        >
+                            <span className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-bold capitalize text-theme-text-strong">
+                                    {name}
+                                </span>
+                                {selected === name ? (
+                                    <CheckIcon className="h-4 w-4 shrink-0 text-theme-text-strong" />
+                                ) : null}
+                            </span>
+                            <span className="flex h-8 overflow-hidden rounded-lg border border-theme-border">
+                                <span className="flex-1 bg-theme-bg-subtle" />
+                                <span className="flex-1 bg-theme-bg-active" />
+                                <span className="flex-1 bg-theme-bg-hover" />
+                                <span className="flex-1 bg-theme-bg-pale" />
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </section>
+
+            {/* Themed ramp + live components — ONLY this region follows the picker. */}
+            <section data-theme={selected} className="flex flex-col gap-4">
+                <SectionHeader title="Themed tokens">
+                    These resolve from the selected theme. Use them as
+                    bg-theme-*, border-theme-border, and text-theme-text-soft.
+                </SectionHeader>
+                <Surface variant="panel" className="flex flex-col gap-4">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-2.5">
+                        {THEMED_TOKENS.map(([name, fill, usage]) => (
+                            <Swatch
+                                key={name}
+                                name={name}
+                                fill={fill}
+                                usage={usage}
+                            />
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4">
+                        <Button theme={selected} size="sm">
+                            Button
+                        </Button>
+                        <Chip theme={selected} size="sm">
+                            Chip
+                        </Chip>
+                        <TabButton
+                            theme={selected}
+                            active
+                            onClick={() => undefined}
+                        >
+                            Active tab
+                        </TabButton>
+                        <TabButton
+                            theme={selected}
+                            active={false}
+                            onClick={() => undefined}
+                        >
+                            Tab
+                        </TabButton>
+                        <Input
+                            className="w-40"
+                            placeholder="Input"
+                            aria-label="Themed input preview"
+                        />
+                    </div>
+                </Surface>
+            </section>
+
+            <section className="flex flex-col gap-4">
+                <SectionHeader title="Structural">
+                    Neutral, theme-independent surfaces and text — identical in
+                    every theme; only light/dark changes them.
+                </SectionHeader>
+                <Surface
+                    variant="panel"
+                    className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-2.5"
+                >
+                    {STRUCTURAL_TOKENS.map(([name, fill, usage]) => (
+                        <Swatch
+                            key={name}
+                            name={name}
+                            fill={fill}
+                            usage={usage}
+                        />
+                    ))}
+                </Surface>
+            </section>
+
+            <section className="flex flex-col gap-4">
+                <SectionHeader title="Semantic">
+                    Intent colors for state, independent of theme. Each pairs a
+                    soft background with a readable text color.
+                </SectionHeader>
+                <Surface variant="panel" className="flex flex-wrap gap-2">
+                    {INTENT_TOKENS.map(([name, pill]) => (
+                        <span
+                            key={name}
+                            className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${pill}`}
+                        >
+                            {name}
+                        </span>
+                    ))}
+                </Surface>
             </section>
         </>
     );

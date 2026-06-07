@@ -294,85 +294,6 @@ function LifeMergeApp() {
                                         <span>Click the board to drop</span>
                                     </div>
                                 ) : null}
-                                {game.generationFocus ? (
-                                    <output
-                                        className={`generation-focus is-${game.generationFocus.status}`}
-                                    >
-                                        <div className="generation-focus-head">
-                                            <span>
-                                                {game.generationFocus.status ===
-                                                "result"
-                                                    ? "New discovery"
-                                                    : "Combining"}
-                                            </span>
-                                        </div>
-                                        <div className="generation-parents">
-                                            {game.generationFocus.parents.map(
-                                                (parent, index) => (
-                                                    <div
-                                                        className="generation-parent"
-                                                        key={parent.id}
-                                                    >
-                                                        {index === 1 ? (
-                                                            <span className="generation-plus">
-                                                                +
-                                                            </span>
-                                                        ) : null}
-                                                        <img
-                                                            src={
-                                                                parent.imageUrl
-                                                            }
-                                                            alt=""
-                                                        />
-                                                        <div className="generation-parent-text">
-                                                            <strong>
-                                                                {parent.name}
-                                                            </strong>
-                                                            <p>
-                                                                {
-                                                                    parent.description
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                        {game.generationFocus.result ? (
-                                            <div className="generation-result">
-                                                <span className="generation-arrow">
-                                                    ↓
-                                                </span>
-                                                <img
-                                                    src={
-                                                        game.generationFocus
-                                                            .result.imageUrl
-                                                    }
-                                                    alt=""
-                                                />
-                                                <div className="generation-result-text">
-                                                    <strong>
-                                                        {
-                                                            game.generationFocus
-                                                                .result.name
-                                                        }
-                                                    </strong>
-                                                    <p>
-                                                        {
-                                                            game.generationFocus
-                                                                .result
-                                                                .description
-                                                        }
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="generation-pulse">
-                                                <span />
-                                            </div>
-                                        )}
-                                    </output>
-                                ) : null}
                             </div>
                             <div
                                 className="piece-label-layer"
@@ -403,54 +324,118 @@ function LifeMergeApp() {
                 </section>
 
                 <aside className="side-panel">
-                    {/* Inspector: the focused piece's icon, name, description,
-                        and immediate parents when it was generated. */}
-                    <section className="selected-card">
-                        <div
-                            className="selected-icon"
-                            style={
-                                {
-                                    "--piece-color": game.selectedView.color,
-                                    "--piece-ink": game.selectedView.ink,
-                                } as CSSProperties
-                            }
+                    {game.generationFocus ? (
+                        <output
+                            className={`generation-focus is-${game.generationFocus.status}`}
                         >
-                            {realImage(game.selectedView.imageUrl) ? (
-                                <img
-                                    src={realImage(game.selectedView.imageUrl)}
-                                    alt=""
-                                    draggable={false}
-                                />
-                            ) : null}
-                        </div>
-                        <div className="selected-text">
-                            <strong>{game.selectedView.name}</strong>
-                            <p>{game.selectedView.description}</p>
-                            {game.selectedView.lineage.parents ? (
-                                <small
-                                    className="selected-parents"
-                                    title={parentTitle(
-                                        game.selectedView.lineage.parents,
-                                    )}
-                                >
-                                    <span>from</span>
-                                    <b>
-                                        {
-                                            game.selectedView.lineage.parents[0]
-                                                .name
+                            <div className="generation-focus-head">
+                                <span>
+                                    {game.generationFocus.status === "result"
+                                        ? "New discovery"
+                                        : "Combining"}
+                                </span>
+                            </div>
+                            <div className="generation-parents">
+                                {game.generationFocus.parents.map(
+                                    (parent, index) => (
+                                        <div
+                                            className="generation-parent"
+                                            key={parent.id}
+                                        >
+                                            {index === 1 ? (
+                                                <span className="generation-plus">
+                                                    +
+                                                </span>
+                                            ) : null}
+                                            <img src={parent.imageUrl} alt="" />
+                                            <div className="generation-parent-text">
+                                                <strong>{parent.name}</strong>
+                                                <p>{parent.description}</p>
+                                            </div>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                            {game.generationFocus.result ? (
+                                <div className="generation-result">
+                                    <span className="generation-arrow">↓</span>
+                                    <img
+                                        src={
+                                            game.generationFocus.result.imageUrl
                                         }
-                                    </b>
-                                    <span>+</span>
-                                    <b>
-                                        {
-                                            game.selectedView.lineage.parents[1]
-                                                .name
-                                        }
-                                    </b>
-                                </small>
-                            ) : null}
-                        </div>
-                    </section>
+                                        alt=""
+                                    />
+                                    <div className="generation-result-text">
+                                        <strong>
+                                            {game.generationFocus.result.name}
+                                        </strong>
+                                        <p>
+                                            {
+                                                game.generationFocus.result
+                                                    .description
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="generation-pulse">
+                                    <span />
+                                </div>
+                            )}
+                        </output>
+                    ) : (
+                        /* Inspector: the focused piece's icon, name,
+                           description, and immediate parents when generated. */
+                        <section className="selected-card">
+                            <div
+                                className="selected-icon"
+                                style={
+                                    {
+                                        "--piece-color":
+                                            game.selectedView.color,
+                                        "--piece-ink": game.selectedView.ink,
+                                    } as CSSProperties
+                                }
+                            >
+                                {realImage(game.selectedView.imageUrl) ? (
+                                    <img
+                                        src={realImage(
+                                            game.selectedView.imageUrl,
+                                        )}
+                                        alt=""
+                                        draggable={false}
+                                    />
+                                ) : null}
+                            </div>
+                            <div className="selected-text">
+                                <strong>{game.selectedView.name}</strong>
+                                <p>{game.selectedView.description}</p>
+                                {game.selectedView.lineage.parents ? (
+                                    <small
+                                        className="selected-parents"
+                                        title={parentTitle(
+                                            game.selectedView.lineage.parents,
+                                        )}
+                                    >
+                                        <span>from</span>
+                                        <b>
+                                            {
+                                                game.selectedView.lineage
+                                                    .parents[0].name
+                                            }
+                                        </b>
+                                        <span>+</span>
+                                        <b>
+                                            {
+                                                game.selectedView.lineage
+                                                    .parents[1].name
+                                            }
+                                        </b>
+                                    </small>
+                                ) : null}
+                            </div>
+                        </section>
+                    )}
 
                     {game.legendEntries.length > 0 ? (
                         <section className="legend-card">

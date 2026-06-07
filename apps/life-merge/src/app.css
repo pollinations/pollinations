@@ -463,22 +463,17 @@ select {
     font-weight: 700;
 }
 
-/* ---- Generation focus (only while generating) ------------------------ */
+/* ---- Generation focus ------------------------------------------------ */
 
 .generation-focus {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    z-index: 90;
     display: grid;
-    width: min(360px, calc(100% - 24px));
+    box-sizing: border-box;
+    width: 100%;
     gap: 9px;
-    padding: 12px;
+    padding: 14px;
     border: 1px solid rgba(20, 32, 22, 0.1);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 16px 42px rgba(24, 35, 23, 0.18);
-    transform: translateX(-50%);
 }
 
 .generation-focus-head span {

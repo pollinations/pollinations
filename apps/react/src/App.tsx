@@ -22,6 +22,7 @@ import {
     ClockIcon,
     CodeBlock,
     Collapsible,
+    ColorModeToggle,
     CopyButton,
     currentPeriod,
     Dialog,
@@ -183,6 +184,7 @@ function ShellHeader({
                     {view.label}
                 </TabButton>
             ))}
+            <ColorModeToggle />
         </AppHeader>
     );
 }
@@ -199,7 +201,7 @@ function AppShell({
     return (
         <div
             data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-surface-white text-theme-text-strong"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
         >
             <ScrollArea
                 ref={scrollTargetRef}
@@ -1467,7 +1469,7 @@ function DebugShowcase({
     return (
         <div
             data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-surface-white"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg"
         >
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <Suspense fallback={null}>

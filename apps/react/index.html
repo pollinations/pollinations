@@ -1,9 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="polli-ui-root">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#fef3c7" />
+
+        <!-- Set color mode before first paint to avoid a flash. Source of truth
+             after mount: @pollinations/ui ColorModeToggle (STORAGE_KEY must match). -->
+        <script>
+            (() => {
+                try {
+                    let mode = localStorage.getItem("polli-color-mode");
+                    if (mode !== "light" && mode !== "dark") {
+                        mode = matchMedia("(prefers-color-scheme: dark)").matches
+                            ? "dark"
+                            : "light";
+                    }
+                    if (mode === "dark") document.documentElement.classList.add("dark");
+                    // theme-color (browser chrome) is derived from the
+                    // --polli-color-app-bg token by @pollinations/ui
+                    // ColorModeToggle once styles load — no hardcoded color here.
+                } catch {
+                    /* ignore storage / matchMedia failures */
+                }
+            })();
+        </script>
         <meta
             name="description"
             content="React UI showcase for the Pollinations SDK and UI component library — auth, wallet, and design primitives."
@@ -53,7 +73,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="React UI" />
     </head>
-    <body data-theme="amber">
+    <body class="polli-ui-shell" data-theme="amber">
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>

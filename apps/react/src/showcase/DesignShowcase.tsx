@@ -72,13 +72,7 @@ import {
     WalletBalanceCard,
     WalletDot,
 } from "@pollinations/ui/wallet";
-import {
-    type ComponentType,
-    type FC,
-    type ReactNode,
-    useEffect,
-    useState,
-} from "react";
+import { type ComponentType, type FC, type ReactNode, useState } from "react";
 
 /**
  * App-owned design primitive showcase.
@@ -104,17 +98,6 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
     const [internalTheme, setInternalTheme] = useState<ThemeName>("amber");
     const theme = controlledTheme ?? internalTheme;
     const setTheme = onThemeChange ?? setInternalTheme;
-
-    useEffect(() => {
-        document.documentElement.classList.add("polli-ui-root");
-        document.documentElement.classList.add("polli-ui-shell");
-        document.body.classList.add("polli-ui-shell");
-        return () => {
-            document.documentElement.classList.remove("polli-ui-root");
-            document.documentElement.classList.remove("polli-ui-shell");
-            document.body.classList.remove("polli-ui-shell");
-        };
-    }, []);
 
     return (
         <ScrollArea
@@ -1371,11 +1354,7 @@ const ModuleRecipesDemo: FC = () => {
                                 </Button>
                             );
                         })}
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-ink-100 text-ink-600"
-                        >
+                        <Button type="button" size="sm" theme="neutral">
                             unknown
                         </Button>
                         <Button type="button" size="sm" disabled>

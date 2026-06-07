@@ -6,11 +6,17 @@ import {
     useRef,
     useState,
 } from "react";
+import {
+    fetchModelCatalog,
+    type ModelCatalog,
+    type ModelCatalogItem,
+} from "../models.js";
 import type {
     AccountBalance,
     AccountProfile,
     KeyInfo,
     KeyUsageOptions,
+    ModelCategory,
     UsageResponse,
 } from "../types.js";
 import { PollinationsError } from "../types.js";
@@ -210,6 +216,84 @@ export function useAccountProfile(options: { enabled?: boolean } = {}) {
         [],
     );
     return useAccountResource(fetcher, enabled);
+}
+
+export interface UseModelCatalogValue {
+    models: ModelCatalogItem[];
+    allowedModelIds: ReadonlySet<string>;
+    /** Categories the key may use: restricted to allowed models when logged in,
+     * every public category when logged out. */
+    allowedCategories: ModelCategory[];
+    isLoggedIn: boolean;
+    isLoading: boolean;
+    error: Error | null;
+    refresh: () => Promise<void>;
+}
+
+const EMPTY_MODELS: ModelCatalogItem[] = [];
+const EMPTY_ALLOWED: ReadonlySet<string> = new Set();
+
+/**
+ * Loads the public model catalog and, when the provider holds an API key, the
+ * set of models that key may use (`allowedModelIds`). The catalog is a public
+ * endpoint, so `apiKey` is optional — this works logged out.
+ */
+export function useModelCatalog(
+    options: { baseUrl?: string; enabled?: boolean } = {},
+): UseModelCatalogValue {
+    const { baseUrl, enabled = true } = options;
+    const { apiKey, isLoggedIn } = useRequiredAuth();
+    const [catalog, setCatalog] = useState<ModelCatalog | null>(null);
+    const [isLoading, setIsLoading] = useState(enabled);
+    const [error, setError] = useState<Error | null>(null);
+    const reqIdRef = useRef(0);
+
+    const refresh = useCallback(async () => {
+        const reqId = ++reqIdRef.current;
+        if (!enabled) {
+            setCatalog(null);
+            setIsLoading(false);
+            setError(null);
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchModelCatalog({ apiKey, baseUrl });
+            if (reqId !== reqIdRef.current) return;
+            setCatalog(result);
+        } catch (err) {
+            if (reqId !== reqIdRef.current) return;
+            setError(err instanceof Error ? err : new Error(String(err)));
+        } finally {
+            if (reqId === reqIdRef.current) setIsLoading(false);
+        }
+    }, [apiKey, baseUrl, enabled]);
+
+    useEffect(() => {
+        void refresh();
+    }, [refresh]);
+
+    return useMemo(() => {
+        const models = catalog?.models ?? EMPTY_MODELS;
+        const allowedModelIds = catalog?.allowedModelIds ?? EMPTY_ALLOWED;
+        const allowed = isLoggedIn
+            ? models.filter((model) => allowedModelIds.has(model.id))
+            : models;
+        const allowedCategories = [
+            ...new Set(allowed.map((model) => model.category)),
+        ];
+        return {
+            models,
+            allowedModelIds,
+            allowedCategories,
+            isLoggedIn,
+            isLoading,
+            error,
+            refresh,
+        };
+    }, [catalog, isLoggedIn, isLoading, error, refresh]);
 }
 
 /** Current visible balance for the delegated key. */

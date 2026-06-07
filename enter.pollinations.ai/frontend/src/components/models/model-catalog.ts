@@ -16,6 +16,7 @@ export type ApiModelInfo = {
     category?: ModelCategory;
     brand?: string;
     pricing?: ApiPricing;
+    title?: string;
     description?: string;
     input_modalities?: string[];
     output_modalities?: string[];
@@ -97,17 +98,27 @@ export const getCatalogModelId = (model: ApiModelInfo): string =>
     model.name || model.id || "";
 
 export const getCatalogDisplayName = (
-    description: string | undefined,
+    model: ApiModelInfo,
     fallback: string,
-): string => description?.split(" - ")[0]?.trim() || fallback;
+): string =>
+    model.title?.trim() ||
+    model.description?.split(" - ")[0]?.trim() ||
+    fallback;
 
 export const getCatalogDescriptionWithoutName = (
-    description: string | undefined,
+    model: ApiModelInfo,
 ): string | undefined => {
+    const { description } = model;
     if (!description) return undefined;
+    const title = model.title?.trim();
+    const prefix = title ? `${title} - ` : "";
+    if (prefix && description.startsWith(prefix)) {
+        return description.slice(prefix.length).trim() || undefined;
+    }
     const parts = description.split(" - ");
-    if (parts.length < 2) return undefined;
-    return parts.slice(1).join(" - ").trim() || undefined;
+    return parts.length >= 2
+        ? parts.slice(1).join(" - ").trim() || undefined
+        : description;
 };
 
 function priceNumber(pricing: ApiPricing | undefined, field: PriceField) {
@@ -139,8 +150,8 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     return {
         name,
         type: getCatalogCategory(model),
-        displayName: getCatalogDisplayName(model.description, name),
-        description: getCatalogDescriptionWithoutName(model.description),
+        displayName: getCatalogDisplayName(model, name),
+        description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,

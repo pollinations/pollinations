@@ -60,6 +60,10 @@ export const getModelDescriptionWithoutName = (
     if (model.description) return model.description;
     const description = getSourceDescription(model);
     if (!description) return undefined;
+    const prefix = model.displayName ? `${model.displayName} - ` : "";
+    if (prefix && description.startsWith(prefix)) {
+        return description.slice(prefix.length).trim() || undefined;
+    }
     const parts = description.split(" - ");
     if (parts.length < 2) return undefined;
     return parts.slice(1).join(" - ").trim() || undefined;

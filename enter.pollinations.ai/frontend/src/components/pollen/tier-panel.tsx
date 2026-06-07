@@ -9,7 +9,7 @@ const APPEAL_URL =
 type TierFinePrintProps = { showTierHint?: boolean };
 
 const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
-    <div className="mt-5 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+    <div className="mt-5 space-y-2 border-t border-accent-amber-300/70 pt-5 text-[13px] leading-snug text-accent-amber-950/45">
         {showTierHint && (
             <p className="flex items-start gap-1.5">
                 <TrendUpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -45,7 +45,7 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
                     href={APPEAL_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                    className="underline decoration-accent-amber-700/25 underline-offset-2 transition-colors hover:text-accent-amber-950"
                 >
                     Contact us
                 </a>
@@ -66,7 +66,7 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
 
 const MicrobeLimitedPanel: FC = () => (
     <div className="flex flex-col gap-3">
-        <p className="text-sm text-gray-600 leading-relaxed">
+        <p className="text-sm text-ink-600 leading-relaxed">
             We're verifying that your account belongs to a real person. This
             usually takes a few days.
         </p>

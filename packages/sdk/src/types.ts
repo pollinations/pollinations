@@ -789,6 +789,18 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
+/** All model categories, in catalog display order. Single source of truth. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
@@ -801,6 +813,10 @@ export type VideoCapability =
 export interface ModelInfo {
     id?: string;
     name: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
+    category?: ModelCategory;
+    brand?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;
@@ -808,6 +824,8 @@ export interface ModelInfo {
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    max_reference_images?: number;
+    max_reference_videos?: number;
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;
@@ -820,15 +838,7 @@ export interface ModelInfo {
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
     paid_only?: boolean;
-    pricing?: {
-        currency: "pollen";
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-    };
+    pricing?: Record<string, string> & { currency: "pollen" };
 }
 
 // ============================================================================

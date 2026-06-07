@@ -1,3 +1,41 @@
+export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
+export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
+export {
+    Collapsible,
+    type CollapsibleProps,
+} from "./compositions/Collapsible.tsx";
+export {
+    CopyButton,
+    type CopyButtonProps,
+} from "./compositions/CopyButton.tsx";
+export {
+    ExternalLinkButton,
+    type ExternalLinkButtonProps,
+} from "./compositions/ExternalLinkButton.tsx";
+export {
+    FileUpload,
+    type FileUploadProps,
+} from "./compositions/FileUpload.tsx";
+export { InfoTip } from "./compositions/InfoTip.tsx";
+export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
+export { Markdown, type MarkdownProps } from "./compositions/Markdown.tsx";
+export {
+    MediaPlaceholder,
+    type MediaPlaceholderProps,
+} from "./compositions/MediaPlaceholder.tsx";
+export {
+    MultiSelect,
+    type MultiSelectProps,
+} from "./compositions/MultiSelect.tsx";
+export { NavItem, type NavItemProps } from "./compositions/NavItem.tsx";
+export {
+    PeriodPicker,
+    type PeriodPickerProps,
+} from "./compositions/PeriodPicker.tsx";
+export { Prose, type ProseProps } from "./compositions/Prose.tsx";
+export { Section, type SectionProps } from "./compositions/Section.tsx";
+export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export { cn } from "./lib/cn-app.ts";
 export type { RejectedFile, RejectReason } from "./lib/partition-files.ts";
 export {
@@ -8,7 +46,6 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
-export { Alert, type AlertProps } from "./primitives/Alert.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,
@@ -16,11 +53,6 @@ export {
 } from "./primitives/ButtonGroup.tsx";
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
-export {
-    Collapsible,
-    type CollapsibleProps,
-} from "./primitives/Collapsible.tsx";
-export { CopyButton, type CopyButtonProps } from "./primitives/CopyButton.tsx";
 export {
     Dialog,
     type DialogProps,
@@ -31,33 +63,13 @@ export {
     DropdownItem,
     type DropdownItemProps,
 } from "./primitives/DropdownItem.tsx";
-export {
-    ExternalLinkButton,
-    type ExternalLinkButtonProps,
-} from "./primitives/ExternalLinkButton.tsx";
 export { Field } from "./primitives/Field.tsx";
-export { FileUpload, type FileUploadProps } from "./primitives/FileUpload.tsx";
 export { IconButton } from "./primitives/IconButton.tsx";
-export { InfoTip } from "./primitives/InfoTip.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
-export { LinkCard, type LinkCardProps } from "./primitives/LinkCard.tsx";
-export { Markdown, type MarkdownProps } from "./primitives/Markdown.tsx";
-export {
-    MultiSelect,
-    type MultiSelectProps,
-} from "./primitives/MultiSelect.tsx";
-export { NavItem, type NavItemProps } from "./primitives/NavItem.tsx";
-export {
-    PeriodPicker,
-    type PeriodPickerProps,
-} from "./primitives/PeriodPicker.tsx";
-export { Prose, type ProseProps } from "./primitives/Prose.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
-export { Section, type SectionProps } from "./primitives/Section.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
-export { StatCard, type StatCardProps } from "./primitives/StatCard.tsx";
 export { Surface } from "./primitives/Surface.tsx";
 export {
     Switch,
@@ -84,4 +96,16 @@ export {
 } from "./primitives/Table.tsx";
 export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
-export { type ThemeName, themes } from "./theme.ts";
+export {
+    Heading,
+    type HeadingProps,
+    type HeadingSize,
+    headingClassName,
+    Text,
+    type TextProps,
+    type TextSize,
+    type TextTone,
+    type TextWeight,
+    textClassName,
+} from "./primitives/Typography.tsx";
+export { type ThemeName, themePalette, themes } from "./theme.ts";

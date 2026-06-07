@@ -71,7 +71,7 @@ export function getModelCategoriesFromCatalog(
                 const id = getCatalogModelId(model);
                 return {
                     id,
-                    label: getCatalogDisplayName(model.description, id),
+                    label: getCatalogDisplayName(model, id),
                 };
             })
             .filter((model) => model.id)
@@ -100,7 +100,5 @@ export function computeCategoryModalities(
     const modalities = categories
         .filter(({ models }) => models.some(({ id }) => selected.has(id)))
         .map(({ modality }) => modality);
-    return modalities.length > 0 || allowedModels.length === 0
-        ? modalities
-        : ["text"];
+    return modalities;
 }

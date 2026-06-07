@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AUDIO_SERVICES } from "../../../../shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "../../../../shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "../../../../shared/registry/image.ts";
+import { REALTIME_SERVICES } from "../../../../shared/registry/realtime.ts";
 import { TEXT_SERVICES } from "../../../../shared/registry/text.ts";
 
 // Tinybird config
@@ -49,6 +50,7 @@ function registryServicesToModels(services, endpointType) {
     return Object.entries(services).map(([name, service]) => ({
         name,
         aliases: service.aliases,
+        title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
@@ -68,6 +70,7 @@ const ALL_REGISTERED_MODELS = [
     ...registryServicesToModels(TEXT_SERVICES, "text"),
     ...registryServicesToModels(IMAGE_SERVICES, "image"),
     ...registryServicesToModels(AUDIO_SERVICES, "audio"),
+    ...registryServicesToModels(REALTIME_SERVICES, "realtime"),
     ...registryServicesToModels(EMBEDDING_SERVICES, "embedding"),
 ];
 
@@ -194,8 +197,9 @@ export function useModelMonitor(aggregationWindow = "60m") {
             embedding: results.embedding?.ok ?? null,
         });
 
-        const allModels = Object.entries(results)
-            .flatMap(([type, { ok, models }]) =>
+        const endpointTypes = new Set(Object.keys(results));
+        const endpointModels = Object.entries(results).flatMap(
+            ([type, { ok, models }]) =>
                 (ok
                     ? models
                     : VISIBLE_REGISTERED_MODELS_BY_ENDPOINT[type] || []
@@ -206,8 +210,16 @@ export function useModelMonitor(aggregationWindow = "60m") {
                         ok ? "visible" : "endpoint-fallback",
                     ),
                 ),
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
+        );
+        const registryOnlyModels = VISIBLE_REGISTERED_MODELS.filter(
+            (model) => !endpointTypes.has(model.endpointType),
+        ).map((model) => ({
+            ...model,
+            catalogStatus: "registry-only",
+        }));
+        const allModels = [...endpointModels, ...registryOnlyModels].sort(
+            (a, b) => a.name.localeCompare(b.name),
+        );
 
         setModels(allModels);
 

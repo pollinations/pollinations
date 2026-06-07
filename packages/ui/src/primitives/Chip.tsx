@@ -20,13 +20,10 @@ const chipSizes = {
 const intentClasses: Record<ChipIntent, string> = {
     news: "polli:bg-intent-news-bg-light polli:text-intent-news-text",
     alpha: "polli:bg-intent-alpha-bg-light polli:text-intent-alpha-text",
-    neutral:
-        "polli:border polli:border-gray-400/70 polli:bg-gray-100/80 polli:text-gray-900",
-    success:
-        "polli:border polli:border-intent-success-border polli:bg-intent-success-bg-light polli:text-intent-success-text",
-    warning:
-        "polli:border polli:border-intent-warning-border polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
-    danger: "polli:border polli:border-intent-danger-border polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+    neutral: "polli:bg-ink-100/80 polli:text-ink-900",
+    success: "polli:bg-intent-success-bg-light polli:text-intent-success-text",
+    warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+    danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };
 
 export type ChipProps = ComponentPropsWithoutRef<"span"> & {

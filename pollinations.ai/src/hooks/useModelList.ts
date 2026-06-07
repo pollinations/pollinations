@@ -9,6 +9,7 @@ const AUDIO_MODELS_URL = `${API_BASE}/audio/models`;
 export interface Model {
     id: string;
     name: string;
+    title: string;
     description?: string;
     type: "image" | "text" | "audio";
     hasImageInput: boolean;
@@ -39,6 +40,7 @@ type RawModel =
     | {
           id?: string;
           name?: string;
+          title?: string;
           description?: string;
           input_modalities?: string[];
           output_modalities?: string[];
@@ -82,6 +84,7 @@ function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
         return {
             id,
             name: id,
+            title: id,
             type,
             hasImageInput: false,
             hasAudioOutput: false,
@@ -92,6 +95,7 @@ function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
     return {
         id,
         name: id,
+        title: model.title || model.description?.split(" - ")[0]?.trim() || id,
         description: model.description,
         type,
         hasImageInput: model.input_modalities?.includes("image") || false,

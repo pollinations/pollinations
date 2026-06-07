@@ -148,7 +148,7 @@ const TabContent: FC<TabContentProps> = ({
                 {personaModels.length > 0 && (
                     <>
                         <div className="pt-2 pb-0 px-2">
-                            <span className="text-xs font-semibold text-pink-500 opacity-60">
+                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
                                 Persona
                             </span>
                         </div>
@@ -177,7 +177,7 @@ const TabContent: FC<TabContentProps> = ({
                 {personaModels.length > 0 && (
                     <>
                         <div className="pt-3 pb-1 px-4">
-                            <span className="text-xs font-semibold text-pink-500 opacity-60">
+                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
                                 Persona
                             </span>
                         </div>
@@ -234,12 +234,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
         <div
             className={cn(
                 "rounded-xl mb-1 border",
-                expanded ? "border-teal-200" : "border-transparent",
+                expanded ? "border-accent-teal-200" : "border-transparent",
                 isDisabled
                     ? "bg-transparent"
                     : expanded
-                      ? "bg-white/90"
-                      : "bg-white/80 hover:bg-white/90 transition-colors",
+                      ? "bg-surface-opaque/90"
+                      : "bg-surface-opaque/80 hover:bg-surface-opaque/90 transition-colors",
             )}
         >
             {/* Clickable header */}
@@ -258,7 +258,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                         <ChevronIcon
                             expanded={expanded}
-                            className="mt-1 h-3.5 w-3.5 shrink-0 text-gray-300"
+                            className="mt-1 h-3.5 w-3.5 shrink-0 text-ink-300"
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2.5">
@@ -324,10 +324,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             aria-label={`Copy API model name ${model.name}`}
                             className={(copied) =>
                                 cn(
-                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
+                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-ink-500 transition-colors",
                                     copied
-                                        ? "text-teal-700"
-                                        : "hover:text-gray-700",
+                                        ? "text-accent-teal-700"
+                                        : "hover:text-ink-700",
                                 )
                             }
                         >
@@ -337,7 +337,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         {model.name}
                                     </span>
                                     {copied && (
-                                        <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
+                                        <span className="rounded-lg bg-accent-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-teal-700">
                                             copied
                                         </span>
                                     )}
@@ -459,7 +459,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 
     return (
         <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-bold text-ink-500 uppercase tracking-wide">
                 {label}
             </span>
             <div className="flex min-w-0 flex-wrap justify-end gap-1">
@@ -558,9 +558,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-gray-700"
+                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-ink-700"
                 >
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}
                     </span>
                 </button>
@@ -576,12 +576,12 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     <button
                         type="button"
                         onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-gray-700"
+                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-ink-700"
                     >
-                        <div className="text-sm font-bold text-gray-900">
+                        <div className="text-sm font-bold text-ink-900">
                             1 pollen {sortArrow("perPollen")}
                         </div>
-                        <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                        <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                             ≈{" "}
                             {activeSection
                                 ? unitLabels[activeSection.type]
@@ -592,24 +592,24 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("input")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-ink-700"
                 >
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-ink-900">
                         Input {sortArrow("input")}
                     </div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
                 </button>
                 <button
                     type="button"
                     onClick={() => onSort("output")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-ink-700"
                 >
-                    <div className="text-sm font-bold text-gray-900">
+                    <div className="text-sm font-bold text-ink-900">
                         Output {sortArrow("output")}
                     </div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                    <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
                 </button>

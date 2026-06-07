@@ -68,7 +68,7 @@ export const Dialog: FC<DialogProps> = ({
                 {showBackdrop && (
                     <ArkDialog.Backdrop
                         className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-gray-950/50",
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-ink-950/50",
                             backdropClassName,
                         )}
                     />
@@ -86,7 +86,7 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-white polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
                             sizeClasses[size],
                             contentClassName,
                         )}

@@ -116,7 +116,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 <div className="border-t pt-4 border-theme-border">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                            <p className="text-sm text-ink-400 animate-[pulse_2s_ease-in-out_infinite]">
                                 Fetching earnings data…
                             </p>
                         </div>
@@ -124,13 +124,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     {error && !loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <div className="text-center">
-                                <p className="text-sm text-red-500 font-medium">
+                                <p className="text-sm text-intent-danger-500 font-medium">
                                     {error}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => fetchEarnings()}
-                                    className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                                    className="mt-2 text-xs text-intent-danger-600 hover:text-intent-danger-700 underline"
                                 >
                                     Try again
                                 </button>

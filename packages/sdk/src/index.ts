@@ -70,9 +70,8 @@ export {
     type FetchModelCatalogOptions,
     fetchModelCatalog,
     type ModelCatalog,
-    type ModelCatalogCategory,
     type ModelCatalogItem,
-    type ModelCatalogSource,
+    pricingEntries,
 } from "./models.js";
 
 // Export all types
@@ -122,8 +121,9 @@ export type {
     MessageContent,
     MessageContentPart,
     MessageRole,
-    ModelInfo,
     // Models
+    ModelCategory,
+    ModelInfo,
     ModelTier,
     // Config
     PollinationsConfig,

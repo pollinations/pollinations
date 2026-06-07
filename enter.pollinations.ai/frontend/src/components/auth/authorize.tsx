@@ -13,7 +13,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
@@ -31,7 +31,12 @@ import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { computeCategoryModalities } from "../models/model-categories.ts";
+import { fetchModelCatalog } from "../models/model-catalog.ts";
+import {
+    computeCategoryModalities,
+    getModelCategoriesFromCatalog,
+    type ModelCategoryGroup,
+} from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -88,6 +93,9 @@ export function Authorize() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+    const [modelCategories, setModelCategories] = useState<
+        ModelCategoryGroup[]
+    >([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -104,6 +112,7 @@ export function Authorize() {
 
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
+        modelCategories,
     );
     // Which optional scopes the caller requested. Stays constant once set —
     // unaffected by the user toggling a scope off in the Advanced panel.
@@ -122,6 +131,24 @@ export function Authorize() {
         (!app_key || redirectValidationState === "valid");
 
     useScrollLock();
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) {
+                    setModelCategories(getModelCategoriesFromCatalog(models));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setModelCategories([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
@@ -563,12 +590,9 @@ export function Authorize() {
                                                         key={m}
                                                         size="sm"
                                                         theme={
-                                                            getModalityColors(m)
-                                                                ?.theme
-                                                        }
-                                                        className={
-                                                            getModalityColors(m)
-                                                                ?.filled ?? ""
+                                                            getModalityTheme(
+                                                                m,
+                                                            ) ?? undefined
                                                         }
                                                     >
                                                         {m}

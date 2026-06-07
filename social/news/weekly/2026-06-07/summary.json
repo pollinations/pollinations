@@ -1,0 +1,211 @@
+{
+  "date": "2026-06-07",
+  "period_start": "2026-05-31",
+  "period_end": "2026-06-06",
+  "title": "The React SDK and UI ecosystem is live",
+  "summary": "We shipped a React SDK, normalized 39 models to at-cost pricing, and welcomed 25 new community apps to the Greenhouse.\n\nWe shipped `@pollinations_ai/sdk/react` and `@pollinations_ai/ui`. You get drop-in auth providers, SSR-safe hooks, and a model catalog helper. We immediately dogfooded it to build a brand new standalone Playground app with multimodal inputs and video frame controls.\n\nWe dropped the 1.5x markup on 39 models. You now pay exactly the provider cost. We also moved Claude and Nova to AWS Bedrock global cross-region profiles to dodge throttling and cut prices by another 10%, and routed Flux through Fireworks for better speed.\n\nThe Greenhouse exploded this week. We merged 25 community apps into the showcase, including an n8n automation node, an iOS app, a Javanese calendar tracker, and an amigurumi crochet pattern generator. People are building weird and wonderful things.\n\nFixed a bug where ElevenLabs WAV streams returned placeholder RIFF headers that crashed ffmpeg. We also repaired Whisper STT response formats, and stripped cache controls from Grok requests so multi-turn conversations stop dropping context.",
+  "pr_count": 50,
+  "prs": [
+    {
+      "number": 11217,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 10806,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11431,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11457,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11458,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11476,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11501,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11505,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11508,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11509,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11511,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11512,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11514,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11516,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11517,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11518,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11520,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11523,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11524,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11528,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11529,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11530,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11532,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11535,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11537,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11539,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11540,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11502,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11548,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11549,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11550,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11551,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11552,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11553,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11554,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11555,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11556,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11561,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11562,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11579,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11587,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11592,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11597,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11610,
+      "date": "2026-06-04"
+    },
+    {
+      "number": 11611,
+      "date": "2026-06-04"
+    },
+    {
+      "number": 11618,
+      "date": "2026-06-04"
+    },
+    {
+      "number": 11617,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11630,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11631,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11635,
+      "date": "2026-06-05"
+    }
+  ],
+  "generated_at": "2026-06-07T07:21:06.408137+00:00"
+}

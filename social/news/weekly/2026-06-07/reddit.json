@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-06-07",
+  "period_start": "2026-05-31",
+  "period_end": "2026-06-06",
+  "generated_at": "2026-06-07T07:21:06.408137+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/reddit.jpg"
+    }
+  ],
+  "title": "50 PRs: React SDK, smarter model routing, and WAV header fixes",
+  "text": "Merged 50 PRs this week. A lot of infrastructure cleanup and a major SDK addition.\n\nThe biggest structural change is the new React SDK and UI ecosystem. We merged the React auth provider and UI packages, plus an alpha design system upgrade. If you build frontends on top of our endpoints, this should save you from writing auth and state boilerplate.\n\nOn the infrastructure side, we normalized all pricing multipliers to 1x (at-cost pricing). We also reworked how we route models to keep things stable under load: Flux is now routing through Fireworks, Claude Bedrock models are using global inference profiles to avoid regional rate limits, and we moved Gemma 4 26b to OpenRouter.\n\nWe knocked out a few annoying bugs:\n- Fixed WAV RIFF header sizes in TTS responses that were causing playback issues in strict audio parsers.\n- Handled response_format=text/srt/vtt properly in Whisper STT.\n- Stripped `reasoning_effort` payloads from non-reasoning Grok models so they stop throwing validation errors.\n- Repaired the auth modal theme and focus states in Codex.\n\nFor the agents, we added a `render_visual` tool to Polly, allowing explicit AI-driven tables and charts instead of relying on markdown hacks.\n\nFinally, the community shipped 25 new apps to the registry this week. You can check the full changelog, model catalog, and the new React packages on our GitHub."
+}

@@ -66,17 +66,30 @@ const TierCard: FC<TierCardProps> = ({
     pollen,
     children,
 }) => (
+    // Active tier = the wallet's tier colour (tier-pale fill + tier-deep text)
+    // so "your current tier" reads at a glance; inactive = neutral well. The
+    // fill is an inline style using the exact wallet token, so it can't be lost
+    // to a competing themed-bg utility from the Surface variant.
     <Surface
-        variant="card-themed"
-        className={isActive ? "bg-tier-pale" : "bg-tier-pale/40"}
+        variant="card"
+        style={
+            isActive
+                ? { backgroundColor: "var(--polli-color-tier-pale)" }
+                : undefined
+        }
     >
-        <span className="text-3xl font-bold text-ink-900">
+        <span
+            className={cn(
+                "text-3xl font-bold",
+                isActive ? "text-tier-deep" : "text-ink-900",
+            )}
+        >
             {emoji} {name}
         </span>
         <p
             className={cn(
-                "text-xs font-mono text-theme-text-muted mt-1",
-                isActive && "font-bold text-ink-900",
+                "text-xs font-mono mt-1",
+                isActive ? "font-bold text-tier-deep" : "text-theme-text-muted",
             )}
         >
             {pollen} pollen/hour

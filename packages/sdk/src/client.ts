@@ -419,7 +419,6 @@ export class Pollinations {
             enhance: options.enhance,
             negative_prompt: options.negativePrompt,
             private: options.private,
-            nologo: options.nologo,
             nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
@@ -737,7 +736,6 @@ export class Pollinations {
             audio: options.audio,
             image: options.referenceImage,
             private: options.private,
-            nologo: options.nologo,
             safe: options.safe,
         };
 

@@ -25,7 +25,6 @@ type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = [
-    "nologo",
     "enhance",
     "safe",
     "private",
@@ -218,7 +217,6 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
             for (const [key, value] of Object.entries({
                 model,
                 ...resolved,
-                nologo: "true",
             }))
                 imageUrl.searchParams.set(key, String(value));
             const safeValue = normalizeSafeValue(body.safe as SafeValue);

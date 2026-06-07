@@ -106,6 +106,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <div className="flex gap-1 shrink-0 ml-2 items-center">
                         <IconButton
                             title="Edit key"
+                            tooltip="✏️ Edit key"
                             onClick={() => setEditingKey(apiKey)}
                         >
                             ✎
@@ -113,6 +114,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <IconButton
                             intent="danger"
                             title="Delete key"
+                            tooltip="🗑️ Delete key"
                             onClick={() => setDeleteId(apiKey.id)}
                             className="text-lg"
                         >
@@ -192,7 +194,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     ? undefined
                                     : "bg-ink-100 text-theme-text-muted"
                             }
-                            title="Developer earnings"
                         >
                             Earnings {earningsEnabled ? "on" : "off"}
                         </Chip>

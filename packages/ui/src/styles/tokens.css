@@ -198,9 +198,11 @@
     --polli-color-surface-translucent: oklch(0.345 0.006 250 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
-    /* Neutral text — even 0.11 lightness steps (strong→base→muted) so the
-       hierarchy is mathematical; muted is the single legible muted-grey. */
-    --polli-color-text-strong:         oklch(0.955 0.006 250);
+    /* Neutral text. strong is 0.92 (not ~white) to avoid halation/glare on
+       large serif headings in dark — near-white text blooms on a dark desk.
+       base/muted stay put (they don't glare), so the top step is 0.075 then
+       0.11; muted is the single legible muted-grey. */
+    --polli-color-text-strong:         oklch(0.92 0.006 250);
     --polli-color-text-base:           oklch(0.845 0.01 250);
     --polli-color-text-muted:          oklch(0.735 0.012 250);
 

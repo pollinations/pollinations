@@ -2,7 +2,6 @@ import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
 import { BeakerIcon, Button, Chip } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { Balance } from "@pollinations/ui/wallet/sdk";
 import type { CSSProperties } from "react";
 import { type GamePiece, LIFE_PRESETS } from "./life";
 import {
@@ -137,7 +136,6 @@ function LifeMergeApp() {
                             Reset
                         </Button>
                     ) : null}
-                    <Balance />
                     <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
                 </div>
             </header>

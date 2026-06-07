@@ -2,7 +2,7 @@ import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
 import { BeakerIcon, Button, Chip } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import { type GamePiece, LIFE_PRESETS, type LineageNode } from "./life";
 import {
     BOARD_ASPECT_RATIO,
@@ -93,6 +93,22 @@ function App() {
 function LifeMergeApp() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const game = useGameEngine({ apiKey, isLoggedIn, isHydrated });
+    const generationFocusId = game.generationFocus?.id ?? null;
+    const [inspectorOverride, setInspectorOverride] = useState<{
+        generationFocusId: string | null;
+        pieceId: string;
+    } | null>(null);
+    const inspectorOverrideId =
+        inspectorOverride?.generationFocusId === generationFocusId
+            ? inspectorOverride.pieceId
+            : null;
+    const showInspectorOverride = (pieceId: string) =>
+        setInspectorOverride({ generationFocusId, pieceId });
+    const visibleGenerationFocus =
+        game.generationFocus &&
+        (!inspectorOverrideId || inspectorOverrideId === generationFocusId)
+            ? game.generationFocus
+            : null;
     const scaled = (value: number) => `${value * game.viewScale}px`;
 
     return (
@@ -226,12 +242,19 @@ function LifeMergeApp() {
                                                 : ""
                                         }`}
                                         title={pieceTitle(piece)}
-                                        onPointerEnter={() =>
-                                            game.showDiscovery(piece)
-                                        }
-                                        onClick={() =>
-                                            game.showDiscovery(piece)
-                                        }
+                                        onPointerEnter={() => {
+                                            showInspectorOverride(piece.id);
+                                            game.showDiscovery(piece);
+                                        }}
+                                        onPointerLeave={(event) => {
+                                            if (event.pointerType !== "touch") {
+                                                setInspectorOverride(null);
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            showInspectorOverride(piece.id);
+                                            game.showDiscovery(piece);
+                                        }}
                                         style={
                                             {
                                                 "--piece-x": scaled(piece.x),
@@ -341,19 +364,19 @@ function LifeMergeApp() {
                 </section>
 
                 <aside className="side-panel">
-                    {game.generationFocus ? (
+                    {visibleGenerationFocus ? (
                         <output
-                            className={`generation-focus is-${game.generationFocus.status}`}
+                            className={`generation-focus is-${visibleGenerationFocus.status}`}
                         >
                             <div className="generation-focus-head">
                                 <span>
-                                    {game.generationFocus.status === "result"
+                                    {visibleGenerationFocus.status === "result"
                                         ? "New discovery"
                                         : "Combining"}
                                 </span>
                             </div>
                             <div className="generation-parents">
-                                {game.generationFocus.parents.map(
+                                {visibleGenerationFocus.parents.map(
                                     (parent, index) => (
                                         <div
                                             className="generation-parent"
@@ -373,22 +396,23 @@ function LifeMergeApp() {
                                     ),
                                 )}
                             </div>
-                            {game.generationFocus.result ? (
+                            {visibleGenerationFocus.result ? (
                                 <div className="generation-result">
                                     <span className="generation-arrow">↓</span>
                                     <img
                                         src={
-                                            game.generationFocus.result.imageUrl
+                                            visibleGenerationFocus.result
+                                                .imageUrl
                                         }
                                         alt=""
                                     />
                                     <div className="generation-result-text">
                                         <strong>
-                                            {game.generationFocus.result.name}
+                                            {visibleGenerationFocus.result.name}
                                         </strong>
                                         <p>
                                             {
-                                                game.generationFocus.result
+                                                visibleGenerationFocus.result
                                                     .description
                                             }
                                         </p>
@@ -467,12 +491,22 @@ function LifeMergeApp() {
                                             type="button"
                                             className="legend-row"
                                             title={pieceTitle(entry)}
-                                            onPointerEnter={() =>
-                                                game.selectPiece(entry)
-                                            }
-                                            onClick={() =>
-                                                game.showDiscovery(entry)
-                                            }
+                                            onPointerEnter={() => {
+                                                showInspectorOverride(entry.id);
+                                                game.selectPiece(entry);
+                                            }}
+                                            onPointerLeave={(event) => {
+                                                if (
+                                                    event.pointerType !==
+                                                    "touch"
+                                                ) {
+                                                    setInspectorOverride(null);
+                                                }
+                                            }}
+                                            onClick={() => {
+                                                showInspectorOverride(entry.id);
+                                                game.showDiscovery(entry);
+                                            }}
                                         >
                                             <span
                                                 className="legend-icon"

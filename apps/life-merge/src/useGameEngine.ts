@@ -183,6 +183,7 @@ export type GenerationFocus = {
 // What the inspector card shows: the focused piece's icon + identity + its
 // lineage (the recursive tree is currently hidden in the UI but kept here).
 export type SelectedView = {
+    id: string;
     name: string;
     description: string;
     imageUrl?: string;
@@ -194,10 +195,11 @@ export type SelectedView = {
 function toSelectedView(
     piece: Pick<
         GamePiece,
-        "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
+        "id" | "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
     >,
 ): SelectedView {
     return {
+        id: piece.id,
         name: piece.name,
         description: piece.description,
         imageUrl: piece.imageUrl,
@@ -511,7 +513,13 @@ export function useGameEngine({
     const selectPiece = (
         piece: Pick<
             GamePiece,
-            "name" | "description" | "imageUrl" | "color" | "ink" | "lineage"
+            | "id"
+            | "name"
+            | "description"
+            | "imageUrl"
+            | "color"
+            | "ink"
+            | "lineage"
         >,
     ) => {
         setSelectedView(toSelectedView(piece));

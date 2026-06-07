@@ -218,7 +218,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                                 </div>
                             </div>
 
-                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-theme-border pt-2">
+                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-divider pt-2">
                                 <div className="flex flex-wrap gap-1">
                                     {stats.countOff > 0 && (
                                         <Chip intent="danger" size="sm">

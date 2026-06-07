@@ -74,6 +74,7 @@ import {
     TokensIcon,
     Tooltip,
     TrendUpIcon,
+    useColorMode,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -822,6 +823,7 @@ function PrimitivesPage() {
         useState<(typeof CONTROL_SIZES)[number]>("md");
     const [switchOn, setSwitchOn] = useState(true);
     const [sliderValue, setSliderValue] = useState(60);
+    const { isDark } = useColorMode();
 
     return (
         <>
@@ -1015,6 +1017,21 @@ function PrimitivesPage() {
                                 onChange={() => undefined}
                                 ariaLabel="Invalid toggle preview"
                             />
+                        </div>
+                    </PrimitiveExample>
+
+                    <PrimitiveExample
+                        name="ColorModeToggle"
+                        description="Light/dark switch that flips the whole design system. A two-state choice (not on/off), self-wired via the useColorMode hook and kept in sync across every instance and browser tab."
+                    >
+                        <div className="flex items-center gap-3">
+                            <ColorModeToggle />
+                            <span className="text-sm text-theme-text-soft">
+                                Currently{" "}
+                                <span className="font-semibold text-theme-text-strong">
+                                    {isDark ? "dark" : "light"}
+                                </span>
+                            </span>
                         </div>
                     </PrimitiveExample>
 

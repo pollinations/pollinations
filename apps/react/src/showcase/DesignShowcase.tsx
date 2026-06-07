@@ -12,6 +12,7 @@ import {
     ClipboardIcon,
     ClockIcon,
     Collapsible,
+    ColorModeToggle,
     Section as CompositionSection,
     CopyButton,
     currentPeriod,
@@ -267,6 +268,7 @@ const primitiveNames = [
     "ButtonGroup",
     "ChevronIcon",
     "Chip",
+    "ColorModeToggle",
     "Dialog",
     "DialogTitle",
     "Dropdown",
@@ -845,6 +847,12 @@ const InputsDemo: FC = () => {
                             ariaLabel="Disabled switch"
                             onChange={noopSwitch}
                         />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
+                            color mode
+                        </span>
+                        <ColorModeToggle />
                     </div>
                 </div>
                 <div className="col-span-full">

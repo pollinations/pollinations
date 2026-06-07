@@ -291,11 +291,7 @@ function LifeMergeApp() {
                                 ) : game.pieces.length === 0 ? (
                                     <div className="board-empty">
                                         <BeakerIcon />
-                                        <span>
-                                            {game.nextPiece.pending
-                                                ? "Making the first piece…"
-                                                : "Click the board to drop"}
-                                        </span>
+                                        <span>Click the board to drop</span>
                                     </div>
                                 ) : null}
                                 {game.generationFocus ? (

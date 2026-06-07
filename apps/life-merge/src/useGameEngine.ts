@@ -133,6 +133,11 @@ function canonicalParents<T extends Pick<Specimen, "name" | "description">>(
     return leftKey.localeCompare(rightKey) <= 0 ? parents : [right, left];
 }
 
+// Image generation can lag behind play; only merge placeholders are unknown.
+function isResolvingIdentity(piece: Pick<GamePiece, "pending" | "parents">) {
+    return piece.pending && Boolean(piece.parents);
+}
+
 function mergeCacheKey(args: {
     presetId: LifePresetId;
     styleId: LifeStylePresetId;
@@ -319,11 +324,7 @@ export function useGameEngine({
     const rungs = activePreset.rungs;
     const canUseAi = isHydrated && isLoggedIn && Boolean(apiKey);
     const canDrop =
-        canUseAi &&
-        hasStarted &&
-        !nextPiece.pending &&
-        nextPiece.generated &&
-        !isCrowded;
+        canUseAi && hasStarted && !isResolvingIdentity(nextPiece) && !isCrowded;
     useEffect(() => {
         apiKeyRef.current = apiKey;
     }, [apiKey]);
@@ -537,6 +538,36 @@ export function useGameEngine({
         }
     };
 
+    const hasPiece = (pieceId: string) =>
+        nextPieceRef.current.id === pieceId ||
+        piecesRef.current.some((piece) => piece.id === pieceId);
+
+    const stopImagePending = (pieceId: string) => {
+        if (nextPieceRef.current.id === pieceId) {
+            const stoppedPiece = {
+                ...nextPieceRef.current,
+                pending: false,
+                generated: false,
+            };
+            nextPieceRef.current = stoppedPiece;
+            setNextPiece(stoppedPiece);
+        }
+
+        if (piecesRef.current.some((piece) => piece.id === pieceId)) {
+            setPieceList(
+                piecesRef.current.map((piece) =>
+                    piece.id === pieceId
+                        ? {
+                              ...piece,
+                              pending: false,
+                              generated: false,
+                          }
+                        : piece,
+                ),
+            );
+        }
+    };
+
     const applyGeneratedSpecimen = (pieceId: string, specimen: Specimen) => {
         if (nextPieceRef.current.id === pieceId) {
             const updated: GamePiece = {
@@ -587,6 +618,7 @@ export function useGameEngine({
         ].join(":");
         const cached = generatedCacheRef.current.get(cacheKey);
         if (cached) {
+            if (!hasPiece(piece.id)) return;
             const enriched = {
                 ...cached,
                 lineage: piece.lineage,
@@ -607,6 +639,12 @@ export function useGameEngine({
                 style: styleRef.current,
                 targetRung: rungsRef.current[piece.tier],
             });
+            if (!hasPiece(piece.id)) {
+                if (generated.imageUrl?.startsWith("blob:")) {
+                    URL.revokeObjectURL(generated.imageUrl);
+                }
+                return;
+            }
             rememberObjectUrl(generated);
             generatedCacheRef.current.set(cacheKey, generated);
             const enriched = {
@@ -616,15 +654,7 @@ export function useGameEngine({
             applyGeneratedSpecimen(piece.id, enriched);
             showDiscovery({ ...piece, ...enriched });
         } catch {
-            if (nextPieceRef.current.id === piece.id) {
-                const stoppedPiece = {
-                    ...nextPieceRef.current,
-                    pending: false,
-                    generated: false,
-                };
-                nextPieceRef.current = stoppedPiece;
-                setNextPiece(stoppedPiece);
-            }
+            stopImagePending(piece.id);
         }
     };
 
@@ -678,8 +708,6 @@ export function useGameEngine({
         if (tier === 0 && hasStartedRef.current) void hydrateSeedPiece(piece);
     };
 
-    const hasPendingNextDrop = () => nextPieceRef.current.pending;
-
     // First board click: lock in the chosen preset and generate the first
     // seed from it. The seed appears at the top to aim; the next click drops.
     const startGame = () => {
@@ -717,10 +745,7 @@ export function useGameEngine({
             startGame();
             return;
         }
-        if (hasPendingNextDrop()) {
-            return;
-        }
-        if (!nextPieceRef.current.generated) {
+        if (isResolvingIdentity(nextPieceRef.current)) {
             return;
         }
         if (isCrowded) return;
@@ -904,7 +929,7 @@ export function useGameEngine({
         if (!left || !right) return;
         if (left.tier !== right.tier) return;
         if (left.tier >= rungsRef.current.length - 1) return;
-        if (left.pending || right.pending) return;
+        if (isResolvingIdentity(left) || isResolvingIdentity(right)) return;
         if (!apiKeyRef.current) {
             return;
         }

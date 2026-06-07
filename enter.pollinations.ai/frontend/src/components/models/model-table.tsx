@@ -187,7 +187,7 @@ const TabContent: FC<TabContentProps> = ({
                 {personaModels.length > 0 && (
                     <>
                         <div className="pt-2 pb-0 px-2">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
+                            <span className="text-xs font-semibold text-theme-text-soft">
                                 Persona
                             </span>
                         </div>
@@ -216,7 +216,7 @@ const TabContent: FC<TabContentProps> = ({
                 {personaModels.length > 0 && (
                     <>
                         <div className="pt-3 pb-1 px-4">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
+                            <span className="text-xs font-semibold text-theme-text-soft">
                                 Persona
                             </span>
                         </div>
@@ -273,7 +273,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
         <div
             className={cn(
                 "rounded-xl mb-1 border",
-                expanded ? "border-accent-teal-200" : "border-transparent",
+                expanded ? "border-theme-border" : "border-transparent",
                 isDisabled
                     ? "bg-transparent"
                     : expanded
@@ -297,7 +297,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                         <ChevronIcon
                             expanded={expanded}
-                            className="mt-1 h-3.5 w-3.5 shrink-0 text-ink-300"
+                            className="mt-1 h-3.5 w-3.5 shrink-0 text-theme-text-muted"
                         />
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2.5">
@@ -363,10 +363,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             aria-label={`Copy API model name ${model.name}`}
                             className={(copied) =>
                                 cn(
-                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-ink-500 transition-colors",
+                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-theme-text-muted transition-colors",
                                     copied
-                                        ? "text-accent-teal-700"
-                                        : "hover:text-ink-700",
+                                        ? "text-intent-success-600"
+                                        : "hover:text-theme-text-base",
                                 )
                             }
                         >
@@ -376,7 +376,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         {model.name}
                                     </span>
                                     {copied && (
-                                        <span className="rounded-lg bg-accent-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-teal-700">
+                                        <span className="rounded-lg bg-intent-success-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-700">
                                             copied
                                         </span>
                                     )}
@@ -498,7 +498,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 
     return (
         <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
-            <span className="text-xs font-bold text-ink-500 uppercase tracking-wide">
+            <span className="text-xs font-bold text-theme-text-muted uppercase tracking-wide">
                 {label}
             </span>
             <div className="flex min-w-0 flex-wrap justify-end gap-1">
@@ -597,7 +597,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-ink-700"
+                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-theme-text-base"
                 >
                     <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}
@@ -615,7 +615,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     <button
                         type="button"
                         onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-ink-700"
+                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
                     >
                         <div className="text-sm font-bold text-ink-900">
                             1 pollen {sortArrow("perPollen")}
@@ -631,7 +631,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("input")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-ink-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
                 >
                     <div className="text-sm font-bold text-ink-900">
                         Input {sortArrow("input")}
@@ -643,7 +643,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("output")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-ink-700"
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
                 >
                     <div className="text-sm font-bold text-ink-900">
                         Output {sortArrow("output")}

@@ -40,7 +40,7 @@ export const Dialog: FC<DialogProps> = ({
     titleClassName,
     ariaLabel,
     labelledBy,
-    theme = "blue",
+    theme = "neutral",
     size = "md",
     showBackdrop = true,
     backdropClassName,

@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#d1fae5" />
+
+    <!-- Set color mode before first paint to avoid a flash. Source of truth
+         after mount: @pollinations/ui ColorModeToggle (STORAGE_KEY must match). -->
+    <script>
+      (() => {
+        try {
+          let mode = localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+          // Match the browser chrome to the resolved mode's desk color
+          // (--polli-color-app-bg). ColorModeToggle keeps it in sync at runtime.
+          const meta = document.createElement("meta");
+          meta.name = "theme-color";
+          meta.content = mode === "dark" ? "#232528" : "#ebe7df";
+          document.head.appendChild(meta);
+        } catch {
+          /* ignore storage / matchMedia failures */
+        }
+      })();
+    </script>
     <meta name="description" content="Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps." />
 
     <title>Console | pollinations.ai</title>

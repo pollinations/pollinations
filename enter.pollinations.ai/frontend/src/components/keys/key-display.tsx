@@ -16,7 +16,7 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
                     "font-mono text-xs text-left cursor-pointer transition-all",
                     copied
                         ? "text-intent-success-600 font-semibold"
-                        : "text-accent-blue-600 hover:text-accent-blue-800 hover:underline",
+                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
                 )
             }
         >

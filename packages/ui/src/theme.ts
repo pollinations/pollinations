@@ -1,9 +1,11 @@
 import paletteData from "./theme-palette.json";
 
 /**
- * The seven chrome themes exposed by the CSS-var cascade. Apply via
+ * The chrome themes exposed by the CSS-var cascade. Apply via
  * `data-theme="<name>"` on any ancestor — primitives and `--polli-*`
- * tokens in that subtree restyle accordingly.
+ * tokens in that subtree restyle accordingly. `neutral` is the no-hue
+ * member: it maps the themed slots to neutral tokens, for global chrome
+ * (the rail) and elements that should not carry a page hue.
  */
 export const themes = [
     "amber",
@@ -13,6 +15,7 @@ export const themes = [
     "teal",
     "violet",
     "emerald",
+    "neutral",
 ] as const;
 
 export type ThemeName = (typeof themes)[number];

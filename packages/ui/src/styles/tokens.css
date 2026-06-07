@@ -1,19 +1,60 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+/* ============================================================================
+   Pollinations UI — color tokens. Refresh + dark mode + 3-level depth.
+
+   DEPTH MODEL (deeper = darker, forward = lighter — in BOTH modes)
+     Level 0  Desk       --polli-color-app-bg          NEUTRAL, theme-independent
+     Level 1  Container  --polli-color-bg-pale         THEMED (carries the hue)
+     Level 2  Well        --polli-color-surface-opaque  NEUTRAL card surface
+              Accents     --polli-color-bg-active / bg-hover(=border)  THEMED
+
+   SPLIT ARCHITECTURE
+     - Theme-independent tokens live in :root (light) / .dark (dark): app-bg,
+       surface-*, ink ramp, text-strong/base/muted, intents, shadows, accents.
+     - Per-page hue lives ONLY in [data-theme] (7 themed tokens) with a
+       .dark [data-theme] twin. Switching page swaps the accent; switching mode
+       flips the neutrals. No drift, no duplication.
+
+   DARK: add class `dark` to <html> (color-scheme owned here: :root=light,
+   .dark=dark). INVARIANT: --polli-color-border === --polli-color-bg-hover.
+   ========================================================================== */
 
 :root {
-    --polli-font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    color-scheme: light;
+
+    --polli-font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
     --polli-font-subheading: "Fraunces", ui-serif, serif;
-    --polli-font-body: "Uncut Sans", ui-sans-serif, sans-serif;
-    --polli-font-pixel: "Pixelify Sans", ui-monospace, monospace;
-    --polli-text-micro: 10px;
-    --polli-text-base: 16px;
+    --polli-font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
+    --polli-font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --polli-text-micro:      10px;
+    --polli-text-base:       16px;
 
     --polli-color-brand-dark: #110518;
 
-    --polli-color-surface-opaque: oklch(1 0 0);
-    --polli-color-surface-translucent: oklch(1 0 0 / 0.8);
+    /* Level 0 — Desk (neutral, identical on every page) */
+    --polli-color-app-bg:              oklch(0.928 0.011 80);
+
+    /* Level 2 — Well + neutral card surfaces */
+    --polli-color-surface-opaque:      oklch(0.993 0.005 80);
+    --polli-color-surface-translucent: oklch(0.993 0.005 80 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
+    /* Neutral text (theme-independent, warm low-chroma) */
+    --polli-color-text-strong:         oklch(0.285 0.018 80);
+    --polli-color-text-base:           oklch(0.42 0.016 80);
+    --polli-color-text-muted:          oklch(0.51 0.012 80);
+
+    /* Neutral separator line — subtle hairline for dividers/hr/table rows.
+       Calibrated to stay visible-but-quiet on every surface in BOTH modes
+       (a plain ink shade can't: it inverts and vanishes on the desk in dark).
+       Distinct from theme-border (themed element outline) by design. */
+    --polli-color-divider:             oklch(0.86 0.006 250);
+
+    /* Raised elevation shadows (Level 1 container / Level 2 well) */
+    --polli-shadow-container: 0 1px 2px rgba(60, 45, 30, 0.06), 0 12px 26px rgba(60, 45, 30, 0.1);
+    --polli-shadow-well:      0 1px 2px rgba(60, 45, 30, 0.05), 0 5px 12px rgba(60, 45, 30, 0.07);
+
+    /* Neutral ink ramp */
     --polli-color-ink-50:  oklch(0.985 0.002 247.839);
     --polli-color-ink-100: oklch(0.967 0.003 264.542);
     --polli-color-ink-200: oklch(0.928 0.006 264.531);
@@ -27,302 +68,324 @@
     --polli-color-ink-950: oklch(0.13 0.028 261.692);
 }
 
-/* ─── Per-theme cascade (public `--polli-color-*` tokens) ────────
-   Consumers may reference these in their own CSS:
-       color: var(--polli-color-text-base).
-   Renames between minor versions count as breaking. */
-[data-theme="amber"] {
-    --polli-color-text-base:    oklch(0.414 0.112 45.904);
-    --polli-color-text-strong:  oklch(0.279 0.077 45.635);
-    --polli-color-text-soft:    oklch(0.555 0.163 48.998);
-    --polli-color-text-muted:   oklch(0.62 0.045 45.904);
-
-    --polli-color-border:       oklch(0.879 0.169 91.605);
-
-    --polli-color-bg-subtle:    oklch(0.987 0.022 95.277 / 0.7);
-    --polli-color-bg-active:    oklch(0.924 0.12 95.746);
-    --polli-color-bg-hover:     oklch(0.879 0.169 91.605);
-    --polli-color-bg-pale:      oklch(0.962 0.059 95.617);
-    --polli-color-scrollbar-thumb: oklch(0.828 0.189 84.429 / 0.7);
-}
-
-[data-theme="blue"] {
-    --polli-color-text-base:    oklch(0.379 0.146 265.522);
-    --polli-color-text-strong:  oklch(0.282 0.091 267.935);
-    --polli-color-text-soft:    oklch(0.488 0.243 264.376);
-    --polli-color-text-muted:   oklch(0.62 0.058 265.522);
-
-    --polli-color-border:       oklch(0.809 0.105 251.813);
-
-    --polli-color-bg-subtle:    oklch(0.97 0.014 254.604 / 0.7);
-    --polli-color-bg-active:    oklch(0.882 0.059 254.128);
-    --polli-color-bg-hover:     oklch(0.809 0.105 251.813);
-    --polli-color-bg-pale:      oklch(0.932 0.032 255.585);
-    --polli-color-scrollbar-thumb: oklch(0.707 0.165 254.624 / 0.7);
-}
-
-[data-theme="pink"] {
-    --polli-color-text-base:    oklch(0.408 0.153 2.432);
-    --polli-color-text-strong:  oklch(0.284 0.109 3.907);
-    --polli-color-text-soft:    oklch(0.525 0.223 3.958);
-    --polli-color-text-muted:   oklch(0.62 0.061 2.432);
-
-    --polli-color-border:       oklch(0.823 0.12 346.018);
-
-    --polli-color-bg-subtle:    oklch(0.971 0.014 343.198 / 0.7);
-    --polli-color-bg-active:    oklch(0.899 0.061 343.231);
-    --polli-color-bg-hover:     oklch(0.823 0.12 346.018);
-    --polli-color-bg-pale:      oklch(0.948 0.028 342.258);
-    --polli-color-scrollbar-thumb: oklch(0.718 0.202 349.761 / 0.7);
-}
-
-[data-theme="coral"] {
-    --polli-color-text-base:    oklch(0.408 0.123 38.172);
-    --polli-color-text-strong:  oklch(0.266 0.079 36.259);
-    --polli-color-text-soft:    oklch(0.553 0.195 38.402);
-    --polli-color-text-muted:   oklch(0.62 0.049 38.172);
-
-    --polli-color-border:       oklch(0.837 0.128 66.29);
-
-    --polli-color-bg-subtle:    oklch(0.98 0.016 73.684 / 0.7);
-    --polli-color-bg-active:    oklch(0.901 0.076 70.697);
-    --polli-color-bg-hover:     oklch(0.837 0.128 66.29);
-    --polli-color-bg-pale:      oklch(0.954 0.038 75.164);
-    --polli-color-scrollbar-thumb: oklch(0.75 0.183 55.934 / 0.7);
+/* ─── LIGHT — themed cascade (7 hue tokens per page). Harmonized: one
+   perceived lightness & chroma per token; only the hue angle changes. ─── */
+:root,
+[data-theme="emerald"] {
+    --polli-color-bg-pale:         oklch(0.972 0.045 163);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 163 / 0.7);
+    --polli-color-bg-active:       oklch(0.908 0.085 163);
+    --polli-color-bg-hover:        oklch(0.858 0.115 163);
+    --polli-color-border:          oklch(0.858 0.115 163);
+    --polli-color-scrollbar-thumb: oklch(0.758 0.14 163 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 163);
 }
 
 [data-theme="teal"] {
-    --polli-color-text-base:    oklch(0.386 0.063 188.416);
-    --polli-color-text-strong:  oklch(0.277 0.046 192.524);
-    --polli-color-text-soft:    oklch(0.511 0.096 186.391);
-    --polli-color-text-muted:   oklch(0.62 0.025 188.416);
+    --polli-color-bg-pale:         oklch(0.972 0.045 183);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 183 / 0.7);
+    --polli-color-bg-active:       oklch(0.912 0.085 183);
+    --polli-color-bg-hover:        oklch(0.862 0.115 183);
+    --polli-color-border:          oklch(0.862 0.115 183);
+    --polli-color-scrollbar-thumb: oklch(0.762 0.14 183 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 183);
+}
 
-    --polli-color-border:       oklch(0.855 0.138 181.071);
-
-    --polli-color-bg-subtle:    oklch(0.984 0.014 180.72 / 0.7);
-    --polli-color-bg-active:    oklch(0.91 0.096 180.426);
-    --polli-color-bg-hover:     oklch(0.855 0.138 181.071);
-    --polli-color-bg-pale:      oklch(0.953 0.051 180.801);
-    --polli-color-scrollbar-thumb: oklch(0.704 0.14 182.503 / 0.7);
+[data-theme="blue"] {
+    --polli-color-bg-pale:         oklch(0.972 0.045 252);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 252 / 0.7);
+    --polli-color-bg-active:       oklch(0.895 0.085 252);
+    --polli-color-bg-hover:        oklch(0.845 0.115 252);
+    --polli-color-border:          oklch(0.845 0.115 252);
+    --polli-color-scrollbar-thumb: oklch(0.745 0.14 252 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 252);
 }
 
 [data-theme="violet"] {
-    --polli-color-text-base:    oklch(0.38 0.189 293.745);
-    --polli-color-text-strong:  oklch(0.283 0.141 291.089);
-    --polli-color-text-soft:    oklch(0.491 0.27 292.581);
-    --polli-color-text-muted:   oklch(0.62 0.076 293.745);
-
-    --polli-color-border:       oklch(0.811 0.111 293.571);
-
-    --polli-color-bg-subtle:    oklch(0.969 0.016 293.756 / 0.7);
-    --polli-color-bg-active:    oklch(0.894 0.057 293.283);
-    --polli-color-bg-hover:     oklch(0.811 0.111 293.571);
-    --polli-color-bg-pale:      oklch(0.943 0.029 294.588);
-    --polli-color-scrollbar-thumb: oklch(0.702 0.183 293.541 / 0.7);
+    --polli-color-bg-pale:         oklch(0.972 0.045 293);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 293 / 0.7);
+    --polli-color-bg-active:       oklch(0.9 0.085 293);
+    --polli-color-bg-hover:        oklch(0.85 0.115 293);
+    --polli-color-border:          oklch(0.85 0.115 293);
+    --polli-color-scrollbar-thumb: oklch(0.75 0.14 293 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 293);
 }
 
-/* Emerald is also the chrome default — :root fallback so unwrapped routes
-   resolve --polli-color-* vars. */
-:root,
-[data-theme="emerald"] {
-    --polli-color-text-base:    oklch(0.378 0.077 168.94);
-    --polli-color-text-strong:  oklch(0.262 0.051 172.552);
-    --polli-color-text-soft:    oklch(0.508 0.118 165.612);
-    --polli-color-text-muted:   oklch(0.62 0.031 168.94);
-
-    --polli-color-border:       oklch(0.845 0.143 164.978);
-
-    --polli-color-bg-subtle:    oklch(0.979 0.021 166.113 / 0.7);
-    --polli-color-bg-active:    oklch(0.905 0.093 164.15);
-    --polli-color-bg-hover:     oklch(0.845 0.143 164.978);
-    --polli-color-bg-pale:      oklch(0.95 0.052 163.051);
-    --polli-color-scrollbar-thumb: oklch(0.765 0.177 163.223 / 0.7);
+[data-theme="pink"] {
+    --polli-color-bg-pale:         oklch(0.972 0.045 346);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 346 / 0.7);
+    --polli-color-bg-active:       oklch(0.9 0.085 346);
+    --polli-color-bg-hover:        oklch(0.85 0.115 346);
+    --polli-color-border:          oklch(0.85 0.115 346);
+    --polli-color-scrollbar-thumb: oklch(0.75 0.14 346 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 346);
 }
 
-/* Intent tokens (semantic, theme-independent). Public. */
+[data-theme="coral"] {
+    --polli-color-bg-pale:         oklch(0.972 0.045 62);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 62 / 0.7);
+    --polli-color-bg-active:       oklch(0.916 0.085 62);
+    --polli-color-bg-hover:        oklch(0.866 0.115 62);
+    --polli-color-border:          oklch(0.866 0.115 62);
+    --polli-color-scrollbar-thumb: oklch(0.766 0.14 62 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 62);
+}
+
+[data-theme="amber"] {
+    --polli-color-bg-pale:         oklch(0.972 0.045 90);
+    --polli-color-bg-subtle:       oklch(0.95 0.03 90 / 0.7);
+    --polli-color-bg-active:       oklch(0.932 0.085 90);
+    --polli-color-bg-hover:        oklch(0.882 0.115 90);
+    --polli-color-border:          oklch(0.882 0.115 90);
+    --polli-color-scrollbar-thumb: oklch(0.782 0.14 90 / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 90);
+}
+
+/* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
+   rail) carries data-theme="neutral" so its tooltips, focus rings and surfaces
+   read neutral instead of inheriting the emerald default. Mode-agnostic: every
+   slot points at a mode-aware neutral token, so dark adapts automatically. */
+[data-theme="neutral"] {
+    --polli-color-bg-pale:         var(--polli-color-surface-opaque);
+    --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 8%, transparent);
+    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 16%, transparent);
+    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-text-muted) 26%, transparent);
+    --polli-color-border:          var(--polli-color-divider);
+    --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
+    --polli-color-text-soft:       var(--polli-color-text-muted);
+}
+
+/* Intent tokens — LIGHT (semantic, theme-independent). */
 :root {
     --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
     --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
     --polli-color-danger-border:    oklch(0.78 0.115 25);
-
     --polli-color-success-bg-light: oklch(0.94 0.055 150);
     --polli-color-success-text:     oklch(0.38 0.12 150);
-
     --polli-color-warning-bg-light: oklch(0.94 0.06 75);
     --polli-color-warning-text:     oklch(0.45 0.13 65);
-
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
-
     --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
     --polli-color-alpha-text:       oklch(0.42 0.18 300);
 }
 
-/* Fixed accent ramps used when a color is intentionally not inherited from the
-   active chrome theme. Values mirror Tailwind v4 ramps, but live under owned
-   token names so default palette utilities can stay disabled. */
+/* Switch primitive — theme-independent, mode-aware. Light thumb in BOTH modes
+   (so it reads as a switch, not a dark blob), vivid on/invalid tracks, neutral
+   off track. Only the off track flips per mode (see .dark below). */
 :root {
-    --polli-color-accent-amber-50:  oklch(0.987 0.022 95.277);
-    --polli-color-accent-amber-100: oklch(0.962 0.059 95.617);
-    --polli-color-accent-amber-200: oklch(0.924 0.12 95.746);
-    --polli-color-accent-amber-300: oklch(0.879 0.169 91.605);
-    --polli-color-accent-amber-400: oklch(0.828 0.189 84.429);
-    --polli-color-accent-amber-500: oklch(0.769 0.188 70.08);
-    --polli-color-accent-amber-600: oklch(0.666 0.179 58.318);
-    --polli-color-accent-amber-700: oklch(0.555 0.163 48.998);
-    --polli-color-accent-amber-800: oklch(0.473 0.137 46.201);
-    --polli-color-accent-amber-900: oklch(0.414 0.112 45.904);
-    --polli-color-accent-amber-950: oklch(0.279 0.077 45.635);
+    --polli-color-switch-thumb:         oklch(0.98 0.005 80);
+    --polli-color-switch-track-off:     oklch(0.86 0.012 80);
+    --polli-color-switch-track-on:      oklch(0.68 0.17 150);
+    --polli-color-switch-track-invalid: oklch(0.62 0.2 25);
+}
 
-    --polli-color-accent-blue-50:  oklch(0.97 0.014 254.604);
-    --polli-color-accent-blue-100: oklch(0.932 0.032 255.585);
-    --polli-color-accent-blue-200: oklch(0.882 0.059 254.128);
-    --polli-color-accent-blue-300: oklch(0.809 0.105 251.813);
-    --polli-color-accent-blue-400: oklch(0.707 0.165 254.624);
-    --polli-color-accent-blue-500: oklch(0.623 0.214 259.815);
-    --polli-color-accent-blue-600: oklch(0.546 0.245 262.881);
-    --polli-color-accent-blue-700: oklch(0.488 0.243 264.376);
-    --polli-color-accent-blue-800: oklch(0.424 0.199 265.638);
-    --polli-color-accent-blue-900: oklch(0.379 0.146 265.522);
-    --polli-color-accent-blue-950: oklch(0.282 0.091 267.935);
+/* ════════════════════════════════════════════════════════════════════════
+   DARK MODE — add `dark` to <html>.
+   (a) mode layer: neutrals, ink ramp, shadows, intents (theme-independent)
+   ════════════════════════════════════════════════════════════════════════ */
+.dark {
+    color-scheme: dark;
 
-    --polli-color-accent-emerald-100: oklch(0.95 0.052 163.051);
-    --polli-color-accent-emerald-600: oklch(0.596 0.145 163.225);
+    /* Level 0 — Desk. ONE cool neutral hue (250) shared by every dark neutral
+       below — desk, surfaces, text, ink — so nothing splits warm/cool. Low
+       chroma keeps it clean charcoal, never muddy. */
+    --polli-color-app-bg:              oklch(0.265 0.006 250);
 
-    --polli-color-accent-teal-100: oklch(0.953 0.051 180.801);
-    --polli-color-accent-teal-200: oklch(0.91 0.096 180.426);
-    --polli-color-accent-teal-700: oklch(0.511 0.096 186.391);
+    /* Level 2 — Well + neutral card surfaces (raised above the desk) */
+    --polli-color-surface-opaque:      oklch(0.345 0.006 250);
+    --polli-color-surface-translucent: oklch(0.345 0.006 250 / 0.8);
+    --polli-color-surface-white: var(--polli-color-surface-translucent);
 
-    --polli-color-accent-violet-100: oklch(0.943 0.029 294.588);
-    --polli-color-accent-violet-300: oklch(0.811 0.111 293.571);
-    --polli-color-accent-violet-400: oklch(0.702 0.183 293.541);
-    --polli-color-accent-violet-600: oklch(0.541 0.281 293.009);
-    --polli-color-accent-violet-700: oklch(0.491 0.27 292.581);
-    --polli-color-accent-violet-800: oklch(0.432 0.232 292.759);
-    --polli-color-accent-violet-950: oklch(0.283 0.141 291.089);
+    /* Neutral text — even 0.11 lightness steps (strong→base→muted) so the
+       hierarchy is mathematical; muted is the single legible muted-grey. */
+    --polli-color-text-strong:         oklch(0.955 0.006 250);
+    --polli-color-text-base:           oklch(0.845 0.01 250);
+    --polli-color-text-muted:          oklch(0.735 0.012 250);
 
-    --polli-color-accent-purple-600: oklch(0.558 0.288 302.321);
-    --polli-color-accent-purple-700: oklch(0.496 0.265 301.924);
-    --polli-color-accent-purple-800: oklch(0.438 0.218 303.724);
+    /* Neutral separator line (dark) — a quiet hairline LIGHTER than the
+       surface so it reads on desk and cards alike. */
+    --polli-color-divider:             oklch(0.44 0.006 250);
 
-    --polli-color-accent-pink-500: oklch(0.656 0.241 354.308);
+    /* Raised elevation shadows — deeper, with a faint top highlight */
+    --polli-shadow-container: 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 24px rgba(0, 0, 0, 0.45);
+    --polli-shadow-well:      0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.35);
+
+    /* Ink ramp — inverted (high numbers read light); same cool neutral hue */
+    --polli-color-ink-50:  oklch(0.165 0.006 250);
+    --polli-color-ink-100: oklch(0.205 0.006 250);
+    --polli-color-ink-200: oklch(0.255 0.006 250);
+    --polli-color-ink-300: oklch(0.315 0.006 250);
+    --polli-color-ink-400: oklch(0.395 0.006 250);
+    --polli-color-ink-500: oklch(0.505 0.006 250);
+    --polli-color-ink-600: oklch(0.62 0.006 250);
+    --polli-color-ink-700: oklch(0.72 0.006 250);
+    --polli-color-ink-800: oklch(0.82 0.006 250);
+    --polli-color-ink-900: oklch(0.9 0.006 250);
+    --polli-color-ink-950: oklch(0.96 0.006 250);
+
+    /* Intents — DARK: deep fill + light text (mirror of the light tints) */
+    --polli-color-danger-bg-light:  oklch(0.36 0.095 25);
+    --polli-color-danger-bg-hover:  oklch(0.43 0.11 25);
+    --polli-color-danger-text:      oklch(0.855 0.105 25);
+    --polli-color-danger-border:    oklch(0.48 0.11 25);
+    --polli-color-success-bg-light: oklch(0.35 0.075 150);
+    --polli-color-success-text:     oklch(0.86 0.1 150);
+    --polli-color-warning-bg-light: oklch(0.36 0.075 75);
+    --polli-color-warning-text:     oklch(0.87 0.1 75);
+    --polli-color-news-bg-light:    oklch(0.35 0.07 158);
+    --polli-color-news-text:        oklch(0.86 0.1 158);
+    --polli-color-alpha-bg-light:   oklch(0.35 0.085 300);
+    --polli-color-alpha-text:       oklch(0.85 0.12 300);
+
+    /* Switch — off track darkens so it stays visible on the dark desk;
+       thumb + on/invalid tracks are shared with :root. */
+    --polli-color-switch-track-off: oklch(0.44 0.012 80);
+}
+
+/* (b) DARK — themed cascade. Higher specificity than the light [data-theme]
+   blocks, so it wins automatically under <html class="dark">.
+
+   MIRROR RULE: every themed token keeps the theme's OWN hue; dark only inverts
+   lightness (deep tint + light text). bg-pale / bg-subtle stay cohesive via LOW
+   CHROMA, never a hue rotation toward a warm anchor — rotating a cool hue across
+   the wheel (e.g. blue 252° → ~355°) is what made dark surfaces read maroon. ─── */
+.dark,
+.dark [data-theme="emerald"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 163);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 163 / 0.7);
+    --polli-color-bg-active:       oklch(0.433 0.09 163);
+    --polli-color-bg-hover:        oklch(0.513 0.112 163);
+    --polli-color-border:          oklch(0.513 0.112 163);
+    --polli-color-scrollbar-thumb: oklch(0.568 0.12 163 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 163);
+}
+
+.dark [data-theme="teal"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 183);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 183 / 0.7);
+    --polli-color-bg-active:       oklch(0.437 0.09 183);
+    --polli-color-bg-hover:        oklch(0.517 0.112 183);
+    --polli-color-border:          oklch(0.517 0.112 183);
+    --polli-color-scrollbar-thumb: oklch(0.572 0.12 183 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 183);
+}
+
+.dark [data-theme="blue"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 252);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 252 / 0.7);
+    --polli-color-bg-active:       oklch(0.42 0.09 252);
+    --polli-color-bg-hover:        oklch(0.5 0.112 252);
+    --polli-color-border:          oklch(0.5 0.112 252);
+    --polli-color-scrollbar-thumb: oklch(0.555 0.12 252 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 252);
+}
+
+.dark [data-theme="violet"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 293);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 293 / 0.7);
+    --polli-color-bg-active:       oklch(0.425 0.09 293);
+    --polli-color-bg-hover:        oklch(0.505 0.112 293);
+    --polli-color-border:          oklch(0.505 0.112 293);
+    --polli-color-scrollbar-thumb: oklch(0.56 0.12 293 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 293);
+}
+
+.dark [data-theme="pink"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 346);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 346 / 0.7);
+    --polli-color-bg-active:       oklch(0.425 0.09 346);
+    --polli-color-bg-hover:        oklch(0.505 0.112 346);
+    --polli-color-border:          oklch(0.505 0.112 346);
+    --polli-color-scrollbar-thumb: oklch(0.56 0.12 346 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 346);
+}
+
+.dark [data-theme="coral"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 62);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 62 / 0.7);
+    --polli-color-bg-active:       oklch(0.441 0.09 62);
+    --polli-color-bg-hover:        oklch(0.521 0.112 62);
+    --polli-color-border:          oklch(0.521 0.112 62);
+    --polli-color-scrollbar-thumb: oklch(0.576 0.12 62 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 62);
+}
+
+.dark [data-theme="amber"] {
+    --polli-color-bg-pale:         oklch(0.305 0.018 90);
+    --polli-color-bg-subtle:       oklch(0.39 0.024 90 / 0.7);
+    --polli-color-bg-active:       oklch(0.457 0.09 90);
+    --polli-color-bg-hover:        oklch(0.537 0.112 90);
+    --polli-color-border:          oklch(0.537 0.112 90);
+    --polli-color-scrollbar-thumb: oklch(0.592 0.12 90 / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 90);
 }
 
 /* Tailwind utility surface — internal. */
 @theme inline {
     --color-*: initial;
 
-    --font-heading:                   "LCT Mogi", ui-sans-serif, sans-serif;
-    --font-subheading:                "Fraunces", ui-serif, serif;
-    --font-body:                      "Uncut Sans", ui-sans-serif, sans-serif;
-    --font-pixel:                     "Pixelify Sans", ui-monospace, monospace;
-    --text-micro:                     10px;
-    --text-base:                      16px;
+    --font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --text-micro:      10px;
+    --text-base:       16px;
 
-    --color-transparent:              transparent;
-    --color-current:                  currentColor;
-    --color-inherit:                  inherit;
+    --shadow-container: var(--polli-shadow-container);
+    --shadow-well:      var(--polli-shadow-well);
 
-    --color-brand-dark:               var(--polli-color-brand-dark);
+    --color-transparent: transparent;
+    --color-current:     currentColor;
+    --color-inherit:     inherit;
 
-    --color-ink-50:                   var(--polli-color-ink-50);
-    --color-ink-100:                  var(--polli-color-ink-100);
-    --color-ink-200:                  var(--polli-color-ink-200);
-    --color-ink-300:                  var(--polli-color-ink-300);
-    --color-ink-400:                  var(--polli-color-ink-400);
-    --color-ink-500:                  var(--polli-color-ink-500);
-    --color-ink-600:                  var(--polli-color-ink-600);
-    --color-ink-700:                  var(--polli-color-ink-700);
-    --color-ink-800:                  var(--polli-color-ink-800);
-    --color-ink-900:                  var(--polli-color-ink-900);
-    --color-ink-950:                  var(--polli-color-ink-950);
+    --color-brand-dark:  var(--polli-color-brand-dark);
 
-    --color-theme-text-base:         var(--polli-color-text-base);
-    --color-theme-text-strong:       var(--polli-color-text-strong);
-    --color-theme-text-soft:         var(--polli-color-text-soft);
-    --color-theme-text-muted:        var(--polli-color-text-muted);
+    --color-app-bg:      var(--polli-color-app-bg);
+    --color-divider:     var(--polli-color-divider);
 
-    --color-theme-border:            var(--polli-color-border);
+    --color-ink-50:  var(--polli-color-ink-50);
+    --color-ink-100: var(--polli-color-ink-100);
+    --color-ink-200: var(--polli-color-ink-200);
+    --color-ink-300: var(--polli-color-ink-300);
+    --color-ink-400: var(--polli-color-ink-400);
+    --color-ink-500: var(--polli-color-ink-500);
+    --color-ink-600: var(--polli-color-ink-600);
+    --color-ink-700: var(--polli-color-ink-700);
+    --color-ink-800: var(--polli-color-ink-800);
+    --color-ink-900: var(--polli-color-ink-900);
+    --color-ink-950: var(--polli-color-ink-950);
 
-    --color-theme-bg-subtle:         var(--polli-color-bg-subtle);
-    --color-theme-bg-active:         var(--polli-color-bg-active);
-    --color-theme-bg-hover:          var(--polli-color-bg-hover);
-    --color-theme-bg-pale:           var(--polli-color-bg-pale);
+    --color-theme-text-base:   var(--polli-color-text-base);
+    --color-theme-text-strong: var(--polli-color-text-strong);
+    --color-theme-text-soft:   var(--polli-color-text-soft);
+    --color-theme-text-muted:  var(--polli-color-text-muted);
+    --color-theme-border:      var(--polli-color-border);
+    --color-theme-bg-subtle:   var(--polli-color-bg-subtle);
+    --color-theme-bg-active:   var(--polli-color-bg-active);
+    --color-theme-bg-hover:    var(--polli-color-bg-hover);
+    --color-theme-bg-pale:     var(--polli-color-bg-pale);
 
     --color-intent-danger-bg-light:  var(--polli-color-danger-bg-light);
     --color-intent-danger-bg-hover:  var(--polli-color-danger-bg-hover);
     --color-intent-danger-text:      var(--polli-color-danger-text);
     --color-intent-danger-border:    var(--polli-color-danger-border);
-    --color-intent-danger-50:        var(--polli-color-danger-bg-light);
-    --color-intent-danger-200:       var(--polli-color-danger-border);
-    --color-intent-danger-500:       var(--polli-color-danger-text);
-    --color-intent-danger-600:       var(--polli-color-danger-text);
-    --color-intent-danger-700:       var(--polli-color-danger-text);
-    --color-intent-danger-800:       var(--polli-color-danger-text);
-
     --color-intent-success-bg-light: var(--polli-color-success-bg-light);
     --color-intent-success-text:     var(--polli-color-success-text);
-    --color-intent-success-100:      var(--polli-color-success-bg-light);
-    --color-intent-success-600:      var(--polli-color-success-text);
-    --color-intent-success-700:      var(--polli-color-success-text);
-    --color-intent-success-800:      var(--polli-color-success-text);
-
     --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
     --color-intent-warning-text:     var(--polli-color-warning-text);
-
     --color-intent-news-bg-light:    var(--polli-color-news-bg-light);
     --color-intent-news-text:        var(--polli-color-news-text);
-
     --color-intent-alpha-bg-light:   var(--polli-color-alpha-bg-light);
     --color-intent-alpha-text:       var(--polli-color-alpha-text);
 
-    --color-surface-opaque:          var(--polli-color-surface-opaque);
-    --color-surface-translucent:     var(--polli-color-surface-translucent);
-    --color-surface-white:           var(--polli-color-surface-translucent);
+    --color-switch-thumb:            var(--polli-color-switch-thumb);
+    --color-switch-track-off:        var(--polli-color-switch-track-off);
+    --color-switch-track-on:         var(--polli-color-switch-track-on);
+    --color-switch-track-invalid:    var(--polli-color-switch-track-invalid);
 
-    --color-accent-amber-50:         var(--polli-color-accent-amber-50);
-    --color-accent-amber-100:        var(--polli-color-accent-amber-100);
-    --color-accent-amber-200:        var(--polli-color-accent-amber-200);
-    --color-accent-amber-300:        var(--polli-color-accent-amber-300);
-    --color-accent-amber-400:        var(--polli-color-accent-amber-400);
-    --color-accent-amber-500:        var(--polli-color-accent-amber-500);
-    --color-accent-amber-600:        var(--polli-color-accent-amber-600);
-    --color-accent-amber-700:        var(--polli-color-accent-amber-700);
-    --color-accent-amber-800:        var(--polli-color-accent-amber-800);
-    --color-accent-amber-900:        var(--polli-color-accent-amber-900);
-    --color-accent-amber-950:        var(--polli-color-accent-amber-950);
-
-    --color-accent-blue-50:          var(--polli-color-accent-blue-50);
-    --color-accent-blue-100:         var(--polli-color-accent-blue-100);
-    --color-accent-blue-200:         var(--polli-color-accent-blue-200);
-    --color-accent-blue-300:         var(--polli-color-accent-blue-300);
-    --color-accent-blue-400:         var(--polli-color-accent-blue-400);
-    --color-accent-blue-500:         var(--polli-color-accent-blue-500);
-    --color-accent-blue-600:         var(--polli-color-accent-blue-600);
-    --color-accent-blue-700:         var(--polli-color-accent-blue-700);
-    --color-accent-blue-800:         var(--polli-color-accent-blue-800);
-    --color-accent-blue-900:         var(--polli-color-accent-blue-900);
-    --color-accent-blue-950:         var(--polli-color-accent-blue-950);
-
-    --color-accent-emerald-100:      var(--polli-color-accent-emerald-100);
-    --color-accent-emerald-600:      var(--polli-color-accent-emerald-600);
-
-    --color-accent-teal-100:         var(--polli-color-accent-teal-100);
-    --color-accent-teal-200:         var(--polli-color-accent-teal-200);
-    --color-accent-teal-700:         var(--polli-color-accent-teal-700);
-
-    --color-accent-violet-100:       var(--polli-color-accent-violet-100);
-    --color-accent-violet-300:       var(--polli-color-accent-violet-300);
-    --color-accent-violet-400:       var(--polli-color-accent-violet-400);
-    --color-accent-violet-600:       var(--polli-color-accent-violet-600);
-    --color-accent-violet-700:       var(--polli-color-accent-violet-700);
-    --color-accent-violet-800:       var(--polli-color-accent-violet-800);
-    --color-accent-violet-950:       var(--polli-color-accent-violet-950);
-
-    --color-accent-purple-600:       var(--polli-color-accent-purple-600);
-    --color-accent-purple-700:       var(--polli-color-accent-purple-700);
-    --color-accent-purple-800:       var(--polli-color-accent-purple-800);
-
-    --color-accent-pink-500:         var(--polli-color-accent-pink-500);
+    --color-surface-opaque:      var(--polli-color-surface-opaque);
+    --color-surface-translucent: var(--polli-color-surface-translucent);
+    --color-surface-white:       var(--polli-color-surface-translucent);
 }

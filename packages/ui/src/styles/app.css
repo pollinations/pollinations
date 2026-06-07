@@ -14,11 +14,17 @@
     --text-micro:                   var(--polli-text-micro);
     --text-base:                    var(--polli-text-base);
 
+    --shadow-container:             var(--polli-shadow-container);
+    --shadow-well:                  var(--polli-shadow-well);
+
     --color-transparent:            transparent;
     --color-current:                currentColor;
     --color-inherit:                inherit;
 
     --color-brand-dark:             var(--polli-color-brand-dark);
+
+    --color-app-bg:                 var(--polli-color-app-bg);
+    --color-divider:                var(--polli-color-divider);
 
     --color-ink-50:                 var(--polli-color-ink-50);
     --color-ink-100:                var(--polli-color-ink-100);
@@ -72,56 +78,12 @@
     --color-surface-opaque:         var(--polli-color-surface-opaque);
     --color-surface-translucent:    var(--polli-color-surface-translucent);
     --color-surface-white:          var(--polli-color-surface-translucent);
-
-    --color-accent-amber-50:        var(--polli-color-accent-amber-50);
-    --color-accent-amber-100:       var(--polli-color-accent-amber-100);
-    --color-accent-amber-200:       var(--polli-color-accent-amber-200);
-    --color-accent-amber-300:       var(--polli-color-accent-amber-300);
-    --color-accent-amber-400:       var(--polli-color-accent-amber-400);
-    --color-accent-amber-500:       var(--polli-color-accent-amber-500);
-    --color-accent-amber-600:       var(--polli-color-accent-amber-600);
-    --color-accent-amber-700:       var(--polli-color-accent-amber-700);
-    --color-accent-amber-800:       var(--polli-color-accent-amber-800);
-    --color-accent-amber-900:       var(--polli-color-accent-amber-900);
-    --color-accent-amber-950:       var(--polli-color-accent-amber-950);
-
-    --color-accent-blue-50:         var(--polli-color-accent-blue-50);
-    --color-accent-blue-100:        var(--polli-color-accent-blue-100);
-    --color-accent-blue-200:        var(--polli-color-accent-blue-200);
-    --color-accent-blue-300:        var(--polli-color-accent-blue-300);
-    --color-accent-blue-400:        var(--polli-color-accent-blue-400);
-    --color-accent-blue-500:        var(--polli-color-accent-blue-500);
-    --color-accent-blue-600:        var(--polli-color-accent-blue-600);
-    --color-accent-blue-700:        var(--polli-color-accent-blue-700);
-    --color-accent-blue-800:        var(--polli-color-accent-blue-800);
-    --color-accent-blue-900:        var(--polli-color-accent-blue-900);
-    --color-accent-blue-950:        var(--polli-color-accent-blue-950);
-
-    --color-accent-emerald-100:     var(--polli-color-accent-emerald-100);
-    --color-accent-emerald-600:     var(--polli-color-accent-emerald-600);
-
-    --color-accent-teal-100:        var(--polli-color-accent-teal-100);
-    --color-accent-teal-200:        var(--polli-color-accent-teal-200);
-    --color-accent-teal-700:        var(--polli-color-accent-teal-700);
-
-    --color-accent-violet-100:      var(--polli-color-accent-violet-100);
-    --color-accent-violet-300:      var(--polli-color-accent-violet-300);
-    --color-accent-violet-400:      var(--polli-color-accent-violet-400);
-    --color-accent-violet-600:      var(--polli-color-accent-violet-600);
-    --color-accent-violet-700:      var(--polli-color-accent-violet-700);
-    --color-accent-violet-800:      var(--polli-color-accent-violet-800);
-    --color-accent-violet-950:      var(--polli-color-accent-violet-950);
-
-    --color-accent-purple-600:      var(--polli-color-accent-purple-600);
-    --color-accent-purple-700:      var(--polli-color-accent-purple-700);
-    --color-accent-purple-800:      var(--polli-color-accent-purple-800);
-
-    --color-accent-pink-500:        var(--polli-color-accent-pink-500);
 }
 
 @layer base {
     html.polli-ui-root {
-        color-scheme: light;
+        /* color-scheme is owned by tokens.css (:root = light, .dark = dark)
+           so adding class `dark` to <html> flips native controls too. */
         overflow-x: hidden;
     }
 
@@ -137,7 +99,7 @@
 
     body.polli-ui-body {
         max-width: 800px;
-        @apply mx-auto min-h-screen overflow-x-hidden bg-theme-bg-pale px-4 pt-4 pb-8 font-body font-medium text-base text-theme-text-strong sm:px-6 md:px-8;
+        @apply mx-auto min-h-screen overflow-x-hidden bg-app-bg px-4 pt-4 pb-8 font-body font-medium text-base text-theme-text-strong sm:px-6 md:px-8;
     }
 
     html.polli-ui-shell,

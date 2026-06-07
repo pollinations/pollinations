@@ -298,7 +298,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                             : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                         !selectable &&
-                                            "polli:cursor-not-allowed polli:text-ink-300 polli:hover:bg-transparent",
+                                            "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                     )}
                                 >
                                     {label}
@@ -308,7 +308,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     </div>
                 ) : (
                     <>
-                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-xs polli:font-bold polli:uppercase polli:text-ink-400">
+                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-xs polli:font-bold polli:uppercase polli:text-theme-text-muted">
                             {WEEKDAY_LABELS.map((label) => (
                                 <div key={label}>{label}</div>
                             ))}
@@ -351,14 +351,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         className={cn(
                                             "polli-control polli:aspect-square polli:rounded-lg polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
-                                                "polli:text-ink-300",
+                                                "polli:text-theme-text-muted",
                                             sameUtcDay(date, today) &&
                                                 "polli:ring-1 polli:ring-theme-border",
                                             selected
                                                 ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                                 : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                             !selectable &&
-                                                "polli:cursor-not-allowed polli:text-ink-300 polli:hover:bg-transparent",
+                                                "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                         )}
                                     >
                                         {date.getUTCDate()}

@@ -10,7 +10,7 @@ import type { ThemeName } from "../theme.ts";
 type StatCardVariant = "stat" | "fact";
 
 const valueVariantClasses: Record<StatCardVariant, string> = {
-    stat: "polli:min-h-8 polli:text-2xl polli:font-bold polli:leading-tight polli:tabular-nums polli:text-theme-text-strong",
+    stat: "polli:min-h-8 polli:text-2xl polli:font-bold polli:leading-tight polli:tabular-nums polli:text-theme-text-base",
     fact: "polli:text-sm polli:leading-6 polli:text-theme-text-soft",
 };
 
@@ -41,7 +41,7 @@ export const StatCard: FC<StatCardProps> = ({
         <Text
             as="div"
             size="micro"
-            tone="strong"
+            tone="soft"
             weight="bold"
             className={cn(
                 "polli:uppercase polli:tracking-wide",

@@ -595,7 +595,7 @@ export function Authorize() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
@@ -604,7 +604,7 @@ export function Authorize() {
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
@@ -616,7 +616,7 @@ export function Authorize() {
                         <Collapsible
                             expanded={permissionsExpanded}
                             onToggle={() => setPermissionsExpanded((v) => !v)}
-                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-theme-border bg-transparent"
+                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-divider bg-transparent"
                             hoverClassName="hover:bg-theme-bg-pale"
                             panelClassName="px-3 pb-3 pt-1 space-y-6"
                             label={

@@ -283,7 +283,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     }
                 />
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center text-sm font-bold text-accent-amber-950">
+                    <div className="flex min-w-0 items-center text-sm font-bold text-theme-text-soft">
                         Auto top-up
                         <InfoTip
                             content={AUTO_TOP_UP_TOOLTIP_CONTENT}
@@ -295,7 +295,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             "text-xs font-medium",
                             alertTone
                                 ? "text-intent-danger-700"
-                                : "text-accent-amber-800/75",
+                                : "text-theme-text-muted",
                         )}
                     >
                         {statusMessage}
@@ -361,7 +361,7 @@ function renderStatusMessage(
                     href={issue.invoiceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-accent-amber-900"
+                    className="font-semibold underline underline-offset-2 hover:text-theme-text-soft"
                 >
                     complete in Stripe
                 </a>
@@ -391,7 +391,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     >
         <span>{loading ? "Opening..." : "Manage billing"}</span>
         {!loading && (
-            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-accent-amber-700/70" />
+            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />
         )}
     </Button>
 );
@@ -508,7 +508,7 @@ type SetupSnippetProps = {
 };
 
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
-    <div className="min-w-0 break-words leading-relaxed text-accent-amber-950">
+    <div className="min-w-0 break-words leading-relaxed text-theme-text-soft">
         <span className="text-sm font-bold">{title}:</span>{" "}
         <span className="inline-flex rounded-lg bg-surface-opaque px-2 py-0.5 text-sm font-medium">
             {value}

@@ -123,10 +123,10 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-theme-border">
+                <div className="border-t pt-4 border-divider">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-ink-400 animate-[pulse_2s_ease-in-out_infinite]">
+                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
                                 Fetching usage data…
                             </p>
                         </div>
@@ -159,7 +159,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 </div>
 
                 {!loading && !error && (
-                    <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
+                    <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-divider divide-divider">
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                             <StatCard
                                 label="Pollen spent"

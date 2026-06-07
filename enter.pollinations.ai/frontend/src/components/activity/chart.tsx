@@ -167,10 +167,10 @@ export const Chart: FC<ChartProps> = ({
         return (
             <div className="flex items-center justify-center h-[180px]">
                 <div className="text-center">
-                    <p className="text-sm text-ink-400 font-medium">
+                    <p className="text-sm text-theme-text-muted font-medium">
                         No usage data available
                     </p>
-                    <p className="text-xs text-ink-300 mt-1">
+                    <p className="text-xs text-theme-text-muted mt-1">
                         Make some API requests to see your analytics
                     </p>
                 </div>
@@ -205,7 +205,7 @@ export const Chart: FC<ChartProps> = ({
                             y={t.y}
                             textAnchor="end"
                             alignmentBaseline="middle"
-                            className="text-micro fill-ink-400 font-medium"
+                            className="text-micro fill-theme-text-muted font-medium"
                         >
                             {formatVal(t.value)}
                         </text>
@@ -219,7 +219,7 @@ export const Chart: FC<ChartProps> = ({
                             x={bars[0].x + bars[0].width / 2}
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-ink-400"
+                            className="text-micro fill-theme-text-muted"
                         >
                             {bars[0].label}
                         </text>
@@ -231,7 +231,7 @@ export const Chart: FC<ChartProps> = ({
                                 }
                                 y={height - 8}
                                 textAnchor="middle"
-                                className="text-micro fill-ink-400"
+                                className="text-micro fill-theme-text-muted"
                             >
                                 {bars[Math.floor(bars.length / 2)].label}
                             </text>
@@ -243,7 +243,7 @@ export const Chart: FC<ChartProps> = ({
                             }
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-ink-400"
+                            className="text-micro fill-theme-text-muted"
                         >
                             {bars[bars.length - 1].label}
                         </text>

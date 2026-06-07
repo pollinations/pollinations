@@ -176,10 +176,10 @@ export const ModelRow: FC<ModelRowProps> = ({
                         aria-label={`Copy API model name ${model.name}`}
                         className={(copied) =>
                             cn(
-                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-ink-500 transition-colors",
+                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-theme-text-muted transition-colors",
                                 copied
-                                    ? "text-accent-teal-700"
-                                    : "hover:text-ink-700",
+                                    ? "text-intent-success-600"
+                                    : "hover:text-theme-text-base",
                             )
                         }
                     >
@@ -187,7 +187,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <>
                                 <span>{model.name}</span>
                                 {copied && (
-                                    <span className="rounded-lg bg-accent-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-teal-700">
+                                    <span className="rounded-lg bg-intent-success-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-700">
                                         copied
                                     </span>
                                 )}

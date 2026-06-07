@@ -85,12 +85,12 @@ const CategorySection: FC<{
                 {models.map((model) => (
                     <div
                         key={model.name}
-                        className="bg-accent-violet-100/80 rounded-lg px-3 py-2"
+                        className="bg-theme-bg-pale rounded-lg px-3 py-2"
                     >
-                        <span className="font-medium text-accent-violet-800 capitalize">
+                        <span className="font-medium text-theme-text-soft capitalize">
                             {model.name}
                         </span>
-                        <span className="text-ink-600">
+                        <span className="text-theme-text-muted">
                             {" "}
                             — {model.perPollen} {model.unit}/pollen
                         </span>
@@ -107,7 +107,7 @@ export const PollenExamples: FC = () => {
 
     return (
         <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
-            <div className="text-sm text-ink-600 mb-3">
+            <div className="text-sm text-theme-text-muted mb-3">
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
@@ -115,7 +115,7 @@ export const PollenExamples: FC = () => {
             <CategorySection emoji="🎨" title="Image" models={examples.image} />
             <CategorySection emoji="💬" title="Text" models={examples.text} />
 
-            <div className="text-xs text-ink-500 pt-2">
+            <div className="text-xs text-theme-text-muted pt-2">
                 Values are estimates based on typical usage. See{" "}
                 <strong>Pricing</strong> below for exact rates.
             </div>

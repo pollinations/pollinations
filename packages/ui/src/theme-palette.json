@@ -6,7 +6,8 @@
         "coral": "#ffedd5",
         "teal": "#ccfbf1",
         "violet": "#ede9fe",
-        "emerald": "#d1fae5"
+        "emerald": "#d1fae5",
+        "neutral": "#fffcf9"
     },
     "brandDark": "#110518"
 }

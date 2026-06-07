@@ -1,12 +1,6 @@
 import { cn, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
 
-const priceBadgeColors = {
-    gray: "text-ink-700",
-    purple: "text-accent-purple-700",
-    teal: "text-accent-teal-700",
-} as const;
-
 const TOKEN_TYPE_LABELS: Record<string, string> = {
     "💬": "text",
     "🖼️": "image",
@@ -46,7 +40,6 @@ export type PriceBadgeConfig = {
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
-    color?: keyof typeof priceBadgeColors;
     className?: string;
 };
 
@@ -66,7 +59,6 @@ export const groupPriceBadges = (
             badge.perImage ? "img" : "",
             badge.perToken ? "token" : "",
             badge.perSecond ? "sec" : "",
-            badge.color ?? "",
             badge.className ?? "",
         ].join("|");
 
@@ -98,7 +90,6 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     perImage,
     perToken,
     perSecond,
-    color = "gray",
     className,
 }) => {
     const validPrices = prices.filter((p): p is string =>
@@ -129,8 +120,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     const badge = (
         <span
             className={cn(
-                "inline-flex items-center gap-px px-2 py-0.5 text-xs whitespace-nowrap",
-                priceBadgeColors[color],
+                "inline-flex items-center gap-px px-2 py-0.5 text-xs whitespace-nowrap text-ink-700",
                 className,
             )}
         >

@@ -14,6 +14,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
 }) => (
     <Dialog
         open={!!deleteId}
+        theme="blue"
         onOpenChange={(open) => !open && onCancel()}
         title="Delete API Key"
         size="sm"

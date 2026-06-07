@@ -3,6 +3,7 @@ import {
     CheckIcon,
     ChevronIcon,
     ClipboardIcon,
+    ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
@@ -208,24 +209,30 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         {
             label: "API",
             href: `${genDocsUrl()}`,
-            icon: <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
+            icon: (
+                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
         },
         {
             label: "BYOP",
             href: `${genDocsUrl()}#tag/byop`,
-            icon: <WalletIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
+            icon: (
+                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
         },
         {
             label: "CLI",
             href: `${genDocsUrl()}#tag/cli`,
             icon: (
-                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />
+                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
         },
         {
             label: "MCP Server",
             href: `${genDocsUrl()}#tag/mcp-server`,
-            icon: <McpIcon className="h-3.5 w-3.5 shrink-0 text-ink-500" />,
+            icon: (
+                <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
         },
     ];
 
@@ -244,9 +251,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const supportAction: SupportAction = {
         label: "Docs",
         title: "Copy full docs for LLMs",
-        icon: <BookIcon className="h-4 w-4 shrink-0 text-ink-500" />,
+        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         idleIcon: (
-            <ClipboardIcon className="h-4 w-4 shrink-0 text-ink-400 transition-colors group-hover:text-ink-600" />
+            <ClipboardIcon className="h-4 w-4 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
         ),
         successIcon: (
             <CheckIcon className="h-4 w-4 shrink-0 text-intent-success-700" />
@@ -270,7 +277,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-theme-bg-pale text-theme-text-strong">
+        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
             <div className="hidden md:block">{rail}</div>
             <div
                 ref={drawerRef}
@@ -295,14 +302,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-theme-bg-pale shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
                     <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
-                            <BrandMark size="mobile" />
+                            <BrandMark size="drawer" />
                             <button
                                 type="button"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
@@ -323,13 +330,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 className="flex min-w-0 flex-1 flex-col md:ml-60"
                 data-theme={activeTheme}
             >
-                <MobileHeader
+                <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-6 pb-8 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
@@ -371,6 +378,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     onPageChange,
 }) => (
     <aside
+        data-theme="neutral"
         className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
         aria-label="Dashboard navigation"
     >
@@ -432,26 +440,22 @@ const DashboardNavButton: FC<{
     </button>
 );
 
-const MobileHeader: FC<{
+const MobileMenuButton: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
     onOpen: () => void;
 }> = ({ buttonRef, onOpen }) => (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-theme-text-strong/10 bg-theme-bg-pale px-4 py-3 md:hidden">
-        <button
-            ref={buttonRef}
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-            onClick={onOpen}
-            aria-label="Open navigation"
-        >
-            <MenuIcon className="h-5 w-5" />
-        </button>
-        <BrandMark size="mobile" />
-        <span className="h-9 w-9" aria-hidden="true" />
-    </header>
+    <button
+        ref={buttonRef}
+        type="button"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        onClick={onOpen}
+        aria-label="Open navigation"
+    >
+        <MenuIcon className="h-5 w-5" />
+    </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "mobile" }> = ({ size }) => (
+const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -464,9 +468,7 @@ const BrandMark: FC<{ size: "desktop" | "mobile" }> = ({ size }) => (
             aria-hidden="true"
             className={cn(
                 "block shrink-0 bg-current",
-                size === "desktop"
-                    ? "h-6 w-[195px]"
-                    : "h-6 w-[195px] min-[390px]:h-7 min-[390px]:w-[228px] sm:h-8 sm:w-[260px]",
+                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
             )}
             style={brandWordmarkMask}
         />
@@ -492,7 +494,7 @@ const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-strong/55">
+            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
                 {count}
             </span>
         )}
@@ -510,7 +512,6 @@ const DashboardSupport: FC<{
             tooltip={action.title}
             copiedTooltip="Copied!"
             tooltipClassName="w-full"
-            title={action.title}
             className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
         >
             {(copied) => (
@@ -544,7 +545,7 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
             {icon}
             {label}
         </span>
-        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-ink-400 transition-colors group-hover:text-ink-600" />
+        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
     </a>
 );
 
@@ -553,7 +554,7 @@ const DashboardFooter: FC<{
     note?: ReactNode;
 }> = ({ links, note }) => (
     <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-strong/55">
+        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
             {links.map((link) => (
                 <a
                     key={link.href}
@@ -566,11 +567,10 @@ const DashboardFooter: FC<{
                 </a>
             ))}
         </div>
-        {note && (
-            <div className="px-3 text-xs leading-none text-theme-text-strong/45">
-                {note}
-            </div>
-        )}
+        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+            <span>{note}</span>
+            <ColorModeToggle />
+        </div>
     </>
 );
 
@@ -596,8 +596,9 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
         trigger={(open) => (
             <button
                 type="button"
+                data-theme="amber"
                 className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-accent-amber-200 p-1 pr-3 transition-colors hover:bg-accent-amber-300",
+                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
                     className,
                 )}
             >
@@ -606,12 +607,12 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     alt={`${username} avatar`}
                     className="h-8 shrink-0 rounded-full"
                 />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-accent-amber-900">
+                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-soft">
                     {username}
                 </span>
                 <ChevronIcon
                     expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-accent-amber-900 transition-transform duration-200 ease-out"
+                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-soft transition-transform duration-200 ease-out"
                 />
             </button>
         )}
@@ -622,7 +623,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     <AccountMenuLinkRow key={link.href} {...link} />
                 ))}
                 {links.length > 0 && (
-                    <div className="my-1 border-t border-accent-amber-300" />
+                    <div className="my-1 border-t border-divider" />
                 )}
                 <button
                     type="button"
@@ -630,7 +631,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-accent-amber-900 hover:bg-accent-amber-300 focus:outline-none focus-visible:bg-accent-amber-300"
+                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-soft hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     Sign Out
                 </button>
@@ -650,7 +651,7 @@ const AccountMenuLinkRow: FC<AccountMenuLink> = ({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent-amber-900 transition-colors hover:bg-accent-amber-300 focus:outline-none focus-visible:bg-accent-amber-300"
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

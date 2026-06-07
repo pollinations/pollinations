@@ -54,6 +54,12 @@ export {
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
 export {
+    type ColorMode,
+    ColorModeToggle,
+    setColorMode,
+    useColorMode,
+} from "./primitives/ColorModeToggle.tsx";
+export {
     Dialog,
     type DialogProps,
     DialogTitle,

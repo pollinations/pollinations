@@ -30,7 +30,10 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     } = getPermissionUiTheme(theme);
 
     return (
-        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
+        <Field.Root
+            data-theme={theme}
+            className={inline ? "flex items-center gap-3" : ""}
+        >
             <Field.Label
                 className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0 w-20" : "mb-2"}`}
             >
@@ -57,7 +60,9 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                     placeholder="Unlimited"
                     disabled={disabled}
                 />
-                <span className="text-sm text-ink-500 w-12">pollen</span>
+                <span className="text-sm text-theme-text-muted w-12">
+                    pollen
+                </span>
             </div>
         </Field.Root>
     );

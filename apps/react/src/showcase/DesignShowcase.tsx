@@ -1334,7 +1334,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(2.1)}{" "}
-                                <span className="font-medium text-accent-amber-800/70">
+                                <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
                             </>
@@ -1348,7 +1348,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(8)}{" "}
-                                <span className="font-medium text-accent-amber-800/70">
+                                <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
                             </>

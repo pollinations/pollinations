@@ -92,7 +92,7 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         packBalance={packBalance}
                     />
                 </div>
-                <div className="mt-5 space-y-2 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
+                <div className="mt-5 space-y-2 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>

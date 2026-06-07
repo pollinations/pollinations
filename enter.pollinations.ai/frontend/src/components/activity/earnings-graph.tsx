@@ -113,10 +113,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-theme-border">
+                <div className="border-t pt-4 border-divider">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-ink-400 animate-[pulse_2s_ease-in-out_infinite]">
+                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
                                 Fetching earnings data…
                             </p>
                         </div>
@@ -148,14 +148,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     )}
                 </div>
 
-                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
+                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-divider divide-divider">
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <StatCard
                             theme={theme}
                             label="Pollen earned"
                             value={formatPollen(stats.totalPollen)}
-                            labelClassName="text-theme-text-soft"
-                            valueClassName="text-theme-text-base"
                             detail={
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
@@ -201,8 +199,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             theme={theme}
                             label="Active users"
                             value={stats.activeUsers.toLocaleString()}
-                            labelClassName="text-theme-text-soft"
-                            valueClassName="text-theme-text-base"
                             detail={
                                 stats.appCount > 0 ? (
                                     <span className="text-theme-text-soft">
@@ -219,8 +215,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         <StatCard
                             theme={theme}
                             label="Top app"
-                            labelClassName="text-theme-text-soft"
-                            valueClassName="text-theme-text-base"
                             value={
                                 <span className="text-xl leading-tight">
                                     {stats.topApp?.label || "None"}

@@ -21,46 +21,32 @@ type PermissionUiThemeConfig = {
     input: PermissionUiInputConfig;
 };
 
+// Themed, mode-aware classes. The hue is no longer baked into the class names —
+// each consumer sets `data-theme={theme}` on its root so these tokens resolve to
+// the right accent (blue/amber/…) AND flip correctly in dark mode. Both theme
+// keys therefore share one config.
+const FRAME: PermissionUiThemeConfig = {
+    row: {
+        selectedClasses: "border-theme-border bg-theme-bg-active",
+        selectedHoverClasses:
+            "hover:bg-theme-bg-hover hover:border-theme-border",
+        rowHoverClasses: "hover:bg-theme-bg-pale hover:border-theme-border",
+        focusRingClasses:
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-border",
+    },
+    accent: {
+        actionTextClasses: "text-theme-text-soft hover:text-theme-text-strong",
+    },
+    input: {
+        classes:
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border focus-visible:border-theme-border",
+    },
+};
+
 const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
     {
-        amber: {
-            row: {
-                selectedClasses: "border-accent-amber-400 bg-accent-amber-100",
-                selectedHoverClasses:
-                    "hover:bg-accent-amber-200 hover:border-accent-amber-500",
-                rowHoverClasses:
-                    "hover:bg-accent-amber-50 hover:border-accent-amber-300",
-                focusRingClasses:
-                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-amber-500/60",
-            },
-            accent: {
-                actionTextClasses:
-                    "text-accent-amber-800 hover:text-accent-amber-950",
-            },
-            input: {
-                classes:
-                    "bg-accent-amber-100 border-accent-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-amber-500/60 focus-visible:border-accent-amber-500",
-            },
-        },
-        blue: {
-            row: {
-                selectedClasses: "border-accent-blue-300 bg-accent-blue-100",
-                selectedHoverClasses:
-                    "hover:bg-accent-blue-200 hover:border-accent-blue-400",
-                rowHoverClasses:
-                    "hover:bg-accent-blue-50 hover:border-accent-blue-300",
-                focusRingClasses:
-                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-blue-500/60",
-            },
-            accent: {
-                actionTextClasses:
-                    "text-accent-blue-800 hover:text-accent-blue-950",
-            },
-            input: {
-                classes:
-                    "bg-accent-blue-50 border-accent-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue-500/60 focus-visible:border-accent-blue-300",
-            },
-        },
+        amber: FRAME,
+        blue: FRAME,
     };
 
 export function getPermissionUiTheme(

@@ -13,7 +13,7 @@ const sizes = {
 
 // Cascade-driven base — reads [data-theme] vars.
 const themeClasses =
-    "polli:bg-theme-bg-active polli:text-theme-text-base " +
+    "polli:bg-theme-bg-active polli:text-theme-text-strong " +
     "polli:hover:bg-theme-bg-hover polli:transition-colors";
 
 // Single intent: danger. Soft recipe — light tile + deep text, slightly

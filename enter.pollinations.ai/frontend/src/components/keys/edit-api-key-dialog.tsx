@@ -146,6 +146,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <Dialog
             open
+            theme="blue"
             onOpenChange={(open) => !open && onClose()}
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
@@ -171,15 +172,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 cn(
                                     "font-mono text-sm cursor-pointer transition-all",
                                     copied
-                                        ? "text-accent-blue-700 font-semibold"
-                                        : "text-accent-blue-600 hover:text-accent-blue-800 hover:underline",
+                                        ? "text-intent-success-600 font-semibold"
+                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
                                 )
                             }
                         >
                             {(copied) => (copied ? "✓ Copied!" : plaintextKey)}
                         </CopyButton>
                     ) : (
-                        <span className="font-mono text-sm text-ink-500">
+                        <span className="font-mono text-sm text-theme-text-muted">
                             {apiKey.start}...
                         </span>
                     )}
@@ -202,7 +203,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full border-accent-blue-200 bg-accent-blue-50 focus-visible:border-accent-blue-300 focus-visible:ring-accent-blue-200"
+                            className="w-full focus-visible:border-theme-border focus-visible:ring-theme-border"
                             placeholder="Enter API key name"
                             disabled={isSubmitting}
                         />

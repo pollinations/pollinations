@@ -1,4 +1,4 @@
-import type { Modalities, ModelPrice } from "./types.ts";
+import type { Modalities, ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
     "ACE-Step": "ace-step",
@@ -122,13 +122,20 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     return labels.join(", ");
 };
 
-export const hasReasoning = (model: ModelPrice): boolean =>
-    model.reasoning === true;
+const hasCapability = (
+    model: ModelPrice,
+    capability: ModelCapability,
+): boolean =>
+    model.capabilities.includes(capability);
 
-export const hasSearch = (model: ModelPrice): boolean => model.search === true;
+export const hasReasoning = (model: ModelPrice): boolean =>
+    hasCapability(model, "reasoning");
+
+export const hasSearch = (model: ModelPrice): boolean =>
+    hasCapability(model, "web_search");
 
 export const hasCodeExecution = (model: ModelPrice): boolean =>
-    model.codeExecution === true;
+    hasCapability(model, "code_execution");
 
 export const hasVision = (model: ModelPrice): boolean => {
     const modalities = getModalities(model);
@@ -144,8 +151,6 @@ export const hasAudioOutput = (model: ModelPrice): boolean => {
     const modalities = getModalities(model);
     return modalities.output.includes("audio");
 };
-
-export const isPersona = (model: ModelPrice): boolean => model.persona === true;
 
 /**
  * Check if a model is "new" (added within the last 7 days).

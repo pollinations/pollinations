@@ -10,3 +10,8 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /image/models` | Image & video models with capabilities and pricing |
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
+
+Rich model endpoints include `capabilities` for agentic/model traits:
+`tool_calling`, `reasoning`, `web_search`, and `code_execution`.
+Modalities, video frame controls, voices, and context length remain separate
+structured fields.

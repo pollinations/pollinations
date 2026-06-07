@@ -24,6 +24,7 @@ beforeEach(() => {
                         category: "realtime",
                         input_modalities: ["text", "audio", "image"],
                         output_modalities: ["text", "audio"],
+                        capabilities: ["tool_calling", "reasoning"],
                     },
                     {
                         name: "tts",
@@ -121,6 +122,7 @@ describe("fetchModelCatalog", () => {
             inputModalities: ["text"],
             outputModalities: ["image"],
             videoCapabilities: [],
+            capabilities: [],
             voices: [],
             paidOnly: true,
             tools: false,

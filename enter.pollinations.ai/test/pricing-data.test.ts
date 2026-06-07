@@ -60,6 +60,20 @@ test("catalog prices format text rates through formatPricePer1M", () => {
     });
 });
 
+test("model info exposes built-in model capabilities without raw implementation flags", () => {
+    const geminiSearch = getTextModelsInfo().find(
+        (model) => model.name === "gemini-search",
+    ) as Record<string, unknown> | undefined;
+
+    expect(geminiSearch).toMatchObject({
+        capabilities: ["web_search", "code_execution"],
+        tools: false,
+    });
+    expect(geminiSearch).not.toHaveProperty("search");
+    expect(geminiSearch).not.toHaveProperty("code_execution");
+    expect(geminiSearch).not.toHaveProperty("persona");
+});
+
 test("AssemblyAI STT pricing is exposed per input audio second", () => {
     const universal2 = getCatalogModelPrices().find(
         (price) => price.name === "universal-2",

@@ -3,7 +3,11 @@ import {
     formatPricePer1M,
     formatPricePerImage,
 } from "./formatters.ts";
-import type { ModelCategory, ModelPrice } from "./types.ts";
+import type {
+    ModelCapability,
+    ModelCategory,
+    ModelPrice,
+} from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
 type ApiPricing = Partial<Record<PriceField, string>> & {
@@ -20,14 +24,12 @@ export type ApiModelInfo = {
     description?: string;
     input_modalities?: string[];
     output_modalities?: string[];
+    capabilities?: ModelCapability[];
     tools?: boolean;
     reasoning?: boolean;
-    search?: boolean;
-    code_execution?: boolean;
     context_length?: number;
     voices?: string[];
     is_specialized?: boolean;
-    persona?: boolean;
     paid_only?: boolean;
     alpha?: boolean;
     added_date?: number;
@@ -155,10 +157,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         brand: model.brand,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
-        reasoning: model.reasoning,
-        search: model.search,
-        codeExecution: model.code_execution,
-        persona: model.persona,
+        capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
         alpha: model.alpha,
         addedDate: model.added_date,

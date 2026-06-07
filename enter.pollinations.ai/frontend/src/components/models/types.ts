@@ -6,6 +6,12 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
+
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
@@ -14,10 +20,7 @@ export type ModelPrice = {
     brand?: string;
     inputModalities?: string[];
     outputModalities?: string[];
-    reasoning?: boolean;
-    search?: boolean;
-    codeExecution?: boolean;
-    persona?: boolean;
+    capabilities: ModelCapability[];
     paidOnly?: boolean;
     alpha?: boolean;
     addedDate?: number;

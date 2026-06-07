@@ -10,7 +10,6 @@ import {
     isAlpha,
     isNewModel,
     isPaidOnly,
-    isPersona,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import {
@@ -111,7 +110,6 @@ export const sectionLabels: Record<SectionType, string> = {
 // --- Tab content ---
 
 type TabContentProps = {
-    type: SectionType;
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
@@ -120,7 +118,6 @@ type TabContentProps = {
 };
 
 const TabContent: FC<TabContentProps> = ({
-    type,
     models,
     sortKey,
     sortDir,
@@ -128,16 +125,12 @@ const TabContent: FC<TabContentProps> = ({
     packBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
-    const regularModels =
-        type === "text" ? sorted.filter((m) => !isPersona(m)) : sorted;
-    const personaModels =
-        type === "text" ? sorted.filter((m) => isPersona(m)) : [];
 
     return (
         <>
             {/* Desktop cards */}
             <div className="hidden md:flex md:flex-col gap-2 pb-1">
-                {regularModels.map((model) => (
+                {sorted.map((model) => (
                     <ModelRow
                         key={model.name}
                         model={model}
@@ -145,28 +138,11 @@ const TabContent: FC<TabContentProps> = ({
                         packBalance={packBalance}
                     />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-2 pb-0 px-2">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <ModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
 
             {/* Mobile list */}
             <div className="md:hidden pb-1">
-                {regularModels.map((model) => (
+                {sorted.map((model) => (
                     <MobileModelRow
                         key={model.name}
                         model={model}
@@ -174,23 +150,6 @@ const TabContent: FC<TabContentProps> = ({
                         packBalance={packBalance}
                     />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-3 pb-1 px-4">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <MobileModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
         </>
     );
@@ -618,7 +577,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             {/* Tab content */}
             {activeSection && (
                 <TabContent
-                    type={activeSection.type}
                     models={activeSection.models}
                     sortKey={sortKey}
                     sortDir={sortDir}

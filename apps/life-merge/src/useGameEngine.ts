@@ -27,6 +27,7 @@ import {
     LIFE_STYLE_PRESETS,
     type LifePreset,
     type LifePresetId,
+    type LifePromptMode,
     type LifeStylePreset,
     type LifeStylePresetId,
     type LineageNode,
@@ -66,6 +67,7 @@ const PRESET_STYLE: Record<LifePresetId, LifeStylePresetId> = {
     bio: "blueprint",
     inventions: "risograph",
     future: "ink-wash",
+    infinite: "risograph",
 };
 
 function styleForPresetId(presetId: LifePresetId): LifeStylePreset {
@@ -122,9 +124,19 @@ function cacheText(value: string) {
     return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+function canonicalParents<T extends Pick<Specimen, "name" | "description">>(
+    parents: [T, T],
+): [T, T] {
+    const [left, right] = parents;
+    const leftKey = `${cacheText(left.name)}\n${cacheText(left.description)}`;
+    const rightKey = `${cacheText(right.name)}\n${cacheText(right.description)}`;
+    return leftKey.localeCompare(rightKey) <= 0 ? parents : [right, left];
+}
+
 function mergeCacheKey(args: {
     presetId: LifePresetId;
     styleId: LifeStylePresetId;
+    promptMode: LifePromptMode;
     targetTier: number;
     parents: [
         Pick<Specimen, "name" | "description">,
@@ -133,16 +145,15 @@ function mergeCacheKey(args: {
     evolutionPrompt: string;
     stylePrompt: string;
 }) {
-    const parentInputs = args.parents
-        .map((parent) => [
-            cacheText(parent.name),
-            cacheText(parent.description),
-        ])
-        .sort(([leftName], [rightName]) => leftName.localeCompare(rightName));
+    const parentInputs = canonicalParents(args.parents).map((parent) => [
+        cacheText(parent.name),
+        cacheText(parent.description),
+    ]);
     return JSON.stringify([
-        "merge-v4",
+        "merge-v5",
         args.presetId,
         args.styleId,
+        args.promptMode,
         args.targetTier,
         cacheText(args.evolutionPrompt),
         cacheText(args.stylePrompt),
@@ -237,6 +248,9 @@ export function useGameEngine({
     const styleRef = useRef(
         composeStyle(styleForPresetId(DEFAULT_PRESET.id), DEFAULT_PRESET),
     );
+    const promptModeRef = useRef<LifePromptMode>(
+        DEFAULT_PRESET.promptMode ?? "grounded",
+    );
     const generatedPoolRef = useRef<Map<string, Specimen[]>>(new Map());
     const generatedCacheRef = useRef<Map<string, Specimen>>(new Map());
     const nextPieceRef = useRef<GamePiece>(
@@ -303,16 +317,11 @@ export function useGameEngine({
         [activePreset, activeStyle],
     );
     const rungs = activePreset.rungs;
-    const pendingBoardGenerations = pieces.filter(
-        (piece) => piece.pending,
-    ).length;
-    const activeGenerations =
-        pendingBoardGenerations + (nextPiece.pending ? 1 : 0);
     const canUseAi = isHydrated && isLoggedIn && Boolean(apiKey);
     const canDrop =
         canUseAi &&
         hasStarted &&
-        activeGenerations === 0 &&
+        !nextPiece.pending &&
         nextPiece.generated &&
         !isCrowded;
     useEffect(() => {
@@ -330,6 +339,7 @@ export function useGameEngine({
         rungsRef.current = rungs;
         styleIdRef.current = activeStyle.id;
         styleRef.current = promptStyle;
+        promptModeRef.current = activePreset.promptMode ?? "grounded";
     }, [
         activePreset,
         presetId,
@@ -668,9 +678,7 @@ export function useGameEngine({
         if (tier === 0 && hasStartedRef.current) void hydrateSeedPiece(piece);
     };
 
-    const hasPendingGeneration = () =>
-        nextPieceRef.current.pending ||
-        piecesRef.current.some((piece) => piece.pending);
+    const hasPendingNextDrop = () => nextPieceRef.current.pending;
 
     // First board click: lock in the chosen preset and generate the first
     // seed from it. The seed appears at the top to aim; the next click drops.
@@ -709,7 +717,7 @@ export function useGameEngine({
             startGame();
             return;
         }
-        if (hasPendingGeneration()) {
+        if (hasPendingNextDrop()) {
             return;
         }
         if (!nextPieceRef.current.generated) {
@@ -757,6 +765,7 @@ export function useGameEngine({
         rungsRef.current = nextPreset.rungs;
         styleIdRef.current = nextStyle.id;
         styleRef.current = composeStyle(nextStyle, nextPreset);
+        promptModeRef.current = nextPreset.promptMode ?? "grounded";
         setPresetId(nextPreset.id);
         resetGame();
     };
@@ -814,9 +823,12 @@ export function useGameEngine({
 
         const evolutionPrompt = presetRef.current.evolutionPrompt;
         const style = styleRef.current;
+        const promptMode = promptModeRef.current;
+        const generationParents = canonicalParents(parents);
         const cacheKey = mergeCacheKey({
             presetId: presetIdRef.current,
             styleId: styleIdRef.current,
+            promptMode,
             targetTier,
             parents,
             evolutionPrompt,
@@ -843,8 +855,9 @@ export function useGameEngine({
             const generated = await generateSpecimen({
                 apiKey,
                 targetRung: rungsRef.current[targetTier],
-                parents,
+                parents: generationParents,
                 evolutionPrompt,
+                promptMode,
                 style,
             });
             rememberObjectUrl(generated);

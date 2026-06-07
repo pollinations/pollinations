@@ -5,13 +5,15 @@ export type LifeRung = {
     ink: string;
 };
 
-export type LifePresetId = "bio" | "inventions" | "future";
+export type LifePresetId = "bio" | "inventions" | "future" | "infinite";
+export type LifePromptMode = "grounded" | "infinite-craft";
 
 export type LifePreset = {
     id: LifePresetId;
     label: string;
     axis: string;
     evolutionPrompt: string;
+    promptMode?: LifePromptMode;
     stylePrompt: string;
     seeds: Specimen[];
     rungs: LifeRung[];
@@ -222,6 +224,29 @@ export const FUTURE_SEEDS: Specimen[] = [
     },
 ];
 
+export const INFINITE_CRAFT_SEEDS: Specimen[] = [
+    {
+        name: "Fire",
+        description: "Heat and flame that can burn, change, or power things.",
+        imagePrompt: "a small bright flame",
+    },
+    {
+        name: "Water",
+        description: "A flowing liquid that can mix, cool, and shape things.",
+        imagePrompt: "a clear water droplet",
+    },
+    {
+        name: "Wind",
+        description: "Moving air that can carry, erode, or stir things.",
+        imagePrompt: "a simple curling gust of wind",
+    },
+    {
+        name: "Earth",
+        description: "Ground, soil, and stone that can hold and build things.",
+        imagePrompt: "a small mound of earth and stone",
+    },
+];
+
 function createRungs(): LifeRung[] {
     return SUIKA_RADII.map((radius, index) => ({
         id: `layer-${index + 1}`,
@@ -263,6 +288,18 @@ export const LIFE_PRESETS: LifePreset[] = [
         stylePrompt:
             "minimal future-lab token, precise luminous edges, clean readable technology icon",
         seeds: FUTURE_SEEDS,
+        rungs: createRungs(),
+    },
+    {
+        id: "infinite",
+        label: "Infinite Craft",
+        axis: "combine anything from fire, water, wind, and earth",
+        promptMode: "infinite-craft",
+        evolutionPrompt:
+            "Create one surprising Infinite Craft-style result from the two parents. The order does not matter. The result can be a thing, material, place, person, creature, event, concept, technology, food, culture, or natural phenomenon.",
+        stylePrompt:
+            "clean playful alchemy token, bold readable symbol, simple iconic silhouette",
+        seeds: INFINITE_CRAFT_SEEDS,
         rungs: createRungs(),
     },
 ];

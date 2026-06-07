@@ -1,4 +1,9 @@
-import type { LifeRung, LifeStylePreset, Specimen } from "./life";
+import type {
+    LifePromptMode,
+    LifeRung,
+    LifeStylePreset,
+    Specimen,
+} from "./life";
 
 const API_BASE = "https://gen.pollinations.ai";
 const TEXT_MODEL = "claude";
@@ -35,7 +40,7 @@ function textValue(value: unknown, maxLength: number) {
     return cleaned.slice(0, maxLength);
 }
 
-function nameValue(value: unknown) {
+function nameValue(value: unknown, maxWords = 2) {
     const text = textValue(value, 28);
     if (!text) return null;
     const cleaned = text
@@ -51,11 +56,67 @@ function nameValue(value: unknown) {
     const words = cleaned
         .split(/[\s-]+/)
         .filter(Boolean)
-        .slice(0, 2);
+        .slice(0, maxWords);
     if (words.length === 0 || words.some((word) => word.length > 12)) {
         return null;
     }
     return words.join(" ");
+}
+
+function buildUserPrompt(args: {
+    left: Pick<Specimen, "name" | "description">;
+    right: Pick<Specimen, "name" | "description">;
+    evolutionPrompt: string;
+    style: LifeStylePreset;
+    promptMode: LifePromptMode;
+}) {
+    const base = [
+        `Parent A: ${args.left.name} — ${args.left.description}`,
+        `Parent B: ${args.right.name} — ${args.right.description}`,
+        `Evolution prompt: ${args.evolutionPrompt}.`,
+        `Visual style: ${args.style.label}. ${args.style.prompt}.`,
+        "The new token will be physically larger, but size is not a semantic category.",
+    ];
+
+    const nameShape =
+        args.promptMode === "infinite-craft"
+            ? "1-3 common nouns"
+            : "1-2 common nouns";
+    const outputRules = [
+        "The description must be one concise sentence with no fluff.",
+        "The imagePrompt must plainly describe the physical object itself (shape, material, key features) so it is recognizable — not a person, character, or mascot. Do not mention game tokens, icons, circles, or style; those are added separately.",
+        `Return JSON: {"name":"${nameShape}","description":"one concise sentence under 80 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}`,
+    ];
+
+    if (args.promptMode === "infinite-craft") {
+        return [
+            ...base,
+            "Combine the parents like an endless alchemy word game.",
+            "The order of the parents does not matter; both are equally important.",
+            "Return exactly one noun or short noun phrase related to both parents.",
+            "The result may be concrete or abstract, serious or weird, as long as it feels like a plausible craft result.",
+            "Allowed domains include things, materials, people, places, creatures, events, concepts, nature, technology, food, culture, media, and emotions.",
+            "Do not return both parent names joined together unless that is the natural common result.",
+            "No sentence names, explanations, URLs, code, or punctuation-heavy answers.",
+            ...outputRules,
+        ].join("\n");
+    }
+
+    return [
+        ...base,
+        "Choose one emergent step, not a leap.",
+        "Choose the simplest real result caused by combining the parents.",
+        "Use only properties present in the parent names or descriptions. Do not add a major new force, material, or process unless a parent provides it.",
+        "If a key cause is missing, choose a smaller intermediate result.",
+        "Prefer concrete causal results over loose associations.",
+        "Follow the evolution prompt exactly and keep the result inside that world.",
+        "Do not introduce unrelated domains unless the evolution prompt asks for that.",
+        "No puns, brands, pop culture, metaphors, or coined names.",
+        "Use real common English nouns only. Do not coin words. Do not use cute nonsense names.",
+        "Good names: moss frog, copper wire, reef shell, moon sensor.",
+        "Bad names: buddy sproutbug, glimmerkin, sugarwhirl, tiny blob.",
+        ...outputRules,
+    ].join("\n");
 }
 
 function promptSeed(value: string) {
@@ -104,9 +165,11 @@ export async function generateSpecimen(args: {
         Pick<Specimen, "name" | "description">,
     ];
     evolutionPrompt: string;
+    promptMode?: LifePromptMode;
     style: LifeStylePreset;
 }): Promise<Specimen> {
     const [left, right] = args.parents;
+    const promptMode = args.promptMode ?? "grounded";
 
     const textResponse = await fetch(`${API_BASE}/v1/chat/completions`, {
         method: "POST",
@@ -132,27 +195,13 @@ export async function generateSpecimen(args: {
                 },
                 {
                     role: "user",
-                    content: [
-                        `Parent A: ${left.name} — ${left.description}`,
-                        `Parent B: ${right.name} — ${right.description}`,
-                        `Evolution prompt: ${args.evolutionPrompt}.`,
-                        `Visual style: ${args.style.label}. ${args.style.prompt}.`,
-                        "The new token will be physically larger, but size is not a semantic category.",
-                        "Choose one emergent step, not a leap.",
-                        "Choose the simplest real result caused by combining the parents.",
-                        "Use only properties present in the parent names or descriptions. Do not add a major new force, material, or process unless a parent provides it.",
-                        "If a key cause is missing, choose a smaller intermediate result.",
-                        "Prefer concrete causal results over loose associations.",
-                        "Follow the evolution prompt exactly and keep the result inside that world.",
-                        "Do not introduce unrelated domains unless the evolution prompt asks for that.",
-                        "No puns, brands, pop culture, metaphors, or coined names.",
-                        "Use real common English nouns only. Do not coin words. Do not use cute nonsense names.",
-                        "Good names: moss frog, copper wire, reef shell, moon sensor.",
-                        "Bad names: buddy sproutbug, glimmerkin, sugarwhirl, tiny blob.",
-                        "The description must be one concise sentence with no fluff.",
-                        "The imagePrompt must plainly describe the physical object itself (shape, material, key features) so it is recognizable — not a person, character, or mascot. Do not mention game tokens, icons, circles, or style; those are added separately.",
-                        'Return JSON: {"name":"1-2 common nouns","description":"one concise sentence under 80 chars","imagePrompt":"a plain visual description of the object itself, 8-15 words"}',
-                    ].join("\n"),
+                    content: buildUserPrompt({
+                        left,
+                        right,
+                        evolutionPrompt: args.evolutionPrompt,
+                        style: args.style,
+                        promptMode,
+                    }),
                 },
             ],
         }),
@@ -168,7 +217,10 @@ export async function generateSpecimen(args: {
     const payload = parseJsonObject(
         textPayload.choices?.[0]?.message?.content ?? "",
     );
-    const name = nameValue(payload.name);
+    const name = nameValue(
+        payload.name,
+        promptMode === "infinite-craft" ? 3 : 2,
+    );
     const description = textValue(payload.description, 80);
     const imagePrompt = textValue(payload.imagePrompt, 360);
     if (!name || !description || !imagePrompt) {

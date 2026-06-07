@@ -252,12 +252,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         label: "Docs",
         icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
         copyLabel: "Copy All",
-        idleIcon: (
-            <ClipboardIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
-        ),
-        successIcon: (
-            <CheckIcon className="h-3.5 w-3.5 shrink-0 text-intent-success-text" />
-        ),
+        // No colour on the icons — they inherit the button's text colour so they
+        // match the filled idle/copied states.
+        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
+        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
         copyValue: async () => {
             const res = await fetch(`${genDocsUrl()}/llm.txt`);
             return res.text();
@@ -515,9 +513,16 @@ const DashboardSupport: FC<{
             </span>
             <CopyButton
                 value={action.copyValue}
-                copiedTimeoutMs={1200}
+                copiedTimeoutMs={1500}
                 tooltip={null}
-                className="group inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium text-theme-text-muted transition-colors hover:bg-surface-opaque/60 hover:text-theme-text-base"
+                className={(copied) =>
+                    cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                        copied
+                            ? "bg-intent-success-bg-light text-intent-success-text"
+                            : "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover",
+                    )
+                }
             >
                 {(copied) => (
                     <>

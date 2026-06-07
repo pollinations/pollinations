@@ -107,6 +107,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <IconButton
                             title="Edit key"
                             tooltip="✏️ Edit key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setEditingKey(apiKey)}
                         >
                             ✎
@@ -115,6 +117,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             intent="danger"
                             title="Delete key"
                             tooltip="🗑️ Delete key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setDeleteId(apiKey.id)}
                             className="text-lg"
                         >

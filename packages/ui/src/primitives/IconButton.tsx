@@ -20,6 +20,8 @@ type IconButtonProps = {
     intent?: IconButtonIntent;
     title?: string;
     tooltip?: ReactNode;
+    tooltipAlign?: "start" | "center";
+    tooltipClampToViewport?: boolean;
     onClick: () => void;
     children: ReactNode;
     className?: string;
@@ -29,6 +31,8 @@ export const IconButton: FC<IconButtonProps> = ({
     intent,
     title,
     tooltip,
+    tooltipAlign,
+    tooltipClampToViewport,
     onClick,
     children,
     className,
@@ -53,7 +57,12 @@ export const IconButton: FC<IconButtonProps> = ({
     if (!tooltipContent) return button;
 
     return (
-        <Tooltip triggerAs="span" content={tooltipContent}>
+        <Tooltip
+            triggerAs="span"
+            content={tooltipContent}
+            align={tooltipAlign}
+            clampToViewport={tooltipClampToViewport}
+        >
             {button}
         </Tooltip>
     );

@@ -9,6 +9,8 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
         <CopyButton
             value={fullKey}
             tooltip="📋 Copy full key"
+            tooltipAlign="center"
+            tooltipClampToViewport={false}
             tooltipClassName="inline-flex"
             aria-label="Copy full API key"
             className={(copied) =>

@@ -19,6 +19,8 @@ export type CopyButtonProps = Omit<
     children: ReactNode | ((copied: boolean) => ReactNode);
     copiedTimeoutMs?: number;
     tooltip?: ReactNode;
+    tooltipAlign?: "start" | "center";
+    tooltipClampToViewport?: boolean;
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
@@ -31,6 +33,8 @@ export function CopyButton({
     children,
     copiedTimeoutMs = 2000,
     tooltip = "📋 Click to copy",
+    tooltipAlign,
+    tooltipClampToViewport,
     copiedTooltip = "✅ Copied!",
     tooltipClassName,
     className,
@@ -89,6 +93,8 @@ export function CopyButton({
         <Tooltip
             triggerAs="span"
             content={copied ? copiedTooltip : tooltip}
+            align={tooltipAlign}
+            clampToViewport={tooltipClampToViewport}
             className={tooltipClassName}
         >
             {button}

@@ -14,7 +14,9 @@ const TOOLTIP_VIEWPORT_MARGIN = 12;
 type TooltipProps = {
     children: ReactNode;
     content: ReactNode;
+    align?: "start" | "center";
     ariaLabel?: string;
+    clampToViewport?: boolean;
     className?: string;
     onClick?: () => void;
     style?: CSSProperties;
@@ -30,7 +32,9 @@ type TooltipProps = {
 export const Tooltip: FC<TooltipProps> = ({
     children,
     content,
+    align = "start",
     ariaLabel,
+    clampToViewport = true,
     className,
     onClick,
     style,
@@ -38,7 +42,12 @@ export const Tooltip: FC<TooltipProps> = ({
     displayContents = false,
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({
+    const [tooltipPosition, setTooltipPosition] = useState<{
+        top: number;
+        left: number;
+        maxWidth: number;
+        transform?: CSSProperties["transform"];
+    }>({
         top: 0,
         left: 0,
         maxWidth: TOOLTIP_MAX_WIDTH,
@@ -52,17 +61,25 @@ export const Tooltip: FC<TooltipProps> = ({
                 TOOLTIP_MAX_WIDTH,
                 window.innerWidth - TOOLTIP_VIEWPORT_MARGIN * 2,
             );
-            const left = Math.min(
-                Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
-                Math.max(
-                    TOOLTIP_VIEWPORT_MARGIN,
-                    window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
-                ),
-            );
+            let left =
+                align === "center" ? rect.left + rect.width / 2 : rect.left;
+            let transform: CSSProperties["transform"] =
+                align === "center" ? "translateX(-50%)" : undefined;
+            if (clampToViewport) {
+                left = Math.min(
+                    Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
+                    Math.max(
+                        TOOLTIP_VIEWPORT_MARGIN,
+                        window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
+                    ),
+                );
+                transform = undefined;
+            }
             setTooltipPosition({
                 top: rect.bottom + 4,
                 left,
                 maxWidth,
+                transform,
             });
         }
     };
@@ -92,6 +109,7 @@ export const Tooltip: FC<TooltipProps> = ({
                     top: tooltipPosition.top,
                     left: tooltipPosition.left,
                     maxWidth: tooltipPosition.maxWidth,
+                    transform: tooltipPosition.transform,
                 }}
                 className={`${
                     showTooltip

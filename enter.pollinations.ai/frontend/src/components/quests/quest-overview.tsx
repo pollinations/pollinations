@@ -1,14 +1,11 @@
+import { Button, Chip, Section, Surface, TabButton } from "@pollinations/ui";
+import { PaidChip } from "@pollinations/ui/wallet";
 import { useEffect, useMemo, useState } from "react";
+import { apiClient } from "../../api.ts";
 import type {
     QuestOverviewItem,
     QuestOverviewResponse,
-} from "../../../routes/quests.ts";
-import { apiClient } from "../../api.ts";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Button } from "../ui/button.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { Surface } from "../ui/surface.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
+} from "../../backend-types.ts";
 
 type QuestOverviewProps = {
     initialData?: QuestOverviewResponse | null;
@@ -16,7 +13,7 @@ type QuestOverviewProps = {
 
 type QuestFilter = "available" | "claimed" | "completed";
 
-const theme = "green" as const;
+const theme = "coral" as const;
 
 export function QuestOverview({ initialData = null }: QuestOverviewProps = {}) {
     const [filter, setFilter] = useState<QuestFilter>("available");
@@ -70,7 +67,7 @@ export function QuestOverview({ initialData = null }: QuestOverviewProps = {}) {
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection title="Quests" theme={theme} framed>
+            <Section title="Quests" theme={theme} framed>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
                         {(["available", "claimed", "completed"] as const).map(
@@ -126,7 +123,7 @@ export function QuestOverview({ initialData = null }: QuestOverviewProps = {}) {
                         ))
                     )}
                 </div>
-            </DashboardSection>
+            </Section>
         </div>
     );
 }
@@ -163,14 +160,13 @@ function QuestCard({ quest }: { quest: QuestOverviewItem }) {
                             Claimed
                         </Chip>
                     )}
-                    <Chip
+                    <PaidChip
                         theme={theme}
-                        intent="paid"
                         size="sm"
                         className="whitespace-nowrap"
                     >
                         {formatReward(quest)}
-                    </Chip>
+                    </PaidChip>
                 </div>
             </div>
 
@@ -184,7 +180,7 @@ function QuestCard({ quest }: { quest: QuestOverviewItem }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             theme={theme}
-                            size="small"
+                            size="sm"
                             className="whitespace-nowrap"
                             title={pr.title}
                             aria-label={`${pullRequestLabel} #${pr.number}: ${pr.title}`}

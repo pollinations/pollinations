@@ -68,7 +68,10 @@ export const Dialog: FC<DialogProps> = ({
                 {showBackdrop && (
                     <ArkDialog.Backdrop
                         className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-ink-950/50",
+                            // Scrim must DARKEN in both modes — ink-950 inverts
+                            // (near-white in dark) and would brighten the page.
+                            // Fixed black + a soft blur dims and de-focuses.
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm",
                             backdropClassName,
                         )}
                     />

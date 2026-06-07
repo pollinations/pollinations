@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { API_BASE } from "../api.config";
+import { useCachedFetch } from "./useCachedFetch";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
 const TEXT_MODELS_URL = `${API_BASE}/text/models`;
@@ -31,6 +32,9 @@ interface UseModelListReturn {
     error: Error | null;
     allModels: Model[];
 }
+
+const CACHE_KEY_PREFIX = "pollinations:modelList:v2:";
+const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 type RawModel =
     | {
@@ -202,34 +206,23 @@ async function fetchModelListData(
  * @param apiKey - API key from useAuth (null when logged out → all models grayed out)
  */
 export function useModelList(apiKey: string | null): UseModelListReturn {
-    const [data, setData] = useState<ModelListData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        let cancelled = false;
-
-        setData(null);
-        setError(null);
-        setIsLoading(true);
-
-        fetchModelListData(apiKey)
-            .then((freshData) => {
-                if (cancelled) return;
-                setData(freshData);
-                setIsLoading(false);
-            })
-            .catch((err) => {
-                if (cancelled) return;
+    const fetcher = useCallback(
+        () =>
+            fetchModelListData(apiKey).catch((err) => {
                 setError(err instanceof Error ? err : new Error(String(err)));
-                setData(null);
-                setIsLoading(false);
-            });
+                throw err;
+            }),
+        [apiKey],
+    );
 
-        return () => {
-            cancelled = true;
-        };
-    }, [apiKey]);
+    const cacheKey = `${CACHE_KEY_PREFIX}${apiKey ? apiKey.slice(-8) : "anon"}`;
+    const { data, loading: isLoading } = useCachedFetch<ModelListData>(
+        cacheKey,
+        fetcher,
+        TTL_MS,
+    );
 
     const allowedImageModelIds = useMemo(
         () => new Set<string>(data?.allowed.image ?? []),

@@ -16,12 +16,9 @@
               : "light";
           }
           if (mode === "dark") document.documentElement.classList.add("dark");
-          // Match the browser chrome to the resolved mode's desk color
-          // (--polli-color-app-bg). ColorModeToggle keeps it in sync at runtime.
-          const meta = document.createElement("meta");
-          meta.name = "theme-color";
-          meta.content = mode === "dark" ? "#232528" : "#ebe7df";
-          document.head.appendChild(meta);
+          // theme-color (browser chrome) is derived from the --polli-color-app-bg
+          // token by @pollinations/ui ColorModeToggle once styles load — no
+          // hardcoded color here.
         } catch {
           /* ignore storage / matchMedia failures */
         }

@@ -42,18 +42,27 @@ let current: ColorMode =
 const listeners = new Set<() => void>();
 
 function apply(): void {
-    if (typeof document !== "undefined") {
-        document.documentElement.classList.toggle("dark", current === "dark");
-        // Keep the browser chrome (theme-color) matched to the desk color
-        // (--polli-color-app-bg) so the mobile address bar flips with the mode.
-        const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) {
-            meta.setAttribute(
-                "content",
-                current === "dark" ? "#232528" : "#ebe7df",
-            );
-        }
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.toggle("dark", current === "dark");
+    syncThemeColor();
+}
+
+// Match the browser chrome (theme-color) to the resolved desk color by reading
+// the computed --polli-color-app-bg token — never a hardcoded value. Runs on
+// mount / mode change, after styles load, so the token resolves per mode.
+function syncThemeColor(): void {
+    if (typeof document === "undefined") return;
+    const appBg = getComputedStyle(document.documentElement)
+        .getPropertyValue("--polli-color-app-bg")
+        .trim();
+    if (!appBg) return;
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
     }
+    meta.setAttribute("content", appBg);
 }
 
 function emit(): void {

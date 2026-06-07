@@ -147,9 +147,9 @@
    slot points at a mode-aware neutral token, so dark adapts automatically. */
 [data-theme="neutral"] {
     --polli-color-bg-pale:         var(--polli-color-surface-opaque);
-    --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 8%, transparent);
-    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 16%, transparent);
-    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-text-muted) 26%, transparent);
+    --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 10%, transparent);
+    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
+    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-text-muted) 46%, transparent);
     --polli-color-border:          var(--polli-color-divider);
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);

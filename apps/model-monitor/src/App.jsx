@@ -23,7 +23,7 @@ import { ModalityDot } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
-const APP_THEME = "neutral";
+const APP_THEME = "amber";
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },

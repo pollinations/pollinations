@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "pollinations": {
-    "theme": "neutral"
+    "theme": "amber"
   },
   "scripts": {
     "dev": "vite",

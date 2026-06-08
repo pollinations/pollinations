@@ -100,7 +100,7 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
-const APP_THEME: ThemeName = "neutral";
+const APP_THEME: ThemeName = "amber";
 // Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
 // Unset falls back to the SDK default (production gen.pollinations.ai).
 const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;

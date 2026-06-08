@@ -223,8 +223,19 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                     onToggle={() => setModelsExpanded((v) => !v)}
                     disabled={disabled}
                     ariaLabel="Toggle model list"
-                    wrapperClassName={rowTheme.selectedClasses}
-                    hoverClassName={rowTheme.selectedHoverClasses}
+                    // Border only on the wrapper so the expanded panel stays
+                    // transparent (chips read on the neutral dialog surface, not
+                    // a themed fill). Highlight the header only when ≥1 model is
+                    // selected — same as the Profile/Usage/Keys rows.
+                    wrapperClassName="border-theme-border"
+                    triggerClassName={
+                        selectedCount > 0 ? "bg-theme-bg-active" : undefined
+                    }
+                    hoverClassName={
+                        selectedCount > 0
+                            ? rowTheme.selectedHoverClasses
+                            : rowTheme.rowHoverClasses
+                    }
                     focusClassName={rowTheme.focusRingClasses}
                     panelClassName="border-t border-theme-border px-3 pb-3 pt-3 space-y-3"
                     label={

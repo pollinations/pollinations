@@ -809,6 +809,13 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+/** Per-model agentic/text capabilities */
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
+
 /** Model information */
 export interface ModelInfo {
     id?: string;
@@ -826,6 +833,7 @@ export interface ModelInfo {
     video_capabilities?: VideoCapability[];
     max_reference_images?: number;
     max_reference_videos?: number;
+    capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;

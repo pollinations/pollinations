@@ -563,7 +563,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
         // calculateCost when the response includes web search metadata.
         cost: {

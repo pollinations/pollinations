@@ -179,8 +179,9 @@ test("Gemini grounding cost is added by family billing rules", () => {
     const gemini3Cost = calculateCost("gemini", usage, groundedOutput);
 
     // Gemini 2.5 Search bills once per grounded prompt, not once per query.
+    // priceMultiplier is 1×, so price equals cost.
     expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
-    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.8025, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3Cost.totalCost).toBeCloseTo(3.528, 8);
@@ -200,9 +201,10 @@ test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {
         completionTextTokens: 1_000,
     });
 
+    // priceMultiplier is 1×, so price equals cost.
     expect(shortContextCost.totalCost).toBeCloseTo(0.412, 8);
     expect(longContextCost.totalCost).toBeCloseTo(0.818004, 8);
-    expect(longContextPrice.totalPrice).toBeCloseTo(1.227006, 8);
+    expect(longContextPrice.totalPrice).toBeCloseTo(0.818004, 8);
 });
 
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {

@@ -39,6 +39,12 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    billing_policy: z
+        .object({
+            id: z.string(),
+            description: z.string(),
+        })
+        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -103,6 +109,12 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         category: service.category,
         brand: service.brand,
         pricing,
+        billing_policy: service.billingPolicy
+            ? {
+                  id: service.billingPolicy.id,
+                  description: service.billingPolicy.description,
+              }
+            : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

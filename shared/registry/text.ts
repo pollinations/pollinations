@@ -1,7 +1,7 @@
 import {
-    calculateGemini31ProCost,
-    calculateGeminiGroundedPromptCost,
-    calculateGeminiSearchQueryCost,
+    gemini31ProBillingPolicy,
+    geminiGroundedPromptBillingPolicy,
+    geminiSearchQueryBillingPolicy,
 } from "./gemini-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -284,7 +284,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.0),
             completionTextTokens: perMillion(3.0),
         },
-        calculateCost: calculateGeminiSearchQueryCost,
+        billingPolicy: geminiSearchQueryBillingPolicy,
         title: "Gemini 3 Flash",
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -314,7 +314,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
             completionTextTokens: perMillion(9.0),
         },
-        calculateCost: calculateGeminiSearchQueryCost,
+        billingPolicy: geminiSearchQueryBillingPolicy,
         title: "Gemini 3.5 Flash",
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -346,7 +346,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
-        calculateCost: calculateGeminiSearchQueryCost,
+        billingPolicy: geminiSearchQueryBillingPolicy,
         title: "Gemini 3.1 Flash Lite",
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio", "video"],
@@ -374,7 +374,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        calculateCost: calculateGeminiGroundedPromptCost,
+        billingPolicy: geminiGroundedPromptBillingPolicy,
         title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image", "video"],
@@ -572,7 +572,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
-        calculateCost: calculateGeminiGroundedPromptCost,
+        billingPolicy: geminiGroundedPromptBillingPolicy,
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
@@ -605,6 +605,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
+        billingPolicy: geminiSearchQueryBillingPolicy,
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
@@ -635,6 +636,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5),
             completionTextTokens: perMillion(9.0),
         },
+        billingPolicy: geminiSearchQueryBillingPolicy,
         title: "Gemini 3.5 Flash Search",
         description: "Gemini 3.5 Flash Search - Premium grounded web research",
         inputModalities: ["text", "image", "audio", "video"],
@@ -979,7 +981,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        calculateCost: calculateGemini31ProCost,
+        billingPolicy: gemini31ProBillingPolicy,
         title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",

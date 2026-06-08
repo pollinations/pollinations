@@ -1,7 +1,7 @@
 import { perMillion } from "./price-helpers";
 import type {
-    CostCalculator,
-    CostCalculatorInput,
+    BillingPolicy,
+    BillingPolicyInput,
     CostDefinition,
     Usage,
 } from "./registry";
@@ -44,7 +44,7 @@ function getPromptTokenCount(usage: Usage): number {
 }
 
 function calculateGeminiCost(
-    { usage, model, linearCost }: CostCalculatorInput,
+    { usage, model, linearCost }: BillingPolicyInput,
     extraCost = 0,
     longContext?: GeminiLongContextCost,
 ) {
@@ -66,20 +66,30 @@ function calculateGeminiCost(
 const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 
-export const calculateGeminiGroundedPromptCost: CostCalculator = (input) =>
-    calculateGeminiCost(
-        input,
-        getGeminiGroundingWebSearchQueryCount(input.output) > 0
-            ? GEMINI_25_GROUNDING_COST_PER_PROMPT
-            : 0,
-    );
+export const geminiGroundedPromptBillingPolicy: BillingPolicy = {
+    id: "google.gemini_2.grounded_prompt.v1",
+    description:
+        "Adds Google Search grounding at $35 / 1K grounded prompts when grounding metadata is present.",
+    calculateCost: (input) =>
+        calculateGeminiCost(
+            input,
+            getGeminiGroundingWebSearchQueryCount(input.output) > 0
+                ? GEMINI_25_GROUNDING_COST_PER_PROMPT
+                : 0,
+        ),
+};
 
-export const calculateGeminiSearchQueryCost: CostCalculator = (input) =>
-    calculateGeminiCost(
-        input,
-        getGeminiGroundingWebSearchQueryCount(input.output) *
-            GEMINI_3_GROUNDING_COST_PER_QUERY,
-    );
+export const geminiSearchQueryBillingPolicy: BillingPolicy = {
+    id: "google.gemini_3.search_query.v1",
+    description:
+        "Adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+    calculateCost: (input) =>
+        calculateGeminiCost(
+            input,
+            getGeminiGroundingWebSearchQueryCount(input.output) *
+                GEMINI_3_GROUNDING_COST_PER_QUERY,
+        ),
+};
 
 const GEMINI_3_1_PRO_LONG_CONTEXT: GeminiLongContextCost = {
     thresholdTokens: 200_000,
@@ -93,10 +103,15 @@ const GEMINI_3_1_PRO_LONG_CONTEXT: GeminiLongContextCost = {
     },
 };
 
-export const calculateGemini31ProCost: CostCalculator = (input) =>
-    calculateGeminiCost(
-        input,
-        getGeminiGroundingWebSearchQueryCount(input.output) *
-            GEMINI_3_GROUNDING_COST_PER_QUERY,
-        GEMINI_3_1_PRO_LONG_CONTEXT,
-    );
+export const gemini31ProBillingPolicy: BillingPolicy = {
+    id: "google.gemini_3_1_pro.dynamic.v1",
+    description:
+        "Uses Gemini long-context rates above 200K prompt tokens and adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+    calculateCost: (input) =>
+        calculateGeminiCost(
+            input,
+            getGeminiGroundingWebSearchQueryCount(input.output) *
+                GEMINI_3_GROUNDING_COST_PER_QUERY,
+            GEMINI_3_1_PRO_LONG_CONTEXT,
+        ),
+};

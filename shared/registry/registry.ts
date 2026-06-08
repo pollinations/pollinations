@@ -83,16 +83,18 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
-export type CostCalculatorInput<TModelId extends string = string> = {
+export type BillingPolicyInput<TModelId extends string = string> = {
     usage: Usage;
     output?: unknown;
     model: ModelDefinition<TModelId>;
     linearCost: (costDefinition?: CostDefinition) => UsageCost;
 };
 
-export type CostCalculator<TModelId extends string = string> = (
-    input: CostCalculatorInput<TModelId>,
-) => UsageCost;
+export type BillingPolicy<TModelId extends string = string> = {
+    id: string;
+    description: string;
+    calculateCost: (input: BillingPolicyInput<TModelId>) => UsageCost;
+};
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
@@ -104,7 +106,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
-    calculateCost?: CostCalculator<TModelId>;
+    billingPolicy?: BillingPolicy<TModelId>;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -297,8 +299,13 @@ export function calculateCost(
     const linearCost = (costDefinition = svc.cost) =>
         calculateLinearCost(model, usage, costDefinition);
 
-    return svc.calculateCost
-        ? svc.calculateCost({ usage, output, model: svc, linearCost })
+    return svc.billingPolicy
+        ? svc.billingPolicy.calculateCost({
+              usage,
+              output,
+              model: svc,
+              linearCost,
+          })
         : linearCost();
 }
 

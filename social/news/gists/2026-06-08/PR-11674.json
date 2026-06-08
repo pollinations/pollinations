@@ -1,0 +1,35 @@
+{
+  "pr_number": 11674,
+  "title": "chore: remove 4 dead apps (2026-06-08)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11674",
+  "merged_at": "2026-06-08T08:53:06Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Dead App Removal\n\nThese apps returned 404/410 in **all 3 check rounds** (5 min apart):\n\n- WorkFlow | https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW\n- Christmas Postcard Creator | https://christmas-card-creator.up.railway.app/\n- Lapse Game 2075 | https://makeypocket.github.io/LapseGame/\n- Player or AI [Roblox] | https://www.roblox.com/games/95217169945642/Player-or-AI\n\nReview before merging. Close this PR to keep all apps.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "Our automated bot did some light gardening, removing a few community apps that have gone offline to keep the showcase fresh.",
+    "summary": "Automated cleanup removed four offline community apps (WorkFlow, Christmas Postcard Creator, Lapse Game 2075, and Player or AI) from the showcase after they consistently returned 404 errors.",
+    "impact": "The community showcase remains clean and functional, ensuring users only discover active, working projects.",
+    "keywords": [
+      "showcase",
+      "cleanup",
+      "bot",
+      "apps",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature doing some garden cleanup. Nomnom eating dead leaves/broken links to represent removing 404s.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up brown pixelated leaves while the round tan Nomnom creature happily eats a broken link icon. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-08/PR-11674.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, sweeping up brown pixelated leaves while the round tan Nomnom creature happily eats a broken link icon. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-08T08:54:09.786940+00:00"
+}

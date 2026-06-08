@@ -39,6 +39,30 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    billing: z
+        .object({
+            tiers: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        description: z.string(),
+                    }),
+                )
+                .optional(),
+            adjustments: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        description: z.string(),
+                        kind: z.string(),
+                        unit: z.string(),
+                        count: z.string(),
+                        unit_price: z.string(),
+                    }),
+                )
+                .optional(),
+        })
+        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -96,6 +120,26 @@ function getModelInfo(modelName: ModelName): ModelInfo {
             pricing[key] = toFixedPoint(value);
         }
     }
+    const billing = service.billing
+        ? {
+              tiers: service.billing.tiers?.map((tier) => ({
+                  id: tier.id,
+                  description: tier.description,
+              })),
+              adjustments: service.billing.adjustments?.map((adjustment) => ({
+                  id: adjustment.id,
+                  description: adjustment.description,
+                  kind: adjustment.kind,
+                  unit: adjustment.unit,
+                  count: adjustment.count,
+                  unit_price: toFixedPoint(
+                      adjustment.unitCost *
+                          (adjustment.priceMultiplier ??
+                              service.priceMultiplier),
+                  ),
+              })),
+          }
+        : undefined;
 
     return {
         name: modelName as string,
@@ -103,6 +147,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         category: service.category,
         brand: service.brand,
         pricing,
+        billing,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

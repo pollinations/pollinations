@@ -83,16 +83,52 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
-export type CostCalculatorInput<TModelId extends string = string> = {
-    usage: Usage;
-    output?: unknown;
-    model: ModelDefinition<TModelId>;
-    linearCost: (costDefinition?: CostDefinition) => UsageCost;
+export type BillingAdjustmentCounter =
+    | "geminiGroundedPrompt"
+    | "geminiWebSearchQueries";
+
+export type BillingTierRule = {
+    id: string;
+    description: string;
+    when: {
+        promptTokensGt: number;
+    };
+    cost: CostDefinition;
 };
 
-export type CostCalculator<TModelId extends string = string> = (
-    input: CostCalculatorInput<TModelId>,
-) => UsageCost;
+export type BillingAdjustmentRule = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    count: BillingAdjustmentCounter;
+    unitCost: number;
+    priceMultiplier?: number;
+};
+
+export type BillingRules = {
+    tiers?: BillingTierRule[];
+    adjustments?: BillingAdjustmentRule[];
+};
+
+export type BillingAdjustment = {
+    id: string;
+    kind: string;
+    unit: string;
+    units: number;
+    unitCost: number;
+    unitPrice: number;
+    totalCost: number;
+    totalPrice: number;
+};
+
+export type BillingResult = {
+    cost: UsageCost;
+    price: UsagePrice;
+    effectivePriceDefinition: PriceDefinition;
+    pricingTier?: string;
+    adjustments: BillingAdjustment[];
+};
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
@@ -104,7 +140,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
-    calculateCost?: CostCalculator<TModelId>;
+    billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -182,6 +218,92 @@ function calculateLinearCost(
         ...usageCost,
         totalCost,
     };
+}
+
+function derivePriceFromCostDefinition(
+    costDefinition: CostDefinition,
+    priceMultiplier: number,
+): PriceDefinition {
+    if (priceMultiplier === 1) return costDefinition;
+    return Object.fromEntries(
+        Object.entries(costDefinition).map(([k, v]) => [
+            k,
+            (v as number) * priceMultiplier,
+        ]),
+    ) as PriceDefinition;
+}
+
+function getPromptTokenCount(usage: Usage): number {
+    return (
+        (usage.promptTextTokens ?? 0) +
+        (usage.promptCachedTokens ?? 0) +
+        (usage.promptAudioTokens ?? 0) +
+        (usage.promptImageTokens ?? 0) +
+        (usage.promptVideoTokens ?? 0)
+    );
+}
+
+type GroundedOutput = {
+    choices?: { groundingMetadata?: { webSearchQueries?: string[] } }[];
+    streamEvents?: GroundedOutput[];
+};
+
+function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+    const o = output as GroundedOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    const queries = new Set<string>();
+    for (const event of events) {
+        for (const choice of event.choices ?? []) {
+            for (const q of choice.groundingMetadata?.webSearchQueries ?? []) {
+                if (q?.trim()) queries.add(q);
+            }
+        }
+    }
+    return queries.size;
+}
+
+function countBillingAdjustmentUnits(
+    counter: BillingAdjustmentCounter,
+    output: unknown,
+): number {
+    const geminiQueryCount = getGeminiGroundingWebSearchQueryCount(output);
+    if (counter === "geminiGroundedPrompt") {
+        return geminiQueryCount > 0 ? 1 : 0;
+    }
+    return geminiQueryCount;
+}
+
+function selectBillingTier(
+    svc: ModelDefinition,
+    usage: Usage,
+): BillingTierRule | undefined {
+    const promptTokens = getPromptTokenCount(usage);
+    return svc.billing?.tiers?.find(
+        (tier) => promptTokens > tier.when.promptTokensGt,
+    );
+}
+
+function calculateBillingAdjustments(
+    svc: ModelDefinition,
+    output: unknown,
+): BillingAdjustment[] {
+    return (svc.billing?.adjustments ?? [])
+        .map((rule) => {
+            const units = countBillingAdjustmentUnits(rule.count, output);
+            const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
+            const unitPrice = rule.unitCost * priceMultiplier;
+            return {
+                id: rule.id,
+                kind: rule.kind,
+                unit: rule.unit,
+                units,
+                unitCost: rule.unitCost,
+                unitPrice,
+                totalCost: units * rule.unitCost,
+                totalPrice: roundPollenLedgerAmount(units * unitPrice),
+            } satisfies BillingAdjustment;
+        })
+        .filter((adjustment) => adjustment.units > 0);
 }
 
 const MODEL_REGISTRY = {
@@ -282,6 +404,68 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 }
 
 /**
+ * Calculate full billing for a model based on usage and optional response output.
+ */
+export function calculateBilling(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): BillingResult {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
+        throw new Error(
+            `Failed to get current cost for model: ${model.toString()}`,
+        );
+    const billingTier = selectBillingTier(svc, usage);
+    const costDefinition = billingTier
+        ? { ...svc.cost, ...billingTier.cost }
+        : svc.cost;
+    const usageCost = calculateLinearCost(model, usage, costDefinition);
+    const adjustments = calculateBillingAdjustments(svc, output);
+    const totalAdjustmentCost = adjustments.reduce(
+        (total, adjustment) => total + adjustment.totalCost,
+        0,
+    );
+    const totalAdjustmentPrice = adjustments.reduce(
+        (total, adjustment) => total + adjustment.totalPrice,
+        0,
+    );
+    const cost = {
+        ...usageCost,
+        totalCost: usageCost.totalCost + totalAdjustmentCost,
+    };
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, cost]) => [
+                usageType,
+                (cost as number) * svc.priceMultiplier,
+            ]),
+    ) as Usage;
+    const tokenTotalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
+    );
+    const price = {
+        ...usagePrice,
+        totalPrice: roundPollenLedgerAmount(
+            tokenTotalPrice + totalAdjustmentPrice,
+        ),
+    };
+
+    return {
+        cost,
+        price,
+        effectivePriceDefinition: derivePriceFromCostDefinition(
+            costDefinition,
+            svc.priceMultiplier,
+        ),
+        pricingTier: billingTier?.id,
+        adjustments,
+    };
+}
+
+/**
  * Calculate cost for a model based on usage
  */
 export function calculateCost(
@@ -289,17 +473,7 @@ export function calculateCost(
     usage: Usage,
     output?: unknown,
 ): UsageCost {
-    const svc = MODEL_REGISTRY[model];
-    if (!svc)
-        throw new Error(
-            `Failed to get current cost for model: ${model.toString()}`,
-        );
-    const linearCost = (costDefinition = svc.cost) =>
-        calculateLinearCost(model, usage, costDefinition);
-
-    return svc.calculateCost
-        ? svc.calculateCost({ usage, output, model: svc, linearCost })
-        : linearCost();
+    return calculateBilling(model, usage, output).cost;
 }
 
 /**
@@ -310,25 +484,5 @@ export function calculatePrice(
     usage: Usage,
     output?: unknown,
 ): UsagePrice {
-    const svc = MODEL_REGISTRY[model];
-    if (!svc)
-        throw new Error(
-            `Failed to get current price for model: ${model.toString()}`,
-        );
-    const usageCost = calculateCost(model, usage, output);
-    const usagePrice = Object.fromEntries(
-        Object.entries(usageCost)
-            .filter(([usageType]) => usageType !== "totalCost")
-            .map(([usageType, cost]) => [
-                usageType,
-                (cost as number) * svc.priceMultiplier,
-            ]),
-    ) as Usage;
-    const totalPrice = roundPollenLedgerAmount(
-        usageCost.totalCost * svc.priceMultiplier,
-    );
-    return {
-        ...usagePrice,
-        totalPrice,
-    };
+    return calculateBilling(model, usage, output).price;
 }

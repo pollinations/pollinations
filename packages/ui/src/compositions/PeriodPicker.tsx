@@ -18,7 +18,7 @@ import type { ThemeName } from "../theme.ts";
 export type PeriodPickerProps = {
     value: PeriodSelection;
     onChange: (value: PeriodSelection) => void;
-    theme: ThemeName;
+    theme?: ThemeName;
     minDate?: Date;
     maxDate?: Date;
 };

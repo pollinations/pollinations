@@ -1,13 +1,6 @@
 {
     "bgPale": {
         "amber": "#fff4d4",
-        "blue": "#e1f9ff",
-        "pink": "#ffeafa",
-        "coral": "#ffecdf",
-        "teal": "#d4fffc",
-        "violet": "#faf0ff",
-        "emerald": "#dcffed",
-        "lime": "#edfcdc",
         "neutral": "#fffcf9"
     },
     "brandDark": "#110518"

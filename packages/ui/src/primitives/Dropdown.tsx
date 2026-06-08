@@ -9,7 +9,7 @@ const DEFAULT_PANEL =
     "polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:shadow-lg";
 
 export type DropdownProps = {
-    theme: ThemeName;
+    theme?: ThemeName;
     /** Trigger element; receives the current open state (e.g. to rotate a chevron). */
     trigger: (open: boolean) => ReactNode;
     /** Panel content. As a function, receives `close` to dismiss after a selection. */

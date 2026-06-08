@@ -13,7 +13,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { ModalityDot } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
@@ -559,16 +559,13 @@ export function Authorize() {
                                             <span>Generate</span>
                                             <div className="flex items-center gap-1 flex-nowrap">
                                                 {modalities.map((m) => (
-                                                    <Chip
-                                                        key={m}
-                                                        size="sm"
-                                                        theme={
-                                                            getModalityTheme(
-                                                                m,
-                                                            ) ?? undefined
-                                                        }
-                                                    >
-                                                        {m}
+                                                    <Chip key={m} size="sm">
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <ModalityDot
+                                                                modality={m}
+                                                            />
+                                                            {m}
+                                                        </span>
                                                     </Chip>
                                                 ))}
                                             </div>

@@ -1,34 +1,38 @@
-/** Pollinations model modality to package theme mapping. */
+/** Pollinations model-modality colors. Single-accent model: modality is NOT a
+ *  page theme — each modality is a fixed color from the `--polli-color-modality-*`
+ *  tokens, applied as a dot/badge via inline style (the key is dynamic, so a CSS
+ *  var beats a Tailwind class). The token VALUES live in styles/tokens.css. */
 import type { ModelCategory } from "@pollinations/sdk";
-import type { ThemeName } from "../../theme.ts";
 
 /** A model modality is just a model category. Single source of truth: the SDK. */
 export type Modality = ModelCategory;
 
-export const MODALITY_THEMES: Record<ModelCategory, ThemeName> = {
-    text: "blue",
-    image: "pink",
-    video: "teal",
-    audio: "amber",
-    realtime: "coral",
-    embedding: "violet",
-};
+/** The canonical modality keys (match the `--polli-color-modality-*` tokens). */
+export type ModalityKey = ModelCategory;
 
-/** Theme for a known model category. Total — every category has a theme. */
-export function modalityTheme(category: ModelCategory): ThemeName {
-    return MODALITY_THEMES[category];
-}
+const MODALITIES: readonly ModelCategory[] = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "realtime",
+    "embedding",
+];
 
-/** Map a human-typed category string to the canonical `ModelCategory` key. */
-function normalize(category: string): ModelCategory | null {
+/** Map an untrusted category string to its modality key; null if unknown. */
+export function getModalityKey(category: string): ModalityKey | null {
     const lower = category.toLowerCase();
     if (lower === "images") return "image";
     if (lower === "embeddings") return "embedding";
-    return lower in MODALITY_THEMES ? (lower as ModelCategory) : null;
+    return MODALITIES.includes(lower as ModelCategory)
+        ? (lower as ModelCategory)
+        : null;
 }
 
-/** Theme for an untrusted category string (e.g. user input); null if unknown. */
-export function getModalityTheme(category: string): ThemeName | null {
-    const key = normalize(category);
-    return key ? MODALITY_THEMES[key] : null;
-}
+/** CSS var for a modality's solid color (dot / border / icon). */
+export const modalityColorVar = (key: ModalityKey): string =>
+    `var(--polli-color-modality-${key})`;
+
+/** CSS var for a modality's faint chip background. */
+export const modalityBgVar = (key: ModalityKey): string =>
+    `var(--polli-color-modality-${key}-bg)`;

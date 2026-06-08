@@ -26,8 +26,8 @@ import {
 } from "@pollinations/ui";
 import {
     categoryLabel,
+    ModalityDot,
     ModelSelector,
-    modalityTheme,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
 
@@ -174,11 +174,13 @@ function ModalityTabs({
                 <TabButton
                     key={category}
                     active={activeCategory === category}
-                    theme={modalityTheme(category)}
                     size="sm"
                     onClick={() => onCategoryChange(category)}
                 >
-                    {categoryLabel(category)}
+                    <span className="polli:inline-flex polli:items-center polli:gap-1.5">
+                        <ModalityDot modality={category} />
+                        {categoryLabel(category)}
+                    </span>
                 </TabButton>
             ))}
         </ButtonGroup>
@@ -196,10 +198,8 @@ function ResultPanel({
     activeCategory: ModelCategory;
     className?: string;
 }) {
-    const theme = modalityTheme(activeCategory);
     return (
         <Surface
-            theme={theme}
             variant="panel"
             className={cn(
                 "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
@@ -207,9 +207,12 @@ function ResultPanel({
             )}
         >
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <Text as="h2" size="sm" tone="strong" weight="semibold">
-                    Output
-                </Text>
+                <span className="polli:inline-flex polli:items-center polli:gap-1.5">
+                    <ModalityDot modality={activeCategory} />
+                    <Text as="h2" size="sm" tone="strong" weight="semibold">
+                        Output
+                    </Text>
+                </span>
                 {result && result.type !== "text" && (
                     <Button
                         as="a"
@@ -217,7 +220,6 @@ function ResultPanel({
                         download={`pollinations-playground.${getResultExtension(
                             result,
                         )}`}
-                        theme={theme}
                         size="sm"
                     >
                         Save
@@ -227,14 +229,12 @@ function ResultPanel({
 
             {isLoading ? (
                 <MediaPlaceholder
-                    theme={theme}
                     label="Generating..."
                     detail="Hang tight while your result is created."
                     className="polli:flex-1"
                 />
             ) : !result ? (
                 <MediaPlaceholder
-                    theme={theme}
                     icon={<ImageIcon className="polli:h-5 polli:w-5" />}
                     label="Output preview"
                     detail="Generated results appear here."
@@ -386,9 +386,6 @@ export function Playground({
         !!currentModel &&
         isLoggedIn &&
         catalog.allowedModelIds.has(currentModel.id);
-    const activeTheme = currentModel
-        ? modalityTheme(currentModel.category)
-        : modalityTheme(activeCategory);
 
     useEffect(() => {
         setReferenceImages((current) => {
@@ -576,7 +573,6 @@ export function Playground({
             <div className="polli-playground-main-grid">
                 <div className="polli:flex polli:flex-col polli:gap-4">
                     <Surface
-                        theme={activeTheme}
                         variant="panel"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
@@ -596,7 +592,6 @@ export function Playground({
                     </Surface>
 
                     <Surface
-                        theme={activeTheme}
                         variant="panel"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
@@ -643,7 +638,6 @@ export function Playground({
                                             </span>
                                         </>
                                     }
-                                    theme={activeTheme}
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
                                         if (reason === "size") {
@@ -685,7 +679,6 @@ export function Playground({
                                             </span>
                                         </>
                                     }
-                                    theme={activeTheme}
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
                                         if (reason === "size") {
@@ -729,7 +722,6 @@ export function Playground({
                                                 </span>
                                             </>
                                         }
-                                        theme={activeTheme}
                                         onReject={(rejected) => {
                                             const reason = rejected[0]?.reason;
                                             if (reason === "size") {
@@ -776,7 +768,6 @@ export function Playground({
                                                     </>
                                                 )
                                             }
-                                            theme={activeTheme}
                                             onReject={(rejected) => {
                                                 const reason =
                                                     rejected[0]?.reason;
@@ -855,7 +846,8 @@ export function Playground({
 
                         {currentModel && currentModel.voices.length > 0 && (
                             <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                <Field.Label className="polli:flex polli:items-center polli:gap-1.5 polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                                    <ModalityDot modality="audio" />
                                     Voice
                                 </Field.Label>
                                 <ButtonGroup aria-label="Voice">
@@ -863,7 +855,6 @@ export function Playground({
                                         <TabButton
                                             key={voice}
                                             active={selectedVoice === voice}
-                                            theme={modalityTheme("audio")}
                                             size="sm"
                                             onClick={() =>
                                                 setSelectedVoice(voice)
@@ -880,7 +871,6 @@ export function Playground({
 
                         <Button
                             type="button"
-                            theme={activeTheme}
                             size="lg"
                             disabled={
                                 isGenerating ||

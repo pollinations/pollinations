@@ -29,6 +29,6 @@ export type ThemeName = (typeof themes)[number];
  * a form tools can read. `brandDark` is the shared splash/OG contrast color.
  */
 export const themePalette: {
-    bgPale: Record<ThemeName, string>;
+    bgPale: Record<string, string>;
     brandDark: string;
 } = paletteData;

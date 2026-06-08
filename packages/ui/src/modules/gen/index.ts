@@ -1,3 +1,4 @@
+export { ModalityDot } from "./ModalityDot.tsx";
 export {
     CATEGORY_LABELS,
     categoryLabel,
@@ -7,7 +8,9 @@ export {
     type ModelSelectorProps,
 } from "./ModelSelector.tsx";
 export {
-    getModalityTheme,
+    getModalityKey,
     type Modality,
-    modalityTheme,
+    type ModalityKey,
+    modalityBgVar,
+    modalityColorVar,
 } from "./themes.ts";

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "pollinations": {
-    "theme": "violet"
+    "theme": "amber"
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4179",

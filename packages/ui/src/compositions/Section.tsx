@@ -6,7 +6,7 @@ import type { ThemeName } from "../theme.ts";
 
 export type SectionProps = {
     title: string;
-    theme: ThemeName;
+    theme?: ThemeName;
     id?: string;
     framed?: boolean;
     intro?: ReactNode;

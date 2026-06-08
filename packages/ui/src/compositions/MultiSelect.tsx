@@ -19,7 +19,7 @@ export type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
-    theme: ThemeName;
+    theme?: ThemeName;
 };
 
 const TRIGGER_BASE =

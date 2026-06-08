@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { ModalityDot } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -296,10 +296,8 @@ const ModelCategory: FC<{
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">
-            <span
-                data-theme={getModalityTheme(label)}
-                className="text-sm font-semibold text-theme-text-strong"
-            >
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-theme-text-strong">
+                <ModalityDot modality={label} />
                 {label}
             </span>
             <button
@@ -324,7 +322,6 @@ const ModelCategory: FC<{
                     onClick={() => toggleModel(model.id)}
                     disabled={disabled}
                     showApiName={showApiName}
-                    category={label}
                 />
             ))}
         </ButtonGroup>
@@ -338,7 +335,6 @@ const ModelChip: FC<{
     onClick: () => void;
     disabled?: boolean;
     showApiName?: boolean;
-    category?: string;
 }> = ({
     apiName,
     officialName,
@@ -346,24 +342,18 @@ const ModelChip: FC<{
     onClick,
     disabled,
     showApiName = true,
-    category,
 }) => {
-    const theme = getModalityTheme(category ?? "");
     const colorClasses = selected
-        ? theme
-            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-            : "polli:bg-ink-200 polli:text-ink-900"
+        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
         : cn(
               "polli:bg-ink-100 polli:text-theme-text-muted",
-              theme &&
-                  !disabled &&
+              !disabled &&
                   "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
           );
 
     return (
         <Button
             type="button"
-            theme={theme ?? undefined}
             size="sm"
             aria-pressed={selected}
             onClick={onClick}

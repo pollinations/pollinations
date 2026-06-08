@@ -6,7 +6,7 @@ import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
-import { modalityTheme } from "./themes.ts";
+import { ModalityDot } from "./ModalityDot.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
@@ -56,7 +56,6 @@ export function ModelSelector({
         (model) => model.category === category,
     );
     const currentModel = models.find((model) => model.id === value);
-    const theme = modalityTheme(category);
     const modelLabel = currentModel ? displayModelName(currentModel) : "Select";
     const accessibleLabel = currentModel
         ? `${CATEGORY_LABELS[category]} model: ${modelLabel}`
@@ -64,17 +63,18 @@ export function ModelSelector({
 
     return (
         <Dropdown
-            theme={theme}
             align="end"
             className="polli:w-[min(24rem,calc(100vw-2rem))] polli:p-2"
             trigger={(open) => (
                 <Button
                     type="button"
-                    theme={theme}
                     aria-label={accessibleLabel}
                     className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
-                    <span className="polli:truncate">{modelLabel}</span>
+                    <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                        <ModalityDot modality={category} />
+                        <span className="polli:truncate">{modelLabel}</span>
+                    </span>
                     <ChevronIcon expanded={open} />
                 </Button>
             )}
@@ -85,10 +85,7 @@ export function ModelSelector({
                         Loading models...
                     </p>
                 ) : (
-                    <ScrollArea
-                        theme={theme}
-                        className="polli:max-h-64 polli:pr-2"
-                    >
+                    <ScrollArea className="polli:max-h-64 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
                                 const isActive = value === model.id;
@@ -96,7 +93,6 @@ export function ModelSelector({
                                     <TabButton
                                         key={model.id}
                                         active={isActive}
-                                        theme={modalityTheme(model.category)}
                                         size="sm"
                                         variant="ghost"
                                         className="polli:w-full polli:justify-between polli:text-left"
@@ -105,8 +101,13 @@ export function ModelSelector({
                                             close();
                                         }}
                                     >
-                                        <span className="polli:truncate">
-                                            {displayModelName(model)}
+                                        <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                                            <ModalityDot
+                                                modality={model.category}
+                                            />
+                                            <span className="polli:truncate">
+                                                {displayModelName(model)}
+                                            </span>
                                         </span>
                                         {model.paidOnly && (
                                             <Chip

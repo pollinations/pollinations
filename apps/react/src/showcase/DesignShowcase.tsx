@@ -5,7 +5,6 @@ import {
     BeakerIcon,
     BookIcon,
     Button,
-    ButtonGroup,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -65,7 +64,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { getModalityKey, ModalityDot } from "@pollinations/ui/gen";
 import {
     formatPollen,
     PaidChip,
@@ -297,7 +296,8 @@ const primitiveNames = [
 const moduleNames = [
     "AuthInfoCard",
     "ErrorBanner",
-    "getModalityTheme",
+    "getModalityKey",
+    "ModalityDot",
     "PaidChip",
     "TierChip",
     "WalletBalanceCard",
@@ -1347,28 +1347,20 @@ const ModuleRecipesDemo: FC = () => {
                         info={<InfoTip content="Tier allowance balance." />}
                     />
                 </div>
-                <Row label="ButtonGroup">
-                    <ButtonGroup aria-label="Modality options">
-                        {modalities.map((modality) => {
-                            const theme = getModalityTheme(modality);
-                            return (
-                                <Button
-                                    key={modality}
-                                    type="button"
-                                    theme={theme ?? undefined}
-                                    size="sm"
-                                >
-                                    {modality}
-                                </Button>
-                            );
-                        })}
-                        <Button type="button" size="sm" theme="neutral">
-                            unknown
-                        </Button>
-                        <Button type="button" size="sm" disabled>
-                            disabled
-                        </Button>
-                    </ButtonGroup>
+                <Row label="ModalityDot">
+                    {modalities.map((modality) => (
+                        <span
+                            key={modality}
+                            className="inline-flex items-center gap-1.5 text-sm text-theme-text-strong"
+                        >
+                            <ModalityDot modality={modality} />
+                            {modality}
+                        </span>
+                    ))}
+                    <span className="inline-flex items-center gap-1.5 text-sm text-theme-text-soft">
+                        <ModalityDot modality="unknown" />
+                        {getModalityKey("unknown") ?? "unknown (no dot)"}
+                    </span>
                 </Row>
                 <Surface className="flex flex-col gap-3">
                     <h3 className="font-subheading text-xl text-theme-text-strong">

@@ -19,7 +19,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { ModalityDot } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
@@ -176,7 +176,6 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                 const isActive = typeFilter === key;
                 const isDimmed = typeFilter !== null && !isActive;
                 const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-                const theme = getModalityTheme(key);
 
                 return (
                     <button
@@ -190,7 +189,6 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                         aria-pressed={isActive}
                     >
                         <Surface
-                            theme={theme ?? undefined}
                             variant="card-themed"
                             className={cn(
                                 "flex h-full min-h-28 flex-col gap-3 transition-colors group-hover:bg-theme-bg-hover sm:min-h-32",
@@ -198,7 +196,8 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                             )}
                         >
                             <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2">
-                                <h2 className="shrink-0 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
+                                <h2 className="flex shrink-0 items-center gap-2 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
+                                    <ModalityDot modality={key} />
                                     {title}
                                 </h2>
                                 <Chip
@@ -668,8 +667,6 @@ function App() {
                                                 : null;
                                             const health =
                                                 computeHealthStatus(stats);
-                                            const modalityTheme =
-                                                getModalityTheme(model.type);
 
                                             return (
                                                 <TableRow
@@ -678,13 +675,14 @@ function App() {
                                                 >
                                                     <TableCell>
                                                         <Chip
-                                                            theme={
-                                                                modalityTheme ??
-                                                                undefined
-                                                            }
                                                             size="sm"
-                                                            className="text-micro font-bold uppercase tracking-wide"
+                                                            className="gap-1.5 text-micro font-bold uppercase tracking-wide"
                                                         >
+                                                            <ModalityDot
+                                                                modality={
+                                                                    model.type
+                                                                }
+                                                            />
                                                             {model.type}
                                                         </Chip>
                                                     </TableCell>

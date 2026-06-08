@@ -8,12 +8,13 @@
      Level 2  Well        --polli-color-surface-opaque  NEUTRAL card surface
               Accents     --polli-color-bg-active / bg-hover(=border)  THEMED
 
-   SPLIT ARCHITECTURE
-     - Theme-independent tokens live in :root (light) / .dark (dark): app-bg,
-       surface-*, ink ramp, text-strong/base/muted, intents, shadows, accents.
-     - Per-page hue lives ONLY in [data-theme] (7 themed tokens) with a
-       .dark [data-theme] twin. Switching page swaps the accent; switching mode
-       flips the neutrals. No drift, no duplication.
+   SINGLE-ACCENT ARCHITECTURE
+     - All chrome uses ONE app accent (amber), defined once on :root via the
+       recipe (--polli-hue/--polli-nudge). Switching mode flips the neutrals.
+     - The multi-hue palette is reserved for dedicated ROLES only: modality
+       (model-UI dots/badges), wallet (paid/tier coins — in the wallet module),
+       and the fixed intents (status + labels). None of these ride a page theme.
+     - `neutral` is the one no-hue member, for chrome that must carry no accent.
 
    DARK: add class `dark` to <html> (color-scheme owned here: :root=light,
    .dark=dark). INVARIANT: --polli-color-border === --polli-color-bg-hover.
@@ -68,32 +69,17 @@
     --polli-color-ink-950: oklch(0.13 0.028 261.692);
 }
 
-/* ─── THEMED CASCADE — ONE recipe, parameterized per theme.
-   Each theme sets only two custom props: --polli-hue (the OKLCH hue angle) and
-   --polli-nudge (a single lightness offset shared by the three accent steps,
-   identical in light AND dark). Every token's L/C lives ONCE in the recipe
-   below; hue + nudge are applied via var()/calc(). So: change a token's
-   lightness/chroma in one place; add or retune a theme in one line.
-   INVARIANT: --polli-color-border === --polli-color-bg-hover (a ref, not a
-   copy). `neutral` is excluded via :not() — its block below maps the themed
-   slots to neutral tokens. ─── */
+/* ─── SINGLE APP ACCENT (amber). The app renders ONE accent everywhere; the
+   multi-hue palette lives only in dedicated roles (modality, wallet, intents).
+   The accent keeps the v3 recipe form, so swapping it later = change
+   --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
+   lightness for the new hue). --polli-hue is mode-agnostic — both the light
+   (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
+   `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below. ─── */
 :root {
-    --polli-hue:   163;   /* default page = emerald */
-    --polli-nudge: 0;
-}
-[data-theme="emerald"] { --polli-hue: 163; --polli-nudge:  0;     }
-[data-theme="teal"]    { --polli-hue: 190; --polli-nudge:  0.004; }
-[data-theme="blue"]    { --polli-hue: 252; --polli-nudge: -0.013; }
-[data-theme="violet"]  { --polli-hue: 300; --polli-nudge: -0.008; }
-[data-theme="pink"]    { --polli-hue: 350; --polli-nudge: -0.008; }
-[data-theme="coral"]   { --polli-hue:  40; --polli-nudge:  0.008; }
-[data-theme="amber"]   { --polli-hue:  85; --polli-nudge:  0.024; }
-[data-theme="lime"]    { --polli-hue: 128; --polli-nudge:  0.012; }
+    --polli-hue:   85;     /* app accent = amber */
+    --polli-nudge: 0.024;  /* accent-lightness offset for this hue */
 
-/* LIGHT recipe — base L/C per token; hue from --polli-hue, accent lightness
-   offset by --polli-nudge. */
-:root,
-[data-theme]:not([data-theme="neutral"]) {
     --polli-color-bg-pale:         oklch(0.972 0.045 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.95 0.03 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.908 + var(--polli-nudge)) 0.085 var(--polli-hue));
@@ -117,8 +103,11 @@
     --polli-color-text-soft:       var(--polli-color-text-muted);
 }
 
-/* Intent tokens — LIGHT (semantic, theme-independent). */
+/* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
+   STATUS (feedback) = danger / success / warning — the traffic-light trio;
+   LABELS (informational) = news / alpha — not status, their own system. */
 :root {
+    /* STATUS — danger / success / warning */
     --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
     --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
@@ -127,10 +116,29 @@
     --polli-color-success-text:     oklch(0.38 0.12 150);
     --polli-color-warning-bg-light: oklch(0.94 0.06 75);
     --polli-color-warning-text:     oklch(0.45 0.13 65);
+    /* LABELS — news / alpha */
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
     --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
     --polli-color-alpha-text:       oklch(0.42 0.18 300);
+}
+
+/* Modality colors — a FIXED per-modality palette, DECOUPLED from the app
+   accent. Rendered as dots/badges on model UI (never as a page theme).
+   `solid` = dot/border; `-bg` = faint chip background. */
+:root {
+    --polli-color-modality-text:         oklch(0.68 0.11 252);
+    --polli-color-modality-image:        oklch(0.68 0.11 350);
+    --polli-color-modality-video:        oklch(0.68 0.11 190);
+    --polli-color-modality-audio:        oklch(0.68 0.11 300);
+    --polli-color-modality-realtime:     oklch(0.68 0.11 128);
+    --polli-color-modality-embedding:    oklch(0.68 0.11 163);
+    --polli-color-modality-text-bg:      oklch(0.95 0.03 252 / 0.7);
+    --polli-color-modality-image-bg:     oklch(0.95 0.03 350 / 0.7);
+    --polli-color-modality-video-bg:     oklch(0.95 0.03 190 / 0.7);
+    --polli-color-modality-audio-bg:     oklch(0.95 0.03 300 / 0.7);
+    --polli-color-modality-realtime-bg:  oklch(0.95 0.03 128 / 0.7);
+    --polli-color-modality-embedding-bg: oklch(0.95 0.03 163 / 0.7);
 }
 
 /* Switch primitive — theme-independent, mode-aware. Light thumb in BOTH modes
@@ -209,13 +217,26 @@
     --polli-color-switch-track-off: oklch(0.44 0.012 80);
 }
 
-/* (b) DARK recipe — mirror: deep tint + light text, SAME {hue, nudge} as
-   light (set once above). Higher specificity than the light recipe, so it wins
-   under <html class="dark">. Low chroma keeps bg-pale/bg-subtle cohesive
-   WITHOUT a hue rotation — rotating a cool hue toward a warm anchor (blue 252°
-   → ~355°) is what made dark surfaces read maroon. border === bg-hover. ─── */
-.dark,
-.dark [data-theme]:not([data-theme="neutral"]) {
+/* Modality colors — DARK (deeper solids; deep-tint chip backgrounds). */
+.dark {
+    --polli-color-modality-text:         oklch(0.62 0.10 252);
+    --polli-color-modality-image:        oklch(0.62 0.10 350);
+    --polli-color-modality-video:        oklch(0.62 0.10 190);
+    --polli-color-modality-audio:        oklch(0.62 0.10 300);
+    --polli-color-modality-realtime:     oklch(0.62 0.10 128);
+    --polli-color-modality-embedding:    oklch(0.62 0.10 163);
+    --polli-color-modality-text-bg:      oklch(0.39 0.03 252 / 0.7);
+    --polli-color-modality-image-bg:     oklch(0.39 0.03 350 / 0.7);
+    --polli-color-modality-video-bg:     oklch(0.39 0.03 190 / 0.7);
+    --polli-color-modality-audio-bg:     oklch(0.39 0.03 300 / 0.7);
+    --polli-color-modality-realtime-bg:  oklch(0.39 0.03 128 / 0.7);
+    --polli-color-modality-embedding-bg: oklch(0.39 0.03 163 / 0.7);
+}
+
+/* (b) DARK accent recipe — mirror: deep tint + light text, reads the same
+   --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
+   bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
+.dark {
     --polli-color-bg-pale:         oklch(0.305 0.03 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.39 0.034 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.433 + var(--polli-nudge)) 0.09 var(--polli-hue));

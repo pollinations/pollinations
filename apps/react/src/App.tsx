@@ -82,9 +82,9 @@ import {
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import {
     categoryLabel,
+    ModalityDot,
     ModelSelector,
     type ModelSelectorCategory,
-    modalityTheme,
 } from "@pollinations/ui/gen";
 import {
     lazy,
@@ -346,8 +346,11 @@ function ModelCountChips({
         );
     }
     return counts.map(({ category, count }) => (
-        <Chip key={category} theme={modalityTheme(category)} size="sm">
-            {categoryLabel(category)} {count}
+        <Chip key={category} size="sm">
+            <span className="inline-flex items-center gap-1.5">
+                <ModalityDot modality={category} />
+                {categoryLabel(category)} {count}
+            </span>
         </Chip>
     ));
 }
@@ -414,9 +417,6 @@ function ModulesPage() {
     const categories = allowedCategories;
     const activeCategory =
         category && categories.includes(category) ? category : categories[0];
-    const categoryTheme = activeCategory
-        ? modalityTheme(activeCategory)
-        : APP_THEME;
     const visibleModels = isLoggedIn
         ? models.filter((model) => allowedModelIds.has(model.id))
         : models;
@@ -581,7 +581,6 @@ function ModulesPage() {
                         <SectionHeader title="Gen" />
                         <Surface
                             variant="panel"
-                            theme={categoryTheme}
                             className="flex flex-col gap-5"
                         >
                             <div className="w-full">
@@ -597,12 +596,16 @@ function ModulesPage() {
                                                     active={
                                                         activeCategory === item
                                                     }
-                                                    theme={modalityTheme(item)}
                                                     onClick={() =>
                                                         setCategory(item)
                                                     }
                                                 >
-                                                    {categoryLabel(item)}
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <ModalityDot
+                                                            modality={item}
+                                                        />
+                                                        {categoryLabel(item)}
+                                                    </span>
                                                 </TabButton>
                                             ))}
                                         </ButtonGroup>
@@ -680,18 +683,12 @@ function ModulesPage() {
                                                             ? "warning"
                                                             : "success"
                                                     }
-                                                    theme={categoryTheme}
                                                     size="sm"
                                                 >
                                                     {selectedModelAccess}
                                                 </Chip>
                                                 {selectedModel.paidOnly ? (
-                                                    <Chip
-                                                        theme={categoryTheme}
-                                                        size="sm"
-                                                    >
-                                                        paid
-                                                    </Chip>
+                                                    <Chip size="sm">paid</Chip>
                                                 ) : null}
                                             </AccountSummaryItem>
                                             <AccountSummaryItem label="Pricing">
@@ -728,7 +725,6 @@ function ModulesPage() {
 
                     <ExternalLinkButton
                         href="https://playground.pollinations.ai"
-                        theme={categoryTheme}
                         className="self-start"
                     >
                         Try it out in Playground

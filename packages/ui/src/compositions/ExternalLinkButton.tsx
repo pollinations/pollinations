@@ -5,7 +5,7 @@ import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 import type { ThemeName } from "../theme.ts";
 
 export type ExternalLinkButtonProps = {
-    theme: ThemeName;
+    theme?: ThemeName;
     href: string;
     size?: "sm" | "md" | "lg";
     className?: string;

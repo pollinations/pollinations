@@ -3,11 +3,7 @@ import {
     formatPricePer1M,
     formatPricePerImage,
 } from "./formatters.ts";
-import type {
-    ModelCapability,
-    ModelCategory,
-    ModelPrice,
-} from "./types.ts";
+import type { ModelCapability, ModelCategory, ModelPrice } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
 type ApiPricing = Partial<Record<PriceField, string>> & {

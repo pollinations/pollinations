@@ -125,8 +125,7 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
 const hasCapability = (
     model: ModelPrice,
     capability: ModelCapability,
-): boolean =>
-    model.capabilities.includes(capability);
+): boolean => model.capabilities.includes(capability);
 
 export const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");

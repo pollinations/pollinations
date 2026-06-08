@@ -1,0 +1,35 @@
+{
+  "pr_number": 11613,
+  "title": "feat: use live model catalog in dashboards",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11613",
+  "merged_at": "2026-06-08T02:32:53Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds category and display metadata to model list API responses.\n- Loads Enter model tables and key-permission model chips from `/models`.\n- Removes registry fallback from the changed dashboard and public-site model-list consumers.\n- Updates the public site model hook to use live model endpoints.\n\nChecks:\n- `npm run typecheck` in `enter.pollinations.ai`\n- `npm run typecheck` in `gen.pollinations.ai`\n- `npm run build:frontend` in `enter.pollinations.ai`\n- `npm run build` in `pollinations.ai`\n- `npx vitest run test/pricing-data.test.ts` in `enter.pollinations.ai`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Live from the hive",
+    "blurb": "The hive's menu is now live. Dashboards and key settings pull straight from the source, so you'll spot new models the second they bloom.",
+    "summary": "The Enter dashboard, public site, SDK, and MCP server now fetch model lists dynamically from the live `/models` endpoint instead of relying on hardcoded registry fallbacks.",
+    "impact": "Users will instantly see newly added models in the dashboard tables and API key permission settings the moment they are deployed to the platform.",
+    "keywords": [
+      "dashboard",
+      "models",
+      "api",
+      "frontend",
+      "catalog"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a glowing, constantly updating menu board or catalog of seeds/flowers. The robot's screen shows a live list, representing the dynamic fetching of models.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny visor and a chunky Monitor Robot looking at a glowing, constantly updating wooden menu board in a digital garden. The robot's screen displays a live list of seeds and flowers. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-08/PR-11613.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny visor and a chunky Monitor Robot looking at a glowing, constantly updating wooden menu board in a digital garden. The robot's screen displays a live list of seeds and flowers. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-08T02:33:49.662308+00:00"
+}

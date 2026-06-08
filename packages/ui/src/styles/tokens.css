@@ -48,7 +48,7 @@
        Calibrated to stay visible-but-quiet on every surface in BOTH modes
        (a plain ink shade can't: it inverts and vanishes on the desk in dark).
        Distinct from theme-border (themed element outline) by design. */
-    --polli-color-divider:             oklch(0.86 0.006 250);
+    --polli-color-divider:             oklch(0.86 0.006 80);
 
     /* Raised elevation shadows (Level 1 container / Level 2 well) */
     --polli-shadow-container: 0 1px 2px rgba(60, 45, 30, 0.06), 0 12px 26px rgba(60, 45, 30, 0.1);
@@ -68,77 +68,39 @@
     --polli-color-ink-950: oklch(0.13 0.028 261.692);
 }
 
-/* ─── LIGHT — themed cascade (7 hue tokens per page). Harmonized: one
-   perceived lightness & chroma per token; only the hue angle changes. ─── */
+/* ─── THEMED CASCADE — ONE recipe, parameterized per theme.
+   Each theme sets only two custom props: --polli-hue (the OKLCH hue angle) and
+   --polli-nudge (a single lightness offset shared by the three accent steps,
+   identical in light AND dark). Every token's L/C lives ONCE in the recipe
+   below; hue + nudge are applied via var()/calc(). So: change a token's
+   lightness/chroma in one place; add or retune a theme in one line.
+   INVARIANT: --polli-color-border === --polli-color-bg-hover (a ref, not a
+   copy). `neutral` is excluded via :not() — its block below maps the themed
+   slots to neutral tokens. ─── */
+:root {
+    --polli-hue:   163;   /* default page = emerald */
+    --polli-nudge: 0;
+}
+[data-theme="emerald"] { --polli-hue: 163; --polli-nudge:  0;     }
+[data-theme="teal"]    { --polli-hue: 190; --polli-nudge:  0.004; }
+[data-theme="blue"]    { --polli-hue: 252; --polli-nudge: -0.013; }
+[data-theme="violet"]  { --polli-hue: 300; --polli-nudge: -0.008; }
+[data-theme="pink"]    { --polli-hue: 350; --polli-nudge: -0.008; }
+[data-theme="coral"]   { --polli-hue:  40; --polli-nudge:  0.008; }
+[data-theme="amber"]   { --polli-hue:  85; --polli-nudge:  0.024; }
+[data-theme="lime"]    { --polli-hue: 128; --polli-nudge:  0.012; }
+
+/* LIGHT recipe — base L/C per token; hue from --polli-hue, accent lightness
+   offset by --polli-nudge. */
 :root,
-[data-theme="emerald"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 163);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 163 / 0.7);
-    --polli-color-bg-active:       oklch(0.908 0.085 163);
-    --polli-color-bg-hover:        oklch(0.858 0.115 163);
-    --polli-color-border:          oklch(0.858 0.115 163);
-    --polli-color-scrollbar-thumb: oklch(0.758 0.14 163 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 163);
-}
-
-[data-theme="teal"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 183);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 183 / 0.7);
-    --polli-color-bg-active:       oklch(0.912 0.085 183);
-    --polli-color-bg-hover:        oklch(0.862 0.115 183);
-    --polli-color-border:          oklch(0.862 0.115 183);
-    --polli-color-scrollbar-thumb: oklch(0.762 0.14 183 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 183);
-}
-
-[data-theme="blue"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 252);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 252 / 0.7);
-    --polli-color-bg-active:       oklch(0.895 0.085 252);
-    --polli-color-bg-hover:        oklch(0.845 0.115 252);
-    --polli-color-border:          oklch(0.845 0.115 252);
-    --polli-color-scrollbar-thumb: oklch(0.745 0.14 252 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 252);
-}
-
-[data-theme="violet"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 293);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 293 / 0.7);
-    --polli-color-bg-active:       oklch(0.9 0.085 293);
-    --polli-color-bg-hover:        oklch(0.85 0.115 293);
-    --polli-color-border:          oklch(0.85 0.115 293);
-    --polli-color-scrollbar-thumb: oklch(0.75 0.14 293 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 293);
-}
-
-[data-theme="pink"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 346);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 346 / 0.7);
-    --polli-color-bg-active:       oklch(0.9 0.085 346);
-    --polli-color-bg-hover:        oklch(0.85 0.115 346);
-    --polli-color-border:          oklch(0.85 0.115 346);
-    --polli-color-scrollbar-thumb: oklch(0.75 0.14 346 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 346);
-}
-
-[data-theme="coral"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 62);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 62 / 0.7);
-    --polli-color-bg-active:       oklch(0.916 0.085 62);
-    --polli-color-bg-hover:        oklch(0.866 0.115 62);
-    --polli-color-border:          oklch(0.866 0.115 62);
-    --polli-color-scrollbar-thumb: oklch(0.766 0.14 62 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 62);
-}
-
-[data-theme="amber"] {
-    --polli-color-bg-pale:         oklch(0.972 0.045 90);
-    --polli-color-bg-subtle:       oklch(0.95 0.03 90 / 0.7);
-    --polli-color-bg-active:       oklch(0.932 0.085 90);
-    --polli-color-bg-hover:        oklch(0.882 0.115 90);
-    --polli-color-border:          oklch(0.882 0.115 90);
-    --polli-color-scrollbar-thumb: oklch(0.782 0.14 90 / 0.7);
-    --polli-color-text-soft:       oklch(0.52 0.095 90);
+[data-theme]:not([data-theme="neutral"]) {
+    --polli-color-bg-pale:         oklch(0.972 0.045 var(--polli-hue));
+    --polli-color-bg-subtle:       oklch(0.95 0.03 var(--polli-hue) / 0.7);
+    --polli-color-bg-active:       oklch(calc(0.908 + var(--polli-nudge)) 0.085 var(--polli-hue));
+    --polli-color-bg-hover:        oklch(calc(0.858 + var(--polli-nudge)) 0.115 var(--polli-hue));
+    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-scrollbar-thumb: oklch(calc(0.758 + var(--polli-nudge)) 0.14 var(--polli-hue) / 0.7);
+    --polli-color-text-soft:       oklch(0.52 0.095 var(--polli-hue));
 }
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
@@ -188,44 +150,45 @@
 .dark {
     color-scheme: dark;
 
-    /* Level 0 — Desk. ONE cool neutral hue (250) shared by every dark neutral
-       below — desk, surfaces, text, ink — so nothing splits warm/cool. Low
-       chroma keeps it clean charcoal, never muddy. */
-    --polli-color-app-bg:              oklch(0.265 0.006 250);
+    /* Level 0 — Desk. ONE warm neutral hue (80) shared by every dark neutral
+       below — desk, surfaces, text, ink — so nothing splits warm/cool, and it
+       matches light mode's warm neutral. A small chroma lift keeps it warm
+       charcoal (not flat gray), never muddy. */
+    --polli-color-app-bg:              oklch(0.265 0.012 80);
 
     /* Level 2 — Well + neutral card surfaces (raised above the desk) */
-    --polli-color-surface-opaque:      oklch(0.345 0.006 250);
-    --polli-color-surface-translucent: oklch(0.345 0.006 250 / 0.8);
+    --polli-color-surface-opaque:      oklch(0.345 0.013 80);
+    --polli-color-surface-translucent: oklch(0.345 0.013 80 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
     /* Neutral text. strong is 0.92 (not ~white) to avoid halation/glare on
        large serif headings in dark — near-white text blooms on a dark desk.
        base/muted stay put (they don't glare), so the top step is 0.075 then
        0.11; muted is the single legible muted-grey. */
-    --polli-color-text-strong:         oklch(0.92 0.006 250);
-    --polli-color-text-base:           oklch(0.845 0.01 250);
-    --polli-color-text-muted:          oklch(0.735 0.012 250);
+    --polli-color-text-strong:         oklch(0.92 0.006 80);
+    --polli-color-text-base:           oklch(0.845 0.01 80);
+    --polli-color-text-muted:          oklch(0.735 0.012 80);
 
     /* Neutral separator line (dark) — a quiet hairline LIGHTER than the
        surface so it reads on desk and cards alike. */
-    --polli-color-divider:             oklch(0.44 0.006 250);
+    --polli-color-divider:             oklch(0.44 0.006 80);
 
     /* Raised elevation shadows — deeper, with a faint top highlight */
     --polli-shadow-container: 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 24px rgba(0, 0, 0, 0.45);
     --polli-shadow-well:      0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 12px rgba(0, 0, 0, 0.35);
 
-    /* Ink ramp — inverted (high numbers read light); same cool neutral hue */
-    --polli-color-ink-50:  oklch(0.165 0.006 250);
-    --polli-color-ink-100: oklch(0.205 0.006 250);
-    --polli-color-ink-200: oklch(0.255 0.006 250);
-    --polli-color-ink-300: oklch(0.315 0.006 250);
-    --polli-color-ink-400: oklch(0.395 0.006 250);
-    --polli-color-ink-500: oklch(0.505 0.006 250);
-    --polli-color-ink-600: oklch(0.62 0.006 250);
-    --polli-color-ink-700: oklch(0.72 0.006 250);
-    --polli-color-ink-800: oklch(0.82 0.006 250);
-    --polli-color-ink-900: oklch(0.9 0.006 250);
-    --polli-color-ink-950: oklch(0.96 0.006 250);
+    /* Ink ramp — inverted (high numbers read light); same warm neutral hue */
+    --polli-color-ink-50:  oklch(0.165 0.006 80);
+    --polli-color-ink-100: oklch(0.205 0.006 80);
+    --polli-color-ink-200: oklch(0.255 0.006 80);
+    --polli-color-ink-300: oklch(0.315 0.006 80);
+    --polli-color-ink-400: oklch(0.395 0.006 80);
+    --polli-color-ink-500: oklch(0.505 0.006 80);
+    --polli-color-ink-600: oklch(0.62 0.006 80);
+    --polli-color-ink-700: oklch(0.72 0.006 80);
+    --polli-color-ink-800: oklch(0.82 0.006 80);
+    --polli-color-ink-900: oklch(0.9 0.006 80);
+    --polli-color-ink-950: oklch(0.96 0.006 80);
 
     /* Intents — DARK: deep fill + light text (mirror of the light tints) */
     --polli-color-danger-bg-light:  oklch(0.36 0.095 25);
@@ -246,82 +209,20 @@
     --polli-color-switch-track-off: oklch(0.44 0.012 80);
 }
 
-/* (b) DARK — themed cascade. Higher specificity than the light [data-theme]
-   blocks, so it wins automatically under <html class="dark">.
-
-   MIRROR RULE: every themed token keeps the theme's OWN hue; dark only inverts
-   lightness (deep tint + light text). bg-pale / bg-subtle stay cohesive via LOW
-   CHROMA, never a hue rotation toward a warm anchor — rotating a cool hue across
-   the wheel (e.g. blue 252° → ~355°) is what made dark surfaces read maroon. ─── */
+/* (b) DARK recipe — mirror: deep tint + light text, SAME {hue, nudge} as
+   light (set once above). Higher specificity than the light recipe, so it wins
+   under <html class="dark">. Low chroma keeps bg-pale/bg-subtle cohesive
+   WITHOUT a hue rotation — rotating a cool hue toward a warm anchor (blue 252°
+   → ~355°) is what made dark surfaces read maroon. border === bg-hover. ─── */
 .dark,
-.dark [data-theme="emerald"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 163);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 163 / 0.7);
-    --polli-color-bg-active:       oklch(0.433 0.09 163);
-    --polli-color-bg-hover:        oklch(0.513 0.112 163);
-    --polli-color-border:          oklch(0.513 0.112 163);
-    --polli-color-scrollbar-thumb: oklch(0.568 0.12 163 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 163);
-}
-
-.dark [data-theme="teal"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 183);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 183 / 0.7);
-    --polli-color-bg-active:       oklch(0.437 0.09 183);
-    --polli-color-bg-hover:        oklch(0.517 0.112 183);
-    --polli-color-border:          oklch(0.517 0.112 183);
-    --polli-color-scrollbar-thumb: oklch(0.572 0.12 183 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 183);
-}
-
-.dark [data-theme="blue"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 252);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 252 / 0.7);
-    --polli-color-bg-active:       oklch(0.42 0.09 252);
-    --polli-color-bg-hover:        oklch(0.5 0.112 252);
-    --polli-color-border:          oklch(0.5 0.112 252);
-    --polli-color-scrollbar-thumb: oklch(0.555 0.12 252 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 252);
-}
-
-.dark [data-theme="violet"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 293);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 293 / 0.7);
-    --polli-color-bg-active:       oklch(0.425 0.09 293);
-    --polli-color-bg-hover:        oklch(0.505 0.112 293);
-    --polli-color-border:          oklch(0.505 0.112 293);
-    --polli-color-scrollbar-thumb: oklch(0.56 0.12 293 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 293);
-}
-
-.dark [data-theme="pink"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 346);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 346 / 0.7);
-    --polli-color-bg-active:       oklch(0.425 0.09 346);
-    --polli-color-bg-hover:        oklch(0.505 0.112 346);
-    --polli-color-border:          oklch(0.505 0.112 346);
-    --polli-color-scrollbar-thumb: oklch(0.56 0.12 346 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 346);
-}
-
-.dark [data-theme="coral"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 62);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 62 / 0.7);
-    --polli-color-bg-active:       oklch(0.441 0.09 62);
-    --polli-color-bg-hover:        oklch(0.521 0.112 62);
-    --polli-color-border:          oklch(0.521 0.112 62);
-    --polli-color-scrollbar-thumb: oklch(0.576 0.12 62 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 62);
-}
-
-.dark [data-theme="amber"] {
-    --polli-color-bg-pale:         oklch(0.305 0.018 90);
-    --polli-color-bg-subtle:       oklch(0.39 0.024 90 / 0.7);
-    --polli-color-bg-active:       oklch(0.457 0.09 90);
-    --polli-color-bg-hover:        oklch(0.537 0.112 90);
-    --polli-color-border:          oklch(0.537 0.112 90);
-    --polli-color-scrollbar-thumb: oklch(0.592 0.12 90 / 0.7);
-    --polli-color-text-soft:       oklch(0.795 0.09 90);
+.dark [data-theme]:not([data-theme="neutral"]) {
+    --polli-color-bg-pale:         oklch(0.305 0.03 var(--polli-hue));
+    --polli-color-bg-subtle:       oklch(0.39 0.034 var(--polli-hue) / 0.7);
+    --polli-color-bg-active:       oklch(calc(0.433 + var(--polli-nudge)) 0.09 var(--polli-hue));
+    --polli-color-bg-hover:        oklch(calc(0.513 + var(--polli-nudge)) 0.112 var(--polli-hue));
+    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-scrollbar-thumb: oklch(calc(0.568 + var(--polli-nudge)) 0.12 var(--polli-hue) / 0.7);
+    --polli-color-text-soft:       oklch(0.795 0.09 var(--polli-hue));
 }
 
 /* Tailwind utility surface — internal. */

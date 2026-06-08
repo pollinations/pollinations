@@ -15,6 +15,7 @@ export const themes = [
     "teal",
     "violet",
     "emerald",
+    "lime",
     "neutral",
 ] as const;
 

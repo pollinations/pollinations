@@ -748,6 +748,12 @@ function ModulesPage() {
 const CONTROL_SIZES = ["sm", "md", "lg"] as const;
 const TAB_SIZES = ["sm", "md"] as const;
 const NAV_ITEM_OPTIONS = ["Models", "Usage", "Keys", "Billing"] as const;
+const NAV_ITEM_ICONS = {
+    Models: BeakerIcon,
+    Usage: TrendUpIcon,
+    Keys: LockIcon,
+    Billing: WalletIcon,
+} as const;
 const SCROLL_AREA_ITEMS = [
     "Text prompt",
     "Image prompt",
@@ -1270,6 +1276,7 @@ function CompositionsPage() {
                                 <NavItem
                                     key={item}
                                     type="button"
+                                    icon={NAV_ITEM_ICONS[item]}
                                     active={activeNavItem === item}
                                     onClick={() => setActiveNavItem(item)}
                                 >

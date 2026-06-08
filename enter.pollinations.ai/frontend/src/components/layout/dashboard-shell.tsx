@@ -13,6 +13,7 @@ import {
     GitHubIcon,
     McpIcon,
     MenuIcon,
+    NavItem,
     ScrollArea,
     TerminalIcon,
     useScrollLock,
@@ -21,6 +22,7 @@ import {
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import type {
+    ComponentType,
     CSSProperties,
     FC,
     PropsWithChildren,
@@ -36,6 +38,7 @@ export type { DashboardPage } from "./dashboard-theme.ts";
 type DashboardNavItem = {
     id: DashboardPage;
     label: string;
+    icon: ComponentType<{ className?: string }>;
 };
 
 const brandWordmarkMask: CSSProperties = {
@@ -384,12 +387,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
         >
             <nav className="flex flex-col gap-1 pr-2">
                 {navItems.map((item) => (
-                    <DashboardNavButton
+                    <NavItem
                         key={item.id}
-                        item={item}
+                        type="button"
+                        data-theme="amber"
+                        icon={item.icon}
                         active={activePage === item.id}
                         onClick={() => onPageChange(item.id)}
-                    />
+                    >
+                        {item.label}
+                    </NavItem>
                 ))}
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
@@ -400,31 +407,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
         </div>
     </aside>
-);
-
-const DashboardNavButton: FC<{
-    item: DashboardNavItem;
-    active: boolean;
-    onClick: () => void;
-}> = ({ item, active, onClick }) => (
-    <button
-        type="button"
-        data-theme="amber"
-        className={cn(
-            "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
-            active
-                ? "bg-theme-bg-active text-theme-text-strong"
-                : "text-ink-800 hover:bg-surface-opaque/60 hover:text-ink-950",
-        )}
-        onClick={onClick}
-        aria-current={active ? "page" : undefined}
-    >
-        <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full bg-theme-bg-hover ring-1 ring-inset ring-ink-950/10"
-            aria-hidden="true"
-        />
-        {item.label}
-    </button>
 );
 
 const MobileMenuButton: FC<{

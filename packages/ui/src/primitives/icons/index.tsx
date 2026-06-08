@@ -173,6 +173,16 @@ export function MenuIcon(props: IconProps) {
     );
 }
 
+export function NewspaperIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 4h12a1 1 0 0 1 1 1v14a1 1 0 0 0 1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1z" />
+            <path d="M18 8h2a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2" />
+            <path d="M7 8h7M7 12h7M7 16h4" />
+        </svg>
+    );
+}
+
 export function PlusIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

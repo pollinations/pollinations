@@ -32,20 +32,17 @@ export const ModelRow: FC<ModelRowProps> = ({
     tierBalance,
     packBalance,
 }) => {
-    const modelDisplayName =
-        model.displayName ?? getModelDisplayName(model.name);
-    const modelDescription =
-        model.description ?? getModelDescriptionWithoutName(model.name);
-    const brandLogoPath =
-        model.brandLogoPath ?? getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const modalityLabel = getModelModalityLabel(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
-    const capabilityLabel = getModelCapabilityLabel(model.name);
+    const modelDisplayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const modalityIcons = getModelModalityIcons(model);
+    const modalityLabel = getModelModalityLabel(model);
+    const capabilityIcons = getModelCapabilityIcons(model);
+    const capabilityLabel = getModelCapabilityLabel(model);
     const publicModelName = modelDisplayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
     const isSignedIn = packBalance !== undefined;
     const genPerPollen = calculatePerPollen(model);
@@ -177,7 +174,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         copiedTimeoutMs={900}
                         tooltip={`Copy API model name ${model.name}`}
                         aria-label={`Copy API model name ${model.name}`}
-                        className={(copied: boolean) =>
+                        className={(copied) =>
                             cn(
                                 "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-ink-500 transition-colors",
                                 copied
@@ -186,7 +183,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             )
                         }
                     >
-                        {(copied: boolean) => (
+                        {(copied) => (
                             <>
                                 <span>{model.name}</span>
                                 {copied && (

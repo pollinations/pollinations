@@ -1,7 +1,14 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { ALL_MODELS, type ModelModality } from "./constants";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getCatalogCategory,
+    getCatalogDisplayName,
+    getCatalogModelId,
+} from "../models/model-catalog.ts";
+import { MODEL_MODALITIES, type ModelModality } from "./constants";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -38,10 +45,61 @@ type UsageDataResult = {
     filteredData: DailyUsageRecord[];
 };
 
+type ActivityModel = {
+    id: string;
+    label: string;
+    type: ModelModality;
+};
+
+const emptyRequestsByModality = (): Record<ModelModality, number> =>
+    Object.fromEntries(
+        MODEL_MODALITIES.map((modality) => [modality, 0]),
+    ) as Record<ModelModality, number>;
+
+const catalogCategoryToActivityModality = (
+    category: ReturnType<typeof getCatalogCategory>,
+): ModelModality => (category === "community" ? "text" : category);
+
+function catalogModelToActivityModel(
+    model: ApiModelInfo,
+): ActivityModel | null {
+    const id = getCatalogModelId(model);
+    if (!id) return null;
+    return {
+        id,
+        label: getCatalogDisplayName(model, id),
+        type: catalogCategoryToActivityModality(getCatalogCategory(model)),
+    };
+}
+
 export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) setCatalogModels(models);
+            })
+            .catch(() => {
+                if (!cancelled) setCatalogModels([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const modelLookup = useMemo(() => {
+        const models = catalogModels
+            .map(catalogModelToActivityModel)
+            .filter((model): model is ActivityModel => Boolean(model));
+        return new Map(models.map((model) => [model.id, model]));
+    }, [catalogModels]);
 
     const fetchUsage = useCallback(() => {
         setLoading(true);
@@ -92,11 +150,11 @@ export function useUsageData(filters: FilterState): UsageDataResult {
 
         return Array.from(modelIds)
             .map((id) => {
-                const registered = ALL_MODELS.find((m) => m.id === id);
-                return { id, label: registered?.label || id };
+                const catalogModel = modelLookup.get(id);
+                return { id, label: catalogModel?.label || id };
             })
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [dailyUsage]);
+    }, [dailyUsage, modelLookup]);
 
     const { chartData, stats, filteredData } = useMemo(() => {
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
@@ -176,10 +234,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 d.byModel.entries(),
             )
                 .map(([modelId, modelStats]) => {
-                    const registered = ALL_MODELS.find((m) => m.id === modelId);
+                    const catalogModel = modelLookup.get(modelId);
                     return {
                         model: modelId,
-                        label: registered?.label || modelId,
+                        label: catalogModel?.label || modelId,
                         requests: modelStats.requests,
                         pollen: modelStats.pollen,
                     };
@@ -274,10 +332,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const topModel = topModelEntry
             ? (() => {
                   const [id, modelStats] = topModelEntry;
-                  const registered = ALL_MODELS.find((m) => m.id === id);
+                  const catalogModel = modelLookup.get(id);
                   return {
                       id,
-                      label: registered?.label || id,
+                      label: catalogModel?.label || id,
                       requests: modelStats.requests,
                       pollen: modelStats.pollen,
                   };
@@ -294,16 +352,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             return best;
         }, null);
 
-        const requestsByModality: Record<ModelModality, number> = {
-            text: 0,
-            image: 0,
-            audio: 0,
-        };
+        const requestsByModality = emptyRequestsByModality();
         for (const r of filtered) {
             if (!r.model || !r.requests) continue;
-            const registered = ALL_MODELS.find((m) => m.id === r.model);
-            if (!registered) continue;
-            requestsByModality[registered.type] += r.requests;
+            const catalogModel = modelLookup.get(r.model);
+            if (!catalogModel) continue;
+            requestsByModality[catalogModel.type] += r.requests;
         }
 
         return {
@@ -322,7 +376,13 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             },
             filteredData: filtered,
         };
-    }, [dailyUsage, filters.selectedModels, filters.metric, filters.period]);
+    }, [
+        dailyUsage,
+        filters.selectedModels,
+        filters.metric,
+        filters.period,
+        modelLookup,
+    ]);
 
     return {
         dailyUsage,

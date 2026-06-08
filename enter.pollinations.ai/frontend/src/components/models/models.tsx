@@ -6,14 +6,13 @@ import {
     TabButton,
     TokensIcon,
 } from "@pollinations/ui";
-import { type FC, useCallback, useEffect, useState } from "react";
-import { config } from "../../config.ts";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
-    getCommunityModelPricesFromApiModels,
-    getModelPrices,
-} from "./data.ts";
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "./model-catalog.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -33,37 +32,39 @@ export const Models: FC<ModelsProps> = ({
     showCommunityEndpoints = false,
 }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
-    const [apiModels, setApiModels] = useState<ApiModelInfo[]>([]);
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
-    const allModels = getModelPrices(stats);
-    const imageModels = allModels.filter((m) => m.type === "image");
-    const videoModels = allModels.filter((m) => m.type === "video");
-    const audioModels = allModels.filter((m) => m.type === "audio");
-    const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
-    const communityModels = getCommunityModelPricesFromApiModels(apiModels);
-    const embeddingModels = allModels.filter((m) => m.type === "embedding");
+    const allModels = useMemo(
+        () => getModelPricesFromCatalog(catalogModels, stats),
+        [catalogModels, stats],
+    );
 
-    const loadModelCatalog = useCallback(async () => {
-        try {
-            const response = await fetch(`${config.genBaseUrl}/models`);
-            if (!response.ok) throw new Error("Model catalog request failed");
-            setApiModels((await response.json()) as ApiModelInfo[]);
-        } catch {
-            setApiModels([]);
-        }
-    }, []);
+    const loadModelCatalog = useCallback(
+        (options: { refresh?: boolean } = {}) =>
+            fetchModelCatalog(options)
+                .then((models) => {
+                    setCatalogModels(models);
+                    setCatalogError(null);
+                })
+                .catch(() => {
+                    setCatalogModels([]);
+                    setCatalogError("Could not load models.");
+                }),
+        [],
+    );
 
     useEffect(() => {
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    useEffect(() => {
-        if (activeTab === "community" && communityModels.length === 0) {
-            setActiveTab("text");
-        }
-    }, [activeTab, communityModels.length]);
-
+    const imageModels = allModels.filter((m) => m.type === "image");
+    const videoModels = allModels.filter((m) => m.type === "video");
+    const audioModels = allModels.filter((m) => m.type === "audio");
+    const realtimeModels = allModels.filter((m) => m.type === "realtime");
+    const textModels = allModels.filter((m) => m.type === "text");
+    const communityModels = allModels.filter((m) => m.type === "community");
+    const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",
         "video",
@@ -113,6 +114,9 @@ export const Models: FC<ModelsProps> = ({
                         </TabButton>
                     ))}
                 </div>
+                {catalogError && (
+                    <p className="mb-4 text-sm text-red-600">{catalogError}</p>
+                )}
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
@@ -120,8 +124,8 @@ export const Models: FC<ModelsProps> = ({
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}
-                        embeddingModels={embeddingModels}
                         communityModels={communityModels}
+                        embeddingModels={embeddingModels}
                         activeTab={activeTab}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
@@ -150,7 +154,11 @@ export const Models: FC<ModelsProps> = ({
                 </div>
             </Section>
             {showCommunityEndpoints && (
-                <CommunityEndpoints onChange={loadModelCatalog} />
+                <CommunityEndpoints
+                    onChange={() => {
+                        void loadModelCatalog({ refresh: true });
+                    }}
+                />
             )}
         </div>
     );

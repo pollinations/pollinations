@@ -72,6 +72,7 @@ export async function getCommunityTextModelsInfo(
                 description: row.description ?? undefined,
                 input_modalities: ["text"],
                 output_modalities: ["text"],
+                capabilities: [],
                 context_length: row.contextLength ?? undefined,
             },
         ];

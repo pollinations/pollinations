@@ -109,7 +109,6 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API

@@ -1,10 +1,5 @@
 import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
 import { PaidChip } from "@pollinations/ui/wallet";
-import {
-    getPriceDefinition,
-    type ModelName,
-    type PriceDefinition,
-} from "@shared/registry/registry.ts";
 import { type FC, useState } from "react";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
@@ -15,7 +10,6 @@ import {
     isAlpha,
     isNewModel,
     isPaidOnly,
-    isPersona,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import {
@@ -31,8 +25,8 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
-    | "embedding"
-    | "community";
+    | "community"
+    | "embedding";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
@@ -40,8 +34,8 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
-    embeddingModels: ModelPrice[];
     communityModels: ModelPrice[];
+    embeddingModels: ModelPrice[];
     activeTab: SectionType;
     tierBalance?: number;
     packBalance?: number;
@@ -66,68 +60,6 @@ const DEFAULT_DIR: Record<SortKey, SortDir> = {
     output: "asc",
 };
 
-const INPUT_PRICE_FIELDS = [
-    "promptTextTokens",
-    "promptCachedTokens",
-    "promptAudioTokens",
-    "promptAudioSeconds",
-    "promptImageTokens",
-    "promptVideoTokens",
-] as const satisfies (keyof PriceDefinition)[];
-
-const OUTPUT_PRICE_FIELDS = [
-    "completionTextTokens",
-    "completionAudioTokens",
-    "completionAudioSeconds",
-    "completionImageTokens",
-    "completionVideoSeconds",
-    "completionVideoTokens",
-] as const satisfies (keyof PriceDefinition)[];
-
-const sortValueFromFields = (
-    modelName: string,
-    fields: readonly (keyof PriceDefinition)[],
-): number => {
-    const p = getPriceDefinition(modelName as ModelName);
-    if (!p) return -1;
-    const sum = fields.reduce((total, field) => total + (p[field] ?? 0), 0);
-    return sum > 0 ? sum : -1;
-};
-
-function priceValue(value: string | undefined): number {
-    if (!value) return 0;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function getInputSortValue(model: ModelPrice): number {
-    const registryValue = sortValueFromFields(model.name, INPUT_PRICE_FIELDS);
-    if (registryValue >= 0) return registryValue;
-    const rowValue = [
-        model.promptTextPrice,
-        model.promptCachedPrice,
-        model.promptAudioPrice,
-        model.promptImagePrice,
-        model.promptVideoPrice,
-    ].reduce((sum, price) => sum + priceValue(price), 0);
-    return rowValue > 0 ? rowValue : -1;
-}
-
-function getOutputSortValue(model: ModelPrice): number {
-    const registryValue = sortValueFromFields(model.name, OUTPUT_PRICE_FIELDS);
-    if (registryValue >= 0) return registryValue;
-    const rowValue = [
-        model.completionTextPrice,
-        model.completionAudioPrice,
-        model.completionImagePrice,
-        model.perSecondPrice,
-        model.perAudioSecondPrice,
-        model.perTokenPrice,
-        model.perImagePrice,
-    ].reduce((sum, price) => sum + priceValue(price), 0);
-    return rowValue > 0 ? rowValue : -1;
-}
-
 const sortModels = (
     models: ModelPrice[],
     sortKey: SortKey,
@@ -136,30 +68,22 @@ const sortModels = (
     const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
         if (sortKey === "name") {
-            const an = (
-                a.displayName ??
-                getModelDisplayName(a.name) ??
-                a.name
-            ).toLowerCase();
-            const bn = (
-                b.displayName ??
-                getModelDisplayName(b.name) ??
-                b.name
-            ).toLowerCase();
+            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
+            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
             return an < bn ? -sign : an > bn ? sign : 0;
         }
         const av =
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(a))
                 : sortKey === "input"
-                  ? getInputSortValue(a)
-                  : getOutputSortValue(a);
+                  ? (a.inputSortPrice ?? -1)
+                  : (a.outputSortPrice ?? -1);
         const bv =
             sortKey === "perPollen"
                 ? getPerPollenNumeric(calculatePerPollen(b))
                 : sortKey === "input"
-                  ? getInputSortValue(b)
-                  : getOutputSortValue(b);
+                  ? (b.inputSortPrice ?? -1)
+                  : (b.outputSortPrice ?? -1);
         // Missing values always sort last regardless of direction
         if (av < 0 && bv >= 0) return 1;
         if (bv < 0 && av >= 0) return -1;
@@ -173,8 +97,8 @@ const unitLabels: Record<string, string> = {
     video: "videos",
     audio: "responses",
     realtime: "sessions",
-    embedding: "embeddings",
     community: "responses",
+    embedding: "embeddings",
 };
 
 export const sectionLabels: Record<SectionType, string> = {
@@ -183,14 +107,13 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
-    embedding: "Embedding",
     community: "Community",
+    embedding: "Embedding",
 };
 
 // --- Tab content ---
 
 type TabContentProps = {
-    type: SectionType;
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
@@ -199,7 +122,6 @@ type TabContentProps = {
 };
 
 const TabContent: FC<TabContentProps> = ({
-    type,
     models,
     sortKey,
     sortDir,
@@ -207,16 +129,12 @@ const TabContent: FC<TabContentProps> = ({
     packBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
-    const regularModels =
-        type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
-    const personaModels =
-        type === "text" ? sorted.filter((m) => isPersona(m.name)) : [];
 
     return (
         <>
             {/* Desktop cards */}
             <div className="hidden md:flex md:flex-col gap-2 pb-1">
-                {regularModels.map((model) => (
+                {sorted.map((model) => (
                     <ModelRow
                         key={model.name}
                         model={model}
@@ -224,28 +142,11 @@ const TabContent: FC<TabContentProps> = ({
                         packBalance={packBalance}
                     />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-2 pb-0 px-2">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <ModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
 
             {/* Mobile list */}
             <div className="md:hidden pb-1">
-                {regularModels.map((model) => (
+                {sorted.map((model) => (
                     <MobileModelRow
                         key={model.name}
                         model={model}
@@ -253,23 +154,6 @@ const TabContent: FC<TabContentProps> = ({
                         packBalance={packBalance}
                     />
                 ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <div className="pt-3 pb-1 px-4">
-                            <span className="text-xs font-semibold text-accent-pink-500 opacity-60">
-                                Persona
-                            </span>
-                        </div>
-                        {personaModels.map((model) => (
-                            <MobileModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
-                        ))}
-                    </>
-                )}
             </div>
         </>
     );
@@ -289,15 +173,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const displayName = model.displayName ?? getModelDisplayName(model.name);
-    const brandLogoPath =
-        model.brandLogoPath ?? getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const displayName = getModelDisplayName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const modalityIcons = getModelModalityIcons(model);
+    const capabilityIcons = getModelCapabilityIcons(model);
     const publicModelName = displayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
     const isSignedIn = packBalance !== undefined;
     const perPollen = calculatePerPollen(model);
@@ -402,7 +285,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             copiedTimeoutMs={900}
                             tooltip={`Copy API model name ${model.name}`}
                             aria-label={`Copy API model name ${model.name}`}
-                            className={(copied: boolean) =>
+                            className={(copied) =>
                                 cn(
                                     "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-ink-500 transition-colors",
                                     copied
@@ -411,7 +294,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 )
                             }
                         >
-                            {(copied: boolean) => (
+                            {(copied) => (
                                 <>
                                     <span className="min-w-0 truncate">
                                         {model.name}
@@ -595,8 +478,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     audioModels,
     realtimeModels,
-    embeddingModels,
     communityModels,
+    embeddingModels,
     activeTab,
     tierBalance,
     packBalance,
@@ -702,7 +585,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             {/* Tab content */}
             {activeSection && (
                 <TabContent
-                    type={activeSection.type}
                     models={activeSection.models}
                     sortKey={sortKey}
                     sortDir={sortDir}

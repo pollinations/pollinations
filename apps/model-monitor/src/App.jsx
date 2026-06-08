@@ -674,7 +674,6 @@ function App() {
                                                                 model.type
                                                             }
                                                             size="sm"
-                                                            dot={false}
                                                             className="text-micro font-bold uppercase tracking-wide"
                                                         >
                                                             {model.type}

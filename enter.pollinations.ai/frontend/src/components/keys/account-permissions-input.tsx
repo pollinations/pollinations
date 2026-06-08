@@ -346,7 +346,7 @@ const ModelChip: FC<{
         active={selected}
         onClick={onClick}
         disabled={disabled}
-        dot={false}
+        bordered={false}
         size="sm"
         className="polli:shrink-0"
     >

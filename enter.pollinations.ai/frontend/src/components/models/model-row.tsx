@@ -206,7 +206,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     <ModalityChip
                                         modality={model.type}
                                         size="sm"
-                                        dot={false}
                                     >
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>

@@ -536,7 +536,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     return (
         <>
             {modalityIcons.length > 0 && (
-                <ModalityChip modality={type} size="sm" dot={false}>
+                <ModalityChip modality={type} size="sm">
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}

@@ -1,5 +1,5 @@
 {
-    "name": "Playground | pollinations.ai",
+    "name": "Pollinations Playground",
     "short_name": "Playground",
     "description": "Generate images, text, and audio with the Pollinations API in one focused playground.",
     "icons": [
@@ -22,7 +22,7 @@
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#ede9fe",
+    "theme_color": "#faf0ff",
     "background_color": "#110518",
     "display": "standalone",
     "start_url": "/"

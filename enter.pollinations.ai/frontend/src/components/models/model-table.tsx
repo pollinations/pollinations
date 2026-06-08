@@ -1,4 +1,5 @@
 import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
+import { ModalityChip } from "@pollinations/ui/gen";
 import { PaidChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
@@ -33,6 +34,9 @@ export type SectionType =
     | "text"
     | "embedding";
 
+/** Filter selection: a single modality, or "all" (every section, no filter). */
+export type TabValue = SectionType | "all";
+
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
@@ -40,7 +44,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
-    activeTab: SectionType;
+    activeTab: TabValue;
     tierBalance?: number;
     packBalance?: number;
 };
@@ -328,6 +332,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 capabilityIcons.length > 0) && (
                                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
                                     <MobileMetadataBadges
+                                        type={model.type}
                                         modalityIcons={modalityIcons}
                                         capabilityIcons={capabilityIcons}
                                     />
@@ -514,11 +519,13 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 };
 
 type MobileMetadataBadgesProps = {
+    type: SectionType;
     modalityIcons: string[];
     capabilityIcons: string[];
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
+    type,
     modalityIcons,
     capabilityIcons,
 }) => {
@@ -529,11 +536,11 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     return (
         <>
             {modalityIcons.length > 0 && (
-                <Chip intent="neutral" size="sm">
+                <ModalityChip modality={type} size="sm" dot={false}>
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </Chip>
+                </ModalityChip>
             )}
             {capabilityIcons.length > 0 && (
                 <Chip intent="neutral" size="sm">
@@ -577,6 +584,12 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
+    // "all" → every section stacked (each keeps its own header/persona split);
+    // otherwise just the selected modality.
+    const visibleSections =
+        activeTab === "all"
+            ? sections
+            : sections.filter((s) => s.type === activeTab);
 
     const onSort = (key: SortKey) => {
         if (key === sortKey) {
@@ -657,17 +670,26 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 </button>
             </div>
 
-            {/* Tab content */}
-            {activeSection && (
-                <TabContent
-                    type={activeSection.type}
-                    models={activeSection.models}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                />
-            )}
+            {/* Tab content — one section, or all of them stacked under "All" */}
+            {visibleSections.map((section) => (
+                <div key={section.type}>
+                    {activeTab === "all" && (
+                        <div className="px-2 pt-3 pb-1.5">
+                            <ModalityChip modality={section.type} size="sm">
+                                {sectionLabels[section.type]}
+                            </ModalityChip>
+                        </div>
+                    )}
+                    <TabContent
+                        type={section.type}
+                        models={section.models}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        tierBalance={tierBalance}
+                        packBalance={packBalance}
+                    />
+                </div>
+            ))}
         </div>
     );
 };

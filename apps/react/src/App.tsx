@@ -80,7 +80,9 @@ import {
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import {
     categoryLabel,
+    ModalityChip,
     ModalityDot,
+    ModalityTab,
     ModelSelector,
     type ModelSelectorCategory,
 } from "@pollinations/ui/gen";
@@ -584,8 +586,9 @@ function ModulesPage() {
                                     <AccountSummaryItem label="Category">
                                         <ButtonGroup aria-label="Modality">
                                             {categories.map((item) => (
-                                                <TabButton
+                                                <ModalityTab
                                                     key={item}
+                                                    modality={item}
                                                     active={
                                                         activeCategory === item
                                                     }
@@ -593,13 +596,8 @@ function ModulesPage() {
                                                         setCategory(item)
                                                     }
                                                 >
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <ModalityDot
-                                                            modality={item}
-                                                        />
-                                                        {categoryLabel(item)}
-                                                    </span>
-                                                </TabButton>
+                                                    {categoryLabel(item)}
+                                                </ModalityTab>
                                             ))}
                                         </ButtonGroup>
                                     </AccountSummaryItem>
@@ -1559,22 +1557,46 @@ function ColorsPage() {
 
             <section className="flex flex-col gap-4">
                 <SectionHeader title="Modality">
-                    A fixed color per model modality, shown as a dot — not a
-                    page theme. Decoupled from the accent.
+                    A fixed color per model modality — as a dot, a chip, or a
+                    filter tab. Decoupled from the accent; identical wherever a
+                    modality appears.
                 </SectionHeader>
-                <Surface
-                    variant="panel"
-                    className="flex flex-wrap gap-x-5 gap-y-3"
-                >
-                    {MODALITIES.map((m) => (
-                        <span
-                            key={m}
-                            className="inline-flex items-center gap-2 text-sm font-medium capitalize text-theme-text-base"
-                        >
-                            <ModalityDot modality={m} />
-                            {m}
-                        </span>
-                    ))}
+                <Surface variant="panel" className="flex flex-col gap-4">
+                    <div className="flex flex-wrap gap-x-5 gap-y-3">
+                        {MODALITIES.map((m) => (
+                            <span
+                                key={m}
+                                className="inline-flex items-center gap-2 text-sm font-medium capitalize text-theme-text-base"
+                            >
+                                <ModalityDot modality={m} />
+                                {m}
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {MODALITIES.map((m) => (
+                            <ModalityChip
+                                key={m}
+                                modality={m}
+                                className="capitalize"
+                            >
+                                {m}
+                            </ModalityChip>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {MODALITIES.map((m, i) => (
+                            <ModalityTab
+                                key={m}
+                                modality={m}
+                                active={i === 0}
+                                onClick={() => undefined}
+                                className="capitalize"
+                            >
+                                {m}
+                            </ModalityTab>
+                        ))}
+                    </div>
                 </Surface>
             </section>
 

@@ -12,7 +12,11 @@ export type TabButtonProps = {
     className?: string;
 };
 
-const sizeClasses = {
+/** Shared pill shape (no colors) — reused by ModalityTab so both match exactly. */
+export const tabButtonBaseClass =
+    "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-all polli:duration-200";
+
+export const tabButtonSizeClass = {
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",
 } as const;
@@ -51,11 +55,11 @@ export const TabButton: FC<TabButtonProps> = ({
             aria-pressed={active}
             disabled={disabled}
             className={cn(
-                "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-all polli:duration-200",
+                tabButtonBaseClass,
                 classes.base,
                 active ? classes.active : classes.inactive,
                 disabled && "polli:cursor-not-allowed polli:opacity-50",
-                sizeClasses[size],
+                tabButtonSizeClass[size],
                 className,
             )}
         >

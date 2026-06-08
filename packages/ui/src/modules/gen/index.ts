@@ -1,4 +1,6 @@
+export { ModalityChip } from "./ModalityChip.tsx";
 export { ModalityDot } from "./ModalityDot.tsx";
+export { ModalityTab, type ModalityTabValue } from "./ModalityTab.tsx";
 export {
     CATEGORY_LABELS,
     categoryLabel,

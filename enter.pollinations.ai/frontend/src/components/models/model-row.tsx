@@ -1,4 +1,5 @@
 import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations/ui";
+import { ModalityChip } from "@pollinations/ui/gen";
 import { PaidChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import {
@@ -202,11 +203,15 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
-                                    <Chip intent="neutral" size="sm">
+                                    <ModalityChip
+                                        modality={model.type}
+                                        size="sm"
+                                        dot={false}
+                                    >
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Chip>
+                                    </ModalityChip>
                                 </Tooltip>
                             )}
                             {capabilityIcons.length > 0 && (

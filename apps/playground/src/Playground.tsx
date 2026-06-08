@@ -26,6 +26,7 @@ import {
 import {
     categoryLabel,
     ModalityDot,
+    ModalityTab,
     ModelSelector,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
@@ -169,17 +170,15 @@ function ModalityTabs({
     return (
         <ButtonGroup aria-label="Modality">
             {CATEGORY_ORDER.map((category) => (
-                <TabButton
+                <ModalityTab
                     key={category}
+                    modality={category}
                     active={activeCategory === category}
                     size="sm"
                     onClick={() => onCategoryChange(category)}
                 >
-                    <span className="polli:inline-flex polli:items-center polli:gap-1.5">
-                        <ModalityDot modality={category} />
-                        {categoryLabel(category)}
-                    </span>
-                </TabButton>
+                    {categoryLabel(category)}
+                </ModalityTab>
             ))}
         </ButtonGroup>
     );

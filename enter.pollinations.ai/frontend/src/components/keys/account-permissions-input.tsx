@@ -1,5 +1,5 @@
-import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { ModalityDot } from "@pollinations/ui/gen";
+import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
+import { ModalityDot, ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -308,6 +308,7 @@ const ModelCategory: FC<{
             {models.map((model) => (
                 <ModelChip
                     key={model.id}
+                    modality={label}
                     apiName={model.id}
                     officialName={model.label}
                     selected={isModelSelected(model.id)}
@@ -320,7 +321,11 @@ const ModelCategory: FC<{
     </div>
 );
 
+// One toggle per model, colored by its category's modality (the whole category
+// shares one color — selected = filled, unselected = tinted label). The dot is
+// off here because the category header already shows the modality dot.
 const ModelChip: FC<{
+    modality: string;
     apiName: string;
     officialName: string;
     selected: boolean;
@@ -328,37 +333,26 @@ const ModelChip: FC<{
     disabled?: boolean;
     showApiName?: boolean;
 }> = ({
+    modality,
     apiName,
     officialName,
     selected,
     onClick,
     disabled,
     showApiName = true,
-}) => {
-    const colorClasses = selected
-        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-        : cn(
-              "polli:bg-ink-100 polli:text-theme-text-muted",
-              !disabled &&
-                  "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
-          );
-
-    return (
-        <Button
-            type="button"
-            size="sm"
-            aria-pressed={selected}
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                "polli:shrink-0 polli:gap-1 polli:px-3 polli:py-1 polli:text-left polli:text-sm",
-                colorClasses,
-            )}
-        >
-            {officialName}
-            {showApiName && (
-                <span className="font-mono opacity-70"> - {apiName}</span>
-            )}
-        </Button>
-    );
-};
+}) => (
+    <ModalityTab
+        modality={modality}
+        active={selected}
+        onClick={onClick}
+        disabled={disabled}
+        dot={false}
+        size="sm"
+        className="polli:shrink-0"
+    >
+        {officialName}
+        {showApiName && (
+            <span className="font-mono opacity-70"> - {apiName}</span>
+        )}
+    </ModalityTab>
+);

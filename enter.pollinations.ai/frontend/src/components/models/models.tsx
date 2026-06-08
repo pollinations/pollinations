@@ -3,14 +3,15 @@ import {
     ExternalLinkButton,
     ImageIcon,
     Section,
-    TabButton,
     TokensIcon,
 } from "@pollinations/ui";
+import { ModalityTab } from "@pollinations/ui/gen";
 import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,
     sectionLabels,
+    type TabValue,
     UnifiedModelTable,
 } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
@@ -21,7 +22,7 @@ type ModelsProps = {
 };
 
 export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
-    const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [activeTab, setActiveTab] = useState<TabValue>("all");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -64,16 +65,24 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                 }
             >
                 <div className="mb-4 flex flex-wrap gap-1.5">
+                    <ModalityTab
+                        modality="all"
+                        active={activeTab === "all"}
+                        onClick={() => setActiveTab("all")}
+                    >
+                        <span className="font-bold">All</span>
+                    </ModalityTab>
                     {availableSections.map((section) => (
-                        <TabButton
+                        <ModalityTab
                             key={section}
+                            modality={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
                         >
                             <span className="font-bold">
                                 {sectionLabels[section]}
                             </span>
-                        </TabButton>
+                        </ModalityTab>
                     ))}
                 </div>
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

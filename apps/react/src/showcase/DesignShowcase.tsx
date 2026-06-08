@@ -62,7 +62,12 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
-import { getModalityKey, ModalityDot } from "@pollinations/ui/gen";
+import {
+    getModalityKey,
+    ModalityChip,
+    ModalityDot,
+    ModalityTab,
+} from "@pollinations/ui/gen";
 import {
     formatPollen,
     PaidChip,
@@ -237,7 +242,9 @@ const moduleNames = [
     "AuthInfoCard",
     "ErrorBanner",
     "getModalityKey",
+    "ModalityChip",
     "ModalityDot",
+    "ModalityTab",
     "PaidChip",
     "TierChip",
     "WalletBalanceCard",
@@ -1239,6 +1246,30 @@ const ModuleRecipesDemo: FC = () => {
                         <ModalityDot modality="unknown" />
                         {getModalityKey("unknown") ?? "unknown (no dot)"}
                     </span>
+                </Row>
+                <Row label="ModalityChip">
+                    {modalities.map((modality) => (
+                        <ModalityChip
+                            key={modality}
+                            modality={modality}
+                            className="capitalize"
+                        >
+                            {modality}
+                        </ModalityChip>
+                    ))}
+                </Row>
+                <Row label="ModalityTab">
+                    {modalities.map((modality, i) => (
+                        <ModalityTab
+                            key={modality}
+                            modality={modality}
+                            active={i === 0}
+                            onClick={() => undefined}
+                            className="capitalize"
+                        >
+                            {modality}
+                        </ModalityTab>
+                    ))}
                 </Row>
                 <Surface className="flex flex-col gap-3">
                     <h3 className="font-subheading text-xl text-theme-text-strong">

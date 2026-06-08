@@ -19,7 +19,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { ModalityDot } from "@pollinations/ui/gen";
+import { ModalityChip, ModalityDot } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
@@ -669,17 +669,16 @@ function App() {
                                                     intent={rowIntent(health)}
                                                 >
                                                     <TableCell>
-                                                        <Chip
+                                                        <ModalityChip
+                                                            modality={
+                                                                model.type
+                                                            }
                                                             size="sm"
-                                                            className="gap-1.5 text-micro font-bold uppercase tracking-wide"
+                                                            dot={false}
+                                                            className="text-micro font-bold uppercase tracking-wide"
                                                         >
-                                                            <ModalityDot
-                                                                modality={
-                                                                    model.type
-                                                                }
-                                                            />
                                                             {model.type}
-                                                        </Chip>
+                                                        </ModalityChip>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">

@@ -225,7 +225,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
 
     return (
-        <div data-theme="amber" className="px-3 py-1 flex flex-col gap-1">
+        <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
                     <WalletDot kind="paid" />

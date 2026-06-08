@@ -1515,17 +1515,18 @@ function ColorsPage() {
     return (
         <>
             <PageIntro>
-                One app accent (amber) drives all chrome. The multi-hue palette
-                is reserved for dedicated roles: per-modality dots, the wallet
-                coins, and the fixed status/label intents. Flip the light/dark
-                toggle in the header to see each token adapt.
+                One app accent drives all chrome — set once via{" "}
+                <code>--polli-hue</code> (currently hue 85, an amber). The
+                multi-hue palette is reserved for dedicated roles: per-modality
+                dots, the wallet coins, and the fixed status/label intents. Flip
+                the light/dark toggle in the header to see each token adapt.
             </PageIntro>
 
             <section className="flex flex-col gap-4">
                 <SectionHeader title="Accent">
-                    The single app accent (amber). Every themed token —
-                    bg-theme-*, border-theme-border, text-theme-text-soft —
-                    resolves to it; no per-page hue.
+                    The single app accent. Every themed token — bg-theme-*,
+                    border-theme-border, text-theme-text-soft — resolves to it;
+                    no per-page hue.
                 </SectionHeader>
                 <Surface variant="panel" className="flex flex-col gap-4">
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-2.5">

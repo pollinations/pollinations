@@ -67,7 +67,7 @@ function AppUserMenuContent({
     const { logout } = useAuthActions();
 
     return (
-        <div data-theme="amber" className="polli:flex polli:justify-end">
+        <div data-theme="accent" className="polli:flex polli:justify-end">
             <WhenLoggedOut>
                 <LoginButton>{labels.authorize}</LoginButton>
             </WhenLoggedOut>
@@ -79,7 +79,7 @@ function AppUserMenuContent({
                     trigger={(open) => (
                         <button
                             type="button"
-                            data-theme="amber"
+                            data-theme="accent"
                             aria-label={labels.appUserMenu}
                             className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-theme-bg-hover"
                         >
@@ -100,7 +100,7 @@ function AppUserMenuContent({
                 >
                     {(close) => (
                         <div
-                            data-theme="amber"
+                            data-theme="accent"
                             className="polli:flex polli:flex-col"
                         >
                             <DropdownItem

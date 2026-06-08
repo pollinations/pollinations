@@ -1,6 +1,6 @@
 {
     "bgPale": {
-        "amber": "#fff4d4",
+        "accent": "#fff4d4",
         "neutral": "#fffcf9"
     },
     "brandDark": "#110518"

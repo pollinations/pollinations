@@ -9,8 +9,8 @@
               Accents     --polli-color-bg-active / bg-hover(=border)  THEMED
 
    SINGLE-ACCENT ARCHITECTURE
-     - All chrome uses ONE app accent (amber), defined once on :root via the
-       recipe (--polli-hue/--polli-nudge). Switching mode flips the neutrals.
+     - All chrome uses ONE app accent, defined once on :root via the recipe
+       (--polli-hue/--polli-nudge). Switching mode flips the neutrals.
      - The multi-hue palette is reserved for dedicated ROLES only: modality
        (model-UI dots/badges), wallet (paid/tier coins — in the wallet module),
        and the fixed intents (status + labels). None of these ride a page theme.
@@ -69,18 +69,18 @@
     --polli-color-ink-950: oklch(0.13 0.028 261.692);
 }
 
-/* ─── SINGLE APP ACCENT (amber). The app renders ONE accent everywhere; the
+/* ─── SINGLE APP ACCENT. The app renders ONE accent everywhere; the
    multi-hue palette lives only in dedicated roles (modality, wallet, intents).
-   The accent keeps the v3 recipe form, so swapping it later = change
+   The accent keeps the v3 recipe form, so recoloring the whole app = change
    --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
    lightness for the new hue). --polli-hue is mode-agnostic — both the light
    (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
    `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below;
-   `data-theme="amber"` re-asserts the accent INSIDE a neutral subtree (e.g.
-   amber nav buttons in the neutral rail). ─── */
+   `data-theme="accent"` re-asserts the accent INSIDE a neutral subtree (e.g.
+   accent nav buttons in the neutral rail). ─── */
 :root,
-[data-theme="amber"] {
-    --polli-hue:   85;     /* app accent = amber */
+[data-theme="accent"] {
+    --polli-hue:   85;     /* hue 85 ≈ amber — the ONLY color value; change to recolor the app */
     --polli-nudge: 0.024;  /* accent-lightness offset for this hue */
 
     --polli-color-bg-pale:         oklch(0.972 0.045 var(--polli-hue));
@@ -240,7 +240,7 @@
    --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
    bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
 .dark,
-.dark [data-theme="amber"] {
+.dark [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.305 0.03 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.39 0.034 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.433 + var(--polli-nudge)) 0.09 var(--polli-hue));

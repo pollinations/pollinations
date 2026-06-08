@@ -390,7 +390,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     <NavItem
                         key={item.id}
                         type="button"
-                        data-theme="amber"
+                        data-theme="accent"
                         icon={item.icon}
                         active={activePage === item.id}
                         onClick={() => onPageChange(item.id)}
@@ -482,8 +482,8 @@ const DashboardSupport: FC<{
                 {action.icon}
                 {action.label}
             </span>
-            {/* amber over the neutral rail (matches the nav buttons) */}
-            <span data-theme="amber">
+            {/* accent over the neutral rail (matches the nav buttons) */}
+            <span data-theme="accent">
                 <CopyButton
                     value={action.copyValue}
                     copiedTimeoutMs={1500}
@@ -549,8 +549,8 @@ const DashboardFooter: FC<{
         </div>
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
-            {/* amber accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="amber">
+            {/* accent on the toggle's active icon, over the neutral rail */}
+            <span data-theme="accent">
                 <ColorModeToggle />
             </span>
         </div>
@@ -578,7 +578,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
         trigger={(open) => (
             <button
                 type="button"
-                data-theme="amber"
+                data-theme="accent"
                 className={cn(
                     "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
                     className,

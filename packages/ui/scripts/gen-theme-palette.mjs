@@ -1,5 +1,5 @@
 // Generates src/theme-palette.json — sRGB-hex brand colors for non-CSS tooling
-// (app icons, web manifests). Single-accent model: `amber` is the app accent
+// (app icons, web manifests). Single-accent model: `accent` is the app accent
 // (its bg-pale), `neutral` is the no-hue surface.
 //
 // Single source of truth: the accent hue + bg-pale recipe + neutral surface all
@@ -63,7 +63,7 @@ export async function generatePalette() {
 
     return {
         bgPale: {
-            amber: oklchToHex(+recipe[1], +recipe[2], +accentHue[1]),
+            accent: oklchToHex(+recipe[1], +recipe[2], +accentHue[1]),
             neutral: oklchToHex(+surf[1], +surf[2], +surf[3]),
         },
         brandDark: brand[1],

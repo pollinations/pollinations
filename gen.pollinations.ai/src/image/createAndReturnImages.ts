@@ -6,6 +6,7 @@ import {
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
@@ -157,24 +158,17 @@ async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
- * Calls self-hosted image generation servers (flux, zimage pools).
+ * Calls self-hosted image generation servers (zimage pool).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
- * @param {number} concurrentRequests - The number of concurrent requests.
  * @returns {Promise<Array>} - The generated images.
  */
 export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
 ): Promise<ImageGenerationResult> => {
     try {
-        logOps(
-            "concurrent requests",
-            concurrentRequests,
-            "safeParams",
-            safeParams,
-        );
+        logOps("safeParams", safeParams);
         // Always use max steps (4) - all requests go through enter.pollinations.ai
         const steps = 4;
         logOps("calculated_steps", steps);
@@ -629,7 +623,6 @@ function formatAuthInfo(userInfo: AuthResult): string {
 const generateImage = async (
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
@@ -677,7 +670,6 @@ const generateImage = async (
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
         }
@@ -726,7 +718,6 @@ const generateImage = async (
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
         }
@@ -752,218 +743,127 @@ const generateImage = async (
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
         }
 
-        case "seedream5": {
-            try {
-                return await callSeedream5API(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Seedream 5.0 generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "seedream5":
+            return await callSeedream5API(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "seedream": {
-            try {
-                return await callSeedreamAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Seedream 4.0 generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "seedream":
+            return await callSeedreamAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "seedream-pro": {
-            try {
-                return await callSeedreamProAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Seedream 4.5 Pro generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "seedream-pro":
+            return await callSeedreamProAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "klein": {
-            try {
-                return await callFluxKleinAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Flux Klein generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "klein":
+            return await callFluxKleinAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "p-image": {
-            try {
-                return await callPrunaImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Pruna p-image generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "p-image":
+            return await callPrunaImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "grok-imagine": {
-            try {
-                return await callXaiImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    "grok-imagine-image",
-                );
-            } catch (error) {
-                logError("Grok Imagine generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "grok-imagine":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-image",
+            );
 
-        case "grok-imagine-pro": {
-            try {
-                return await callXaiImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    "grok-imagine-image-pro",
-                );
-            } catch (error) {
-                logError("Grok Imagine Pro generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "grok-imagine-pro":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-image-pro",
+            );
 
-        case "p-image-edit": {
-            try {
-                return await callPrunaImageEditAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError(
-                    "Pruna p-image-edit generation failed:",
-                    error.message,
-                );
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "p-image-edit":
+            return await callPrunaImageEditAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "nova-canvas": {
-            try {
-                return await callNovaCanvasAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Nova Canvas generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "nova-canvas":
+            return await callNovaCanvasAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
-        case "wan-image": {
-            try {
-                return await callWanImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    false,
-                );
-            } catch (error) {
-                logError("Wan image generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "wan-image":
+            return await callWanImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                false,
+            );
 
-        case "wan-image-pro": {
-            try {
-                return await callWanImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                    true,
-                );
-            } catch (error) {
-                logError("Wan image pro generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "wan-image-pro":
+            return await callWanImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                true,
+            );
 
-        case "qwen-image": {
-            try {
-                return await callQwenImageAPI(
-                    prompt,
-                    safeParams,
-                    progress,
-                    requestId,
-                );
-            } catch (error) {
-                logError("Qwen image generation failed:", error.message);
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        case "qwen-image":
+            return await callQwenImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
 
         case "flux":
             progress.updateBar(
                 requestId,
                 25,
                 "Processing",
-                "Using registered servers",
+                "Using Fireworks FLUX",
             );
-            return await callSelfHostedServer(
+            return await callFireworksFluxSchnellAPI(
                 prompt,
                 safeParams,
-                concurrentRequests,
+                progress,
+                requestId,
             );
 
         default:
             // zimage and any unrecognized model fall through to self-hosted servers
-            return await callSelfHostedServer(
-                prompt,
-                safeParams,
-                concurrentRequests,
-            );
+            return await callSelfHostedServer(prompt, safeParams);
     }
 };
 
@@ -1022,7 +922,6 @@ const processImageBuffer = async (
  * Creates and returns images with metadata, checking for NSFW content.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
- * @param {number} concurrentRequests - Number of concurrent requests.
  * @param {string} originalPrompt - The original prompt before any transformations.
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
@@ -1032,7 +931,6 @@ const processImageBuffer = async (
 export async function createAndReturnImageCached(
     prompt: string,
     safeParams: ImageParams,
-    concurrentRequests: number,
     originalPrompt: string,
     progress: ProgressManager,
     requestId: string,
@@ -1046,7 +944,6 @@ export async function createAndReturnImageCached(
         const result = await generateImage(
             prompt,
             safeParams,
-            concurrentRequests,
             progress,
             requestId,
             userInfo,

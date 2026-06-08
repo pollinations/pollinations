@@ -1,16 +1,51 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    getImageModelIds,
+    getVideoModelIds,
+    IMAGE_SERVICES,
+} from "@shared/registry/image.ts";
+import { getRealtimeModelsInfo } from "@shared/registry/model-info.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
+import { marked } from "marked";
+import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import LOGO_WHITE_SVG from "../../../assets/logo-text-white.svg?raw";
+import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
+import {
+    API_REFERENCE_CUSTOM_CSS,
+    GUIDES_CSS,
+    POLLINATIONS_HEADER_CSS,
+    POLLINATIONS_HEADER_SCALAR_CSS,
+    POLLINATIONS_HEADER_STANDALONE_CSS,
+} from "./docs-styles.ts";
+
+// Same favicon as enter.pollinations.ai (32×32 PNG, ~1.3kB → inlined as a
+// data URI so we don't need a separate binary asset route or a build-time
+// step. Update this if enter's favicon ever changes.
+const FAVICON_DATA_URI =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAE9ElEQVR4nMVXaWhdVRB+7gsWNxQVQVxQEYsbIqhFsEjd/WGVWtHiTltccS1Yan9ocK1VqRoVqkUkFRUFUawWUxWVNG/m5ZlgXNLcmZtaWmuKJnkzTz0y55z78raQpYsDFx73nDvznTnffDMvl9sOWz/Uf9T64YFjcv+HrXVuTxT+FpV++MYl++1yACD0JAj9hsopKr2+ywJ3uI69UGgpCEte+Foo8+UorCC8rM/17bvTAYAmd6JQGYRuyN5hia8E4RFUWrRTg3dqcjYI/QPKrQ3AhFtQ2WGZZ25XEBB6EZRfqX5QaAWUk1kovBaUsc25Peq/c87tDkJfGzEL5fQiEHqh0Q+/3Ot69xkPwL+o9CsIfZY9xnR/OmVnjsf6FoUfr+xT/qnWB/fa+x63edq4AEB5cd3pdkOhx0ZBcEtDcKVFVevL6k+KSvfYWtFtOmDSAMxAqB2FB1DoqXDXdMkoMdPz/Tvh5f7kypirs8kCeLTJ+3ZUZnMAym2g1N/h0v29ICn9CMIfd7hfDgSlHlAujAVgzCvocZunQYlP9BwQXt7hNhzZBEBqvwsj/ceZDhQkuT5fpsusMjpLA6eEbFB3PYCi6zsChZ+I13NG3vUdNOp4ZOOxqOmDPr3xDkM6qQzKq0HpLvvA1A6Fh03/AyD+EpQ+AKU3jKT2zu8THkTld2Om5oPS2yBcqvO9DYWWdI30H5/zUiq0zdhd0IGzUGkDKL8Kkt6CQp/GDzZlJLQTRwBzPMOV21CSW0Oa0xmRC3Zajr+/8ECEnwXh3y1GkHHeamBzKHQbCg11Oz7UOxFah0IfZRkylCj8SVUZrvEAysnF1gtAKcESzQ4A+L2qfe12LVZBcW0lKhftt3EFhTaj8gPh7sO9tdrmILU8CG7j4TUcKCezQOhPnwXhmwxAJaUlmg0lutoTOPaILHBNQKElMXvPWaYLrv/g4LzEVxiRLJVFlxwCQltM/RoqoUwXGg8MSF7pjgxAQel2C2DBsZRe1VSghIeNjAXhayIZb64rE15oZLE7Rkmvi2q2uDkIGgrNp0Kqv/zJIz9q/dLd0dd86xP+u5iJBgPlVbYBlO/zrA93+VJDSSrfX8PqAGJp9R7jVCCel/bXPAChISN20+CZodK9fqNyFyp1RiYPWqMBpYcLSg9VOl8tgGdsLaxTuzE+nJy6rRLizNAybi8wQ0nPROHPG4JM9RFa16V8bm6yhpJMR+UFqPwWKHXYY85idzMilexkWZBQ83Gf0jt2/6Z8uR1pEEYwU7suUzzrAX44DUSck9vRlre5T/nnqFx/REZDpxs4DJXfRKUPowR/N8oX3mrNKlPIKRtKMheF/kbh763f+3rXdEbW6zMA2bBq92x7jIgo9FWoAF4wteBDdHQsydXNRrAIYGUGoN6CqvIqy4pvOpMGIEGMiiPJCc3WbQ4ApfeNeGON4/Ga3KSzUCilJ0ctcDZsVDS7ykDpkaoye7p+3f4tZbwwmc8Lnz5hAKhctMEUhed5dteN4V1Cp8XJqRWFnw/9ILmgxoeNbqFv3BiaHSWTAEB91pJt+LAKsJquXs9rel44eTLXl2XVnFAFYAUok3HJdMT3/gkDEJ7n/4AYCYW2gNI51etFV9zbyGdTU5BYWmPzYfUekOTUMMj4LFg1LJwwAA+izDNDm02mN1s3ENZSrdbrg1d8lPgkX5ZlunSsQP8BPbyNNiarxF0AAAAASUVORK5CYII=";
+
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import ACCOUNT_MD from "../docs/account.md?raw";
+import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
+import AUTHENTICATION_MD from "../docs/authentication.md?raw";
+import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
+import ERRORS_MD from "../docs/errors.md?raw";
+import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
+import INTRODUCTION_MD from "../docs/introduction.md?raw";
+import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
+import MODELS_MD from "../docs/models.md?raw";
+import QUICK_START_MD from "../docs/quick-start.md?raw";
+import SAFETY_MD from "../docs/safety.md?raw";
+import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
+import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
 
@@ -21,52 +56,26 @@ const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
     .trim();
 
 const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
-const ERRORS_DOCS = [
-    "All errors return JSON with a consistent shape:",
-    "",
-    "```json",
-    "{",
-    '  "status": 400,',
-    '  "success": false,',
-    '  "error": {',
-    '    "code": "BAD_REQUEST",',
-    '    "message": "Description of what went wrong"',
-    "  }",
-    "}",
-    "```",
-    "",
-    "| Status | Meaning |",
-    "|--------|---------|",
-    "| `400` | Invalid parameters or malformed request |",
-    "| `401` | Missing or invalid API key |",
-    "| `402` | Insufficient pollen balance |",
-    "| `403` | API key lacks required permission |",
-    "| `500` | Internal server error |",
-].join("\n");
-const SAFETY_DOCS = [
-    "Optional safety checking runs on text input before generation. Omitted, `false`, or `0` means off.",
-    "",
-    "Use `safe` as a query parameter or JSON body field, or send the same value in the `" +
-        SAFETY_HEADER_NAME +
-        "` header.",
-    "",
-    "Values: `privacy` redacts personal information like names, email, phone, address, IP, URLs, and usernames. `secrets` redacts keys and passwords. `sexual`, `violence`, and `shield` block matching requests. Aliases: `true` = `privacy,secrets`, `nsfw` = `sexual,violence`.",
-    "",
-    "```bash",
-    'curl "https://gen.pollinations.ai/text/email%20me%20at%20a%40example.com?safe=privacy" \\',
-    '  -H "Authorization: Bearer YOUR_API_KEY"',
-    "",
-    "curl https://gen.pollinations.ai/v1/chat/completions \\",
-    '  -H "Authorization: Bearer YOUR_API_KEY" \\',
-    '  -H "Content-Type: application/json" \\',
-    `  -H "${SAFETY_HEADER_NAME}: privacy" \\`,
-    '  -d \'{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}\'',
-    "```",
-    "",
-    "Large requests check the latest 50,000 text characters, across up to 25 text parts, in one safety call.",
-    "",
-    'Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.',
-].join("\n");
+
+// Strip the leading H1/H2 heading line so the markdown can be embedded under
+// a Scalar tag (which already renders its own title) without double headings.
+const stripLeadingHeading = (md: string) =>
+    md.replace(/^#{1,2}\s.*\n+/, "").trim();
+
+// Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
+// substitution. The placeholders live in the .md files so the prose stays in
+// markdown but the model lists update automatically as the registry changes.
+const interpolate = (md: string, vars: Record<string, string>): string =>
+    md.replace(/\{\{(\w+)\}\}/g, (m, key) => vars[key] ?? m);
+
+const INTRODUCTION_DOCS = INTRODUCTION_MD.trim();
+const QUICK_START_DOCS = QUICK_START_MD.trim();
+const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
+const MODELS_DOCS = MODELS_MD.trim();
+const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
+const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const SAFETY_DOCS = SAFETY_MD.trim();
+const ERRORS_DOCS = ERRORS_MD.trim();
 const IMAGE_ALIASES = new Set(
     Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
 );
@@ -86,28 +95,16 @@ const ALL_ALIASES = new Set([
     ...EMBEDDING_ALIASES,
 ]);
 
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
-    .join(", ");
+const imageModelDisplayNames = getImageModelIds().join(", ");
 
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
-    .join(", ");
+const videoModelDisplayNames = getVideoModelIds().join(", ");
 
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
+const realtimeModelDisplayNames = getRealtimeModelsInfo()
+    .map((model) => model.name)
+    .join(", ");
 
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
@@ -123,160 +120,153 @@ function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     ) as OpenApiSchema;
 }
 
-function generateLLMDoc(): string {
-    return [
-        "# Pollinations API",
-        "",
-        "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
-        "",
-        "Base URL: https://gen.pollinations.ai",
-        "API Keys: https://enter.pollinations.ai",
-        "Docs: https://gen.pollinations.ai/docs",
-        "OpenAPI: https://gen.pollinations.ai/docs/open-api/generate-schema",
-        "",
-        "## Quick Start",
-        "",
-        "### Text (Python, OpenAI SDK)",
-        "",
-        "```python",
-        "from openai import OpenAI",
-        'client = OpenAI(base_url="https://gen.pollinations.ai", api_key="YOUR_API_KEY")',
-        'response = client.chat.completions.create(model="openai", messages=[{"role": "user", "content": "Hello!"}])',
-        "print(response.choices[0].message.content)",
-        "```",
-        "",
-        "### Image (URL — no code needed)",
-        "",
-        "```",
-        "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
-        "```",
-        "",
-        "### Audio (cURL)",
-        "",
-        "```bash",
-        'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
-        '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
-        "```",
-        "",
-        "### Embeddings (OpenAI-compatible)",
-        "",
-        "```bash",
-        "curl https://gen.pollinations.ai/v1/embeddings \\",
-        '  -H "Authorization: Bearer YOUR_API_KEY" \\',
-        '  -H "Content-Type: application/json" \\',
-        '  -d \'{"model":"openai-3-small","input":"Hello world","dimensions":512}\'',
-        "```",
-        "",
-        "## Authentication",
-        "",
-        "All generation requests require an API key. Model listing endpoints work without auth.",
-        "",
-        "- Header: `Authorization: Bearer YOUR_API_KEY`",
-        "- Query param: `?key=YOUR_API_KEY`",
-        "",
-        "Key types: `sk_` (secret, server-side) | `pk_` (publishable, client-side, rate limited)",
-        "",
-        "## Account",
-        "",
-        "All account endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission.",
-        "Base path: /account",
-        "",
-        "### GET /account/profile",
-        "",
-        "Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
-        "",
-        "### GET /account/balance",
-        "",
-        "Returns remaining pollen. If the API key has a budget, returns key budget instead.",
-        "",
-        "### GET /account/usage",
-        "",
-        "Per-request usage history: model, token counts, cost, response time.",
-        "",
-        "## Generation",
-        "",
-        "- POST /v1/chat/completions: OpenAI-compatible text generation.",
-        "- POST /text: text generation with direct content response.",
-        "- GET /text/{prompt}: simple text generation.",
-        "- GET /image/{prompt}: image generation.",
-        "- GET /video/{prompt}: video generation.",
-        "- GET /audio/{text}: speech or music generation.",
-        "- POST /v1/embeddings: OpenAI-compatible embeddings.",
-        "- POST /v1/audio/speech: OpenAI-compatible speech generation.",
-        "- POST /v1/audio/transcriptions: audio transcription.",
-        "- POST /v1/images/generations: OpenAI-compatible image generation.",
-        "- POST /v1/images/edits: OpenAI-compatible image editing.",
-        "",
-        "## Media Storage",
-        "",
-        "Base URL: https://media.pollinations.ai",
-        "Content-addressed file storage. Upload requires API key; retrieval is public.",
-        "",
-        "## Models",
-        "",
-        "- GET /v1/models",
-        "- GET /text/models",
-        "- GET /image/models",
-        "- GET /audio/models",
-        "- GET /embeddings/models",
-        "",
-        "## Request Safety Checking",
-        "",
-        SAFETY_DOCS,
-        "",
-        "## Errors",
-        "",
-        ERRORS_DOCS,
-        "",
-        BYOP_DOCS,
-        "",
-        "## CLI",
-        "",
-        CLI_DOCS,
-        "",
-        "## MCP Server",
-        "",
-        MCP_DOCS,
-    ].join("\n");
-}
+// Substitute live registry values into the section markdown.
+const MODEL_VARS: Record<string, string> = {
+    TEXT_MODELS: textModelDisplayNames,
+    IMAGE_MODELS: imageModelDisplayNames,
+    VIDEO_MODELS: videoModelDisplayNames,
+    REALTIME_MODELS: realtimeModelDisplayNames,
+    AUDIO_MODELS: audioModelDisplayNames,
+    EMBEDDING_MODELS: embeddingModelDisplayNames,
+    ELEVENLABS_VOICES: ELEVENLABS_VOICES.join(", "),
+};
 
-const LLM_DOC_TEXT = generateLLMDoc();
+const TEXT_GENERATION_DOCS = interpolate(TEXT_GENERATION_MD.trim(), MODEL_VARS);
+const IMAGE_GENERATION_DOCS = interpolate(
+    IMAGE_GENERATION_MD.trim(),
+    MODEL_VARS,
+);
+const VIDEO_GENERATION_DOCS = interpolate(
+    VIDEO_GENERATION_MD.trim(),
+    MODEL_VARS,
+);
+const AUDIO_GENERATION_DOCS = interpolate(
+    AUDIO_GENERATION_MD.trim(),
+    MODEL_VARS,
+);
+const REALTIME_DOCS = [
+    "## Realtime Voice",
+    "",
+    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+    "",
+    "| Endpoint | Description |",
+    "|----------|-------------|",
+    "| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2`) |",
+    "",
+    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
+    "",
+    "The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes. Input transcription sessions are not supported yet.",
+    "",
+    "Events sent and received over the socket use the OpenAI Realtime protocol unchanged. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "",
+    "```js",
+    'import WebSocket from "ws";',
+    "",
+    "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
+    "const ws = new WebSocket(",
+    '    "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2",',
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
+    "    { headers: { Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}` } },",
+    ");",
+    "",
+    'ws.on("open", () => ws.send(JSON.stringify({',
+    '    type: "session.update",',
+    '    session: { type: "realtime", instructions: "Be concise." },',
+    "})));",
+    'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
+    "```",
+    "",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "",
+    `**Realtime models:** ${realtimeModelDisplayNames}`,
+].join("\n");
+const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
-const LLM_BUTTON_HTML = `
+// Composition: the "api" section copy mirrors the Scalar API Reference page
+// — intro + quick start + auth + all generation modalities + models + media
+// storage + account + safety + errors. BYOP, CLI, MCP are separate guides.
+const GEN_API_DOCS = [
+    INTRODUCTION_DOCS,
+    QUICK_START_DOCS,
+    AUTHENTICATION_DOCS,
+    TEXT_GENERATION_DOCS,
+    IMAGE_GENERATION_DOCS,
+    VIDEO_GENERATION_DOCS,
+    REALTIME_DOCS,
+    AUDIO_GENERATION_DOCS,
+    EMBEDDINGS_DOCS,
+    MODELS_DOCS,
+    MEDIA_STORAGE_DOCS,
+    ACCOUNT_DOCS,
+    SAFETY_DOCS,
+    ERRORS_DOCS,
+].join("\n\n");
+
+const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
+const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
+const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
+
+const LLM_DOC_TEXT = [
+    GEN_API_DOCS,
+    BYOP_SECTION,
+    CLI_SECTION,
+    MCP_SECTION,
+].join("\n\n");
+
+const LLM_DOC_SECTIONS: Record<string, string> = {
+    api: GEN_API_DOCS,
+    byop: BYOP_SECTION,
+    cli: CLI_SECTION,
+    mcp: MCP_SECTION,
+};
+
+type GuideId = "byop" | "cli" | "mcp";
+
+function pollinationsHeaderHtml(scalarHosted = false): string {
+    const contextCss = scalarHosted
+        ? POLLINATIONS_HEADER_SCALAR_CSS
+        : POLLINATIONS_HEADER_STANDALONE_CSS;
+    return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
+<header class="ph-bar">
+  <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
+</header>
+<div class="ph-fab-cluster">
+  <button class="ph-fab ph-fab-copy" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    <span>Copy for LLMs</span>
+  </button>
+</div>
 <script>
 (function () {
-  var button = document.createElement('button');
-  button.textContent = 'Copy for LLMs';
-  button.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9999;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font:14px system-ui;box-shadow:0 6px 18px rgba(0,0,0,.14);cursor:pointer';
-  button.onclick = async function () {
-    var res = await fetch('/docs/llm.txt');
-    var text = await res.text();
-    await navigator.clipboard.writeText(text);
-    var previous = button.textContent;
-    button.textContent = 'Copied';
-    setTimeout(function () { button.textContent = previous; }, 1200);
-  };
-  document.body.appendChild(button);
+  // Copy for LLMs — always copies the full doc (api + integrations).
+  var copy = document.querySelector('.ph-fab-copy');
+  if (copy) {
+    var label = copy.querySelector('span');
+    copy.addEventListener('click', async function () {
+      var res = await fetch('/docs/llm.txt');
+      var text = await res.text();
+      await navigator.clipboard.writeText(text);
+      var prev = label.textContent;
+      label.textContent = 'Copied';
+      setTimeout(function () { label.textContent = prev; }, 1200);
+    });
+  }
+  // Text-based DOM scan for Scalar buttons whose class names get hashed
+  // by the CDN bundle — we tag them by their stable label so our CSS can
+  // hide ("Ask AI") or style ("Show more") them in amber.
+  function scanScalarButtons() {
+    var nodes = document.querySelectorAll('button, a, [role="button"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var text = (nodes[i].textContent || '').trim();
+      if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
+      else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
+    }
+  }
+  scanScalarButtons();
+  new MutationObserver(scanScalarButtons).observe(document.body, { childList: true, subtree: true });
 })();
 </script>`;
-
-const API_REFERENCE_CUSTOM_CSS = `
-.scalar-app .markdown:has(table) {
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
-
-.scalar-app .markdown:has(table) table {
-  min-width: 720px !important;
-}
-
-.scalar-app .markdown:has(table) table th,
-.scalar-app .markdown:has(table) table td {
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-}
-`;
 
 function generationDocumentation(): OpenApiSchema {
     return {
@@ -284,83 +274,7 @@ function generationDocumentation(): OpenApiSchema {
         info: {
             title: "Pollinations API",
             version: "0.3.0",
-            description: [
-                "## Introduction",
-                "",
-                "Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
-                "",
-                "**Base URL:** `https://gen.pollinations.ai`",
-                "",
-                "**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)",
-                "",
-                "## Overview",
-                "",
-                "| Capability | Endpoint | Format |",
-                "|---|---|---|",
-                "| ✍️ **Text Generation** | `POST /v1/chat/completions` | OpenAI-compatible |",
-                "| ✍️ **Simple Text** | `GET /text/{prompt}` | Plain text |",
-                "| 🖼️ **Image Generation** | `GET /image/{prompt}` | JPEG / PNG |",
-                "| 🎬 **Video Generation** | `GET /video/{prompt}` | MP4 |",
-                "| 🔊 **Text-to-Speech** | `GET /audio/{text}` | MP3 |",
-                "| 🔊 **Music Generation** | `GET /audio/{text}` | MP3 |",
-                "| 🔊 **Transcription** | `POST /v1/audio/transcriptions` | JSON |",
-                "| 🤖 **Model Discovery** | `GET /v1/models` | JSON |",
-                "",
-                "## Quick Start",
-                "",
-                "### Generate an Image",
-                "",
-                "Paste this URL in your browser — no code needed:",
-                "",
-                "```",
-                "https://gen.pollinations.ai/image/a%20cat%20in%20space",
-                "```",
-                "",
-                "Or use it directly in HTML:",
-                "",
-                "```html",
-                '<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space" />',
-                "```",
-                "",
-                "### Generate Text (OpenAI-compatible)",
-                "",
-                "```bash",
-                "curl https://gen.pollinations.ai/v1/chat/completions \\",
-                '  -H "Authorization: Bearer YOUR_API_KEY" \\',
-                '  -H "Content-Type: application/json" \\',
-                '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello!"}]}\'',
-                "```",
-                "",
-                "### Generate Speech",
-                "",
-                "```bash",
-                'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
-                '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
-                "```",
-                "",
-                "## 🔐 Authentication",
-                "",
-                "All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.",
-                "",
-                "**Two key types:**",
-                "",
-                "| Type | Prefix | Use case | Rate limits |",
-                "|------|--------|----------|-------------|",
-                "| Secret | `sk_` | Server-side apps | None |",
-                "| Publishable | `pk_` | Client-side apps (beta) | 1 pollen/IP/hour |",
-                "",
-                "**How to authenticate:**",
-                "",
-                "```bash",
-                "# Option 1: Authorization header (recommended)",
-                'curl -H "Authorization: Bearer YOUR_API_KEY" ...',
-                "",
-                "# Option 2: Query parameter",
-                'curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"',
-                "```",
-                "",
-                "> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.",
-            ].join("\n"),
+            description: INTRODUCTION_DOCS,
         },
         components: {
             securitySchemes: {
@@ -374,141 +288,101 @@ function generationDocumentation(): OpenApiSchema {
             },
         },
         security: [{ bearerAuth: [] }],
+        "x-tagGroups": [
+            {
+                name: "Get Started",
+                tags: ["🚀 Quick Start", "🔐 Authentication"],
+            },
+            {
+                name: "Integrations",
+                tags: ["🌸 BYOP", "🖥 CLI", "🔌 MCP Server"],
+            },
+            {
+                name: "Generation",
+                tags: [
+                    "✍️ Text",
+                    "🖼️ Image",
+                    "🎬 Video",
+                    "🎙️ Realtime",
+                    "🔊 Audio",
+                    "🔢 Embeddings",
+                ],
+            },
+            {
+                name: "Resources",
+                tags: [
+                    "🤖 Models",
+                    "📦 Media Storage",
+                    "👤 Account",
+                    "❌ Errors",
+                    "🛡️ Safety",
+                ],
+            },
+        ],
         tags: [
             {
-                name: "👤 Account",
-                description: [
-                    "Manage your account, check your pollen balance, and view usage history. All endpoints require authentication.",
-                    "",
-                    "| Endpoint | Description |",
-                    "|----------|-------------|",
-                    "| `GET /account/profile` | GitHub username and profile image |",
-                    "| `GET /account/balance` | Current pollen balance |",
-                    "| `GET /account/usage` | Per-request history with costs |",
-                    "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
-                    "| `GET /account/key` | API key validity, type, and permissions |",
-                    "",
-                    "When using API keys, specific permissions may be required, such as `account:usage` or `account:profile`.",
-                ].join("\n"),
+                name: "🚀 Quick Start",
+                description: stripLeadingHeading(QUICK_START_DOCS),
             },
             {
-                name: "✍️ Text Generation",
-                description: [
-                    "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by changing the base URL.",
-                    "",
-                    "| Endpoint | Best for |",
-                    "|----------|----------|",
-                    "| `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |",
-                    "| `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |",
-                    "",
-                    `**Available models:** ${textModelDisplayNames}`,
-                ].join("\n"),
+                name: "🔐 Authentication",
+                description: stripLeadingHeading(AUTHENTICATION_DOCS),
             },
             {
-                name: "🖼️ Image Generation",
-                description: [
-                    "Generate images from text prompts via a simple GET request. Returns JPEG or PNG.",
-                    "",
-                    "```",
-                    "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
-                    "```",
-                    "",
-                    `**Available models:** ${imageModelDisplayNames}`,
-                ].join("\n"),
-            },
-            {
-                name: "🎬 Video Generation",
-                description: [
-                    "Generate videos from text prompts or reference images. Returns MP4.",
-                    "",
-                    "```",
-                    "https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4",
-                    "```",
-                    "",
-                    `**Available models:** ${videoModelDisplayNames}`,
-                ].join("\n"),
-            },
-            {
-                name: "🔊 Audio Generation",
-                description: [
-                    "Text-to-speech, music generation, and audio transcription.",
-                    "",
-                    "| Endpoint | Description |",
-                    "|----------|-------------|",
-                    "| `GET /audio/{text}` | Simple URL-based TTS or music generation |",
-                    "| `POST /v1/audio/speech` | OpenAI-compatible TTS |",
-                    "| `POST /v1/audio/transcriptions` | Speech-to-text transcription |",
-                    "",
-                    `**Audio models:** ${audioModelDisplayNames}`,
-                    "",
-                    `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
-                ].join("\n"),
-            },
-            {
-                name: "🔢 Embeddings",
-                description: [
-                    "Generate vector embeddings with an OpenAI-compatible response format.",
-                    "",
-                    "| Endpoint | Description |",
-                    "|----------|-------------|",
-                    "| `POST /v1/embeddings` | OpenAI-compatible embeddings endpoint |",
-                    "| `GET /embeddings/models` | Embedding models with pricing and modalities |",
-                    "",
-                    "`gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.",
-                    "",
-                    "String batch input supports up to 32 items. `task_type` is Gemini-only. Dimensions are model-specific: `openai-3-small` supports up to 1536; `gemini-2` and `openai-3-large` support up to 3072.",
-                    "",
-                    `**Embedding models:** ${embeddingModelDisplayNames}`,
-                ].join("\n"),
-            },
-            {
-                name: "📦 Media Storage",
-                description: [
-                    "Content-addressed media storage. Upload and retrieve images, audio, and video by content hash.",
-                    "",
-                    "| Endpoint | Description |",
-                    "|----------|-------------|",
-                    "| `POST /upload` | Upload a file, receive a content-addressed URL |",
-                    "| `GET /{hash}` | Retrieve a previously uploaded file |",
-                    "| `GET /{hash}/metadata` | Get file metadata as JSON |",
-                    "",
-                    "**Base URL:** https://media.pollinations.ai",
-                ].join("\n"),
-            },
-            {
-                name: "🤖 Models",
-                description: [
-                    "Discover available models with pricing, capabilities, and metadata. No authentication required.",
-                    "",
-                    "| Endpoint | Returns |",
-                    "|----------|---------|",
-                    "| `GET /models` | All models with pricing, capabilities, and metadata |",
-                    '| `GET /v1/models` | All models in OpenAI-compatible format (`{object: "list", data: [...]}`) |',
-                    "| `GET /text/models` | Text models with pricing, context window, tool support |",
-                    "| `GET /image/models` | Image & video models with capabilities and pricing |",
-                    "| `GET /audio/models` | Audio models with supported voices |",
-                    "| `GET /embeddings/models` | Embedding models with supported modalities |",
-                ].join("\n"),
-            },
-            {
-                name: "🛡️ Request Safety Checking",
-                description: SAFETY_DOCS,
-            },
-            {
-                name: "❌ Errors",
-                description: ERRORS_DOCS,
-            },
-            {
-                name: "🌸 Bring Your Own Pollen",
+                name: "🌸 BYOP",
                 description: BYOP_DOCS,
             },
             {
-                name: "🖥️ CLI",
+                name: "🖥 CLI",
                 description: CLI_DOCS,
             },
             {
                 name: "🔌 MCP Server",
                 description: MCP_DOCS,
+            },
+            {
+                name: "❌ Errors",
+                description: stripLeadingHeading(ERRORS_DOCS),
+            },
+            {
+                name: "🛡️ Safety",
+                description: stripLeadingHeading(SAFETY_DOCS),
+            },
+            {
+                name: "✍️ Text",
+                description: stripLeadingHeading(TEXT_GENERATION_DOCS),
+            },
+            {
+                name: "🖼️ Image",
+                description: stripLeadingHeading(IMAGE_GENERATION_DOCS),
+            },
+            {
+                name: "🎬 Video",
+                description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
+            },
+            {
+                name: "🎙️ Realtime",
+                description: stripLeadingHeading(REALTIME_DOCS),
+            },
+            {
+                name: "🔊 Audio",
+                description: stripLeadingHeading(AUDIO_GENERATION_DOCS),
+            },
+            {
+                name: "🔢 Embeddings",
+                description: stripLeadingHeading(EMBEDDINGS_DOCS),
+            },
+            {
+                name: "🤖 Models",
+                description: stripLeadingHeading(MODELS_DOCS),
+            },
+            {
+                name: "📦 Media Storage",
+                description: stripLeadingHeading(MEDIA_STORAGE_DOCS),
+            },
+            {
+                name: "👤 Account",
+                description: stripLeadingHeading(ACCOUNT_DOCS),
             },
         ],
     };
@@ -556,22 +430,36 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
     if (!response.ok) return undefined;
     const schema = (await response.json()) as OpenApiSchema;
 
-    for (const operations of Object.values(asRecord(schema.paths))) {
+    for (const [path, operations] of Object.entries(asRecord(schema.paths))) {
         if (!operations || typeof operations !== "object") continue;
         (operations as OpenApiSchema).servers = [
             { url: "https://media.pollinations.ai" },
         ];
-        for (const operation of Object.values(operations as OpenApiSchema)) {
+        for (const [method, operation] of Object.entries(
+            operations as OpenApiSchema,
+        )) {
             if (!operation || typeof operation !== "object") continue;
-            const record = operation as { tags?: unknown };
+            const record = operation as { tags?: unknown; security?: unknown };
             if (!Array.isArray(record.tags)) continue;
             record.tags = record.tags.map((tag) =>
                 tag === "media.pollinations.ai" ? "📦 Media Storage" : tag,
             );
+            // Public read routes do not require auth. Defensive override in
+            // case the upstream media spec hasn't been redeployed with the
+            // explicit `security: []` setting yet.
+            if (isPublicMediaRead(method, path)) {
+                record.security = [];
+            }
         }
     }
 
     return schema;
+}
+
+function isPublicMediaRead(method: string, path: string): boolean {
+    const lower = method.toLowerCase();
+    if (lower !== "get" && lower !== "head") return false;
+    return path === "/{hash}" || path === "/{hash}/metadata";
 }
 
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
@@ -641,6 +529,48 @@ function isGenerationPath(path: string): boolean {
         path === "/generate" ||
         path.startsWith("/generate/")
     );
+}
+
+function injectSamples(schema: OpenApiSchema): OpenApiSchema {
+    const paths = schema.paths as Record<string, unknown> | undefined;
+    if (!paths) return schema;
+
+    for (const [path, value] of Object.entries(paths)) {
+        if (!value || typeof value !== "object") continue;
+        const normalizedPath = path
+            .replace(/:(\w+)\{[^}]*\}/g, "{$1}")
+            .replace(/:(\w+)/g, "{$1}");
+        for (const [method, operation] of Object.entries(
+            value as Record<string, unknown>,
+        )) {
+            if (!operation || typeof operation !== "object") continue;
+            const key = `${method} ${normalizedPath}`;
+            const samples = CODE_SAMPLES[key];
+            if (samples) {
+                (operation as Record<string, unknown>)["x-codeSamples"] =
+                    samples;
+            }
+            const example = RESPONSE_EXAMPLES[key];
+            if (example) {
+                const responses = (operation as Record<string, unknown>)
+                    .responses as Record<string, unknown> | undefined;
+                const ok = responses?.["200"] as
+                    | Record<string, unknown>
+                    | undefined;
+                const content = ok?.content as
+                    | Record<string, unknown>
+                    | undefined;
+                const json = content?.["application/json"] as
+                    | Record<string, unknown>
+                    | undefined;
+                if (json) {
+                    json.example = example;
+                }
+            }
+        }
+    }
+
+    return schema;
 }
 
 function mergeSchemas(
@@ -726,15 +656,96 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
     );
 }
 
+type Guide = {
+    id: GuideId;
+    title: string;
+    emoji: string;
+    summary: string;
+    markdown: string;
+};
+
+const GUIDES: Guide[] = [
+    {
+        id: "byop",
+        title: "BYOP",
+        emoji: "🌸",
+        summary:
+            "Let your users authorize your app to spend their own Pollen on Pollinations requests.",
+        markdown: BYOP_DOCS,
+    },
+    {
+        id: "cli",
+        title: "CLI",
+        emoji: "🖥️",
+        summary:
+            "The Pollinations CLI — for humans, AI agents, and everything in between.",
+        markdown: CLI_DOCS,
+    },
+    {
+        id: "mcp",
+        title: "MCP Server",
+        emoji: "🔌",
+        summary:
+            "Wire Pollinations into Claude Desktop, Cursor, and other MCP-compatible clients.",
+        markdown: MCP_DOCS,
+    },
+];
+
+const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
+
+function guidesPage(body: string): string {
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pollinations.ai - Docs</title>
+<link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
+<style>${GUIDES_CSS}</style>
+</head>
+<body>
+${pollinationsHeaderHtml()}
+<main class="wrap">${body}</main>
+</body>
+</html>`;
+}
+
+function guidesIndexHtml(): string {
+    const cards = GUIDES.map(
+        (g) =>
+            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
+    ).join("");
+    const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
+    return guidesPage(body);
+}
+
+function guideHtml(guide: Guide): string {
+    // Prepend the guide title as an H1 so each guide page has a clear heading.
+    // Source READMEs have their H1 stripped (because we render the page title
+    // separately) — re-adding it here gives the rendered page a proper title
+    // without duplicating it across surfaces.
+    const rendered = marked.parse(
+        `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
+        { async: false },
+    ) as string;
+    return guidesPage(rendered);
+}
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
-                pageTitle: "Pollinations API Reference",
-                title: "Pollinations API Reference",
+                pageTitle: "pollinations.ai - Docs",
+                title: "pollinations.ai - Docs",
+                favicon: FAVICON_DATA_URI,
                 theme: "saturn",
+                darkMode: true,
+                forceDarkModeState: "dark",
+                hideDarkModeToggle: true,
+                showDeveloperTools: "never",
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
+                hideClientButton: true,
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },
                 ],
@@ -749,17 +760,35 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             })(c, next);
             if (!response) return;
             const html = await response.text();
-            const lastBodyIdx = html.lastIndexOf("</body>");
-            if (lastBodyIdx === -1) return c.html(html);
+            const bodyOpenMatch = html.match(/<body[^>]*>/);
+            if (!bodyOpenMatch || bodyOpenMatch.index === undefined) {
+                return c.html(html);
+            }
+            const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
-                html.slice(0, lastBodyIdx) +
-                    LLM_BUTTON_HTML +
-                    html.slice(lastBodyIdx),
+                html.slice(0, insertAt) +
+                    pollinationsHeaderHtml(true) +
+                    html.slice(insertAt),
             );
+        })
+        .get("/logo.svg", (c) => {
+            c.header("Content-Type", "image/svg+xml");
+            c.header("Cache-Control", "public, max-age=86400");
+            return c.body(LOGO_WHITE_SVG);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");
-            return c.text(LLM_DOC_TEXT);
+            const section = c.req.query("section");
+            if (!section) return c.text(LLM_DOC_TEXT);
+            const content = LLM_DOC_SECTIONS[section];
+            if (!content) return c.text("Section not found", 404);
+            return c.text(content);
+        })
+        .get("/guides", (c) => c.html(guidesIndexHtml()))
+        .get("/guides/:id", (c) => {
+            const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
+            if (!guide) return c.text("Guide not found", 404);
+            return c.html(guideHtml(guide));
         })
         .get("/open-api/generate-schema", async (c) => {
             const [generationSchema, enterSchema, mediaSchema] =
@@ -768,9 +797,14 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                     fetchEnterSchema(c).catch(() => undefined),
                     fetchMediaSchema().catch(() => undefined),
                 ]);
-
-            return c.json(
+            const merged = injectSamples(
                 mergeSchemas(generationSchema, enterSchema, mediaSchema),
             );
+
+            if (c.req.query("format") === "yaml") {
+                c.header("Content-Type", "application/yaml; charset=utf-8");
+                return c.body(yamlStringify(merged));
+            }
+            return c.json(merged);
         });
 }

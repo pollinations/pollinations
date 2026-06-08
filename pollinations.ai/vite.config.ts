@@ -12,9 +12,6 @@ export default defineConfig({
             "@shared": path.resolve(__dirname, "../shared"),
         },
     },
-    server: {
-        open: true,
-    },
     build: {
         reportCompressedSize: true,
         rollupOptions: {

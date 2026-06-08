@@ -1,6 +1,10 @@
 /**
  * Match an incoming `redirect_uri` against a registered allowlist for a `pk_`.
  *
+ * Scheme policy (https-only except loopback http) is enforced at registration
+ * time (see validateRedirectUriFormat). Matching trusts the stored allowlist
+ * and does not re-check the scheme.
+ *
  * Comparison rules:
  * - Scheme + hostname + path are matched exactly (after lowercasing host).
  * - Trailing slash on the path is insignificant: `/cb` and `/cb/` match.
@@ -26,6 +30,11 @@ export function redirectUriMatchesAllowlist(
     const incoming = safeParse(uri);
     if (!incoming) return false;
     return allowlist.some((entry) => matchesEntry(incoming, entry));
+}
+
+export function isAllowedRedirectUrl(url: URL): boolean {
+    if (url.protocol === "https:") return true;
+    return url.protocol === "http:" && isLoopbackHostname(url.hostname);
 }
 
 export function isLoopbackHostname(hostname: string): boolean {

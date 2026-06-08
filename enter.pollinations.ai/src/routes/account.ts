@@ -1,3 +1,4 @@
+import type { Logger } from "@logtape/logtape";
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
@@ -7,6 +8,7 @@ import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
@@ -137,7 +139,7 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
         ),
     earningsEnabled: z
         .boolean()
@@ -353,7 +355,19 @@ function buildUsageWindows(
     return newestFirst ? windows.reverse() : windows;
 }
 
-async function fetchTinybirdRows<T>(
+/**
+ * Thrown when Tinybird returns 429 (rate limit / vCPU budget exceeded). This is
+ * transient, so read-only usage endpoints should degrade gracefully rather than
+ * surface it as a 5xx with the raw upstream message.
+ */
+export class TinybirdRateLimitError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TinybirdRateLimitError";
+    }
+}
+
+export async function fetchTinybirdRows<T>(
     origin: string,
     path: string,
     token: string,
@@ -374,16 +388,18 @@ async function fetchTinybirdRows<T>(
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-            `Tinybird error: ${response.status} ${errorText || "(empty response)"}`,
-        );
+        const message = `Tinybird error: ${response.status} ${errorText || "(empty response)"}`;
+        if (response.status === 429) {
+            throw new TinybirdRateLimitError(message);
+        }
+        throw new Error(message);
     }
 
     const data = (await response.json()) as { data: T[] };
     return data.data;
 }
 
-function requireTinybirdReadToken(env: CloudflareBindings): string {
+export function requireTinybirdReadToken(env: CloudflareBindings): string {
     if (!env.TINYBIRD_READ_TOKEN) {
         throw new HTTPException(500, {
             message: "Tinybird read token is not configured",
@@ -515,6 +531,9 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
     });
 }
 
+const USAGE_CSV_HEADER =
+    "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
+
 function usageRecordToCsvRow(row: UsageRecord): string {
     return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
 }
@@ -528,7 +547,9 @@ type DeveloperEarningsRow = {
     app_key_id: string;
     app_name: string;
     requests: number;
+    baseline_price: number;
     pollen_earned: number;
+    cost_usd: number;
     markup_rate: number;
     unique_users: number;
 };
@@ -544,7 +565,17 @@ const developerEarningsRowSchema = z.object({
         .describe("BYOP app key id; empty string on the global rollup row"),
     app_name: z.string().describe("App display name"),
     requests: z.number().describe("Number of billed requests"),
-    pollen_earned: z.number().describe("Pollen earned (markup take)"),
+    baseline_price: z
+        .number()
+        .describe("Model cost before markup (sum over the bucket)"),
+    pollen_earned: z
+        .number()
+        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+    cost_usd: z
+        .number()
+        .describe(
+            "Markup-inclusive total charged to payers (sum over the bucket)",
+        ),
     markup_rate: z.number().describe("Average markup rate applied"),
     unique_users: z
         .number()
@@ -566,7 +597,7 @@ const developerEarningsResponseSchema = z.object({
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.pollen_earned},${row.markup_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -601,6 +632,57 @@ async function fetchDetailedUsagePage(
 function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
     const { cursor_event_id: _, ...usage } = row;
     return usage;
+}
+
+// Shared tail for the detailed-usage endpoints (/usage, /key/usage):
+// fetch a page from the user_usage pipe, strip the cursor, then return CSV
+// (with a per-route filename prefix) or JSON, or a 500 on upstream error.
+async function respondDetailedUsage(
+    c: Pick<Context<Env>, "env" | "json">,
+    log: Logger,
+    params: {
+        userId: string;
+        apiKeyId?: string;
+        filenamePrefix: string;
+        filenamePeriod: string;
+        format: "json" | "csv";
+        limit: number;
+        since: string;
+        until: string;
+        before?: string;
+    },
+): Promise<Response> {
+    const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(c.env);
+
+    try {
+        const usage = (
+            await fetchDetailedUsagePage(tinybirdOrigin, tinybirdToken, {
+                userId: params.userId,
+                apiKeyId: params.apiKeyId,
+                limit: params.limit,
+                since: params.since,
+                until: params.until,
+                before: params.before,
+            })
+        ).map(stripUsageCursor);
+
+        if (params.format === "csv") {
+            const rows = usage.map(usageRecordToCsvRow);
+            const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
+            return new Response(csv, {
+                headers: {
+                    "Content-Type": "text/csv",
+                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${usage.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                },
+            });
+        }
+
+        return c.json({ usage, count: usage.length });
+    } catch (error) {
+        log.error("Error fetching usage: {error}", { error });
+        return c.json({ error: "Failed to fetch usage data" }, 500);
+    }
 }
 
 // Response schemas for OpenAPI documentation
@@ -873,10 +955,6 @@ export const accountRoutes = new Hono<Env>()
                 granularity,
                 period,
             });
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = requireTinybirdReadToken(c.env);
-            const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
@@ -891,46 +969,16 @@ export const accountRoutes = new Hono<Env>()
                 },
             );
 
-            try {
-                const usage = (
-                    await fetchDetailedUsagePage(
-                        tinybirdOrigin,
-                        tinybirdToken,
-                        {
-                            userId: usageUserId,
-                            limit,
-                            since: usageWindow.since,
-                            until: usageWindow.until,
-                            before,
-                        },
-                    )
-                ).map(stripUsageCursor);
-
-                log.debug("Fetched {count} usage records", {
-                    count: usage.length,
-                });
-
-                // Return CSV if requested
-                if (format === "csv") {
-                    const rows = usage.map(usageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-latest-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
-                }
-
-                return c.json({
-                    usage,
-                    count: usage.length,
-                });
-            } catch (error) {
-                log.error("Error fetching usage: {error}", { error });
-                return c.json({ error: "Failed to fetch usage data" }, 500);
-            }
+            return respondDetailedUsage(c, log, {
+                userId: usageUserId,
+                filenamePrefix: "pollinations-usage-latest",
+                filenamePeriod,
+                format,
+                limit,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+            });
         },
     )
     .get(
@@ -1088,7 +1136,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total_price − dev_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Combined earnings buckets and rollups",
@@ -1135,9 +1183,11 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
+            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
+            // any old cached rows that would render as undefined in CSV.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:debug:${devUserId}`
-                : `earnings:${devUserId}`;
+                ? `earnings:v2:debug:${devUserId}`
+                : `earnings:v2:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
@@ -1221,7 +1271,7 @@ export const accountRoutes = new Hono<Env>()
 
                 if (format === "csv") {
                     const header =
-                        "date,app_key_id,app_name,requests,pollen_earned,markup_rate";
+                        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1605,49 +1655,22 @@ export const accountRoutes = new Hono<Env>()
                 granularity,
                 period,
             });
-            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = requireTinybirdReadToken(c.env);
-            const header =
-                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
                 { userId: user.id, keyId: apiKey.id, days },
             );
 
-            try {
-                const usage = (
-                    await fetchDetailedUsagePage(
-                        tinybirdOrigin,
-                        tinybirdToken,
-                        {
-                            userId: user.id,
-                            apiKeyId: apiKey.id,
-                            limit,
-                            since: usageWindow.since,
-                            until: usageWindow.until,
-                            before,
-                        },
-                    )
-                ).map(stripUsageCursor);
-
-                if (format === "csv") {
-                    const rows = usage.map(usageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
-                }
-
-                return c.json({ usage, count: usage.length });
-            } catch (error) {
-                log.error("Error fetching key usage: {error}", { error });
-                return c.json({ error: "Failed to fetch usage data" }, 500);
-            }
+            return respondDetailedUsage(c, log, {
+                userId: user.id,
+                apiKeyId: apiKey.id,
+                filenamePrefix: "pollinations-key-usage",
+                filenamePeriod,
+                format,
+                limit,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+            });
         },
     );
-
-export default accountRoutes;

@@ -1,4 +1,5 @@
 import debug from "debug";
+import { arrayBufferToBase64 } from "@/util.ts";
 import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");
@@ -26,7 +27,6 @@ class ImageFetchError extends Error {
 
 /** Max image size: 20MB */
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
-const MAX_TOTAL_IMAGE_BYTES = MAX_IMAGE_SIZE;
 const MAX_IMAGES_PER_REQUEST = 8;
 
 const BLOCKED_HOSTNAMES = /^localhost$/i;
@@ -108,7 +108,7 @@ async function readImageBytes(
 ): Promise<ArrayBuffer> {
     if (maxBytes <= 0) {
         throw new ImageFetchError(
-            `Too many image bytes in request (max ${MAX_TOTAL_IMAGE_BYTES} bytes).`,
+            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
             400,
         );
     }
@@ -252,18 +252,6 @@ async function fetchImageAsBase64(
     }
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    const chunkSize = 0x8000;
-
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-
-    return btoa(binary);
-}
-
 /**
  * Returns true if the URL is an HTTP(S) URL that needs base64 conversion.
  * Data URLs and GCS URLs are already supported natively.
@@ -303,7 +291,7 @@ async function processContentPart(
         );
     }
 
-    const remainingBytes = MAX_TOTAL_IMAGE_BYTES - context.totalBytes;
+    const remainingBytes = MAX_IMAGE_SIZE - context.totalBytes;
     const { dataUrl, byteLength } = await fetchImageAsBase64(
         part.image_url.url,
         remainingBytes,
@@ -338,25 +326,16 @@ export function createImageUrlToBase64Transform(): TransformFn {
         const provider = config?.provider as string | undefined;
         const requiresBase64ImageUrls =
             config?.requiresBase64ImageUrls === true;
-        const targets = (config?.targets || []) as Array<
-            Record<string, unknown>
-        >;
-        const hasBase64Target = targets.some(
-            (t) => t.provider === "vertex-ai" || t.provider === "bedrock",
-        );
 
         if (
             provider !== "vertex-ai" &&
             provider !== "bedrock" &&
-            !requiresBase64ImageUrls &&
-            !hasBase64Target
+            !requiresBase64ImageUrls
         ) {
             return { messages, options };
         }
 
-        const providerInfo = provider
-            ? provider
-            : `fallback[${targets.map((t) => t.provider).join(", ")}]`;
+        const providerInfo = provider ?? "base64-required";
         log(`Processing messages for ${providerInfo} image URL conversion`);
 
         const context: ImageConversionContext = {

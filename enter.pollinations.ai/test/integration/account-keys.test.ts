@@ -59,6 +59,35 @@ describe("Account Key Management API", () => {
             expect(data.metadata.earningsEnabled).toBe(false);
         });
 
+        test("should reject unsafe publishable app redirect URIs", async ({
+            sessionToken,
+        }) => {
+            for (const redirectUri of [
+                "javascript://x/%0afetch('https://example.com')//",
+                "data://x/text/html,<script>alert(1)</script>",
+                "file://localhost/tmp/callback",
+                "http://app.example/callback",
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/account/keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: "unsafe-pub-key",
+                            type: "publishable",
+                            redirectUris: [redirectUri],
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(400);
+            }
+        });
+
         test("should create a publishable app key with earnings enabled", async ({
             sessionToken,
         }) => {

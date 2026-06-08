@@ -4,7 +4,11 @@
   "workspaces": [
     "shared",
     "enter.pollinations.ai",
-    "gen.pollinations.ai"
+    "gen.pollinations.ai",
+    "packages/sdk",
+    "packages/ui",
+    "apps/react",
+    "tools/icons"
   ],
   "scripts": {
     "install:all": "npm install && npm install --prefix packages/sdk && npm install --prefix packages/mcp",

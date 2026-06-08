@@ -4,7 +4,6 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
 import {
-    countFluxJobs,
     getRegisteredServers,
     isValidType,
     registerServer,
@@ -24,11 +23,7 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
-import {
-    type MinimalRequest,
-    normalizeAndTranslatePrompt,
-    type TimingStep,
-} from "./normalizeAndTranslatePrompt.ts";
+import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { createProgressTracker } from "./progressBar.ts";
 import { sleep } from "./util.ts";
@@ -47,6 +42,7 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "FIREWORKS_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -78,13 +74,6 @@ function createAuthResult(c: ImageContext): AuthResult {
         userId: c.var.auth?.user?.id || null,
         username: c.var.auth?.user?.githubUsername || null,
         debugInfo: {},
-    };
-}
-
-function createMinimalRequest(c: ImageContext): MinimalRequest {
-    return {
-        headers: Object.fromEntries(c.req.raw.headers.entries()),
-        url: c.req.url,
     };
 }
 
@@ -336,17 +325,12 @@ async function generateImageResult(
     originalPrompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const timingInfo: TimingStep[] = [
-        { step: "Request received.", timestamp: Date.now() },
-    ];
     const requestId = c.get("requestId");
     const progress = createProgressTracker().startRequest(requestId);
 
     progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
     const { prompt } = await normalizeAndTranslatePrompt(
         originalPrompt,
-        createMinimalRequest(c),
-        timingInfo,
         safeParams,
     );
     progress.updateBar(requestId, 30, "Prompt", "Normalized");
@@ -355,7 +339,6 @@ async function generateImageResult(
     const result = await createAndReturnImageCached(
         prompt,
         safeParams,
-        await countFluxJobs(),
         originalPrompt,
         progress,
         requestId,

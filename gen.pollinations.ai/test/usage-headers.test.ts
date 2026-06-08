@@ -7,56 +7,30 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("buildUsageHeaders", () => {
-    it("should include x-model-used header", () => {
+    // Raw-string consumers (track.ts, text-cache.ts) read these exact wire keys
+    // and values, so pin the literal key→String(value) mapping for every
+    // single-field passthrough. One fully-populated Usage covers all of them.
+    it("emits the literal wire key/value for each populated field", () => {
         const usage: Usage = {
-            promptTextTokens: 10,
-            completionTextTokens: 20,
+            promptTextTokens: 42,
+            completionTextTokens: 55,
+            promptCachedTokens: 50,
+            promptCacheWriteTokens: 4096,
+            completionReasoningTokens: 150,
         };
         const headers = buildUsageHeaders("openai-fast", usage);
 
-        expect(headers["x-model-used"]).toBe("openai-fast");
-    });
-
-    it("should include x-usage-prompt-text-tokens header", () => {
-        const usage: Usage = {
-            promptTextTokens: 42,
-            completionTextTokens: 20,
+        const expected: Record<string, string> = {
+            "x-model-used": "openai-fast",
+            "x-usage-prompt-text-tokens": "42",
+            "x-usage-completion-text-tokens": "55",
+            "x-usage-prompt-cached-tokens": "50",
+            "x-usage-prompt-cache-write-tokens": "4096",
+            "x-usage-completion-reasoning-tokens": "150",
         };
-        const headers = buildUsageHeaders("openai", usage);
-
-        expect(headers["x-usage-prompt-text-tokens"]).toBe("42");
-    });
-
-    it("should include x-usage-completion-text-tokens header", () => {
-        const usage: Usage = {
-            promptTextTokens: 10,
-            completionTextTokens: 55,
-        };
-        const headers = buildUsageHeaders("openai", usage);
-
-        expect(headers["x-usage-completion-text-tokens"]).toBe("55");
-    });
-
-    it("should include cached tokens header when present", () => {
-        const usage: Usage = {
-            promptTextTokens: 100,
-            promptCachedTokens: 50,
-            completionTextTokens: 20,
-        };
-        const headers = buildUsageHeaders("claude-large", usage);
-
-        expect(headers["x-usage-prompt-cached-tokens"]).toBe("50");
-    });
-
-    it("should include reasoning tokens header when present", () => {
-        const usage: Usage = {
-            promptTextTokens: 100,
-            completionTextTokens: 20,
-            completionReasoningTokens: 150,
-        };
-        const headers = buildUsageHeaders("deepseek", usage);
-
-        expect(headers["x-usage-completion-reasoning-tokens"]).toBe("150");
+        for (const [key, value] of Object.entries(expected)) {
+            expect(headers[key]).toBe(value);
+        }
     });
 
     it("should omit zero-value headers", () => {
@@ -113,6 +87,26 @@ describe("openaiUsageToUsage", () => {
 
         expect(usage.promptTextTokens).toBe(70); // 100 - 30
         expect(usage.promptCachedTokens).toBe(30);
+    });
+
+    it("should handle Anthropic cache creation tokens", () => {
+        const openaiUsage = {
+            prompt_tokens: 8596,
+            completion_tokens: 8,
+            total_tokens: 8604,
+            prompt_tokens_details: {
+                cached_tokens: 0,
+            },
+            cache_read_input_tokens: 0,
+            cache_creation_input_tokens: 8584,
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(12);
+        expect(usage.promptCacheWriteTokens).toBe(8584);
+        expect(usage.promptCachedTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(8);
     });
 
     it("should handle reasoning tokens in completion_tokens_details", () => {
@@ -174,6 +168,143 @@ describe("openaiUsageToUsage", () => {
         expect(usage.promptImageTokens).toBe(1);
         expect(usage.completionTextTokens).toBe(1);
     });
+
+    // Grok via Azure reports reasoning as an additive counter:
+    // total_tokens = prompt_tokens + completion_tokens + reasoning_tokens.
+    it("handles additive reasoning convention when total_tokens proves it", () => {
+        // Production shape from grok-large:
+        // prompt=35, completion=64, reasoning=345, total=444.
+        const openaiUsage = {
+            prompt_tokens: 35,
+            completion_tokens: 64,
+            total_tokens: 444,
+            completion_tokens_details: {
+                reasoning_tokens: 345,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.completionTextTokens).toBe(64);
+        expect(usage.completionReasoningTokens).toBe(345);
+    });
+
+    it("keeps additive reasoning when prompt detail has the same token count", () => {
+        const openaiUsage = {
+            prompt_tokens: 1000,
+            completion_tokens: 500,
+            total_tokens: 1733,
+            prompt_tokens_details: {
+                cached_tokens: 233,
+            },
+            completion_tokens_details: {
+                reasoning_tokens: 233,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(767);
+        expect(usage.promptCachedTokens).toBe(233);
+        expect(usage.completionTextTokens).toBe(500);
+        expect(usage.completionReasoningTokens).toBe(233);
+    });
+
+    it("keeps inclusive reasoning inside completion_tokens when total_tokens is prompt plus completion", () => {
+        // Production shape from mistral-4 with reasoning enabled:
+        // prompt=54, completion=256, reasoning=203, total=310.
+        const openaiUsage = {
+            prompt_tokens: 54,
+            completion_tokens: 256,
+            total_tokens: 310,
+            completion_tokens_details: {
+                reasoning_tokens: 203,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.completionTextTokens).toBe(53);
+        expect(usage.completionReasoningTokens).toBe(203);
+    });
+
+    it("caps inclusive completion details when provider detail exceeds completion_tokens", () => {
+        // Quarantined shape: completion=195, reasoning=204.
+        // total=prompt+completion proves inclusive accounting, so do not bill
+        // 195 visible tokens plus 204 reasoning tokens.
+        const openaiUsage = {
+            prompt_tokens: 711,
+            completion_tokens: 195,
+            total_tokens: 906,
+            completion_tokens_details: {
+                reasoning_tokens: 204,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.completionTextTokens).toBe(0);
+        expect(usage.completionReasoningTokens).toBe(195);
+    });
+
+    it("caps inclusive prompt details when cached_tokens exceeds prompt_tokens", () => {
+        // Quarantined shape: prompt=500, cached=1701.
+        // total=prompt+completion proves inclusive accounting, so cap cached
+        // to the prompt token budget instead of inventing negative text tokens.
+        const openaiUsage = {
+            prompt_tokens: 500,
+            completion_tokens: 100,
+            total_tokens: 600,
+            prompt_tokens_details: {
+                cached_tokens: 1701,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(0);
+        expect(usage.promptCachedTokens).toBe(500);
+    });
+
+    it("handles additive prompt convention when total_tokens proves it", () => {
+        const openaiUsage = {
+            prompt_tokens: 500,
+            completion_tokens: 100,
+            total_tokens: 2301,
+            prompt_tokens_details: {
+                cached_tokens: 1701,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(500);
+        expect(usage.promptCachedTokens).toBe(1701);
+    });
+
+    it("never produces negative token counts", () => {
+        const openaiUsage = {
+            prompt_tokens: 50,
+            completion_tokens: 100,
+            total_tokens: 150,
+            prompt_tokens_details: {
+                cached_tokens: 200,
+                audio_tokens: 0,
+                image_tokens: 0,
+            },
+            completion_tokens_details: {
+                reasoning_tokens: 500,
+                audio_tokens: 0,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBeGreaterThanOrEqual(0);
+        expect(usage.completionTextTokens).toBeGreaterThanOrEqual(0);
+        expect(usage.promptCachedTokens).toBe(50);
+        expect(usage.completionReasoningTokens).toBe(100);
+    });
 });
 
 describe("parseUsageHeaders", () => {
@@ -209,12 +340,14 @@ describe("parseUsageHeaders", () => {
             "x-model-used": "claude-large",
             "x-usage-prompt-text-tokens": "200",
             "x-usage-prompt-cached-tokens": "100",
+            "x-usage-prompt-cache-write-tokens": "4096",
         });
 
         const usage = parseUsageHeaders(headers);
 
         expect(usage.promptTextTokens).toBe(200);
         expect(usage.promptCachedTokens).toBe(100);
+        expect(usage.promptCacheWriteTokens).toBe(4096);
     });
 
     it("should omit missing headers", () => {
@@ -235,6 +368,7 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         const originalUsage: Usage = {
             promptTextTokens: 100,
             promptCachedTokens: 50,
+            promptCacheWriteTokens: 4096,
             promptAudioTokens: 200,
             completionTextTokens: 75,
             completionReasoningTokens: 150,
@@ -249,6 +383,9 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         );
         expect(parsedUsage.promptCachedTokens).toBe(
             originalUsage.promptCachedTokens,
+        );
+        expect(parsedUsage.promptCacheWriteTokens).toBe(
+            originalUsage.promptCacheWriteTokens,
         );
         expect(parsedUsage.promptAudioTokens).toBe(
             originalUsage.promptAudioTokens,

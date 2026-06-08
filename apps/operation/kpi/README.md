@@ -73,7 +73,9 @@ npm run build
 CLOUDFLARE_ACCOUNT_ID=b6ec751c0862027ba269faf7029b2501 npx wrangler deploy
 ```
 
-**Live URL:** https://kpi.myceli.ai
+**Public URL:** https://kpi.pollinations.ai
+
+**Myceli origin:** https://kpi.myceli.ai
 
 **Worker name:** `myceli-kpi`
 

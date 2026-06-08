@@ -1,0 +1,232 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+/*
+ * Tailwind v4 — skip preflight so host apps that import
+ * `@pollinations/ui/styles.css` don't get their global `margin`,
+ * `list-style`, heading sizes, etc. reset. We only need the theme machinery
+ * (so `@theme inline` in tokens.css resolves) and the utility classes.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(polli);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
+@import "./fonts.css";
+@import "./tokens.css";
+@import "../modules/wallet/styles.css";
+
+.polli-scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.polli-scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 160ms ease;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"] {
+    scrollbar-color: var(--polli-color-scrollbar-thumb) transparent;
+}
+
+.polli-scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+    background-color: var(--polli-color-scrollbar-thumb);
+}
+
+.polli-input-number-clean::-webkit-inner-spin-button,
+.polli-input-number-clean::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.polli-input-number-clean {
+    -moz-appearance: textfield;
+}
+
+.polli-input,
+.polli-textarea {
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: none;
+}
+
+.polli-input:focus,
+.polli-input:focus-visible,
+.polli-textarea:focus,
+.polli-textarea:focus-visible {
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.polli-input[data-error="true"],
+.polli-textarea[data-error="true"] {
+    border-color: var(--polli-color-danger-border);
+}
+
+.polli-input[data-error="true"]:focus,
+.polli-input[data-error="true"]:focus-visible,
+.polli-textarea[data-error="true"]:focus,
+.polli-textarea[data-error="true"]:focus-visible {
+    border-color: var(--polli-color-danger-border);
+    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+}
+
+.polli-textarea {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea:focus {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea::-webkit-resizer {
+    background:
+        linear-gradient(
+            135deg,
+            transparent 0 52%,
+            var(--polli-textarea-resizer-color) 52% 58%,
+            transparent 58% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 66%,
+            var(--polli-textarea-resizer-color) 66% 72%,
+            transparent 72% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 80%,
+            var(--polli-textarea-resizer-color) 80% 86%,
+            transparent 86% 100%
+        );
+}
+
+.polli-control {
+    outline: none;
+}
+
+.polli-control:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--polli-color-border);
+}
+
+.polli-control[data-intent="danger"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
+}
+
+.polli-slider {
+    --polli-slider-thumb-shadow-fallback: color-mix(
+        in oklab,
+        var(--polli-color-text-strong) 35%,
+        transparent
+    );
+    --polli-slider-progress-value: var(--polli-slider-progress, 0%);
+    --polli-slider-fill-value: var(
+        --polli-slider-fill,
+        var(--polli-color-bg-active)
+    );
+    --polli-slider-track-value: var(
+        --polli-slider-track,
+        var(--polli-color-bg-pale)
+    );
+    --polli-slider-thumb-border-value: var(
+        --polli-slider-thumb-border,
+        var(--polli-color-text-strong)
+    );
+    --polli-slider-thumb-shadow-value: var(
+        --polli-slider-thumb-shadow,
+        var(--polli-slider-thumb-shadow-fallback)
+    );
+
+    width: 100%;
+    height: 0.5rem;
+    cursor: grab;
+    appearance: none;
+    border-radius: 9999px;
+    outline: none;
+    transition: opacity 150ms ease, filter 150ms ease;
+    background: linear-gradient(
+        to right,
+        var(--polli-slider-fill-value) 0%,
+        var(--polli-slider-fill-value) var(--polli-slider-progress-value),
+        var(--polli-slider-track-value) var(--polli-slider-progress-value),
+        var(--polli-slider-track-value) 100%
+    );
+}
+
+.polli-slider:active {
+    cursor: grabbing;
+}
+
+.polli-slider:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.polli-slider:focus-visible {
+    box-shadow: 0 0 0 2px var(--polli-slider-fill-value),
+        0 0 0 4px var(--polli-color-surface-white);
+}
+
+.polli-slider::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: transparent;
+}
+
+.polli-slider::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: transparent;
+}
+
+.polli-slider::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -7px;
+    appearance: none;
+    border: 3px solid var(--polli-slider-thumb-border-value);
+    border-radius: 9999px;
+    background: white;
+    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
+    transition: transform 150ms ease;
+}
+
+.polli-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--polli-slider-thumb-border-value);
+    border-radius: 9999px;
+    background: white;
+    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
+    transition: transform 150ms ease;
+}
+
+.polli-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+}
+
+.polli-slider:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+}
+
+/*
+ * No `@source inline(...)` allowlist needed: Tailwind v4 content-scans
+ * the package source by default, so every `polli:*` class literal in
+ * the `.ts` / `.tsx` files is picked up. Add `@source inline(...)` here
+ * only if you introduce a class constructed dynamically (template
+ * literal, runtime concatenation) that can't be detected statically.
+ */

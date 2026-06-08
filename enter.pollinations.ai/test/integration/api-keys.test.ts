@@ -119,6 +119,37 @@ describe("API Key Management", () => {
             expect(created.metadata.earningsEnabled).toBe(false);
         });
 
+        test("rejects unsafe redirectUris metadata during app key creation", async ({
+            sessionToken,
+        }) => {
+            for (const redirectUri of [
+                "javascript://x/%0afetch('https://example.com')//",
+                "data://x/text/html,<script>alert(1)</script>",
+                "file://localhost/tmp/callback",
+                "http://app.example/callback",
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: "unsafe-publishable",
+                            type: "publishable",
+                            metadata: {
+                                redirectUris: [redirectUri],
+                            },
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(400);
+            }
+        });
+
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
             sessionToken,
         }) => {
@@ -966,6 +997,44 @@ describe("API Key Management", () => {
             expect(refreshed?.metadata?.redirectUris).toEqual([
                 "https://freshness.example/callback",
             ]);
+        });
+
+        test("rejects unsafe redirectUris during metadata updates", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "metadata-unsafe-redirect-test",
+                prefix: "pk",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const createdKey = createResponse.data;
+            expect(createdKey).toBeTruthy();
+            if (!createdKey) {
+                throw new Error("Failed to create API key");
+            }
+
+            const metadataResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        redirectUris: [
+                            "javascript://x/%0afetch('https://example.com')//",
+                        ],
+                    }),
+                },
+            );
+
+            expect(metadataResponse.status).toBe(400);
         });
 
         test("allows enabling rewards from app key metadata", async ({

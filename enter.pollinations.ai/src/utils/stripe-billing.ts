@@ -4,11 +4,11 @@ import {
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
-import { getPollenPack, type PollenPack } from "@/pollen-packs.ts";
 import { createStripeClient } from "./stripe.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
@@ -56,7 +56,6 @@ type AutoTopUpAttemptRow = {
     userId: string;
     stripeInvoiceId: string | null;
     amountUsd: number;
-    pollenGrant: number;
     status: string;
 };
 
@@ -327,7 +326,10 @@ export async function updateAutoTopUpSettings(
         return { ok: true, overview: await getBillingOverview(env, userId) };
     }
 
-    const pack = getPollenPack(String(input.packAmountUsd));
+    const pack =
+        typeof input.packAmountUsd === "number"
+            ? getPollenPackByAmount(input.packAmountUsd)
+            : undefined;
     if (
         !pack ||
         pack.amountUsd < AUTO_TOP_UP_PACK_MIN_USD ||
@@ -397,7 +399,13 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
-    const pack = getPollenPack(String(user.autoTopUpAmountUsd)) as PollenPack;
+    const pack =
+        user.autoTopUpAmountUsd == null
+            ? undefined
+            : getPollenPackByAmount(user.autoTopUpAmountUsd);
+    if (!pack) {
+        return { status: "skipped", reason: "auto top-up pack invalid" };
+    }
 
     await expireStaleClaimedAttempts(env.DB, userId);
 
@@ -425,7 +433,6 @@ export async function processAutoTopUpForUser(
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
-        pollenGrant: pack.pollenGrant,
     });
     if (!claimed) {
         return {
@@ -481,7 +488,6 @@ export async function processAutoTopUpForUser(
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
             autoTopUpAttemptId: attemptId,
-            packAmount: String(pack.amountUsd),
         };
 
         // auto_advance: false keeps collection explicit: one manual pay()
@@ -623,7 +629,7 @@ export async function creditAutoTopUpInvoice(
                             AND completed_at = ?
                     )`,
         ).bind(
-            attempt.pollenGrant,
+            attempt.amountUsd,
             attempt.userId,
             invoice.id,
             attempt.userId,
@@ -637,7 +643,7 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: "invoice already credited" };
     }
 
-    return { credited: true, pollenCredited: attempt.pollenGrant };
+    return { credited: true, pollenCredited: attempt.amountUsd };
 }
 
 export async function markAutoTopUpInvoiceFailed(
@@ -905,7 +911,6 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
-        pollenGrant: number;
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -916,12 +921,11 @@ async function claimAutoTopUpAttempt(
                 user_id,
                 stripe_invoice_id,
                 amount_usd,
-                pollen_grant,
                 status,
                 created_at,
                 updated_at
             )
-            SELECT ?, ?, NULL, ?, ?, ?, ?, ?
+            SELECT ?, ?, NULL, ?, ?, ?, ?
             WHERE EXISTS (
                 SELECT 1
                 FROM user
@@ -941,7 +945,6 @@ async function claimAutoTopUpAttempt(
             input.attemptId,
             input.userId,
             input.amountUsd,
-            input.pollenGrant,
             AUTO_TOP_UP_ATTEMPT_STATUS_CLAIMED,
             now,
             now,
@@ -997,7 +1000,6 @@ async function getAutoTopUpAttemptByInvoiceId(
                     user_id AS userId,
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
-                    pollen_grant AS pollenGrant,
                     status
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?

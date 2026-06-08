@@ -7,22 +7,12 @@ import {
     type UserBalance,
 } from "./bucket-selection.ts";
 
-export {
-    type BalanceBucket,
-    canCoverEstimatedCharge,
-    selectDeductionBucket,
-    type UserBalance,
-} from "./bucket-selection.ts";
+export type { UserBalance } from "./bucket-selection.ts";
 
 export type BalanceCheckResult = {
     selectedMeterId: string;
     selectedMeterSlug: string;
     balances: Record<string, number>;
-};
-
-export type BalanceSource = {
-    source: BalanceBucket;
-    slug: "v1:meter:tier" | "v1:meter:pack";
 };
 
 export async function getUserBalance(
@@ -69,26 +59,19 @@ export function hasPositivePaidBalance(balances: UserBalance): boolean {
     return balances.packBalance > 0;
 }
 
-export function determineBalanceSource(
-    balances: UserBalance,
-    isPaidOnly = false,
-    amount?: number,
-): BalanceSource {
-    if (typeof amount === "number" && amount > 0) {
-        const source = selectDeductionBucket(balances, amount, isPaidOnly);
-        return source === "tier"
-            ? { source, slug: "v1:meter:tier" }
-            : { source, slug: "v1:meter:pack" };
-    }
-
-    if (isPaidOnly) {
-        return { source: "pack", slug: "v1:meter:pack" };
-    }
-
-    if (balances.tierBalance > 0) {
-        return { source: "tier", slug: "v1:meter:tier" };
-    }
-    return { source: "pack", slug: "v1:meter:pack" };
+/**
+ * Map a deduction bucket to its meter id/slug pair. The balances sub-object
+ * differs per call site, so this returns only the id/slug pair.
+ */
+export function payerBucketToMeter(bucket: BalanceBucket): {
+    selectedMeterId: string;
+    selectedMeterSlug: "v1:meter:tier" | "v1:meter:pack";
+} {
+    return {
+        selectedMeterId: `local:${bucket}`,
+        selectedMeterSlug:
+            bucket === "tier" ? "v1:meter:tier" : "v1:meter:pack",
+    };
 }
 
 export function createBalanceCheckResult(
@@ -96,14 +79,16 @@ export function createBalanceCheckResult(
     isPaidOnly = false,
     amount?: number,
 ): BalanceCheckResult {
-    const { source, slug } = determineBalanceSource(
-        balances,
-        isPaidOnly,
-        amount,
-    );
+    let source: BalanceBucket;
+    if (typeof amount === "number" && amount > 0) {
+        source = selectDeductionBucket(balances, amount, isPaidOnly);
+    } else if (isPaidOnly) {
+        source = "pack";
+    } else {
+        source = balances.tierBalance > 0 ? "tier" : "pack";
+    }
     return {
-        selectedMeterId: `local:${source}`,
-        selectedMeterSlug: slug,
+        ...payerBucketToMeter(source),
         balances: {
             "v1:meter:tier": isPaidOnly ? 0 : balances.tierBalance,
             "v1:meter:pack": balances.packBalance,

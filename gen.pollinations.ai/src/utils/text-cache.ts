@@ -6,6 +6,7 @@
 
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -174,8 +175,21 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
         // Browser cache: immutable since same request = same response
         headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
+        const responseBody = refreshR2ObjectTtl(
+            c.env.TEXT_BUCKET,
+            key,
+            cachedObject,
+            (promise) => c.executionCtx.waitUntil(promise),
+            (error) => {
+                c.get("log")?.error(
+                    "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
+                    { error },
+                );
+            },
+        );
+
         // Create response from cached object
-        return new Response(cachedObject.body, {
+        return new Response(responseBody, {
             status: parseInt(metadata.status || "200", 10),
             statusText: metadata.statusText || "OK",
             headers,

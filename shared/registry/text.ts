@@ -23,8 +23,6 @@ export const AUDIO_VOICES = [
     "dan",
 ] as const;
 
-export type AudioVoice = (typeof AUDIO_VOICES)[number];
-
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
@@ -37,15 +35,17 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(1.25),
         },
+        title: "GPT-5.4 Nano",
         description: "GPT-5.4 Nano - Fast & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
@@ -57,15 +57,17 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.05),
             promptCachedTokens: perMillion(0.005),
             completionTextTokens: perMillion(0.4),
         },
+        title: "GPT-5 Nano",
         description: "GPT-5 Nano - Ultra Fast & Affordable",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
@@ -89,12 +91,14 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.25),
             completionTextTokens: perMillion(15.0),
         },
+        title: "GPT-5.4",
         description: "GPT-5.4 - Most Powerful & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         reasoning: true,
-        contextLength: 400000,
+        contextLength: 1050000,
         isSpecialized: false,
     },
     "gpt-5.4-mini": {
@@ -104,15 +108,17 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
             completionTextTokens: perMillion(4.5),
         },
+        title: "GPT-5.4 Mini",
         description: "GPT-5.4 Mini - Balanced Speed & Cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
@@ -130,14 +136,15 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(30.0),
         },
+        title: "GPT-5.5",
         description: "GPT-5.5 - Frontier Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         reasoning: true,
-        contextLength: 1000000,
+        contextLength: 1050000,
         isSpecialized: false,
-        paidOnly: true,
     },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
@@ -151,6 +158,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.06),
             completionTextTokens: perMillion(0.22),
         },
+        title: "Qwen3 Coder 30B",
         description: "Qwen3 Coder 30B - Specialized for Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -177,10 +185,12 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.075),
             completionTextTokens: perMillion(0.2),
         },
+        title: "Mistral Small 3.2",
         description:
             "Mistral Small 3.2 - Improved Instruction Following & Function Calling",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter/Mistral image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 128000,
         isSpecialized: false,
@@ -198,10 +208,13 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
+        title: "Mistral Small 4",
         description: "Mistral Small 4 - Unified Reasoning & Multimodal",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
         tools: true,
+        reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
     },
@@ -224,6 +237,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(10.0),
             completionAudioTokens: perMillion(20.0),
         },
+        title: "GPT Audio Mini",
         description: "GPT Audio Mini - Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
@@ -246,6 +260,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(40.0),
             completionAudioTokens: perMillion(80.0),
         },
+        title: "GPT Audio 1.5",
         description: "GPT Audio 1.5 - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
@@ -261,7 +276,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -270,9 +285,12 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(3.0),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        title: "Gemini 3 Flash",
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
         codeExecution: true,
@@ -286,7 +304,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
         // Non-global regions add ~10%; we route through global.
@@ -297,9 +315,12 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(9.0),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        title: "Gemini 3.5 Flash",
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
         codeExecution: true,
@@ -317,7 +338,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.25),
@@ -326,9 +347,12 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.5),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        title: "Gemini 3.1 Flash Lite",
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
-        inputModalities: ["text", "image", "audio"],
+        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
         codeExecution: true,
@@ -342,7 +366,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
@@ -351,9 +375,12 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
         calculateCost: calculateGeminiGroundedPromptCost,
+        title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
         codeExecution: true,
@@ -368,17 +395,18 @@ export const TEXT_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
         ],
-        modelId: "deepseek/deepseek-v4-flash",
-        provider: "openrouter",
+        modelId: "accounts/fireworks/models/deepseek-v4-flash",
+        provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.126),
-            promptCachedTokens: perMillion(0.0252),
-            completionTextTokens: perMillion(0.252),
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.014),
+            completionTextTokens: perMillion(0.28),
         },
+        title: "DeepSeek V4 Flash (Lite)",
         description: "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -394,25 +422,28 @@ export const TEXT_SERVICES = {
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
         ],
-        modelId: "google/gemma-4-26B-A4B-it",
-        provider: "deepinfra",
+        modelId: "google/gemma-4-26b-a4b-it",
+        provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.07),
-            completionTextTokens: perMillion(0.34),
+            // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
+            // prompt $0.06/M, completion $0.33/M. No prompt caching upstream.
+            promptTextTokens: perMillion(0.06),
+            completionTextTokens: perMillion(0.33),
         },
+        title: "Gemma 4 26B A4B",
         description:
             "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-        paidOnly: true,
     },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
@@ -427,6 +458,7 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.14),
             completionTextTokens: perMillion(3.48),
         },
+        title: "DeepSeek V4 Pro",
         description: "DeepSeek V4 Pro - Advanced Reasoning & Coding",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -434,7 +466,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
-        paidOnly: true,
     },
     "grok": {
         aliases: [
@@ -459,9 +490,11 @@ export const TEXT_SERVICES = {
             promptImageTokens: perMillion(2.0),
             completionTextTokens: perMillion(6.0),
         },
+        title: "Grok 4.20 Non-Reasoning",
         description: "Grok 4.20 Non-Reasoning - Fast multimodal tool-calling",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         contextLength: 262144,
         isSpecialized: false,
@@ -485,15 +518,42 @@ export const TEXT_SERVICES = {
             promptImageTokens: perMillion(2.0),
             completionTextTokens: perMillion(6.0),
         },
+        title: "Grok 4.20 Reasoning",
         description:
             "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-        paidOnly: true,
+    },
+    "grok-4.3": {
+        aliases: ["grok-4-3"],
+        modelId: "grok-4.3",
+        provider: "azure",
+        brand: "xAI",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        priceMultiplier: 1,
+        // xAI applies a higher price tier above 200K tokens; currently absorbed
+        // by Pollinations — see _local/model-changes-2026-06-02.md.
+        cost: {
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.2),
+            promptImageTokens: perMillion(1.25),
+            completionTextTokens: perMillion(2.5),
+        },
+        title: "Grok 4.3",
+        description: "Grok 4.3 - Newer & cheaper multimodal reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576, // xAI Grok 4.3 context window.
+        isSpecialized: false,
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
@@ -513,10 +573,74 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.4),
         },
         calculateCost: calculateGeminiGroundedPromptCost,
+        title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: false,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-search-fast": {
+        aliases: ["gemini-3.1-flash-lite-search"],
+        modelId: "gemini-3.1-flash-lite-preview",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
+        // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
+        // free queries/month shared across all Gemini 3 models; absorbed by
+        // Pollinations.
+        cost: {
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            promptAudioTokens: perMillion(0.5),
+            completionTextTokens: perMillion(1.5),
+        },
+        title: "Gemini 3.1 Flash Lite Search",
+        description:
+            "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: false,
+        search: true,
+        codeExecution: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "gemini-search-large": {
+        aliases: ["gemini-3.5-flash-search"],
+        modelId: "gemini-3.5-flash",
+        provider: "google",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-05-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
+        // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            promptAudioTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9.0),
+        },
+        title: "Gemini 3.5 Flash Search",
+        description: "Gemini 3.5 Flash Search - Premium grounded web research",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: false,
         search: true,
         codeExecution: true,
@@ -525,17 +649,18 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "claude-haiku-4-5-20251001",
-        provider: "bedrock",
+        modelId: "gpt-5.4-mini",
+        provider: "azure",
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            promptTextTokens: perMillion(1.1),
-            promptCachedTokens: perMillion(0.11),
-            completionTextTokens: perMillion(5.5),
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(4.5),
         },
+        title: "MIDIjourney",
         description: "MIDIjourney - AI Music Composition Assistant",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -544,18 +669,18 @@ export const TEXT_SERVICES = {
     },
     "midijourney-large": {
         aliases: [],
-        modelId: "claude-opus-4-6",
-        provider: "bedrock",
+        modelId: "gpt-5.5",
+        provider: "azure",
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            completionTextTokens: perMillion(27.5),
+            promptTextTokens: perMillion(5.0),
+            promptCachedTokens: perMillion(0.5),
+            completionTextTokens: perMillion(30.0),
         },
+        title: "MIDIjourney Large",
         description: "MIDIjourney Large - Premium AI Music Composition",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -569,15 +694,20 @@ export const TEXT_SERVICES = {
         brand: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.1),
-            promptCachedTokens: perMillion(0.11),
-            completionTextTokens: perMillion(5.5),
+            // Bedrock global.anthropic.claude-haiku-4-5 global standard rates.
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(1.25),
+            completionTextTokens: perMillion(5),
         },
+        title: "Claude Haiku 4.5",
         description: "Claude Haiku 4.5 - Fast & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 200000,
         isSpecialized: false,
@@ -592,15 +722,19 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(3.3),
-            promptCachedTokens: perMillion(0.33),
-            completionTextTokens: perMillion(16.5),
+            // Bedrock global.anthropic.claude-sonnet-4-6 global standard rates.
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
+            completionTextTokens: perMillion(15),
         },
+        title: "Claude Sonnet 4.6",
         description: "Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
-        contextLength: 200000,
+        contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
     "claude-large": {
@@ -613,15 +747,19 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-6 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
+        title: "Claude Opus 4.6",
         description: "Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
-        contextLength: 200000,
+        contextLength: 1000000, // Bedrock global Claude Opus 4.6 context window.
         isSpecialized: false,
     },
     "claude-opus-4.7": {
@@ -634,15 +772,44 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-7 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
+        title: "Claude Opus 4.7",
         description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
-        contextLength: 200000,
+        contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
+        isSpecialized: false,
+    },
+    "claude-opus-4.8": {
+        aliases: [],
+        modelId: "claude-opus-4-8",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-opus-4-8 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
+        },
+        title: "Claude Opus 4.8",
+        description: "Claude Opus 4.8 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "perplexity-fast": {
@@ -652,17 +819,69 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
+        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
+        // (~$5/1k at low search_context_size), which our token-based billing
+        // cannot capture directly. Temporary until a per-request fee field exists.
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
-        description: "Perplexity Sonar - Fast & Affordable with Web Search",
-        inputModalities: ["text", "image"],
+        title: "Perplexity Sonar",
+        description: "Perplexity Sonar - Fast & affordable web search",
+        // Sonar is text-only — verified empirically (image input is ignored,
+        // no image tokens billed). Do not add "image".
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
         search: true,
-        contextLength: 127072,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "perplexity-deep": {
+        aliases: ["sonar-deep"],
+        modelId: "sonar",
+        provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        // Same sonar base as perplexity-fast but high search_context_size for
+        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
+        // matches fast for now — they bill identically until a per-request fee
+        // field lets us price the deeper search separately.
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(1.0),
+        },
+        title: "Perplexity Sonar",
+        description: "Perplexity Sonar - Deep web search with broad grounding",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "perplexity": {
+        aliases: ["sonar-pro", "perplexity-pro"],
+        modelId: "sonar-pro",
+        provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(3.0),
+            completionTextTokens: perMillion(15.0),
+        },
+        title: "Perplexity Sonar Pro",
+        description: "Perplexity Sonar Pro - Advanced multi-source web search",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        search: true,
+        contextLength: 200000,
         isSpecialized: false,
     },
     "perplexity-reasoning": {
@@ -677,9 +896,10 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
         },
+        title: "Perplexity Sonar Reasoning",
         description:
-            "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
-        inputModalities: ["text", "image"],
+            "Perplexity Sonar Reasoning - Step-by-step reasoning with web search",
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
         reasoning: true,
@@ -707,10 +927,12 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.1),
             completionTextTokens: perMillion(3.0),
         },
+        title: "Moonshot Kimi K2.5",
         description:
             "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
         contextLength: 262000,
@@ -729,10 +951,12 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.16),
             completionTextTokens: perMillion(4.0),
         },
+        title: "Moonshot Kimi K2.6",
         description:
             "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
         contextLength: 262000,
@@ -745,7 +969,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1.5,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -756,10 +980,13 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(12.0),
         },
         calculateCost: calculateGemini31ProCost,
+        title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         reasoning: true,
         search: true,
@@ -779,6 +1006,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.035),
             completionTextTokens: perMillion(0.14),
         },
+        title: "Nova Micro",
         description: "Nova Micro - Ultra Fast & Ultra Cheap",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -798,9 +1026,11 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.33),
             completionTextTokens: perMillion(2.75),
         },
+        title: "Nova 2 Lite",
         description: "Nova 2 Lite - 1M Context with Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -819,6 +1049,7 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.2),
             completionTextTokens: perMillion(3.2),
         },
+        title: "Z.ai GLM-5.1",
         description:
             "Z.ai GLM-5.1 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
@@ -835,11 +1066,12 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),
         },
+        title: "Meta Llama 3.3 70B",
         description:
             "Meta Llama 3.3 70B - Open-source dense model for general chat",
         inputModalities: ["text"],
@@ -860,15 +1092,17 @@ export const TEXT_SERVICES = {
         brand: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.25),
             completionTextTokens: perMillion(1.0),
         },
+        title: "Meta Llama 4 Maverick",
         description:
             "Meta Llama 4 Maverick - Open-source multimodal MoE with vision",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Azure-hosted Llama vision route has no public fixed image count; Pollinations cap.
         tools: true,
         contextLength: 1048576,
         isSpecialized: false,
@@ -890,10 +1124,12 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.08),
             completionTextTokens: perMillion(0.3),
         },
+        title: "Meta Llama 4 Scout",
         description:
             "Meta Llama 4 Scout - Open-source MoE for long context & retrieval",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 327680,
         isSpecialized: false,
@@ -916,12 +1152,40 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.06),
             completionTextTokens: perMillion(1.2),
         },
+        title: "MiniMax M2.7",
         description: "MiniMax M2.7 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "minimax-m3": {
+        aliases: ["minimax3", "minimax-3"],
+        modelId: "minimax/minimax-m3",
+        provider: "openrouter",
+        brand: "MiniMax",
+        category: "text",
+        addedDate: new Date("2026-06-02").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter minimax/minimax-m3 effective rates (2026-06-02):
+            // currently a temporary 50% promo — prompt $0.30/M, completion
+            // $1.20/M, cache read $0.06/M. Base (post-promo) is double:
+            // $0.60/M, $2.40/M, $0.12/M — revisit when the promo ends.
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.06),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "MiniMax M3",
+        description: "MiniMax M3 - Coding, agentic & 1M-context reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "mistral-large": {
@@ -931,15 +1195,17 @@ export const TEXT_SERVICES = {
         brand: "Mistral",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.5),
             promptCachedTokens: perMillion(0.05),
             completionTextTokens: perMillion(1.5),
         },
+        title: "Mistral Large 3",
         description: "Mistral Large 3 - Premium Multilingual & Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 256000,
@@ -957,10 +1223,12 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),
         },
+        title: "Polly by @Itachi-1824",
         description:
             "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 3, // Pollinations community model cap.
         tools: true,
         reasoning: true,
         codeExecution: true,
@@ -975,13 +1243,14 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
-        priceMultiplier: 1.5,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(1.5), // per 1M tokens
         },
-        description:
-            "Qwen3 Coder Next - Advanced Code Generation via DashScope",
+        title: "Qwen3 Coder Next",
+        description: "Qwen3 Coder Next - Advanced Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1001,10 +1270,12 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.1),
             completionTextTokens: perMillion(3.0),
         },
+        title: "Qwen3.6 Plus",
         description:
             "Qwen3.6 Plus - 396B MoE Flagship with Reasoning (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -1028,9 +1299,11 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.52),
         },
+        title: "Qwen3 VL 30B A3B Instruct",
         description: "Qwen3 VL 30B A3B Instruct - Fast vision-language model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: false,
         contextLength: 131072,
@@ -1053,8 +1326,61 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.26),
             completionTextTokens: perMillion(2.6),
         },
+        title: "Qwen3 VL 235B A22B Thinking",
         description: "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning",
         inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "step-flash": {
+        aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
+        modelId: "stepfun/step-3.7-flash",
+        provider: "openrouter",
+        brand: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter stepfun/step-3.7-flash posted rates (2026-05-29):
+            // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
+            promptTextTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.04),
+            completionTextTokens: perMillion(1.15),
+        },
+        title: "StepFun Step 3.7 Flash",
+        description: "StepFun Step 3.7 Flash - Fast multimodal reasoning model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
+        // tokens are billed within completion_tokens at the completionText rate.
+        reasoning: true,
+        contextLength: 256000,
+        isSpecialized: false,
+    },
+    "step-3.5-flash": {
+        aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
+        modelId: "stepfun/step-3.5-flash",
+        provider: "openrouter",
+        brand: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-05-29").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter stepfun/step-3.5-flash posted rates (2026-05-29):
+            // prompt $0.09/M, completion $0.30/M, cache read $0.02/M
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0.3),
+        },
+        title: "StepFun Step 3.5 Flash",
+        description: "StepFun Step 3.5 Flash - Fast text reasoning model",
+        inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -1073,6 +1399,7 @@ export const TEXT_SERVICES = {
             promptTextTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.01),
         },
+        title: "Qwen3Guard 8B",
         description: "Qwen3Guard 8B - Content Safety & Moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],

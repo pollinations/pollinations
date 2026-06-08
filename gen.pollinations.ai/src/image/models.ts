@@ -148,6 +148,16 @@ export const IMAGE_CONFIG = {
         defaultResolution: "480p",
     },
 
+    // Alibaba Wan 2.7 - Newer video generation (720P default, bundled audio)
+    "wan-pro": {
+        type: "alibaba-dashscope-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "720p",
+    },
+
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
         type: "alibaba-dashscope-image",
@@ -200,7 +210,7 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Flux Schnell - Fast high-quality image generation (IO.net, nunchaku-quantized)
+    // Flux Schnell - Fast high-quality image generation (Fireworks serverless)
     flux: {
         type: "flux",
         enhance: false,

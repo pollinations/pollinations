@@ -1,4 +1,4 @@
-# @pollinations_ai/cli
+# @pollinations/cli
 
 The Pollinations CLI — for humans, AI agents, and everything in between.
 
@@ -7,7 +7,7 @@ Generate text, images, audio, video from the terminal. Backed by the [Pollinatio
 https://github.com/user-attachments/assets/6b200d95-d734-469c-9fe5-3e63549778fe
 
 ```bash
-npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
+npx @pollinations/cli gen image "a cat in space" --output cat.png
 ```
 
 ## For AI agents
@@ -16,7 +16,7 @@ Point your coding agent (Claude Code, Cursor, Windsurf, Codex) at the skill file
 
 > Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
 
-The skill also ships inside the package: `node_modules/@pollinations_ai/cli/SKILL.md`.
+The skill also ships inside the package: `node_modules/@pollinations/cli/SKILL.md`.
 
 Every command is agent-friendly:
 
@@ -28,7 +28,7 @@ Every command is agent-friendly:
 ## Get started
 
 ```bash
-npm install -g @pollinations_ai/cli     # installs the `polli` binary
+npm install -g @pollinations/cli     # installs the `polli` binary
 polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```

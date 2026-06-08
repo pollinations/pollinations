@@ -1,3 +1,5 @@
+import { lookupUpstream } from "./upstream";
+
 interface Env {
     UPSTREAM_MAP: string;
 }
@@ -37,6 +39,9 @@ export default {
         // Override Host so the upstream Worker's routing/SNI is correct.
         headers.set("Host", upstreamHost);
 
+        const isWebSocketUpgrade =
+            req.headers.get("Upgrade")?.toLowerCase() === "websocket";
+
         const hasBody = req.method !== "GET" && req.method !== "HEAD";
         let upstream: Response;
         try {
@@ -54,6 +59,13 @@ export default {
                     "Cache-Control": "no-store",
                 },
             });
+        }
+
+        // WebSocket upgrade responses carry a `webSocket` field that is lost
+        // if the response is rebuilt with `new Response(...)`. Pass it through
+        // unchanged so the client/upstream WS pair can hand-off.
+        if (isWebSocketUpgrade && upstream.status === 101) {
+            return upstream;
         }
 
         // Strip hop-by-hop and length headers so streaming bodies (SSE,
@@ -75,12 +87,3 @@ export default {
         return new Response(upstream.body, responseInit);
     },
 };
-
-function lookupUpstream(mapJson: string, host: string): string | undefined {
-    try {
-        const map = JSON.parse(mapJson) as Record<string, string>;
-        return map[host];
-    } catch {
-        return undefined;
-    }
-}

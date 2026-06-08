@@ -75,8 +75,11 @@
    --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
    lightness for the new hue). --polli-hue is mode-agnostic — both the light
    (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
-   `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below. ─── */
-:root {
+   `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below;
+   `data-theme="amber"` re-asserts the accent INSIDE a neutral subtree (e.g.
+   amber nav buttons in the neutral rail). ─── */
+:root,
+[data-theme="amber"] {
     --polli-hue:   85;     /* app accent = amber */
     --polli-nudge: 0.024;  /* accent-lightness offset for this hue */
 
@@ -236,7 +239,8 @@
 /* (b) DARK accent recipe — mirror: deep tint + light text, reads the same
    --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
    bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
-.dark {
+.dark,
+.dark [data-theme="amber"] {
     --polli-color-bg-pale:         oklch(0.305 0.03 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.39 0.034 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.433 + var(--polli-nudge)) 0.09 var(--polli-hue));

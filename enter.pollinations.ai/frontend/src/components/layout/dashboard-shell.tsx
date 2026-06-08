@@ -500,26 +500,29 @@ const DashboardSupport: FC<{
                 {action.icon}
                 {action.label}
             </span>
-            <CopyButton
-                value={action.copyValue}
-                copiedTimeoutMs={1500}
-                tooltip={null}
-                className={(copied) =>
-                    cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                        copied
-                            ? "bg-intent-success-bg-light text-intent-success-text"
-                            : "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover",
-                    )
-                }
-            >
-                {(copied) => (
-                    <>
-                        {copied ? action.successIcon : action.idleIcon}
-                        {copied ? "Copied" : action.copyLabel}
-                    </>
-                )}
-            </CopyButton>
+            {/* amber over the neutral rail (matches the nav buttons) */}
+            <span data-theme="amber">
+                <CopyButton
+                    value={action.copyValue}
+                    copiedTimeoutMs={1500}
+                    tooltip={null}
+                    className={(copied) =>
+                        cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                            copied
+                                ? "bg-intent-success-bg-light text-intent-success-text"
+                                : "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover",
+                        )
+                    }
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? action.successIcon : action.idleIcon}
+                            {copied ? "Copied" : action.copyLabel}
+                        </>
+                    )}
+                </CopyButton>
+            </span>
         </div>
         <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
             {links.map((link) => (

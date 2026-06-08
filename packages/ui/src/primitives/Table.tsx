@@ -36,7 +36,7 @@ export const TableHead: FC<TableHeadProps> = ({ className, ...rest }) => (
     <thead
         {...rest}
         className={cn(
-            "polli:bg-theme-bg-active polli:text-micro polli:text-theme-text-muted",
+            "polli:bg-transparent polli:text-micro polli:text-theme-text-muted",
             className,
         )}
     />

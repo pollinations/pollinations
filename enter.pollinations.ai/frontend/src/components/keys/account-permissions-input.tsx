@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -183,7 +183,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
                                     isChecked
                                         ? rowTheme.selectedClasses
-                                        : "border-gray-200",
+                                        : "border-ink-200",
                                     rowTheme.focusRingClasses,
                                     !disabled &&
                                         (isChecked
@@ -208,7 +208,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             permission.label
                                         )}
                                     </span>
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-ink-500">
                                         – {permission.tooltip}
                                     </span>
                                 </div>
@@ -226,11 +226,11 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                     wrapperClassName={rowTheme.selectedClasses}
                     hoverClassName={rowTheme.selectedHoverClasses}
                     focusClassName={rowTheme.focusRingClasses}
-                    panelClassName="border-t border-gray-200 px-3 pb-3 pt-3 space-y-3"
+                    panelClassName="border-t border-ink-200 px-3 pb-3 pt-3 space-y-3"
                     label={
                         <div className="flex items-baseline gap-1">
                             <span className="text-sm font-medium">Models</span>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-ink-500">
                                 –{" "}
                                 {isUnrestricted
                                     ? "all models allowed"
@@ -284,11 +284,8 @@ const ModelCategory: FC<{
     <div>
         <div className="flex items-center justify-between mb-1">
             <span
-                data-theme={getModalityColors(label)?.theme}
-                className={cn(
-                    "text-sm font-semibold",
-                    getModalityColors(label)?.text,
-                )}
+                data-theme={getModalityTheme(label)}
+                className="text-sm font-semibold text-theme-text-strong"
             >
                 {label}
             </span>
@@ -338,18 +335,22 @@ const ModelChip: FC<{
     showApiName = true,
     category,
 }) => {
-    const colors = getModalityColors(category ?? "");
+    const theme = getModalityTheme(category ?? "");
     const colorClasses = selected
-        ? (colors?.filled ?? "polli:bg-gray-200 polli:text-gray-900")
+        ? theme
+            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+            : "polli:bg-ink-200 polli:text-ink-900"
         : cn(
-              "polli:bg-gray-100 polli:text-gray-600",
-              !disabled && colors?.hover,
+              "polli:bg-ink-100 polli:text-ink-600",
+              theme &&
+                  !disabled &&
+                  "polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
           );
 
     return (
         <Button
             type="button"
-            theme={colors?.theme}
+            theme={theme ?? undefined}
             size="sm"
             aria-pressed={selected}
             onClick={onClick}

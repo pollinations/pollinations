@@ -58,12 +58,17 @@ export async function getCommunityTextModelsInfo(
         addPrice(pricing, "promptTextTokens", row.promptTextPrice);
         addPrice(pricing, "completionTextTokens", row.completionTextPrice);
 
+        const name = communityModelId(row.ownerGithubUsername, row.name);
+        const title = row.description?.trim() || name;
+
         return [
             {
-                name: communityModelId(row.ownerGithubUsername, row.name),
+                name,
                 aliases: [],
                 category: "community",
+                brand: "Community",
                 pricing,
+                title,
                 description: row.description ?? undefined,
                 input_modalities: ["text"],
                 output_modalities: ["text"],

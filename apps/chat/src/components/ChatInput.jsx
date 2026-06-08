@@ -68,7 +68,6 @@ const ChatInput = ({
     const activeModelId = getActiveModelId();
     const activeModelsMap = getActiveModelsMap();
     const modelLabel =
-        activeModelsMap?.[activeModelId]?.description ||
         activeModelsMap?.[activeModelId]?.name ||
         activeModelId ||
         "Select model";
@@ -512,11 +511,7 @@ const ChatInput = ({
                                         <div className="model-options-container">
                                             {Object.entries(activeModelsMap)
                                                 .filter(([k, m]) =>
-                                                    (
-                                                        m.description ||
-                                                        m.name ||
-                                                        k
-                                                    )
+                                                    (m.name || k)
                                                         .toLowerCase()
                                                         .includes(
                                                             modelSearchTerm.toLowerCase(),
@@ -532,9 +527,7 @@ const ChatInput = ({
                                                         }
                                                     >
                                                         <span className="model-option-name">
-                                                            {m.description ||
-                                                                m.name ||
-                                                                k}
+                                                            {m.name || k}
                                                         </span>
                                                         {activeModelId ===
                                                             k && (

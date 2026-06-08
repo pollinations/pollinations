@@ -1,11 +1,13 @@
 import {
     Alert,
+    AppHeader,
     Button,
     Chip,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
     GitHubIcon,
+    Heading,
     ScrollArea,
     Surface,
     TabButton,
@@ -16,17 +18,11 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { getModalityColors } from "@pollinations/ui/modality";
-import { useState } from "react";
+import { getModalityTheme } from "@pollinations/ui/gen";
+import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
 const APP_THEME = "violet";
-
-const brandWordmarkMask = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
@@ -41,6 +37,7 @@ const MODEL_TYPES = [
     { key: "image", title: "Image" },
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
+    { key: "realtime", title: "Realtime" },
     { key: "embedding", title: "Embedding" },
 ];
 
@@ -169,7 +166,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
     };
 
     return (
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-5">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-3">
             {MODEL_TYPES.map(({ key, title }) => {
                 const group = models.filter((model) => model.type === key);
                 if (group.length === 0) return null;
@@ -178,7 +175,7 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                 const isActive = typeFilter === key;
                 const isDimmed = typeFilter !== null && !isActive;
                 const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-                const colors = getModalityColors(key);
+                const theme = getModalityTheme(key);
 
                 return (
                     <button
@@ -186,44 +183,37 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
                         type="button"
                         onClick={() => onTypeFilter(isActive ? null : key)}
                         className={cn(
-                            "min-w-0 h-full w-full rounded-xl text-left transition",
+                            "group min-w-0 h-full w-full rounded-xl text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-bg-active",
                             isDimmed && "opacity-40",
                         )}
                         aria-pressed={isActive}
                     >
                         <Surface
-                            theme={colors?.theme}
+                            theme={theme ?? undefined}
                             variant="card-themed"
                             className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 border border-theme-border sm:min-h-48",
+                                "flex h-full min-h-28 flex-col gap-3 transition-colors group-hover:bg-theme-bg-hover sm:min-h-32",
                                 isActive && "ring-2 ring-theme-bg-active",
                             )}
                         >
-                            <div className="flex min-w-0 items-start justify-between gap-3">
-                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-col sm:items-start">
-                                    <h2 className="min-w-0 truncate font-serif text-2xl font-black leading-none text-theme-text-strong">
-                                        {title}
-                                    </h2>
-                                    <Chip intent="neutral" size="sm">
-                                        {stats.totalModels} models
-                                    </Chip>
-                                </div>
-                                <div className="shrink-0 text-right sm:hidden">
-                                    <div className="text-2xl font-bold leading-none tabular-nums text-theme-text-strong">
+                            <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2">
+                                <h2 className="shrink-0 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
+                                    {title}
+                                </h2>
+                                <Chip
+                                    intent="neutral"
+                                    size="sm"
+                                    className="shrink-0"
+                                >
+                                    {stats.totalModels} models
+                                </Chip>
+                                <div className="flex min-w-max shrink-0 items-baseline gap-1.5 text-theme-text-strong">
+                                    <span className="text-3xl font-bold leading-none tabular-nums">
                                         {stats.successRate.toFixed(1)}%
-                                    </div>
-                                    <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
+                                    </span>
+                                    <span className="text-xs font-bold tracking-wide">
                                         success
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block">
-                                <div className="text-4xl font-bold leading-none tabular-nums text-theme-text-strong md:text-3xl lg:text-4xl">
-                                    {stats.successRate.toFixed(1)}%
-                                </div>
-                                <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
-                                    success
+                                    </span>
                                 </div>
                             </div>
 
@@ -330,25 +320,6 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
     );
 }
 
-function BrandMark() {
-    return (
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex text-theme-text-strong"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <span
-                aria-hidden="true"
-                className="block h-9 w-[292px] max-w-[70vw] shrink-0 bg-current"
-                style={brandWordmarkMask}
-            />
-        </a>
-    );
-}
-
 function WindowTabs({ value, onChange }) {
     return (
         <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
@@ -377,6 +348,7 @@ function App() {
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
+    const scrollAreaRef = useRef(null);
     const failedCatalogEndpoints = Object.entries(endpointStatus)
         .filter(([, ok]) => ok === false)
         .map(([name]) => name);
@@ -504,60 +476,61 @@ function App() {
             className="h-dvh bg-theme-bg-subtle text-theme-text-base"
             data-theme={APP_THEME}
         >
-            <ScrollArea axis="y" className="h-full">
+            <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
+                <AppHeader
+                    navLabel="Model Monitor links"
+                    autoHide
+                    scrollTargetRef={scrollAreaRef}
+                    innerClassName={adminMode ? "polli:max-w-6xl" : undefined}
+                >
+                    {EXTERNAL_LINKS.map((link) => (
+                        <HeaderLink key={link.href} {...link} />
+                    ))}
+                </AppHeader>
                 <main
                     className={cn(
-                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",
+                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
                         adminMode ? "max-w-6xl" : "max-w-5xl",
                     )}
                 >
-                    <header className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <BrandMark />
-                            <div className="flex items-center gap-2">
-                                {EXTERNAL_LINKS.map((link) => (
-                                    <HeaderLink key={link.href} {...link} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div className="min-w-0">
-                                <h1 className="font-serif text-2xl font-black text-theme-text-strong">
-                                    Model Monitor
-                                </h1>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm leading-6 text-theme-text-soft">
-                                    <span>
-                                        Real-time health monitoring for models.
-                                    </span>
-                                    <span>
-                                        Last update:{" "}
-                                        {lastUpdated?.toLocaleTimeString(
-                                            "en-GB",
-                                            {
-                                                timeZone: "UTC",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                                second: "2-digit",
-                                            },
-                                        ) || "-"}{" "}
-                                        UTC
-                                    </span>
+                    <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <Heading
+                                as="h1"
+                                size="title"
+                                className="polli-model-monitor-title polli:m-0 polli:text-ink-950"
+                            >
+                                Model Monitor
+                            </Heading>
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-ink-700">
+                                Real-time health monitoring for Pollinations AI
+                                models.
+                            </p>
+                            {!tinybirdConfigured && (
+                                <div className="mt-2">
+                                    <Chip intent="warning" size="sm">
+                                        Tinybird not configured
+                                    </Chip>
                                 </div>
-                                {!tinybirdConfigured && (
-                                    <div className="mt-2">
-                                        <Chip intent="warning" size="sm">
-                                            Tinybird not configured
-                                        </Chip>
-                                    </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-start gap-2 sm:items-end">
                             <WindowTabs
                                 value={aggregationWindow}
                                 onChange={setAggregationWindow}
                             />
+                            <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                                Last update:{" "}
+                                {lastUpdated?.toLocaleTimeString("en-GB", {
+                                    timeZone: "UTC",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                }) || "-"}{" "}
+                                UTC
+                            </p>
                         </div>
-                    </header>
+                    </section>
 
                     {error && (
                         <Alert intent="danger" title="Monitor error">
@@ -693,9 +666,8 @@ function App() {
                                                 : null;
                                             const health =
                                                 computeHealthStatus(stats);
-                                            const modality = getModalityColors(
-                                                model.type,
-                                            );
+                                            const modalityTheme =
+                                                getModalityTheme(model.type);
 
                                             return (
                                                 <TableRow
@@ -705,7 +677,8 @@ function App() {
                                                     <TableCell>
                                                         <Chip
                                                             theme={
-                                                                modality?.theme
+                                                                modalityTheme ??
+                                                                undefined
                                                             }
                                                             size="sm"
                                                             className="text-micro font-bold uppercase tracking-wide"
@@ -718,12 +691,10 @@ function App() {
                                                             <span className="font-medium text-theme-text-strong">
                                                                 {model.name}
                                                             </span>
-                                                            {model.description && (
+                                                            {model.title && (
                                                                 <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
                                                                     {
-                                                                        model.description.split(
-                                                                            " - ",
-                                                                        )[0]
+                                                                        model.title
                                                                     }
                                                                 </span>
                                                             )}

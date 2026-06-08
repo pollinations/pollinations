@@ -16,6 +16,7 @@ const AUDIO_MODELS_URL = `${API_BASE}/audio/models`;
 export interface Model {
     id: string;
     name: string;
+    title: string;
     description?: string;
     type: "image" | "text" | "audio";
     hasImageInput: boolean;
@@ -48,6 +49,7 @@ function serviceToModel(
     return {
         id: serviceId as string,
         name: serviceId as string,
+        title: def.title,
         description: def.description,
         type,
         hasImageInput: def.inputModalities?.includes("image") || false,

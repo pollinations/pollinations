@@ -22,6 +22,7 @@ export const REALTIME_SERVICES = {
             completionTextTokens: 0.000024,
             completionAudioTokens: 0.000064,
         },
+        title: "GPT Realtime 2",
         description: "GPT Realtime 2 - realtime voice reasoning",
         inputModalities: ["text", "audio", "image"],
         outputModalities: ["text", "audio"],

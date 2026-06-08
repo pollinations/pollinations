@@ -12,6 +12,7 @@ import {
     ClipboardIcon,
     ClockIcon,
     Collapsible,
+    Section as CompositionSection,
     CopyButton,
     currentPeriod,
     Dialog,
@@ -24,6 +25,7 @@ import {
     FileUpload,
     GenApiIcon,
     GitHubIcon,
+    Heading,
     IconButton,
     type IconProps,
     ImageIcon,
@@ -36,7 +38,6 @@ import {
     MultiSelect,
     PeriodPicker,
     type PeriodSelection,
-    Section as PrimitiveSection,
     Prose,
     ScrollArea,
     Slider,
@@ -52,6 +53,7 @@ import {
     TableHeaderCell,
     TableRow,
     TerminalIcon,
+    Text,
     Textarea,
     type ThemeName,
     TokensIcon,
@@ -62,7 +64,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
-import { getModalityColors } from "@pollinations/ui/modality";
+import { getModalityTheme } from "@pollinations/ui/gen";
 import {
     formatPollen,
     PaidChip,
@@ -118,7 +120,7 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
         <ScrollArea
             theme={theme}
             data-theme={theme}
-            className={`w-full overflow-x-hidden bg-emerald-100 text-theme-text-base ${
+            className={`w-full overflow-x-hidden bg-theme-bg-pale text-theme-text-base ${
                 hideHeader ? "min-h-0 flex-1" : "h-dvh"
             }`}
         >
@@ -168,7 +170,7 @@ type HeaderProps = {
 };
 
 const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
-    <header className="sticky top-0 z-20 border-b border-green-950/10 bg-emerald-100 px-5 py-4 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-theme-text-strong/10 bg-theme-bg-pale px-5 py-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4">
             <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
@@ -278,29 +280,21 @@ const ControlGroup: FC<{ label: string; children: ReactNode }> = ({
 );
 
 const primitiveNames = [
-    "Alert",
     "Button",
     "ButtonGroup",
     "ChevronIcon",
     "Chip",
-    "Collapsible",
-    "CopyButton",
     "Dialog",
     "DialogTitle",
     "Dropdown",
-    "ExternalLinkButton",
+    "DropdownItem",
     "Field",
-    "FileUpload",
+    "Heading",
     "IconButton",
-    "InfoTip",
+    "InlineLink",
     "Input",
-    "MultiSelect",
-    "PeriodPicker",
-    "Prose",
     "ScrollArea",
-    "Section",
     "Slider",
-    "StatCard",
     "Surface",
     "Switch",
     "TabButton",
@@ -310,6 +304,7 @@ const primitiveNames = [
     "TableHead",
     "TableHeaderCell",
     "TableRow",
+    "Text",
     "Textarea",
     "Tooltip",
 ] as const;
@@ -317,7 +312,7 @@ const primitiveNames = [
 const moduleNames = [
     "AuthInfoCard",
     "ErrorBanner",
-    "getModalityColors",
+    "getModalityTheme",
     "PaidChip",
     "TierChip",
     "WalletBalanceCard",
@@ -325,11 +320,30 @@ const moduleNames = [
     "formatPollen",
 ] as const;
 
+const compositionNames = [
+    "Alert",
+    "CodeBlock",
+    "Collapsible",
+    "CopyButton",
+    "ExternalLinkButton",
+    "FileUpload",
+    "InfoTip",
+    "LinkCard",
+    "Markdown",
+    "MediaPlaceholder",
+    "MultiSelect",
+    "NavItem",
+    "PeriodPicker",
+    "Prose",
+    "Section",
+    "StatCard",
+] as const;
+
 const CoverageDemo: FC = () => (
     <ShowcaseSection
         id="coverage"
         title="Coverage"
-        caption="Every SDK-free primitive exported from the package appears below, plus the icon set and reusable module recipes."
+        caption="Every SDK-free primitive exported from the package appears below, plus compositions, icons, and reusable module recipes."
     >
         <Surface
             variant="panel"
@@ -349,13 +363,18 @@ const CoverageDemo: FC = () => (
             />
             <StatCard
                 label="Recipes"
-                value={moduleNames.length}
-                detail="Auth, wallet, and modality pieces without SDK state."
+                value={compositionNames.length + moduleNames.length}
+                detail="Compositions plus auth, wallet, and modality pieces."
                 className="rounded-xl bg-surface-white p-4"
             />
             <Surface className="col-span-full flex flex-wrap gap-2">
                 {primitiveNames.map((name) => (
                     <Chip key={name} size="sm">
+                        {name}
+                    </Chip>
+                ))}
+                {compositionNames.map((name) => (
+                    <Chip key={name} intent="success" size="sm">
                         {name}
                     </Chip>
                 ))}
@@ -366,29 +385,46 @@ const CoverageDemo: FC = () => (
 
 const typographyRows = [
     {
-        label: "Heading",
-        className: "font-heading text-4xl",
-        sample: "Pollinations",
+        label: 'Heading size="title"',
+        sample: (
+            <Heading as="h3" size="title">
+                Pollinations
+            </Heading>
+        ),
     },
     {
-        label: "Subheading",
-        className: "font-subheading text-3xl",
-        sample: "Reusable UI",
+        label: 'Heading size="section"',
+        sample: (
+            <Heading as="h3" size="section">
+                Reusable UI
+            </Heading>
+        ),
     },
     {
-        label: "Body",
-        className: "font-body text-base",
-        sample: "Clear defaults for product surfaces.",
+        label: 'Text size="body"',
+        sample: <Text>Clear defaults for product surfaces.</Text>,
     },
     {
-        label: "Pixel",
-        className: "font-pixel text-base",
-        sample: "API 200 OK",
+        label: 'Text size="sm" tone="soft"',
+        sample: (
+            <Text size="sm" tone="soft">
+                Supporting copy with calmer emphasis.
+            </Text>
+        ),
     },
     {
-        label: "Micro",
-        className: "font-body text-micro uppercase",
-        sample: "Status label",
+        label: 'Text size="micro"',
+        sample: (
+            <Text
+                as="span"
+                size="micro"
+                tone="muted"
+                weight="bold"
+                className="uppercase tracking-wide"
+            >
+                Status label
+            </Text>
+        ),
     },
 ] as const;
 
@@ -403,7 +439,7 @@ const TypographyDemo: FC = () => (
     <ShowcaseSection
         id="type"
         title="Typography"
-        caption="Font, size, and semantic text color utilities backed by package tokens."
+        caption="Typography primitives for heading levels, body copy, labels, and semantic text tones."
     >
         <Surface variant="panel" className="flex flex-col gap-3">
             {typographyRows.map((row) => (
@@ -411,17 +447,12 @@ const TypographyDemo: FC = () => (
                     key={row.label}
                     className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-theme-border pb-3 last:border-b-0 last:pb-0"
                 >
-                    <span
-                        className={`w-80 shrink-0 text-theme-text-strong ${row.className}`}
-                    >
+                    <div className="w-80 shrink-0 text-theme-text-strong">
                         {row.sample}
-                    </span>
+                    </div>
                     <code className="w-36 shrink-0 font-mono text-xs text-theme-text-strong">
                         {row.label}
                     </code>
-                    <span className="min-w-0 flex-1 text-xs text-theme-text-soft">
-                        {row.className}
-                    </span>
                 </div>
             ))}
             <div className="flex flex-wrap gap-2 pt-1">
@@ -439,7 +470,7 @@ const TypographyDemo: FC = () => (
 );
 
 const proseSample = [
-    "# Prose primitive",
+    "# Prose composition",
     "",
     "Renders **markdown** through `react-markdown` + `remark-gfm` + `rehype-slug`,",
     "mapping every element to package theme tokens and fonts.",
@@ -458,7 +489,7 @@ const ProseDemo: FC = () => (
     <ShowcaseSection
         id="prose"
         title="Prose"
-        caption="Markdown rendering primitive backed by react-markdown with GFM and heading slugs, themed via package tokens."
+        caption="Markdown rendering composition backed by react-markdown with GFM and heading slugs, themed via package tokens."
     >
         <Surface variant="panel">
             <Prose>{proseSample}</Prose>
@@ -640,7 +671,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <Button>Default</Button>
                 <Button size="sm">Small</Button>
                 <Button size="lg">Large</Button>
-                <Button theme="blue">Theme prop</Button>
+                <Button theme="amber">Theme prop</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
             </Row>
@@ -676,7 +707,7 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     className={(copied) =>
                         `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
                             copied
-                                ? "bg-green-100 text-green-800"
+                                ? "bg-intent-success-100 text-intent-success-800"
                                 : "bg-theme-bg-active text-theme-text-strong"
                         }`
                     }
@@ -776,7 +807,7 @@ const InputsDemo: FC = () => {
                         </ArkField.Label>
                         <ArkField.Input
                             placeholder="email@example.com"
-                            className="rounded-lg border border-intent-danger-border bg-white px-3 py-2 text-sm"
+                            className="rounded-lg border border-intent-danger-border bg-surface-opaque px-3 py-2 text-sm"
                         />
                         <ArkField.HelperText className="text-xs text-theme-text-soft">
                             Exported Ark field namespace with package styling.
@@ -1070,7 +1101,7 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
     <ShowcaseSection
         id="layout"
         title="Layout"
-        caption="Surface, Section, StatCard, ScrollArea, and Table primitives for dense product screens."
+        caption="Surface, ScrollArea, and Table primitives, plus StatCard and Section compositions for page structure."
     >
         <Surface variant="panel" className="flex flex-col gap-4">
             <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
@@ -1097,17 +1128,17 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     className="rounded-xl bg-surface-white p-4"
                 />
             </div>
-            <PrimitiveSection
-                title="Primitive section"
+            <CompositionSection
+                title="Composition section"
                 theme={theme}
                 framed
                 action={<Button size="sm">Action</Button>}
             >
                 <p className="text-sm text-theme-text-soft">
-                    Section owns heading layout and optional framing. The app
-                    owns the content inside it.
+                    Section combines semantic layout with the Surface primitive.
+                    The app owns the action and content.
                 </p>
-            </PrimitiveSection>
+            </CompositionSection>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
                 <Surface>
                     <p className="mb-2 font-mono text-xs uppercase tracking-wide text-theme-text-soft">
@@ -1303,7 +1334,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(2.1)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-accent-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1317,7 +1348,7 @@ const ModuleRecipesDemo: FC = () => {
                         footer={
                             <>
                                 +{formatPollen(8)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-accent-amber-800/70">
                                     / 7d
                                 </span>
                             </>
@@ -1328,14 +1359,13 @@ const ModuleRecipesDemo: FC = () => {
                 <Row label="ButtonGroup">
                     <ButtonGroup aria-label="Modality options">
                         {modalities.map((modality) => {
-                            const colors = getModalityColors(modality);
+                            const theme = getModalityTheme(modality);
                             return (
                                 <Button
                                     key={modality}
                                     type="button"
-                                    theme={colors?.theme}
+                                    theme={theme ?? undefined}
                                     size="sm"
-                                    className={colors?.filled}
                                 >
                                     {modality}
                                 </Button>
@@ -1344,7 +1374,7 @@ const ModuleRecipesDemo: FC = () => {
                         <Button
                             type="button"
                             size="sm"
-                            className="bg-gray-100 text-gray-600"
+                            className="bg-ink-100 text-ink-600"
                         >
                             unknown
                         </Button>

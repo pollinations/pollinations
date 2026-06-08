@@ -188,7 +188,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 <DialogTitle className="text-lg font-semibold">
                     {simplified ? "Create App Key" : "Create API Key"}
                 </DialogTitle>
-                <div className="mt-1 text-sm text-gray-500">
+                <div className="mt-1 text-sm text-ink-500">
                     {simplified ? (
                         <ul className="list-disc space-y-1 pl-5">
                             <li>
@@ -207,7 +207,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-700 underline hover:text-blue-900"
+                                    className="text-accent-blue-700 underline hover:text-accent-blue-900"
                                 >
                                     Read the guide
                                 </a>
@@ -229,13 +229,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
                     {error && (
                         <div className="pb-2">
-                            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                            <p className="text-sm text-intent-danger-600 bg-intent-danger-50 px-3 py-2 rounded-lg">
                                 {error}
                             </p>
                         </div>
                     )}
 
-                    <hr className="border-gray-200" />
+                    <hr className="border-ink-200" />
                     <Field.Root className="flex flex-col gap-2">
                         <Field.Label className="text-sm font-semibold">
                             {createdKey
@@ -251,8 +251,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             className={cn(
                                 "w-full",
                                 createdKey
-                                    ? "border-blue-200 bg-blue-50 font-mono text-xs"
-                                    : "border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200",
+                                    ? "border-accent-blue-200 bg-accent-blue-50 font-mono text-xs"
+                                    : "border-accent-blue-200 bg-accent-blue-50 focus:outline-none focus-visible:border-accent-blue-300 focus-visible:ring-1 focus-visible:ring-accent-blue-200",
                             )}
                             placeholder={createdKey ? "" : "Enter API key name"}
                             required={!createdKey}
@@ -262,7 +262,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     </Field.Root>
 
                     {!simplified && !createdKey && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-ink-500">
                             Publishable keys (<code>pk_</code>) deprecated –
                             create via{" "}
                             <a
@@ -271,7 +271,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 underline hover:text-blue-800"
+                                className="text-accent-blue-600 underline hover:text-accent-blue-800"
                             >
                                 API
                             </a>{" "}
@@ -280,7 +280,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 underline hover:text-blue-800"
+                                className="text-accent-blue-600 underline hover:text-accent-blue-800"
                             >
                                 polli CLI
                             </a>
@@ -289,8 +289,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     )}
 
                     {!simplified && createdKey && (
-                        <ul className="text-xs text-gray-700 space-y-1 list-disc pl-5">
-                            <li className="text-amber-700 font-medium">
+                        <ul className="text-xs text-ink-700 space-y-1 list-disc pl-5">
+                            <li className="text-accent-amber-700 font-medium">
                                 Only shown once – copy it now.
                             </li>
                             <li>

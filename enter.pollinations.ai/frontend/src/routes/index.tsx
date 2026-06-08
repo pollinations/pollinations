@@ -332,7 +332,7 @@ function RouteComponent() {
                             theme={dashboardThemeByPage.activity}
                             minDate={ACTIVITY_MIN_DATE}
                         />
-                        <p className="text-micro text-gray-400">
+                        <p className="text-micro text-ink-400">
                             Data refreshes every hour. Times shown in UTC.
                         </p>
                     </div>

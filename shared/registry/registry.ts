@@ -90,9 +90,19 @@ export type BillingPolicyInput<TModelId extends string = string> = {
     linearCost: (costDefinition?: CostDefinition) => UsageCost;
 };
 
+export type BillingPolicyAdjustment = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    unitCost: number;
+    when: "grounded" | "always";
+};
+
 export type BillingPolicy<TModelId extends string = string> = {
     id: string;
     description: string;
+    adjustments?: BillingPolicyAdjustment[];
     calculateCost: (input: BillingPolicyInput<TModelId>) => UsageCost;
 };
 
@@ -184,6 +194,12 @@ function calculateLinearCost(
         ...usageCost,
         totalCost,
     };
+}
+
+function calculateAlwaysPolicyAdjustmentCost(policy?: BillingPolicy): number {
+    return (policy?.adjustments ?? [])
+        .filter((adjustment) => adjustment.when === "always")
+        .reduce((total, adjustment) => total + adjustment.unitCost, 0);
 }
 
 const MODEL_REGISTRY = {
@@ -299,7 +315,7 @@ export function calculateCost(
     const linearCost = (costDefinition = svc.cost) =>
         calculateLinearCost(model, usage, costDefinition);
 
-    return svc.billingPolicy
+    const usageCost = svc.billingPolicy
         ? svc.billingPolicy.calculateCost({
               usage,
               output,
@@ -307,6 +323,14 @@ export function calculateCost(
               linearCost,
           })
         : linearCost();
+    const alwaysAdjustmentCost = calculateAlwaysPolicyAdjustmentCost(
+        svc.billingPolicy,
+    );
+    if (alwaysAdjustmentCost === 0) return usageCost;
+    return {
+        ...usageCost,
+        totalCost: usageCost.totalCost + alwaysAdjustmentCost,
+    };
 }
 
 /**

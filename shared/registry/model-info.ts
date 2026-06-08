@@ -43,6 +43,18 @@ export const ModelInfoSchema = z.object({
         .object({
             id: z.string(),
             description: z.string(),
+            adjustments: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        description: z.string(),
+                        kind: z.string(),
+                        unit: z.string(),
+                        when: z.enum(["grounded", "always"]),
+                        unit_price: z.string(),
+                    }),
+                )
+                .optional(),
         })
         .optional(),
     title: z.string(),
@@ -113,6 +125,18 @@ function getModelInfo(modelName: ModelName): ModelInfo {
             ? {
                   id: service.billingPolicy.id,
                   description: service.billingPolicy.description,
+                  adjustments: service.billingPolicy.adjustments?.map(
+                      (adjustment) => ({
+                          id: adjustment.id,
+                          description: adjustment.description,
+                          kind: adjustment.kind,
+                          unit: adjustment.unit,
+                          when: adjustment.when,
+                          unit_price: toFixedPoint(
+                              adjustment.unitCost * service.priceMultiplier,
+                          ),
+                      }),
+                  ),
               }
             : undefined,
         // User-facing metadata from service definition

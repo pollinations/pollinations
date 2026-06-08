@@ -66,10 +66,30 @@ function calculateGeminiCost(
 const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 
-export const geminiGroundedPromptBillingPolicy: BillingPolicy = {
+const GEMINI_25_GROUNDING_ADJUSTMENT = {
     id: "google.gemini_2.grounded_prompt.v1",
     description:
         "Adds Google Search grounding at $35 / 1K grounded prompts when grounding metadata is present.",
+    kind: "grounded_prompt",
+    unit: "prompt",
+    unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+    when: "grounded",
+} as const;
+
+const GEMINI_3_SEARCH_ADJUSTMENT = {
+    id: "google.gemini_3.search_query.v1",
+    description:
+        "Adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+    kind: "search_query",
+    unit: "query",
+    unitCost: GEMINI_3_GROUNDING_COST_PER_QUERY,
+    when: "grounded",
+} as const;
+
+export const geminiGroundedPromptBillingPolicy: BillingPolicy = {
+    id: "google.gemini_2.grounded_prompt.v1",
+    description: GEMINI_25_GROUNDING_ADJUSTMENT.description,
+    adjustments: [GEMINI_25_GROUNDING_ADJUSTMENT],
     calculateCost: (input) =>
         calculateGeminiCost(
             input,
@@ -81,8 +101,8 @@ export const geminiGroundedPromptBillingPolicy: BillingPolicy = {
 
 export const geminiSearchQueryBillingPolicy: BillingPolicy = {
     id: "google.gemini_3.search_query.v1",
-    description:
-        "Adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+    description: GEMINI_3_SEARCH_ADJUSTMENT.description,
+    adjustments: [GEMINI_3_SEARCH_ADJUSTMENT],
     calculateCost: (input) =>
         calculateGeminiCost(
             input,
@@ -107,6 +127,7 @@ export const gemini31ProBillingPolicy: BillingPolicy = {
     id: "google.gemini_3_1_pro.dynamic.v1",
     description:
         "Uses Gemini long-context rates above 200K prompt tokens and adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+    adjustments: [GEMINI_3_SEARCH_ADJUSTMENT],
     calculateCost: (input) =>
         calculateGeminiCost(
             input,

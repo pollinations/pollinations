@@ -211,10 +211,71 @@ test("Gemini billing policies are exposed in model catalog metadata", () => {
         id: "google.gemini_3.search_query.v1",
         description:
             "Adds Google Search grounding at $14 / 1K search queries when grounding metadata is present.",
+        adjustments: [
+            {
+                id: "google.gemini_3.search_query.v1",
+                kind: "search_query",
+                unit: "query",
+                when: "grounded",
+                unit_price: "0.014",
+            },
+        ],
     });
     expect(geminiLarge?.billing_policy?.description).toContain(
         "Uses Gemini long-context rates above 200K prompt tokens",
     );
+});
+
+test("Perplexity request search fees are added by billing policies", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const cases = [
+        ["perplexity-fast", 2.005],
+        ["perplexity-deep", 2.012],
+        ["perplexity", 18.014],
+        ["perplexity-reasoning", 10.014],
+    ] as const;
+
+    for (const [model, total] of cases) {
+        const cost = calculateCost(model, usage);
+        const price = calculatePrice(model, usage);
+
+        expect(cost.totalCost).toBeCloseTo(total, 8);
+        expect(price.totalPrice).toBeCloseTo(total, 8);
+    }
+});
+
+test("Perplexity billing policies expose request fee metadata", () => {
+    const models = getTextModelsInfo();
+
+    expect(
+        models.find((model) => model.name === "perplexity-fast")
+            ?.billing_policy,
+    ).toMatchObject({
+        id: "perplexity.sonar_low.search_request.v1",
+        adjustments: [
+            {
+                kind: "search_request",
+                unit: "request",
+                when: "always",
+                unit_price: "0.005",
+            },
+        ],
+    });
+    expect(
+        models.find((model) => model.name === "perplexity-deep")?.billing_policy
+            ?.adjustments?.[0].unit_price,
+    ).toBe("0.012");
+    expect(
+        models.find((model) => model.name === "perplexity")?.billing_policy
+            ?.adjustments?.[0].unit_price,
+    ).toBe("0.014");
+    expect(
+        models.find((model) => model.name === "perplexity-reasoning")
+            ?.billing_policy?.adjustments?.[0].unit_price,
+    ).toBe("0.014");
 });
 
 test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {

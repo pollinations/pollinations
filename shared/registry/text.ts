@@ -3,6 +3,12 @@ import {
     geminiGroundedPromptBillingPolicy,
     geminiSearchQueryBillingPolicy,
 } from "./gemini-billing";
+import {
+    perplexityDeepBillingPolicy,
+    perplexityFastBillingPolicy,
+    perplexityProBillingPolicy,
+    perplexityReasoningBillingPolicy,
+} from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -821,10 +827,8 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
-        // (~$5/1k at low search_context_size), which our token-based billing
-        // cannot capture directly. Temporary until a per-request fee field exists.
         priceMultiplier: 1,
+        billingPolicy: perplexityFastBillingPolicy,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -847,11 +851,8 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        // Same sonar base as perplexity-fast but high search_context_size for
-        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
-        // matches fast for now — they bill identically until a per-request fee
-        // field lets us price the deeper search separately.
         priceMultiplier: 1,
+        billingPolicy: perplexityDeepBillingPolicy,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -873,6 +874,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
+        billingPolicy: perplexityProBillingPolicy,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -894,6 +896,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
+        billingPolicy: perplexityReasoningBillingPolicy,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),

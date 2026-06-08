@@ -131,9 +131,10 @@ export function useColorMode(): {
 
 /**
  * Sliding sun/moon switch. Light/dark is a two-state choice, not an on/off
- * affordance, so this uses a neutral palette (no green) rather than `Switch`.
- * The thumb carries the active mode's icon; the mode you'd switch to sits
- * ghosted on the empty side. Self-contained — wires itself to `useColorMode`.
+ * affordance, so this uses `Switch`'s shape but its own palette. The thumb
+ * carries the active mode's icon tinted with the accent (`text-soft`, follows
+ * `--polli-hue`); the mode you'd switch to sits ghosted (faint neutral) on the
+ * empty side. Self-contained — wires itself to `useColorMode`.
  */
 export const ColorModeToggle: FC = () => {
     const { isDark, toggle } = useColorMode();
@@ -153,7 +154,7 @@ export const ColorModeToggle: FC = () => {
             )}
             <span
                 className={cn(
-                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-strong polli:shadow-sm polli:transition-transform",
+                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-soft polli:shadow-sm polli:transition-transform",
                     isDark ? "polli:translate-x-[26px]" : "polli:translate-x-0",
                 )}
             >

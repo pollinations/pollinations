@@ -567,7 +567,10 @@ const DashboardFooter: FC<{
         </div>
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
-            <ColorModeToggle />
+            {/* amber accent on the toggle's active icon, over the neutral rail */}
+            <span data-theme="amber">
+                <ColorModeToggle />
+            </span>
         </div>
     </>
 );

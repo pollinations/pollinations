@@ -1,27 +1,6 @@
 import paletteData from "./theme-palette.json";
 
 /**
- * The chrome themes exposed by the CSS-var cascade. Apply via
- * `data-theme="<name>"` on any ancestor — primitives and `--polli-*`
- * tokens in that subtree restyle accordingly. `neutral` is the no-hue
- * member: it maps the themed slots to neutral tokens, for global chrome
- * (the rail) and elements that should not carry a page hue.
- */
-export const themes = [
-    "amber",
-    "blue",
-    "pink",
-    "coral",
-    "teal",
-    "violet",
-    "emerald",
-    "lime",
-    "neutral",
-] as const;
-
-export type ThemeName = (typeof themes)[number];
-
-/**
  * Per-theme brand colors as sRGB hex, for non-CSS consumers (icon/asset
  * tooling, web manifests). `bgPale` mirrors each theme's
  * `--polli-color-bg-pale` token in `styles/tokens.css` — that CSS cascade

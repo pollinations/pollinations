@@ -22,7 +22,6 @@ import {
     TabButton,
     Text,
     Textarea,
-    type ThemeName,
 } from "@pollinations/ui";
 import {
     categoryLabel,
@@ -65,7 +64,6 @@ type PlaygroundResult =
 export type PlaygroundProps = {
     title?: string;
     subtitle?: string;
-    theme?: ThemeName;
     className?: string;
 };
 
@@ -307,7 +305,6 @@ async function uploadReferenceImages(
 export function Playground({
     title = "Playground",
     subtitle = "Create and refine images, text, audio, and video from one focused workspace.",
-    theme = "violet",
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
@@ -542,7 +539,6 @@ export function Playground({
 
     return (
         <div
-            data-theme={theme}
             className={cn(
                 "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-theme-text-base",
                 className,

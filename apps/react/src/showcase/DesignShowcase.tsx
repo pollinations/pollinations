@@ -55,11 +55,9 @@ import {
     TerminalIcon,
     Text,
     Textarea,
-    type ThemeName,
     TokensIcon,
     Tooltip,
     TrendUpIcon,
-    themes,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -83,61 +81,37 @@ import { type ComponentType, type FC, type ReactNode, useState } from "react";
 export type DesignShowcaseProps = {
     headerSlot?: ReactNode;
     hideHeader?: boolean;
-    hideThemeTabs?: boolean;
-    theme?: ThemeName;
-    onThemeChange?: (theme: ThemeName) => void;
 };
 
 export const DesignShowcase: FC<DesignShowcaseProps> = ({
     headerSlot,
     hideHeader = false,
-    hideThemeTabs = false,
-    theme: controlledTheme,
-    onThemeChange,
 }) => {
-    const [internalTheme, setInternalTheme] = useState<ThemeName>("amber");
-    const theme = controlledTheme ?? internalTheme;
-    const setTheme = onThemeChange ?? setInternalTheme;
-
     return (
         <ScrollArea
-            theme={theme}
-            data-theme={theme}
             className={`w-full overflow-x-hidden bg-theme-bg-pale text-theme-text-base ${
                 hideHeader ? "min-h-0 flex-1" : "h-dvh"
             }`}
         >
-            {hideHeader && (headerSlot || !hideThemeTabs) ? (
+            {hideHeader && headerSlot ? (
                 <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-4 px-5 pt-8">
-                    {headerSlot ? headerSlot : null}
-                    {!hideThemeTabs ? (
-                        <ThemeTabs
-                            value={theme}
-                            options={themes}
-                            onChange={setTheme}
-                        />
-                    ) : null}
+                    {headerSlot}
                 </div>
             ) : !hideHeader ? (
-                <Header
-                    theme={theme}
-                    onThemeChange={setTheme}
-                    headerSlot={headerSlot}
-                />
+                <Header headerSlot={headerSlot} />
             ) : null}
             <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-8 px-5 pt-8 pb-10">
                 <main className="flex min-w-0 flex-col gap-10">
                     <CoverageDemo />
                     <TypographyDemo />
                     <ProseDemo />
-                    <ThemeDemo theme={theme} onThemeChange={setTheme} />
                     <TokensDemo />
                     <IconsDemo />
-                    <ButtonsDemo theme={theme} />
+                    <ButtonsDemo />
                     <InputsDemo />
-                    <SelectionDemo theme={theme} />
-                    <OverlaysDemo theme={theme} />
-                    <LayoutDemo theme={theme} />
+                    <SelectionDemo />
+                    <OverlaysDemo />
+                    <LayoutDemo />
                     <FeedbackDemo />
                     <ModuleRecipesDemo />
                 </main>
@@ -147,12 +121,10 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
 };
 
 type HeaderProps = {
-    theme: ThemeName;
-    onThemeChange: (theme: ThemeName) => void;
     headerSlot?: ReactNode;
 };
 
-const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
+const Header: FC<HeaderProps> = ({ headerSlot }) => (
     <header className="sticky top-0 z-20 border-b border-theme-text-strong/10 bg-theme-bg-pale px-5 py-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4">
             <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -168,40 +140,8 @@ const Header: FC<HeaderProps> = ({ theme, onThemeChange, headerSlot }) => (
                     <div className="w-full md:w-auto">{headerSlot}</div>
                 ) : null}
             </div>
-            <ThemeTabs
-                value={theme}
-                options={themes}
-                onChange={onThemeChange}
-            />
         </div>
     </header>
-);
-
-type ThemeTabsProps = {
-    value: ThemeName;
-    options: readonly ThemeName[];
-    onChange: (value: ThemeName) => void;
-};
-
-const ThemeTabs: FC<ThemeTabsProps> = ({ value, options, onChange }) => (
-    <div className="flex min-w-0 max-w-full flex-col items-start gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
-            Theme
-        </span>
-        <div className="flex w-full max-w-full flex-wrap gap-1.5">
-            {options.map((option) => (
-                <TabButton
-                    key={option}
-                    active={value === option}
-                    onClick={() => onChange(option)}
-                    theme={option}
-                    size="sm"
-                >
-                    <span className="capitalize">{option}</span>
-                </TabButton>
-            ))}
-        </div>
-    </div>
 );
 
 type ShowcaseSectionProps = {
@@ -482,43 +422,6 @@ const ProseDemo: FC = () => (
     </ShowcaseSection>
 );
 
-const ThemeDemo: FC<HeaderProps> = ({ theme, onThemeChange }) => (
-    <ShowcaseSection
-        id="themes"
-        title="Themes"
-        caption="The theme cascade is driven by data-theme on any ancestor or by component theme props."
-    >
-        <Surface
-            variant="panel"
-            className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3"
-        >
-            {themes.map((item) => (
-                <button
-                    key={item}
-                    type="button"
-                    data-theme={item}
-                    aria-pressed={theme === item}
-                    onClick={() => onThemeChange(item)}
-                    className="flex min-w-0 flex-col gap-2 rounded-xl border border-theme-border bg-theme-bg-subtle p-3 text-left transition-colors hover:bg-theme-bg-pale"
-                >
-                    <span className="text-sm font-bold capitalize text-theme-text-strong">
-                        {item}
-                    </span>
-                    <span className="flex h-8 overflow-hidden rounded-lg">
-                        <span className="flex-1 bg-theme-bg-subtle" />
-                        <span className="flex-1 bg-theme-bg-active" />
-                        <span className="flex-1 bg-theme-bg-hover" />
-                        <span className="flex-1 bg-theme-bg-pale" />
-                    </span>
-                    <span className="text-xs text-theme-text-soft">
-                        {theme === item ? "Selected" : "Preview"}
-                    </span>
-                </button>
-            ))}
-        </Surface>
-    </ShowcaseSection>
-);
-
 const tokenRows = [
     ["text-base", "var(--polli-color-text-base)", "bg-theme-text-base"],
     ["text-strong", "var(--polli-color-text-strong)", "bg-theme-text-strong"],
@@ -645,7 +548,7 @@ const IconsDemo: FC = () => (
     </ShowcaseSection>
 );
 
-const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
+const ButtonsDemo: FC = () => (
     <ShowcaseSection
         id="buttons"
         title="Buttons"
@@ -656,22 +559,14 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <Button>Default</Button>
                 <Button size="sm">Small</Button>
                 <Button size="lg">Large</Button>
-                <Button theme="amber">Theme prop</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
             </Row>
             <Row label="External link">
-                <ExternalLinkButton
-                    theme={theme}
-                    href="https://pollinations.ai"
-                >
+                <ExternalLinkButton href="https://pollinations.ai">
                     Pollinations
                 </ExternalLinkButton>
-                <ExternalLinkButton
-                    theme={theme}
-                    href="https://pollinations.ai"
-                    size="sm"
-                >
+                <ExternalLinkButton href="https://pollinations.ai" size="sm">
                     Small link
                 </ExternalLinkButton>
             </Row>
@@ -730,11 +625,6 @@ const ButtonsDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                 <Chip intent="success">Success</Chip>
                 <Chip intent="warning">Warning</Chip>
                 <Chip intent="danger">Danger</Chip>
-                {themes.map((theme) => (
-                    <Chip key={theme} theme={theme}>
-                        {theme}
-                    </Chip>
-                ))}
             </Row>
         </div>
     </ShowcaseSection>
@@ -896,7 +786,7 @@ const selectionOptions = [
 
 const tabOptions = ["Request", "Pollen", "Usage"] as const;
 
-const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
+const SelectionDemo: FC = () => {
     const [activeTab, setActiveTab] =
         useState<(typeof tabOptions)[number]>("Request");
     const [selected, setSelected] = useState<string[]>(["images", "text"]);
@@ -926,7 +816,6 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                 </ControlGroup>
                 <ControlGroup label="Dropdown">
                     <Dropdown
-                        theme={theme}
                         align="start"
                         className="w-56 p-2"
                         trigger={(open) => (
@@ -966,7 +855,6 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             placeholder="All"
                             align="start"
                             label="Types"
-                            theme={theme}
                         />
                         <MultiSelect
                             options={[]}
@@ -976,23 +864,18 @@ const SelectionDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                             disabled
                             disabledText="Unavailable"
                             label="Disabled"
-                            theme={theme}
                         />
                     </div>
                 </ControlGroup>
                 <ControlGroup label="PeriodPicker">
-                    <PeriodPicker
-                        value={period}
-                        onChange={setPeriod}
-                        theme={theme}
-                    />
+                    <PeriodPicker value={period} onChange={setPeriod} />
                 </ControlGroup>
             </Surface>
         </ShowcaseSection>
     );
 };
 
-const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
+const OverlaysDemo: FC = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [firstOpen, setFirstOpen] = useState(false);
     const [secondOpen, setSecondOpen] = useState(true);
@@ -1012,7 +895,6 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
                         open={dialogOpen}
                         onOpenChange={setDialogOpen}
                         labelledBy="showcase-dialog-title"
-                        theme={theme}
                         size="sm"
                     >
                         <div className="p-6">
@@ -1088,7 +970,7 @@ const OverlaysDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
     );
 };
 
-const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
+const LayoutDemo: FC = () => (
     <ShowcaseSection
         id="layout"
         title="Layout"
@@ -1121,7 +1003,6 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
             </div>
             <CompositionSection
                 title="Composition section"
-                theme={theme}
                 framed
                 action={<Button size="sm">Action</Button>}
             >
@@ -1152,14 +1033,11 @@ const LayoutDemo: FC<{ theme: ThemeName }> = ({ theme }) => (
                     </p>
                     <ScrollArea
                         axis="x"
-                        theme="violet"
                         className="rounded-lg bg-theme-bg-subtle p-3"
                     >
                         <div className="flex w-max gap-2">
                             {scrollRows.slice(0, 16).map((row) => (
-                                <Chip key={row} theme="violet">
-                                    item {row}
-                                </Chip>
+                                <Chip key={row}>item {row}</Chip>
                             ))}
                         </div>
                     </ScrollArea>

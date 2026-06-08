@@ -3,7 +3,6 @@ import { Portal } from "@ark-ui/react/portal";
 import type { FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
@@ -21,7 +20,6 @@ export type DialogProps = {
     titleClassName?: string;
     ariaLabel?: string;
     labelledBy?: string;
-    theme?: ThemeName;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
     backdropClassName?: string;
@@ -40,7 +38,6 @@ export const Dialog: FC<DialogProps> = ({
     titleClassName,
     ariaLabel,
     labelledBy,
-    theme = "neutral",
     size = "md",
     showBackdrop = true,
     backdropClassName,
@@ -77,7 +74,6 @@ export const Dialog: FC<DialogProps> = ({
                     />
                 )}
                 <ArkDialog.Positioner
-                    data-theme={theme}
                     className={cn(
                         "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
                         positionerClassName,
@@ -85,7 +81,6 @@ export const Dialog: FC<DialogProps> = ({
                 >
                     <ArkDialog.Content
                         ref={contentRef}
-                        data-theme={theme}
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(

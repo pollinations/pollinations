@@ -1,10 +1,8 @@
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Text } from "../primitives/Typography.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type MediaPlaceholderProps = ComponentPropsWithoutRef<"div"> & {
-    theme?: ThemeName;
     icon?: ReactNode;
     label?: ReactNode;
     detail?: ReactNode;
@@ -12,7 +10,6 @@ export type MediaPlaceholderProps = ComponentPropsWithoutRef<"div"> & {
 };
 
 export const MediaPlaceholder: FC<MediaPlaceholderProps> = ({
-    theme,
     icon,
     label,
     detail,
@@ -23,7 +20,6 @@ export const MediaPlaceholder: FC<MediaPlaceholderProps> = ({
 }) => (
     <div
         {...rest}
-        data-theme={theme}
         className={cn(
             "polli:flex polli:aspect-video polli:min-h-40 polli:flex-col polli:items-center polli:justify-center polli:gap-3 polli:rounded-lg polli:border polli:border-dashed polli:border-theme-border polli:bg-theme-bg-pale polli:p-6 polli:text-center",
             className,

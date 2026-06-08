@@ -29,18 +29,13 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import {
-    DASHBOARD_NAV_ITEMS,
-    type DashboardPage,
-    type ThemeName,
-} from "./dashboard-theme.ts";
+import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
 type DashboardNavItem = {
     id: DashboardPage;
     label: string;
-    theme: ThemeName;
 };
 
 const brandWordmarkMask: CSSProperties = {
@@ -150,9 +145,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
-
-    const activeTheme =
-        navItems.find((item) => item.id === activePage)?.theme ?? "emerald";
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -324,10 +316,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div
-                className="flex min-w-0 flex-1 flex-col md:ml-60"
-                data-theme={activeTheme}
-            >
+            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
@@ -420,7 +409,7 @@ const DashboardNavButton: FC<{
 }> = ({ item, active, onClick }) => (
     <button
         type="button"
-        data-theme={item.theme}
+        data-theme="amber"
         className={cn(
             "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
             active
@@ -596,7 +585,6 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     className,
 }) => (
     <Dropdown
-        theme="amber"
         align="end"
         className="w-[var(--reference-width)] min-w-0 p-1"
         trigger={(open) => (

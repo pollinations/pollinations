@@ -70,11 +70,9 @@ import {
     TerminalIcon,
     Text,
     Textarea,
-    type ThemeName,
     TokensIcon,
     Tooltip,
     TrendUpIcon,
-    themes,
     useColorMode,
     WalletIcon,
     XIcon,
@@ -100,7 +98,6 @@ import {
 // Created via `polli keys create --type publishable` with redirect URIs
 // http://localhost:5173 and https://react.pollinations.ai.
 const APP_KEY = "pk_kZRl8saq8s2h9ome";
-const APP_THEME: ThemeName = "amber";
 // Point the catalog at a local gen worker in dev (VITE_GEN_BASE_URL=http://localhost:8788).
 // Unset falls back to the SDK default (production gen.pollinations.ai).
 const GEN_BASE_URL = import.meta.env.VITE_GEN_BASE_URL || undefined;
@@ -181,7 +178,6 @@ function ShellHeader({
             {PUBLIC_VIEWS.map((view) => (
                 <TabButton
                     key={view.id}
-                    theme={APP_THEME}
                     active={activeView === view.id}
                     onClick={() => onSelectView(view.id)}
                 >
@@ -203,10 +199,7 @@ function AppShell({
     const scrollTargetRef = useRef<HTMLDivElement | null>(null);
 
     return (
-        <div
-            data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
-        >
+        <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
             <ScrollArea
                 ref={scrollTargetRef}
                 axis="y"
@@ -865,11 +858,7 @@ function PrimitivesPage() {
                     >
                         <div className="flex flex-wrap gap-2">
                             {CONTROL_SIZES.map((size) => (
-                                <Button
-                                    key={size}
-                                    theme={APP_THEME}
-                                    size={size}
-                                >
+                                <Button key={size} size={size}>
                                     {size}
                                 </Button>
                             ))}
@@ -912,11 +901,7 @@ function PrimitivesPage() {
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-wrap items-center gap-2">
                                 {CONTROL_SIZES.map((size) => (
-                                    <Chip
-                                        key={size}
-                                        size={size}
-                                        theme={APP_THEME}
-                                    >
+                                    <Chip key={size} size={size}>
                                         {size}
                                     </Chip>
                                 ))}
@@ -936,10 +921,7 @@ function PrimitivesPage() {
                     >
                         <p className="text-sm text-theme-text-soft">
                             Read the{" "}
-                            <InlineLink
-                                href="https://pollinations.ai"
-                                theme={APP_THEME}
-                            >
+                            <InlineLink href="https://pollinations.ai">
                                 API guide
                             </InlineLink>
                             .
@@ -1053,7 +1035,6 @@ function PrimitivesPage() {
                                                 activePrimitiveTab ===
                                                 `${size}-${item}`
                                             }
-                                            theme={APP_THEME}
                                             size={size}
                                             onClick={() =>
                                                 setActivePrimitiveTab(
@@ -1074,9 +1055,8 @@ function PrimitivesPage() {
                         description="Small menu surface anchored to a trigger."
                     >
                         <Dropdown
-                            theme={APP_THEME}
                             trigger={(open) => (
-                                <Button type="button" theme={APP_THEME}>
+                                <Button type="button">
                                     {open ? "Close menu" : "Open menu"}
                                 </Button>
                             )}
@@ -1104,7 +1084,6 @@ function PrimitivesPage() {
                                     key={size}
                                     type="button"
                                     size={size}
-                                    theme={APP_THEME}
                                     onClick={() => {
                                         setDialogSize(size);
                                         setDialogOpen(true);
@@ -1118,7 +1097,6 @@ function PrimitivesPage() {
                             open={dialogOpen}
                             onOpenChange={setDialogOpen}
                             title={`Primitive dialog (${dialogSize})`}
-                            theme={APP_THEME}
                             size={dialogSize}
                         >
                             <div className="flex flex-col gap-4 p-6">
@@ -1129,7 +1107,6 @@ function PrimitivesPage() {
                                     <Button
                                         type="button"
                                         size="sm"
-                                        theme={APP_THEME}
                                         onClick={() => setDialogOpen(false)}
                                     >
                                         Close
@@ -1167,11 +1144,7 @@ function PrimitivesPage() {
                             <Surface variant="card" className="text-sm">
                                 Card surface
                             </Surface>
-                            <Surface
-                                variant="card-themed"
-                                theme={APP_THEME}
-                                className="text-sm"
-                            >
+                            <Surface variant="card-themed" className="text-sm">
                                 Themed card
                             </Surface>
                         </div>
@@ -1183,7 +1156,6 @@ function PrimitivesPage() {
                     >
                         <ScrollArea
                             axis="y"
-                            theme={APP_THEME}
                             className="h-40 rounded-lg border border-theme-border bg-theme-bg-pale p-3"
                         >
                             <div className="flex flex-col gap-2">
@@ -1193,7 +1165,7 @@ function PrimitivesPage() {
                                         className="flex items-center justify-between rounded-lg bg-theme-bg-subtle px-3 py-2 text-sm"
                                     >
                                         <span>{item}</span>
-                                        <Chip size="sm" theme={APP_THEME}>
+                                        <Chip size="sm">
                                             {String(index + 1).padStart(2, "0")}
                                         </Chip>
                                     </div>
@@ -1210,9 +1182,7 @@ function PrimitivesPage() {
                             content="Copied values stay local."
                             triggerAs="span"
                         >
-                            <Button size="sm" theme={APP_THEME}>
-                                Hover
-                            </Button>
+                            <Button size="sm">Hover</Button>
                         </Tooltip>
                     </PrimitiveExample>
                 </div>
@@ -1253,7 +1223,6 @@ function CompositionsPage() {
                                 <ExternalLinkButton
                                     key={size}
                                     href="https://pollinations.ai"
-                                    theme={APP_THEME}
                                     size={size}
                                 >
                                     {size}
@@ -1284,10 +1253,7 @@ function CompositionsPage() {
                         name="LinkCard"
                         description="Clickable card composition for grouped navigation targets."
                     >
-                        <LinkCard
-                            href="https://pollinations.ai"
-                            theme={APP_THEME}
-                        >
+                        <LinkCard href="https://pollinations.ai">
                             <p className="font-semibold">Documentation</p>
                             <p className="text-sm text-theme-text-soft">
                                 Open the public docs.
@@ -1305,9 +1271,6 @@ function CompositionsPage() {
                                     key={item}
                                     type="button"
                                     active={activeNavItem === item}
-                                    theme={
-                                        item === "Billing" ? "teal" : APP_THEME
-                                    }
                                     onClick={() => setActiveNavItem(item)}
                                 >
                                     {item}
@@ -1331,7 +1294,6 @@ function CompositionsPage() {
                             onChange={setSelectedModalities}
                             label="Types"
                             placeholder="All"
-                            theme={APP_THEME}
                         />
                     </PrimitiveExample>
 
@@ -1339,11 +1301,7 @@ function CompositionsPage() {
                         name="PeriodPicker"
                         description="Preset time-window selector for dashboards and usage views."
                     >
-                        <PeriodPicker
-                            value={period}
-                            onChange={setPeriod}
-                            theme={APP_THEME}
-                        />
+                        <PeriodPicker value={period} onChange={setPeriod} />
                     </PrimitiveExample>
 
                     <PrimitiveExample
@@ -1392,14 +1350,9 @@ function CompositionsPage() {
                     >
                         <Section
                             title="Section title"
-                            theme={APP_THEME}
                             framed
                             intro="Intro copy belongs to the section API."
-                            action={
-                                <Button size="sm" theme={APP_THEME}>
-                                    Action
-                                </Button>
-                            }
+                            action={<Button size="sm">Action</Button>}
                         >
                             <Text size="sm" tone="soft">
                                 Framed section content.
@@ -1445,7 +1398,6 @@ function CompositionsPage() {
                             code={
                                 'await generateText("Hello", { model: "openai" });'
                             }
-                            theme={APP_THEME}
                         />
                     </PrimitiveExample>
 
@@ -1457,7 +1409,6 @@ function CompositionsPage() {
                             value={files}
                             onChange={setFiles}
                             maxFiles={2}
-                            theme={APP_THEME}
                         />
                     </PrimitiveExample>
 
@@ -1512,6 +1463,21 @@ const INTENT_TOKENS = [
     ["alpha", "bg-intent-alpha-bg-light text-intent-alpha-text"],
 ] as const;
 
+const MODALITIES = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "realtime",
+    "embedding",
+] as const;
+
+// [name, coin color var] — the wallet credit coins (from the wallet module).
+const WALLET_SWATCHES = [
+    ["pollen", "var(--polli-color-tier-soft)"],
+    ["pollen+", "var(--polli-color-paid-soft)"],
+] as const;
+
 function Swatch({
     name,
     fill,
@@ -1539,61 +1505,20 @@ function Swatch({
 }
 
 function ColorsPage() {
-    const [selected, setSelected] = useState<ThemeName>("blue");
-
     return (
         <>
             <PageIntro>
-                Every surface, control, and text role is a design token. Pick a
-                theme to preview its color ramp — only this panel re-themes, the
-                rest of the app stays neutral. Flip the light/dark toggle in the
-                header to see each token adapt.
+                One app accent (amber) drives all chrome. The multi-hue palette
+                is reserved for dedicated roles: per-modality dots, the wallet
+                coins, and the fixed status/label intents. Flip the light/dark
+                toggle in the header to see each token adapt.
             </PageIntro>
 
             <section className="flex flex-col gap-4">
-                <SectionHeader title="Theme">
-                    The page hue, set via data-theme on any ancestor or a
-                    component's theme prop. Includes the neutral (no-hue)
-                    member.
-                </SectionHeader>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-                    {themes.map((name) => (
-                        <button
-                            key={name}
-                            type="button"
-                            data-theme={name}
-                            aria-pressed={selected === name}
-                            onClick={() => setSelected(name)}
-                            className={`flex flex-col gap-2 rounded-xl border p-3 text-left transition-colors bg-theme-bg-subtle hover:bg-theme-bg-pale ${
-                                selected === name
-                                    ? "border-theme-border"
-                                    : "border-divider"
-                            }`}
-                        >
-                            <span className="flex items-center justify-between gap-2">
-                                <span className="text-sm font-bold capitalize text-theme-text-strong">
-                                    {name}
-                                </span>
-                                {selected === name ? (
-                                    <CheckIcon className="h-4 w-4 shrink-0 text-theme-text-strong" />
-                                ) : null}
-                            </span>
-                            <span className="flex h-8 overflow-hidden rounded-lg border border-theme-border">
-                                <span className="flex-1 bg-theme-bg-subtle" />
-                                <span className="flex-1 bg-theme-bg-active" />
-                                <span className="flex-1 bg-theme-bg-hover" />
-                                <span className="flex-1 bg-theme-bg-pale" />
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </section>
-
-            {/* Themed ramp + live components — ONLY this region follows the picker. */}
-            <section data-theme={selected} className="flex flex-col gap-4">
-                <SectionHeader title="Themed tokens">
-                    These resolve from the selected theme. Use them as
-                    bg-theme-*, border-theme-border, and text-theme-text-soft.
+                <SectionHeader title="Accent">
+                    The single app accent (amber). Every themed token —
+                    bg-theme-*, border-theme-border, text-theme-text-soft —
+                    resolves to it; no per-page hue.
                 </SectionHeader>
                 <Surface variant="panel" className="flex flex-col gap-4">
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-2.5">
@@ -1607,32 +1532,63 @@ function ColorsPage() {
                         ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4">
-                        <Button theme={selected} size="sm">
-                            Button
-                        </Button>
-                        <Chip theme={selected} size="sm">
-                            Chip
-                        </Chip>
-                        <TabButton
-                            theme={selected}
-                            active
-                            onClick={() => undefined}
-                        >
+                        <Button size="sm">Button</Button>
+                        <Chip size="sm">Chip</Chip>
+                        <TabButton active onClick={() => undefined}>
                             Active tab
                         </TabButton>
-                        <TabButton
-                            theme={selected}
-                            active={false}
-                            onClick={() => undefined}
-                        >
+                        <TabButton active={false} onClick={() => undefined}>
                             Tab
                         </TabButton>
                         <Input
                             className="w-40"
                             placeholder="Input"
-                            aria-label="Themed input preview"
+                            aria-label="Accent input preview"
                         />
                     </div>
+                </Surface>
+            </section>
+
+            <section className="flex flex-col gap-4">
+                <SectionHeader title="Modality">
+                    A fixed color per model modality, shown as a dot — not a
+                    page theme. Decoupled from the accent.
+                </SectionHeader>
+                <Surface
+                    variant="panel"
+                    className="flex flex-wrap gap-x-5 gap-y-3"
+                >
+                    {MODALITIES.map((m) => (
+                        <span
+                            key={m}
+                            className="inline-flex items-center gap-2 text-sm font-medium capitalize text-theme-text-base"
+                        >
+                            <ModalityDot modality={m} />
+                            {m}
+                        </span>
+                    ))}
+                </Surface>
+            </section>
+
+            <section className="flex flex-col gap-4">
+                <SectionHeader title="Wallet">
+                    Two honey coins for the credit system — pollen and pollen+.
+                </SectionHeader>
+                <Surface variant="panel" className="flex flex-wrap gap-2.5">
+                    {WALLET_SWATCHES.map(([name, color]) => (
+                        <div
+                            key={name}
+                            className="flex items-center gap-3 rounded-lg bg-surface-opaque p-2.5"
+                        >
+                            <span
+                                className="h-9 w-9 shrink-0 rounded-full border border-divider"
+                                style={{ backgroundColor: color }}
+                            />
+                            <span className="text-sm font-semibold text-theme-text-strong">
+                                {name}
+                            </span>
+                        </div>
+                    ))}
                 </Surface>
             </section>
 
@@ -1657,9 +1613,10 @@ function ColorsPage() {
             </section>
 
             <section className="flex flex-col gap-4">
-                <SectionHeader title="Semantic">
-                    Intent colors for state, independent of theme. Each pairs a
-                    soft background with a readable text color.
+                <SectionHeader title="Status &amp; labels">
+                    Intent colors, independent of the accent. Status
+                    (danger/success/warning) is the traffic-light trio; labels
+                    (news/alpha) are their own system.
                 </SectionHeader>
                 <Surface variant="panel" className="flex flex-wrap gap-2">
                     {INTENT_TOKENS.map(([name, pill]) => (
@@ -1684,13 +1641,10 @@ function DebugShowcase({
     onSelectView: (view: AppView) => void;
 }) {
     return (
-        <div
-            data-theme={APP_THEME}
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg"
-        >
+        <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg">
             <ShellHeader activeView={activeView} onSelectView={onSelectView} />
             <Suspense fallback={null}>
-                <DesignShowcase hideHeader hideThemeTabs theme={APP_THEME} />
+                <DesignShowcase hideHeader />
             </Suspense>
         </div>
     );

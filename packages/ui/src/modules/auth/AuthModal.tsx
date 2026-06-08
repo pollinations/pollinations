@@ -36,7 +36,6 @@ export function AuthModal({
     return (
         <Dialog
             open
-            theme="amber"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}

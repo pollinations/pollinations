@@ -69,12 +69,11 @@ function AppUserMenuContent({
     return (
         <div data-theme="amber" className="polli:flex polli:justify-end">
             <WhenLoggedOut>
-                <LoginButton theme="amber">{labels.authorize}</LoginButton>
+                <LoginButton>{labels.authorize}</LoginButton>
             </WhenLoggedOut>
 
             <WhenLoggedIn>
                 <Dropdown
-                    theme="amber"
                     align="end"
                     className="polli:w-64 polli:p-1"
                     trigger={(open) => (

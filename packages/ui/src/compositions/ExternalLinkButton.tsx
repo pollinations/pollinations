@@ -2,10 +2,8 @@ import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Button } from "../primitives/Button.tsx";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type ExternalLinkButtonProps = {
-    theme?: ThemeName;
     href: string;
     size?: "sm" | "md" | "lg";
     className?: string;
@@ -13,7 +11,6 @@ export type ExternalLinkButtonProps = {
 };
 
 export const ExternalLinkButton: FC<ExternalLinkButtonProps> = ({
-    theme,
     href,
     size = "md",
     className,
@@ -24,7 +21,6 @@ export const ExternalLinkButton: FC<ExternalLinkButtonProps> = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        theme={theme}
         size={size}
         className={cn("polli:gap-2", className)}
     >

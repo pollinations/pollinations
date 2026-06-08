@@ -1,6 +1,5 @@
 import type { ComponentPropsWithoutRef, FC, PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 type SurfaceVariant = "panel" | "card" | "card-themed";
 
@@ -12,8 +11,6 @@ const variantClasses: Record<SurfaceVariant, string> = {
 };
 
 type SurfaceOwnProps = {
-    /** Override the cascade theme for this surface's subtree. */
-    theme?: ThemeName;
     /**
      * Depth role (all opaque, elevation via shadow not borders):
      * - `panel` — Level 1 container: themed bg, container shadow
@@ -30,7 +27,6 @@ type SurfaceProps = PropsWithChildren<
 >;
 
 export const Surface: FC<SurfaceProps> = ({
-    theme,
     variant = "card",
     className,
     children,
@@ -38,7 +34,6 @@ export const Surface: FC<SurfaceProps> = ({
 }) => (
     <div
         {...rest}
-        data-theme={theme}
         className={cn("polli:min-w-0", variantClasses[variant], className)}
     >
         {children}

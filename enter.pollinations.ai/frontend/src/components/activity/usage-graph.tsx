@@ -15,7 +15,6 @@ import {
 } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
@@ -25,14 +24,12 @@ type UsageGraphProps = {
     period: UsagePeriodSelection;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
-    theme: ThemeName;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
     period,
     apiKeys,
     action,
-    theme,
 }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
@@ -68,7 +65,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         filters.selectedModels.length > 1;
 
     return (
-        <Section title="Usage" theme={theme} framed action={action}>
+        <Section title="Usage" framed action={action}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-1.5">
@@ -102,7 +99,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             disabledText="None"
                             align="end"
                             label="Models"
-                            theme={theme}
                         />
                         <MultiSelect
                             options={keySelectOptions}
@@ -118,7 +114,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             disabledText="None"
                             align="end"
                             label="API Keys"
-                            theme={theme}
                         />
                     </div>
                 </div>
@@ -180,7 +175,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                         </TierChip>
                                     </div>
                                 }
-                                theme={theme}
                             />
                         </div>
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
@@ -190,10 +184,8 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     <ModalityPills
                                         breakdown={stats.requestsByModality}
-                                        theme={theme}
                                     />
                                 }
-                                theme={theme}
                             />
                         </div>
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
@@ -250,7 +242,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                         "No model usage yet"
                                     )
                                 }
-                                theme={theme}
                             />
                         </div>
                     </div>
@@ -262,14 +253,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
 
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;
-    theme: ThemeName;
-}> = ({ breakdown, theme }) => {
+}> = ({ breakdown }) => {
     const entries = (Object.keys(MODALITY_META) as ModelModality[])
         .map((modality) => ({ modality, count: breakdown[modality] }))
         .filter(({ count }) => count > 0);
     if (entries.length === 0) return null;
     return (
-        <div data-theme={theme} className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
@@ -279,7 +269,6 @@ const ModalityPills: FC<{
                         displayContents
                     >
                         <Chip
-                            theme={theme}
                             size="lg"
                             className="font-semibold text-theme-text-base"
                         >

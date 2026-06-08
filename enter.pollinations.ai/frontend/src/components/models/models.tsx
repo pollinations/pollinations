@@ -44,20 +44,17 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
         <div className="flex flex-col gap-6">
             <Section
                 title="Models"
-                theme="teal"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                         <ExternalLinkButton
-                            theme="teal"
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
                             📊 Model Health
                         </ExternalLinkButton>
                         <ExternalLinkButton
-                            theme="teal"
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >

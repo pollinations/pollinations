@@ -406,7 +406,6 @@ export function Authorize() {
                                 as="button"
                                 onClick={signIn}
                                 disabled={isSigningIn}
-                                theme="amber"
                             >
                                 {isSigningIn
                                     ? "Signing in..."
@@ -597,7 +596,6 @@ export function Authorize() {
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
@@ -606,7 +604,6 @@ export function Authorize() {
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
@@ -635,7 +632,6 @@ export function Authorize() {
                                 }
                                 onModelsChange={keyPermissions.setAllowedModels}
                                 visiblePermissions={visibleOptionalPermissions}
-                                theme="amber"
                                 showApiName={false}
                                 modelsInitiallyExpanded
                             />
@@ -667,7 +663,6 @@ export function Authorize() {
                             as="button"
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
-                            theme="amber"
                         >
                             {isAuthorizing ? "Authorizing..." : "Authorize"}
                         </Button>

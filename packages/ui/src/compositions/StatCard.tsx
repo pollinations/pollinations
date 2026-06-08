@@ -1,7 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Text } from "../primitives/Typography.tsx";
-import type { ThemeName } from "../theme.ts";
 
 /**
  * - `stat` — large numeric value (default)
@@ -19,7 +18,6 @@ export type StatCardProps = {
     value: ReactNode;
     detail?: ReactNode;
     variant?: StatCardVariant;
-    theme?: ThemeName;
     className?: string;
     labelClassName?: string;
     valueClassName?: string;
@@ -31,13 +29,12 @@ export const StatCard: FC<StatCardProps> = ({
     value,
     detail,
     variant = "stat",
-    theme,
     className,
     labelClassName,
     valueClassName,
     detailClassName,
 }) => (
-    <div data-theme={theme} className={cn("polli:text-sm", className)}>
+    <div className={cn("polli:text-sm", className)}>
         <Text
             as="div"
             size="micro"

@@ -7,10 +7,7 @@ import {
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
-import {
-    getPermissionUiTheme,
-    type PermissionUiTheme,
-} from "./permission-ui.ts";
+import { getPermissionUiTheme } from "./permission-ui.ts";
 
 type AccountPermissionOption = {
     id: "profile" | "usage" | "keys";
@@ -26,7 +23,6 @@ type AccountPermissionsInputProps = {
     allowedModels: string[] | null;
     onModelsChange: (models: string[] | null) => void;
     visiblePermissions?: readonly AccountPermissionOption["id"][];
-    theme?: PermissionUiTheme;
     showApiName?: boolean;
     /** Whether the Models section starts expanded. Always collapsible. */
     modelsInitiallyExpanded?: boolean;
@@ -62,11 +58,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     allowedModels,
     onModelsChange,
     visiblePermissions,
-    theme = "blue",
     showApiName = true,
     modelsInitiallyExpanded = false,
 }) => {
-    const themeConfig = getPermissionUiTheme(theme);
+    const themeConfig = getPermissionUiTheme();
     const { row: rowTheme } = themeConfig;
     const permissionOptions =
         visiblePermissions === undefined
@@ -155,7 +150,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     );
 
     return (
-        <div data-theme={theme}>
+        <div>
             <div className="space-y-4">
                 {/* Other Permissions - Profile, Usage */}
                 {permissionOptions.map((permission) => {
@@ -263,7 +258,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             toggleCategory={toggleCategory}
                             isCategoryAllSelected={isCategoryAllSelected}
                             showApiName={showApiName}
-                            theme={theme}
                         />
                     ))}
                 </Collapsible>
@@ -282,7 +276,6 @@ const ModelCategory: FC<{
     toggleCategory: (models: ModelCategoryModel[]) => void;
     isCategoryAllSelected: (models: ModelCategoryModel[]) => boolean;
     showApiName?: boolean;
-    theme?: PermissionUiTheme;
 }> = ({
     label,
     models,
@@ -292,7 +285,6 @@ const ModelCategory: FC<{
     toggleCategory,
     isCategoryAllSelected,
     showApiName = true,
-    theme = "blue",
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">
@@ -306,7 +298,7 @@ const ModelCategory: FC<{
                 disabled={disabled}
                 className={cn(
                     "text-micro disabled:opacity-50 cursor-pointer",
-                    getPermissionUiTheme(theme).accent.actionTextClasses,
+                    getPermissionUiTheme().accent.actionTextClasses,
                 )}
             >
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}

@@ -1,13 +1,10 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 export type TabButtonProps = {
     active: boolean;
     onClick: () => void;
     children: ReactNode;
-    /** Optional cascade override; defaults to inherited [data-theme]. */
-    theme?: ThemeName;
     size?: "md" | "sm";
     variant?: "default" | "ghost";
     ariaLabel?: string;
@@ -36,7 +33,6 @@ const variantClasses = {
 } as const;
 
 export const TabButton: FC<TabButtonProps> = ({
-    theme,
     active,
     onClick,
     children,
@@ -50,7 +46,6 @@ export const TabButton: FC<TabButtonProps> = ({
     return (
         <button
             type="button"
-            data-theme={theme}
             onClick={onClick}
             aria-label={ariaLabel}
             aria-pressed={active}

@@ -1,10 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 type BaseNavItemProps = {
-    /** Section color via the `[data-theme]` cascade — tints the dot + active fill. */
-    theme?: ThemeName;
     /** Current/selected item — fills with the section color + sets `aria-current`. */
     active?: boolean;
     className?: string;
@@ -33,7 +30,6 @@ export type NavItemProps<T extends React.ElementType = "button"> =
  */
 export function NavItem<T extends React.ElementType = "button">({
     as,
-    theme,
     active = false,
     className,
     children,
@@ -42,7 +38,6 @@ export function NavItem<T extends React.ElementType = "button">({
     const Component: React.ElementType = as || "button";
     return (
         <Component
-            data-theme={theme}
             aria-current={active ? "page" : undefined}
             className={cn(
                 base,

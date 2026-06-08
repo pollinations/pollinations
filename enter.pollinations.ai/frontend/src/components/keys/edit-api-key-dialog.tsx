@@ -146,7 +146,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <Dialog
             open
-            theme="blue"
             onOpenChange={(open) => !open && onClose()}
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >

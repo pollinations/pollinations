@@ -3,7 +3,6 @@ import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../primitives/Dropdown.tsx";
 import { ScrollArea } from "../primitives/ScrollArea.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type MultiSelectOption = {
     value: string;
@@ -19,7 +18,6 @@ export type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
-    theme?: ThemeName;
 };
 
 const TRIGGER_BASE =
@@ -40,7 +38,6 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
-    theme,
 }) => {
     const isAllSelected = selected.length === 0;
 
@@ -68,10 +65,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 
     if (disabled) {
         return (
-            <div
-                data-theme={theme}
-                className="polli:group polli:relative polli:flex polli:items-center polli:gap-2"
-            >
+            <div className="polli:group polli:relative polli:flex polli:items-center polli:gap-2">
                 {labelNode}
                 <button
                     type="button"
@@ -97,13 +91,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     }
 
     return (
-        <div
-            data-theme={theme}
-            className="polli:flex polli:items-center polli:gap-2"
-        >
+        <div className="polli:flex polli:items-center polli:gap-2">
             {labelNode}
             <Dropdown
-                theme={theme}
                 align={align}
                 className="polli:min-w-[320px]"
                 trigger={(open) => (
@@ -138,7 +128,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     </button>
                 )}
             >
-                <ScrollArea theme={theme} className="polli:max-h-64">
+                <ScrollArea className="polli:max-h-64">
                     <button
                         type="button"
                         onClick={selectAll}

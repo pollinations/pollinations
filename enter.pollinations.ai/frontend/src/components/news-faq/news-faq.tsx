@@ -7,10 +7,9 @@ export const NewsFaq: FC = () => (
     <div className="flex flex-col gap-6">
         <Section
             title="News"
-            theme="violet"
             framed
             action={
-                <ExternalLinkButton theme="violet" href={HIGHLIGHTS_GITHUB_URL}>
+                <ExternalLinkButton href={HIGHLIGHTS_GITHUB_URL}>
                     📰 More on GitHub
                 </ExternalLinkButton>
             }
@@ -19,10 +18,9 @@ export const NewsFaq: FC = () => (
         </Section>
         <Section
             title="FAQ"
-            theme="violet"
             framed
             action={
-                <ExternalLinkButton theme="violet" href={FAQ_GITHUB_URL}>
+                <ExternalLinkButton href={FAQ_GITHUB_URL}>
                     ❓ View on GitHub
                 </ExternalLinkButton>
             }

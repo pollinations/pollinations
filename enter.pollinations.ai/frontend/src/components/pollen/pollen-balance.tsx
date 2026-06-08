@@ -314,7 +314,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <Button
                                 as="a"
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                theme="amber"
                                 className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
                                 Buy

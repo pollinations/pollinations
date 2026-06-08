@@ -23,8 +23,6 @@ import { ModalityDot } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
-const APP_THEME = "amber";
-
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
     { key: "24h", label: "24h" },
@@ -472,10 +470,7 @@ function App() {
         : sortedModels;
 
     return (
-        <div
-            className="h-dvh bg-app-bg text-theme-text-base"
-            data-theme={APP_THEME}
-        >
+        <div className="h-dvh bg-app-bg text-theme-text-base">
             <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
                 <AppHeader
                     navLabel="Model Monitor links"

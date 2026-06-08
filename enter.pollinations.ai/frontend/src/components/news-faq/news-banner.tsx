@@ -129,7 +129,6 @@ export const NewsBanner: FC = () => {
             {PINNED_NEWS.length > 0 && (
                 <Surface
                     variant="card-themed"
-                    theme="violet"
                     className="flex flex-col divide-y divide-theme-border leading-relaxed"
                 >
                     {PINNED_NEWS.map((item) => (

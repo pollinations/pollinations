@@ -153,7 +153,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog
             open={isOpen}
-            theme="blue"
             onOpenChange={(open) => {
                 if (open) {
                     setCreatedKey(null);

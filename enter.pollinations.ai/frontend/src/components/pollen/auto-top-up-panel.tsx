@@ -394,7 +394,6 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     <Button
         as="button"
         type="button"
-        theme="amber"
         onClick={onClick}
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
@@ -445,7 +444,6 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
             <Button
                 as="button"
                 type="button"
-                theme="amber"
                 onClick={onSave}
                 disabled={saveDisabled}
                 className="w-28 min-w-0 self-start text-center shadow-none sm:self-center"

@@ -15,7 +15,6 @@ import {
 } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useState } from "react";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chart } from "./chart";
 import type { UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
@@ -23,14 +22,9 @@ import { useEarningsData } from "./use-earnings-data";
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
     apps: Array<{ id: string; name: string }>;
-    theme: ThemeName;
 };
 
-export const EarningsGraph: FC<EarningsGraphProps> = ({
-    period,
-    apps,
-    theme,
-}) => {
+export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
 
     const appSelectOptions = apps.map((a) => ({
@@ -67,12 +61,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     return (
         <Section
             title="Earnings"
-            theme={theme}
             framed
             action={
                 <Button
                     as="button"
-                    theme={theme}
                     onClick={downloadEarnings}
                     className="flex items-center gap-1.5"
                 >
@@ -108,7 +100,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             disabledText="None"
                             align="end"
                             label="Apps"
-                            theme={theme}
                         />
                     </div>
                 </div>
@@ -151,7 +142,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-divider divide-divider">
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <StatCard
-                            theme={theme}
                             label="Pollen earned"
                             value={formatPollen(stats.totalPollen)}
                             detail={
@@ -196,7 +186,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <StatCard
-                            theme={theme}
                             label="Active users"
                             value={stats.activeUsers.toLocaleString()}
                             detail={
@@ -213,7 +202,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <StatCard
-                            theme={theme}
                             label="Top app"
                             value={
                                 <span className="text-xl leading-tight">

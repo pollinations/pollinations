@@ -1,6 +1,5 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 /** Button only supports `danger`. Label/status color recipes live on Chip. */
 type ButtonIntent = "danger";
@@ -25,8 +24,6 @@ const intentClasses: Record<ButtonIntent, string> = {
 };
 
 type BaseButtonProps = {
-    /** Override the cascade theme for this button's subtree. Ignored when `intent` is set. */
-    theme?: ThemeName;
     /** Only `"danger"` for now. */
     intent?: ButtonIntent;
     size?: keyof typeof sizes;
@@ -35,7 +32,6 @@ type BaseButtonProps = {
 };
 
 const buttonClasses = ({
-    theme: _theme,
     intent,
     size,
     className,
@@ -61,7 +57,6 @@ export type ButtonProps<T extends React.ElementType = "button"> =
 export function Button<T extends React.ElementType = "button">({
     as,
     children,
-    theme,
     intent,
     size,
     className,
@@ -72,11 +67,8 @@ export function Button<T extends React.ElementType = "button">({
 
     return (
         <Component
-            // Cascade override only applies when `intent` is unset.
-            data-theme={intent ? undefined : theme}
             data-intent={intent}
             className={buttonClasses({
-                theme,
                 intent,
                 size,
                 className,

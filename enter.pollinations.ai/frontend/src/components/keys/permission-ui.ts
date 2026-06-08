@@ -1,5 +1,3 @@
-export type PermissionUiTheme = "amber" | "blue";
-
 type PermissionUiFrameConfig = {
     selectedClasses: string;
     selectedHoverClasses: string;
@@ -21,10 +19,9 @@ type PermissionUiThemeConfig = {
     input: PermissionUiInputConfig;
 };
 
-// Themed, mode-aware classes. The hue is no longer baked into the class names —
-// each consumer sets `data-theme={theme}` on its root so these tokens resolve to
-// the right accent (blue/amber/…) AND flip correctly in dark mode. Both theme
-// keys therefore share one config.
+// Mode-aware classes. The hue is no longer baked into the class names — the
+// surrounding dialog scopes its subtree with the ambient accent, so these
+// `theme-*` tokens resolve to it AND flip correctly in dark mode.
 const FRAME: PermissionUiThemeConfig = {
     row: {
         selectedClasses: "border-theme-border bg-theme-bg-active",
@@ -43,14 +40,6 @@ const FRAME: PermissionUiThemeConfig = {
     },
 };
 
-const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
-    {
-        amber: FRAME,
-        blue: FRAME,
-    };
-
-export function getPermissionUiTheme(
-    theme: PermissionUiTheme = "blue",
-): PermissionUiThemeConfig {
-    return PERMISSION_UI_THEMES[theme];
+export function getPermissionUiTheme(): PermissionUiThemeConfig {
+    return FRAME;
 }

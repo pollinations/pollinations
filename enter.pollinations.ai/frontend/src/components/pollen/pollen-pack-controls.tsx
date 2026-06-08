@@ -108,7 +108,6 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                     </span>
                                     {isSelected && (
                                         <Chip
-                                            theme="amber"
                                             size="sm"
                                             className={cn(
                                                 "absolute top-full mt-1 flex-col items-stretch whitespace-nowrap",

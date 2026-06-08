@@ -13,12 +13,10 @@ import {
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../primitives/Dropdown.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type PeriodPickerProps = {
     value: PeriodSelection;
     onChange: (value: PeriodSelection) => void;
-    theme?: ThemeName;
     minDate?: Date;
     maxDate?: Date;
 };
@@ -128,7 +126,6 @@ function viewBounds(
 export const PeriodPicker: FC<PeriodPickerProps> = ({
     value,
     onChange,
-    theme,
     minDate = new Date(0),
     maxDate,
 }) => {
@@ -188,10 +185,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             : formatMonthYear(viewDate, "long");
 
     return (
-        <div
-            data-theme={theme}
-            className="polli:flex polli:flex-wrap polli:items-center polli:gap-2"
-        >
+        <div className="polli:flex polli:flex-wrap polli:items-center polli:gap-2">
             <div className="polli:flex polli:flex-wrap polli:gap-1.5">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
@@ -207,7 +201,6 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 )}
             </div>
             <Dropdown
-                theme={theme}
                 open={open}
                 onOpenChange={setOpen}
                 className="polli:w-[320px] polli:rounded-xl polli:p-3.5"

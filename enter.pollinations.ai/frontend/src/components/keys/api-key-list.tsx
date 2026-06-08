@@ -182,7 +182,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     }
                                     displayContents
                                 >
-                                    <Chip theme="blue" size="sm">
+                                    <Chip size="sm">
                                         +{extraRedirectUriCount}
                                     </Chip>
                                 </Tooltip>
@@ -230,7 +230,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <div className="flex flex-col gap-6">
                 <Section
                     title="API"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog
@@ -265,7 +264,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </Section>
                 <Section
                     title="App"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog

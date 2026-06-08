@@ -2,11 +2,9 @@ import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Surface } from "../primitives/Surface.tsx";
 import { Heading, Text } from "../primitives/Typography.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type SectionProps = {
     title: string;
-    theme?: ThemeName;
     id?: string;
     framed?: boolean;
     intro?: ReactNode;
@@ -20,7 +18,6 @@ export type SectionProps = {
 
 export const Section: FC<SectionProps> = ({
     title,
-    theme,
     id,
     framed = false,
     intro,
@@ -41,7 +38,6 @@ export const Section: FC<SectionProps> = ({
         <header className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3 polli:px-1">
             <Heading
                 as="h2"
-                data-theme={theme}
                 size="section"
                 className={cn("polli:text-left", titleClassName)}
             >
@@ -56,7 +52,6 @@ export const Section: FC<SectionProps> = ({
         {framed ? (
             <Surface
                 variant="panel"
-                theme={theme}
                 className={cn(
                     "polli:flex polli:flex-col polli:gap-5",
                     panelClassName,
@@ -72,11 +67,7 @@ export const Section: FC<SectionProps> = ({
         ) : (
             <>
                 {intro && (
-                    <Text
-                        as="div"
-                        data-theme={theme}
-                        className="polli:max-w-2xl"
-                    >
+                    <Text as="div" className="polli:max-w-2xl">
                         {intro}
                     </Text>
                 )}

@@ -85,7 +85,8 @@ export type VideoCapability =
 
 export type BillingAdjustmentCounter =
     | "geminiGroundedPrompt"
-    | "geminiWebSearchQueries";
+    | "geminiWebSearchQueries"
+    | "perplexityRequest";
 
 export type BillingTierRule = {
     id: string;
@@ -104,30 +105,12 @@ export type BillingAdjustmentRule = {
     count: BillingAdjustmentCounter;
     unitCost: number;
     priceMultiplier?: number;
+    when?: "grounded" | "always";
 };
 
 export type BillingRules = {
     tiers?: BillingTierRule[];
     adjustments?: BillingAdjustmentRule[];
-};
-
-export type BillingAdjustment = {
-    id: string;
-    kind: string;
-    unit: string;
-    units: number;
-    unitCost: number;
-    unitPrice: number;
-    totalCost: number;
-    totalPrice: number;
-};
-
-export type BillingResult = {
-    cost: UsageCost;
-    price: UsagePrice;
-    effectivePriceDefinition: PriceDefinition;
-    pricingTier?: string;
-    adjustments: BillingAdjustment[];
 };
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
@@ -220,19 +203,6 @@ function calculateLinearCost(
     };
 }
 
-function derivePriceFromCostDefinition(
-    costDefinition: CostDefinition,
-    priceMultiplier: number,
-): PriceDefinition {
-    if (priceMultiplier === 1) return costDefinition;
-    return Object.fromEntries(
-        Object.entries(costDefinition).map(([k, v]) => [
-            k,
-            (v as number) * priceMultiplier,
-        ]),
-    ) as PriceDefinition;
-}
-
 function getPromptTokenCount(usage: Usage): number {
     return (
         (usage.promptTextTokens ?? 0) +
@@ -266,6 +236,7 @@ function countBillingAdjustmentUnits(
     counter: BillingAdjustmentCounter,
     output: unknown,
 ): number {
+    if (counter === "perplexityRequest") return 1;
     const geminiQueryCount = getGeminiGroundingWebSearchQueryCount(output);
     if (counter === "geminiGroundedPrompt") {
         return geminiQueryCount > 0 ? 1 : 0;
@@ -283,27 +254,39 @@ function selectBillingTier(
     );
 }
 
-function calculateBillingAdjustments(
+function getBillingCostDefinition(
+    svc: ModelDefinition,
+    usage: Usage,
+): CostDefinition {
+    const billingTier = selectBillingTier(svc, usage);
+    return billingTier ? { ...svc.cost, ...billingTier.cost } : svc.cost;
+}
+
+function calculateBillingAdjustmentCost(
     svc: ModelDefinition,
     output: unknown,
-): BillingAdjustment[] {
-    return (svc.billing?.adjustments ?? [])
-        .map((rule) => {
-            const units = countBillingAdjustmentUnits(rule.count, output);
-            const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
-            const unitPrice = rule.unitCost * priceMultiplier;
-            return {
-                id: rule.id,
-                kind: rule.kind,
-                unit: rule.unit,
-                units,
-                unitCost: rule.unitCost,
-                unitPrice,
-                totalCost: units * rule.unitCost,
-                totalPrice: roundPollenLedgerAmount(units * unitPrice),
-            } satisfies BillingAdjustment;
-        })
-        .filter((adjustment) => adjustment.units > 0);
+): number {
+    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
+        const units = countBillingAdjustmentUnits(rule.count, output);
+        if ((rule.when ?? "grounded") !== "always" && units === 0) {
+            return total;
+        }
+        return total + units * rule.unitCost;
+    }, 0);
+}
+
+function calculateBillingAdjustmentPrice(
+    svc: ModelDefinition,
+    output: unknown,
+): number {
+    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
+        const units = countBillingAdjustmentUnits(rule.count, output);
+        if ((rule.when ?? "grounded") !== "always" && units === 0) {
+            return total;
+        }
+        const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
+        return total + units * rule.unitCost * priceMultiplier;
+    }, 0);
 }
 
 const MODEL_REGISTRY = {
@@ -404,36 +387,49 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 }
 
 /**
- * Calculate full billing for a model based on usage and optional response output.
+ * Calculate cost for a model based on usage
  */
-export function calculateBilling(
+export function calculateCost(
     model: ModelName,
     usage: Usage,
     output?: unknown,
-): BillingResult {
+): UsageCost {
     const svc = MODEL_REGISTRY[model];
     if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const billingTier = selectBillingTier(svc, usage);
-    const costDefinition = billingTier
-        ? { ...svc.cost, ...billingTier.cost }
-        : svc.cost;
-    const usageCost = calculateLinearCost(model, usage, costDefinition);
-    const adjustments = calculateBillingAdjustments(svc, output);
-    const totalAdjustmentCost = adjustments.reduce(
-        (total, adjustment) => total + adjustment.totalCost,
-        0,
+    const usageCost = calculateLinearCost(
+        model,
+        usage,
+        getBillingCostDefinition(svc, usage),
     );
-    const totalAdjustmentPrice = adjustments.reduce(
-        (total, adjustment) => total + adjustment.totalPrice,
-        0,
-    );
-    const cost = {
+    const adjustmentCost = calculateBillingAdjustmentCost(svc, output);
+    if (adjustmentCost === 0) return usageCost;
+    return {
         ...usageCost,
-        totalCost: usageCost.totalCost + totalAdjustmentCost,
+        totalCost: usageCost.totalCost + adjustmentCost,
     };
+}
+
+/**
+ * Calculate price for a model based on usage
+ */
+export function calculatePrice(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsagePrice {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
+        throw new Error(
+            `Failed to get current price for model: ${model.toString()}`,
+        );
+    const usageCost = calculateLinearCost(
+        model,
+        usage,
+        getBillingCostDefinition(svc, usage),
+    );
     const usagePrice = Object.fromEntries(
         Object.entries(usageCost)
             .filter(([usageType]) => usageType !== "totalCost")
@@ -446,43 +442,9 @@ export function calculateBilling(
         (total, price) => total + price,
         0,
     );
-    const price = {
-        ...usagePrice,
-        totalPrice: roundPollenLedgerAmount(
-            tokenTotalPrice + totalAdjustmentPrice,
-        ),
-    };
-
+    const adjustmentPrice = calculateBillingAdjustmentPrice(svc, output);
     return {
-        cost,
-        price,
-        effectivePriceDefinition: derivePriceFromCostDefinition(
-            costDefinition,
-            svc.priceMultiplier,
-        ),
-        pricingTier: billingTier?.id,
-        adjustments,
+        ...usagePrice,
+        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
-}
-
-/**
- * Calculate cost for a model based on usage
- */
-export function calculateCost(
-    model: ModelName,
-    usage: Usage,
-    output?: unknown,
-): UsageCost {
-    return calculateBilling(model, usage, output).cost;
-}
-
-/**
- * Calculate price for a model based on usage
- */
-export function calculatePrice(
-    model: ModelName,
-    usage: Usage,
-    output?: unknown,
-): UsagePrice {
-    return calculateBilling(model, usage, output).price;
 }

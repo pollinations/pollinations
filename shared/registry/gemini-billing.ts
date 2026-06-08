@@ -23,6 +23,7 @@ export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
             unit: "prompt",
             count: "geminiGroundedPrompt",
             unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
+            when: "grounded",
         },
     ],
 };
@@ -37,6 +38,7 @@ export const GEMINI_3_SEARCH_BILLING: BillingRules = {
             unit: "query",
             count: "geminiWebSearchQueries",
             unitCost: GEMINI_3_GROUNDING_COST_PER_QUERY,
+            when: "grounded",
         },
     ],
 };

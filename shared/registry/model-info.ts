@@ -56,7 +56,12 @@ export const ModelInfoSchema = z.object({
                         description: z.string(),
                         kind: z.string(),
                         unit: z.string(),
-                        count: z.string(),
+                        count: z.enum([
+                            "geminiGroundedPrompt",
+                            "geminiWebSearchQueries",
+                            "perplexityRequest",
+                        ]),
+                        when: z.enum(["grounded", "always"]),
                         unit_price: z.string(),
                     }),
                 )
@@ -132,6 +137,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
                   kind: adjustment.kind,
                   unit: adjustment.unit,
                   count: adjustment.count,
+                  when: adjustment.when ?? "grounded",
                   unit_price: toFixedPoint(
                       adjustment.unitCost *
                           (adjustment.priceMultiplier ??

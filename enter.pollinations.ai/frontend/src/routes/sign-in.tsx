@@ -1,7 +1,6 @@
-import { Button } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
 import { authClient } from "../auth.ts";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -13,6 +12,9 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { useSocialProviders } from "../hooks/use-social-providers.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
+import type { SocialProvider } from "../lib/social-providers.ts";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
@@ -63,19 +65,9 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function RouteComponent() {
-    const [loading, setLoading] = useState(false);
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
+    const socialProviders = useSocialProviders();
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
-
-    const handleSignIn = async () => {
-        setLoading(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-        });
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-    };
 
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
@@ -94,8 +86,10 @@ function RouteComponent() {
             onPageChange={handlePageChange}
             accountArea={
                 <SignedOutAccountArea
-                    loading={loading}
-                    onSignIn={handleSignIn}
+                    socialProviders={socialProviders}
+                    pendingProvider={pendingProvider}
+                    signInError={signInError}
+                    onSignIn={signIn}
                 />
             }
         >
@@ -106,21 +100,24 @@ function RouteComponent() {
 }
 
 function SignedOutAccountArea({
-    loading,
+    socialProviders,
+    pendingProvider,
+    signInError,
     onSignIn,
 }: {
-    loading: boolean;
-    onSignIn: () => void;
+    socialProviders: ReturnType<typeof useSocialProviders>;
+    pendingProvider: SocialProvider | null;
+    signInError: string | null;
+    onSignIn: (provider: SocialProvider) => void;
 }) {
     return (
-        <Button
-            as="button"
-            onClick={onSignIn}
-            disabled={loading}
-            theme="amber"
-            className="w-full justify-center text-center"
-        >
-            {loading ? "Signing in..." : "Sign in with GitHub"}
-        </Button>
+        <SocialSignInButtons
+            providers={socialProviders.providers}
+            isLoading={socialProviders.isLoading}
+            error={signInError ?? socialProviders.error}
+            pendingProvider={pendingProvider}
+            onSignIn={onSignIn}
+            className="w-full"
+        />
     );
 }

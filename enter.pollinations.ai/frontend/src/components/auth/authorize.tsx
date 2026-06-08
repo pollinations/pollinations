@@ -25,7 +25,8 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { useSocialProviders } from "../../hooks/use-social-providers.ts";
+import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
@@ -38,6 +39,7 @@ import {
     type ModelCategoryGroup,
 } from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
+import { SocialSignInButtons } from "./social-sign-in-buttons.tsx";
 
 type Attribution = {
     found: boolean;
@@ -82,7 +84,13 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const {
+        pendingProvider,
+        isSigningIn,
+        error: signInError,
+        signIn,
+    } = useSocialSignIn();
+    const socialProviders = useSocialProviders();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -419,7 +427,16 @@ export function Authorize() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="flex gap-2 justify-end">
+                    {!error && (
+                        <SocialSignInButtons
+                            providers={socialProviders.providers}
+                            isLoading={socialProviders.isLoading}
+                            error={socialProviders.error}
+                            pendingProvider={pendingProvider}
+                            onSignIn={signIn}
+                        />
+                    )}
+                    <div className="flex justify-end">
                         <Button
                             as="button"
                             onClick={handleDeny}
@@ -428,18 +445,6 @@ export function Authorize() {
                         >
                             Deny
                         </Button>
-                        {!error && (
-                            <Button
-                                as="button"
-                                onClick={signIn}
-                                disabled={isSigningIn}
-                                theme="amber"
-                            >
-                                {isSigningIn
-                                    ? "Signing in..."
-                                    : "Continue with GitHub"}
-                            </Button>
-                        )}
                     </div>
                 </div>
             </AuthModal>

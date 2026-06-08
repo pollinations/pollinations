@@ -278,8 +278,8 @@ function RouteComponent() {
     return (
         <DashboardShell
             activePage={activePage}
-            githubUsername={githubUsername}
-            githubAvatarUrl={user?.image || ""}
+            displayName={githubUsername || user?.name || user?.email || ""}
+            avatarUrl={user?.image || ""}
             onPageChange={handlePageChange}
             onSignOut={handleSignOut}
             walletArea={

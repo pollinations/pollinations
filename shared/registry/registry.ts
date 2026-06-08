@@ -105,6 +105,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
     calculateCost?: CostCalculator<TModelId>;
+    pricingNotes?: string[];
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata

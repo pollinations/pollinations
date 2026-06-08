@@ -177,6 +177,16 @@ test("Gemini grounding cost is added by family billing rules", () => {
         groundedOutput,
     );
     const gemini3Cost = calculateCost("gemini", usage, groundedOutput);
+    const geminiSearchFastCost = calculateCost(
+        "gemini-search-fast",
+        usage,
+        groundedOutput,
+    );
+    const geminiSearchLargeCost = calculateCost(
+        "gemini-search-large",
+        usage,
+        groundedOutput,
+    );
 
     // Gemini 2.5 Search bills once per grounded prompt, not once per query.
     // priceMultiplier is 1×, so price equals cost.
@@ -185,6 +195,24 @@ test("Gemini grounding cost is added by family billing rules", () => {
 
     // Gemini 3.x bills per non-empty search query.
     expect(gemini3Cost.totalCost).toBeCloseTo(3.528, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(10.528, 8);
+});
+
+test("Gemini dynamic billing notes are exposed in model catalog metadata", () => {
+    const geminiSearchFast = getTextModelsInfo().find(
+        (model) => model.name === "gemini-search-fast",
+    );
+    const geminiLarge = getTextModelsInfo().find(
+        (model) => model.name === "gemini-large",
+    );
+
+    expect(geminiSearchFast?.pricing_notes).toContain(
+        "Google Search grounding adds $14 / 1K search queries when grounding metadata is present.",
+    );
+    expect(geminiLarge?.pricing_notes).toContain(
+        "Prompts above 200K tokens use Gemini long-context rates.",
+    );
 });
 
 test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {

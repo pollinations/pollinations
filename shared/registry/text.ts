@@ -6,6 +6,19 @@ import {
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
+const GEMINI_25_GROUNDING_PRICING_NOTES = [
+    "Google Search grounding adds $35 / 1K grounded prompts when grounding metadata is present.",
+];
+
+const GEMINI_3_SEARCH_PRICING_NOTES = [
+    "Google Search grounding adds $14 / 1K search queries when grounding metadata is present.",
+];
+
+const GEMINI_31_PRO_PRICING_NOTES = [
+    "Prompts above 200K tokens use Gemini long-context rates.",
+    ...GEMINI_3_SEARCH_PRICING_NOTES,
+];
+
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
     "alloy",
@@ -285,6 +298,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(3.0),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        pricingNotes: GEMINI_3_SEARCH_PRICING_NOTES,
         title: "Gemini 3 Flash",
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -315,6 +329,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(9.0),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        pricingNotes: GEMINI_3_SEARCH_PRICING_NOTES,
         title: "Gemini 3.5 Flash",
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -347,6 +362,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.5),
         },
         calculateCost: calculateGeminiSearchQueryCost,
+        pricingNotes: GEMINI_3_SEARCH_PRICING_NOTES,
         title: "Gemini 3.1 Flash Lite",
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio", "video"],
@@ -375,6 +391,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
         calculateCost: calculateGeminiGroundedPromptCost,
+        pricingNotes: GEMINI_25_GROUNDING_PRICING_NOTES,
         title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image", "video"],
@@ -573,6 +590,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(0.4),
         },
         calculateCost: calculateGeminiGroundedPromptCost,
+        pricingNotes: GEMINI_25_GROUNDING_PRICING_NOTES,
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
@@ -605,6 +623,8 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
+        calculateCost: calculateGeminiSearchQueryCost,
+        pricingNotes: GEMINI_3_SEARCH_PRICING_NOTES,
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
@@ -635,6 +655,8 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5),
             completionTextTokens: perMillion(9.0),
         },
+        calculateCost: calculateGeminiSearchQueryCost,
+        pricingNotes: GEMINI_3_SEARCH_PRICING_NOTES,
         title: "Gemini 3.5 Flash Search",
         description: "Gemini 3.5 Flash Search - Premium grounded web research",
         inputModalities: ["text", "image", "audio", "video"],
@@ -980,6 +1002,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(12.0),
         },
         calculateCost: calculateGemini31ProCost,
+        pricingNotes: GEMINI_31_PRO_PRICING_NOTES,
         title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",

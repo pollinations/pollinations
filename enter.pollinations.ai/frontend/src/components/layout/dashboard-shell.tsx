@@ -31,6 +31,7 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
+import { AccentSwitcher } from "./accent-switcher.tsx";
 import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
@@ -547,6 +548,8 @@ const DashboardFooter: FC<{
                 </a>
             ))}
         </div>
+        {/* TEMP — accent theme switcher (audition palettes). Remove with accent-switcher.tsx. */}
+        <AccentSwitcher />
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
             {/* accent on the toggle's active icon, over the neutral rail */}

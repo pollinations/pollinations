@@ -2,13 +2,16 @@ import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Tooltip } from "./Tooltip.tsx";
 
-/** IconButton only supports `danger` (delete icons). */
-type IconButtonIntent = "danger";
+/** `danger` (delete, red) and `info` (edit/links, blue). */
+type IconButtonIntent = "danger" | "info";
 
 const intentClasses: Record<IconButtonIntent, string> = {
     danger:
         "polli:bg-intent-danger-bg-light polli:hover:bg-intent-danger-bg-hover " +
         "polli:text-intent-danger-text",
+    info:
+        "polli:bg-intent-info-bg-light polli:hover:bg-intent-info-bg-hover " +
+        "polli:text-intent-info-text",
 };
 
 // Default (no intent): cascade-driven theme tile, deeper on hover.

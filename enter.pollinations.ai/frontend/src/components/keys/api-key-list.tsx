@@ -105,6 +105,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     <div className="flex gap-1 shrink-0 ml-2 items-center">
                         <IconButton
+                            intent="info"
                             title="Edit key"
                             tooltip="✏️ Edit key"
                             tooltipAlign="center"

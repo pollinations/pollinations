@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
 
-/** Button only supports `danger`. Label/status color recipes live on Chip. */
-type ButtonIntent = "danger";
+/** `danger` (red) and `info` (edit/links, blue). Label recipes live on Chip. */
+type ButtonIntent = "danger" | "info";
 
 const sizes = {
     sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
@@ -21,6 +21,9 @@ const intentClasses: Record<ButtonIntent, string> = {
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
+    info:
+        "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
+        "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
 };
 
 type BaseButtonProps = {

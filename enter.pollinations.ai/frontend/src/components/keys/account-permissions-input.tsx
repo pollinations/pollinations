@@ -1,5 +1,5 @@
 import { ButtonGroup, Collapsible, cn } from "@pollinations/ui";
-import { ModalityDot, ModalityTab } from "@pollinations/ui/gen";
+import { ModalityTab } from "@pollinations/ui/gen";
 import type { FC } from "react";
 import { useState } from "react";
 import {
@@ -288,18 +288,14 @@ const ModelCategory: FC<{
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-theme-text-strong">
-                <ModalityDot modality={label} />
+            <span className="text-sm font-semibold text-theme-text-strong">
                 {label}
             </span>
             <button
                 type="button"
                 onClick={() => toggleCategory(models)}
                 disabled={disabled}
-                className={cn(
-                    "text-micro disabled:opacity-50 cursor-pointer",
-                    getPermissionUiTheme().accent.actionTextClasses,
-                )}
+                className="text-micro font-medium uppercase tracking-wide text-theme-text-muted transition-colors hover:text-theme-text-base disabled:opacity-50 cursor-pointer"
             >
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
             </button>

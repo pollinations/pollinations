@@ -5,17 +5,12 @@ type PermissionUiFrameConfig = {
     focusRingClasses: string;
 };
 
-type PermissionUiAccentConfig = {
-    actionTextClasses: string;
-};
-
 type PermissionUiInputConfig = {
     classes: string;
 };
 
 type PermissionUiThemeConfig = {
     row: PermissionUiFrameConfig;
-    accent: PermissionUiAccentConfig;
     input: PermissionUiInputConfig;
 };
 
@@ -30,9 +25,6 @@ const FRAME: PermissionUiThemeConfig = {
         rowHoverClasses: "hover:bg-theme-bg-pale hover:border-theme-border",
         focusRingClasses:
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-border",
-    },
-    accent: {
-        actionTextClasses: "text-theme-text-soft hover:text-theme-text-strong",
     },
     input: {
         classes:

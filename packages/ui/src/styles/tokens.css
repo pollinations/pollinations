@@ -107,10 +107,10 @@
 }
 
 /* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
-   STATUS (feedback) = danger / success / warning — the traffic-light trio;
-   LABELS (informational) = news / alpha — not status, their own system. */
+   STATUS (feedback) = danger / success / warning / info — the action quartet
+   (info = blue, for edit/links); LABELS (informational) = news / alpha. */
 :root {
-    /* STATUS — danger / success / warning */
+    /* STATUS — danger / success / warning / info */
     --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
     --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
@@ -119,6 +119,9 @@
     --polli-color-success-text:     oklch(0.38 0.12 150);
     --polli-color-warning-bg-light: oklch(0.94 0.06 75);
     --polli-color-warning-text:     oklch(0.45 0.13 65);
+    --polli-color-info-bg-light:    oklch(0.935 0.04 252);
+    --polli-color-info-bg-hover:    oklch(0.88 0.05 252);
+    --polli-color-info-text:        oklch(0.5 0.15 252);
     /* LABELS — news / alpha */
     --polli-color-news-bg-light:    oklch(0.935 0.06 158);
     --polli-color-news-text:        oklch(0.46 0.13 158);
@@ -210,6 +213,9 @@
     --polli-color-success-text:     oklch(0.86 0.1 150);
     --polli-color-warning-bg-light: oklch(0.36 0.075 75);
     --polli-color-warning-text:     oklch(0.87 0.1 75);
+    --polli-color-info-bg-light:    oklch(0.36 0.08 252);
+    --polli-color-info-bg-hover:    oklch(0.43 0.095 252);
+    --polli-color-info-text:        oklch(0.82 0.09 252);
     --polli-color-news-bg-light:    oklch(0.35 0.07 158);
     --polli-color-news-text:        oklch(0.86 0.1 158);
     --polli-color-alpha-bg-light:   oklch(0.35 0.085 300);
@@ -303,6 +309,9 @@
     --color-intent-success-text:     var(--polli-color-success-text);
     --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
     --color-intent-warning-text:     var(--polli-color-warning-text);
+    --color-intent-info-bg-light:    var(--polli-color-info-bg-light);
+    --color-intent-info-bg-hover:    var(--polli-color-info-bg-hover);
+    --color-intent-info-text:        var(--polli-color-info-text);
     --color-intent-news-bg-light:    var(--polli-color-news-bg-light);
     --color-intent-news-text:        var(--polli-color-news-text);
     --color-intent-alpha-bg-light:   var(--polli-color-alpha-bg-light);

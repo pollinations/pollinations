@@ -105,6 +105,9 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
     calculateCost?: CostCalculator<TModelId>;
+    // Provider fee that is charged once per request, expressed as USD per
+    // 1,000 requests. Used for request-determined search fees such as Perplexity.
+    searchFeePerThousandRequests?: number;
     pricingNotes?: string[];
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -298,9 +301,15 @@ export function calculateCost(
     const linearCost = (costDefinition = svc.cost) =>
         calculateLinearCost(model, usage, costDefinition);
 
-    return svc.calculateCost
+    const usageCost = svc.calculateCost
         ? svc.calculateCost({ usage, output, model: svc, linearCost })
         : linearCost();
+    if (!svc.searchFeePerThousandRequests) return usageCost;
+    return {
+        ...usageCost,
+        totalCost:
+            usageCost.totalCost + svc.searchFeePerThousandRequests / 1000,
+    };
 }
 
 /**

@@ -215,6 +215,48 @@ test("Gemini dynamic billing notes are exposed in model catalog metadata", () =>
     );
 });
 
+test("Perplexity request search fees are added by the shared cost path", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const cases = [
+        ["perplexity-fast", 2.005],
+        ["perplexity-deep", 2.012],
+        ["perplexity", 18.014],
+        ["perplexity-reasoning", 10.014],
+    ] as const;
+
+    for (const [model, total] of cases) {
+        const cost = calculateCost(model, usage);
+        const price = calculatePrice(model, usage);
+
+        expect(cost.totalCost).toBeCloseTo(total, 8);
+        expect(price.totalPrice).toBeCloseTo(total, 8);
+    }
+});
+
+test("Perplexity request fees are exposed in model catalog metadata", () => {
+    const models = getTextModelsInfo();
+
+    expect(
+        models.find((model) => model.name === "perplexity-fast")
+            ?.search_fee_per_thousand_requests,
+    ).toBe(5);
+    expect(
+        models.find((model) => model.name === "perplexity-deep")
+            ?.search_fee_per_thousand_requests,
+    ).toBe(12);
+    expect(
+        models.find((model) => model.name === "perplexity")
+            ?.search_fee_per_thousand_requests,
+    ).toBe(14);
+    expect(
+        models.find((model) => model.name === "perplexity-reasoning")
+            ?.search_fee_per_thousand_requests,
+    ).toBe(14);
+});
+
 test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {
     const shortContextCost = calculateCost("gemini-large", {
         promptTextTokens: 200_000,

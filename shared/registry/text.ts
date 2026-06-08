@@ -19,6 +19,14 @@ const GEMINI_31_PRO_PRICING_NOTES = [
     ...GEMINI_3_SEARCH_PRICING_NOTES,
 ];
 
+const PERPLEXITY_LOW_SEARCH_PRICING_NOTES = [
+    "Perplexity Search adds $5 / 1K requests for low search context.",
+];
+
+const PERPLEXITY_HIGH_SEARCH_PRICING_NOTES = [
+    "Perplexity Search adds a model-specific high-context request fee.",
+];
+
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
     "alloy",
@@ -841,10 +849,9 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
-        // (~$5/1k at low search_context_size), which our token-based billing
-        // cannot capture directly. Temporary until a per-request fee field exists.
         priceMultiplier: 1,
+        searchFeePerThousandRequests: 5,
+        pricingNotes: PERPLEXITY_LOW_SEARCH_PRICING_NOTES,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -867,11 +874,9 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        // Same sonar base as perplexity-fast but high search_context_size for
-        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
-        // matches fast for now — they bill identically until a per-request fee
-        // field lets us price the deeper search separately.
         priceMultiplier: 1,
+        searchFeePerThousandRequests: 12,
+        pricingNotes: PERPLEXITY_HIGH_SEARCH_PRICING_NOTES,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -893,6 +898,8 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
+        searchFeePerThousandRequests: 14,
+        pricingNotes: PERPLEXITY_HIGH_SEARCH_PRICING_NOTES,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -914,6 +921,8 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
+        searchFeePerThousandRequests: 14,
+        pricingNotes: PERPLEXITY_HIGH_SEARCH_PRICING_NOTES,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),

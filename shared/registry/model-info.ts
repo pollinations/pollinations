@@ -39,6 +39,7 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    search_fee_per_thousand_requests: z.number().positive().optional(),
     pricing_notes: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
@@ -104,6 +105,9 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         category: service.category,
         brand: service.brand,
         pricing,
+        search_fee_per_thousand_requests: service.searchFeePerThousandRequests
+            ? service.searchFeePerThousandRequests * service.priceMultiplier
+            : undefined,
         pricing_notes: service.pricingNotes,
         // User-facing metadata from service definition
         title: service.title,

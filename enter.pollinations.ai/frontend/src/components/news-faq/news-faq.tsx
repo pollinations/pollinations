@@ -1,4 +1,4 @@
-import { ExternalLinkButton, Section } from "@pollinations/ui";
+import { ExternalLinkButton, GitHubIcon, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ, FAQ_GITHUB_URL } from "./faq.tsx";
 import {
@@ -17,7 +17,10 @@ export const NewsFaq: FC = () => (
             framed
             action={
                 <ExternalLinkButton href={HIGHLIGHTS_GITHUB_URL}>
-                    📰 More on GitHub
+                    <span className="inline-flex items-center gap-1.5">
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        More on GitHub
+                    </span>
                 </ExternalLinkButton>
             }
         >
@@ -28,7 +31,10 @@ export const NewsFaq: FC = () => (
             framed
             action={
                 <ExternalLinkButton href={FAQ_GITHUB_URL}>
-                    ❓ View on GitHub
+                    <span className="inline-flex items-center gap-1.5">
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        View on GitHub
+                    </span>
                 </ExternalLinkButton>
             }
         >

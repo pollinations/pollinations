@@ -1,7 +1,6 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { getMockEarningsData, isActivityMockEnabled } from "./mock-data.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
 export type DeveloperEarningsRow = {
@@ -64,7 +63,6 @@ export function useEarningsData(
 
     const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
     const { granularity, period } = filters.period;
-    const selectedAppKeyIds = filters.selectedAppKeyIds;
 
     const fetchEarnings = useCallback(() => {
         inFlightRef.current?.abort();
@@ -76,18 +74,6 @@ export function useEarningsData(
         setDailyEarnings([]);
         setPerApp([]);
         setGlobalSummary(null);
-
-        if (isActivityMockEnabled()) {
-            const mock = getMockEarningsData(
-                { granularity, period },
-                selectedAppKeyIds,
-            );
-            setDailyEarnings(mock.daily);
-            setPerApp(mock.perApp);
-            setGlobalSummary(mock.global);
-            setLoading(false);
-            return;
-        }
 
         const query: {
             granularity: string;
@@ -132,7 +118,7 @@ export function useEarningsData(
                 if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [granularity, period, selectedAppKeyIds, selectedAppKeyIdsKey]);
+    }, [granularity, period, selectedAppKeyIdsKey]);
 
     useEffect(() => {
         fetchEarnings();

@@ -2,7 +2,6 @@ import type { PeriodSelection } from "@pollinations/ui";
 
 export type DailyUsageRecord = {
     date: string;
-    api_key_id?: string;
     model: string | null;
     meter_source: string | null;
     requests: number;

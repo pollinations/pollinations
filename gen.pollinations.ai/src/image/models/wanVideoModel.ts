@@ -27,6 +27,13 @@ interface WanModelConfig {
     trackingName: string;
     displayName: string;
     audioBundledWithVideo?: boolean;
+    /**
+     * wan2.7+ replaced the legacy `input.img_url` string with a unified
+     * `input.media` array of `{ type, url }` (type ∈ first_frame | last_frame |
+     * driving_audio | first_clip). When set, i2v sends the image as
+     * media[{type:"first_frame"}] instead of img_url.
+     */
+    usesMediaArray?: boolean;
 }
 
 const WAN_26_CONFIG: WanModelConfig = {
@@ -64,6 +71,7 @@ const WAN_27_CONFIG: WanModelConfig = {
     trackingName: "wan-pro",
     displayName: "Wan 2.7",
     audioBundledWithVideo: true,
+    usesMediaArray: true,
 };
 
 // kf2v uses a different DashScope endpoint than i2v/t2v
@@ -124,6 +132,7 @@ interface DashScopeRequest {
         img_url?: string;
         first_frame_url?: string;
         last_frame_url?: string;
+        media?: Array<{ type: string; url: string }>;
     };
     parameters: {
         resolution: string;
@@ -402,6 +411,31 @@ function buildDashScopeRequest(
             },
         };
     }
+    // wan2.7+ unified i2v inputs into an input.media[] array ({type, url});
+    // the legacy img_url string is accepted at submit but fails the task async
+    // with "Field required: input.media". Map the start image to first_frame.
+    if (config.usesMediaArray) {
+        return {
+            model: firstFrameUrl ? config.i2vModel : config.t2vModel,
+            input: firstFrameUrl
+                ? {
+                      prompt,
+                      media: [
+                          {
+                              type: "first_frame",
+                              url: prepareImageUrl(firstFrameUrl),
+                          },
+                      ],
+                  }
+                : { prompt },
+            parameters: {
+                resolution: videoParams.resolution,
+                duration: videoParams.durationSeconds,
+                prompt_extend: true,
+                audio: videoParams.generateAudio,
+            },
+        };
+    }
     return {
         model: firstFrameUrl ? config.i2vModel : config.t2vModel,
         input: firstFrameUrl
@@ -446,6 +480,10 @@ function logRequestSafely(requestBody: DashScopeRequest): void {
             img_url: mask(requestBody.input.img_url),
             first_frame_url: mask(requestBody.input.first_frame_url),
             last_frame_url: mask(requestBody.input.last_frame_url),
+            media: requestBody.input.media?.map((m) => ({
+                ...m,
+                url: mask(m.url),
+            })),
         },
     };
     logOps("DashScope API request:", JSON.stringify(safeRequest, null, 2));

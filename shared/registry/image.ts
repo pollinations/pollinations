@@ -534,7 +534,7 @@ export const IMAGE_SERVICES = {
     "p-image": {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",
-        provider: "pruna",
+        provider: "replicate",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -551,7 +551,7 @@ export const IMAGE_SERVICES = {
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
         modelId: "p-image-edit",
-        provider: "pruna",
+        provider: "replicate",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -566,22 +566,43 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // Pollinations route cap.
     },
-    "p-video": {
-        aliases: ["pruna-video"],
-        modelId: "p-video",
-        provider: "pruna",
+    // Pruna p-video is one Replicate model (prunaai/p-video) priced per second
+    // by resolution: 720p $0.02/s, 1080p $0.04/s. The registry carries one flat
+    // rate per model, so we expose the two tiers as separate models, each with
+    // its real per-second cost. `p-video` aliases to the 720p tier.
+    "p-video-720p": {
+        aliases: ["p-video", "pruna-video"],
+        modelId: "p-video-720p",
+        provider: "replicate",
         brand: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // $0.12 per run / 5s default = $0.024/sec
-            completionVideoSeconds: 0.024, // per sec
+            completionVideoSeconds: 0.02, // Replicate 720p per sec
         },
-        title: "Pruna p-video",
-        description:
-            "Pruna p-video - Text/image-to-video generation (up to 1080p)",
+        title: "Pruna p-video 720p",
+        description: "Pruna p-video - Text/image-to-video generation (720p)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+    },
+    "p-video-1080p": {
+        aliases: ["pruna-video-1080p"],
+        modelId: "p-video-1080p",
+        provider: "replicate",
+        brand: "Pruna",
+        category: "video",
+        addedDate: new Date("2026-06-09").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.04, // Replicate 1080p per sec
+        },
+        title: "Pruna p-video 1080p",
+        description: "Pruna p-video - Text/image-to-video generation (1080p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

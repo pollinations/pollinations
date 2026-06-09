@@ -9,7 +9,7 @@ const APPEAL_URL =
 type TierFinePrintProps = { showTierHint?: boolean };
 
 const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
-    <div className="mt-5 space-y-2 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
+    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
         {showTierHint && (
             <p className="flex items-start gap-1.5">
                 <TrendUpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />

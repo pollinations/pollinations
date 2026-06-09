@@ -255,7 +255,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
@@ -276,32 +276,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     }
                 >
                     <div className="flex flex-col gap-3">
-                        <Surface
-                            variant="card-themed"
-                            className="w-fit text-theme-text-strong"
-                        >
-                            <span className="font-body text-xs font-bold uppercase tracking-wide text-intent-danger-text mr-1.5">
-                                New!
-                            </span>
-                            Turn on earnings to receive a share of pollen users
-                            spend in your app.{" "}
-                            <a
-                                href={genDocsUrl("#tag/bring-your-own-pollen")}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-theme-text-soft hover:text-theme-text-strong"
-                            >
-                                <span className="underline underline-offset-2">
-                                    Read the guide
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    className="no-underline ml-0.5"
-                                >
-                                    ↗
-                                </span>
-                            </a>
-                        </Surface>
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
@@ -316,13 +290,43 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
-                        <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
-                        </span>
-                    </p>
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <p className="flex items-start gap-1.5">
+                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                For apps where users sign in with their own
+                                Pollinations account and spend their own Pollen.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <span className="font-bold uppercase tracking-wide text-intent-danger-text mr-1">
+                                    New!
+                                </span>
+                                Turn on earnings to receive a share of pollen
+                                users spend in your app.{" "}
+                                <a
+                                    href={genDocsUrl(
+                                        "#tag/bring-your-own-pollen",
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-theme-text-soft hover:text-theme-text-strong"
+                                >
+                                    <span className="underline underline-offset-2">
+                                        Read the guide
+                                    </span>
+                                    <span
+                                        aria-hidden="true"
+                                        className="no-underline ml-0.5"
+                                    >
+                                        ↗
+                                    </span>
+                                </a>
+                            </span>
+                        </p>
+                    </div>
                 </Section>
             </div>
             <DeleteConfirmation

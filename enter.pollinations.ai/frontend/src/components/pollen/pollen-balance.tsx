@@ -4,6 +4,7 @@ import {
     CopyButton,
     InfoTip,
     MailIcon,
+    Surface,
     Tooltip,
     WalletIcon,
 } from "@pollinations/ui";
@@ -181,7 +182,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="mt-5 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
+            <div className="mt-4 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <button
                     type="button"
                     onClick={() => {
@@ -284,7 +285,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
 
     return (
         <>
-            <div className="space-y-4">
+            <Surface>
                 {selectedPack && (
                     <div className="flex w-full flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
                         <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
@@ -321,11 +322,11 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         </Tooltip>
                     </div>
                 )}
-            </div>
-            <div className="mt-5 border-t border-divider pt-5">
+            </Surface>
+            <Surface>
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
-            </div>
-            <div className="mt-5 space-y-2 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
+            </Surface>
+            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>

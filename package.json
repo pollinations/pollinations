@@ -9,6 +9,7 @@
     "packages/ui",
     "apps/react",
     "apps/life-merge",
+    "apps/brainrot-merge",
     "tools/icons"
   ],
   "scripts": {

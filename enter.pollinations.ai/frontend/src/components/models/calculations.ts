@@ -45,3 +45,13 @@ export function calculatePerPollen(model: ModelPrice): string {
 
     return "—";
 }
+
+/** Coarse unit noun per model type, used in the "1 pollen ≈ …" column. */
+export const unitLabels: Record<string, string> = {
+    text: "responses",
+    image: "images",
+    video: "videos",
+    audio: "responses",
+    realtime: "sessions",
+    embedding: "embeddings",
+};

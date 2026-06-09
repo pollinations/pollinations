@@ -1,14 +1,15 @@
-import { Chip, Surface, Tooltip } from "@pollinations/ui";
+import { CardIcon, Chip, SproutIcon, Surface, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { calculatePerPollen } from "./calculations.ts";
+import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
-    getModelCapabilityIcons,
+    getModelCapabilities,
     getModelCapabilityLabel,
     getModelDescriptionWithoutName,
     getModelDisplayName,
-    getModelModalityIcons,
+    getModelInputModalities,
     getModelModalityLabel,
     isAlpha,
     isNewModel,
@@ -25,9 +26,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const modelDescription = getModelDescriptionWithoutName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
+    const inputModalities = getModelInputModalities(model.name);
     const modalityLabel = getModelModalityLabel(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const capabilities = getModelCapabilities(model.name);
     const capabilityLabel = getModelCapabilityLabel(model.name);
     const publicModelName = modelDisplayName || model.name;
     const showNew = isNewModel(model.name);
@@ -35,79 +36,84 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showAlpha = isAlpha(model.name);
 
     const genPerPollen = calculatePerPollen(model);
+    const balanceLabel = showPaidOnly ? "Paid balance only" : "Tier balance";
+    const perPollenTooltip =
+        genPerPollen === "—"
+            ? balanceLabel
+            : `${balanceLabel} · ≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen`;
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
-            emoji: "💬",
-            subEmojis: ["💬"],
+            kind: "text",
+            subKinds: ["text"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptCachedPrice],
-            emoji: "💾",
-            subEmojis: ["💾"],
+            kind: "cached",
+            subKinds: ["cached"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptAudioPrice],
-            emoji: "🎙️",
-            subEmojis: ["🎙️"],
+            kind: "audioIn",
+            subKinds: ["audioIn"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptVideoPrice],
-            emoji: "🎬",
-            subEmojis: ["🎬"],
+            kind: "video",
+            subKinds: ["video"],
             perToken: model.perToken,
         },
     ]);
     const outputPriceBadges = groupPriceBadges([
         {
             prices: [model.completionTextPrice],
-            emoji: "💬",
-            subEmojis: ["💬"],
+            kind: "text",
+            subKinds: ["text"],
             perToken: model.perToken,
         },
         {
             prices: [model.completionAudioPrice],
-            emoji: "🔊",
-            subEmojis: ["🔊"],
+            kind: "audioOut",
+            subKinds: ["audioOut"],
             perToken: model.perToken,
         },
         {
             prices: [model.perSecondPrice],
-            emoji: model.type === "audio" ? "🔊" : "🎬",
-            subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
+            kind: model.type === "audio" ? "audioOut" : "video",
+            subKinds: [model.type === "audio" ? "audioOut" : "video"],
             perSecond: true,
         },
         {
             prices: [model.perAudioSecondPrice],
-            emoji: "🔊",
-            subEmojis: ["🔊"],
+            kind: "audioOut",
+            subKinds: ["audioOut"],
             perSecond: true,
         },
         {
             prices: [model.perTokenPrice],
-            emoji: "🎬",
-            subEmojis: ["🎬"],
+            kind: "video",
+            subKinds: ["video"],
             perToken: true,
         },
         {
             prices: [model.perImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perImage: true,
         },
         {
             prices: [model.completionImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perToken: model.perToken,
         },
     ]);
@@ -134,8 +140,24 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 )}
             </div>
 
-            {/* Model info — flexible width */}
-            <div className="flex-1 min-w-0 pl-3">
+            {/* Hairline separating the brand logo from the model info —
+                spaced clear of the logo square on both sides */}
+            {brandLogoPath && (
+                <span
+                    aria-hidden="true"
+                    className="mx-3 h-10 w-px shrink-0 self-center bg-divider"
+                />
+            )}
+
+            {/* Model info — flexible width; logo-less rows pad to the same
+                start (40px logo + 25px divider footprint = 65px) */}
+            <div
+                className={
+                    brandLogoPath
+                        ? "flex-1 min-w-0"
+                        : "flex-1 min-w-0 pl-[25px]"
+                }
+            >
                 <div className="flex min-w-0 flex-col gap-1.5">
                     {modelDescription ? (
                         <Tooltip
@@ -152,29 +174,51 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {publicModelName}
                         </span>
                     )}
-                    {(modalityIcons.length > 0 ||
-                        capabilityIcons.length > 0 ||
+                    {(inputModalities.length > 0 ||
+                        capabilities.length > 0 ||
                         showNew ||
-                        showAlpha ||
-                        showPaidOnly) && (
+                        showAlpha) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            {modalityIcons.length > 0 && (
-                                <Tooltip content={modalityLabel}>
-                                    <Chip size="sm">
-                                        {modalityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Chip>
-                                </Tooltip>
-                            )}
-                            {capabilityIcons.length > 0 && (
-                                <Tooltip content={capabilityLabel}>
-                                    <Chip size="sm">
-                                        {capabilityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Chip>
-                                </Tooltip>
+                            {(inputModalities.length > 0 ||
+                                capabilities.length > 0) && (
+                                <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                                    {inputModalities.length > 0 && (
+                                        <Tooltip content={modalityLabel}>
+                                            <span className="inline-flex items-center gap-2">
+                                                {inputModalities.map((key) => {
+                                                    const Icon =
+                                                        MODALITY_ICON[key];
+                                                    return (
+                                                        <Icon
+                                                            key={key}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    );
+                                                })}
+                                            </span>
+                                        </Tooltip>
+                                    )}
+                                    {inputModalities.length > 0 &&
+                                        capabilities.length > 0 && (
+                                            <span className="h-3.5 w-px bg-current opacity-30" />
+                                        )}
+                                    {capabilities.length > 0 && (
+                                        <Tooltip content={capabilityLabel}>
+                                            <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                                                {capabilities.map((key) => {
+                                                    const Icon =
+                                                        CAPABILITY_ICON[key];
+                                                    return (
+                                                        <Icon
+                                                            key={key}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    );
+                                                })}
+                                            </span>
+                                        </Tooltip>
+                                    )}
+                                </div>
                             )}
                             {showNew && (
                                 <Chip intent="news" size="sm">
@@ -182,15 +226,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 </Chip>
                             )}
                             {showAlpha && (
-                                <Tooltip content="🧪 Alpha model — experimental, may be unstable">
+                                <Tooltip content="Alpha model — experimental, may be unstable">
                                     <Chip intent="alpha" size="sm">
                                         ALPHA
                                     </Chip>
-                                </Tooltip>
-                            )}
-                            {showPaidOnly && (
-                                <Tooltip content="💳 This model uses paid balance only.">
-                                    <PaidChip size="sm">PAID</PaidChip>
                                 </Tooltip>
                             )}
                         </div>
@@ -198,14 +237,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; paid color for paid models, tier color
-                for tier models */}
+            {/* Per pollen — fixed width; gold + card for paid-only models, green
+                + sprout for tier-eligible models (replaces the old PAID badge) */}
             <div className="w-[90px] text-center shrink-0">
-                {showPaidOnly ? (
-                    <PaidChip>{genPerPollen}</PaidChip>
-                ) : (
-                    <TierChip>{genPerPollen}</TierChip>
-                )}
+                <Tooltip content={perPollenTooltip} displayContents>
+                    {showPaidOnly ? (
+                        <PaidChip>
+                            <CardIcon className="h-3.5 w-3.5" />
+                            {genPerPollen}
+                        </PaidChip>
+                    ) : (
+                        <TierChip>
+                            <SproutIcon className="h-3.5 w-3.5" />
+                            {genPerPollen}
+                        </TierChip>
+                    )}
+                </Tooltip>
             </div>
 
             {/* Input prices — fixed width */}
@@ -213,7 +260,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {inputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
@@ -225,7 +272,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {outputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}

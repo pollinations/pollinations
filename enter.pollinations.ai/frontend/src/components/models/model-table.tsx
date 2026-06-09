@@ -1,4 +1,10 @@
-import { ChevronIcon, Chip, Tooltip } from "@pollinations/ui";
+import {
+    CardIcon,
+    ChevronIcon,
+    Chip,
+    SproutIcon,
+    Tooltip,
+} from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
@@ -6,16 +12,19 @@ import {
     type PriceDefinition,
 } from "@shared/registry/registry.ts";
 import { type FC, useState } from "react";
-import { calculatePerPollen } from "./calculations.ts";
+import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
-    getModelCapabilityIcons,
+    getModelCapabilities,
     getModelDisplayName,
-    getModelModalityIcons,
+    getModelInputModalities,
+    type InputModality,
     isAlpha,
     isNewModel,
     isPaidOnly,
     isPersona,
+    type ModelCapability,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import {
@@ -127,15 +136,6 @@ const sortModels = (
     });
 };
 
-const unitLabels: Record<string, string> = {
-    text: "responses",
-    image: "images",
-    video: "videos",
-    audio: "responses",
-    realtime: "sessions",
-    embedding: "embeddings",
-};
-
 export const sectionLabels: Record<SectionType, string> = {
     image: "Image",
     video: "Video",
@@ -219,8 +219,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const [expanded, setExpanded] = useState(false);
     const displayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const inputModalities = getModelInputModalities(model.name);
+    const capabilities = getModelCapabilities(model.name);
     const publicModelName = displayName || model.name;
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
@@ -242,67 +242,61 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     className="absolute inset-0 w-full rounded-xl cursor-pointer"
                     onClick={() => setExpanded(!expanded)}
                 />
-                <div className="relative z-10 pointer-events-none grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 p-4">
-                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <ChevronIcon
-                            expanded={expanded}
-                            className="mt-1 h-3.5 w-3.5 shrink-0 text-theme-text-muted"
+                <div className="relative z-10 pointer-events-none flex items-center gap-2.5 p-4">
+                    <ChevronIcon
+                        expanded={expanded}
+                        className="h-3.5 w-3.5 shrink-0 text-theme-text-muted"
+                    />
+                    {brandLogoPath && (
+                        <span
+                            aria-hidden="true"
+                            className="h-[1.35rem] w-[1.35rem] shrink-0 bg-current opacity-55"
+                            style={{
+                                maskImage: `url(${brandLogoPath})`,
+                                WebkitMaskImage: `url(${brandLogoPath})`,
+                                maskRepeat: "no-repeat",
+                                WebkitMaskRepeat: "no-repeat",
+                                maskPosition: "center",
+                                WebkitMaskPosition: "center",
+                                maskSize: "contain",
+                                WebkitMaskSize: "contain",
+                            }}
                         />
-                        <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                                {brandLogoPath && (
-                                    <span
-                                        aria-hidden="true"
-                                        className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
-                                        style={{
-                                            maskImage: `url(${brandLogoPath})`,
-                                            WebkitMaskImage: `url(${brandLogoPath})`,
-                                            maskRepeat: "no-repeat",
-                                            WebkitMaskRepeat: "no-repeat",
-                                            maskPosition: "center",
-                                            WebkitMaskPosition: "center",
-                                            maskSize: "contain",
-                                            WebkitMaskSize: "contain",
-                                        }}
-                                    />
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="min-w-0 truncate text-sm font-medium">
+                            {publicModelName}
+                        </span>
+                        {(showNew ||
+                            showAlpha ||
+                            inputModalities.length > 0 ||
+                            capabilities.length > 0) && (
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                <MobileMetadataBadges
+                                    inputModalities={inputModalities}
+                                    capabilities={capabilities}
+                                />
+                                {showNew && (
+                                    <Chip intent="news" size="sm">
+                                        NEW
+                                    </Chip>
                                 )}
-                                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                                    {publicModelName}
-                                </span>
+                                {showAlpha && (
+                                    <Chip intent="alpha" size="sm">
+                                        ALPHA
+                                    </Chip>
+                                )}
                             </div>
-                            {(showNew ||
-                                showAlpha ||
-                                showPaidOnly ||
-                                modalityIcons.length > 0 ||
-                                capabilityIcons.length > 0) && (
-                                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                                    <MobileMetadataBadges
-                                        modalityIcons={modalityIcons}
-                                        capabilityIcons={capabilityIcons}
-                                    />
-                                    {showNew && (
-                                        <Chip intent="news" size="sm">
-                                            NEW
-                                        </Chip>
-                                    )}
-                                    {showAlpha && (
-                                        <Chip intent="alpha" size="sm">
-                                            ALPHA
-                                        </Chip>
-                                    )}
-                                    {showPaidOnly && (
-                                        <PaidChip size="sm">PAID</PaidChip>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                     {showPaidOnly ? (
-                        <PaidChip className="justify-self-end">
+                        <PaidChip className="shrink-0">
+                            <CardIcon className="h-3.5 w-3.5" />
                             {perPollen}
                         </PaidChip>
                     ) : (
-                        <TierChip className="justify-self-end">
+                        <TierChip className="shrink-0">
+                            <SproutIcon className="h-3.5 w-3.5" />
                             {perPollen}
                         </TierChip>
                     )}
@@ -349,76 +343,76 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
             ? [
                   {
                       prices: [model.promptTextPrice],
-                      emoji: "💬",
-                      subEmojis: ["💬"],
+                      kind: "text",
+                      subKinds: ["text"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.promptCachedPrice],
-                      emoji: "💾",
-                      subEmojis: ["💾"],
+                      kind: "cached",
+                      subKinds: ["cached"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.promptAudioPrice],
-                      emoji: "🎙️",
-                      subEmojis: ["🎙️"],
+                      kind: "audioIn",
+                      subKinds: ["audioIn"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.promptImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
+                      kind: "image",
+                      subKinds: ["image"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.promptVideoPrice],
-                      emoji: "🎬",
-                      subEmojis: ["🎬"],
+                      kind: "video",
+                      subKinds: ["video"],
                       perToken: model.perToken,
                   },
               ]
             : [
                   {
                       prices: [model.completionTextPrice],
-                      emoji: "💬",
-                      subEmojis: ["💬"],
+                      kind: "text",
+                      subKinds: ["text"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.completionAudioPrice],
-                      emoji: "🔊",
-                      subEmojis: ["🔊"],
+                      kind: "audioOut",
+                      subKinds: ["audioOut"],
                       perToken: model.perToken,
                   },
                   {
                       prices: [model.perSecondPrice],
-                      emoji: model.type === "audio" ? "🔊" : "🎬",
-                      subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
+                      kind: model.type === "audio" ? "audioOut" : "video",
+                      subKinds: [model.type === "audio" ? "audioOut" : "video"],
                       perSecond: true,
                   },
                   {
                       prices: [model.perAudioSecondPrice],
-                      emoji: "🔊",
-                      subEmojis: ["🔊"],
+                      kind: "audioOut",
+                      subKinds: ["audioOut"],
                       perSecond: true,
                   },
                   {
                       prices: [model.perTokenPrice],
-                      emoji: "🎬",
-                      subEmojis: ["🎬"],
+                      kind: "video",
+                      subKinds: ["video"],
                       perToken: true,
                   },
                   {
                       prices: [model.perImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
+                      kind: "image",
+                      subKinds: ["image"],
                       perImage: true,
                   },
                   {
                       prices: [model.completionImagePrice],
-                      emoji: "🖼️",
-                      subEmojis: ["🖼️"],
+                      kind: "image",
+                      subKinds: ["image"],
                       perToken: model.perToken,
                   },
               ],
@@ -434,7 +428,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
             <div className="flex min-w-0 flex-wrap justify-end gap-1">
                 {badges.map((badge) => (
                     <PriceBadge
-                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                        key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                         {...badge}
                     />
                 ))}
@@ -444,35 +438,40 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 };
 
 type MobileMetadataBadgesProps = {
-    modalityIcons: string[];
-    capabilityIcons: string[];
+    inputModalities: InputModality[];
+    capabilities: ModelCapability[];
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
-    modalityIcons,
-    capabilityIcons,
+    inputModalities,
+    capabilities,
 }) => {
-    if (modalityIcons.length === 0 && capabilityIcons.length === 0) {
+    if (inputModalities.length === 0 && capabilities.length === 0) {
         return null;
     }
 
     return (
-        <>
-            {modalityIcons.length > 0 && (
-                <Chip size="sm">
-                    {modalityIcons.map((emoji) => (
-                        <span key={emoji}>{emoji}</span>
-                    ))}
-                </Chip>
+        <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+            {inputModalities.length > 0 && (
+                <span className="inline-flex items-center gap-2">
+                    {inputModalities.map((key) => {
+                        const Icon = MODALITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
             )}
-            {capabilityIcons.length > 0 && (
-                <Chip size="sm">
-                    {capabilityIcons.map((emoji) => (
-                        <span key={emoji}>{emoji}</span>
-                    ))}
-                </Chip>
+            {inputModalities.length > 0 && capabilities.length > 0 && (
+                <span className="h-3.5 w-px bg-current opacity-30" />
             )}
-        </>
+            {capabilities.length > 0 && (
+                <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                    {capabilities.map((key) => {
+                        const Icon = CAPABILITY_ICON[key];
+                        return <Icon key={key} className="h-4 w-4" />;
+                    })}
+                </span>
+            )}
+        </div>
     );
 };
 
@@ -525,7 +524,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-theme-text-base"
+                    className="flex-1 min-w-6 text-left pl-[65px] cursor-pointer hover:text-theme-text-base"
                 >
                     <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}
@@ -535,7 +534,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
-                            📊 Based on{" "}
+                            Based on{" "}
                             <span className="font-semibold text-theme-text-strong">
                                 average community usage
                             </span>

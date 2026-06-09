@@ -110,6 +110,18 @@ function formatNewsDate(date: string): string {
     });
 }
 
+/** Hand-curated, pinned announcements — stacked white cards. */
+export const Announcements: FC = () => {
+    if (PINNED_NEWS.length === 0) return null;
+    return (
+        <div className="flex flex-col gap-3">
+            {PINNED_NEWS.map((item) => (
+                <PinnedNews key={item.title} item={item} />
+            ))}
+        </div>
+    );
+};
+
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
@@ -122,36 +134,19 @@ export const NewsBanner: FC = () => {
             .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
 
-    if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
+    if (highlights.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-3">
-            {PINNED_NEWS.length > 0 && (
-                <Surface
-                    variant="card-themed"
-                    className="flex flex-col divide-y divide-theme-border leading-relaxed"
-                >
-                    {PINNED_NEWS.map((item) => (
-                        <PinnedNews key={item.title} item={item} />
-                    ))}
-                </Surface>
-            )}
-            {highlights.length > 0 && (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {highlights.map((item) => (
-                        <DynamicNews
-                            key={`${item.date}-${item.title}`}
-                            item={item}
-                        />
-                    ))}
-                </div>
-            )}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {highlights.map((item) => (
+                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
+            ))}
         </div>
     );
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <div className="min-w-0 py-3 first:pt-0 last:pb-0">
+    <Surface variant="card" className="min-w-0 leading-relaxed">
         {(item.dateLabel || item.date) && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 {item.dateLabel ??
@@ -178,7 +173,7 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
                 ))}
             </ul>
         )}
-    </div>
+    </Surface>
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (

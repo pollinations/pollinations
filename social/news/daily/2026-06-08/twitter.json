@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-08",
+  "period_start": "2026-06-08",
+  "period_end": "2026-06-08",
+  "generated_at": "2026-06-09T07:10:13.245218+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/twitter.jpg"
+    }
+  ],
+  "text": "hardcoding model lists in the UI is a great way to guarantee your dashboard is always out of date. just shipped a live model catalog. if a new model is running on the backend, it shows up in the dashboard immediately."
+}

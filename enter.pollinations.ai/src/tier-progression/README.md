@@ -19,6 +19,8 @@ these flows, but the business logic lives here.
 - `flows/spore-to-microbe-enrich.ts`: enrich the scan CSV with Tinybird consumption data
 - `flows/spore-to-microbe-review.ts`: apply usage-based rules to adjust block actions
 - `flows/spore-to-microbe-apply.ts`: apply tier downgrades from the reviewed report
+- `flows/abuse-scan.ts`: usage-first, all-tier abuse scan (read-only) → apply-compatible CSV
+- `flows/abuse-scan-lib.ts`: pure scoring/clustering/CSV logic for abuse-scan (unit-tested)
 - `flows/cleanup-github-users.ts`: audit D1 users against GitHub API (renamed/deleted accounts)
 - `shared/github_profile.py`: GitHub identity lookup and scoring logic
 - `shared/d1_updates.py`: shared D1 query and mutation helpers
@@ -65,6 +67,25 @@ npx tsx src/tier-progression/flows/spore-to-microbe-enrich.ts
 npx tsx src/tier-progression/flows/spore-to-microbe-review.ts
 npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks
 ```
+
+### abuse scan (usage-first, all tiers, read-only)
+
+`flows/abuse-scan.ts` ranks all non-microbe users by usage abuse signals (hammering +
+errors, free-credit burn) with IP-rotation / tight-subnet / email-root clustering, gates
+out payers (D1 purchase history + in-window pack pollen, with a live Stripe fallback on the
+shortlist), and writes `abuse-scan-report.csv` in the apply CSV schema. It mutates nothing.
+Pure logic + tests live in `abuse-scan-lib.ts` / `test/abuse-scan-lib.test.ts`.
+
+```bash
+npx tsx src/tier-progression/flows/abuse-scan.ts --days 7
+# review the CSV, then dry-run apply (--report is required):
+npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks \
+  --env production --report src/tier-progression/abuse-scan-report.csv --dry-run
+```
+
+Uses the prod Tinybird read token + Stripe key from `secrets/prod.vars.json` (NOT `.tinyb`,
+which is staging). Auto-`block` is reserved for severe hammering or clustered farms;
+mid-volume lone hammerers land in `review` for a human to confirm.
 
 ## Entry Point
 

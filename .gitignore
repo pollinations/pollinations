@@ -10,6 +10,7 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /DESIGN_REFACTOR_PLAN.md
 /Design Audit.html
 /_local/
+/.superpowers/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

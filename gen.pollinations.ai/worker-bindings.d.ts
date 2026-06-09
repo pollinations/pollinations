@@ -34,6 +34,9 @@ interface CloudflareBindings {
     AWS_BEDROCK_ACCESS_KEY_ID?: string;
     AWS_BEDROCK_SECRET_ACCESS_KEY?: string;
     AWS_BEDROCK_REGION?: string;
+    AWS_BEDROCK_MYCELI_ACCESS_KEY_ID?: string;
+    AWS_BEDROCK_MYCELI_SECRET_ACCESS_KEY?: string;
+    AWS_BEDROCK_MYCELI_REGION?: string;
     BEDROCK_GUARDRAIL_ID?: string;
     BEDROCK_GUARDRAIL_VERSION?: string;
     AZURE_MYCELI_PROD_API_KEY: string;

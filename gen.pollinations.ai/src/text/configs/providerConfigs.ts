@@ -73,14 +73,44 @@ export function createAzureModelConfig(
     };
 }
 
-export function createBedrockNativeConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
+/**
+ * Which AWS account's Bedrock credentials to use.
+ * - "default": original Pollinations account (301235909293) — all Bedrock models.
+ * - "myceli":  new Myceli org prod account (514585225061). Opt models in here as
+ *              their Bedrock quota on that account is raised enough to serve them.
+ *              No fallback: if these creds are missing the call fails loudly, so a
+ *              misrouted model is visible instead of silently served from the old account.
+ */
+type BedrockAccount = "default" | "myceli";
+
+function bedrockCredentials(
+    account: BedrockAccount,
+): Pick<
+    ProviderConfig,
+    "aws-access-key-id" | "aws-secret-access-key" | "aws-region"
+> {
+    if (account === "myceli") {
+        return {
+            "aws-access-key-id": process.env.AWS_BEDROCK_MYCELI_ACCESS_KEY_ID,
+            "aws-secret-access-key":
+                process.env.AWS_BEDROCK_MYCELI_SECRET_ACCESS_KEY,
+            "aws-region": process.env.AWS_BEDROCK_MYCELI_REGION || "us-east-1",
+        };
+    }
     return {
-        provider: "bedrock",
         "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
         "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
         "aws-region": process.env.AWS_REGION || "us-east-1",
+    };
+}
+
+export function createBedrockNativeConfig(
+    overrides: ModelOverride = {},
+    account: BedrockAccount = "default",
+): ProviderConfig {
+    return {
+        provider: "bedrock",
+        ...bedrockCredentials(account),
         ...overrides,
     };
 }

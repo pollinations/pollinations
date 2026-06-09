@@ -243,7 +243,6 @@ PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
 PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
 POLLEN_REFILL_PER_HOUR = 1
-PRUNA_API_KEY = "not-a-secret-workers-test-only"
 XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"

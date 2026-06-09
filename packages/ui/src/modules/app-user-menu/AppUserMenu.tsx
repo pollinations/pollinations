@@ -2,6 +2,7 @@ import { useAuthActions } from "@pollinations/sdk/react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
+import { LockIcon } from "../../primitives/icons/index.tsx";
 import {
     LoginButton,
     UserAvatar,
@@ -69,7 +70,10 @@ function AppUserMenuContent({
     return (
         <div data-theme="accent" className="polli:flex polli:justify-end">
             <WhenLoggedOut>
-                <LoginButton>{labels.authorize}</LoginButton>
+                <LoginButton className="polli:gap-1.5">
+                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                    {labels.authorize}
+                </LoginButton>
             </WhenLoggedOut>
 
             <WhenLoggedIn>

@@ -1,4 +1,4 @@
-import { cn, Tooltip } from "@pollinations/ui";
+import { Chip, cn, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
 import { PRICE_ICON, type PriceKind } from "./model-icons.tsx";
 
@@ -95,11 +95,10 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
 
     // One compact pill: emoji(s) + value grouped so it reads as a single unit.
     const badge = (
-        <span
-            className={cn(
-                "inline-flex items-center gap-1 rounded-md bg-ink-100/80 px-1.5 py-0.5 text-xs whitespace-nowrap tabular-nums text-ink-900",
-                className,
-            )}
+        <Chip
+            intent="neutral"
+            size="sm"
+            className={cn("whitespace-nowrap tabular-nums", className)}
         >
             <span className="inline-flex items-center gap-0.5">
                 {(subKinds.length > 0 ? subKinds : [kind]).map((item) => {
@@ -111,7 +110,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
                 {validPrices[0]}
                 {suffix}
             </span>
-        </span>
+        </Chip>
     );
 
     return tokenTypeLabel ? (

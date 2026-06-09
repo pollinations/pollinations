@@ -2,6 +2,7 @@ import {
     Button,
     CardIcon,
     Chip,
+    DownloadIcon,
     MultiSelect,
     Section,
     SproutIcon,
@@ -9,13 +10,7 @@ import {
     Surface,
     Tooltip,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    PAID_BALANCE_CHART_COLOR,
-    PaidChip,
-    TIER_BALANCE_CHART_COLOR,
-    TierChip,
-} from "@pollinations/ui/wallet";
+import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useState } from "react";
 import { Chart } from "./chart";
@@ -71,22 +66,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                     onClick={downloadEarnings}
                     className="flex items-center gap-1.5"
                 >
-                    <svg
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                    <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
                     Download CSV
                 </Button>
             }
@@ -136,8 +116,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             data={chartData}
                             metric="pollen"
                             showModelBreakdown={showAppBreakdown}
-                            paidBarColor={PAID_BALANCE_CHART_COLOR}
-                            tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
                 </Surface>

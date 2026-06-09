@@ -17,18 +17,9 @@ type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
-    /** Override bar colors. Defaults to the package wallet colors. */
-    paidBarColor?: string;
-    tierBarColor?: string;
 };
 
-export const Chart: FC<ChartProps> = ({
-    data,
-    metric,
-    showModelBreakdown,
-    paidBarColor = PAID_BALANCE_CHART_COLOR,
-    tierBarColor = TIER_BALANCE_CHART_COLOR,
-}) => {
+export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -271,7 +262,7 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
-                                    fill: tierBarColor,
+                                    fill: TIER_BALANCE_CHART_COLOR,
                                     opacity: hovered === idx ? 0.85 : 1,
                                     transition: "opacity 0.15s ease-out",
                                 }}
@@ -293,7 +284,7 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={2}
                                 style={{
-                                    fill: paidBarColor,
+                                    fill: PAID_BALANCE_CHART_COLOR,
                                     opacity: hovered === idx ? 0.85 : 1,
                                     transition: "opacity 0.15s ease-out",
                                 }}

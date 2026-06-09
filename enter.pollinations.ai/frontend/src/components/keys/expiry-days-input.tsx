@@ -1,6 +1,5 @@
-import { cn, Field, InfoTip, Input } from "@pollinations/ui";
+import { Field, InfoTip, Input } from "@pollinations/ui";
 import type { FC } from "react";
-import { getPermissionUiTheme } from "./permission-ui.ts";
 
 type ExpiryDaysInputProps = {
     value: number | null;
@@ -20,10 +19,6 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     disabled = false,
     inline = false,
 }) => {
-    const {
-        input: { classes: inputClasses },
-    } = getPermissionUiTheme();
-
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             <Field.Label
@@ -47,7 +42,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("w-[90px]", inputClasses)}
+                    className="w-[90px]"
                     hideNumberSteppers
                     placeholder="Never"
                     disabled={disabled}

@@ -7,7 +7,7 @@ import {
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
-import { getPermissionUiTheme } from "./permission-ui.ts";
+import { PERMISSION_UI_THEME } from "./permission-ui.ts";
 
 type AccountPermissionOption = {
     id: "profile" | "usage" | "keys";
@@ -61,8 +61,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     showApiName = true,
     modelsInitiallyExpanded = false,
 }) => {
-    const themeConfig = getPermissionUiTheme();
-    const { row: rowTheme } = themeConfig;
+    const { row: rowTheme } = PERMISSION_UI_THEME;
     const permissionOptions =
         visiblePermissions === undefined
             ? ACCOUNT_PERMISSIONS
@@ -304,7 +303,6 @@ const ModelCategory: FC<{
             {models.map((model) => (
                 <ModelChip
                     key={model.id}
-                    modality={label}
                     apiName={model.id}
                     officialName={model.label}
                     selected={isModelSelected(model.id)}
@@ -317,11 +315,7 @@ const ModelCategory: FC<{
     </div>
 );
 
-// One toggle per model, colored by its category's modality (the whole category
-// shares one color — selected = filled, unselected = tinted label). The dot is
-// off here because the category header already shows the modality dot.
 const ModelChip: FC<{
-    modality: string;
     apiName: string;
     officialName: string;
     selected: boolean;
@@ -329,7 +323,6 @@ const ModelChip: FC<{
     disabled?: boolean;
     showApiName?: boolean;
 }> = ({
-    modality,
     apiName,
     officialName,
     selected,
@@ -338,11 +331,9 @@ const ModelChip: FC<{
     showApiName = true,
 }) => (
     <ModalityTab
-        modality={modality}
         active={selected}
         onClick={onClick}
         disabled={disabled}
-        bordered={false}
         size="sm"
         className="polli:shrink-0"
     >

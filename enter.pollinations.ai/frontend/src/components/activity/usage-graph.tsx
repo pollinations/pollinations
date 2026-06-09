@@ -13,13 +13,7 @@ import {
     TabButton,
     Tooltip,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    PAID_BALANCE_CHART_COLOR,
-    PaidChip,
-    TIER_BALANCE_CHART_COLOR,
-    TierChip,
-} from "@pollinations/ui/wallet";
+import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
@@ -154,8 +148,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             data={chartData}
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
-                            paidBarColor={PAID_BALANCE_CHART_COLOR}
-                            tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
                 </Surface>

@@ -5,19 +5,14 @@ type PermissionUiFrameConfig = {
     focusRingClasses: string;
 };
 
-type PermissionUiInputConfig = {
-    classes: string;
-};
-
 type PermissionUiThemeConfig = {
     row: PermissionUiFrameConfig;
-    input: PermissionUiInputConfig;
 };
 
 // Mode-aware classes. The hue is no longer baked into the class names — the
 // surrounding dialog scopes its subtree with the ambient accent, so these
 // `theme-*` tokens resolve to it AND flip correctly in dark mode.
-const FRAME: PermissionUiThemeConfig = {
+export const PERMISSION_UI_THEME: PermissionUiThemeConfig = {
     row: {
         selectedClasses: "border-theme-border bg-theme-bg-active",
         selectedHoverClasses:
@@ -26,12 +21,4 @@ const FRAME: PermissionUiThemeConfig = {
         focusRingClasses:
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-border",
     },
-    input: {
-        classes:
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border focus-visible:border-theme-border",
-    },
 };
-
-export function getPermissionUiTheme(): PermissionUiThemeConfig {
-    return FRAME;
-}

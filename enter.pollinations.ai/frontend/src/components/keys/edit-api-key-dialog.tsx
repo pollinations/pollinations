@@ -216,7 +216,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full focus-visible:border-theme-border focus-visible:ring-theme-border"
+                            className="w-full"
                             placeholder="Enter API key name"
                             disabled={isSubmitting}
                         />

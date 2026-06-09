@@ -250,9 +250,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             onChange={(e) => setName(e.target.value)}
                             className={cn(
                                 "w-full",
-                                createdKey
-                                    ? "font-mono text-xs"
-                                    : "focus:outline-none focus-visible:border-theme-border focus-visible:ring-1 focus-visible:ring-theme-border",
+                                createdKey && "font-mono text-xs",
                             )}
                             placeholder={createdKey ? "" : "Enter API key name"}
                             required={!createdKey}

@@ -79,24 +79,6 @@ export const MODEL_CATEGORIES: ModelCategoryGroup[] = CATEGORY_ORDER.map(
     },
 );
 
-const getCategoryModelIds = (category: Category): string[] =>
-    (
-        MODEL_CATEGORIES.find((group) => group.category === category)?.models ??
-        []
-    ).map((model) => model.id);
-
-export const textModelIds = getCategoryModelIds("text");
-
-export const imageModelIds = getCategoryModelIds("image");
-
-export const videoModelIds = getCategoryModelIds("video");
-
-export const audioModelIds = getCategoryModelIds("audio");
-
-export const realtimeModelIds = getCategoryModelIds("realtime");
-
-export const embeddingModelIds = getCategoryModelIds("embedding");
-
 export function computeCategoryModalities(
     allowedModels: string[] | null,
 ): ModelCategoryGroup["modality"][] {

@@ -6,7 +6,7 @@ export type TabButtonProps = {
     onClick: () => void;
     children: ReactNode;
     size?: "md" | "sm";
-    variant?: "default" | "ghost";
+    variant?: "default" | "ghost" | "soft";
     ariaLabel?: string;
     disabled?: boolean;
     className?: string;
@@ -33,6 +33,16 @@ const variantClasses = {
         active: "polli:bg-theme-bg-active polli:text-theme-text-strong",
         inactive:
             "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
+    },
+    // Filled like `default`, but borderless. Without a border the faint
+    // `bg-subtle` is invisible on the themed panel, so this shifts up to opaque
+    // fills: a visible accent when idle, a stronger fill when selected, plus a
+    // hover step.
+    soft: {
+        base: "",
+        active: "polli:bg-theme-bg-hover polli:text-theme-text-strong",
+        inactive:
+            "polli:bg-theme-bg-active polli:text-theme-text-base polli:hover:bg-theme-bg-hover",
     },
 } as const;
 

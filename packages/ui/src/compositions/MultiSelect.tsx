@@ -21,7 +21,7 @@ export type MultiSelectProps = {
 };
 
 const TRIGGER_BASE =
-    "polli-control polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:border polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
+    "polli-control polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
 
 const ROW_BASE =
     "polli-control polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
@@ -72,7 +72,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     disabled
                     className={cn(
                         TRIGGER_BASE,
-                        "polli:cursor-not-allowed polli:border-theme-border polli:bg-theme-bg-subtle polli:opacity-60",
+                        "polli:cursor-not-allowed polli:bg-theme-bg-subtle polli:opacity-60",
                     )}
                 >
                     <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
@@ -102,8 +102,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             TRIGGER_BASE,
                             open
-                                ? "polli:border-theme-border polli:bg-theme-bg-active"
-                                : "polli:border-theme-border polli:bg-theme-bg-subtle polli:hover:bg-theme-bg-pale",
+                                ? "polli:bg-theme-bg-hover"
+                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
                         )}
                     >
                         <span

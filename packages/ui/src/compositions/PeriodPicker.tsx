@@ -193,6 +193,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             key={granularity}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
+                            variant="soft"
                         >
                             {granularity[0].toUpperCase() +
                                 granularity.slice(1)}
@@ -209,11 +210,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                         type="button"
                         aria-label={`Select period, current ${summaryLabel}`}
                         className={cn(
-                            "polli-control polli:inline-flex polli:w-[19rem] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-5 polli:pt-2 polli:pb-2.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
-                            "polli:border-theme-border polli:bg-theme-bg-subtle polli:text-theme-text-base",
-                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-pale",
+                            "polli-control polli:inline-flex polli:w-[19rem] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                            "polli:bg-theme-bg-active polli:text-theme-text-base",
+                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
                             isOpen &&
-                                "polli:bg-theme-bg-active polli:text-theme-text-strong polli:shadow-sm",
+                                "polli:bg-theme-bg-hover polli:text-theme-text-strong",
                         )}
                     >
                         <span className="polli:truncate">{summaryLabel}</span>

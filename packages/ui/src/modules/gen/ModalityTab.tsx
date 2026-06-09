@@ -6,19 +6,17 @@ import {
 } from "../../primitives/TabButton.tsx";
 import { getModalityKey, modalityBgVar, modalityColorVar } from "./themes.ts";
 
-/** `"all"` is the no-filter option (rendered in the app accent, not a modality). */
-export type ModalityTabValue = string | "all";
-
 /**
- * A pill colored as a model modality (or the app accent for `"all"`). One bg
- * rule for every state: transparent when idle, tinted on hover, deeper when
- * selected — so the colored label/border carry the contrast. `bordered`
- * (default) keeps the `TabButton` 1px border for filter tabs; `bordered={false}`
- * drops it for multi-select toggles, where a border would read as a tab.
+ * A pill carrying a model modality's color on its border + fill; the label stays
+ * the strong (black) text token. No transparency: idle is the opaque card
+ * surface, and hover and selected both use the same strengthened modality fill.
+ * `bordered`
+ * (default) keeps the `TabButton` 1px border + surface fill for filter tabs;
+ * `bordered={false}` drops both for multi-select toggles (transparent until
+ * hovered/selected), where a border would read as a tab.
  *
  * Colors come only from the `--polli-color-modality-*` tokens (or the themed
- * accent tokens); the modality label is blended toward `text-strong` to stay
- * readable in light and dark.
+ * accent tokens for an unknown modality) — no hardcoded values.
  */
 export function ModalityTab({
     modality,
@@ -30,7 +28,7 @@ export function ModalityTab({
     disabled = false,
     className,
 }: {
-    modality: ModalityTabValue;
+    modality: string;
     active: boolean;
     onClick: () => void;
     children: ReactNode;
@@ -40,21 +38,14 @@ export function ModalityTab({
     disabled?: boolean;
     className?: string;
 }) {
-    const key = modality === "all" ? null : getModalityKey(modality);
-    // Palette: per-modality tokens, or the themed accent for "all"/unknown.
-    const palette = key
-        ? {
-              text: `color-mix(in oklab, ${modalityColorVar(key)} 72%, var(--polli-color-text-strong))`,
-              border: modalityColorVar(key),
-              hover: modalityBgVar(key),
-              activeBg: `color-mix(in oklab, ${modalityColorVar(key)} 28%, ${modalityBgVar(key)})`,
-          }
-        : {
-              text: "var(--polli-color-text-base)",
-              border: "var(--polli-color-border)",
-              hover: "var(--polli-color-bg-subtle)",
-              activeBg: "var(--polli-color-bg-active)",
-          };
+    const key = getModalityKey(modality);
+    // Modality tokens, or the themed accent for an unknown modality. The fill is
+    // strengthened toward the solid modality color so the selected (and hover)
+    // background reads clearly — still token-only, no hardcoded values.
+    const fill = key
+        ? `color-mix(in oklab, ${modalityColorVar(key)} 30%, ${modalityBgVar(key)})`
+        : "var(--polli-color-bg-active)";
+    const border = key ? modalityColorVar(key) : "var(--polli-color-border)";
     return (
         <button
             type="button"
@@ -63,22 +54,24 @@ export function ModalityTab({
             disabled={disabled}
             style={
                 {
-                    color: palette.text,
-                    "--mod-hover": palette.hover,
-                    // idle = transparent (more contrast); selected = deeper tint;
-                    // hover handled by the class below.
-                    backgroundColor: active ? palette.activeBg : undefined,
-                    borderColor: bordered ? palette.border : undefined,
+                    color: "var(--polli-color-text-strong)",
+                    "--mod-fill": fill,
+                    // Selected fills inline so it always wins; hover matches it
+                    // via the class below. Idle uses the opaque surface CLASS
+                    // (not inline) so :hover can override it.
+                    backgroundColor: active ? fill : undefined,
+                    borderColor: bordered ? border : undefined,
                 } as CSSProperties
             }
             className={cn(
                 tabButtonBaseClass,
                 tabButtonSizeClass[size],
                 bordered && "polli:border",
+                bordered && !active && "polli:bg-surface-opaque",
                 disabled
                     ? "polli:cursor-not-allowed polli:opacity-50"
                     : "polli:cursor-pointer",
-                !active && !disabled && "polli:hover:bg-[var(--mod-hover)]",
+                !active && !disabled && "polli:hover:bg-[var(--mod-fill)]",
                 className,
             )}
         >

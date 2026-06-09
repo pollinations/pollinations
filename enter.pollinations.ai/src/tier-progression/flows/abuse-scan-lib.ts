@@ -36,8 +36,7 @@ export interface UserSignals {
     failingReqs: number;
     errorRate: number; // 0..100
     tierPollen: number; // free pollen burned in window
-    packPollenWindow: number; // paid pollen burned in window (informational)
-    packPollenAllTime: number; // paid pollen burned all-time (paid signal)
+    packPollenWindow: number; // paid pollen burned in window (a paid signal)
     uniqIpHash: number;
     topIpSubnet: string;
     ipClusterSize: number; // max users sharing any of this user's ip_hashes
@@ -116,7 +115,7 @@ export function computeScore(u: UserSignals): {
 }
 
 export function isHardPaid(u: UserSignals): boolean {
-    return u.hasCheckoutCredits || u.packBalance > 0 || u.packPollenAllTime > 0;
+    return u.hasCheckoutCredits || u.packBalance > 0 || u.packPollenWindow > 0;
 }
 
 export function decideAction(u: UserSignals, score: number): Action {
@@ -169,7 +168,9 @@ export function isoMinute(unixSeconds: number): string {
         .replace("T", " ");
 }
 
-// Window aggregate over generation_event, one row per user_id.
+// Window aggregate over generation_event, one row per user_id. `uniq(ip_hash)` is
+// the cheap rotation count; `topK(10)(ip_subnet)` carries the user's main subnets
+// (LowCardinality, bounded) so clustering needs no second per-user scan over hashes.
 export function buildUsageQuery(days: number): string {
     return `SELECT user_id,
         count() AS total_reqs,
@@ -177,7 +178,8 @@ export function buildUsageQuery(days: number): string {
         round(countIf(response_status >= 400) * 100.0 / count(), 1) AS error_rate,
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 4) AS tier_pollen,
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 4) AS pack_pollen_window,
-        uniq(ip_hash) AS uniq_ip_hash
+        uniq(ip_hash) AS uniq_ip_hash,
+        topK(10)(ip_subnet) AS subnets
     FROM generation_event
     WHERE start_time >= now() - INTERVAL ${days} DAY
         AND user_id NOT IN ('undefined', '')
@@ -187,37 +189,19 @@ export function buildUsageQuery(days: number): string {
         .trim();
 }
 
-// (user_id, ip_hash) pairs for candidate users in the window.
-export function buildUserIpsQuery(userIds: string[], days: number): string {
-    return `SELECT DISTINCT user_id, ip_hash
+// Cluster size (distinct users) per subnet, over the window. Filtering by a small
+// LowCardinality `ip_subnet IN (...)` set keeps this fast (vs. high-cardinality ip_hash).
+export function buildSubnetClusterQuery(
+    subnets: string[],
+    days: number,
+): string {
+    return `SELECT ip_subnet, uniq(user_id) AS cluster_size
     FROM generation_event
     WHERE start_time >= now() - INTERVAL ${days} DAY
-        AND user_id IN (${sqlList(userIds)})
-        AND ip_hash NOT IN ('undefined', '')
-    FORMAT JSON`
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-// Cluster size (distinct users) for the given ip_hashes, all-time within retention.
-export function buildIpClusterQuery(ipHashes: string[]): string {
-    return `SELECT ip_hash, uniq(user_id) AS cluster_size
-    FROM generation_event
-    WHERE ip_hash IN (${sqlList(ipHashes)})
-        AND ip_hash NOT IN ('undefined', '')
+        AND ip_subnet IN (${sqlList(subnets)})
+        AND ip_subnet NOT IN ('undefined', '')
         AND user_id NOT IN ('undefined', '')
-    GROUP BY ip_hash
-    FORMAT JSON`
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-// All-time paid pollen consumed, for candidate users (paid signal).
-export function buildAllTimePackQuery(userIds: string[]): string {
-    return `SELECT user_id, round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 4) AS pack_all_time
-    FROM generation_event
-    WHERE user_id IN (${sqlList(userIds)})
-    GROUP BY user_id
+    GROUP BY ip_subnet
     FORMAT JSON`
         .replace(/\s+/g, " ")
         .trim();
@@ -240,7 +224,7 @@ export function toReportCsv(users: ScoredUser[]): string {
                 u.failingReqs,
                 u.errorRate,
                 u.tierPollen,
-                u.packPollenAllTime,
+                u.packPollenWindow,
                 u.uniqIpHash,
                 q(u.topIpSubnet),
                 u.ipClusterSize,

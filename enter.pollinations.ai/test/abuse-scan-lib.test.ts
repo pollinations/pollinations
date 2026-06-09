@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    buildIpClusterQuery,
+    buildSubnetClusterQuery,
     buildUsageQuery,
     computeScore,
     decideAction,
@@ -23,7 +23,6 @@ const base: UserSignals = {
     errorRate: 0,
     tierPollen: 0,
     packPollenWindow: 0,
-    packPollenAllTime: 0,
     uniqIpHash: 1,
     topIpSubnet: "1.2.3.0",
     ipClusterSize: 1,
@@ -84,8 +83,8 @@ describe("paid gate", () => {
         );
     });
 
-    it("hard-skips when all-time pack pollen > 0", () => {
-        expect(decideAction({ ...hammerer, packPollenAllTime: 0.5 }, 90)).toBe(
+    it("hard-skips when pack pollen was burned in the window", () => {
+        expect(decideAction({ ...hammerer, packPollenWindow: 0.5 }, 90)).toBe(
             "skip",
         );
     });
@@ -156,14 +155,16 @@ describe("query builders", () => {
         expect(q).toContain("INTERVAL 7 DAY");
         expect(q).toContain("selected_meter_slug = 'v1:meter:tier'");
         expect(q).toContain("uniq(ip_hash)");
+        expect(q).toContain("topK(10)(ip_subnet)");
         expect(q).toContain("user_id NOT IN ('undefined', '')");
     });
 
-    it("ip cluster query uses uniq(user_id) and excludes undefined hashes", () => {
-        const q = buildIpClusterQuery(["h1", "h2"]);
+    it("subnet cluster query uses uniq(user_id) and filters by subnet/window", () => {
+        const q = buildSubnetClusterQuery(["1.2.3.0", "4.5.6.0"], 7);
         expect(q).toContain("uniq(user_id)");
-        expect(q).toContain("ip_hash IN ('h1','h2')");
-        expect(q).toContain("ip_hash NOT IN ('undefined', '')");
+        expect(q).toContain("ip_subnet IN ('1.2.3.0','4.5.6.0')");
+        expect(q).toContain("ip_subnet NOT IN ('undefined', '')");
+        expect(q).toContain("INTERVAL 7 DAY");
     });
 });
 
@@ -179,7 +180,6 @@ describe("toReportCsv", () => {
         errorRate: 99,
         tierPollen: 1.2,
         packPollenWindow: 0,
-        packPollenAllTime: 0,
         uniqIpHash: 3,
         topIpSubnet: "1.2.3.0",
         ipClusterSize: 5,

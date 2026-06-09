@@ -1,0 +1,35 @@
+{
+  "pr_number": 11706,
+  "title": "fix: route Klein to replacement RunPod pod",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11706",
+  "merged_at": "2026-06-09T22:59:48Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Routes Klein fallback and production `KLEIN_URL` to replacement RunPod pod `jmrbmje2fyuy46`.\n- Updates GPU inventory with the current A5000 pod, cost, URL, and SOPS SSH key note.\n- Updates the Klein outage recovery runbook with the cheap-capacity guardrail, venv setup, token placement, secret push, and verification steps.\n\nValidation:\n- `npx biome check --write gen.pollinations.ai/src/image/models/fluxKleinModel.ts`\n- `git diff --check`\n- `sops -d gen.pollinations.ai/secrets/prod.vars.json | jq -r .KLEIN_URL`\n- Verified production `model=klein` returned HTTP 200 JPEG after the secret push.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Klein gets a new pod",
+    "blurb": "We've swapped out the engine under the hood for the Klein image model. It's back up and running smoothly on a fresh RunPod instance.",
+    "summary": "Routed the Klein image model to a replacement RunPod A5000 instance (jmrbmje2fyuy46) and updated the outage recovery runbooks.",
+    "impact": "The `klein` model is fully restored and generating images again after a backend instance swap.",
+    "keywords": [
+      "infrastructure",
+      "runpod",
+      "klein",
+      "gpu",
+      "recovery"
+    ],
+    "visual_concept": "The bee mascot wearing a hard hat, plugging a large glowing cable into a new chunky retro server rack. A monitor robot gives a thumbs up, celebrating the restored connection.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, plugging a glowing lime green (#ecf874) cable into a chunky retro server rack. A cute monitor-head robot stands nearby giving a thumbs up. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-09/PR-11706.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, plugging a glowing lime green (#ecf874) cable into a chunky retro server rack. A cute monitor-head robot stands nearby giving a thumbs up. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-09T23:01:43.167388+00:00"
+}

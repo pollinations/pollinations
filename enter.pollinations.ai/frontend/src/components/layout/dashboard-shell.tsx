@@ -400,6 +400,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     </NavItem>
                 ))}
                 <DashboardSupport action={supportAction} links={supportLinks} />
+                {/* TEMP — accent theme switcher, as a small section below Docs.
+                    Remove with accent-switcher.tsx + the TEMP block in tokens.css. */}
+                <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
+                    <span className="block px-3 pb-1.5 text-sm font-medium text-ink-900">
+                        Theme
+                    </span>
+                    <AccentSwitcher />
+                </div>
             </nav>
         </ScrollArea>
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
@@ -548,8 +556,6 @@ const DashboardFooter: FC<{
                 </a>
             ))}
         </div>
-        {/* TEMP — accent theme switcher (audition palettes). Remove with accent-switcher.tsx. */}
-        <AccentSwitcher />
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
             {/* accent on the toggle's active icon, over the neutral rail */}

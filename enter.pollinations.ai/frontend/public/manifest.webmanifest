@@ -1,6 +1,6 @@
 {
-    "name": "Console | pollinations.ai",
-    "short_name": "Console",
+    "name": "Dashboard | pollinations.ai",
+    "short_name": "Dashboard",
     "description": "Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps.",
     "icons": [{
             "src": "/icon-192.png",

@@ -1,6 +1,7 @@
 import {
     Alert,
     AppHeader,
+    AppIcon,
     Button,
     Chip,
     ColorModeToggle,
@@ -9,7 +10,6 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     Heading,
-    LockIcon,
     ScrollArea,
     Surface,
     TabButton,
@@ -45,7 +45,7 @@ const EXTERNAL_LINKS = [
     {
         href: "https://enter.pollinations.ai",
         label: "Dashboard",
-        icon: <LockIcon className="h-4 w-4 shrink-0" />,
+        icon: <AppIcon className="h-4 w-4 shrink-0" />,
         showLabel: true,
     },
     {

@@ -88,6 +88,8 @@ export type BillingAdjustmentCounter =
     | "geminiWebSearchQueries"
     | "perplexityRequest";
 
+export type ProviderReportedUnitCostSource = "perplexityUsageCostRequest";
+
 export type BillingTierRule = {
     id: string;
     description: string;
@@ -104,6 +106,7 @@ export type BillingAdjustmentRule = {
     unit: string;
     count: BillingAdjustmentCounter;
     unitCost: number;
+    providerReportedUnitCost?: ProviderReportedUnitCostSource;
     priceMultiplier?: number;
     when?: "grounded" | "always";
 };
@@ -244,6 +247,46 @@ function countBillingAdjustmentUnits(
     return geminiQueryCount;
 }
 
+type PerplexityCostOutput = {
+    usage?: {
+        cost?: {
+            request_cost?: unknown;
+        };
+    };
+    streamEvents?: unknown[];
+};
+
+function asProviderUnitCost(value: unknown): number | undefined {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
+
+function getPerplexityReportedRequestCost(output: unknown): number | undefined {
+    const o = output as PerplexityCostOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+
+    for (const event of [...events].reverse()) {
+        const requestCost = (event as PerplexityCostOutput | undefined)?.usage
+            ?.cost?.request_cost;
+        const unitCost = asProviderUnitCost(requestCost);
+        if (unitCost !== undefined) return unitCost;
+    }
+
+    return undefined;
+}
+
+function getBillingAdjustmentUnitCost(
+    rule: BillingAdjustmentRule,
+    output: unknown,
+): number {
+    if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
+        return getPerplexityReportedRequestCost(output) ?? rule.unitCost;
+    }
+    return rule.unitCost;
+}
+
 function selectBillingTier(
     svc: ModelDefinition,
     usage: Usage,
@@ -271,7 +314,7 @@ function calculateBillingAdjustmentCost(
         if ((rule.when ?? "grounded") !== "always" && units === 0) {
             return total;
         }
-        return total + units * rule.unitCost;
+        return total + units * getBillingAdjustmentUnitCost(rule, output);
     }, 0);
 }
 
@@ -285,7 +328,10 @@ function calculateBillingAdjustmentPrice(
             return total;
         }
         const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
-        return total + units * rule.unitCost * priceMultiplier;
+        return (
+            total +
+            units * getBillingAdjustmentUnitCost(rule, output) * priceMultiplier
+        );
     }, 0);
 }
 

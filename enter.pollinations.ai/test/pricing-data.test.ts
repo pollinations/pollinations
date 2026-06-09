@@ -248,6 +248,45 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     }
 });
 
+test("Perplexity request search fee prefers provider-reported request cost", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const responseOutput = {
+        usage: {
+            cost: {
+                request_cost: 0.006,
+                total_cost: 0.0061,
+            },
+            search_context_size: "low",
+        },
+    };
+    const streamOutput = {
+        streamEvents: [
+            { choices: [{ delta: { content: "ok" } }] },
+            {
+                usage: {
+                    cost: {
+                        request_cost: 0.012,
+                    },
+                },
+                choices: [{ finish_reason: "stop" }],
+            },
+        ],
+    };
+
+    expect(
+        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+    ).toBeCloseTo(2.006, 8);
+    expect(
+        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
+    ).toBeCloseTo(2.006, 8);
+    expect(
+        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
+    ).toBeCloseTo(2.012, 8);
+});
+
 test("Perplexity declarative billing rules expose request fee metadata", () => {
     const models = getTextModelsInfo();
 

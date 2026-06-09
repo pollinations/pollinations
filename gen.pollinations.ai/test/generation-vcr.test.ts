@@ -242,6 +242,19 @@ async function fakePortkeyResponse(request: Request) {
             completionTokens: 2,
             citations: ["https://example.test/source"],
         },
+        {
+            matches: prompt.includes("vcr perplexity reported cost"),
+            content: "snapshot perplexity response",
+            promptTokens: 10,
+            completionTokens: 5,
+            usageExtras: {
+                search_context_size: "low",
+                cost: {
+                    request_cost: 0.006,
+                    total_cost: 0.00602,
+                },
+            },
+        },
     ];
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
@@ -300,6 +313,7 @@ async function fakePortkeyResponse(request: Request) {
                 total_tokens:
                     (selectedCase?.promptTokens || 7) +
                     (selectedCase?.completionTokens || 3),
+                ...selectedCase?.usageExtras,
             },
         },
         { headers: usageHeaders({}) },
@@ -384,6 +398,50 @@ test("chat completions use local text generation with VCR-backed Portkey", async
         tokenCountCompletionText: 3,
         isBilledUsage: true,
     });
+});
+
+test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [
+                { role: "user", content: "vcr perplexity reported cost" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage?: Record<string, unknown>;
+    };
+    expect(body.usage).toMatchObject({
+        prompt_tokens: 10,
+        completion_tokens: 5,
+        total_tokens: 15,
+    });
+    expect(body.usage).not.toHaveProperty("cost");
+    expect(body.usage).not.toHaveProperty("search_context_size");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 5,
+        isBilledUsage: true,
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
 });
 
 test("streaming chat completions replay through VCR", async ({

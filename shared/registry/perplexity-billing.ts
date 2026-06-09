@@ -14,6 +14,7 @@ function createPerplexitySearchBilling(
                 unit: "request",
                 count: "perplexityRequest",
                 unitCost,
+                providerReportedUnitCost: "perplexityUsageCostRequest",
                 when: "always",
             },
         ],

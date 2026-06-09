@@ -1,0 +1,35 @@
+{
+  "pr_number": 11701,
+  "title": "fix: wan-pro image-to-video failing with 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11701",
+  "merged_at": "2026-06-09T21:06:20Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "wan-pro (wan2.7) image-to-video has been failing every request with a 500.\n\n- Root cause: wan2.7 dropped the legacy `input.img_url` string for a unified `input.media[]` array (`{type, url}`). The handler still sent `img_url` — DashScope accepts it at submit but fails the task async with \"Field required: input.media\".\n- Fix: wan2.7 i2v now maps the start image to `media:[{type:\"first_frame\", url}]`; wan2.2/2.6 keep `img_url` (unchanged).\n- Also masks `media` URLs in the safe request logger.\n- Tests: added i2v schema tests for wan-pro (media array) and wan-fast (legacy img_url regression guard). 4/4 wan tests pass, biome clean.\n- Verified end-to-end through the gen worker: wan-pro i2v returns video/mp4 (was 500).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unjamming the video reels",
+    "blurb": "Fixed a pesky bug that was causing Wan-Pro image-to-video generations to fail. Your pixels are ready to move again!",
+    "summary": "Fixed a 500 error in Wan-Pro (wan2.7) image-to-video generation by updating the payload to use the new `input.media[]` array format instead of the legacy `img_url` string.",
+    "impact": "Users can once again successfully generate videos from images using the Wan-Pro model without encountering server errors.",
+    "keywords": [
+      "bug fix",
+      "video generation",
+      "wan-pro",
+      "image-to-video",
+      "api"
+    ],
+    "visual_concept": "Polly the bee fixing a jammed film reel or video player, with the monitor robot cheering as the video starts playing smoothly again.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wrench to fix a glowing film reel attached to a retro computer monitor. The monitor screen shows a smooth, moving landscape, glowing in soft lime green (#ecf874). A chunky pixel robot companion cheers with square pixel eyes. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-09/PR-11701.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wrench to fix a glowing film reel attached to a retro computer monitor. The monitor screen shows a smooth, moving landscape, glowing in soft lime green (#ecf874). A chunky pixel robot companion cheers with square pixel eyes. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-09T21:07:26.686908+00:00"
+}

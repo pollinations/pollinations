@@ -19,7 +19,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { ModalityChip, ModalityDot } from "@pollinations/ui/gen";
+import { ModalityChip } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
@@ -32,11 +32,11 @@ const WINDOW_OPTIONS = [
 ];
 
 const MODEL_TYPES = [
-    { key: "text", title: "Text" },
     { key: "image", title: "Image" },
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
     { key: "realtime", title: "Realtime" },
+    { key: "text", title: "Text" },
     { key: "embedding", title: "Embedding" },
 ];
 
@@ -125,119 +125,122 @@ function rowIntent(status) {
     return "default";
 }
 
-function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
+function calcGroupStats(group) {
+    let total2xx = 0;
+    let total5xx = 0;
+    let countOn = 0;
+    let countDegraded = 0;
+    let countOff = 0;
+
+    for (const model of group) {
+        const stats = model.stats;
+        if (!stats) continue;
+        total2xx += stats.status_2xx || 0;
+        total5xx += stats.errors_5xx || 0;
+        const status = computeHealthStatus(stats);
+        if (status === "on") countOn++;
+        else if (status === "degraded") countDegraded++;
+        else countOff++;
+    }
+
+    const modelRequests = total2xx + total5xx;
+    const successRate =
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
+
+    return {
+        successRate,
+        countOn,
+        countDegraded,
+        countOff,
+        totalModels: group.length,
+    };
+}
+
+// Compact, non-clickable per-category health overview. Filtering lives in the
+// separate CategoryTabs selector below it.
+function CategoryStats({ models }) {
     if (models.length === 0) return null;
 
-    const calcGroupStats = (group) => {
-        let total2xx = 0;
-        let total5xx = 0;
-        let countOn = 0;
-        let countDegraded = 0;
-        let countOff = 0;
-
-        for (const model of group) {
-            const stats = model.stats;
-            if (!stats) continue;
-            total2xx += stats.status_2xx || 0;
-            total5xx += stats.errors_5xx || 0;
-            const status = computeHealthStatus(stats);
-            if (status === "on") countOn++;
-            else if (status === "degraded") countDegraded++;
-            else countOff++;
-        }
-
-        const modelRequests = total2xx + total5xx;
-        const successRate =
-            modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
-
-        let status = "healthy";
-        if (successRate < 75) status = "critical";
-        else if (successRate < 95) status = "degraded";
-
-        return {
-            successRate,
-            status,
-            countOn,
-            countDegraded,
-            countOff,
-            totalModels: group.length,
-        };
-    };
+    const groups = MODEL_TYPES.map(({ key, title }) => ({
+        key,
+        title,
+        group: models.filter((model) => model.type === key),
+    })).filter(({ group }) => group.length > 0);
+    if (groups.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {MODEL_TYPES.map(({ key, title }) => {
-                const group = models.filter((model) => model.type === key);
-                if (group.length === 0) return null;
-
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {groups.map(({ key, title, group }) => {
                 const stats = calcGroupStats(group);
-                const isActive = typeFilter === key;
-                const isDimmed = typeFilter !== null && !isActive;
-                const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-
                 return (
-                    <button
+                    <Surface
                         key={key}
-                        type="button"
-                        onClick={() => onTypeFilter(isActive ? null : key)}
-                        className={cn(
-                            "group min-w-0 h-full w-full rounded-xl text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-bg-active",
-                            isDimmed && "opacity-40",
-                        )}
-                        aria-pressed={isActive}
+                        variant="card"
+                        className="flex min-w-0 flex-col items-center gap-1.5 p-3 text-center"
                     >
-                        <Surface
-                            variant="card-themed"
-                            className={cn(
-                                "flex h-full min-h-28 flex-col gap-3 transition-colors group-hover:bg-theme-bg-hover sm:min-h-32",
-                                isActive && "ring-2 ring-theme-bg-active",
-                            )}
-                        >
-                            <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2">
-                                <h2 className="flex shrink-0 items-center gap-2 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
-                                    <ModalityDot modality={key} />
-                                    {title}
-                                </h2>
-                                <Chip
-                                    intent="neutral"
-                                    size="sm"
-                                    className="shrink-0"
-                                >
-                                    {stats.totalModels} models
+                        <div className="flex min-w-0 items-center justify-center gap-1.5">
+                            <span className="truncate text-sm font-semibold text-theme-text-strong">
+                                {title}
+                            </span>
+                            <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
+                                {stats.totalModels}
+                            </span>
+                        </div>
+                        <span className="text-xl font-bold leading-none tabular-nums text-theme-text-strong">
+                            {stats.successRate.toFixed(1)}%
+                        </span>
+                        <div className="flex flex-wrap justify-center gap-1">
+                            {stats.countOff > 0 && (
+                                <Chip intent="danger" size="sm">
+                                    {stats.countOff} off
                                 </Chip>
-                                <div className="flex min-w-max shrink-0 items-baseline gap-1.5 text-theme-text-strong">
-                                    <span className="text-3xl font-bold leading-none tabular-nums">
-                                        {stats.successRate.toFixed(1)}%
-                                    </span>
-                                    <span className="text-xs font-bold tracking-wide">
-                                        success
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-divider pt-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {stats.countOff > 0 && (
-                                        <Chip intent="danger" size="sm">
-                                            {stats.countOff} off
-                                        </Chip>
-                                    )}
-                                    {stats.countDegraded > 0 && (
-                                        <Chip intent="warning" size="sm">
-                                            {stats.countDegraded} degraded
-                                        </Chip>
-                                    )}
-                                    {!hasIssues && (
-                                        <Chip intent="success" size="sm">
-                                            healthy
-                                        </Chip>
-                                    )}
-                                </div>
-                            </div>
-                        </Surface>
-                    </button>
+                            )}
+                            {stats.countDegraded > 0 && (
+                                <Chip intent="warning" size="sm">
+                                    {stats.countDegraded} degraded
+                                </Chip>
+                            )}
+                            {stats.countOff === 0 &&
+                                stats.countDegraded === 0 && (
+                                    <Chip intent="success" size="sm">
+                                        healthy
+                                    </Chip>
+                                )}
+                        </div>
+                    </Surface>
                 );
             })}
+        </div>
+    );
+}
+
+// Category filter — the shared soft TabButton, same selector as the Window
+// picker. "All" clears the filter; only categories with models are shown.
+function CategoryTabs({ models, value, onChange }) {
+    const available = MODEL_TYPES.filter(({ key }) =>
+        models.some((model) => model.type === key),
+    );
+    if (available.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            <TabButton
+                active={value === null}
+                onClick={() => onChange(null)}
+                size="sm"
+            >
+                All
+            </TabButton>
+            {available.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="sm"
+                >
+                    {title}
+                </TabButton>
+            ))}
         </div>
     );
 }
@@ -545,10 +548,12 @@ function App() {
                         </Alert>
                     )}
 
-                    <GlobalHealthSummary
+                    <CategoryStats models={models} />
+
+                    <CategoryTabs
                         models={models}
-                        typeFilter={typeFilter}
-                        onTypeFilter={setTypeFilter}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
                     />
 
                     <Surface variant="card" className="overflow-hidden p-0">

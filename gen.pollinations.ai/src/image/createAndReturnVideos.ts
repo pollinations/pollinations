@@ -6,7 +6,10 @@
 import debug from "debug";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
-import { callPrunaVideoAPI } from "./models/prunaModel.ts";
+import {
+    callPrunaVideo720API,
+    callPrunaVideo1080API,
+} from "./models/prunaModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
@@ -86,8 +89,16 @@ export async function createAndReturnVideo(
         case "ltx-2":
             result = await callLtx2API(prompt, safeParams, progress, requestId);
             break;
-        case "p-video":
-            result = await callPrunaVideoAPI(
+        case "p-video-720p":
+            result = await callPrunaVideo720API(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+            break;
+        case "p-video-1080p":
+            result = await callPrunaVideo1080API(
                 prompt,
                 safeParams,
                 progress,

@@ -73,8 +73,6 @@ function statusSeverity(model) {
     if (model.catalogStatus === "unregistered") return 4;
     if (model.catalogStatus === "anomaly") return 3;
     if (model.catalogStatus === "catalog-unavailable") return 2;
-    if (model.catalogStatus === "registry-only") return 1;
-    if (model.catalogStatus === "hidden") return 0.5;
     return 0;
 }
 
@@ -260,16 +258,14 @@ function StatusBadge({ stats }) {
 }
 
 function CatalogStatusBadge({ status }) {
-    if (!status || status === "visible" || status === "endpoint-fallback") {
+    if (!status || status === "visible") {
         return null;
     }
 
     const variants = {
-        hidden: { label: "hidden", intent: "neutral" },
         anomaly: { label: "anomaly", intent: "warning" },
         unregistered: { label: "unknown", intent: "warning" },
         "catalog-unavailable": { label: "unverified", intent: "neutral" },
-        "registry-only": { label: "registry", intent: "neutral" },
     };
 
     const variant = variants[status];
@@ -349,9 +345,7 @@ function App() {
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
     const scrollAreaRef = useRef(null);
-    const failedCatalogEndpoints = Object.entries(endpointStatus)
-        .filter(([, ok]) => ok === false)
-        .map(([name]) => name);
+    const catalogUnavailable = endpointStatus.catalog === false;
 
     const handleSort = (key) => {
         setSort((prev) => ({
@@ -538,14 +532,13 @@ function App() {
                         </Alert>
                     )}
 
-                    {failedCatalogEndpoints.length > 0 && (
-                        <Alert intent="warning" title="Catalog fallback">
-                            Fallback active for{" "}
-                            {failedCatalogEndpoints.join(", ")} model
-                            {failedCatalogEndpoints.length > 1
-                                ? " endpoints"
-                                : " endpoint"}
-                            ; using bundled registry metadata.
+                    {catalogUnavailable && (
+                        <Alert
+                            intent="warning"
+                            title="Model catalog unavailable"
+                        >
+                            Showing observed Tinybird traffic only until the
+                            live model catalog responds.
                         </Alert>
                     )}
 

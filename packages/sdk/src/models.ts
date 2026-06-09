@@ -1,5 +1,6 @@
 import {
     MODEL_CATEGORIES,
+    type ModelCapability,
     type ModelCategory,
     type ModelInfo,
     PollinationsError,
@@ -23,6 +24,7 @@ export interface ModelCatalogItem {
     videoCapabilities: string[];
     maxReferenceImages?: number;
     maxReferenceVideos?: number;
+    capabilities: ModelCapability[];
     voices: string[];
     paidOnly: boolean;
     tools: boolean;
@@ -80,6 +82,7 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
         videoCapabilities: model.video_capabilities ?? [],
         maxReferenceImages: model.max_reference_images,
         maxReferenceVideos: model.max_reference_videos,
+        capabilities: model.capabilities ?? [],
         voices: model.voices ?? [],
         paidOnly: model.paid_only ?? false,
         tools: model.tools ?? false,

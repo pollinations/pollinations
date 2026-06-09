@@ -32,17 +32,17 @@ export const ModelRow: FC<ModelRowProps> = ({
     tierBalance,
     packBalance,
 }) => {
-    const modelDisplayName = getModelDisplayName(model.name);
-    const modelDescription = getModelDescriptionWithoutName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const modalityLabel = getModelModalityLabel(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
-    const capabilityLabel = getModelCapabilityLabel(model.name);
+    const modelDisplayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const modalityIcons = getModelModalityIcons(model);
+    const modalityLabel = getModelModalityLabel(model);
+    const capabilityIcons = getModelCapabilityIcons(model);
+    const capabilityLabel = getModelCapabilityLabel(model);
     const publicModelName = modelDisplayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
     const isSignedIn = packBalance !== undefined;
     const genPerPollen = calculatePerPollen(model);

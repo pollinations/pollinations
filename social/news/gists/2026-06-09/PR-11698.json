@@ -1,0 +1,35 @@
+{
+  "pr_number": 11698,
+  "title": "feat: route pruna models through replicate",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11698",
+  "merged_at": "2026-06-09T17:51:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Moves the three Pruna models off the direct `api.pruna.ai` predictions API onto Replicate, which hosts the **identical** Pruna-optimised models under the `prunaai` account. Same engines, so output is unchanged — verified live end-to-end through the gen worker (p-image, p-image-edit, p-video all generate correctly).\n\n### Migration\n- `p-image` → `prunaai/p-image`, `p-image-edit` → `prunaai/p-image-edit`, `p-video` → `prunaai/p-video`\n- Reuses the shared `replicateClient`, inheriting its reliability: bounded polling (a stuck prediction surfaces as a controlled 504 instead of the old 10-min hang) and error classification (429/400/422 passed through instead of a blanket 500)\n- **p-image-edit input validation**: requires at least one input image, returns `400` before calling the provider, instead of the previous wasted prediction the upstream rejected as a `500` (\"No images provided\") — this was the only real source of p-image-edit 5xx in the monitor\n- Removes `PRUNA_API_KEY` everywhere: worker bindings, env allowlist, wrangler test var, push-secrets script, and all three SOPS secret files; registry `provider` flips `pruna` → `replicate` (brand stays Pruna)\n\n### p-video pricing tiers\nReplicate bills `prunaai/p-video` per second by resolution (720p $0.02/s, 1080p $0.04/s). The registry's old flat $0.024/s over-billed 720p and under-billed 1080p (a margin leak). Since the registry carries one flat rate per model, the two tiers are now separate models with their real cost:\n\n| Model | Resolution | cost (= Replicate actual) |\n|-------|-----------|---------------------------|\n| `p-video-720p` | 720p | $0.02/s |\n| `p-video-1080p` | 1080p | $0.04/s |\n\n- `p-video` and `pruna-video` alias to `p-video-720p`. Resolution is locked per model (no longer inferred from `height`), so users opt into the 1080p rate explicitly.\n- Image models bill per output image and already match Replicate exactly ($0.005 / $0.01).\n\n### Contract change\n`p-video` now always means 720p; 1080p is an explicit o",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pruna models get a Replicate refactor",
+    "blurb": "We've re-routed our Pruna models through Replicate, meaning no more infinite hangs when things go wrong. Plus, video generation now has explicit 720p and 1080p models so you know exactly what you're getting.",
+    "summary": "Routed Pruna models (p-image, p-image-edit, p-video) through Replicate for bounded polling, and split p-video into explicit p-video-720p ($0.02/s) and p-video-1080p ($0.04/s) models.",
+    "impact": "Failed requests now return clear 400 errors instead of hanging indefinitely, and users can explicitly opt into 1080p video generation instead of relying on inferred heights.",
+    "keywords": [
+      "pruna",
+      "replicate",
+      "video",
+      "models",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot sorting video cassettes (representing the new explicit 720p and 1080p models) into a sturdy, reliable retro server rack (representing the Replicate infrastructure).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, working with a chunky monitor-head robot to slot two glowing video cassettes labeled '720p' and '1080p' into a sturdy retro server rack. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-09/PR-11698.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, working with a chunky monitor-head robot to slot two glowing video cassettes labeled '720p' and '1080p' into a sturdy retro server rack. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-09T17:52:48.329471+00:00"
+}

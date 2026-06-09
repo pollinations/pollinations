@@ -17,6 +17,13 @@
         "title": "Life Merge",
         "description": "A physics merge game about generated biological categories"
     },
+    "brainrot-merge": {
+        "subdomain": "brainrot-merge",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "Brainrot Merge",
+        "description": "A physics merge game that AI-generates Italian brainrot characters with voice"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": null,

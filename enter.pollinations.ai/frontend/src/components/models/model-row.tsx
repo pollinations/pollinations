@@ -24,17 +24,17 @@ type ModelRowProps = {
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDisplayName = getModelDisplayName(model.name);
-    const modelDescription = getModelDescriptionWithoutName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
-    const inputModalities = getModelInputModalities(model.name);
-    const modalityLabel = getModelModalityLabel(model.name);
-    const capabilities = getModelCapabilities(model.name);
-    const capabilityLabel = getModelCapabilityLabel(model.name);
+    const modelDisplayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const inputModalities = getModelInputModalities(model);
+    const modalityLabel = getModelModalityLabel(model);
+    const capabilities = getModelCapabilities(model);
+    const capabilityLabel = getModelCapabilityLabel(model);
     const publicModelName = modelDisplayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly ? "Paid balance only" : "Tier balance";

@@ -2,6 +2,13 @@ import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
+    getAudioModelsInfo,
+    getEmbeddingModelsInfo,
+    getImageModelsInfo,
+    getRealtimeModelsInfo,
+    getTextModelsInfo,
+} from "@shared/registry/model-info.ts";
+import {
     calculateCost,
     calculatePrice,
     getModelDefinition,
@@ -9,28 +16,37 @@ import {
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
-import { getModelPrices } from "../frontend/src/components/models/data.ts";
 import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
+import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 
-// getModelPrices pipes every registry rate through formatPricePer1M, so this
-// file is the sole coverage of that formatter. Pin each decimal branch and the
-// trailing-zero path directly against representative per-token inputs (rather
-// than whichever model happens to carry those rates today). The 1.5e-8 case
+const getCatalogModelPrices = () =>
+    getModelPricesFromCatalog([
+        ...getTextModelsInfo(),
+        ...getImageModelsInfo(),
+        ...getRealtimeModelsInfo(),
+        ...getAudioModelsInfo(),
+        ...getEmbeddingModelsInfo(),
+    ]);
+
+// Catalog pricing pipes every model rate through formatPricePer1M, so this file
+// is the sole coverage of that formatter. Pin each decimal branch and the
+// trailing-zero path directly against representative per-token inputs rather
+// than whichever model happens to carry those rates today. The 1.5e-8 case
 // guards the fixed IEEE-754 rounding bug where toFixed(2) collapsed
-// 0.015 → "0.01".
+// 0.015 -> "0.01".
 test("formatPricePer1M renders each decimal branch and strips trailing zeros", () => {
-    expect(formatPricePer1M(2e-6)).toBe("2.0"); // ≥1 → 2 decimals, "2.00"→"2.0"
-    expect(formatPricePer1M(2e-7)).toBe("0.2"); // ≥0.1 → 3 decimals
-    expect(formatPricePer1M(2e-8)).toBe("0.02"); // ≥0.01 → 4 decimals
-    expect(formatPricePer1M(1.5e-8)).toBe("0.015"); // ≥0.01 → 4 decimals (IEEE bug)
-    expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 → 5 decimals
+    expect(formatPricePer1M(2e-6)).toBe("2.0"); // >=1 -> 2 decimals, "2.00" -> "2.0"
+    expect(formatPricePer1M(2e-7)).toBe("0.2"); // >=0.1 -> 3 decimals
+    expect(formatPricePer1M(2e-8)).toBe("0.02"); // >=0.01 -> 4 decimals
+    expect(formatPricePer1M(1.5e-8)).toBe("0.015"); // >=0.01 -> 4 decimals
+    expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 -> 5 decimals
 });
 
-test("getModelPrices formats text registry rates through formatPricePer1M", () => {
+test("catalog prices format text rates through formatPricePer1M", () => {
     const price = getPriceDefinition("gemini-fast");
     if (!price) throw new Error("gemini-fast price definition missing");
 
-    const geminiFast = getModelPrices().find(
+    const geminiFast = getCatalogModelPrices().find(
         (modelPrice) => modelPrice.name === "gemini-fast",
     );
 
@@ -44,11 +60,25 @@ test("getModelPrices formats text registry rates through formatPricePer1M", () =
     });
 });
 
+test("model info exposes built-in model capabilities without raw implementation flags", () => {
+    const geminiSearch = getTextModelsInfo().find(
+        (model) => model.name === "gemini-search",
+    ) as Record<string, unknown> | undefined;
+
+    expect(geminiSearch).toMatchObject({
+        capabilities: ["web_search", "code_execution"],
+        tools: false,
+    });
+    expect(geminiSearch).not.toHaveProperty("search");
+    expect(geminiSearch).not.toHaveProperty("code_execution");
+    expect(geminiSearch).not.toHaveProperty("persona");
+});
+
 test("AssemblyAI STT pricing is exposed per input audio second", () => {
-    const universal2 = getModelPrices().find(
+    const universal2 = getCatalogModelPrices().find(
         (price) => price.name === "universal-2",
     );
-    const universal3Pro = getModelPrices().find(
+    const universal3Pro = getCatalogModelPrices().find(
         (price) => price.name === "universal-3-pro",
     );
 

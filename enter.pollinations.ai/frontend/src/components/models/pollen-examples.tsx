@@ -4,11 +4,15 @@
  */
 
 import { ChatIcon, ImageIcon, VideoIcon } from "@pollinations/ui";
-import type { FC, ReactNode } from "react";
+import { type FC, type ReactNode, useEffect, useMemo, useState } from "react";
 import { calculatePerPollen } from "./calculations.ts";
-import { getModelPrices } from "./data.ts";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "./model-catalog.ts";
 import type { ModelPrice } from "./types.ts";
-import { type ModelStats, useModelStats } from "./use-model-stats.ts";
+import { useModelStats } from "./use-model-stats.ts";
 
 type ExampleModel = {
     name: string;
@@ -23,14 +27,12 @@ const getUnit = (model: ModelPrice): string => {
 };
 
 const getExamples = (
-    stats: ModelStats,
+    allModels: ModelPrice[],
 ): {
     video: ExampleModel[];
     image: ExampleModel[];
     text: ExampleModel[];
 } => {
-    const allModels = getModelPrices(stats);
-
     const pickTwo = (
         models: ModelPrice[],
         type: "video" | "image" | "text",
@@ -103,8 +105,37 @@ const CategorySection: FC<{
 };
 
 export const PollenExamples: FC = () => {
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const { stats } = useModelStats();
-    const examples = getExamples(stats);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) setCatalogModels(models);
+            })
+            .catch(() => {
+                if (!cancelled) setCatalogModels([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const examples = useMemo(() => {
+        const allModels = getModelPricesFromCatalog(catalogModels, stats);
+        return getExamples(allModels);
+    }, [catalogModels, stats]);
+
+    if (
+        examples.video.length === 0 &&
+        examples.image.length === 0 &&
+        examples.text.length === 0
+    ) {
+        return null;
+    }
 
     return (
         <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">

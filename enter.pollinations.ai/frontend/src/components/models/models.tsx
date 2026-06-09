@@ -8,8 +8,12 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import { type FC, useState } from "react";
-import { getModelPrices } from "./data.ts";
+import { type FC, useEffect, useMemo, useState } from "react";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "./model-catalog.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -19,8 +23,35 @@ import { useModelStats } from "./use-model-stats.ts";
 
 export const Models: FC = () => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
-    const allModels = getModelPrices(stats);
+    const allModels = useMemo(
+        () => getModelPricesFromCatalog(catalogModels, stats),
+        [catalogModels, stats],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) {
+                    setCatalogModels(models);
+                    setCatalogError(null);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setCatalogModels([]);
+                    setCatalogError("Could not load models.");
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
@@ -77,6 +108,9 @@ export const Models: FC = () => {
                         </TabButton>
                     ))}
                 </div>
+                {catalogError && (
+                    <p className="mb-4 text-sm text-red-600">{catalogError}</p>
+                )}
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}

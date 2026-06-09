@@ -12,7 +12,7 @@ import {
     VideoIcon,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import type { InputModality, ModelCapability } from "./model-info.ts";
+import type { DisplayCapability, InputModality } from "./model-info.ts";
 
 type Icon = FC<IconProps>;
 
@@ -24,11 +24,11 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
     audio: MicIcon,
 };
 
-/** Capability glyphs (reasoning/search/code). */
-export const CAPABILITY_ICON: Record<ModelCapability, Icon> = {
+/** Capability glyphs (reasoning/web search/code execution). */
+export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     reasoning: ReasoningIcon,
-    search: SearchIcon,
-    code: CodeIcon,
+    web_search: SearchIcon,
+    code_execution: CodeIcon,
 };
 
 /** Price-tier token kinds and their glyphs. */

@@ -3,6 +3,8 @@ import {
     CardIcon,
     ChatIcon,
     Chip,
+    DatabaseIcon,
+    GlobeIcon,
     type IconProps,
     ImageIcon,
     MultiSelect,
@@ -12,12 +14,17 @@ import {
     Surface,
     TabButton,
     Tooltip,
+    VideoIcon,
 } from "@pollinations/ui";
 import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
-import { MODALITY_META, type ModelModality } from "./constants";
+import {
+    MODALITY_META,
+    MODEL_MODALITIES,
+    type ModelModality,
+} from "./constants";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -244,15 +251,19 @@ export const UsageGraph: FC<UsageGraphProps> = ({
 const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
     text: ChatIcon,
     image: ImageIcon,
+    video: VideoIcon,
     audio: AudioIcon,
+    embedding: DatabaseIcon,
+    realtime: GlobeIcon,
 };
 
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;
 }> = ({ breakdown }) => {
-    const entries = (Object.keys(MODALITY_META) as ModelModality[])
-        .map((modality) => ({ modality, count: breakdown[modality] }))
-        .filter(({ count }) => count > 0);
+    const entries = MODEL_MODALITIES.map((modality) => ({
+        modality,
+        count: breakdown[modality],
+    })).filter(({ count }) => count > 0);
     if (entries.length === 0) return null;
     return (
         <div className="flex flex-wrap items-center gap-2">

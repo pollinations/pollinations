@@ -1,0 +1,15 @@
+{
+  "date": "2026-06-08",
+  "period_start": "2026-06-08",
+  "period_end": "2026-06-08",
+  "title": "Live model catalog across the ecosystem",
+  "summary": "Hardcoded model lists are dead; dashboards and SDKs now fetch the live catalog dynamically.\n\nHardcoded model lists are a relic. The Enter dashboard, public site, SDK, and MCP server now pull directly from the live `/models` endpoint. When a new model is deployed, it instantly appears in your dashboard tables and API key settings. No more waiting for a frontend bump to see what's new.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11613,
+      "date": "2026-06-08"
+    }
+  ],
+  "generated_at": "2026-06-09T07:10:13.245218+00:00"
+}

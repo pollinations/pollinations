@@ -193,7 +193,6 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             key={granularity}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
-                            variant="soft"
                         >
                             {granularity[0].toUpperCase() +
                                 granularity.slice(1)}

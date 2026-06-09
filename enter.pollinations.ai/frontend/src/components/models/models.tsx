@@ -72,7 +72,6 @@ export const Models: FC = () => {
                             key={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
-                            variant="soft"
                         >
                             {sectionLabels[section]}
                         </TabButton>

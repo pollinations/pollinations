@@ -86,7 +86,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                         metric: m,
                                     }))
                                 }
-                                variant="soft"
                             >
                                 {m === "requests" ? "Request" : "Pollen"}
                             </TabButton>

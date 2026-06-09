@@ -15,8 +15,8 @@ const themeClasses =
     "polli:bg-theme-bg-active polli:text-theme-text-strong " +
     "polli:hover:bg-theme-bg-hover polli:transition-colors";
 
-// Single intent: danger. Soft recipe — light tile + deep text, slightly
-// deeper bg on hover. No filled CTAs anywhere.
+// Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
+// No filled CTAs anywhere.
 const intentClasses: Record<ButtonIntent, string> = {
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
@@ -27,7 +27,7 @@ const intentClasses: Record<ButtonIntent, string> = {
 };
 
 type BaseButtonProps = {
-    /** Only `"danger"` for now. */
+    /** Optional semantic recipe; omit for the ambient theme button. */
     intent?: ButtonIntent;
     size?: keyof typeof sizes;
     className?: string;

@@ -13,10 +13,10 @@ export type TabButtonProps = {
 };
 
 /** Shared pill shape (no colors) — used by every TabButton variant. */
-export const tabButtonBaseClass =
+const tabButtonBaseClass =
     "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-all polli:duration-200";
 
-export const tabButtonSizeClass = {
+const tabButtonSizeClass = {
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",
 } as const;

@@ -17,12 +17,10 @@ export type DialogProps = {
     triggerAsChild?: boolean;
     triggerClassName?: string;
     title?: ReactNode;
-    titleClassName?: string;
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
-    backdropClassName?: string;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -35,12 +33,10 @@ export const Dialog: FC<DialogProps> = ({
     triggerAsChild = false,
     triggerClassName,
     title,
-    titleClassName,
     ariaLabel,
     labelledBy,
     size = "md",
     showBackdrop = true,
-    backdropClassName,
     positionerClassName,
     contentClassName,
     children,
@@ -64,13 +60,10 @@ export const Dialog: FC<DialogProps> = ({
             <Portal>
                 {showBackdrop && (
                     <ArkDialog.Backdrop
-                        className={cn(
-                            // Scrim must DARKEN in both modes — ink-950 inverts
-                            // (near-white in dark) and would brighten the page.
-                            // Fixed black + a soft blur dims and de-focuses.
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm",
-                            backdropClassName,
-                        )}
+                        // Scrim must DARKEN in both modes — ink-950 inverts
+                        // (near-white in dark) and would brighten the page.
+                        // Fixed black + a soft blur dims and de-focuses.
+                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
                     />
                 )}
                 <ArkDialog.Positioner
@@ -90,12 +83,7 @@ export const Dialog: FC<DialogProps> = ({
                         )}
                     >
                         {title && (
-                            <DialogTitle
-                                className={cn(
-                                    "polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong",
-                                    titleClassName,
-                                )}
-                            >
+                            <DialogTitle className="polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
                                 {title}
                             </DialogTitle>
                         )}

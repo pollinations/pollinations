@@ -6,14 +6,12 @@ export type MediaPlaceholderProps = ComponentPropsWithoutRef<"div"> & {
     icon?: ReactNode;
     label?: ReactNode;
     detail?: ReactNode;
-    action?: ReactNode;
 };
 
 export const MediaPlaceholder: FC<MediaPlaceholderProps> = ({
     icon,
     label,
     detail,
-    action,
     children,
     className,
     ...rest
@@ -45,6 +43,5 @@ export const MediaPlaceholder: FC<MediaPlaceholderProps> = ({
             </div>
         )}
         {children}
-        {action}
     </div>
 );

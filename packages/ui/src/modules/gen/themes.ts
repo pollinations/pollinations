@@ -4,11 +4,8 @@
  *  var beats a Tailwind class). The token VALUES live in styles/tokens.css. */
 import type { ModelCategory } from "@pollinations/sdk";
 
-/** A model modality is just a model category. Single source of truth: the SDK. */
-export type Modality = ModelCategory;
-
 /** The canonical modality keys (match the `--polli-color-modality-*` tokens). */
-export type ModalityKey = ModelCategory;
+type ModalityKey = ModelCategory;
 
 const MODALITIES: readonly ModelCategory[] = [
     "text",

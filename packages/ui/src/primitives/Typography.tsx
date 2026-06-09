@@ -5,16 +5,11 @@ import type {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-export type HeadingSize =
-    | "display"
-    | "title"
-    | "section"
-    | "subsection"
-    | "card";
+type HeadingSize = "display" | "title" | "section" | "subsection" | "card";
 
-export type TextSize = "body" | "sm" | "xs" | "micro";
-export type TextTone = "base" | "strong" | "soft" | "muted";
-export type TextWeight = "normal" | "medium" | "semibold" | "bold";
+type TextSize = "body" | "sm" | "xs" | "micro";
+type TextTone = "base" | "strong" | "soft" | "muted";
+type TextWeight = "normal" | "medium" | "semibold" | "bold";
 
 const headingSizeClasses: Record<HeadingSize, string> = {
     display: "polli:font-heading polli:text-5xl polli:leading-none",
@@ -53,7 +48,7 @@ export function headingClassName(size: HeadingSize, className?: string) {
     );
 }
 
-export function textClassName({
+function textClassName({
     size,
     tone,
     weight,

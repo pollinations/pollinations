@@ -4,14 +4,13 @@ import { cn } from "../lib/cn.ts";
 type BaseNavItemProps = {
     /** Current/selected item — fills with the accent + sets `aria-current`. */
     active?: boolean;
-    /** Optional leading icon (replaces the old section dot). */
+    /** Optional leading icon. */
     icon?: ComponentType<{ className?: string }>;
     className?: string;
 };
 
 // Neutral/quiet when inactive; filled with the accent when active. The leading
-// icon is the section marker (under a single accent, a per-item icon reads
-// better than a colored dot).
+// icon is the section marker.
 const base =
     "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
 const activeClasses = "polli:bg-theme-bg-active polli:text-theme-text-strong";

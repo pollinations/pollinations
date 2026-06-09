@@ -8,7 +8,7 @@ import { TabButton } from "../../primitives/TabButton.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
-export type ModelSelectorItem = {
+type ModelSelectorItem = {
     id: string;
     name: string;
     title: string;
@@ -17,7 +17,7 @@ export type ModelSelectorItem = {
     paidOnly?: boolean;
 };
 
-export type ModelSelectorProps = {
+type ModelSelectorProps = {
     models: readonly ModelSelectorItem[];
     category: ModelSelectorCategory;
     value: string;
@@ -25,7 +25,7 @@ export type ModelSelectorProps = {
     onChange: (modelId: string) => void;
 };
 
-export const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
+const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     image: "Image",
     video: "Video",
     text: "Text",
@@ -39,10 +39,6 @@ export function categoryLabel(category: ModelSelectorCategory): string {
     return CATEGORY_LABELS[category];
 }
 
-function displayModelName(model: ModelSelectorItem): string {
-    return model.title;
-}
-
 export function ModelSelector({
     models,
     category,
@@ -54,7 +50,7 @@ export function ModelSelector({
         (model) => model.category === category,
     );
     const currentModel = models.find((model) => model.id === value);
-    const modelLabel = currentModel ? displayModelName(currentModel) : "Select";
+    const modelLabel = currentModel?.title ?? "Select";
     const accessibleLabel = currentModel
         ? `${CATEGORY_LABELS[category]} model: ${modelLabel}`
         : `Select ${CATEGORY_LABELS[category].toLowerCase()} model`;
@@ -111,7 +107,7 @@ export function ModelSelector({
                                                 <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
                                             )}
                                             <span className="polli:truncate">
-                                                {displayModelName(model)}
+                                                {model.title}
                                             </span>
                                         </span>
                                     </TabButton>

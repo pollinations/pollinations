@@ -14,6 +14,10 @@ export {
     type ExternalLinkButtonProps,
 } from "./compositions/ExternalLinkButton.tsx";
 export {
+    FieldStack,
+    type FieldStackProps,
+} from "./compositions/FieldStack.tsx";
+export {
     FileUpload,
     type FileUploadProps,
 } from "./compositions/FileUpload.tsx";
@@ -37,7 +41,6 @@ export { Prose, type ProseProps } from "./compositions/Prose.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export { cn } from "./lib/cn-app.ts";
-export type { RejectedFile, RejectReason } from "./lib/partition-files.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -54,9 +57,7 @@ export {
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
 export {
-    type ColorMode,
     ColorModeToggle,
-    setColorMode,
     useColorMode,
 } from "./primitives/ColorModeToggle.tsx";
 export {
@@ -105,13 +106,6 @@ export { Tooltip } from "./primitives/Tooltip.tsx";
 export {
     Heading,
     type HeadingProps,
-    type HeadingSize,
-    headingClassName,
     Text,
     type TextProps,
-    type TextSize,
-    type TextTone,
-    type TextWeight,
-    textClassName,
 } from "./primitives/Typography.tsx";
-export { themePalette } from "./theme.ts";

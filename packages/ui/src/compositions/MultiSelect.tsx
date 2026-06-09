@@ -3,6 +3,7 @@ import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../primitives/Dropdown.tsx";
 import { ScrollArea } from "../primitives/ScrollArea.tsx";
+import { Tooltip } from "../primitives/Tooltip.tsx";
 
 export type MultiSelectOption = {
     value: string;
@@ -65,27 +66,31 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 
     if (disabled) {
         return (
-            <div className="polli:group polli:relative polli:flex polli:items-center polli:gap-2">
+            <div className="polli:flex polli:items-center polli:gap-2">
                 {labelNode}
-                <button
-                    type="button"
-                    disabled
-                    className={cn(
-                        TRIGGER_BASE,
-                        "polli:cursor-not-allowed polli:bg-theme-bg-subtle polli:opacity-60",
-                    )}
+                <Tooltip
+                    triggerAs="span"
+                    content="No items available"
+                    align="center"
+                    className="polli:inline-flex"
                 >
-                    <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
-                        {displayText}
-                    </span>
-                    <ChevronIcon
-                        expanded={false}
-                        className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
-                    />
-                </button>
-                <span className="polli:pointer-events-none polli:absolute polli:-top-8 polli:left-1/2 polli:z-[100] polli:-translate-x-1/2 polli:whitespace-nowrap polli:rounded-md polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:px-2 polli:py-1 polli:text-xs polli:text-theme-text-strong polli:opacity-0 polli:shadow-sm polli:transition-opacity polli:group-hover:opacity-100">
-                    No items available
-                </span>
+                    <button
+                        type="button"
+                        disabled
+                        className={cn(
+                            TRIGGER_BASE,
+                            "polli:cursor-not-allowed polli:bg-theme-bg-subtle polli:opacity-60",
+                        )}
+                    >
+                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
+                            {displayText}
+                        </span>
+                        <ChevronIcon
+                            expanded={false}
+                            className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
+                        />
+                    </button>
+                </Tooltip>
             </div>
         );
     }

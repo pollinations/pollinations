@@ -24,8 +24,7 @@ export type WalletKindIconProps = {
     className?: string;
 };
 
-/** The paid/tier marker — a card (paid) or sprout (tier) glyph in the wallet's
- *  deep color. Replaces the old colored dot. */
+/** The paid/tier marker — a card (paid) or sprout (tier) glyph in the wallet's deep color. */
 export const WalletKindIcon: FC<WalletKindIconProps> = ({
     kind,
     className,

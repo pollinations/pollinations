@@ -17,7 +17,7 @@ import { MoonIcon, SunIcon } from "./icons/index.tsx";
  * attached lazily on first subscribe, so importing this module (e.g. via the
  * package barrel) never mutates the DOM on its own.
  */
-export type ColorMode = "light" | "dark";
+type ColorMode = "light" | "dark";
 
 const STORAGE_KEY = "polli-color-mode";
 
@@ -100,7 +100,7 @@ function getServerSnapshot(): ColorMode {
     return "light";
 }
 
-export function setColorMode(mode: ColorMode): void {
+function setColorMode(mode: ColorMode): void {
     if (mode === current) return;
     current = mode;
     apply();

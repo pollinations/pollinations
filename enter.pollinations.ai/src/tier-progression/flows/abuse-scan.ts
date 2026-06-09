@@ -10,7 +10,8 @@
  *   npx tsx src/tier-progression/flows/abuse-scan.ts --no-stripe-fallback
  */
 import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import {
     buildSubnetClusterQuery,
     buildUsageQuery,
@@ -24,7 +25,9 @@ import {
 } from "./abuse-scan-lib.ts";
 
 const TB_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const OUT = "src/tier-progression/abuse-scan-report.csv";
+// Report holds real user emails (PII) — write to the gitignored local scratch
+// area, never the repo tree (run cwd = enter.pollinations.ai/).
+const OUT = "../_local/abuse-detection/abuse-scan-report.csv";
 
 interface Args {
     days: number;
@@ -266,6 +269,7 @@ async function main(): Promise<void> {
         }
     }
 
+    mkdirSync(dirname(args.out), { recursive: true });
     writeFileSync(args.out, toReportCsv(scored));
 
     const counts = { block: 0, review: 0, ok: 0, skip: 0 };

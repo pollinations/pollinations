@@ -21,6 +21,8 @@ these flows, but the business logic lives here.
 - `flows/spore-to-microbe-apply.ts`: apply tier downgrades from the reviewed report
 - `flows/abuse-scan.ts`: usage-first, all-tier abuse scan (read-only) → apply-compatible CSV
 - `flows/abuse-scan-lib.ts`: pure scoring/clustering/CSV logic for abuse-scan (unit-tested)
+- `flows/account-linkage-scan.ts`: multi-account cluster detection for bonus protection (read-only)
+- `flows/account-linkage-lib.ts`: pure email-normalize/union-find/scoring/CSV logic (unit-tested)
 - `flows/cleanup-github-users.ts`: audit D1 users against GitHub API (renamed/deleted accounts)
 - `shared/github_profile.py`: GitHub identity lookup and scoring logic
 - `shared/d1_updates.py`: shared D1 query and mutation helpers
@@ -76,16 +78,50 @@ out payers (D1 purchase history + in-window pack pollen, with a live Stripe fall
 shortlist), and writes `abuse-scan-report.csv` in the apply CSV schema. It mutates nothing.
 Pure logic + tests live in `abuse-scan-lib.ts` / `test/abuse-scan-lib.test.ts`.
 
+Outputs are written to `_local/abuse-detection/` (gitignored — the CSVs contain real
+user emails), NOT the repo tree.
+
 ```bash
 npx tsx src/tier-progression/flows/abuse-scan.ts --days 7
 # review the CSV, then dry-run apply (--report is required):
 npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks \
-  --env production --report src/tier-progression/abuse-scan-report.csv --dry-run
+  --env production --report ../_local/abuse-detection/abuse-scan-report.csv --dry-run
 ```
 
 Uses the prod Tinybird read token + Stripe key from `secrets/prod.vars.json` (NOT `.tinyb`,
 which is staging). Auto-`block` is reserved for severe hammering or clustered farms;
 mid-volume lone hammerers land in `review` for a human to confirm.
+
+### account linkage (multi-account clusters, bonus protection, read-only)
+
+`flows/account-linkage-scan.ts` finds clusters of linked accounts across the
+bonus-eligible (non-microbe) population so one operator can't collect the tier
+bonus N times. It is account-centric (covers dormant, zero-usage accounts), driven
+by D1 `user` + `session`:
+
+- **Linkage edges (primary):** shared normalized email-root, exact `session.ip_address`,
+  and `ip_address`+`user_agent`. Emails are normalized (gmail dots/`+` stripped,
+  numeric locals dropped, root len ≥ 5) to kill artifacts. An IP shared by more than
+  `--ip-cap` (default 15) accounts is treated as shared infra and forms no edge.
+- **Clustering:** union-find over the edges → connected components (singletons dropped).
+- **Usage (corroboration):** per-account failing/error/free-burn from Tinybird
+  (reusing `abuse-scan-lib.buildUsageQuery`) rides on every cluster — best-effort, so
+  the scan still completes if the usage window times out.
+- **Output:** `account-linkage-clusters.csv` (one row per cluster, ranked by confidence)
+  and `account-linkage-members.csv` (apply-compatible: `block` for high-band, `review`
+  for medium, `skip` for clusters with a payer), plus usage columns at hand.
+
+```bash
+npx tsx src/tier-progression/flows/account-linkage-scan.ts
+npx tsx src/tier-progression/flows/account-linkage-scan.ts --usage-days 14 --ip-cap 15
+# review the clusters CSV, then dry-run apply on high-band members:
+npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks \
+  --env production --report ../_local/abuse-detection/account-linkage-members.csv --dry-run
+```
+
+Read-only. Pure logic + tests live in `account-linkage-lib.ts` /
+`test/account-linkage-lib.test.ts`. The durable fix is grant-time enforcement
+(one bonus per email-root / IP / payment method); this scan seeds that blocklist.
 
 ## Entry Point
 

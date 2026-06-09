@@ -243,10 +243,10 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                     </>
                 )}
 
-                {/* Bars - Stacked: tier (teal) at bottom, paid (purple) on top */}
+                {/* Bars - stacked wallet split: tier at bottom, paid on top */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
-                        {/* Tier segment (bottom) - teal */}
+                        {/* Tier segment (bottom) */}
                         {bar.tierHeight > 0 && (
                             <rect
                                 x={bar.x}

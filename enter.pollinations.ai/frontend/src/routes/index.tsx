@@ -12,6 +12,10 @@ import {
     type UsagePeriodSelection,
 } from "../components/activity";
 import {
+    getActivityMockDashboardData,
+    isActivityMockEnabled,
+} from "../components/activity/mock-data.ts";
+import {
     type ApiKey,
     ApiKeyList,
     type CreateApiKey,
@@ -67,6 +71,21 @@ export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
+        if (isActivityMockEnabled()) {
+            const mockData = getActivityMockDashboardData();
+            return {
+                user: context.user,
+                githubUsername: mockData.githubUsername,
+                apiKeys: mockData.apiKeys,
+                tierData: mockData.tierData,
+                tierBalance: mockData.tierBalance,
+                packBalance: mockData.packBalance,
+                billingState: null,
+                paidWeek: mockData.paidWeek,
+                tierWeek: mockData.tierWeek,
+            };
+        }
+
         // Parallelize independent API calls for faster loading
         const [
             tierData,
@@ -257,7 +276,11 @@ function RouteComponent() {
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
-            history.replaceState(null, "", `#${page}`);
+            history.replaceState(
+                null,
+                "",
+                `${window.location.pathname}${window.location.search}#${page}`,
+            );
         } catch {
             // Hash updates are cosmetic; navigation still works without them.
         }

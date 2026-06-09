@@ -23,11 +23,8 @@ export const ALL_MODELS = [
     })),
 ];
 
-export const MODALITY_META: Record<
-    ModelModality,
-    { emoji: string; label: string }
-> = {
-    text: { emoji: "💬", label: "text" },
-    image: { emoji: "🖼️", label: "image" },
-    audio: { emoji: "🎵", label: "audio" },
+export const MODALITY_META: Record<ModelModality, { label: string }> = {
+    text: { label: "text" },
+    image: { label: "image" },
+    audio: { label: "audio" },
 };

@@ -18,7 +18,7 @@ const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
                     <InfoTip
                         content={
                             <div className="space-y-2 text-theme-text-base">
-                                <p>🌱 Tier balance refill rules</p>
+                                <p>Tier balance refill rules</p>
                                 <ul className="list-disc space-y-1 pl-4 text-theme-text-muted">
                                     <li>
                                         Pollen refills every hour up to your

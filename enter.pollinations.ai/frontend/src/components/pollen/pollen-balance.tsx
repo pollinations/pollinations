@@ -1,9 +1,11 @@
 import {
     Button,
+    CardIcon,
     ClockIcon,
     CopyButton,
     InfoTip,
     MailIcon,
+    SproutIcon,
     Surface,
     Tooltip,
     WalletIcon,
@@ -11,10 +13,10 @@ import {
 import {
     formatPollen,
     WalletBalanceCard,
-    WalletDot,
+    WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
-import { type FC, useState } from "react";
+import { type FC, type ReactNode, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -36,13 +38,14 @@ function normalizeDisplayBalance(value: number): number {
 
 const TooltipList: FC<{
     title: string;
-    emoji: string;
+    icon: ReactNode;
     items: string[];
     earned?: number;
-}> = ({ title, emoji, items, earned }) => (
+}> = ({ title, icon, items, earned }) => (
     <span className="block leading-snug">
-        <span className="block font-semibold text-ink-900">
-            {title} <span aria-hidden="true">{emoji}</span>
+        <span className="flex items-center gap-1 font-semibold text-ink-900">
+            {title}
+            {icon}
         </span>
         <ul className="mt-1.5 space-y-1 text-ink-700">
             {items.map((item) => (
@@ -98,7 +101,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             text={
                                 <TooltipList
                                     title="Paid balance"
-                                    emoji="💳"
+                                    icon={<CardIcon className="h-4 w-4" />}
                                     items={[
                                         "Pollen you bought",
                                         "Earnings from paid-side spend in your apps",
@@ -131,7 +134,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 text={
                                     <TooltipList
                                         title="Tier balance"
-                                        emoji="🌱"
+                                        icon={
+                                            <SproutIcon className="h-4 w-4" />
+                                        }
                                         items={[
                                             "Free Pollen that refills hourly",
                                             "Earnings from tier-side spend in your apps",
@@ -229,7 +234,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
         <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletDot kind="paid" />
+                    <WalletKindIcon kind="paid" />
                     Paid
                 </span>
                 <span className="flex items-baseline gap-1.5">
@@ -246,7 +251,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             {!hideTierSegment && (
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                        <WalletDot kind="tier" />
+                        <WalletKindIcon kind="tier" />
                         Tier
                     </span>
                     <span className="flex items-baseline gap-1.5">
@@ -297,7 +302,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         <Tooltip
                             content={
                                 <span className="block">
-                                    🛒 Buy{" "}
+                                    Buy{" "}
                                     <span className="font-semibold text-theme-text-strong">
                                         {selectedPack.amountUsd} pollen
                                     </span>{" "}

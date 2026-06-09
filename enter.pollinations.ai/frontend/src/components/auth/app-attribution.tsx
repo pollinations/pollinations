@@ -23,8 +23,8 @@ export function AppAttribution({
         attribution?.appName ??
         (isDeviceMode ? "A device" : redirectHostname || "An app");
     const tipText = [
-        "⚠️ Same as copy-pasting an API key into their app.",
-        "🔐 Only share with apps you trust.",
+        "Same as copy-pasting an API key into their app.",
+        "Only share with apps you trust.",
     ].join("\n");
     return (
         <>

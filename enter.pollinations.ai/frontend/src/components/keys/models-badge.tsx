@@ -9,12 +9,12 @@ export const ModelsBadge: FC<{
     const modelCount = models?.length ?? 0;
 
     const tooltipContent = (): ReactNode => {
-        if (isAllModels) return "✅ Access to all models";
-        if (modelCount === 0) return "🚫 No models allowed";
+        if (isAllModels) return "Access to all models";
+        if (modelCount === 0) return "No models allowed";
         return (
             <span className="block text-left leading-relaxed">
                 <span className="mb-1 block text-theme-text-base">
-                    🤖 Allowed models
+                    Allowed models
                 </span>
                 <span className="block font-mono text-xs whitespace-nowrap">
                     {models?.map((model) => (

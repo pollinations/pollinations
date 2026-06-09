@@ -68,7 +68,7 @@ const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
     <div className="space-y-2 text-theme-text-base">
         <div>
-            🔁 Keeps your{" "}
+            Keeps your{" "}
             <span className="font-semibold text-theme-text-strong">
                 paid balance
             </span>{" "}
@@ -483,16 +483,16 @@ function canEnable(setup: SetupReadiness): boolean {
 }
 
 function getDisabledReason(setup: SetupReadiness): string | null {
-    if (setup.isSaving) return "⏳ Saving auto top-up...";
-    if (!setup.hasSelectedPack) return "🌾 Choose a valid pollen pack first.";
+    if (setup.isSaving) return "Saving auto top-up...";
+    if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
     if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
-        return "💳 Add a default payment method and billing details in Stripe before saving changes.";
+        return "Add a default payment method and billing details in Stripe before saving changes.";
     }
     if (!setup.paymentMethodReady) {
-        return "💳 Add a default payment method in Stripe before saving changes.";
+        return "Add a default payment method in Stripe before saving changes.";
     }
     if (!setup.billingDetailsReady) {
-        return "🧾 Add billing details in Stripe before saving changes.";
+        return "Add billing details in Stripe before saving changes.";
     }
     return null;
 }
@@ -505,9 +505,8 @@ function getSaveDisabledReason(
 ): string | null {
     const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
-    if (!state.showConfig)
-        return "🔁 Use the switch to enable auto top-up first.";
-    if (!state.hasUnsavedChanges) return "✅ No changes to save.";
+    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
+    if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }
 

@@ -1,11 +1,16 @@
 import {
     AppIcon,
     Chip,
+    GlobeIcon,
     IconButton,
+    KeyIcon,
+    LockIcon,
+    PencilIcon,
     Section,
     Surface,
     TerminalIcon,
     Tooltip,
+    XIcon,
 } from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
@@ -83,11 +88,22 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Chip size="sm">
-                        {isApp
-                            ? "🖥️ App"
-                            : isPublishable
-                              ? "🌐 Publishable"
-                              : "🔒 Secret"}
+                        {isApp ? (
+                            <>
+                                <AppIcon className="h-3.5 w-3.5" />
+                                App
+                            </>
+                        ) : isPublishable ? (
+                            <>
+                                <GlobeIcon className="h-3.5 w-3.5" />
+                                Publishable
+                            </>
+                        ) : (
+                            <>
+                                <LockIcon className="h-3.5 w-3.5" />
+                                Secret
+                            </>
+                        )}
                     </Chip>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -107,23 +123,22 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <IconButton
                             intent="info"
                             title="Edit key"
-                            tooltip="✏️ Edit key"
+                            tooltip="Edit key"
                             tooltipAlign="center"
                             tooltipClampToViewport={false}
                             onClick={() => setEditingKey(apiKey)}
                         >
-                            ✎
+                            <PencilIcon className="h-4 w-4" />
                         </IconButton>
                         <IconButton
                             intent="danger"
                             title="Delete key"
-                            tooltip="🗑️ Delete key"
+                            tooltip="Delete key"
                             tooltipAlign="center"
                             tooltipClampToViewport={false}
                             onClick={() => setDeleteId(apiKey.id)}
-                            className="text-lg"
                         >
-                            ×
+                            <XIcon className="h-4 w-4" />
                         </IconButton>
                     </div>
                 </div>
@@ -168,7 +183,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 <Tooltip
                                     content={
                                         <span className="block whitespace-pre-line">
-                                            ↪️ Additional redirects
+                                            Additional redirects
                                             {"\n"}
                                             {redirectUrisMeta
                                                 .slice(1)
@@ -236,14 +251,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🔑 + API Key"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <KeyIcon className="h-4 w-4" />
+                                    Add Key
+                                </span>
+                            }
                         />
                     }
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🔑</p>
+                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                                 <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first API key
                                 </p>
@@ -270,7 +290,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🖥️ + Add App"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <AppIcon className="h-4 w-4" />
+                                    Add App
+                                </span>
+                            }
                             simplified
                         />
                     }
@@ -278,7 +303,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <div className="flex flex-col gap-3">
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🖥️</p>
+                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                                 <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first app key
                                 </p>

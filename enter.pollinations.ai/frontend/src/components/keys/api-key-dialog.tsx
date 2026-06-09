@@ -9,7 +9,7 @@ import {
     ScrollArea,
     Tooltip,
 } from "@pollinations/ui";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import {
     adjectives,
@@ -24,7 +24,7 @@ import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
-    triggerLabel?: string;
+    triggerLabel?: ReactNode;
     triggerClassName?: string;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
@@ -122,15 +122,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const createDisabledReason =
         !createdKey && noModelsSelected
-            ? "🤖 Select at least one model"
+            ? "Select at least one model"
             : undefined;
 
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
             copiedTimeoutMs={500}
-            tooltip="📋 Copy key"
-            copiedTooltip="✅ Copied! Closing..."
+            tooltip="Copy key"
+            copiedTooltip="Copied! Closing..."
             onCopied={closeAfterCopy}
             onCopyError={() => {
                 onComplete();

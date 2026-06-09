@@ -1,7 +1,13 @@
 import {
+    AudioIcon,
+    CardIcon,
+    ChatIcon,
     Chip,
+    type IconProps,
+    ImageIcon,
     MultiSelect,
     Section,
+    SproutIcon,
     StatCard,
     Surface,
     TabButton,
@@ -167,13 +173,15 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            💳 {formatPollen(stats.paidPollen)}
+                                            <CardIcon className="h-4 w-4" />
+                                            {formatPollen(stats.paidPollen)}
                                         </PaidChip>
                                         <TierChip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            🌱 {formatPollen(stats.tierPollen)}
+                                            <SproutIcon className="h-4 w-4" />
+                                            {formatPollen(stats.tierPollen)}
                                         </TierChip>
                                     </div>
                                 }
@@ -202,7 +210,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Tooltip
-                                                content={`📨 ${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                                content={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -221,7 +229,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                 </Chip>
                                             </Tooltip>
                                             <Tooltip
-                                                content={`🌾 ${formatPollen(stats.topModel.pollen)} pollen`}
+                                                content={`${formatPollen(stats.topModel.pollen)} pollen`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -253,6 +261,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     );
 };
 
+const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
+    text: ChatIcon,
+    image: ImageIcon,
+    audio: AudioIcon,
+};
+
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;
 }> = ({ breakdown }) => {
@@ -263,18 +277,19 @@ const ModalityPills: FC<{
     return (
         <div className="flex flex-wrap items-center gap-2">
             {entries.map(({ modality, count }) => {
-                const { emoji, label } = MODALITY_META[modality];
+                const { label } = MODALITY_META[modality];
+                const Icon = MODALITY_ICON[modality];
                 return (
                     <Tooltip
                         key={modality}
-                        content={`${emoji} ${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                        content={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
                         displayContents
                     >
                         <Chip
                             size="lg"
                             className="font-semibold text-theme-text-base"
                         >
-                            <span aria-hidden="true">{emoji}</span>
+                            <Icon className="h-4 w-4" />
                             <span className="tabular-nums">
                                 {count.toLocaleString()}
                             </span>

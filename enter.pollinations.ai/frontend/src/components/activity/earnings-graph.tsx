@@ -1,8 +1,10 @@
 import {
     Button,
+    CardIcon,
     Chip,
     MultiSelect,
     Section,
+    SproutIcon,
     StatCard,
     Surface,
     Tooltip,
@@ -149,14 +151,14 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Tooltip
-                                            content={`💳 ${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
+                                            content={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
                                             displayContents
                                         >
                                             <PaidChip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
-                                                💳{" "}
+                                                <CardIcon className="h-4 w-4" />
                                                 <span className="tabular-nums">
                                                     {formatPollen(
                                                         stats.totalPaid,
@@ -165,14 +167,14 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                             </PaidChip>
                                         </Tooltip>
                                         <Tooltip
-                                            content={`🌱 ${formatPollen(stats.totalTier)} pollen from tier-side spend`}
+                                            content={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
                                             displayContents
                                         >
                                             <TierChip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
-                                                🌱{" "}
+                                                <SproutIcon className="h-4 w-4" />
                                                 <span className="tabular-nums">
                                                     {formatPollen(
                                                         stats.totalTier,
@@ -214,7 +216,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                     <div className="flex flex-wrap items-center gap-2">
                                         {stats.topApp.uniqueUsers > 0 && (
                                             <Tooltip
-                                                content={`👤 ${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
+                                                content={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
                                                 displayContents
                                             >
                                                 <Chip
@@ -234,7 +236,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                             </Tooltip>
                                         )}
                                         <Tooltip
-                                            content={`🌾 ${formatPollen(stats.topApp.pollen)} pollen earned`}
+                                            content={`${formatPollen(stats.topApp.pollen)} pollen earned`}
                                             displayContents
                                         >
                                             <Chip

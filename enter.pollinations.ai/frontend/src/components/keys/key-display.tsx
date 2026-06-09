@@ -8,7 +8,7 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     return (
         <CopyButton
             value={fullKey}
-            tooltip="📋 Copy full key"
+            tooltip="Copy full key"
             tooltipAlign="center"
             tooltipClampToViewport={false}
             tooltipClassName="inline-flex"
@@ -22,7 +22,7 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
                 )
             }
         >
-            {(copied) => (copied ? "✓ Copied!" : `${start}...`)}
+            {(copied) => (copied ? "Copied!" : `${start}...`)}
         </CopyButton>
     );
 };

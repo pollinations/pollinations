@@ -31,7 +31,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
             >
                 Expiry
                 <InfoTip
-                    text="⏳ Key expires after this many days. Leave empty for no expiry."
+                    text="Key expires after this many days. Leave empty for no expiry."
                     label="Expiry information"
                 />
             </Field.Label>

@@ -1,5 +1,6 @@
 import { apiClient } from "@frontend/api.ts";
 import {
+    AppIcon,
     Button,
     Chip,
     CopyButton,
@@ -7,7 +8,9 @@ import {
     Dialog,
     DialogTitle,
     Field,
+    GlobeIcon,
     Input,
+    LockIcon,
     ScrollArea,
 } from "@pollinations/ui";
 import type { FC } from "react";
@@ -156,11 +159,22 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                 <div className="flex items-center gap-3">
                     <Chip>
-                        {appKey
-                            ? "🖥️ App"
-                            : isPublishable
-                              ? "🌐 Publishable"
-                              : "🔒 Secret"}
+                        {appKey ? (
+                            <>
+                                <AppIcon className="h-4 w-4" />
+                                App
+                            </>
+                        ) : isPublishable ? (
+                            <>
+                                <GlobeIcon className="h-4 w-4" />
+                                Publishable
+                            </>
+                        ) : (
+                            <>
+                                <LockIcon className="h-4 w-4" />
+                                Secret
+                            </>
+                        )}
                     </Chip>
                     {isPublishable && plaintextKey ? (
                         <CopyButton
@@ -176,7 +190,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 )
                             }
                         >
-                            {(copied) => (copied ? "✓ Copied!" : plaintextKey)}
+                            {(copied) => (copied ? "Copied!" : plaintextKey)}
                         </CopyButton>
                     ) : (
                         <span className="font-mono text-sm text-theme-text-muted">

@@ -1,12 +1,7 @@
-import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations/ui";
-import { ModalityChip } from "@pollinations/ui/gen";
-import { PaidChip } from "@pollinations/ui/wallet";
+import { Chip, Surface, Tooltip } from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import {
-    calculatePerPollen,
-    canAffordModel,
-    TOP_UP_TOOLTIP,
-} from "./calculations.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -24,15 +19,9 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({
-    model,
-    tierBalance,
-    packBalance,
-}) => {
+export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const modelDescription = getModelDescriptionWithoutName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
@@ -45,16 +34,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
 
-    const isSignedIn = packBalance !== undefined;
     const genPerPollen = calculatePerPollen(model);
-    const isDisabled =
-        isSignedIn &&
-        !canAffordModel(
-            model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
-            showPaidOnly,
-        );
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
@@ -133,14 +113,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     ]);
 
     return (
-        <div
-            className={cn(
-                "flex items-center rounded-xl p-4",
-                isDisabled
-                    ? "bg-transparent"
-                    : "bg-surface-opaque/80 hover:bg-surface-opaque/90 transition-colors",
-            )}
-        >
+        <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
                 {brandLogoPath && (
@@ -164,37 +137,21 @@ export const ModelRow: FC<ModelRowProps> = ({
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0 pl-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="inline-flex items-center text-base font-medium leading-none">
-                        <span>{publicModelName}</span>
-                        {modelDescription && (
-                            <InfoTip text={modelDescription} />
-                        )}
-                    </span>
-                    <CopyButton
-                        value={model.name}
-                        copiedTimeoutMs={900}
-                        tooltip={`📋 Copy API model name ${model.name}`}
-                        aria-label={`Copy API model name ${model.name}`}
-                        className={(copied) =>
-                            cn(
-                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-theme-text-muted transition-colors",
-                                copied
-                                    ? "text-intent-success-text"
-                                    : "hover:text-theme-text-base",
-                            )
-                        }
-                    >
-                        {(copied) => (
-                            <>
-                                <span>{model.name}</span>
-                                {copied && (
-                                    <span className="rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
-                                        copied
-                                    </span>
-                                )}
-                            </>
-                        )}
-                    </CopyButton>
+                    {modelDescription ? (
+                        <Tooltip
+                            triggerAs="span"
+                            content={modelDescription}
+                            className="self-start"
+                        >
+                            <span className="text-base font-medium leading-none">
+                                {publicModelName}
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        <span className="text-base font-medium leading-none">
+                            {publicModelName}
+                        </span>
+                    )}
                     {(modalityIcons.length > 0 ||
                         capabilityIcons.length > 0 ||
                         showNew ||
@@ -203,19 +160,16 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
-                                    <ModalityChip
-                                        modality={model.type}
-                                        size="sm"
-                                    >
+                                    <Chip size="sm">
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </ModalityChip>
+                                    </Chip>
                                 </Tooltip>
                             )}
                             {capabilityIcons.length > 0 && (
                                 <Tooltip content={capabilityLabel}>
-                                    <Chip intent="neutral" size="sm">
+                                    <Chip size="sm">
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
@@ -235,13 +189,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
-                                <Tooltip
-                                    content={
-                                        isDisabled
-                                            ? TOP_UP_TOOLTIP
-                                            : "💳 This model uses paid balance only."
-                                    }
-                                >
+                                <Tooltip content="💳 This model uses paid balance only.">
                                     <PaidChip size="sm">PAID</PaidChip>
                                 </Tooltip>
                             )}
@@ -250,9 +198,14 @@ export const ModelRow: FC<ModelRowProps> = ({
                 </div>
             </div>
 
-            {/* Per pollen — fixed width */}
+            {/* Per pollen — fixed width; paid color for paid models, tier color
+                for tier models */}
             <div className="w-[90px] text-center shrink-0">
-                <Chip>{genPerPollen}</Chip>
+                {showPaidOnly ? (
+                    <PaidChip>{genPerPollen}</PaidChip>
+                ) : (
+                    <TierChip>{genPerPollen}</TierChip>
+                )}
             </div>
 
             {/* Input prices — fixed width */}
@@ -278,6 +231,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                     ))}
                 </div>
             </div>
-        </div>
+        </Surface>
     );
 };

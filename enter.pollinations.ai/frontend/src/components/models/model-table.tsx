@@ -1,13 +1,12 @@
-import { ChevronIcon, Chip, CopyButton, cn, Tooltip } from "@pollinations/ui";
-import { ModalityChip } from "@pollinations/ui/gen";
-import { PaidChip } from "@pollinations/ui/wallet";
+import { ChevronIcon, Chip, Tooltip } from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
     type ModelName,
     type PriceDefinition,
 } from "@shared/registry/registry.ts";
 import { type FC, useState } from "react";
-import { calculatePerPollen, canAffordModel } from "./calculations.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -34,9 +33,6 @@ export type SectionType =
     | "text"
     | "embedding";
 
-/** Filter selection: a single modality, or "all" (every section, no filter). */
-export type TabValue = SectionType | "all";
-
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
@@ -44,9 +40,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
-    activeTab: TabValue;
-    tierBalance?: number;
-    packBalance?: number;
+    activeTab: SectionType;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -158,8 +152,6 @@ type TabContentProps = {
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
-    tierBalance?: number;
-    packBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({
@@ -167,8 +159,6 @@ const TabContent: FC<TabContentProps> = ({
     models,
     sortKey,
     sortDir,
-    tierBalance,
-    packBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
@@ -181,12 +171,7 @@ const TabContent: FC<TabContentProps> = ({
             {/* Desktop cards */}
             <div className="hidden md:flex md:flex-col gap-2 pb-1">
                 {regularModels.map((model) => (
-                    <ModelRow
-                        key={model.name}
-                        model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
+                    <ModelRow key={model.name} model={model} />
                 ))}
                 {personaModels.length > 0 && (
                     <>
@@ -196,12 +181,7 @@ const TabContent: FC<TabContentProps> = ({
                             </span>
                         </div>
                         {personaModels.map((model) => (
-                            <ModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
+                            <ModelRow key={model.name} model={model} />
                         ))}
                     </>
                 )}
@@ -210,12 +190,7 @@ const TabContent: FC<TabContentProps> = ({
             {/* Mobile list */}
             <div className="md:hidden pb-1">
                 {regularModels.map((model) => (
-                    <MobileModelRow
-                        key={model.name}
-                        model={model}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
+                    <MobileModelRow key={model.name} model={model} />
                 ))}
                 {personaModels.length > 0 && (
                     <>
@@ -225,12 +200,7 @@ const TabContent: FC<TabContentProps> = ({
                             </span>
                         </div>
                         {personaModels.map((model) => (
-                            <MobileModelRow
-                                key={model.name}
-                                model={model}
-                                tierBalance={tierBalance}
-                                packBalance={packBalance}
-                            />
+                            <MobileModelRow key={model.name} model={model} />
                         ))}
                     </>
                 )}
@@ -243,15 +213,9 @@ const TabContent: FC<TabContentProps> = ({
 
 type MobileModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
 };
 
-const MobileModelRow: FC<MobileModelRowProps> = ({
-    model,
-    tierBalance,
-    packBalance,
-}) => {
+const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const [expanded, setExpanded] = useState(false);
     const displayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
@@ -262,29 +226,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
 
-    const isSignedIn = packBalance !== undefined;
     const perPollen = calculatePerPollen(model);
-    const isDisabled =
-        isSignedIn &&
-        !canAffordModel(
-            model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
-            showPaidOnly,
-        );
 
     return (
-        <div
-            className={cn(
-                "rounded-xl mb-1 border",
-                expanded ? "border-theme-border" : "border-transparent",
-                isDisabled
-                    ? "bg-transparent"
-                    : expanded
-                      ? "bg-surface-opaque/90"
-                      : "bg-surface-opaque/80 hover:bg-surface-opaque/90 transition-colors",
-            )}
-        >
+        <div className="rounded-xl mb-1 bg-surface-opaque shadow-well transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
             <div className="relative">
                 <button
@@ -332,7 +277,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 capabilityIcons.length > 0) && (
                                 <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
                                     <MobileMetadataBadges
-                                        type={model.type}
                                         modalityIcons={modalityIcons}
                                         capabilityIcons={capabilityIcons}
                                     />
@@ -353,7 +297,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             )}
                         </div>
                     </div>
-                    <Chip className="justify-self-end">{perPollen}</Chip>
+                    {showPaidOnly ? (
+                        <PaidChip className="justify-self-end">
+                            {perPollen}
+                        </PaidChip>
+                    ) : (
+                        <TierChip className="justify-self-end">
+                            {perPollen}
+                        </TierChip>
+                    )}
                 </div>
             </div>
 
@@ -361,33 +313,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
                     <div className="flex min-w-0 flex-col gap-2 pl-6">
-                        <CopyButton
-                            value={model.name}
-                            copiedTimeoutMs={900}
-                            tooltip={`📋 Copy API model name ${model.name}`}
-                            aria-label={`Copy API model name ${model.name}`}
-                            className={(copied) =>
-                                cn(
-                                    "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-theme-text-muted transition-colors",
-                                    copied
-                                        ? "text-intent-success-text"
-                                        : "hover:text-theme-text-base",
-                                )
-                            }
-                        >
-                            {(copied) => (
-                                <>
-                                    <span className="min-w-0 truncate">
-                                        {model.name}
-                                    </span>
-                                    {copied && (
-                                        <span className="rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
-                                            copied
-                                        </span>
-                                    )}
-                                </>
-                            )}
-                        </CopyButton>
                         <MobilePriceGroup
                             label="In"
                             model={model}
@@ -519,13 +444,11 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
 };
 
 type MobileMetadataBadgesProps = {
-    type: SectionType;
     modalityIcons: string[];
     capabilityIcons: string[];
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
-    type,
     modalityIcons,
     capabilityIcons,
 }) => {
@@ -536,14 +459,14 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     return (
         <>
             {modalityIcons.length > 0 && (
-                <ModalityChip modality={type} size="sm">
+                <Chip size="sm">
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </ModalityChip>
+                </Chip>
             )}
             {capabilityIcons.length > 0 && (
-                <Chip intent="neutral" size="sm">
+                <Chip size="sm">
                     {capabilityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
@@ -563,8 +486,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     realtimeModels,
     embeddingModels,
     activeTab,
-    tierBalance,
-    packBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -584,12 +505,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
-    // "all" → every section stacked (each keeps its own header/persona split);
-    // otherwise just the selected modality.
-    const visibleSections =
-        activeTab === "all"
-            ? sections
-            : sections.filter((s) => s.type === activeTab);
 
     const onSort = (key: SortKey) => {
         if (key === sortKey) {
@@ -670,26 +585,15 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 </button>
             </div>
 
-            {/* Tab content — one section, or all of them stacked under "All" */}
-            {visibleSections.map((section) => (
-                <div key={section.type}>
-                    {activeTab === "all" && (
-                        <div className="px-2 pt-3 pb-1.5">
-                            <ModalityChip modality={section.type} size="sm">
-                                {sectionLabels[section.type]}
-                            </ModalityChip>
-                        </div>
-                    )}
-                    <TabContent
-                        type={section.type}
-                        models={section.models}
-                        sortKey={sortKey}
-                        sortDir={sortDir}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
-                </div>
-            ))}
+            {/* Tab content — the selected modality */}
+            {activeSection && (
+                <TabContent
+                    type={activeSection.type}
+                    models={activeSection.models}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                />
+            )}
         </div>
     );
 };

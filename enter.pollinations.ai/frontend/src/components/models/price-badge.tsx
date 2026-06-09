@@ -10,29 +10,6 @@ const TOKEN_TYPE_LABELS: Record<string, string> = {
     "🔊": "audio",
 };
 
-const renderAlignedPrice = (price: string) => {
-    const numericParts = price.match(/^(\d+)(?:\.(\d+))?$/);
-    if (!numericParts) {
-        return <span className="tabular-nums">{price}</span>;
-    }
-
-    const [, integerPart, fractionalPart] = numericParts;
-
-    return (
-        <span className="inline-flex items-baseline tabular-nums">
-            <span className="inline-block min-w-[2ch] text-right md:min-w-[3ch]">
-                {integerPart}
-            </span>
-            {fractionalPart !== undefined && (
-                <>
-                    <span>.</span>
-                    <span>{fractionalPart}</span>
-                </>
-            )}
-        </span>
-    );
-};
-
 export type PriceBadgeConfig = {
     prices: (string | undefined)[];
     emoji: string;
@@ -108,30 +85,31 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
               ? `${subEmojis[0] ?? "🏷️"} Token type: ${tokenTypes[0]}`
               : undefined;
 
-    // Show suffix based on pricing type
+    // Compact suffix based on pricing type
     const suffix = perSecond
-        ? " /sec"
+        ? "/sec"
         : perImage
-          ? " /img"
+          ? "/img"
           : perToken
-            ? " /M"
+            ? "/M"
             : "";
 
+    // One compact pill: emoji(s) + value grouped so it reads as a single unit.
     const badge = (
         <span
             className={cn(
-                "inline-flex items-center gap-px px-2 py-0.5 text-xs whitespace-nowrap text-ink-700",
+                "inline-flex items-center gap-1 rounded-md bg-ink-100/80 px-1.5 py-0.5 text-xs whitespace-nowrap tabular-nums text-ink-900",
                 className,
             )}
         >
-            <span className="inline-flex min-w-[1.65rem] items-center justify-end gap-0.5">
+            <span className="inline-flex items-center gap-0.5">
                 {(subEmojis.length > 0 ? subEmojis : [emoji]).map((item) => (
                     <span key={item}>{item}</span>
                 ))}
             </span>
-            <span className="inline-flex items-baseline">
-                {renderAlignedPrice(validPrices[0])}
-                <span>{suffix}</span>
+            <span>
+                {validPrices[0]}
+                {suffix}
             </span>
         </span>
     );

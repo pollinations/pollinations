@@ -3,26 +3,20 @@ import {
     ExternalLinkButton,
     ImageIcon,
     Section,
+    TabButton,
     TokensIcon,
 } from "@pollinations/ui";
-import { ModalityTab } from "@pollinations/ui/gen";
 import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,
     sectionLabels,
-    type TabValue,
     UnifiedModelTable,
 } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
 
-type ModelsProps = {
-    tierBalance?: number;
-    packBalance?: number;
-};
-
-export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
-    const [activeTab, setActiveTab] = useState<TabValue>("all");
+export const Models: FC = () => {
+    const [activeTab, setActiveTab] = useState<SectionType>("image");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -65,24 +59,15 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                 }
             >
                 <div className="mb-4 flex flex-wrap gap-1.5">
-                    <ModalityTab
-                        modality="all"
-                        active={activeTab === "all"}
-                        onClick={() => setActiveTab("all")}
-                    >
-                        <span className="font-bold">All</span>
-                    </ModalityTab>
                     {availableSections.map((section) => (
-                        <ModalityTab
+                        <TabButton
                             key={section}
-                            modality={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
+                            variant="soft"
                         >
-                            <span className="font-bold">
-                                {sectionLabels[section]}
-                            </span>
-                        </ModalityTab>
+                            {sectionLabels[section]}
+                        </TabButton>
                     ))}
                 </div>
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -94,11 +79,9 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         textModels={textModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
                     />
                 </div>
-                <div className="mt-5 space-y-2 border-t border-divider pt-5 text-[13px] leading-snug text-theme-text-muted">
+                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>

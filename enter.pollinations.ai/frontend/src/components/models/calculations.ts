@@ -5,10 +5,7 @@
  * Returns "—" when no data is available - no theoretical estimates.
  */
 
-import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import type { ModelPrice } from "./types.ts";
-
-export const TOP_UP_TOOLTIP = "🔒 Top up to use this model";
 
 /** Abbreviate a value >= 1000 as K/M/B with one decimal (locale-stable, "1.5K"). */
 function compact(num: number): string {
@@ -47,18 +44,4 @@ export function calculatePerPollen(model: ModelPrice): string {
     }
 
     return "—";
-}
-
-export function canAffordModel(
-    model: ModelPrice,
-    tierBalance: number,
-    packBalance: number,
-    isPaidOnly: boolean,
-): boolean {
-    const cost = model.realAvgCost ?? 0;
-    return canCoverEstimatedCharge(
-        { tierBalance, packBalance },
-        cost,
-        isPaidOnly,
-    );
 }

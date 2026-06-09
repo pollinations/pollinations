@@ -340,9 +340,7 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
             )}
-            {activePage === "models" && (
-                <Models tierBalance={tierBalance} packBalance={packBalance} />
-            )}
+            {activePage === "models" && <Models />}
         </DashboardShell>
     );
 }

@@ -97,6 +97,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
+import { UserAvatar } from "@pollinations/ui/auth/sdk";
 import {
     categoryLabel,
     ModalityChip,
@@ -268,39 +269,14 @@ function SectionHeader({
 }) {
     return (
         <div className="mb-4 flex max-w-3xl flex-col gap-1">
-            <h2 className="font-serif text-2xl font-black text-theme-text-strong">
+            <Heading as="h2" size="section">
                 {title}
-            </h2>
+            </Heading>
             {children ? (
                 <p className="text-sm leading-6 text-theme-text-soft">
                     {children}
                 </p>
             ) : null}
-        </div>
-    );
-}
-
-function AccountSummaryItem({
-    label,
-    children,
-}: {
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="grid min-w-0 gap-1 rounded-lg bg-theme-bg-pale px-3 py-2 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center">
-            <Text
-                as="span"
-                size="micro"
-                tone="muted"
-                weight="bold"
-                className="shrink-0"
-            >
-                {label}
-            </Text>
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end">
-                {children}
-            </div>
         </div>
     );
 }
@@ -321,6 +297,101 @@ function AccountSummaryText({
     );
 }
 
+function CatalogValue({
+    children,
+    mono = false,
+}: {
+    children: ReactNode;
+    mono?: boolean;
+}) {
+    return (
+        <span
+            className={`min-w-0 break-words text-sm text-theme-text-base [overflow-wrap:anywhere] ${mono ? "break-all font-mono" : ""}`}
+        >
+            {children}
+        </span>
+    );
+}
+
+function CatalogCell({ children }: { children: ReactNode }) {
+    return (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {children}
+        </div>
+    );
+}
+
+function CatalogTableRow({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <TableRow>
+            <TableCell
+                muted
+                className="w-40 align-top font-medium whitespace-nowrap"
+            >
+                {label}
+            </TableCell>
+            <TableCell className="min-w-0 align-top">
+                <CatalogCell>{children}</CatalogCell>
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function CatalogTable({
+    ariaLabel = "Model catalog",
+    children,
+}: {
+    ariaLabel?: string;
+    children: ReactNode;
+}) {
+    return (
+        <Table aria-label={ariaLabel}>
+            <TableBody>{children}</TableBody>
+        </Table>
+    );
+}
+
+function formatCatalogToken(value: string): string {
+    return value.replace(/_/g, " ");
+}
+
+function ModalityChipList({ values }: { values: readonly string[] }) {
+    if (values.length === 0) {
+        return (
+            <Text as="span" size="sm" tone="muted">
+                Not listed
+            </Text>
+        );
+    }
+    return values.map((value) => (
+        <ModalityChip key={value} modality={value} size="sm">
+            {formatCatalogToken(value)}
+        </ModalityChip>
+    ));
+}
+
+function TokenChipList({ values }: { values: readonly string[] }) {
+    return values.map((value) => (
+        <Chip key={value} intent="neutral" size="sm">
+            {formatCatalogToken(value)}
+        </Chip>
+    ));
+}
+
+function BooleanCapability({ value }: { value: boolean }) {
+    return (
+        <Chip intent={value ? "success" : "neutral"} size="sm">
+            {value ? "Yes" : "No"}
+        </Chip>
+    );
+}
+
 function formatPollenAmount(value: number | null | undefined): string {
     if (value == null) return "No cap";
     return `${value.toLocaleString(undefined, {
@@ -338,11 +409,11 @@ function formatExpiry(value: string | null | undefined): string {
     return value.slice(0, 10);
 }
 
-function ModelCountChips({
-    counts,
+function CategoryChips({
+    categories,
     isLoading,
 }: {
-    counts: readonly { category: ModelSelectorCategory; count: number }[];
+    categories: readonly ModelSelectorCategory[];
     isLoading: boolean;
 }) {
     if (isLoading) {
@@ -352,41 +423,21 @@ function ModelCountChips({
             </Chip>
         );
     }
-    if (!counts.length) {
+    if (!categories.length) {
         return (
             <Chip intent="neutral" size="sm">
-                No model
+                No category
             </Chip>
         );
     }
-    return counts.map(({ category, count }) => (
+    return categories.map((category) => (
         <Chip key={category} size="sm">
             <span className="inline-flex items-center gap-1.5">
                 <ModalityDot modality={category} />
-                {categoryLabel(category)} {count}
+                {categoryLabel(category)}
             </span>
         </Chip>
     ));
-}
-
-function formatList(values: readonly string[] | undefined): string {
-    return values?.length ? values.join(", ") : "Not listed";
-}
-
-function formatModelLimit(model: ModelCatalogItem | undefined): string {
-    if (model?.contextLength) {
-        return `${model.contextLength.toLocaleString()} context`;
-    }
-    return "Not listed";
-}
-
-function formatPricing(model: ModelCatalogItem | undefined): string {
-    const entries = pricingEntries(model?.pricing);
-    if (!entries.length) return "Not listed";
-
-    return entries
-        .map(([label, value]) => `${label}: ${value} pollen`)
-        .join(", ");
 }
 
 function selectedCatalogModel(
@@ -447,13 +498,7 @@ function ModulesPage() {
         : selectedModel && allowedModelIds.has(selectedModel.id)
           ? "Allowed by key"
           : "Not allowed";
-    const modelCounts = categories
-        .map((item) => ({
-            category: item,
-            count: visibleModels.filter((model) => model.category === item)
-                .length,
-        }))
-        .filter(({ count }) => count > 0);
+    const selectedPricingEntries = pricingEntries(selectedModel?.pricing);
 
     return (
         <>
@@ -483,39 +528,49 @@ function ModulesPage() {
                             <Text as="h3" size="sm" weight="bold">
                                 Account
                             </Text>
-                            <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
-                                <AccountSummaryItem label="GitHub Username">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? (profile.data
-                                                      ?.githubUsername ?? null)
-                                                : "—"
-                                        }
-                                        isLoading={profile.isLoading}
-                                        fallback="Not available"
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="GitHub Name">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? profile.data?.name
-                                                : "—"
-                                        }
-                                        isLoading={profile.isLoading}
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="Email">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? profile.data?.email
-                                                : "—"
-                                        }
-                                        isLoading={profile.isLoading}
-                                    />
-                                </AccountSummaryItem>
+                            <div className="mt-2">
+                                <CatalogTable ariaLabel="Account">
+                                    <CatalogTableRow label="Profile picture">
+                                        {isLoggedIn ? (
+                                            <UserAvatar size="lg" />
+                                        ) : (
+                                            <AccountSummaryText value="—" />
+                                        )}
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="GitHub Username">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? (profile.data
+                                                          ?.githubUsername ??
+                                                      null)
+                                                    : "—"
+                                            }
+                                            isLoading={profile.isLoading}
+                                            fallback="Not available"
+                                        />
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="GitHub Name">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? profile.data?.name
+                                                    : "—"
+                                            }
+                                            isLoading={profile.isLoading}
+                                        />
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="Email">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? profile.data?.email
+                                                    : "—"
+                                            }
+                                            isLoading={profile.isLoading}
+                                        />
+                                    </CatalogTableRow>
+                                </CatalogTable>
                             </div>
                         </div>
 
@@ -523,66 +578,68 @@ function ModulesPage() {
                             <Text as="h3" size="sm" weight="bold">
                                 App access (per key)
                             </Text>
-                            <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
-                                <AccountSummaryItem label="Key budget">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? formatPollenAmount(
-                                                      accountKey.data
-                                                          ?.pollenBudget,
-                                                  )
-                                                : "—"
-                                        }
-                                        isLoading={accountKey.isLoading}
-                                        fallback="No cap"
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="Key expires">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? formatExpiry(
-                                                      accountKey.data
-                                                          ?.expiresAt,
-                                                  )
-                                                : "—"
-                                        }
-                                        isLoading={accountKey.isLoading}
-                                        fallback="No expiry"
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="Usage">
-                                    <AccountSummaryText
-                                        value={
-                                            isLoggedIn
-                                                ? formatUsageCount(
-                                                      keyUsage.data?.count,
-                                                  )
-                                                : "—"
-                                        }
-                                        isLoading={keyUsage.isLoading}
-                                    />
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="Models and Modalities">
-                                    {isLoggedIn ? (
-                                        <ModelCountChips
-                                            counts={modelCounts}
-                                            isLoading={isLoading}
+                            <div className="mt-2">
+                                <CatalogTable ariaLabel="App access per key">
+                                    <CatalogTableRow label="Key budget">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? formatPollenAmount(
+                                                          accountKey.data
+                                                              ?.pollenBudget,
+                                                      )
+                                                    : "—"
+                                            }
+                                            isLoading={accountKey.isLoading}
+                                            fallback="No cap"
                                         />
-                                    ) : (
-                                        <AccountSummaryText value="—" />
-                                    )}
-                                </AccountSummaryItem>
-                                <AccountSummaryItem label="App Earnings">
-                                    {isLoggedIn ? (
-                                        <Chip intent="success" size="sm">
-                                            20% of pollen spent in-app
-                                        </Chip>
-                                    ) : (
-                                        <AccountSummaryText value="—" />
-                                    )}
-                                </AccountSummaryItem>
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="Key expires">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? formatExpiry(
+                                                          accountKey.data
+                                                              ?.expiresAt,
+                                                      )
+                                                    : "—"
+                                            }
+                                            isLoading={accountKey.isLoading}
+                                            fallback="No expiry"
+                                        />
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="Usage">
+                                        <AccountSummaryText
+                                            value={
+                                                isLoggedIn
+                                                    ? formatUsageCount(
+                                                          keyUsage.data?.count,
+                                                      )
+                                                    : "—"
+                                            }
+                                            isLoading={keyUsage.isLoading}
+                                        />
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="Categories">
+                                        {isLoggedIn ? (
+                                            <CategoryChips
+                                                categories={categories}
+                                                isLoading={isLoading}
+                                            />
+                                        ) : (
+                                            <AccountSummaryText value="—" />
+                                        )}
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="App Earnings">
+                                        {isLoggedIn ? (
+                                            <Chip intent="success" size="sm">
+                                                20% of pollen spent in-app
+                                            </Chip>
+                                        ) : (
+                                            <AccountSummaryText value="—" />
+                                        )}
+                                    </CatalogTableRow>
+                                </CatalogTable>
                             </div>
                         </div>
                     </div>
@@ -597,38 +654,30 @@ function ModulesPage() {
                             variant="panel"
                             className="flex flex-col gap-5"
                         >
-                            <div className="w-full">
-                                <Text as="h3" size="sm" weight="bold">
-                                    Modality
-                                </Text>
-                                <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
-                                    <AccountSummaryItem label="Category">
-                                        <ButtonGroup aria-label="Modality">
-                                            {categories.map((item) => (
-                                                <ModalityTab
-                                                    key={item}
-                                                    modality={item}
-                                                    active={
-                                                        activeCategory === item
-                                                    }
-                                                    onClick={() =>
-                                                        setCategory(item)
-                                                    }
-                                                >
-                                                    {categoryLabel(item)}
-                                                </ModalityTab>
-                                            ))}
-                                        </ButtonGroup>
-                                    </AccountSummaryItem>
-                                </div>
-                            </div>
+                            <CatalogTable ariaLabel="Model categories">
+                                <CatalogTableRow label="Category">
+                                    <ButtonGroup aria-label="Categories">
+                                        {categories.map((item) => (
+                                            <ModalityTab
+                                                key={item}
+                                                active={activeCategory === item}
+                                                onClick={() =>
+                                                    setCategory(item)
+                                                }
+                                            >
+                                                {categoryLabel(item)}
+                                            </ModalityTab>
+                                        ))}
+                                    </ButtonGroup>
+                                </CatalogTableRow>
+                            </CatalogTable>
 
-                            <div className="w-full">
+                            <div className="flex w-full flex-col gap-2">
                                 <Text as="h3" size="sm" weight="bold">
-                                    Models
+                                    Model
                                 </Text>
-                                <div className="mt-2 grid w-full gap-2 lg:grid-cols-2">
-                                    <AccountSummaryItem label="Model">
+                                <CatalogTable ariaLabel="Selected model">
+                                    <CatalogTableRow label="Title">
                                         <ModelSelector
                                             models={visibleModels}
                                             category={activeCategory}
@@ -644,48 +693,21 @@ function ModulesPage() {
                                                 )
                                             }
                                         />
-                                    </AccountSummaryItem>
+                                    </CatalogTableRow>
                                     {selectedModel ? (
                                         <>
-                                            <AccountSummaryItem label="Brand">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
+                                            <CatalogTableRow label="ID">
+                                                <CatalogValue mono>
+                                                    {selectedModel.id}
+                                                </CatalogValue>
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Brand">
+                                                <CatalogValue>
                                                     {selectedModel.brand ??
                                                         "Not listed"}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Description">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
-                                                    {selectedModel.description ??
-                                                        "Not listed"}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="ID">
-                                                <span className="min-w-0 break-all font-mono text-sm text-theme-text-base sm:text-right">
-                                                    {selectedModel.id}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Input">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
-                                                    {formatList(
-                                                        selectedModel.inputModalities,
-                                                    )}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Output">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
-                                                    {formatList(
-                                                        selectedModel.outputModalities,
-                                                    )}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Limit">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
-                                                    {formatModelLimit(
-                                                        selectedModel,
-                                                    )}
-                                                </span>
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Access">
+                                                </CatalogValue>
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Access">
                                                 <Chip
                                                     intent={
                                                         selectedModelAccess ===
@@ -700,36 +722,124 @@ function ModulesPage() {
                                                 {selectedModel.paidOnly ? (
                                                     <Chip size="sm">paid</Chip>
                                                 ) : null}
-                                            </AccountSummaryItem>
-                                            <AccountSummaryItem label="Pricing">
-                                                <span className="text-sm text-theme-text-base sm:text-right">
-                                                    {formatPricing(
-                                                        selectedModel,
-                                                    )}
-                                                </span>
-                                            </AccountSummaryItem>
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Description">
+                                                <CatalogValue>
+                                                    {selectedModel.description ??
+                                                        "Not listed"}
+                                                </CatalogValue>
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Input">
+                                                <ModalityChipList
+                                                    values={
+                                                        selectedModel.inputModalities
+                                                    }
+                                                />
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Output">
+                                                <ModalityChipList
+                                                    values={
+                                                        selectedModel.outputModalities
+                                                    }
+                                                />
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Tools">
+                                                <BooleanCapability
+                                                    value={selectedModel.tools}
+                                                />
+                                            </CatalogTableRow>
+                                            <CatalogTableRow label="Reasoning">
+                                                <BooleanCapability
+                                                    value={
+                                                        selectedModel.reasoning
+                                                    }
+                                                />
+                                            </CatalogTableRow>
+                                            {selectedModel.contextLength ? (
+                                                <CatalogTableRow label="Context">
+                                                    <CatalogValue>
+                                                        {`${selectedModel.contextLength.toLocaleString()} tokens`}
+                                                    </CatalogValue>
+                                                </CatalogTableRow>
+                                            ) : null}
+                                            {selectedModel.maxReferenceImages ? (
+                                                <CatalogTableRow label="Reference images">
+                                                    <CatalogValue>
+                                                        {selectedModel.maxReferenceImages.toLocaleString()}
+                                                    </CatalogValue>
+                                                </CatalogTableRow>
+                                            ) : null}
+                                            {selectedModel.maxReferenceVideos ? (
+                                                <CatalogTableRow label="Reference videos">
+                                                    <CatalogValue>
+                                                        {selectedModel.maxReferenceVideos.toLocaleString()}
+                                                    </CatalogValue>
+                                                </CatalogTableRow>
+                                            ) : null}
+                                            {selectedModel.videoCapabilities
+                                                .length ? (
+                                                <CatalogTableRow label="Video">
+                                                    <TokenChipList
+                                                        values={
+                                                            selectedModel.videoCapabilities
+                                                        }
+                                                    />
+                                                </CatalogTableRow>
+                                            ) : null}
+                                            {selectedModel.voices.length ? (
+                                                <CatalogTableRow label="Voices">
+                                                    <TokenChipList
+                                                        values={
+                                                            selectedModel.voices
+                                                        }
+                                                    />
+                                                </CatalogTableRow>
+                                            ) : null}
+                                            {selectedPricingEntries.length ? (
+                                                selectedPricingEntries.map(
+                                                    ([label, value]) => (
+                                                        <CatalogTableRow
+                                                            key={label}
+                                                            label={`Price: ${label}`}
+                                                        >
+                                                            <CatalogValue mono>
+                                                                {value}
+                                                            </CatalogValue>
+                                                            <Chip
+                                                                intent="neutral"
+                                                                size="sm"
+                                                            >
+                                                                pollen
+                                                            </Chip>
+                                                        </CatalogTableRow>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <CatalogTableRow label="Pricing">
+                                                    <Text
+                                                        as="span"
+                                                        size="sm"
+                                                        tone="muted"
+                                                    >
+                                                        Not listed
+                                                    </Text>
+                                                </CatalogTableRow>
+                                            )}
                                         </>
                                     ) : null}
-                                </div>
-                                {error ? (
-                                    <div className="mt-3">
-                                        <Alert intent="warning">
-                                            Model catalog unavailable:{" "}
-                                            {error.message}
-                                        </Alert>
-                                    </div>
-                                ) : !selectedModel ? (
-                                    <Text
-                                        size="sm"
-                                        tone="soft"
-                                        className="mt-3"
-                                    >
-                                        {isLoading
-                                            ? "Loading models..."
-                                            : "No model available for this modality."}
-                                    </Text>
-                                ) : null}
+                                </CatalogTable>
                             </div>
+                            {error ? (
+                                <Alert intent="warning">
+                                    Model catalog unavailable: {error.message}
+                                </Alert>
+                            ) : !selectedModel ? (
+                                <Text size="sm" tone="soft">
+                                    {isLoading
+                                        ? "Loading models..."
+                                        : "No model available for this category."}
+                                </Text>
+                            ) : null}
                         </Surface>
                     </section>
 
@@ -1675,7 +1785,6 @@ function ColorsPage() {
                         {MODALITIES.map((m, i) => (
                             <ModalityTab
                                 key={m}
-                                modality={m}
                                 active={i === 0}
                                 onClick={() => undefined}
                                 className="capitalize"

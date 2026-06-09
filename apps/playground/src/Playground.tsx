@@ -12,7 +12,7 @@ import {
     Button,
     ButtonGroup,
     cn,
-    Field,
+    FieldStack,
     FileUpload,
     Heading,
     ImageIcon,
@@ -172,7 +172,6 @@ function ModalityTabs({
             {CATEGORY_ORDER.map((category) => (
                 <ModalityTab
                     key={category}
-                    modality={category}
                     active={activeCategory === category}
                     size="sm"
                     onClick={() => onCategoryChange(category)}
@@ -590,10 +589,7 @@ export function Playground({
                         variant="panel"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
-                        <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                Prompt
-                            </Field.Label>
+                        <FieldStack label="Prompt">
                             <Textarea
                                 value={prompt}
                                 rows={7}
@@ -606,13 +602,10 @@ export function Playground({
                                 )}
                                 className="polli-playground-textarea polli:min-h-44"
                             />
-                        </Field.Root>
+                        </FieldStack>
 
                         {isAudioTranscription && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Audio file
-                                </Field.Label>
+                            <FieldStack label="Audio file">
                                 <FileUpload
                                     value={audioFiles}
                                     onChange={setAudioFiles}
@@ -648,15 +641,18 @@ export function Playground({
                                         }
                                     }}
                                 />
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {isReferenceImageListMode && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Reference images (up to{" "}
-                                    {pluralizeImages(maxReferenceImages)})
-                                </Field.Label>
+                            <FieldStack
+                                label={
+                                    <>
+                                        Reference images (up to{" "}
+                                        {pluralizeImages(maxReferenceImages)})
+                                    </>
+                                }
+                            >
                                 <FileUpload
                                     value={referenceImages}
                                     onChange={setReferenceImages}
@@ -693,15 +689,12 @@ export function Playground({
                                         }
                                     }}
                                 />
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {isVideoReferenceMode && (
                             <div className="polli-playground-frame-grid">
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        First frame
-                                    </Field.Label>
+                                <FieldStack label="First frame">
                                     <FileUpload
                                         value={firstFrameFiles}
                                         onChange={(files) =>
@@ -734,13 +727,10 @@ export function Playground({
                                             }
                                         }}
                                     />
-                                </Field.Root>
+                                </FieldStack>
 
                                 {supportsLastFrame && (
-                                    <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                        <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                            Last frame
-                                        </Field.Label>
+                                    <FieldStack label="Last frame">
                                         <FileUpload
                                             value={lastFrameFiles}
                                             onChange={(files) =>
@@ -781,7 +771,7 @@ export function Playground({
                                                 }
                                             }}
                                         />
-                                    </Field.Root>
+                                    </FieldStack>
                                 )}
                             </div>
                         )}
@@ -789,10 +779,7 @@ export function Playground({
                         {(currentModel?.category === "image" ||
                             currentModel?.category === "video") && (
                             <div className="polli-playground-settings-grid">
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Width
-                                    </Field.Label>
+                                <FieldStack label="Width">
                                     <Input
                                         type="number"
                                         min={256}
@@ -804,11 +791,8 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Height
-                                    </Field.Label>
+                                </FieldStack>
+                                <FieldStack label="Height">
                                     <Input
                                         type="number"
                                         min={256}
@@ -822,11 +806,8 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Seed
-                                    </Field.Label>
+                                </FieldStack>
+                                <FieldStack label="Seed">
                                     <Input
                                         type="number"
                                         value={seed}
@@ -835,16 +816,20 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
+                                </FieldStack>
                             </div>
                         )}
 
                         {currentModel && currentModel.voices.length > 0 && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:flex polli:items-center polli:gap-1.5 polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    <ModalityDot modality="audio" />
-                                    Voice
-                                </Field.Label>
+                            <FieldStack
+                                label={
+                                    <>
+                                        <ModalityDot modality="audio" />
+                                        Voice
+                                    </>
+                                }
+                                labelClassName="polli:flex polli:items-center polli:gap-1.5"
+                            >
                                 <ButtonGroup aria-label="Voice">
                                     {currentModel.voices.map((voice) => (
                                         <TabButton
@@ -859,7 +844,7 @@ export function Playground({
                                         </TabButton>
                                     ))}
                                 </ButtonGroup>
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {error && <Alert intent="danger">{error}</Alert>}

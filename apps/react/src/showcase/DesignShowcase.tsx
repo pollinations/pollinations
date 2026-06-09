@@ -25,9 +25,11 @@ import {
     DiscordIcon,
     DownloadIcon,
     Dropdown,
+    DropdownItem,
     ExternalLinkButton,
     ExternalLinkIcon,
     EyeIcon,
+    FieldStack,
     FileUpload,
     GenApiIcon,
     GitHubIcon,
@@ -126,7 +128,6 @@ export const DesignShowcase: FC<DesignShowcaseProps> = ({
             ) : null}
             <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-8 px-5 pt-8 pb-10">
                 <main className="flex min-w-0 flex-col gap-10">
-                    <CoverageDemo />
                     <TypographyDemo />
                     <ProseDemo />
                     <TokensDemo />
@@ -153,9 +154,9 @@ const Header: FC<HeaderProps> = ({ headerSlot }) => (
         <div className="mx-auto flex w-full max-w-[1220px] min-w-0 flex-col items-start gap-4">
             <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
-                    <h1 className="font-serif text-2xl font-black text-theme-text-strong">
+                    <Heading as="h1" size="section">
                         Design Showcase
-                    </h1>
+                    </Heading>
                     <p className="max-w-3xl text-sm leading-6 text-theme-text-soft">
                         Package primitives, icons, tokens, and SDK-free recipes.
                     </p>
@@ -186,9 +187,9 @@ const ShowcaseSection: FC<ShowcaseSectionProps> = ({
         className="flex w-full min-w-0 scroll-mt-24 flex-col gap-3"
     >
         <div className="flex flex-col gap-1">
-            <h2 className="font-serif text-2xl font-black text-theme-text-strong">
+            <Heading as="h2" size="section">
                 {title}
-            </h2>
+            </Heading>
             <p className="max-w-3xl break-words text-sm leading-6 text-theme-text-soft [overflow-wrap:anywhere]">
                 {caption}
             </p>
@@ -224,114 +225,6 @@ const ControlGroup: FC<{ label: string; children: ReactNode }> = ({
         </span>
         {children}
     </div>
-);
-
-const primitiveNames = [
-    "Button",
-    "ButtonGroup",
-    "ChevronIcon",
-    "Chip",
-    "ColorModeToggle",
-    "Dialog",
-    "DialogTitle",
-    "Dropdown",
-    "DropdownItem",
-    "Field",
-    "Heading",
-    "IconButton",
-    "InlineLink",
-    "Input",
-    "ScrollArea",
-    "Slider",
-    "Surface",
-    "Switch",
-    "TabButton",
-    "Table",
-    "TableBody",
-    "TableCell",
-    "TableHead",
-    "TableHeaderCell",
-    "TableRow",
-    "Text",
-    "Textarea",
-    "Tooltip",
-] as const;
-
-const moduleNames = [
-    "AuthInfoCard",
-    "ErrorBanner",
-    "getModalityKey",
-    "ModalityChip",
-    "ModalityDot",
-    "ModalityTab",
-    "PaidChip",
-    "TierChip",
-    "WalletBalanceCard",
-    "WalletKindIcon",
-    "formatPollen",
-] as const;
-
-const compositionNames = [
-    "Alert",
-    "CodeBlock",
-    "Collapsible",
-    "CopyButton",
-    "ExternalLinkButton",
-    "FileUpload",
-    "InfoTip",
-    "LinkCard",
-    "Markdown",
-    "MediaPlaceholder",
-    "MultiSelect",
-    "NavItem",
-    "PeriodPicker",
-    "Prose",
-    "Section",
-    "StatCard",
-] as const;
-
-const CoverageDemo: FC = () => (
-    <ShowcaseSection
-        id="coverage"
-        title="Coverage"
-        caption="Every SDK-free primitive exported from the package appears below, plus compositions, icons, and reusable module recipes."
-    >
-        <Surface
-            variant="panel"
-            className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3"
-        >
-            <StatCard
-                label="Primitives"
-                value={primitiveNames.length}
-                detail="Buttons, inputs, overlays, layout, and feedback."
-                className="rounded-xl bg-surface-white p-4"
-            />
-            <StatCard
-                label="Icons"
-                value={iconItems.length + 1}
-                detail="All exported icons plus the canonical chevron."
-                className="rounded-xl bg-surface-white p-4"
-            />
-            <StatCard
-                label="Recipes"
-                value={compositionNames.length + moduleNames.length}
-                detail="Compositions plus auth, wallet, and modality pieces."
-                className="rounded-xl bg-surface-white p-4"
-            />
-            <Surface className="col-span-full flex flex-wrap gap-2">
-                {primitiveNames.map((name) => (
-                    <Chip key={name} size="sm">
-                        {name}
-                    </Chip>
-                ))}
-                {compositionNames.map((name) => (
-                    <Chip key={name} intent="success" size="sm">
-                        {name}
-                    </Chip>
-                ))}
-            </Surface>
-        </Surface>
-    </ShowcaseSection>
 );
 
 const typographyRows = [
@@ -717,6 +610,14 @@ const InputsDemo: FC = () => {
                     <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>
                 <div className="col-span-full">
+                    <FieldStack label="FieldStack" className="max-w-xl">
+                        <Input placeholder="Project name" />
+                        <Text size="xs" tone="soft">
+                            Package-owned label stack for common app forms.
+                        </Text>
+                    </FieldStack>
+                </div>
+                <div className="col-span-full">
                     <ArkField.Root
                         invalid
                         className="flex max-w-xl flex-col gap-1"
@@ -877,14 +778,12 @@ const SelectionDemo: FC = () => {
                             <div className="flex flex-col">
                                 {["Account", "Usage", "Settings"].map(
                                     (item) => (
-                                        <button
+                                        <DropdownItem
                                             key={item}
-                                            type="button"
                                             onClick={close}
-                                            className="rounded-md px-3 py-2 text-left text-sm text-theme-text-base hover:bg-theme-bg-subtle"
                                         >
                                             {item}
-                                        </button>
+                                        </DropdownItem>
                                     ),
                                 )}
                             </div>
@@ -1300,7 +1199,6 @@ const ModuleRecipesDemo: FC = () => {
                     {modalities.map((modality, i) => (
                         <ModalityTab
                             key={modality}
-                            modality={modality}
                             active={i === 0}
                             onClick={() => undefined}
                             className="capitalize"

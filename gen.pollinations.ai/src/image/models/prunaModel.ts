@@ -341,24 +341,28 @@ export async function callPrunaImageEditAPI(
 // p-video: Text/Image-to-Video
 // =============================================================================
 
-export async function callPrunaVideoAPI(
+// prunaai/p-video is one Replicate model priced per second by resolution
+// (720p $0.02/s, 1080p $0.04/s). The registry carries one flat rate per model,
+// so each tier is its own model (p-video-720p / p-video-1080p) and the
+// resolution is locked here rather than inferred from the requested height —
+// this keeps recorded cost exact and lets the user opt into the 1080p rate
+// explicitly by model name.
+async function generatePrunaVideo(
+    resolution: "720p" | "1080p",
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
+    const displayName = `Pruna p-video ${resolution}`;
+
     progress.updateBar(
         requestId,
         35,
         "Processing",
-        "Starting video generation with Pruna p-video...",
+        `Starting video generation with ${displayName}...`,
     );
 
-    // Replicate prices p-video by resolution (720p $0.02/s, 1080p $0.04/s) and
-    // draft mode; the registry carries a single per-second rate, so — matching
-    // the seedance migration — we keep that rate and revisit tiered pricing as
-    // a follow-up rather than over/under-billing per tier.
-    const resolution = (safeParams.height || 720) >= 1080 ? "1080p" : "720p";
     const duration = Math.max(
         1,
         Math.min(10, Math.floor(safeParams.duration || 5)),
@@ -388,7 +392,7 @@ export async function callPrunaVideoAPI(
     if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
 
-    logOps("p-video input:", {
+    logOps(`${displayName} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[data uri]" : undefined,
@@ -405,11 +409,11 @@ export async function callPrunaVideoAPI(
         await runPrunaPrediction<PVideoInput>(
             "prunaai/p-video",
             input,
-            "Pruna p-video",
+            displayName,
         );
 
     progress.updateBar(requestId, 90, "Processing", "Downloading video...");
-    const buffer = await downloadOutput(output, "Pruna p-video");
+    const buffer = await downloadOutput(output, displayName);
     logOps(
         `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
     );
@@ -418,17 +422,35 @@ export async function callPrunaVideoAPI(
     // requested duration if the metric is missing.
     const billedDuration = videoOutputDurationSeconds ?? duration;
 
-    progress.updateBar(requestId, 95, "Success", "Pruna p-video completed");
+    progress.updateBar(requestId, 95, "Success", `${displayName} completed`);
 
     return {
         buffer,
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: "p-video",
+            actualModel: `p-video-${resolution}`,
             usage: {
                 completionVideoSeconds: billedDuration,
             },
         },
     };
 }
+
+/** Pruna p-video at 720p ($0.02/s). */
+export const callPrunaVideo720API = (
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> =>
+    generatePrunaVideo("720p", prompt, safeParams, progress, requestId);
+
+/** Pruna p-video at 1080p ($0.04/s). */
+export const callPrunaVideo1080API = (
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> =>
+    generatePrunaVideo("1080p", prompt, safeParams, progress, requestId);

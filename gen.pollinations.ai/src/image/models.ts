@@ -248,14 +248,22 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Pruna p-video - Text/image-to-video generation
-    "p-video": {
-        type: "pruna-video",
+    // Pruna p-video - Text/image-to-video generation (720p / 1080p tiers)
+    "p-video-720p": {
+        type: "pruna-video-720p",
         enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
         defaultResolution: "720p",
+    },
+    "p-video-1080p": {
+        type: "pruna-video-1080p",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "1080p",
     },
 
     // Amazon Nova Canvas - Bedrock image generation

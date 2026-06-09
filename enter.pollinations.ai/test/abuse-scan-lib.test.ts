@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
     computeScore,
+    decideAction,
+    isHardPaid,
     type UserSignals,
 } from "../src/tier-progression/flows/abuse-scan-lib.ts";
 
@@ -53,5 +55,46 @@ describe("computeScore", () => {
             clusterId: "x",
         };
         expect(computeScore(u).score).toBeLessThanOrEqual(100);
+    });
+});
+
+describe("paid gate", () => {
+    const hammerer: UserSignals = {
+        ...base,
+        failingReqs: 993000,
+        errorRate: 99,
+        uniqIpHash: 40,
+    };
+
+    it("hard-skips a paying user even with pack_pollen=0 in window (checkout credits)", () => {
+        const u = { ...hammerer, hasCheckoutCredits: true };
+        expect(isHardPaid(u)).toBe(true);
+        expect(decideAction(u, computeScore(u).score)).toBe("skip");
+    });
+
+    it("hard-skips when pack_balance > 0", () => {
+        expect(decideAction({ ...hammerer, packBalance: 2.5 }, 90)).toBe(
+            "skip",
+        );
+    });
+
+    it("hard-skips when all-time pack pollen > 0", () => {
+        expect(decideAction({ ...hammerer, packPollenAllTime: 0.5 }, 90)).toBe(
+            "skip",
+        );
+    });
+
+    it("caps a stripe_customer_id-only user at review (not block)", () => {
+        expect(
+            decideAction({ ...hammerer, hasStripeCustomerId: true }, 90),
+        ).toBe("review");
+    });
+
+    it("blocks a never-paid hammerer", () => {
+        expect(decideAction(hammerer, 90)).toBe("block");
+    });
+
+    it("returns ok below the review threshold", () => {
+        expect(decideAction(base, 10)).toBe("ok");
     });
 });

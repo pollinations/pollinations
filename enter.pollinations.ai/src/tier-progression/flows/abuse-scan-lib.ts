@@ -114,3 +114,21 @@ export function computeScore(u: UserSignals): {
 
     return { score: Math.min(100, Math.round(score)), signals };
 }
+
+export function isHardPaid(u: UserSignals): boolean {
+    return u.hasCheckoutCredits || u.packBalance > 0 || u.packPollenAllTime > 0;
+}
+
+export function decideAction(u: UserSignals, score: number): Action {
+    if (isHardPaid(u)) return "skip"; // protect confirmed payers
+    let action: Action =
+        score >= SCORE_THRESHOLDS.block
+            ? "block"
+            : score >= SCORE_THRESHOLDS.review
+              ? "review"
+              : "ok";
+    // Soft signal: a customer record may exist from an incomplete checkout — never
+    // auto-block on it alone; cap at review for a human to confirm.
+    if (u.hasStripeCustomerId && action === "block") action = "review";
+    return action;
+}

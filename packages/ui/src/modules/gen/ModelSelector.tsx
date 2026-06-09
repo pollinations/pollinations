@@ -1,12 +1,10 @@
 import type { ModelCategory } from "@pollinations/sdk";
-import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
+import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
-import { ModalityDot } from "./ModalityDot.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
@@ -63,7 +61,7 @@ export function ModelSelector({
 
     return (
         <Dropdown
-            align="end"
+            align="start"
             className="polli:w-[min(24rem,calc(100vw-2rem))] polli:p-2"
             trigger={(open) => (
                 <Button
@@ -72,7 +70,12 @@ export function ModelSelector({
                     className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                        <ModalityDot modality={category} />
+                        {currentModel &&
+                            (currentModel.paidOnly ? (
+                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                            ) : (
+                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                            ))}
                         <span className="polli:truncate">{modelLabel}</span>
                     </span>
                     <ChevronIcon expanded={open} />
@@ -95,32 +98,22 @@ export function ModelSelector({
                                         active={isActive}
                                         size="sm"
                                         variant="ghost"
-                                        className="polli:w-full polli:justify-between polli:text-left"
+                                        className="polli:w-full polli:justify-start polli:text-left"
                                         onClick={() => {
                                             onChange(model.id);
                                             close();
                                         }}
                                     >
                                         <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                                            <ModalityDot
-                                                modality={model.category}
-                                            />
+                                            {model.paidOnly ? (
+                                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                                            ) : (
+                                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                                            )}
                                             <span className="polli:truncate">
                                                 {displayModelName(model)}
                                             </span>
                                         </span>
-                                        {model.paidOnly && (
-                                            <Chip
-                                                size="sm"
-                                                className={cn(
-                                                    "polli:shrink-0",
-                                                    isActive &&
-                                                        "polli:bg-surface-white",
-                                                )}
-                                            >
-                                                paid
-                                            </Chip>
-                                        )}
                                     </TabButton>
                                 );
                             })}

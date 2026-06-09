@@ -39,7 +39,7 @@ export interface UserSignals {
     packPollenWindow: number; // paid pollen burned in window (a paid signal)
     uniqIpHash: number;
     topIpSubnet: string;
-    ipClusterSize: number; // max users sharing any of this user's ip_hashes
+    ipClusterSize: number; // max users sharing any of this user's /24 subnets
     hasCheckoutCredits: boolean; // D1 stripe_checkout_credits row exists
     packBalance: number; // D1 user.pack_balance
     hasStripeCustomerId: boolean; // D1 user.stripe_customer_id not null
@@ -86,10 +86,12 @@ export function computeScore(u: UserSignals): {
         signals.push("err>=70");
     }
 
-    // Only a genuine shared-IP cluster (>=2 users) counts.
-    if (u.ipClusterSize >= 2) {
-        score += Math.min(20, u.ipClusterSize * 0.15);
-        signals.push(`ipcluster=${u.ipClusterSize}`);
+    // A *tight* shared-subnet cluster (a handful of accounts on one /24) is a farm
+    // signal; huge subnets (hundreds of users) are shared infra (CGNAT / cloud / VPN),
+    // NOT abuse — they score zero. The raw size is still surfaced for humans.
+    if (u.ipClusterSize >= 3 && u.ipClusterSize <= 50) {
+        score += 15;
+        signals.push(`subnetcluster=${u.ipClusterSize}`);
     }
 
     if (u.clusterId) {

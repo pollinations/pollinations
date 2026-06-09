@@ -10,9 +10,16 @@
  *   npx tsx src/tier-progression/flows/abuse-scan.ts --no-stripe-fallback
  */
 import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import {
     buildSubnetClusterQuery,
     buildUsageQuery,
+    computeScore,
+    decideAction,
+    detectClusters,
+    isHardPaid,
+    type ScoredUser,
+    toReportCsv,
     type UserSignals,
 } from "./abuse-scan-lib.ts";
 
@@ -135,6 +142,35 @@ function d1Users(ids: string[]): D1UserRow[] {
     return out;
 }
 
+// Live Stripe ground-truth: any succeeded charge by userId metadata or billing email.
+async function stripePaid(
+    key: string,
+    userId: string,
+    email: string,
+): Promise<boolean> {
+    const search = async (query: string): Promise<number> => {
+        const res = await fetch(
+            `https://api.stripe.com/v1/charges/search?query=${encodeURIComponent(query)}`,
+            { headers: { Authorization: `Bearer ${key}` } },
+        );
+        if (!res.ok) return 0;
+        return (((await res.json()) as { data?: unknown[] }).data ?? []).length;
+    };
+    if (await search(`metadata['userId']:'${userId}' AND status:'succeeded'`)) {
+        return true;
+    }
+    const safeEmail = email.replace(/'/g, "");
+    if (
+        safeEmail &&
+        (await search(
+            `billing_details.email:'${safeEmail}' AND status:'succeeded'`,
+        ))
+    ) {
+        return true;
+    }
+    return false;
+}
+
 async function main(): Promise<void> {
     const args = parseArgs();
     console.log("🔎 Abuse Scan (read-only)");
@@ -210,8 +246,48 @@ async function main(): Promise<void> {
     }
     console.log(`   ${signals.length} candidates after tier/D1 filtering`);
 
-    // Stages 2–4 are added in Task 7.
-    void signals;
+    detectClusters(signals);
+
+    const scored: ScoredUser[] = signals.map((u) => {
+        const { score, signals: sig } = computeScore(u);
+        return { ...u, score, signals: sig, action: decideAction(u, score) };
+    });
+
+    if (args.stripeFallback) {
+        const stripeKey = loadSecret("STRIPE_SECRET_KEY");
+        console.log("📊 stripe fallback on shortlist...");
+        for (const u of scored) {
+            if (u.action !== "block" && u.action !== "review") continue;
+            if (isHardPaid(u)) continue; // already gated by D1/usage
+            if (await stripePaid(stripeKey, u.id, u.email)) {
+                u.action = "skip";
+                u.signals.push("stripe-paid");
+            }
+        }
+    }
+
+    writeFileSync(args.out, toReportCsv(scored));
+
+    const counts = { block: 0, review: 0, ok: 0, skip: 0 };
+    for (const u of scored) counts[u.action]++;
+    const blocks = scored
+        .filter((u) => u.action === "block")
+        .sort((a, b) => b.score - a.score);
+    console.log(`\n✅ ${args.out}`);
+    console.log(
+        `   block=${counts.block} review=${counts.review} skip=${counts.skip} ok=${counts.ok}`,
+    );
+    console.log("\nTop block candidates:");
+    for (const u of blocks.slice(0, 25)) {
+        console.log(
+            `   [${u.score}] ${u.tier.padEnd(6)} ${(u.githubUsername || "-").padEnd(20)} ` +
+                `fail=${u.failingReqs} err=${u.errorRate}% ipc=${u.ipClusterSize} ${u.signals.join(",")}`,
+        );
+    }
+    console.log("\nReview manually, then (DRY RUN first):");
+    console.log(
+        `   npx tsx src/tier-progression/flows/spore-to-microbe-apply.ts apply-blocks --env production --report ${args.out} --dry-run`,
+    );
 }
 
 main().catch((e) => {

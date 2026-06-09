@@ -50,6 +50,16 @@ describe("computeScore", () => {
         expect(signals).toContain("err>=95");
     });
 
+    it("rewards a tight shared-subnet cluster but ignores huge infra subnets", () => {
+        const tight = computeScore({ ...base, ipClusterSize: 8 });
+        const infra = computeScore({ ...base, ipClusterSize: 900 });
+        expect(tight.signals).toContain("subnetcluster=8");
+        expect(tight.score).toBeGreaterThan(infra.score);
+        expect(infra.signals.some((s) => s.startsWith("subnetcluster"))).toBe(
+            false,
+        );
+    });
+
     it("caps at 100", () => {
         const u = {
             ...base,

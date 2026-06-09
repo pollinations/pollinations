@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callWanAPI,
+    callWanFastAPI,
     callWanProAPI,
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -12,6 +13,10 @@ const DASHSCOPE_SUBMIT_URL =
 const DASHSCOPE_POLL_URL =
     "https://dashscope-intl.aliyuncs.com/api/v1/tasks/task-wan-test";
 const VIDEO_URL = "https://video.example.com/wan-output.mp4";
+const INPUT_IMAGE_URL = "https://img.example.com/first-frame.png";
+// PNG magic bytes so downloadUserImage's detectMimeType resolves to image/png.
+const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const EXPECTED_DATA_URI = /^data:image\/png;base64,/;
 
 interface DashScopeRequest {
     url: string;
@@ -90,6 +95,13 @@ function mockDashScopeFetch(requests: DashScopeRequest[], videoDuration = 2) {
                 });
             }
 
+            if (href === INPUT_IMAGE_URL) {
+                return new Response(PNG_BYTES, {
+                    status: 200,
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+
             return new Response("unexpected URL", { status: 404 });
         });
 }
@@ -159,5 +171,54 @@ describe("wanVideoModel billing usage", () => {
                 completionAudioSeconds: 3,
             },
         });
+    });
+});
+
+describe("wanVideoModel image-to-video input schema", () => {
+    it("wan-pro (wan2.7) i2v sends the image as input.media[].first_frame", async () => {
+        syncImageEnv(
+            { DASHSCOPE_API_KEY: "dashscope-test-key" } as CloudflareBindings,
+            ["DASHSCOPE_API_KEY"],
+        );
+        const requests: DashScopeRequest[] = [];
+        mockDashScopeFetch(requests);
+
+        await callWanProAPI(
+            "a cat walking",
+            { ...baseParams, image: [INPUT_IMAGE_URL] },
+            asProgress(makeProgress()),
+            "req-wan-pro-i2v",
+        );
+
+        expect(requests).toHaveLength(1);
+        expect(requests[0].body.model).toBe("wan2.7-i2v");
+        const input = requests[0].body.input;
+        // wan2.7 uses the unified media array, NOT the legacy img_url string.
+        expect(input.img_url).toBeUndefined();
+        const media = input.media as Array<{ type: string; url: string }>;
+        expect(media).toHaveLength(1);
+        expect(media[0].type).toBe("first_frame");
+        expect(media[0].url).toMatch(EXPECTED_DATA_URI);
+    });
+
+    it("wan-fast (wan2.2) i2v still uses the legacy img_url string", async () => {
+        syncImageEnv(
+            { DASHSCOPE_API_KEY: "dashscope-test-key" } as CloudflareBindings,
+            ["DASHSCOPE_API_KEY"],
+        );
+        const requests: DashScopeRequest[] = [];
+        mockDashScopeFetch(requests);
+
+        await callWanFastAPI(
+            "a cat walking",
+            { ...baseParams, model: "wan-fast", image: [INPUT_IMAGE_URL] },
+            asProgress(makeProgress()),
+            "req-wan-fast-i2v",
+        );
+
+        expect(requests[0].body.model).toBe("wan2.2-i2v-flash");
+        const input = requests[0].body.input;
+        expect(input.media).toBeUndefined();
+        expect(input.img_url as string).toMatch(EXPECTED_DATA_URI);
     });
 });

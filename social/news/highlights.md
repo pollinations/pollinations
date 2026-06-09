@@ -1,3 +1,4 @@
+- **2026-06-08** – **🔄 Live Model Catalog** The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop.
 - **2026-06-05** – **🚀 Standalone Playground** Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads.
 - **2026-06-04** – **📦 SDK Model Catalog** Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing.
 - **2026-06-04** – **🎨 UI Component Upgrades** The [React UI library](https://www.npmjs.com/package/@pollinations/ui) just got a fresh coat of pixels, adding a new model selector, `FileUpload`, and `Markdown` primitives for your frontend builds.

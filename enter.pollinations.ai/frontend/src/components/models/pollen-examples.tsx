@@ -3,7 +3,8 @@
  * Shows 2 examples each from video, image, and text models
  */
 
-import type { FC } from "react";
+import { ChatIcon, ImageIcon, VideoIcon } from "@pollinations/ui";
+import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import { getModelPrices } from "./data.ts";
 import type { ModelPrice } from "./types.ts";
@@ -70,16 +71,16 @@ const getExamples = (
 };
 
 const CategorySection: FC<{
-    emoji: string;
+    icon: ReactNode;
     title: string;
     models: ExampleModel[];
-}> = ({ emoji, title, models }) => {
+}> = ({ icon, title, models }) => {
     if (models.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <div className="font-semibold text-ink-700">
-                {emoji} {title}
+            <div className="flex items-center gap-1.5 font-semibold text-ink-700">
+                {icon} {title}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((model) => (
@@ -111,9 +112,21 @@ export const PollenExamples: FC = () => {
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
-            <CategorySection emoji="🎬" title="Video" models={examples.video} />
-            <CategorySection emoji="🎨" title="Image" models={examples.image} />
-            <CategorySection emoji="💬" title="Text" models={examples.text} />
+            <CategorySection
+                icon={<VideoIcon className="h-4 w-4" />}
+                title="Video"
+                models={examples.video}
+            />
+            <CategorySection
+                icon={<ImageIcon className="h-4 w-4" />}
+                title="Image"
+                models={examples.image}
+            />
+            <CategorySection
+                icon={<ChatIcon className="h-4 w-4" />}
+                title="Text"
+                models={examples.text}
+            />
 
             <div className="text-xs text-theme-text-muted pt-2">
                 Values are estimates based on typical usage. See{" "}

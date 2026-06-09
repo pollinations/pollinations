@@ -1,10 +1,12 @@
 import {
     ClockIcon,
     ExternalLinkButton,
+    GitHubIcon,
     ImageIcon,
     Section,
     TabButton,
     TokensIcon,
+    TrendUpIcon,
 } from "@pollinations/ui";
 import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
@@ -47,13 +49,19 @@ export const Models: FC = () => {
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
-                            📊 Model Health
+                            <span className="inline-flex items-center gap-1.5">
+                                <TrendUpIcon className="h-4 w-4" />
+                                Model Health
+                            </span>
                         </ExternalLinkButton>
                         <ExternalLinkButton
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >
-                            🗳️ Vote for next model
+                            <span className="inline-flex items-center gap-1.5">
+                                <GitHubIcon className="h-4 w-4" />
+                                Vote for next model
+                            </span>
                         </ExternalLinkButton>
                     </div>
                 }

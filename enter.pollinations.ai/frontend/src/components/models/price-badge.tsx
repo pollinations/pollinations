@@ -1,19 +1,20 @@
 import { cn, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
+import { PRICE_ICON, type PriceKind } from "./model-icons.tsx";
 
-const TOKEN_TYPE_LABELS: Record<string, string> = {
-    "💬": "text",
-    "🖼️": "image",
-    "💾": "cached",
-    "🎬": "video",
-    "🎙️": "audio",
-    "🔊": "audio",
+const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
+    text: "text",
+    image: "image",
+    cached: "cached",
+    video: "video",
+    audioIn: "audio",
+    audioOut: "audio",
 };
 
 export type PriceBadgeConfig = {
     prices: (string | undefined)[];
-    emoji: string;
-    subEmojis: string[];
+    kind: PriceKind;
+    subKinds: PriceKind[];
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
@@ -41,19 +42,19 @@ export const groupPriceBadges = (
 
         const existing = grouped.get(key);
         if (existing) {
-            const nextSubEmojis = [
-                ...existing.subEmojis,
-                ...badge.subEmojis,
-                badge.emoji,
-            ].filter(Boolean);
-            existing.subEmojis = [...new Set(nextSubEmojis)];
+            const nextSubKinds = [
+                ...existing.subKinds,
+                ...badge.subKinds,
+                badge.kind,
+            ];
+            existing.subKinds = [...new Set(nextSubKinds)];
             continue;
         }
 
         grouped.set(key, {
             ...badge,
             prices: [validPrices[0]],
-            subEmojis: [...new Set([...badge.subEmojis, badge.emoji])],
+            subKinds: [...new Set([...badge.subKinds, badge.kind])],
         });
     }
 
@@ -62,8 +63,8 @@ export const groupPriceBadges = (
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({
     prices,
-    emoji,
-    subEmojis,
+    kind,
+    subKinds,
     perImage,
     perToken,
     perSecond,
@@ -74,15 +75,13 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     );
     if (validPrices.length === 0) return null;
     const tokenTypes = [
-        ...new Set(
-            subEmojis.map((item) => TOKEN_TYPE_LABELS[item]).filter(Boolean),
-        ),
+        ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
     const tokenTypeLabel =
         tokenTypes.length > 1
-            ? `${subEmojis.join(" ")} Token types: ${tokenTypes.join(", ")}`
+            ? `Token types: ${tokenTypes.join(", ")}`
             : tokenTypes.length === 1
-              ? `${subEmojis[0] ?? "🏷️"} Token type: ${tokenTypes[0]}`
+              ? `Token type: ${tokenTypes[0]}`
               : undefined;
 
     // Compact suffix based on pricing type
@@ -103,9 +102,10 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
             )}
         >
             <span className="inline-flex items-center gap-0.5">
-                {(subEmojis.length > 0 ? subEmojis : [emoji]).map((item) => (
-                    <span key={item}>{item}</span>
-                ))}
+                {(subKinds.length > 0 ? subKinds : [kind]).map((item) => {
+                    const Icon = PRICE_ICON[item];
+                    return <Icon key={item} className="h-3.5 w-3.5" />;
+                })}
             </span>
             <span>
                 {validPrices[0]}

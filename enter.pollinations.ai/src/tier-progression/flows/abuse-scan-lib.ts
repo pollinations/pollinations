@@ -132,3 +132,22 @@ export function decideAction(u: UserSignals, score: number): Action {
     if (u.hasStripeCustomerId && action === "block") action = "review";
     return action;
 }
+
+// Mutates users: sets clusterId for >=3 accounts that share an email local-part root
+// (digits stripped). Catches numbered-sibling farms like numberphotos2/3/4.
+export function detectClusters(users: UserSignals[]): void {
+    const byRoot = new Map<string, UserSignals[]>();
+    for (const u of users) {
+        const local = (u.email.split("@")[0] ?? "").toLowerCase();
+        const root = local.replace(/\d+/g, "").replace(/[._-]+$/, "");
+        if (root.length < 4) continue;
+        const group = byRoot.get(root) ?? [];
+        group.push(u);
+        byRoot.set(root, group);
+    }
+    for (const [root, group] of byRoot) {
+        if (group.length >= 3) {
+            for (const u of group) u.clusterId = `root:${root}`;
+        }
+    }
+}

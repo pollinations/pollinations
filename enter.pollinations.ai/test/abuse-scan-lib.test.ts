@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     computeScore,
     decideAction,
+    detectClusters,
     isHardPaid,
     type UserSignals,
 } from "../src/tier-progression/flows/abuse-scan-lib.ts";
@@ -96,5 +97,50 @@ describe("paid gate", () => {
 
     it("returns ok below the review threshold", () => {
         expect(decideAction(base, 10)).toBe("ok");
+    });
+});
+
+describe("detectClusters", () => {
+    it("flags >=3 accounts sharing an email local-part root (numbered siblings)", () => {
+        const users: UserSignals[] = [
+            {
+                ...base,
+                id: "a",
+                email: "numberphotos2@gmail.com",
+                githubUsername: "Hashim898",
+            },
+            {
+                ...base,
+                id: "b",
+                email: "numberphotos3@gmail.com",
+                githubUsername: "Zulari3",
+            },
+            {
+                ...base,
+                id: "c",
+                email: "numberphotos4@gmail.com",
+                githubUsername: "Zulari2",
+            },
+            {
+                ...base,
+                id: "d",
+                email: "alice@gmail.com",
+                githubUsername: "alice",
+            },
+        ];
+        detectClusters(users);
+        expect(users[0].clusterId).toBe("root:numberphotos");
+        expect(users[1].clusterId).toBe("root:numberphotos");
+        expect(users[2].clusterId).toBe("root:numberphotos");
+        expect(users[3].clusterId).toBeUndefined();
+    });
+
+    it("does not cluster a root shared by only 2 accounts", () => {
+        const users: UserSignals[] = [
+            { ...base, id: "a", email: "solo1@gmail.com" },
+            { ...base, id: "b", email: "solo2@gmail.com" },
+        ];
+        detectClusters(users);
+        expect(users[0].clusterId).toBeUndefined();
     });
 });

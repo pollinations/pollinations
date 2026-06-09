@@ -42,7 +42,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className="w-[90px]"
+                    className="w-[116px]"
                     hideNumberSteppers
                     placeholder="Unlimited"
                     disabled={disabled}

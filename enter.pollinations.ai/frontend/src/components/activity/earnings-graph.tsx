@@ -4,6 +4,7 @@ import {
     MultiSelect,
     Section,
     StatCard,
+    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import {
@@ -104,7 +105,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-divider">
+                <Surface>
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
@@ -137,10 +138,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
-                </div>
+                </Surface>
 
-                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-divider divide-divider">
-                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <Surface>
                         <StatCard
                             label="Pollen earned"
                             value={formatPollen(stats.totalPollen)}
@@ -183,8 +184,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                 ) : null
                             }
                         />
-                    </div>
-                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                    </Surface>
+                    <Surface>
                         <StatCard
                             label="Active users"
                             value={stats.activeUsers.toLocaleString()}
@@ -199,8 +200,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                 )
                             }
                         />
-                    </div>
-                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                    </Surface>
+                    <Surface>
                         <StatCard
                             label="Top app"
                             value={
@@ -256,7 +257,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                 )
                             }
                         />
-                    </div>
+                    </Surface>
                 </div>
             </div>
         </Section>

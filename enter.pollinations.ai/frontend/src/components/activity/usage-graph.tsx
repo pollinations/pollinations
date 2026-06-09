@@ -3,6 +3,7 @@ import {
     MultiSelect,
     Section,
     StatCard,
+    Surface,
     TabButton,
     Tooltip,
 } from "@pollinations/ui";
@@ -79,6 +80,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                         metric: m,
                                     }))
                                 }
+                                variant="soft"
                             >
                                 {m === "requests" ? "Request" : "Pollen"}
                             </TabButton>
@@ -118,7 +120,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-divider">
+                <Surface>
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
@@ -151,11 +153,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             tierBarColor={TIER_BALANCE_CHART_COLOR}
                         />
                     )}
-                </div>
+                </Surface>
 
                 {!loading && !error && (
-                    <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-divider divide-divider">
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Surface>
                             <StatCard
                                 label="Pollen spent"
                                 value={formatPollen(stats.totalPollen)}
@@ -176,8 +178,8 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     </div>
                                 }
                             />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                        </Surface>
+                        <Surface>
                             <StatCard
                                 label="Requests"
                                 value={stats.totalRequests.toLocaleString()}
@@ -187,8 +189,8 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     />
                                 }
                             />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                        </Surface>
+                        <Surface>
                             <StatCard
                                 label="Top model"
                                 value={
@@ -243,7 +245,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     )
                                 }
                             />
-                        </div>
+                        </Surface>
                     </div>
                 )}
             </div>

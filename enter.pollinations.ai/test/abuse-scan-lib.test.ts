@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildIpClusterQuery,
+    buildUsageQuery,
     computeScore,
     decideAction,
     detectClusters,
     isHardPaid,
+    REPORT_HEADER,
+    type ScoredUser,
+    toReportCsv,
     type UserSignals,
 } from "../src/tier-progression/flows/abuse-scan-lib.ts";
 
@@ -142,5 +147,63 @@ describe("detectClusters", () => {
         ];
         detectClusters(users);
         expect(users[0].clusterId).toBeUndefined();
+    });
+});
+
+describe("query builders", () => {
+    it("usage query windows by days and excludes undefined users", () => {
+        const q = buildUsageQuery(7);
+        expect(q).toContain("INTERVAL 7 DAY");
+        expect(q).toContain("selected_meter_slug = 'v1:meter:tier'");
+        expect(q).toContain("uniq(ip_hash)");
+        expect(q).toContain("user_id NOT IN ('undefined', '')");
+    });
+
+    it("ip cluster query uses uniq(user_id) and excludes undefined hashes", () => {
+        const q = buildIpClusterQuery(["h1", "h2"]);
+        expect(q).toContain("uniq(user_id)");
+        expect(q).toContain("ip_hash IN ('h1','h2')");
+        expect(q).toContain("ip_hash NOT IN ('undefined', '')");
+    });
+});
+
+describe("toReportCsv", () => {
+    const scored: ScoredUser = {
+        id: "u1",
+        email: "a,b@gmail.com",
+        githubUsername: "alice",
+        tier: "seed",
+        createdAt: 1767387198,
+        totalReqs: 100,
+        failingReqs: 99,
+        errorRate: 99,
+        tierPollen: 1.2,
+        packPollenWindow: 0,
+        packPollenAllTime: 0,
+        uniqIpHash: 3,
+        topIpSubnet: "1.2.3.0",
+        ipClusterSize: 5,
+        hasCheckoutCredits: false,
+        packBalance: 0,
+        hasStripeCustomerId: false,
+        score: 80,
+        signals: ["fail>=20k", "err>=95"],
+        action: "block",
+    };
+
+    it("starts with the apply-compatible header columns", () => {
+        const csv = toReportCsv([scored]);
+        const header = csv.split("\n")[0];
+        expect(header.startsWith(REPORT_HEADER)).toBe(true);
+    });
+
+    it("quotes fields with commas and keeps extra columns after the contract columns", () => {
+        const csv = toReportCsv([scored]);
+        const row = csv.split("\n")[1];
+        expect(row).toContain('"a,b@gmail.com"');
+        expect(row).toContain('"block"');
+        expect(row).toContain('"fail>=20k; err>=95"');
+        // extra columns appended (apply ignores them)
+        expect(row.trim().endsWith("5")).toBe(true); // ip_cluster_size last
     });
 });

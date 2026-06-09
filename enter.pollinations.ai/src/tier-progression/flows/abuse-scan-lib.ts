@@ -151,3 +151,100 @@ export function detectClusters(users: UserSignals[]): void {
         }
     }
 }
+
+export const REPORT_HEADER =
+    "id,action,score,email,github_username,signals,tier,registered";
+
+const EXTRA_HEADER =
+    "failing_reqs,error_rate,tier_pollen,pack_pollen,uniq_ip_hash,top_ip_subnet,ip_cluster_size";
+
+function sqlList(values: string[]): string {
+    return values.map((v) => `'${v.replace(/'/g, "''")}'`).join(",");
+}
+
+export function isoMinute(unixSeconds: number): string {
+    return new Date(unixSeconds * 1000)
+        .toISOString()
+        .slice(0, 16)
+        .replace("T", " ");
+}
+
+// Window aggregate over generation_event, one row per user_id.
+export function buildUsageQuery(days: number): string {
+    return `SELECT user_id,
+        count() AS total_reqs,
+        countIf(response_status >= 400) AS failing_reqs,
+        round(countIf(response_status >= 400) * 100.0 / count(), 1) AS error_rate,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier'), 4) AS tier_pollen,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 4) AS pack_pollen_window,
+        uniq(ip_hash) AS uniq_ip_hash
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL ${days} DAY
+        AND user_id NOT IN ('undefined', '')
+    GROUP BY user_id
+    FORMAT JSON`
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// (user_id, ip_hash) pairs for candidate users in the window.
+export function buildUserIpsQuery(userIds: string[], days: number): string {
+    return `SELECT DISTINCT user_id, ip_hash
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL ${days} DAY
+        AND user_id IN (${sqlList(userIds)})
+        AND ip_hash NOT IN ('undefined', '')
+    FORMAT JSON`
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// Cluster size (distinct users) for the given ip_hashes, all-time within retention.
+export function buildIpClusterQuery(ipHashes: string[]): string {
+    return `SELECT ip_hash, uniq(user_id) AS cluster_size
+    FROM generation_event
+    WHERE ip_hash IN (${sqlList(ipHashes)})
+        AND ip_hash NOT IN ('undefined', '')
+        AND user_id NOT IN ('undefined', '')
+    GROUP BY ip_hash
+    FORMAT JSON`
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// All-time paid pollen consumed, for candidate users (paid signal).
+export function buildAllTimePackQuery(userIds: string[]): string {
+    return `SELECT user_id, round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack'), 4) AS pack_all_time
+    FROM generation_event
+    WHERE user_id IN (${sqlList(userIds)})
+    GROUP BY user_id
+    FORMAT JSON`
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+export function toReportCsv(users: ScoredUser[]): string {
+    const q = (s: string | number) => `"${String(s).replace(/"/g, '""')}"`;
+    const rows = [...users]
+        .sort((a, b) => b.score - a.score)
+        .map((u) =>
+            [
+                q(u.id),
+                q(u.action),
+                u.score,
+                q(u.email),
+                q(u.githubUsername),
+                q(u.signals.join("; ")),
+                q(u.tier),
+                q(isoMinute(u.createdAt)),
+                u.failingReqs,
+                u.errorRate,
+                u.tierPollen,
+                u.packPollenAllTime,
+                u.uniqIpHash,
+                q(u.topIpSubnet),
+                u.ipClusterSize,
+            ].join(","),
+        );
+    return [`${REPORT_HEADER},${EXTRA_HEADER}`, ...rows].join("\n");
+}

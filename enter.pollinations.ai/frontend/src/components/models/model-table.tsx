@@ -1,10 +1,4 @@
-import {
-    CardIcon,
-    ChevronIcon,
-    Chip,
-    SproutIcon,
-    Tooltip,
-} from "@pollinations/ui";
+import { CardIcon, ChevronIcon, SproutIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import {
     getPriceDefinition,
@@ -27,6 +21,7 @@ import {
     type ModelCapability,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
+import { ModelStatusChips } from "./model-status-chips.tsx";
 import {
     groupPriceBadges,
     PriceBadge,
@@ -264,28 +259,23 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         />
                     )}
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="min-w-0 truncate text-sm font-medium">
-                            {publicModelName}
-                        </span>
-                        {(showNew ||
-                            showAlpha ||
-                            inputModalities.length > 0 ||
+                        <div className="flex min-w-0 items-center gap-2">
+                            <span className="min-w-0 truncate text-sm font-medium">
+                                {publicModelName}
+                            </span>
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                                alphaTooltip={false}
+                            />
+                        </div>
+                        {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                                 <MobileMetadataBadges
                                     inputModalities={inputModalities}
                                     capabilities={capabilities}
                                 />
-                                {showNew && (
-                                    <Chip intent="news" size="sm">
-                                        NEW
-                                    </Chip>
-                                )}
-                                {showAlpha && (
-                                    <Chip intent="alpha" size="sm">
-                                        ALPHA
-                                    </Chip>
-                                )}
                             </div>
                         )}
                     </div>

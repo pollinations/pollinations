@@ -1,4 +1,4 @@
-import { CardIcon, Chip, SproutIcon, Surface, Tooltip } from "@pollinations/ui";
+import { CardIcon, SproutIcon, Surface, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
@@ -15,6 +15,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
+import { ModelStatusChips } from "./model-status-chips.tsx";
 import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -159,79 +160,68 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 }
             >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    {modelDescription ? (
-                        <Tooltip
-                            triggerAs="span"
-                            content={modelDescription}
-                            className="self-start"
-                        >
-                            <span className="text-base font-medium leading-none">
+                    <div className="flex min-w-0 items-center gap-2">
+                        {modelDescription ? (
+                            <Tooltip
+                                triggerAs="span"
+                                content={modelDescription}
+                                className="min-w-0"
+                                displayContents
+                            >
+                                <span className="block min-w-0 truncate text-base font-medium leading-none">
+                                    {publicModelName}
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <span className="min-w-0 truncate text-base font-medium leading-none">
                                 {publicModelName}
                             </span>
-                        </Tooltip>
-                    ) : (
-                        <span className="text-base font-medium leading-none">
-                            {publicModelName}
-                        </span>
-                    )}
+                        )}
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                    </div>
                     {(inputModalities.length > 0 ||
-                        capabilities.length > 0 ||
-                        showNew ||
-                        showAlpha) && (
+                        capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            {(inputModalities.length > 0 ||
-                                capabilities.length > 0) && (
-                                <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
-                                    {inputModalities.length > 0 && (
-                                        <Tooltip content={modalityLabel}>
-                                            <span className="inline-flex items-center gap-2">
-                                                {inputModalities.map((key) => {
-                                                    const Icon =
-                                                        MODALITY_ICON[key];
-                                                    return (
-                                                        <Icon
-                                                            key={key}
-                                                            className="h-4 w-4"
-                                                        />
-                                                    );
-                                                })}
-                                            </span>
-                                        </Tooltip>
+                            <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                                {inputModalities.length > 0 && (
+                                    <Tooltip content={modalityLabel}>
+                                        <span className="inline-flex items-center gap-2">
+                                            {inputModalities.map((key) => {
+                                                const Icon = MODALITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                {inputModalities.length > 0 &&
+                                    capabilities.length > 0 && (
+                                        <span className="h-3.5 w-px bg-current opacity-30" />
                                     )}
-                                    {inputModalities.length > 0 &&
-                                        capabilities.length > 0 && (
-                                            <span className="h-3.5 w-px bg-current opacity-30" />
-                                        )}
-                                    {capabilities.length > 0 && (
-                                        <Tooltip content={capabilityLabel}>
-                                            <span className="inline-flex items-center gap-2 text-theme-text-soft">
-                                                {capabilities.map((key) => {
-                                                    const Icon =
-                                                        CAPABILITY_ICON[key];
-                                                    return (
-                                                        <Icon
-                                                            key={key}
-                                                            className="h-4 w-4"
-                                                        />
-                                                    );
-                                                })}
-                                            </span>
-                                        </Tooltip>
-                                    )}
-                                </div>
-                            )}
-                            {showNew && (
-                                <Chip intent="news" size="sm">
-                                    NEW
-                                </Chip>
-                            )}
-                            {showAlpha && (
-                                <Tooltip content="Alpha model — experimental, may be unstable">
-                                    <Chip intent="alpha" size="sm">
-                                        ALPHA
-                                    </Chip>
-                                </Tooltip>
-                            )}
+                                {capabilities.length > 0 && (
+                                    <Tooltip content={capabilityLabel}>
+                                        <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                                            {capabilities.map((key) => {
+                                                const Icon =
+                                                    CAPABILITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

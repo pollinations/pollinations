@@ -1,29 +1,42 @@
+/**
+ * Pruna p-image, p-image-edit, and p-video via Replicate (prunaai/*).
+ *
+ * Migrated off the direct api.pruna.ai predictions API to Replicate, which
+ * hosts the identical Pruna-optimised models under the `prunaai` account:
+ *   - p-image      → prunaai/p-image       (text-to-image)
+ *   - p-image-edit → prunaai/p-image-edit  (multi-image editing, $0.01/img)
+ *   - p-video      → prunaai/p-video       (text/image-to-video)
+ *
+ * Same engines, so output is unchanged. The move also drops the standalone
+ * PRUNA_API_KEY (auth is now REPLICATE_API_TOKEN via runReplicatePrediction)
+ * and inherits the shared Replicate client's reliability properties:
+ *   - bounded polling → a stuck prediction surfaces as a controlled 504
+ *     instead of the old 10-minute hang
+ *   - error classification → 429/400/422 are passed through to the caller
+ *     instead of the old blanket 500
+ */
+
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { base64ToBuffer, bufferToUint8Array } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
+import {
+    ReplicateError,
+    runReplicatePrediction,
+} from "../utils/replicateClient.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:pruna:ops");
 const logError = debug("pollinations:pruna:error");
 
-// Pruna API configuration
-const PRUNA_API_BASE = "https://api.pruna.ai/v1";
-const PREDICTIONS_URL = `${PRUNA_API_BASE}/predictions`;
+// p-image-edit / p-video accept up to this many reference images.
+const MAX_EDIT_IMAGES = 5;
 
-const FILES_URL = `${PRUNA_API_BASE}/files`;
-
-// Polling configuration
-const POLL_MAX_ATTEMPTS = 120; // 10 minutes max
-const POLL_DELAY_MS = 3000; // 3 second intervals
-
-// Supported dimensions for p-image
+// Supported dimensions for prunaai/p-image (custom aspect_ratio mode).
 const SUPPORTED_DIMENSIONS: Array<[number, number]> = [
     [1024, 1024],
     [1184, 896],
@@ -34,22 +47,44 @@ const SUPPORTED_DIMENSIONS: Array<[number, number]> = [
     [832, 1248],
 ];
 
-interface PrunaPredictionResponse {
-    id: string;
-    model: string;
-    get_url: string;
-    input?: Record<string, unknown>;
+// prunaai/p-video aspect_ratio enum (verified against the live Replicate schema).
+const PVIDEO_ASPECT_RATIOS = [
+    "16:9",
+    "9:16",
+    "4:3",
+    "3:4",
+    "3:2",
+    "2:3",
+    "1:1",
+] as const;
+type PVideoAspectRatio = (typeof PVIDEO_ASPECT_RATIOS)[number];
+
+interface PImageInput {
+    prompt: string;
+    aspect_ratio: "custom";
+    width: number;
+    height: number;
+    seed?: number;
 }
 
-interface PrunaStatusResponse {
-    status: "starting" | "processing" | "succeeded" | "failed";
-    message?: string;
-    error?: string;
-    generation_url?: string;
+interface PImageEditInput {
+    prompt: string;
+    images: string[];
+    seed?: number;
+}
+
+interface PVideoInput {
+    prompt: string;
+    resolution: "720p" | "1080p";
+    duration: number;
+    image?: string;
+    aspect_ratio?: PVideoAspectRatio;
+    fps?: 24 | 48;
+    seed?: number;
 }
 
 /**
- * Find the closest supported dimension pair for Pruna p-image
+ * Find the closest supported dimension pair for prunaai/p-image by aspect ratio.
  */
 function findClosestDimensions(
     width: number,
@@ -72,173 +107,85 @@ function findClosestDimensions(
 }
 
 /**
- * Submit a prediction to the Pruna API
+ * Map requested dimensions to the closest supported p-video aspect ratio by
+ * minimum distance in log space (1920×1080 → 16:9, 720×1280 → 9:16, …).
  */
-async function submitPrediction(
+function deriveVideoAspectRatio(
+    width: number,
+    height: number,
+): PVideoAspectRatio {
+    const target = Math.log(width / height);
+    let best: PVideoAspectRatio = "16:9";
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const ar of PVIDEO_ASPECT_RATIOS) {
+        const [w, h] = ar.split(":").map(Number);
+        const dist = Math.abs(Math.log(w / h) - target);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = ar;
+        }
+    }
+    return best;
+}
+
+/**
+ * Download a user-supplied image and return it as a data URI. Replicate's
+ * server-side URL fetcher chokes on query strings and missing extensions, so
+ * we fetch here and inline the bytes (matches seedream/seedance handlers).
+ */
+async function toDataUri(url: string): Promise<string> {
+    const { buffer, mimeType } = await downloadUserImage(url);
+    return `data:${mimeType};base64,${buffer.toString("base64")}`;
+}
+
+/**
+ * Run a prunaai/* prediction on Replicate and return the output URL plus
+ * metrics. The output schema for all three models is a single URI string.
+ * ReplicateError (already status-classified) is remapped to HttpError so the
+ * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
+ */
+async function runPrunaPrediction<TInput>(
     model: string,
-    input: Record<string, unknown>,
-): Promise<PrunaPredictionResponse> {
-    const apiKey = getImageEnv("PRUNA_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "PRUNA_API_KEY environment variable is required",
-            500,
-        );
-    }
-
-    logOps(`Submitting ${model} prediction:`, JSON.stringify(input, null, 2));
-
-    const response = await fetchUpstream(PREDICTIONS_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "apikey": apiKey,
-            "Model": model,
-        },
-        body: JSON.stringify({ input }),
-        errorLabel: "Pruna API request failed",
-    });
-
-    return (await response.json()) as PrunaPredictionResponse;
-}
-
-/**
- * Upload a base64/data URI image to Pruna's file endpoint and return the hosted URL.
- * Pruna rejects inline base64 in predictions but accepts URLs to uploaded files.
- */
-async function uploadImageToPruna(imageData: string): Promise<string> {
-    const apiKey = getImageEnv("PRUNA_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "PRUNA_API_KEY environment variable is required",
-            500,
-        );
-    }
-
-    // Strip data URI prefix if present
-    let base64 = imageData;
-    let mimeType = "image/png";
-    const dataUriMatch = imageData.match(/^data:([^;]+);base64,(.+)$/);
-    if (dataUriMatch) {
-        mimeType = dataUriMatch[1];
-        base64 = dataUriMatch[2];
-    }
-
-    const buffer = base64ToBuffer(base64);
-    const ext = mimeType.split("/")[1] || "png";
-    const blob = new Blob([bufferToUint8Array(buffer)], { type: mimeType });
-    const formData = new FormData();
-    formData.append("content", blob, `image.${ext}`);
-
-    const response = await fetchUpstream(FILES_URL, {
-        method: "POST",
-        headers: { apikey: apiKey },
-        body: formData,
-        errorLabel: "Pruna file upload failed",
-    });
-
-    const result = (await response.json()) as { urls: { get: string } };
-    logOps("Uploaded image to Pruna:", result.urls.get);
-    return result.urls.get;
-}
-
-/**
- * Poll prediction status until completion
- */
-async function pollPrediction(
-    statusUrl: string,
-    progress: ProgressManager,
-    requestId: string,
-    label: string,
-): Promise<string> {
-    const apiKey = getImageEnv("PRUNA_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "PRUNA_API_KEY environment variable is required",
-            500,
-        );
-    }
-
-    for (let attempt = 1; attempt <= POLL_MAX_ATTEMPTS; attempt++) {
-        const progressPercent = 50 + Math.min(35, Math.floor(attempt * 0.5));
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `${label}... (${attempt}/${POLL_MAX_ATTEMPTS})`,
-        );
-
-        const response = await fetch(statusUrl, {
-            method: "GET",
-            headers: { "apikey": apiKey },
+    input: TInput,
+    displayName: string,
+): Promise<{ output: string; videoOutputDurationSeconds?: number }> {
+    try {
+        const result = await runReplicatePrediction<TInput, string>({
+            model,
+            input,
         });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logError(`Poll error (${response.status}):`, errorText);
-            if (response.status >= 400 && response.status < 500) {
-                throw new HttpError(
-                    `Pruna poll failed: ${errorText}`,
-                    response.status,
-                    undefined,
-                    statusUrl,
-                );
-            }
-            await sleep(POLL_DELAY_MS);
-            continue;
+        logOps(`${displayName} prediction succeeded:`, {
+            id: result.id,
+            predict_time: result.predictTimeSeconds,
+        });
+        if (typeof result.output !== "string" || result.output.length === 0) {
+            throw new HttpError(`${displayName} returned no output`, 500);
         }
-
-        const data = (await response.json()) as PrunaStatusResponse;
-        logOps(`Poll attempt ${attempt}, status: ${data.status}`);
-
-        switch (data.status) {
-            case "succeeded":
-                if (!data.generation_url) {
-                    throw new HttpError(
-                        "Pruna succeeded but no generation_url",
-                        500,
-                        undefined,
-                        statusUrl,
-                    );
-                }
-                return data.generation_url;
-
-            case "failed":
-                throw new HttpError(
-                    `Pruna generation failed: ${data.error || data.message || "unknown error"}`,
-                    500,
-                    undefined,
-                    statusUrl,
-                );
-
-            case "starting":
-            case "processing":
-                break;
+        return {
+            output: result.output,
+            videoOutputDurationSeconds: result.videoOutputDurationSeconds,
+        };
+    } catch (err) {
+        logError(`${displayName} prediction failed:`, err);
+        if (err instanceof HttpError) throw err;
+        if (err instanceof ReplicateError) {
+            throw new HttpError(
+                `${displayName} generation failed: ${err.message}`,
+                err.status ?? 500,
+            );
         }
-
-        await sleep(POLL_DELAY_MS);
+        throw err;
     }
-
-    throw new HttpError(
-        "Pruna generation timed out",
-        504,
-        undefined,
-        statusUrl,
-    );
 }
 
-/**
- * Download result from Pruna delivery URL
- */
-async function downloadResult(deliveryUrl: string): Promise<Buffer> {
-    const apiKey = getImageEnv("PRUNA_API_KEY");
-
-    const response = await fetchUpstream(deliveryUrl, {
-        method: "GET",
-        headers: apiKey ? { "apikey": apiKey } : {},
-        errorLabel: "Pruna delivery download failed",
+/** Download a Replicate output URL to a Buffer. */
+async function downloadOutput(
+    url: string,
+    displayName: string,
+): Promise<Buffer> {
+    const response = await fetchUpstream(url, {
+        errorLabel: `Failed to download ${displayName} output`,
     });
-
     return Buffer.from(await response.arrayBuffer());
 }
 
@@ -252,63 +199,52 @@ export async function callPrunaImageAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<ImageGenerationResult> {
-    try {
-        logOps("Calling Pruna p-image with prompt:", prompt);
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        "Generating with Pruna p-image...",
+    );
 
-        progress.updateBar(
-            requestId,
-            35,
-            "Processing",
-            "Generating with Pruna p-image...",
-        );
+    const dims = findClosestDimensions(
+        safeParams.width || 1024,
+        safeParams.height || 1024,
+    );
 
-        const dims = findClosestDimensions(
-            safeParams.width || 1024,
-            safeParams.height || 1024,
-        );
+    const input: PImageInput = {
+        prompt,
+        aspect_ratio: "custom",
+        width: dims.width,
+        height: dims.height,
+    };
+    if (safeParams.seed !== undefined) input.seed = safeParams.seed;
 
-        const input: Record<string, unknown> = {
-            prompt,
-            aspect_ratio: "custom",
-            width: dims.width,
-            height: dims.height,
-        };
+    logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-        if (safeParams.seed !== undefined) {
-            input.seed = safeParams.seed;
-        }
+    const { output } = await runPrunaPrediction<PImageInput>(
+        "prunaai/p-image",
+        input,
+        "Pruna p-image",
+    );
 
-        const prediction = await submitPrediction("p-image", input);
-        const deliveryUrl = await pollPrediction(
-            prediction.get_url,
-            progress,
-            requestId,
-            "Generating image",
-        );
+    progress.updateBar(requestId, 90, "Processing", "Downloading image...");
+    const buffer = await downloadOutput(output, "Pruna p-image");
+    logOps("Downloaded image, buffer size:", buffer.length);
 
-        progress.updateBar(requestId, 90, "Processing", "Downloading image...");
-        const buffer = await downloadResult(deliveryUrl);
-        logOps("Downloaded image, buffer size:", buffer.length);
+    progress.updateBar(requestId, 95, "Success", "Pruna p-image completed");
 
-        progress.updateBar(requestId, 95, "Success", "Pruna p-image completed");
-
-        return {
-            buffer,
-            isMature: false,
-            isChild: false,
-            trackingData: {
-                actualModel: "p-image",
-                usage: {
-                    completionImageTokens: 1,
-                    totalTokenCount: 1,
-                },
+    return {
+        buffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "p-image",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
             },
-        };
-    } catch (error) {
-        logError("Error calling Pruna p-image:", error);
-        if (error instanceof HttpError) throw error;
-        throw new Error(`Pruna p-image generation failed: ${error.message}`);
-    }
+        },
+    };
 }
 
 // =============================================================================
@@ -321,84 +257,84 @@ export async function callPrunaImageEditAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<ImageGenerationResult> {
-    try {
-        logOps("Calling Pruna p-image-edit with prompt:", prompt);
-
-        progress.updateBar(
-            requestId,
-            30,
-            "Processing",
-            "Preparing image for editing...",
-        );
-
-        const input: Record<string, unknown> = { prompt };
-
-        // Pruna p-image-edit accepts image URLs (1-5 images)
-        // Inline base64/data URIs are rejected, so upload those via /v1/files first
-        if (safeParams.image && safeParams.image.length > 0) {
-            const rawImages = safeParams.image.slice(0, 5);
-
-            const resolvedImages: string[] = [];
-            for (const img of rawImages) {
-                if (img.startsWith("http://") || img.startsWith("https://")) {
-                    resolvedImages.push(img);
-                } else {
-                    // base64 or data URI — upload to Pruna's file hosting
-                    resolvedImages.push(await uploadImageToPruna(img));
-                }
-            }
-            input.images = resolvedImages;
-        }
-
-        if (safeParams.seed !== undefined) {
-            input.seed = safeParams.seed;
-        }
-
-        progress.updateBar(
-            requestId,
-            40,
-            "Processing",
-            "Generating with Pruna p-image-edit...",
-        );
-
-        const prediction = await submitPrediction("p-image-edit", input);
-        const deliveryUrl = await pollPrediction(
-            prediction.get_url,
-            progress,
-            requestId,
-            "Editing image",
-        );
-
-        progress.updateBar(requestId, 90, "Processing", "Downloading image...");
-        const buffer = await downloadResult(deliveryUrl);
-        logOps("Downloaded edited image, buffer size:", buffer.length);
-
-        progress.updateBar(
-            requestId,
-            95,
-            "Success",
-            "Pruna p-image-edit completed",
-        );
-
-        return {
-            buffer,
-            isMature: false,
-            isChild: false,
-            trackingData: {
-                actualModel: "p-image-edit",
-                usage: {
-                    completionImageTokens: 1,
-                    totalTokenCount: 1,
-                },
-            },
-        };
-    } catch (error) {
-        logError("Error calling Pruna p-image-edit:", error);
-        if (error instanceof HttpError) throw error;
-        throw new Error(
-            `Pruna p-image-edit generation failed: ${error.message}`,
+    // p-image-edit is an image-to-image model: at least one input image is
+    // required. Validate at the boundary so a missing image is a clean 400
+    // instead of a wasted prediction the upstream rejects ("No images
+    // provided") and we'd report as a 500.
+    const images = safeParams.image ?? [];
+    if (images.length === 0) {
+        throw new HttpError(
+            "p-image-edit requires at least one input image. Provide one via the image parameter.",
+            400,
         );
     }
+    if (images.length > MAX_EDIT_IMAGES) {
+        throw new HttpError(
+            `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
+            400,
+        );
+    }
+
+    progress.updateBar(
+        requestId,
+        30,
+        "Processing",
+        "Preparing image for editing...",
+    );
+
+    const resolvedImages = await Promise.all(images.map(toDataUri));
+
+    progress.updateBar(
+        requestId,
+        45,
+        "Processing",
+        `Processed ${resolvedImages.length} image(s)`,
+    );
+
+    const input: PImageEditInput = { prompt, images: resolvedImages };
+    if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+
+    logOps("p-image-edit input:", {
+        prompt: prompt.slice(0, 80),
+        images: `[${resolvedImages.length} data uris]`,
+    });
+
+    progress.updateBar(
+        requestId,
+        55,
+        "Processing",
+        "Generating with Pruna p-image-edit...",
+    );
+
+    const { output } = await runPrunaPrediction<PImageEditInput>(
+        "prunaai/p-image-edit",
+        input,
+        "Pruna p-image-edit",
+    );
+
+    progress.updateBar(requestId, 90, "Processing", "Downloading image...");
+    const buffer = await downloadOutput(output, "Pruna p-image-edit");
+    logOps("Downloaded edited image, buffer size:", buffer.length);
+
+    progress.updateBar(
+        requestId,
+        95,
+        "Success",
+        "Pruna p-image-edit completed",
+    );
+
+    return {
+        buffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "p-image-edit",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
 }
 
 // =============================================================================
@@ -411,106 +347,88 @@ export async function callPrunaVideoAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    try {
-        logOps("Calling Pruna p-video with prompt:", prompt);
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        "Starting video generation with Pruna p-video...",
+    );
 
+    // Replicate prices p-video by resolution (720p $0.02/s, 1080p $0.04/s) and
+    // draft mode; the registry carries a single per-second rate, so — matching
+    // the seedance migration — we keep that rate and revisit tiered pricing as
+    // a follow-up rather than over/under-billing per tier.
+    const resolution = (safeParams.height || 720) >= 1080 ? "1080p" : "720p";
+    const duration = Math.max(
+        1,
+        Math.min(10, Math.floor(safeParams.duration || 5)),
+    );
+
+    const input: PVideoInput = { prompt, resolution, duration };
+
+    const images = safeParams.image ?? [];
+    if (images.length > 0) {
+        // Image-to-video: the input image drives dimensions; aspect_ratio is
+        // ignored by the upstream in this mode.
         progress.updateBar(
             requestId,
-            35,
+            30,
             "Processing",
-            "Starting video generation with Pruna p-video...",
+            "Preparing reference image...",
         );
-
-        const input: Record<string, unknown> = { prompt };
-
-        // Determine resolution and aspect ratio from dimensions
-        const resolution =
-            (safeParams.height || 720) >= 1080 ? "1080p" : "720p";
-        input.resolution = resolution;
-
-        // Image-to-video mode
-        if (safeParams.image && safeParams.image.length > 0) {
-            const img = safeParams.image[0];
-
-            logOps("Reference image for I2V:", img);
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Preparing reference image...",
-            );
-            // Pruna rejects inline base64/data URIs — pass URLs directly, upload others
-            if (img.startsWith("http://") || img.startsWith("https://")) {
-                input.image = img;
-            } else {
-                input.image = await uploadImageToPruna(img);
-            }
-            // I2V ignores aspect_ratio, uses input image dimensions
-        } else {
-            // Text-to-video: determine aspect ratio from requested dimensions
-            const w = safeParams.width || 1024;
-            const h = safeParams.height || 1024;
-            const ratio = w / h;
-            // Map to closest supported aspect ratio
-            const ratios = [
-                { ar: "16:9", r: 16 / 9 },
-                { ar: "9:16", r: 9 / 16 },
-                { ar: "4:3", r: 4 / 3 },
-                { ar: "3:4", r: 3 / 4 },
-                { ar: "3:2", r: 3 / 2 },
-                { ar: "2:3", r: 2 / 3 },
-                { ar: "1:1", r: 1 },
-            ];
-            const closest = ratios.reduce((a, b) =>
-                Math.abs(a.r - ratio) < Math.abs(b.r - ratio) ? a : b,
-            );
-            input.aspect_ratio = closest.ar;
-            logOps("T2V aspect ratio:", closest.ar, "resolution:", resolution);
-        }
-
-        // Duration (1-10s, default 5)
-        const duration = Math.max(1, Math.min(10, safeParams.duration || 5));
-        input.duration = duration;
-
-        // FPS (24 or 48)
-        if (safeParams.fps) {
-            input.fps = safeParams.fps >= 36 ? 48 : 24;
-        }
-
-        if (safeParams.seed !== undefined) {
-            input.seed = safeParams.seed;
-        }
-
-        const prediction = await submitPrediction("p-video", input);
-        const deliveryUrl = await pollPrediction(
-            prediction.get_url,
-            progress,
-            requestId,
-            "Generating video (this may take 1-3 minutes)",
+        input.image = await toDataUri(images[0]);
+    } else {
+        // Text-to-video: pick the closest supported aspect ratio.
+        input.aspect_ratio = deriveVideoAspectRatio(
+            safeParams.width || 1024,
+            safeParams.height || 1024,
         );
-
-        progress.updateBar(requestId, 90, "Processing", "Downloading video...");
-        const buffer = await downloadResult(deliveryUrl);
-        logOps(
-            `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
-        );
-
-        progress.updateBar(requestId, 95, "Success", "Pruna p-video completed");
-
-        return {
-            buffer,
-            mimeType: "video/mp4",
-            durationSeconds: duration,
-            trackingData: {
-                actualModel: "p-video",
-                usage: {
-                    completionVideoSeconds: duration,
-                },
-            },
-        };
-    } catch (error) {
-        logError("Error calling Pruna p-video:", error);
-        if (error instanceof HttpError) throw error;
-        throw new Error(`Pruna p-video generation failed: ${error.message}`);
     }
+
+    if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;
+    if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+
+    logOps("p-video input:", {
+        ...input,
+        prompt: prompt.slice(0, 80),
+        image: input.image ? "[data uri]" : undefined,
+    });
+
+    progress.updateBar(
+        requestId,
+        45,
+        "Processing",
+        "Submitting to Replicate (this may take 1-3 minutes)...",
+    );
+
+    const { output, videoOutputDurationSeconds } =
+        await runPrunaPrediction<PVideoInput>(
+            "prunaai/p-video",
+            input,
+            "Pruna p-video",
+        );
+
+    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
+    const buffer = await downloadOutput(output, "Pruna p-video");
+    logOps(
+        `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
+    );
+
+    // Bill on the actual output length Replicate reports; fall back to the
+    // requested duration if the metric is missing.
+    const billedDuration = videoOutputDurationSeconds ?? duration;
+
+    progress.updateBar(requestId, 95, "Success", "Pruna p-video completed");
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: billedDuration,
+        trackingData: {
+            actualModel: "p-video",
+            usage: {
+                completionVideoSeconds: billedDuration,
+            },
+        },
+    };
 }

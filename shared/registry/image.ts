@@ -534,7 +534,7 @@ export const IMAGE_SERVICES = {
     "p-image": {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",
-        provider: "pruna",
+        provider: "replicate",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -551,7 +551,7 @@ export const IMAGE_SERVICES = {
     "p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit"],
         modelId: "p-image-edit",
-        provider: "pruna",
+        provider: "replicate",
         brand: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
@@ -569,7 +569,7 @@ export const IMAGE_SERVICES = {
     "p-video": {
         aliases: ["pruna-video"],
         modelId: "p-video",
-        provider: "pruna",
+        provider: "replicate",
         brand: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),

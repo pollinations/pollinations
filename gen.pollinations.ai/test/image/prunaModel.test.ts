@@ -35,7 +35,13 @@ function mockReplicateFetch(
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
-            if (!href.includes("api.replicate.com")) {
+            let isReplicateApi = false;
+            try {
+                isReplicateApi = new URL(href).hostname === "api.replicate.com";
+            } catch {
+                isReplicateApi = false;
+            }
+            if (!isReplicateApi) {
                 return new Response(PNG_BYTES, { status: 200 });
             }
             const body = init?.body

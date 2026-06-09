@@ -11,20 +11,25 @@ import {
     Alert,
     AppHeader,
     AppIcon,
+    AudioIcon,
     BeakerIcon,
     BookIcon,
     Button,
     ButtonGroup,
+    CardIcon,
+    ChatIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
     ClipboardIcon,
     ClockIcon,
     CodeBlock,
+    CodeIcon,
     Collapsible,
     ColorModeToggle,
     CopyButton,
     currentPeriod,
+    DatabaseIcon,
     Dialog,
     DiscordIcon,
     DownloadIcon,
@@ -32,16 +37,19 @@ import {
     DropdownItem,
     ExternalLinkButton,
     ExternalLinkIcon,
+    EyeIcon,
     Field,
     FileUpload,
     GenApiIcon,
     GitHubIcon,
+    GlobeIcon,
     Heading,
     IconButton,
     ImageIcon,
     InfoTip,
     InlineLink,
     Input,
+    KeyIcon,
     LinkCard,
     LockIcon,
     MailIcon,
@@ -49,15 +57,25 @@ import {
     McpIcon,
     MediaPlaceholder,
     MenuIcon,
+    MicIcon,
+    MoonIcon,
     MultiSelect,
     NavItem,
+    NewspaperIcon,
+    PencilIcon,
     PeriodPicker,
     type PeriodSelection,
+    PlusIcon,
     Prose,
+    ReasoningIcon,
     ScrollArea,
+    SearchIcon,
     Section,
     Slider,
+    SpeakerIcon,
+    SproutIcon,
     StatCard,
+    SunIcon,
     Surface,
     Switch,
     TabButton,
@@ -74,6 +92,7 @@ import {
     Tooltip,
     TrendUpIcon,
     useColorMode,
+    VideoIcon,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -232,7 +251,7 @@ function AppShell({
 // which layer you're on; this just explains what that layer is.
 function PageIntro({ children }: { children: ReactNode }) {
     return (
-        <section className="border-b border-theme-border pb-7">
+        <section className="border-b border-divider pb-7">
             <p className="max-w-3xl text-base leading-7 text-theme-text-base">
                 {children}
             </p>
@@ -764,29 +783,83 @@ const SCROLL_AREA_ITEMS = [
     "Usage row",
     "Billing row",
 ] as const;
-const ICON_PREVIEWS = [
-    { label: "App", Icon: AppIcon },
-    { label: "Beaker", Icon: BeakerIcon },
-    { label: "Book", Icon: BookIcon },
-    { label: "Check", Icon: CheckIcon },
-    { label: "Chevron", Icon: ChevronIcon },
-    { label: "Clipboard", Icon: ClipboardIcon },
-    { label: "Clock", Icon: ClockIcon },
-    { label: "Discord", Icon: DiscordIcon },
-    { label: "Download", Icon: DownloadIcon },
-    { label: "External", Icon: ExternalLinkIcon },
-    { label: "Gen API", Icon: GenApiIcon },
-    { label: "GitHub", Icon: GitHubIcon },
-    { label: "Image", Icon: ImageIcon },
-    { label: "Lock", Icon: LockIcon },
-    { label: "Mail", Icon: MailIcon },
-    { label: "MCP", Icon: McpIcon },
-    { label: "Menu", Icon: MenuIcon },
-    { label: "Terminal", Icon: TerminalIcon },
-    { label: "Tokens", Icon: TokensIcon },
-    { label: "Trend", Icon: TrendUpIcon },
-    { label: "Wallet", Icon: WalletIcon },
-    { label: "X", Icon: XIcon },
+const ICON_GROUPS = [
+    {
+        group: "Brand",
+        icons: [
+            { label: "Discord", Icon: DiscordIcon },
+            { label: "GitHub", Icon: GitHubIcon },
+            { label: "Gen API", Icon: GenApiIcon },
+            { label: "MCP", Icon: McpIcon },
+        ],
+    },
+    {
+        group: "Modality",
+        icons: [
+            { label: "Chat", Icon: ChatIcon },
+            { label: "Image", Icon: ImageIcon },
+            { label: "Eye", Icon: EyeIcon },
+            { label: "Video", Icon: VideoIcon },
+            { label: "Mic", Icon: MicIcon },
+            { label: "Speaker", Icon: SpeakerIcon },
+            { label: "Audio", Icon: AudioIcon },
+        ],
+    },
+    {
+        group: "Capability",
+        icons: [
+            { label: "Reasoning", Icon: ReasoningIcon },
+            { label: "Search", Icon: SearchIcon },
+            { label: "Code", Icon: CodeIcon },
+        ],
+    },
+    {
+        group: "Billing",
+        icons: [
+            { label: "Card", Icon: CardIcon },
+            { label: "Sprout", Icon: SproutIcon },
+            { label: "Wallet", Icon: WalletIcon },
+            { label: "Tokens", Icon: TokensIcon },
+        ],
+    },
+    {
+        group: "Actions",
+        icons: [
+            { label: "Check", Icon: CheckIcon },
+            { label: "X", Icon: XIcon },
+            { label: "Plus", Icon: PlusIcon },
+            { label: "Pencil", Icon: PencilIcon },
+            { label: "Download", Icon: DownloadIcon },
+            { label: "Clipboard", Icon: ClipboardIcon },
+            { label: "External", Icon: ExternalLinkIcon },
+        ],
+    },
+    {
+        group: "Navigation",
+        icons: [
+            { label: "Menu", Icon: MenuIcon },
+            { label: "Chevron", Icon: ChevronIcon },
+            { label: "Trend", Icon: TrendUpIcon },
+        ],
+    },
+    {
+        group: "Objects",
+        icons: [
+            { label: "App", Icon: AppIcon },
+            { label: "Beaker", Icon: BeakerIcon },
+            { label: "Book", Icon: BookIcon },
+            { label: "Clock", Icon: ClockIcon },
+            { label: "Database", Icon: DatabaseIcon },
+            { label: "Globe", Icon: GlobeIcon },
+            { label: "Key", Icon: KeyIcon },
+            { label: "Lock", Icon: LockIcon },
+            { label: "Mail", Icon: MailIcon },
+            { label: "Moon", Icon: MoonIcon },
+            { label: "Newspaper", Icon: NewspaperIcon },
+            { label: "Sun", Icon: SunIcon },
+            { label: "Terminal", Icon: TerminalIcon },
+        ],
+    },
 ] as const;
 
 function PrimitiveExample({
@@ -883,16 +956,30 @@ function PrimitivesPage() {
 
                     <PrimitiveExample
                         name="Icons"
-                        description="Exported UI icons, including the shared chevron used by collapsibles and menus."
+                        description="Every exported UI icon, grouped by purpose — including the shared chevron used by collapsibles and menus."
                     >
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                            {ICON_PREVIEWS.map(({ label, Icon }) => (
+                        <div className="flex flex-col gap-4">
+                            {ICON_GROUPS.map(({ group, icons }) => (
                                 <div
-                                    key={label}
-                                    className="flex items-center gap-2 rounded-lg bg-theme-bg-pale px-2 py-2 text-sm text-theme-text-soft"
+                                    key={group}
+                                    className="flex flex-col gap-2"
                                 >
-                                    <Icon className="h-4 w-4 shrink-0 text-theme-text-strong" />
-                                    <span className="truncate">{label}</span>
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+                                        {group}
+                                    </span>
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                                        {icons.map(({ label, Icon }) => (
+                                            <div
+                                                key={label}
+                                                className="flex items-center gap-2 rounded-lg bg-theme-bg-pale px-2 py-2 text-sm text-theme-text-soft"
+                                            >
+                                                <Icon className="h-4 w-4 shrink-0 text-theme-text-strong" />
+                                                <span className="truncate">
+                                                    {label}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>

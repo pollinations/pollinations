@@ -18,9 +18,16 @@ type GeneratedPayload = {
 
 // The meme's canonical lines are blasphemous; generated ones must not be.
 // Defense in depth on top of the prompt instructions: a flagged catchphrase
-// is replaced, never spoken.
+// is replaced and a flagged name is rejected, never spoken. \W* tolerates
+// hyphens/punctuation between tokens and d?dio catches compound spellings
+// like "porcoddio"; isBlocked strips diacritics first ("pòrco dìo").
 const CATCHPHRASE_BLOCKLIST =
-    /porco\s*dio|porco\s*all|dio\s+(cane|porco)|porca\s+madonna|madonna\s+(cane|porca)|cazz|fottut|stronz|merd|vaffancul|puttan|bestemmi|gaza|palestin/i;
+    /porco\W*d?dio|porco\W*all|d?dio\W*(cane|porco|bestia|boia)|porca\W*(madonna|troia)|madonna\W*(cane|porca|troia)|troi|cazz|fottut|stronz|merd|vaffancul|puttan|coglion|minchi|bestemmi|gaza|palestin/i;
+
+function isBlocked(value: string) {
+    const probe = value.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    return CATCHPHRASE_BLOCKLIST.test(probe);
+}
 
 function textValue(value: unknown, maxLength: number) {
     if (typeof value !== "string") return null;
@@ -31,7 +38,7 @@ function textValue(value: unknown, maxLength: number) {
 
 function catchphraseValue(value: unknown, name: string) {
     const text = textValue(value, 140);
-    if (!text || CATCHPHRASE_BLOCKLIST.test(text)) {
+    if (!text || isBlocked(text)) {
         return `Mamma mia! ${name}!`;
     }
     return text;
@@ -44,7 +51,7 @@ function nameValue(value: unknown) {
         .replace(/[^a-zA-ZÀ-ÿ0-9 -]/g, "")
         .replace(/\s+/g, " ")
         .trim();
-    if (!cleaned) return null;
+    if (!cleaned || isBlocked(cleaned)) return null;
     const words = cleaned
         .split(/[\s-]+/)
         .filter(Boolean)

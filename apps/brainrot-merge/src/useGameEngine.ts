@@ -84,14 +84,26 @@ function clampCenter(value: number, radius: number, extent: number) {
     return Math.min(Math.max(value, min), max);
 }
 
+// Area normalization fixes a hull's area, not its extent: an elongated
+// figure reaches further than the tier radius, so x-clamps must use the
+// hull's real half-width or pieces spawn intersecting the walls.
+function pieceHalfWidth(piece: Pick<GamePiece, "radius" | "figure">) {
+    if (!piece.figure) return piece.radius;
+    const scale = figureScale(piece.radius, piece.figure);
+    return Math.max(
+        piece.radius,
+        ...piece.figure.vertices.map((vertex) => Math.abs(vertex.x * scale)),
+    );
+}
+
 function clampPieceCenter(
-    piece: Pick<GamePiece, "radius">,
+    piece: Pick<GamePiece, "radius" | "figure">,
     x: number,
     y: number,
     size: { width: number; height: number },
 ) {
     return {
-        x: clampCenter(x, piece.radius, size.width),
+        x: clampCenter(x, pieceHalfWidth(piece), size.width),
         y: clampCenter(y, piece.radius, size.height),
     };
 }
@@ -207,10 +219,15 @@ export function useGameEngine({
     const highestTierRef = useRef(0);
     const hasStartedRef = useRef(false);
     const generatedPoolRef = useRef<Map<number, Specimen[]>>(new Map());
-    const generatedCacheRef = useRef<Map<string, Specimen>>(new Map());
-    const voiceCacheRef = useRef<Map<string, string>>(new Map());
+    // Both caches store in-flight promises, set BEFORE the await: concurrent
+    // identical requests (same merge pair, same seed, same catchphrase) must
+    // share one paid generation instead of all missing the cache.
+    const generatedCacheRef = useRef<Map<string, Promise<Specimen>>>(new Map());
+    const voiceCacheRef = useRef<Map<string, Promise<string>>>(new Map());
     const voiceEnabledRef = useRef(true);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    // Monotonic token so a slow TTS fetch can't interrupt a newer line.
+    const speakRequestRef = useRef(0);
     const nextPieceRef = useRef<GamePiece>(
         createGamePiece(0, { specimen: createSeedSpecimen() }),
     );
@@ -228,8 +245,9 @@ export function useGameEngine({
     const [isCrowded, setIsCrowded] = useState(false);
     const [voiceEnabled, setVoiceEnabled] = useState(true);
     // The most-recently created/changed piece — its label is revealed briefly
-    // so you can read what just landed/merged without hovering.
-    const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
+    // so you can read what just landed/merged without hovering. Wrapped in an
+    // object so re-revealing the same piece restarts the hide timer.
+    const [activeLabel, setActiveLabel] = useState<{ id: string } | null>(null);
     const [generationFocus, setGenerationFocus] =
         useState<GenerationFocus | null>(null);
     // The piece the inspector is focused on: its icon, name, description and
@@ -250,10 +268,10 @@ export function useGameEngine({
     }, [highestTier]);
 
     useEffect(() => {
-        if (!activeLabelId) return undefined;
-        const timeout = window.setTimeout(() => setActiveLabelId(null), 4000);
+        if (!activeLabel) return undefined;
+        const timeout = window.setTimeout(() => setActiveLabel(null), 4000);
         return () => window.clearTimeout(timeout);
-    }, [activeLabelId]);
+    }, [activeLabel]);
 
     const setPieceList = (nextPieces: GamePiece[]) => {
         piecesRef.current = nextPieces;
@@ -438,6 +456,19 @@ export function useGameEngine({
             oldBody.position.y,
         ) as PieceBody;
         Body.setAngle(newBody, oldBody.angle);
+        // The placeholder circle may rest flush against a wall or the floor;
+        // an elongated hull reaches further than the circle radius, so clamp
+        // by the hull's real extents or it spawns embedded in the statics
+        // and the penetration correction shoves the settled stack.
+        const halfW = (newBody.bounds.max.x - newBody.bounds.min.x) / 2;
+        const halfH = (newBody.bounds.max.y - newBody.bounds.min.y) / 2;
+        Body.setPosition(newBody, {
+            x: clampCenter(newBody.position.x, halfW, BOARD_LOGICAL_SIZE.width),
+            y: Math.min(
+                newBody.position.y,
+                BOARD_LOGICAL_SIZE.height - halfH - BOARD_EDGE_GAP,
+            ),
+        });
         Body.setVelocity(newBody, oldBody.velocity);
         Body.setAngularVelocity(newBody, oldBody.angularVelocity);
         newBody.plugin = { pieceId: piece.id };
@@ -480,7 +511,7 @@ export function useGameEngine({
             | "lineage"
         >,
     ) => {
-        setActiveLabelId(piece.id);
+        setActiveLabel({ id: piece.id });
         setSelectedView(toSelectedView(piece));
     };
 
@@ -497,14 +528,23 @@ export function useGameEngine({
     const speakCatchphrase = async (catchphrase?: string) => {
         const apiKey = apiKeyRef.current;
         if (!apiKey || !catchphrase || !voiceEnabledRef.current) return;
+        const requestId = ++speakRequestRef.current;
         try {
-            let url = voiceCacheRef.current.get(catchphrase);
-            if (!url) {
-                url = await generateVoiceLine({ apiKey, text: catchphrase });
-                voiceCacheRef.current.set(catchphrase, url);
-                objectUrlsRef.current.add(url);
+            let pending = voiceCacheRef.current.get(catchphrase);
+            if (!pending) {
+                pending = generateVoiceLine({
+                    apiKey,
+                    text: catchphrase,
+                }).then((url) => {
+                    objectUrlsRef.current.add(url);
+                    return url;
+                });
+                pending.catch(() => voiceCacheRef.current.delete(catchphrase));
+                voiceCacheRef.current.set(catchphrase, pending);
             }
+            const url = await pending;
             if (!voiceEnabledRef.current) return;
+            if (requestId !== speakRequestRef.current) return;
             const audio = audioRef.current ?? new Audio();
             audioRef.current = audio;
             audio.pause();
@@ -598,38 +638,29 @@ export function useGameEngine({
         }
 
         const cacheKey = `seed:${piece.name.toLowerCase()}`;
-        const cached = generatedCacheRef.current.get(cacheKey);
-        if (cached) {
-            if (!hasPiece(piece.id)) return;
-            const enriched = {
-                ...cached,
-                lineage: piece.lineage,
-            };
-            applyGeneratedSpecimen(piece.id, enriched);
-            showDiscovery({ ...piece, ...enriched });
-            return;
-        }
-
-        try {
-            const generated = await generateImageSpecimen({
+        let pending = generatedCacheRef.current.get(cacheKey);
+        if (!pending) {
+            pending = generateImageSpecimen({
                 apiKey,
                 specimen: {
                     name: piece.name,
                     description: piece.description,
                     imagePrompt: piece.imagePrompt,
                 },
+            }).then((generated) => {
+                // The cache keeps the specimen alive for future same-name
+                // seeds, so its URLs stay registered even if this piece is
+                // gone by the time the image lands.
+                rememberObjectUrl(generated);
+                return generated;
             });
-            if (!hasPiece(piece.id)) {
-                if (generated.imageUrl?.startsWith("blob:")) {
-                    URL.revokeObjectURL(generated.imageUrl);
-                }
-                if (generated.figure?.cutoutUrl.startsWith("blob:")) {
-                    URL.revokeObjectURL(generated.figure.cutoutUrl);
-                }
-                return;
-            }
-            rememberObjectUrl(generated);
-            generatedCacheRef.current.set(cacheKey, generated);
+            pending.catch(() => generatedCacheRef.current.delete(cacheKey));
+            generatedCacheRef.current.set(cacheKey, pending);
+        }
+
+        try {
+            const generated = await pending;
+            if (!hasPiece(piece.id)) return;
             const enriched = {
                 ...generated,
                 lineage: piece.lineage,
@@ -702,12 +733,13 @@ export function useGameEngine({
             return;
         }
         if (isCrowded) return;
+        const halfWidth = pieceHalfWidth(nextPieceRef.current);
         const clampedX = Math.min(
-            Math.max(x, nextPieceRef.current.radius + 8),
-            BOARD_LOGICAL_SIZE.width - nextPieceRef.current.radius - 8,
+            Math.max(x, halfWidth + 8),
+            BOARD_LOGICAL_SIZE.width - halfWidth - 8,
         );
         addPieceToWorld(nextPieceRef.current, clampedX, DROP_Y);
-        setActiveLabelId(nextPieceRef.current.id);
+        setActiveLabel({ id: nextPieceRef.current.id });
         createNextDrop();
     };
 
@@ -776,43 +808,39 @@ export function useGameEngine({
 
         const generationParents = canonicalParents(parents);
         const cacheKey = mergeCacheKey({ targetTier, parents });
-        const cached = generatedCacheRef.current.get(cacheKey);
-        if (cached) {
-            const enriched = {
-                ...cached,
-                lineage: mergeLineage(cached, parents),
-            };
-            applyGeneratedSpecimen(pieceId, enriched);
-            showDiscovery({
-                id: pieceId,
-                ...enriched,
-                color: RUNGS[targetTier].color,
-                ink: RUNGS[targetTier].ink,
+        let pending = generatedCacheRef.current.get(cacheKey);
+        const isCreator = !pending;
+        if (!pending) {
+            pending = generateSpecimen({
+                apiKey,
+                parents: generationParents,
+            }).then((generated) => {
+                rememberObjectUrl(generated);
+                return generated;
             });
-            revealResult(pieceId, enriched, "cached");
-            void speakCatchphrase(enriched.catchphrase);
-            return;
+            pending.catch(() => generatedCacheRef.current.delete(cacheKey));
+            generatedCacheRef.current.set(cacheKey, pending);
         }
 
         try {
-            const generated = await generateSpecimen({
-                apiKey,
-                parents: generationParents,
-            });
-            rememberObjectUrl(generated);
-            generatedCacheRef.current.set(cacheKey, generated);
+            const generated = await pending;
             if (!piecesRef.current.some((piece) => piece.id === pieceId)) {
                 return;
             }
-            const currentPool = generatedPoolRef.current.get(targetTier) ?? [];
             const enriched = {
                 ...generated,
                 lineage: mergeLineage(generated, parents),
             };
-            generatedPoolRef.current.set(
-                targetTier,
-                [enriched, ...currentPool].slice(0, 18),
-            );
+            // Only the call that created the generation feeds the spawn
+            // pool; concurrent same-key merges would duplicate the entry.
+            if (isCreator) {
+                const currentPool =
+                    generatedPoolRef.current.get(targetTier) ?? [];
+                generatedPoolRef.current.set(
+                    targetTier,
+                    [enriched, ...currentPool].slice(0, 18),
+                );
+            }
             applyGeneratedSpecimen(pieceId, enriched);
             showDiscovery({
                 id: pieceId,
@@ -820,7 +848,7 @@ export function useGameEngine({
                 color: RUNGS[targetTier].color,
                 ink: RUNGS[targetTier].ink,
             });
-            revealResult(pieceId, enriched, "generated");
+            revealResult(pieceId, enriched, isCreator ? "generated" : "cached");
             void speakCatchphrase(enriched.catchphrase);
         } catch {
             removePieceFromWorld(pieceId);
@@ -942,6 +970,8 @@ export function useGameEngine({
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.code === "Space") {
                 event.preventDefault();
+                // OS key-repeat would machine-gun paid generations.
+                if (event.repeat) return;
                 dropNextPiece();
             }
             if (event.key.toLowerCase() === "r") {
@@ -965,9 +995,10 @@ export function useGameEngine({
         }
         return Array.from(seen.values()).sort((a, b) => b.tier - a.tier);
     }, [pieces]);
+    const previewHalfWidth = pieceHalfWidth(nextPiece);
     const dropPreviewX = Math.min(
-        Math.max(aimX, nextPiece.radius + 8),
-        BOARD_LOGICAL_SIZE.width - nextPiece.radius - 8,
+        Math.max(aimX, previewHalfWidth + 8),
+        BOARD_LOGICAL_SIZE.width - previewHalfWidth - 8,
     );
 
     return {
@@ -977,7 +1008,7 @@ export function useGameEngine({
         score,
         highestTier,
         isCrowded,
-        activeLabelId,
+        activeLabelId: activeLabel?.id ?? null,
         generationFocus,
         selectedView,
         rungs: RUNGS,

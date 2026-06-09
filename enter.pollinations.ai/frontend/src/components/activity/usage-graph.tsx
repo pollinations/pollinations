@@ -200,44 +200,33 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Tooltip
-                                                content={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
-                                                displayContents
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
                                             >
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {stats.topModel.requests.toLocaleString()}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        {stats.topModel
-                                                            .requests === 1
-                                                            ? "req"
-                                                            : "reqs"}
-                                                    </span>
-                                                </Chip>
-                                            </Tooltip>
-                                            <Tooltip
-                                                content={`${formatPollen(stats.topModel.pollen)} pollen`}
-                                                displayContents
+                                                <span className="tabular-nums">
+                                                    {stats.topModel.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    {stats.topModel.requests ===
+                                                    1
+                                                        ? "req"
+                                                        : "reqs"}
+                                                </span>
+                                            </Chip>
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
                                             >
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {formatPollen(
-                                                            stats.topModel
-                                                                .pollen,
-                                                        )}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        pollen
-                                                    </span>
-                                                </Chip>
-                                            </Tooltip>
+                                                <span className="tabular-nums">
+                                                    {formatPollen(
+                                                        stats.topModel.pollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    pollen
+                                                </span>
+                                            </Chip>
                                         </div>
                                     ) : (
                                         "No model usage yet"

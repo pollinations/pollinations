@@ -8,7 +8,6 @@ import {
     SproutIcon,
     StatCard,
     Surface,
-    Tooltip,
 } from "@pollinations/ui";
 import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
@@ -128,38 +127,24 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             detail={
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Tooltip
-                                            content={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
-                                            displayContents
+                                        <PaidChip
+                                            size="lg"
+                                            className="font-semibold"
                                         >
-                                            <PaidChip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <CardIcon className="h-4 w-4" />
-                                                <span className="tabular-nums">
-                                                    {formatPollen(
-                                                        stats.totalPaid,
-                                                    )}
-                                                </span>
-                                            </PaidChip>
-                                        </Tooltip>
-                                        <Tooltip
-                                            content={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
-                                            displayContents
+                                            <CardIcon className="h-4 w-4" />
+                                            <span className="tabular-nums">
+                                                {formatPollen(stats.totalPaid)}
+                                            </span>
+                                        </PaidChip>
+                                        <TierChip
+                                            size="lg"
+                                            className="font-semibold"
                                         >
-                                            <TierChip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <SproutIcon className="h-4 w-4" />
-                                                <span className="tabular-nums">
-                                                    {formatPollen(
-                                                        stats.totalTier,
-                                                    )}
-                                                </span>
-                                            </TierChip>
-                                        </Tooltip>
+                                            <SproutIcon className="h-4 w-4" />
+                                            <span className="tabular-nums">
+                                                {formatPollen(stats.totalTier)}
+                                            </span>
+                                        </TierChip>
                                     </div>
                                 ) : null
                             }
@@ -193,44 +178,34 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                 stats.topApp ? (
                                     <div className="flex flex-wrap items-center gap-2">
                                         {stats.topApp.uniqueUsers > 0 && (
-                                            <Tooltip
-                                                content={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
-                                                displayContents
-                                            >
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {stats.topApp.uniqueUsers.toLocaleString()}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        {stats.topApp
-                                                            .uniqueUsers === 1
-                                                            ? "user"
-                                                            : "users"}
-                                                    </span>
-                                                </Chip>
-                                            </Tooltip>
-                                        )}
-                                        <Tooltip
-                                            content={`${formatPollen(stats.topApp.pollen)} pollen earned`}
-                                            displayContents
-                                        >
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 <span className="tabular-nums">
-                                                    {formatPollen(
-                                                        stats.topApp.pollen,
-                                                    )}
+                                                    {stats.topApp.uniqueUsers.toLocaleString()}
                                                 </span>
                                                 <span className="font-medium opacity-70">
-                                                    pollen
+                                                    {stats.topApp
+                                                        .uniqueUsers === 1
+                                                        ? "user"
+                                                        : "users"}
                                                 </span>
                                             </Chip>
-                                        </Tooltip>
+                                        )}
+                                        <Chip
+                                            size="lg"
+                                            className="font-semibold"
+                                        >
+                                            <span className="tabular-nums">
+                                                {formatPollen(
+                                                    stats.topApp.pollen,
+                                                )}
+                                            </span>
+                                            <span className="font-medium opacity-70">
+                                                pollen
+                                            </span>
+                                        </Chip>
                                     </div>
                                 ) : (
                                     "No earnings yet"

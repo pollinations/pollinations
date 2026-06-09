@@ -261,7 +261,7 @@ function StatusBadge({ stats }) {
 }
 
 function CatalogStatusBadge({ status }) {
-    if (!status || status === "visible" || status === "endpoint-fallback") {
+    if (!status || status === "visible") {
         return null;
     }
 
@@ -538,13 +538,17 @@ function App() {
                     )}
 
                     {failedCatalogEndpoints.length > 0 && (
-                        <Alert intent="warning" title="Catalog fallback">
-                            Fallback active for{" "}
+                        <Alert
+                            intent="danger"
+                            title="Catalog endpoint unavailable"
+                        >
                             {failedCatalogEndpoints.join(", ")} model
                             {failedCatalogEndpoints.length > 1
                                 ? " endpoints"
                                 : " endpoint"}
-                            ; using bundled registry metadata.
+                            {failedCatalogEndpoints.length > 1 ? " are" : " is"}{" "}
+                            down. No bundled fallback is used for queried
+                            endpoints.
                         </Alert>
                     )}
 

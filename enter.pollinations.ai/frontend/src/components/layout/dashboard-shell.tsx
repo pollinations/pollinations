@@ -589,12 +589,12 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     alt={`${username} avatar`}
                     className="h-8 shrink-0 rounded-full"
                 />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-soft">
+                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
                     {username}
                 </span>
                 <ChevronIcon
                     expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-soft transition-transform duration-200 ease-out"
+                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
                 />
             </button>
         )}
@@ -613,7 +613,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-soft hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     Sign Out
                 </button>
@@ -633,7 +633,7 @@ const AccountMenuLinkRow: FC<AccountMenuLink> = ({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

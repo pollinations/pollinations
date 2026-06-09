@@ -4,7 +4,7 @@ import {
     CardIcon,
     CheckIcon,
     cn,
-    ExternalLinkIcon,
+    ExternalLinkButton,
     InfoTip,
     Switch,
     type SwitchStatus,
@@ -393,19 +393,16 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     onClick,
     loading,
 }) => (
-    <Button
-        as="button"
-        type="button"
+    <ExternalLinkButton
         onClick={onClick}
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
-        <CardIcon className="h-4 w-4 shrink-0" />
-        <span>{loading ? "Opening..." : "Manage billing"}</span>
-        {!loading && (
-            <ExternalLinkIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />
-        )}
-    </Button>
+        <span className="inline-flex items-center gap-1.5">
+            <CardIcon className="h-4 w-4 shrink-0" />
+            <span>{loading ? "Opening..." : "Manage billing"}</span>
+        </span>
+    </ExternalLinkButton>
 );
 
 function mapToggleStatusToSwitchStatus(

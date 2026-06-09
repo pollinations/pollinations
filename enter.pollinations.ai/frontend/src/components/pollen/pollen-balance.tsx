@@ -1,8 +1,8 @@
 import {
-    Button,
     CardIcon,
     ClockIcon,
     CopyButton,
+    ExternalLinkButton,
     InfoTip,
     MailIcon,
     SproutIcon,
@@ -317,14 +317,16 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             }
                             displayContents
                         >
-                            <Button
-                                as="a"
+                            <ExternalLinkButton
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
+                                target="_self"
                                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
-                                <WalletIcon className="h-4 w-4 shrink-0" />
-                                Buy
-                            </Button>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <WalletIcon className="h-4 w-4 shrink-0" />
+                                    Buy
+                                </span>
+                            </ExternalLinkButton>
                         </Tooltip>
                     </div>
                 )}

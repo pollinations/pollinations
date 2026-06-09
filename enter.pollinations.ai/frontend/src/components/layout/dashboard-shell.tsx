@@ -31,7 +31,6 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { AccentSwitcher } from "./accent-switcher.tsx";
 import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
@@ -400,14 +399,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     </NavItem>
                 ))}
                 <DashboardSupport action={supportAction} links={supportLinks} />
-                {/* TEMP — accent theme switcher, as a small section below Docs.
-                    Remove with accent-switcher.tsx + the TEMP block in tokens.css. */}
-                <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
-                    <span className="block px-3 pb-1.5 text-sm font-medium text-ink-900">
-                        Theme
-                    </span>
-                    <AccentSwitcher />
-                </div>
             </nav>
         </ScrollArea>
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">

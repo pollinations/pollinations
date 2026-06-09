@@ -79,18 +79,15 @@
    `data-theme="accent"` re-asserts the accent INSIDE a neutral subtree (e.g.
    accent nav buttons in the neutral rail). ─── */
 :root {
-    --polli-hue:   85;     /* default app accent ≈ amber. The ONE place; override at
-                              runtime via [data-accent] (TEMP accent switcher below). */
+    --polli-hue:   85;     /* default app accent ≈ amber. The ONE place to change it. */
     --polli-nudge: 0.024;  /* accent-lightness offset for this hue */
 }
 
 /* The accent recipe — reads --polli-hue/--polli-nudge from its scope. `:root`
    carries the app default; `data-theme="accent"` re-asserts the live accent inside
-   a neutral subtree (it INHERITS the hue, no longer hardcoded); `[data-accent]` lets
-   a swatch preview one accent locally (TEMP switcher). INVARIANT: border === bg-hover. */
+   a neutral subtree. INVARIANT: border === bg-hover. */
 :root,
-[data-theme="accent"],
-[data-accent]:not([data-accent="neutral"]) {
+[data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.955 0.022 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
@@ -100,28 +97,11 @@
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
 }
 
-/* ─── TEMP: accent switcher — audition palettes by setting data-accent on <html>
-   (whole app) or on a swatch (local preview). Values = the temporary palette; each
-   just feeds the recipe two numbers. Remove together with the AccentSwitcher. ─── */
-[data-accent="coral"]   { --polli-hue: 40;  --polli-nudge: 0.008; }
-[data-accent="amber"]   { --polli-hue: 85;  --polli-nudge: 0.024; }
-[data-accent="lime"]    { --polli-hue: 128; --polli-nudge: 0.012; }
-[data-accent="emerald"] { --polli-hue: 163; --polli-nudge: 0; }
-[data-accent="teal"]    { --polli-hue: 190; --polli-nudge: 0.004; }
-[data-accent="blue"]    { --polli-hue: 252; --polli-nudge: -0.013; }
-[data-accent="violet"]  { --polli-hue: 300; --polli-nudge: -0.008; }
-[data-accent="pink"]    { --polli-hue: 350; --polli-nudge: -0.008; }
-/* ─── /TEMP ─── */
-
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
    rail) carries data-theme="neutral" so its tooltips, focus rings and surfaces
    read neutral instead of inheriting the app accent. Mode-agnostic: every
-   slot points at a mode-aware neutral token, so dark adapts automatically.
-   (TEMP: data-accent="neutral" routes the app/swatch through this same recipe;
-   the compound .dark selector wins over the dark accent recipe below.) */
-[data-theme="neutral"],
-[data-accent="neutral"],
-.dark[data-accent="neutral"] {
+   slot points at a mode-aware neutral token, so dark adapts automatically. */
+[data-theme="neutral"] {
     --polli-color-bg-pale:         var(--polli-color-surface-opaque);
     --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 10%, transparent);
     --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
@@ -271,9 +251,7 @@
    --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
    bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
 .dark,
-.dark [data-theme="accent"],
-.dark [data-accent]:not([data-accent="neutral"]),
-.dark[data-accent]:not([data-accent="neutral"]) {
+.dark [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.33 0.014 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));

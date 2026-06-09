@@ -277,12 +277,23 @@ function getPerplexityReportedRequestCost(output: unknown): number | undefined {
     return undefined;
 }
 
+// Trust a provider-reported unit cost only up to this multiple of the static
+// registry fee — a malformed or hostile value beyond it bills the static fee.
+const PROVIDER_UNIT_COST_MAX_RATIO = 10;
+
 function getBillingAdjustmentUnitCost(
     rule: BillingAdjustmentRule,
     output: unknown,
 ): number {
     if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
-        return getPerplexityReportedRequestCost(output) ?? rule.unitCost;
+        const reported = getPerplexityReportedRequestCost(output);
+        if (
+            reported !== undefined &&
+            reported <= rule.unitCost * PROVIDER_UNIT_COST_MAX_RATIO
+        ) {
+            return reported;
+        }
+        return rule.unitCost;
     }
     return rule.unitCost;
 }

@@ -159,7 +159,7 @@ export const track = (eventType: EventType) =>
                 c.var.auth.apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
-        let responseOverride = null;
+        let responseOverride: Response | null = null;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -176,7 +176,14 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res.clone();
+                // Routes attach telemetry headers (x-moderation-*, cache
+                // status) to the final response AFTER the override is
+                // captured, so read the body from the override but headers
+                // from c.res — keeping the override's content-type since it
+                // describes the body that usage extraction parses.
+                const response = responseOverride
+                    ? withFinalResponseHeaders(responseOverride, c.res)
+                    : c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -381,6 +388,24 @@ async function trackRequest(
         streamRequested,
         referrerData,
     };
+}
+
+// Tracking overrides capture the upstream body before route handlers attach
+// telemetry headers to the final response. Combine the override body with the
+// final headers so header-based extraction (moderation, cache) stays intact.
+function withFinalResponseHeaders(
+    override: Response,
+    final: Response,
+): Response {
+    const headers = new Headers(final.headers);
+    const contentType = override.headers.get("content-type");
+    if (contentType) {
+        headers.set("content-type", contentType);
+    }
+    return new Response(override.body, {
+        status: override.status,
+        headers,
+    });
 }
 
 async function trackResponse(

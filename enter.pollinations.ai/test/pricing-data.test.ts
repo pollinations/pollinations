@@ -287,6 +287,68 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
     ).toBeCloseTo(2.012, 8);
 });
 
+test("Perplexity provider-reported request cost is sanity bounded", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+
+    // Malformed or out-of-bound values fall back to the static $0.005 fee,
+    // never to 0: huge (>10x static), negative, and NaN are all rejected.
+    const rejected = [9.99, -0.5, Number.NaN];
+    for (const requestCost of rejected) {
+        const output = { usage: { cost: { request_cost: requestCost } } };
+        expect(
+            calculateCost("perplexity-fast", usage, output).totalCost,
+        ).toBeCloseTo(2.005, 8);
+        expect(
+            calculatePrice("perplexity-fast", usage, output).totalPrice,
+        ).toBeCloseTo(2.005, 8);
+    }
+
+    // The bound is inclusive: exactly 10x the static fee is still trusted.
+    const atBound = { usage: { cost: { request_cost: 0.05 } } };
+    expect(
+        calculateCost("perplexity-fast", usage, atBound).totalCost,
+    ).toBeCloseTo(2.05, 8);
+});
+
+test("Gemini grounding is detected on streamed chunk output", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const streamOutput = {
+        streamEvents: [
+            { choices: [{ delta: { content: "searching" } }] },
+            {
+                choices: [
+                    {
+                        groundingMetadata: {
+                            webSearchQueries: [
+                                "weather in Berlin",
+                                "Berlin forecast",
+                            ],
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    // Same totals as the non-stream fixtures: grounding billed once per
+    // prompt for Gemini 2.5, per unique query for Gemini 3.x.
+    expect(
+        calculateCost("gemini-search", usage, streamOutput).totalCost,
+    ).toBeCloseTo(0.535, 8);
+    expect(
+        calculatePrice("gemini-search", usage, streamOutput).totalPrice,
+    ).toBeCloseTo(0.535, 8);
+    expect(
+        calculateCost("gemini-search-fast", usage, streamOutput).totalCost,
+    ).toBeCloseTo(1.778, 8);
+});
+
 test("Perplexity declarative billing rules expose request fee metadata", () => {
     const models = getTextModelsInfo();
 

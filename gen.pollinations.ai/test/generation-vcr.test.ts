@@ -171,6 +171,15 @@ async function fakePortkeyResponse(request: Request) {
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
 
     if (body.stream) {
+        const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
+            ? {
+                  search_context_size: "low",
+                  cost: {
+                      request_cost: 0.007,
+                      total_cost: 0.00701,
+                  },
+              }
+            : {};
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
@@ -196,6 +205,7 @@ async function fakePortkeyResponse(request: Request) {
                 prompt_tokens: 7,
                 completion_tokens: 3,
                 total_tokens: 10,
+                ...streamUsageExtras,
             },
         };
         return new Response(
@@ -255,6 +265,24 @@ async function fakePortkeyResponse(request: Request) {
                 },
             },
         },
+        {
+            matches: prompt.includes("vcr moderated text"),
+            content: "snapshot moderated response",
+            promptTokens: 6,
+            completionTokens: 4,
+            promptFilterResults: [
+                {
+                    prompt_index: 0,
+                    content_filter_results: {
+                        hate: { filtered: false, severity: "safe" },
+                        sexual: { filtered: false, severity: "safe" },
+                    },
+                },
+            ],
+            completionFilterResults: {
+                violence: { filtered: false, severity: "medium" },
+            },
+        },
     ];
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
@@ -297,6 +325,7 @@ async function fakePortkeyResponse(request: Request) {
             created: 1,
             model,
             citations: selectedCase?.citations,
+            prompt_filter_results: selectedCase?.promptFilterResults,
             choices: [
                 {
                     index: 0,
@@ -305,6 +334,8 @@ async function fakePortkeyResponse(request: Request) {
                         content: selectedCase?.content ?? "snapshot response",
                     },
                     finish_reason: selectedCase?.finishReason || "stop",
+                    content_filter_results:
+                        selectedCase?.completionFilterResults,
                 },
             ],
             usage: {
@@ -442,6 +473,76 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         isBilledUsage: true,
     });
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
+});
+
+test("streaming chat completions bill provider-reported Perplexity request cost", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            stream: true,
+            messages: [{ role: "user", content: "vcr perplexity stream cost" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+        isBilledUsage: true,
+    });
+    // 0.007 provider-reported request fee + 0.00001 token cost.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
+});
+
+test("non-stream chat completions keep moderation telemetry in generation events", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr moderated text" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-moderation-prompt-hate-severity")).toBe(
+        "safe",
+    );
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "openai-fast",
+        moderationPromptHateSeverity: "safe",
+        moderationPromptSexualSeverity: "safe",
+        moderationCompletionViolenceSeverity: "medium",
+        isBilledUsage: true,
+    });
 });
 
 test("streaming chat completions replay through VCR", async ({

@@ -34,15 +34,15 @@ const variantClasses = {
         inactive:
             "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
     },
-    // Filled like `default`, but borderless. Without a border the faint
-    // `bg-subtle` is invisible on the themed panel, so this shifts up to opaque
-    // fills: a visible accent when idle, a stronger fill when selected, plus a
-    // hover step.
+    // Borderless. Selected uses `bg-active` — the same resting fill as the
+    // site's normal buttons (e.g. the link buttons). Non-selected uses the
+    // quiet `bg-subtle` token; hovering lifts it to `bg-active` too (matching
+    // the selected pill), so the heavier `bg-hover` is never used here.
     soft: {
         base: "",
-        active: "polli:bg-theme-bg-hover polli:text-theme-text-strong",
+        active: "polli:bg-theme-bg-active polli:text-theme-text-strong",
         inactive:
-            "polli:bg-theme-bg-active polli:text-theme-text-base polli:hover:bg-theme-bg-hover",
+            "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-active",
     },
 } as const;
 

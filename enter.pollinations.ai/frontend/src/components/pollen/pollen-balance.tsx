@@ -320,8 +320,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <Button
                                 as="a"
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
+                                <WalletIcon className="h-4 w-4 shrink-0" />
                                 Buy
                             </Button>
                         </Tooltip>

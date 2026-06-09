@@ -1,6 +1,8 @@
 import { apiClient } from "@frontend/api.ts";
 import {
     Button,
+    CardIcon,
+    CheckIcon,
     cn,
     ExternalLinkIcon,
     InfoTip,
@@ -398,6 +400,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
+        <CardIcon className="h-4 w-4 shrink-0" />
         <span>{loading ? "Opening..." : "Manage billing"}</span>
         {!loading && (
             <ExternalLinkIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />
@@ -446,8 +449,9 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 type="button"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="w-28 min-w-0 self-start text-center shadow-none sm:self-center"
+                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
+                <CheckIcon className="h-4 w-4 shrink-0" />
                 Save
             </Button>
         </DisabledControlTooltip>

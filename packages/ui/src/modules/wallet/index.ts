@@ -7,6 +7,6 @@ export { formatPollen } from "./format-pollen.ts";
 export {
     WalletBalanceCard,
     type WalletBalanceCardProps,
-    WalletDot,
-    type WalletDotProps,
+    WalletKindIcon,
+    type WalletKindIconProps,
 } from "./wallet-display.tsx";

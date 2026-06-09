@@ -1,5 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
+import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 
 type WalletBalanceKind = "paid" | "tier";
 
@@ -13,21 +14,34 @@ const walletTextClasses: Record<WalletBalanceKind, string> = {
     tier: "polli-wallet-text-tier",
 };
 
-export type WalletDotProps = {
+const walletKindIcons: Record<WalletBalanceKind, typeof CardIcon> = {
+    paid: CardIcon,
+    tier: SproutIcon,
+};
+
+export type WalletKindIconProps = {
     kind: WalletBalanceKind;
     className?: string;
 };
 
-export const WalletDot: FC<WalletDotProps> = ({ kind, className }) => (
-    <span
-        className={cn(
-            "polli:h-2 polli:w-2 polli:rounded-full",
-            kind === "paid" ? "polli-wallet-dot-paid" : "polli-wallet-dot-tier",
-            className,
-        )}
-        aria-hidden="true"
-    />
-);
+/** The paid/tier marker — a card (paid) or sprout (tier) glyph in the wallet's
+ *  deep color. Replaces the old colored dot. */
+export const WalletKindIcon: FC<WalletKindIconProps> = ({
+    kind,
+    className,
+}) => {
+    const Icon = walletKindIcons[kind];
+    return (
+        <Icon
+            aria-hidden="true"
+            className={cn(
+                "polli:h-3.5 polli:w-3.5 polli:shrink-0",
+                walletTextClasses[kind],
+                className,
+            )}
+        />
+    );
+};
 
 export type WalletBalanceCardProps = {
     kind: WalletBalanceKind;
@@ -54,7 +68,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
         )}
     >
         <span className="polli:flex polli:items-center polli:gap-2">
-            <WalletDot kind={kind} />
+            <WalletKindIcon kind={kind} />
             <span
                 className={cn(
                     "polli:text-sm polli:font-bold polli:uppercase polli:tracking-wide",

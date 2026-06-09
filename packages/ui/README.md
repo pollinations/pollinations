@@ -115,7 +115,7 @@ Wallet colors and utilities are bundled into the main stylesheet
   the data and nothing else — no default copy, no default theme, no default
   intent. The app composes layout, copy, and color.
 - `@pollinations/ui/wallet` exports SDK-free wallet-specific display helpers
-  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
+  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletKindIcon`,
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
 - `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:

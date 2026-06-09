@@ -73,7 +73,7 @@ import {
     PaidChip,
     TierChip,
     WalletBalanceCard,
-    WalletDot,
+    WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { type ComponentType, type FC, type ReactNode, useState } from "react";
 
@@ -248,7 +248,7 @@ const moduleNames = [
     "PaidChip",
     "TierChip",
     "WalletBalanceCard",
-    "WalletDot",
+    "WalletKindIcon",
     "formatPollen",
 ] as const;
 
@@ -1194,11 +1194,11 @@ const ModuleRecipesDemo: FC = () => {
                     <PaidChip>Paid</PaidChip>
                     <TierChip>Tier</TierChip>
                     <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
-                        <WalletDot kind="paid" />
+                        <WalletKindIcon kind="paid" />
                         paid balance
                     </span>
                     <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
-                        <WalletDot kind="tier" />
+                        <WalletKindIcon kind="tier" />
                         tier balance
                     </span>
                 </Row>

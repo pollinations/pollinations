@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-08",
+  "period_start": "2026-06-08",
+  "period_end": "2026-06-08",
+  "generated_at": "2026-06-09T07:10:13.245218+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Hardcoding model lists is a very specific kind of pain. We finally stopped doing it.\n\nThe dashboards now pull directly from a live model catalog across the ecosystem. When a new model drops, it shows up automatically. No manual updates, no stale dropdowns, no waiting on a PR just to fix a typo in a model name.\n\nPR #11613 is merged and live. The garden updates itself now. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #frontend #machinelearning",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

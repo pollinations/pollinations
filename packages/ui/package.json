@@ -57,7 +57,7 @@
   ],
   "scripts": {
     "build": "npm run build:js && npm run build:css && npm run build:fonts && npm run build:assets && npm run build:licenses",
-    "build:runtime": "UI_BUILD_DTS=false npm run build:js && npm run build:css && npm run build:fonts && npm run build:assets && npm run build:licenses",
+    "build:runtime": "npm run build:js && npm run build:css && npm run build:fonts && npm run build:assets && npm run build:licenses",
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "build:assets": "mkdir -p dist/assets && cp src/assets/* dist/assets/",
     "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",

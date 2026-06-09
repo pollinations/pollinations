@@ -4,6 +4,8 @@ import {
     canManageCommunityEndpoints,
     communityChatCompletionsUrl,
     communityModelId,
+    communityOpenAIBaseUrl,
+    isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -12,6 +14,7 @@ import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestUser,
@@ -20,10 +23,16 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateCommunityEndpointCompletion } from "./text/communityEndpoint.ts";
+import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
 const testLog = { getChild: () => testLog };
+const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
+const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
+
+function isPortkeyChatCompletionsRequest(request: Request): boolean {
+    return new URL(request.url).pathname === "/v1/chat/completions";
+}
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -68,10 +77,71 @@ async function signedSessionCookie(token: string): Promise<string> {
     return `better-auth.session_token=${encodeURIComponent(`${token}.${encodedSignature}`)}`;
 }
 
+async function expectCommunityPortkeyRequest(
+    input: RequestInfo | URL,
+    init: RequestInit | undefined,
+    expected: {
+        customHost: string;
+        bearerToken: string;
+        upstreamModel: string;
+        body: Record<string, unknown>;
+    },
+): Promise<void> {
+    const request = new Request(input, init);
+
+    expect(isPortkeyChatCompletionsRequest(request)).toBe(true);
+    expect(request.headers.get("authorization")).toBe(
+        `Bearer ${expected.bearerToken}`,
+    );
+    expect(request.headers.get("x-portkey-provider")).toBe("openai");
+    expect(request.headers.get("x-portkey-custom-host")).toBe(
+        expected.customHost,
+    );
+    expect(request.headers.get("x-portkey-model")).toBe(expected.upstreamModel);
+    expect(request.headers.get("x-portkey-strict-open-ai-compliance")).toBe(
+        "false",
+    );
+    await expect(request.json()).resolves.toMatchObject({
+        model: expected.upstreamModel,
+        ...expected.body,
+    });
+}
+
+function isBillingFetch(request: Request): boolean {
+    return (
+        request.url.startsWith("https://api.europe-west2.gcp.tinybird.co/") ||
+        request.url.startsWith("http://localhost:7181/")
+    );
+}
+
 describe("community endpoint helpers", () => {
     it("keeps the MVP tier gate disabled", () => {
         expect(canManageCommunityEndpoints(null)).toBe(true);
         expect(canManageCommunityEndpoints("microbe")).toBe(true);
+    });
+
+    it("checks the community endpoint owner GitHub ID allowlist", () => {
+        const env = { COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS: "36901823" };
+
+        expect(
+            isCommunityEndpointOwnerAllowed(env, {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            }),
+        ).toBe(true);
+        expect(
+            isCommunityEndpointOwnerAllowed(env, {
+                githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+            }),
+        ).toBe(false);
+        expect(isCommunityEndpointOwnerAllowed(env, { githubId: null })).toBe(
+            false,
+        );
+        expect(
+            isCommunityEndpointOwnerAllowed(
+                { COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS: "" },
+                { githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID },
+            ),
+        ).toBe(false);
     });
 
     it("normalizes bearer tokens with or without the scheme", () => {
@@ -125,7 +195,7 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
-    it("clarifies upstream auth failures after sending the saved token", async () => {
+    it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
             id: "community-endpoint-id",
@@ -143,35 +213,40 @@ describe("community endpoint helpers", () => {
             completionTextPrice: 0.1,
             contextLength: null,
         };
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (_input, init) => {
-                expect(new Headers(init?.headers).get("authorization")).toBe(
-                    "Bearer sk_saved_token",
-                );
-                return Response.json(
-                    {
-                        error: {
-                            message: "Authentication required",
-                        },
-                    },
-                    { status: 401, statusText: "Unauthorized" },
-                );
-            }),
+
+        const context = await communityEndpointGatewayContext(
+            endpoint,
+            {
+                messages: [{ role: "user", content: "hello" }],
+                max_tokens: 5,
+            },
+            secret,
+            "https://portkey.test",
+            "sk_user_key",
         );
 
-        await expect(
-            generateCommunityEndpointCompletion(
-                endpoint,
-                {
-                    messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 5,
+        expect(context).toMatchObject({
+            max_tokens: 5,
+            requestedModel: endpoint.modelId,
+            dynamicModelDef: true,
+            portkeyGatewayUrl: "https://portkey.test",
+            userApiKey: "sk_user_key",
+            modelConfig: {
+                provider: "openai",
+                "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
+                authKey: "sk_saved_token",
+                model: "gpt-4.1-mini",
+            },
+            modelDef: {
+                provider: "community",
+                category: "text",
+                cost: {
+                    promptTextTokens: 0.1,
+                    completionTextTokens: 0.1,
                 },
-                secret,
-            ),
-        ).rejects.toThrow(
-            "Community endpoint rejected the saved bearer token after we sent it: 401 Unauthorized: Authentication required",
-        );
+            },
+        });
+        expect(context).not.toHaveProperty("messages");
     });
 });
 
@@ -182,6 +257,7 @@ fixtureTest(
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -205,15 +281,16 @@ fixtureTest(
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
-            if (request.url === "https://api.example.com/v1/chat/completions") {
-                expect(request.headers.get("authorization")).toBe(
-                    "Bearer sk_saved_token",
-                );
-                await expect(request.json()).resolves.toMatchObject({
-                    model: "gpt-4.1-mini",
-                    messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 5,
-                    stream: false,
+            if (isPortkeyChatCompletionsRequest(request)) {
+                await expectCommunityPortkeyRequest(input, init, {
+                    customHost: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    upstreamModel: "gpt-4.1-mini",
+                    body: {
+                        messages: [{ role: "user", content: "hello" }],
+                        max_tokens: 5,
+                        stream: false,
+                    },
                 });
 
                 return Response.json({
@@ -235,12 +312,7 @@ fixtureTest(
                 });
             }
 
-            if (
-                request.url.startsWith(
-                    "https://api.europe-west2.gcp.tinybird.co/",
-                ) ||
-                request.url.startsWith("http://localhost:7181/")
-            ) {
+            if (isBillingFetch(request)) {
                 return Response.json({ data: [] });
             }
 
@@ -278,10 +350,8 @@ fixtureTest(
             },
         });
 
-        const upstreamCalls = fetchMock.mock.calls.filter(
-            ([input, init]) =>
-                new Request(input, init).url ===
-                "https://api.example.com/v1/chat/completions",
+        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
+            isPortkeyChatCompletionsRequest(new Request(input, init)),
         );
         expect(upstreamCalls).toHaveLength(1);
     },
@@ -294,6 +364,7 @@ fixtureTest(
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -319,19 +390,17 @@ fixtureTest(
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
 
-                if (
-                    request.url ===
-                    "https://api.example.com/v1/chat/completions"
-                ) {
-                    expect(request.headers.get("authorization")).toBe(
-                        "Bearer sk_saved_token",
-                    );
-                    await expect(request.json()).resolves.toMatchObject({
-                        model: "gpt-4.1-mini",
-                        messages: [{ role: "user", content: "hello" }],
-                        max_tokens: 5,
-                        stream: true,
-                        stream_options: { include_usage: true },
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    await expectCommunityPortkeyRequest(input, init, {
+                        customHost: "https://api.example.com/v1",
+                        bearerToken: "sk_saved_token",
+                        upstreamModel: "gpt-4.1-mini",
+                        body: {
+                            messages: [{ role: "user", content: "hello" }],
+                            max_tokens: 5,
+                            stream: true,
+                            stream_options: { include_usage: true },
+                        },
                     });
 
                     return new Response(
@@ -351,12 +420,7 @@ fixtureTest(
                     );
                 }
 
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
+                if (isBillingFetch(request)) {
                     return Response.json({ data: [] });
                 }
 
@@ -399,6 +463,7 @@ fixtureTest(
         const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -424,18 +489,16 @@ fixtureTest(
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
 
-                if (
-                    request.url ===
-                    "https://api.example.com/v1/chat/completions"
-                ) {
-                    expect(request.headers.get("authorization")).toBe(
-                        "Bearer sk_saved_token",
-                    );
-                    await expect(request.json()).resolves.toMatchObject({
-                        model: "gpt-4.1-mini",
-                        messages: [{ role: "user", content: "hello" }],
-                        max_tokens: 5,
-                        stream: false,
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    await expectCommunityPortkeyRequest(input, init, {
+                        customHost: "https://api.example.com/v1",
+                        bearerToken: "sk_saved_token",
+                        upstreamModel: "gpt-4.1-mini",
+                        body: {
+                            messages: [{ role: "user", content: "hello" }],
+                            max_tokens: 5,
+                            stream: false,
+                        },
                     });
 
                     return Response.json({
@@ -460,12 +523,7 @@ fixtureTest(
                     });
                 }
 
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
+                if (isBillingFetch(request)) {
                     return Response.json({ data: [] });
                 }
 
@@ -477,7 +535,7 @@ fixtureTest(
             new Request(
                 `https://gen.pollinations.ai/text/hello?model=${encodeURIComponent(
                     modelId,
-                )}&max_tokens=5`,
+                )}&max_tokens=5&stream=false`,
                 {
                     headers: {
                         Authorization: `Bearer ${apiKey}`,
@@ -487,6 +545,11 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
+        expect(response.headers.get("cache-control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
+        expect(response.headers.get("x-cache")).toBe("MISS");
+        expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
     },
 );
@@ -498,6 +561,7 @@ fixtureTest(
         const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -580,11 +644,96 @@ fixtureTest(
 );
 
 fixtureTest(
+    "rejects community endpoints owned by users outside the allowlist",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    description: "Denied community endpoint",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+        );
+        expect(registerResponse.status).toBe(403);
+
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Denied community model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            contextLength: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const modelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        expect(modelsResponse.status).toBe(200);
+        const models = (await modelsResponse.json()) as { name: string }[];
+        expect(models.some((model) => model.name === modelId)).toBe(false);
+
+        const generationResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(generationResponse.status).toBe(400);
+    },
+);
+
+fixtureTest(
     "registers a Pollinations-compatible endpoint through Enter API and uses it through gen",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -601,18 +750,16 @@ fixtureTest(
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
-            if (
-                request.url ===
-                "https://gen.pollinations.ai/v1/chat/completions"
-            ) {
-                expect(request.headers.get("authorization")).toBe(
-                    "Bearer sk_pollinations_upstream",
-                );
-                await expect(request.json()).resolves.toMatchObject({
-                    model: "openai",
-                    messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 5,
-                    stream: false,
+            if (isPortkeyChatCompletionsRequest(request)) {
+                await expectCommunityPortkeyRequest(input, init, {
+                    customHost: "https://gen.pollinations.ai/v1",
+                    bearerToken: "sk_pollinations_upstream",
+                    upstreamModel: "openai",
+                    body: {
+                        messages: [{ role: "user", content: "hello" }],
+                        max_tokens: 5,
+                        stream: false,
+                    },
                 });
 
                 return Response.json({
@@ -634,12 +781,7 @@ fixtureTest(
                 });
             }
 
-            if (
-                request.url.startsWith(
-                    "https://api.europe-west2.gcp.tinybird.co/",
-                ) ||
-                request.url.startsWith("http://localhost:7181/")
-            ) {
+            if (isBillingFetch(request)) {
                 return Response.json({ data: [] });
             }
 
@@ -702,10 +844,8 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
         expect(
-            fetchMock.mock.calls.filter(
-                ([input, init]) =>
-                    new Request(input, init).url ===
-                    "https://gen.pollinations.ai/v1/chat/completions",
+            fetchMock.mock.calls.filter(([input, init]) =>
+                isPortkeyChatCompletionsRequest(new Request(input, init)),
             ),
         ).toHaveLength(1);
     },

@@ -24,6 +24,7 @@ interface CloudflareBindings {
     LOG_FORMAT?: "text" | "json";
     ALLOW_ANONYMOUS_USAGE?: boolean;
     STAGING_ALLOWED_GITHUB_IDS?: string;
+    COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;

@@ -1,64 +1,49 @@
 import {
     type CommunityEndpointRuntime,
-    communityChatCompletionsUrl,
+    communityOpenAIBaseUrl,
+    communityPriceDefinition,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
-import { genericOpenAIClient } from "./genericOpenAIClient.js";
-import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
+import type { RequestData, TransformOptions } from "./types.js";
 
-export async function generateCommunityEndpointCompletion(
+export async function communityEndpointGatewayContext(
     endpoint: CommunityEndpointRuntime,
     requestData: RequestData,
     secret: string,
-): Promise<ChatCompletion> {
+    portkeyGatewayUrl: string,
+    userApiKey: string,
+): Promise<TransformOptions> {
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
     );
-    const authorization = `Bearer ${normalizeCommunityEndpointBearerToken(
-        bearerToken,
-    )}`;
-    let completion: ChatCompletion;
-    try {
-        completion = await genericOpenAIClient(
-            requestData.messages,
-            {
-                ...requestData,
-                model: endpoint.upstreamModel,
-                stream: requestData.stream === true,
-                stream_options: requestData.stream
-                    ? {
-                          ...requestData.stream_options,
-                          include_usage: true,
-                      }
-                    : requestData.stream_options,
-            },
-            {
-                endpoint: communityChatCompletionsUrl(endpoint.baseUrl),
-                additionalHeaders: {
-                    Authorization: authorization,
-                },
-            },
-        );
-    } catch (thrown) {
-        const error = thrown as ServiceError;
-        if (error.upstreamStatus === 401) {
-            error.message = `Community endpoint rejected the saved bearer token after we sent it: ${error.message}`;
-        }
-        throw error;
-    }
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
-    if (completion.stream) return completion;
-
-    if (!completion.usage) {
-        const error = new Error(
-            "Community endpoint response missing usage",
-        ) as ServiceError;
-        error.status = 502;
-        error.upstreamStatus = 502;
-        throw error;
-    }
-
-    return completion;
+    return {
+        ...requestDataWithoutMessages,
+        modelConfig: {
+            provider: "openai",
+            "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
+            authKey: normalizeCommunityEndpointBearerToken(bearerToken),
+            model: endpoint.upstreamModel,
+        },
+        modelDef: {
+            aliases: [],
+            provider: "community",
+            brand: "Community",
+            category: "text",
+            cost: communityPriceDefinition(endpoint),
+            priceMultiplier: 1,
+            addedDate: 0,
+            title: endpoint.description?.trim() || endpoint.modelId,
+            inputModalities: ["text"],
+            outputModalities: ["text"],
+            contextLength: endpoint.contextLength ?? undefined,
+        },
+        dynamicModelDef: true,
+        requestedModel: endpoint.modelId,
+        portkeyGatewayUrl,
+        userApiKey,
+    };
 }

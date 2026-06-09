@@ -649,7 +649,7 @@ function createTrackingEvent({
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
         const stream = request.query("stream");
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        return parseBooleanLike(stream);
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -664,7 +664,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return z.safeParse(z.coerce.boolean(), stream).data || false;
+                return parseBooleanLike(stream);
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -673,11 +673,23 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return z.safeParse(z.coerce.boolean(), stream).data || false;
+            return parseBooleanLike(stream);
         } catch {
             return false;
         }
     }
+    return false;
+}
+
+function parseBooleanLike(value: unknown): boolean {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value !== "string") return false;
+
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "off", ""].includes(normalized)) return false;
+
     return false;
 }
 

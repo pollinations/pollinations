@@ -1,7 +1,9 @@
 import {
     COMMUNITY_ENDPOINT_TIER_GATE_ENABLED,
+    type CommunityEndpointAllowlistEnv,
     canManageCommunityEndpoints,
     communityModelId,
+    isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -73,15 +75,23 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
-async function requireCommunityEndpointTier(
+async function requireCommunityEndpointAccess(
     db: Db,
+    env: CommunityEndpointAllowlistEnv,
     userId: string,
 ): Promise<void> {
-    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return;
     const user = await db.query.user.findFirst({
-        columns: { tier: true },
+        columns: { githubId: true, tier: true },
         where: eq(schema.user.id, userId),
     });
+
+    if (!isCommunityEndpointOwnerAllowed(env, user)) {
+        throw new HTTPException(403, {
+            message: "Community endpoints are invite-only",
+        });
+    }
+
+    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return;
     if (canManageCommunityEndpoints(user?.tier)) return;
     throw new HTTPException(403, {
         message: "Community endpoints require Flower tier or higher",
@@ -166,7 +176,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get("/", async (c) => {
         const user = c.var.auth.requireUser();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -183,7 +193,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -216,7 +226,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         try {
             const models = await listCommunityEndpointModels(input);
             return c.json({ data: models });
@@ -228,7 +238,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         try {
             await testCommunityEndpoint(input);
             return c.json({
@@ -243,7 +253,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         const endpoint = await requireOwnedEndpoint(db, id, user.id);
         try {
             await testCommunityEndpoint({
@@ -267,7 +277,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const input = c.req.valid("json");
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -334,7 +344,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointTier(db, user.id);
+        await requireCommunityEndpointAccess(db, c.env, user.id);
         await requireOwnedEndpoint(db, id, user.id);
         await db
             .delete(schema.communityEndpoint)

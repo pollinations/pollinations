@@ -11,7 +11,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
-import { generateCommunityEndpointCompletion } from "./communityEndpoint.ts";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -254,16 +254,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const completion = c.var.model.communityEndpoint
-            ? await generateCommunityEndpointCompletion(
-                  c.var.model.communityEndpoint,
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
                   requestData,
                   c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
               )
-            : await generateTextPortkey(
-                  requestData.messages,
-                  withGatewayContext(c, requestData),
-              );
+            : withGatewayContext(c, requestData);
+        const completion = await generateTextPortkey(
+            requestData.messages,
+            gatewayContext,
+        );
         completion.id = completion.id || generatePollinationsId();
 
         if (completion.error) {

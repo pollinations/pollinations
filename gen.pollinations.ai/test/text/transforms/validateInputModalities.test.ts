@@ -60,4 +60,22 @@ describe("validateInputModalities", () => {
             }).messages,
         ).toBe(textMessage);
     });
+
+    it("rejects image input for dynamic text-only model definitions", () => {
+        expect(() =>
+            validateInputModalities(imageMessage, {
+                model: "community/owner/model",
+                requestedModel: "community/owner/model",
+                dynamicModelDef: true,
+                modelDef: { inputModalities: ["text"] },
+            }),
+        ).toThrow(
+            expect.objectContaining({
+                name: "InputModalityError",
+                status: 400,
+                message:
+                    "Model 'community/owner/model' does not support image input. Choose a model with image input support.",
+            }),
+        );
+    });
 });

@@ -565,7 +565,7 @@ function EndpointForm({
                             onFetchModels && (
                                 <Button
                                     type="button"
-                                    size="small"
+                                    size="sm"
                                     disabled={
                                         disabled ||
                                         modelListState.status === "loading"
@@ -822,7 +822,7 @@ function EndpointCard({
                 <div className="flex gap-1">
                     <Button
                         type="button"
-                        size="small"
+                        size="sm"
                         onClick={onTest}
                         disabled={testState.status === "loading"}
                     >

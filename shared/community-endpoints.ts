@@ -1,3 +1,4 @@
+import { parseGithubIdList } from "./auth/github-id-list.ts";
 import type { PriceDefinition } from "./registry/registry.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
@@ -23,6 +24,14 @@ export type CommunityEndpointRuntime = {
 export type CommunityModelParts = {
     ownerGithubUsername: string;
     modelName: string;
+};
+
+export type CommunityEndpointAllowlistEnv = {
+    COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS?: string | null;
+};
+
+type CommunityEndpointOwnerLike = {
+    githubId?: number | null;
 };
 
 type ChatRequestLike = {
@@ -53,6 +62,17 @@ export function canManageCommunityEndpoints(
     );
 }
 
+export function isCommunityEndpointOwnerAllowed(
+    env: CommunityEndpointAllowlistEnv | undefined,
+    owner: CommunityEndpointOwnerLike | null | undefined,
+): boolean {
+    const allowed = parseGithubIdList(
+        env?.COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS,
+    );
+    const githubId = owner?.githubId;
+    return typeof githubId === "number" && allowed.has(githubId);
+}
+
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
@@ -81,10 +101,14 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
 }
 
 export function communityChatCompletionsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/chat/completions`;
+}
+
+export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     return normalized.endsWith("/chat/completions")
-        ? normalized
-        : `${normalized}/chat/completions`;
+        ? normalized.slice(0, -"/chat/completions".length)
+        : normalized;
 }
 
 export function communityPriceDefinition(

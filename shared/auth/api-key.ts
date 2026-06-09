@@ -5,6 +5,9 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
+import { parseGithubIdList } from "./github-id-list.ts";
+
+export { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -46,23 +49,6 @@ export class StagingAccessDeniedError extends Error {
         super("staging is invite-only");
         this.name = "StagingAccessDeniedError";
     }
-}
-
-/**
- * Parse a comma-separated list of numeric GitHub user IDs.
- * Strict: only entries matching /^\d+$/ are kept (so "123abc" is dropped,
- * not silently truncated to 123).
- */
-export function parseGithubIdList(raw: string | undefined | null): Set<number> {
-    if (!raw) return new Set();
-    const ids = new Set<number>();
-    for (const part of raw.split(",")) {
-        const trimmed = part.trim();
-        if (!/^\d+$/.test(trimmed)) continue;
-        const n = Number(trimmed);
-        if (n > 0) ids.add(n);
-    }
-    return ids;
 }
 
 /**

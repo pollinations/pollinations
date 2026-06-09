@@ -1,6 +1,8 @@
 import {
+    type CommunityEndpointAllowlistEnv,
     type CommunityEndpointRuntime,
     communityModelId,
+    isCommunityEndpointOwnerAllowed,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -30,6 +32,7 @@ function addPrice(
 
 export async function getCommunityTextModelsInfo(
     dbBinding: CloudflareBindings["DB"] | undefined,
+    allowlistEnv: CommunityEndpointAllowlistEnv | undefined,
 ): Promise<ModelInfo[]> {
     if (!dbBinding) return [];
 
@@ -37,6 +40,7 @@ export async function getCommunityTextModelsInfo(
     const rows = await db
         .select({
             ownerGithubUsername: schema.user.githubUsername,
+            githubId: schema.user.githubId,
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
@@ -52,6 +56,7 @@ export async function getCommunityTextModelsInfo(
 
     return rows.flatMap((row): ModelInfo[] => {
         if (!row.ownerGithubUsername) return [];
+        if (!isCommunityEndpointOwnerAllowed(allowlistEnv, row)) return [];
         const pricing: Record<string, string> & { currency: "pollen" } = {
             currency: "pollen",
         };
@@ -86,6 +91,7 @@ export function communityTextSupportedEndpoints(): string[] {
 export async function getCommunityEndpointRuntime(
     dbBinding: CloudflareBindings["DB"] | undefined,
     model: string,
+    allowlistEnv: CommunityEndpointAllowlistEnv | undefined,
 ): Promise<CommunityEndpointRuntime | null> {
     const communityModel = parseCommunityModelId(model);
     if (!communityModel || !dbBinding) return null;
@@ -95,6 +101,7 @@ export async function getCommunityEndpointRuntime(
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            githubId: schema.user.githubId,
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             baseUrl: schema.communityEndpoint.baseUrl,
@@ -121,5 +128,20 @@ export async function getCommunityEndpointRuntime(
         )
         .limit(1);
 
-    return row[0] ? { ...row[0], modelId: model } : null;
+    const endpoint = row[0];
+    if (!endpoint) return null;
+    if (!isCommunityEndpointOwnerAllowed(allowlistEnv, endpoint)) return null;
+    return {
+        id: endpoint.id,
+        ownerUserId: endpoint.ownerUserId,
+        modelId: model,
+        name: endpoint.name,
+        description: endpoint.description,
+        baseUrl: endpoint.baseUrl,
+        upstreamModel: endpoint.upstreamModel,
+        bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
+        promptTextPrice: endpoint.promptTextPrice,
+        completionTextPrice: endpoint.completionTextPrice,
+        contextLength: endpoint.contextLength,
+    };
 }

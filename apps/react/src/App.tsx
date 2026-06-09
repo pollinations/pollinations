@@ -1631,11 +1631,10 @@ function CompositionsPage() {
 }
 
 // --- Colors tab ------------------------------------------------------------
-// A self-contained color story. The picker sets data-theme on ONLY the themed
-// preview region, so the rest of the app stays neutral. The themed ramp + live
-// components re-resolve to the picked theme; the structural and semantic
-// colors are theme-independent and shown once. All class strings are literal
-// (the app compiles Tailwind from source, so dynamic class names won't emit).
+// A self-contained color story for the reduced theme. The accent tokens are
+// shown alongside structural, modality, wallet, and intent colors. All class
+// strings are literal (the app compiles Tailwind from source, so dynamic class
+// names won't emit).
 
 // [name, swatch fill class, canonical usage class]
 const THEMED_TOKENS = [

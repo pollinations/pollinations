@@ -543,9 +543,6 @@ export function Playground({
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                {/* Neutral black, not theme-tinted: the package has no neutral
-                    text token yet, so we use raw gray utilities here. Replace with
-                    the shared neutral "ink" scale in the follow-up PR. */}
                 <Heading
                     as="h1"
                     size="title"

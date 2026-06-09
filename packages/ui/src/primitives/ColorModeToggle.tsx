@@ -132,8 +132,8 @@ export function useColorMode(): {
 /**
  * Sliding sun/moon switch. Light/dark is a two-state choice, not an on/off
  * affordance, so this uses `Switch`'s shape but its own palette. The thumb
- * carries the active mode's icon tinted with the accent (`text-soft`, follows
- * `--polli-hue`); the mode you'd switch to sits ghosted (faint neutral) on the
+ * carries the active mode's icon tinted with the accent (`text-soft`); the
+ * mode you'd switch to sits ghosted (faint neutral) on the
  * empty side. Self-contained — wires itself to `useColorMode`.
  */
 export const ColorModeToggle: FC = () => {

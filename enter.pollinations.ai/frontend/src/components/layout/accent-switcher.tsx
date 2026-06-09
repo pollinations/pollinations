@@ -1,4 +1,4 @@
-// TEMP — accent theme switcher to audition the proposed palettes.
+// TEMP — accent theme switcher kept during the final visual cleanup.
 // Sets `data-accent` on <html> (the whole app re-themes via the recipe in
 // tokens.css). Each swatch previews its own accent by scoping itself with
 // `data-accent` and reading the recipe's bg-hover — no hardcoded colors.

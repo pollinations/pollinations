@@ -101,7 +101,7 @@
 }
 
 /* ─── TEMP: accent switcher — audition palettes by setting data-accent on <html>
-   (whole app) or on a swatch (local preview). Values = the proposed palette; each
+   (whole app) or on a swatch (local preview). Values = the temporary palette; each
    just feeds the recipe two numbers. Remove together with the AccentSwitcher. ─── */
 [data-accent="coral"]   { --polli-hue: 40;  --polli-nudge: 0.008; }
 [data-accent="amber"]   { --polli-hue: 85;  --polli-nudge: 0.024; }
@@ -115,7 +115,7 @@
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
    rail) carries data-theme="neutral" so its tooltips, focus rings and surfaces
-   read neutral instead of inheriting the emerald default. Mode-agnostic: every
+   read neutral instead of inheriting the app accent. Mode-agnostic: every
    slot points at a mode-aware neutral token, so dark adapts automatically.
    (TEMP: data-accent="neutral" routes the app/swatch through this same recipe;
    the compound .dark selector wins over the dark accent recipe below.) */

@@ -6,9 +6,10 @@ import {
     ColorModeToggle,
     cn,
     DiscordIcon,
-    ExternalLinkIcon,
+    ExternalLinkButton,
     GitHubIcon,
     Heading,
+    LockIcon,
     ScrollArea,
     Surface,
     TabButton,
@@ -43,8 +44,8 @@ const MODEL_TYPES = [
 const EXTERNAL_LINKS = [
     {
         href: "https://enter.pollinations.ai",
-        label: "Log In",
-        icon: <ExternalLinkIcon className="h-4 w-4" />,
+        label: "Dashboard",
+        icon: <LockIcon className="h-4 w-4 shrink-0" />,
         showLabel: true,
     },
     {
@@ -301,6 +302,17 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 }
 
 function HeaderLink({ href, label, icon, showLabel = false }) {
+    if (showLabel) {
+        return (
+            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+                <span className="inline-flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                </span>
+            </ExternalLinkButton>
+        );
+    }
+
     return (
         <Button
             as="a"
@@ -309,14 +321,10 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             rel="noopener noreferrer"
             title={label}
             size="sm"
-            className={cn(
-                "h-9 gap-2 py-0",
-                showLabel ? "w-auto px-3" : "w-9 px-0",
-            )}
+            className="h-9 w-9 gap-2 px-0 py-0"
             aria-label={label}
         >
             {icon}
-            {showLabel && <span>{label}</span>}
         </Button>
     );
 }

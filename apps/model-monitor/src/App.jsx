@@ -155,66 +155,51 @@ function calcGroupStats(group) {
     };
 }
 
-// Compact, non-clickable per-category health overview. Filtering lives in the
-// separate CategoryTabs selector below it.
-function CategoryStats({ models }) {
-    if (models.length === 0) return null;
-
-    const groups = MODEL_TYPES.map(({ key, title }) => ({
-        key,
-        title,
-        group: models.filter((model) => model.type === key),
-    })).filter(({ group }) => group.length > 0);
-    if (groups.length === 0) return null;
-
+// A count badge for a tab: red = off, orange = degraded. Just the number;
+// the native title carries the detail on hover.
+function CountBadge({ intent, count, label }) {
     return (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {groups.map(({ key, title, group }) => {
-                const stats = calcGroupStats(group);
-                return (
-                    <Surface
-                        key={key}
-                        variant="card"
-                        className="flex min-w-0 flex-col items-center gap-1.5 p-3 text-center"
-                    >
-                        <div className="flex min-w-0 items-center justify-center gap-1.5">
-                            <span className="truncate text-sm font-semibold text-theme-text-strong">
-                                {title}
-                            </span>
-                            <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                                {stats.totalModels}
-                            </span>
-                        </div>
-                        <span className="text-xl font-bold leading-none tabular-nums text-theme-text-strong">
-                            {stats.successRate.toFixed(1)}%
-                        </span>
-                        <div className="flex flex-wrap justify-center gap-1">
-                            {stats.countOff > 0 && (
-                                <Chip intent="danger" size="sm">
-                                    {stats.countOff} off
-                                </Chip>
-                            )}
-                            {stats.countDegraded > 0 && (
-                                <Chip intent="warning" size="sm">
-                                    {stats.countDegraded} degraded
-                                </Chip>
-                            )}
-                            {stats.countOff === 0 &&
-                                stats.countDegraded === 0 && (
-                                    <Chip intent="success" size="sm">
-                                        healthy
-                                    </Chip>
-                                )}
-                        </div>
-                    </Surface>
-                );
-            })}
-        </div>
+        <Chip
+            intent={intent}
+            size="sm"
+            className="tabular-nums"
+            title={`${count} ${label}`}
+        >
+            {count}
+        </Chip>
+    );
+}
+
+// A tab's contents: category name + success rate, plus up to two count badges
+// (off, then degraded). Healthy categories show name + % only.
+function CategoryTab({ title, stats, showBadges = true }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            <span className="text-xs tabular-nums opacity-70">
+                {stats.successRate.toFixed(1)}%
+            </span>
+            {showBadges && stats.countOff > 0 && (
+                <CountBadge
+                    intent="danger"
+                    count={stats.countOff}
+                    label="off"
+                />
+            )}
+            {showBadges && stats.countDegraded > 0 && (
+                <CountBadge
+                    intent="warning"
+                    count={stats.countDegraded}
+                    label="degraded"
+                />
+            )}
+        </span>
     );
 }
 
 // Category filter — the shared soft TabButton, same selector as the Window
-// picker. "All" clears the filter; only categories with models are shown.
+// picker. "All" clears the filter and shows the aggregate rate; only
+// categories with models are shown, each carrying its own rate + badges.
 function CategoryTabs({ models, value, onChange }) {
     const available = MODEL_TYPES.filter(({ key }) =>
         models.some((model) => model.type === key),
@@ -228,7 +213,11 @@ function CategoryTabs({ models, value, onChange }) {
                 onClick={() => onChange(null)}
                 size="sm"
             >
-                All
+                <CategoryTab
+                    title="All"
+                    stats={calcGroupStats(models)}
+                    showBadges={false}
+                />
             </TabButton>
             {available.map(({ key, title }) => (
                 <TabButton
@@ -237,7 +226,12 @@ function CategoryTabs({ models, value, onChange }) {
                     onClick={() => onChange(key)}
                     size="sm"
                 >
-                    {title}
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => model.type === key),
+                        )}
+                    />
                 </TabButton>
             ))}
         </div>
@@ -548,8 +542,6 @@ function App() {
                             live model catalog responds.
                         </Alert>
                     )}
-
-                    <CategoryStats models={models} />
 
                     <CategoryTabs
                         models={models}

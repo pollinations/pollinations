@@ -106,6 +106,8 @@ async function insertAutoTopUpAttempt({
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
+    chargedCurrency = null,
+    chargedAmountCents = null,
 }: {
     id?: string;
     userId: string;
@@ -115,6 +117,8 @@ async function insertAutoTopUpAttempt({
     completedAt?: number | null;
     createdAt?: number;
     updatedAt?: number;
+    chargedCurrency?: string | null;
+    chargedAmountCents?: number | null;
 }) {
     await env.DB.prepare(
         `INSERT INTO stripe_auto_top_up_attempt (
@@ -125,8 +129,10 @@ async function insertAutoTopUpAttempt({
             status,
             created_at,
             updated_at,
-            completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            completed_at,
+            charged_currency,
+            charged_amount_cents
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
@@ -137,6 +143,8 @@ async function insertAutoTopUpAttempt({
             createdAt,
             updatedAt,
             completedAt,
+            chargedCurrency,
+            chargedAmountCents,
         )
         .run();
 }
@@ -2038,6 +2046,66 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
         .bind(user.id)
         .first<{ packBalance: number | null }>();
     expect(updatedUser?.packBalance).toBe(11);
+});
+
+test("POST /api/webhooks/stripe credits paid EUR invoice with canonical USD pollen amount", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe");
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    // EUR attempt: $10 USD → 866 EUR cents (round($10 / 1.155 * 100))
+    const invoiceId = "in_eur_paid_verify";
+    await insertAutoTopUpAttempt({
+        userId: user.id,
+        invoiceId,
+        amountUsd: 10,
+        chargedCurrency: "eur",
+        chargedAmountCents: 866,
+    });
+
+    const response = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
+            currency: "eur",
+            amount_paid: 866,
+            amount_due: 866,
+        }),
+    );
+    expect(response.status).toBe(200);
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind(invoiceId)
+        .first<{ status: string; failureReason: string | null }>();
+
+    // Must credit the canonical USD-anchored Pollen amount (+10), NOT 866 or 8.66
+    expect(updatedUser?.packBalance).toBe(11);
+    expect(attempt?.status).toBe("paid");
+    expect(attempt?.failureReason).toBeNull();
 });
 
 test.for([

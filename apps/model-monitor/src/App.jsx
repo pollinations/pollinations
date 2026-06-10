@@ -104,8 +104,11 @@ function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
     const success = stats.status_2xx || 0;
     const total5xx = stats.errors_5xx || 0;
+    // 4xx are client errors and don't count. Judge purely on the 5xx share of
+    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
+    // volume is not a reason to call a failing model healthy.
     const modelRequests = success + total5xx;
-    if (modelRequests < 3) return "on";
+    if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
     if (pct5xx >= 50) return "off";
     if (pct5xx >= 10) return "degraded";

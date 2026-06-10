@@ -1,7 +1,7 @@
 {
     "name": "React UI | pollinations.ai",
     "short_name": "React UI",
-    "description": "React UI showcase for the Pollinations SDK and UI component library.",
+    "description": "React UI showcase for the Pollinations SDK and UI component library — auth, wallet, and design primitives.",
     "icons": [
         {
             "src": "/icon-192.png",
@@ -22,7 +22,7 @@
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#fff4d4",
+    "theme_color": "#fef8eb",
     "background_color": "#110518",
     "display": "standalone",
     "start_url": "/"

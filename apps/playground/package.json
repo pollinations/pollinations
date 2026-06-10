@@ -3,9 +3,6 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
-    "pollinations": {
-        "theme": "accent"
-    },
     "scripts": {
         "dev": "vite --host 127.0.0.1 --port 4179",
         "predev": "npm run build:deps",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11722,
+  "title": "fix: return 422 for content-policy rejections instead of 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11722",
+  "merged_at": "2026-06-10T10:44:19Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Upstream content-moderation rejections were surfacing as HTTP 500 / `INTERNAL_ERROR`, so they counted as backend failures. On low-traffic image/video models a handful of rejected NSFW prompts dragged success to 0%, falsely flagging models as Off/Degraded on the monitor (83 such 5xx in the last 7d across wan, seedance, seedream, nanobanana).\n\n- Detect content-policy rejections at `throwImageError` — the single funnel all image/video provider errors pass through (catches DashScope green-net, Replicate ContentModeration, Vertex safety, and Azure content safety, including Vertex's plain `Error`)\n- Return **422** with a stable `content_policy_violation` code so clients and the model-monitor can detect this case without parsing messages\n- User-facing message now explains the rejection and includes the provider's reason\n- Adds optional `errorCode` on `UpstreamError` to carry the code through the envelope\n\nThese are client errors (the request content is the problem, retrying won't help), so they belong in 4xx, not 5xx. Genuine backend 5xx (GPU timeouts, provider 502s) are unaffected.\n\nTests: 28 new covering all 13 real prod message variants + 7 genuine failures that must stay 5xx; image suite 83/83, error-observability 5/5, tsc + biome clean.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Blame the prompt, not the server",
+    "blurb": "Content policy rejections now correctly return a 422 error instead of a 500. Your spicy prompts will no longer make our monitors think the servers are on fire!",
+    "summary": "Upstream content moderation rejections now return HTTP 422 with a `content_policy_violation` code instead of HTTP 500.",
+    "impact": "Developers can now programmatically detect policy rejections without parsing error strings, and models won't be falsely flagged as degraded on the status monitor.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "content-moderation",
+      "monitoring",
+      "bug-fix"
+    ],
+    "visual_concept": "The Nomnom creature eating a spicy/rejected prompt (maybe a red chili pepper or a warning sign) and spitting it out, while the Bee holds up a '422' sign instead of a '500' sign. A monitor robot looking relieved in the background.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding up a small sign that says '422' while the round tan nomnom creature spits out a spicy red chili pepper pixel sprite. A chunky monitor robot in the background looks relieved with a green checkmark on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-10/PR-11722.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding up a small sign that says '422' while the round tan nomnom creature spits out a spicy red chili pepper pixel sprite. A chunky monitor robot in the background looks relieved with a green checkmark on its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "generated_at": "2026-06-10T10:45:19.792820+00:00"
+}

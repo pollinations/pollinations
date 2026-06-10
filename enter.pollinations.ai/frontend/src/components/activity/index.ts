@@ -6,6 +6,7 @@ export {
 } from "@pollinations/ui";
 export { EarningsGraph } from "./earnings-graph";
 export { getEarningsEnabledApps } from "./earnings-visibility";
+export { TransactionHistory } from "./transaction-history.tsx";
 export type {
     DailyUsageRecord,
     DataPoint,

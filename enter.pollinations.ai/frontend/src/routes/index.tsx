@@ -8,6 +8,7 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
+    TransactionHistory,
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
@@ -34,7 +35,6 @@ import {
     PollenBalance,
     SidebarWallet,
     TierPanel,
-    TransactionHistory,
 } from "../components/pollen";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
@@ -318,7 +318,13 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
-                    <TransactionHistory />
+                    <Section title="Recent transactions" theme="amber" framed>
+                        <TransactionHistory
+                            mode="compact"
+                            apiKeys={selectableKeys}
+                            theme="amber"
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
@@ -352,6 +358,17 @@ function RouteComponent() {
                             theme={dashboardThemeByPage.activity}
                         />
                     )}
+                    <Section
+                        title="Transactions"
+                        theme={dashboardThemeByPage.activity}
+                        framed
+                    >
+                        <TransactionHistory
+                            mode="full"
+                            apiKeys={selectableKeys}
+                            theme={dashboardThemeByPage.activity}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "keys" && (

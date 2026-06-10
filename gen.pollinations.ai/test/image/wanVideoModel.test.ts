@@ -44,7 +44,6 @@ const baseParams: ImageParams = {
     height: 720,
     dimensionsExplicit: false,
     seed: 42,
-    nofeed: false,
     safe: false,
     quality: "medium",
     image: [],

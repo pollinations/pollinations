@@ -416,8 +416,6 @@ export class Pollinations {
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            private: options.private,
-            nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
@@ -731,7 +729,6 @@ export class Pollinations {
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
             audio: options.audio,
             image: options.referenceImage,
-            private: options.private,
             safe: options.safe,
         };
 

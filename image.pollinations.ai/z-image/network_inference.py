@@ -14,8 +14,6 @@ params = {
     "width": 1024,
     "height": 1024,
     "seed": 42,
-    "private": "false",
-    "nofeed": "false",
     "safe": "false",
     "quality": "medium",
     "image": "",

@@ -28,13 +28,20 @@ type StripeCustomer = {
 type StripePaymentMethod = {
     id: string;
     object: "payment_method";
-    type: "card";
+    type: "card" | "sepa_debit";
     customer: string | null;
-    card: {
+    card?: {
         brand: string;
         last4: string;
         exp_month: number;
         exp_year: number;
+    };
+    sepa_debit?: {
+        last4: string;
+        bank_code: string | null;
+        branch_code: string | null;
+        country: string | null;
+        fingerprint: string | null;
     };
     billing_details?: {
         name?: string | null;
@@ -323,7 +330,7 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 status: "draft",
                 amount_due: 0,
                 amount_paid: 0,
-                currency: "usd",
+                currency: form.get("currency") ?? "usd",
                 metadata: parseMetadata(form),
             };
             state.invoices.push(invoice);
@@ -483,6 +490,30 @@ export function mockCardPaymentMethod(
             name: "Test User",
             email: "test@example.com",
             address: null,
+        },
+    };
+}
+
+export function mockSepaDebitPaymentMethod(
+    id: string,
+    customer: string,
+): StripePaymentMethod {
+    return {
+        id,
+        object: "payment_method",
+        type: "sepa_debit",
+        customer,
+        sepa_debit: {
+            last4: "3000",
+            bank_code: null,
+            branch_code: null,
+            country: "DE",
+            fingerprint: null,
+        },
+        billing_details: {
+            name: "Test EU User",
+            email: "eu@example.com",
+            address: { country: "DE" },
         },
     };
 }

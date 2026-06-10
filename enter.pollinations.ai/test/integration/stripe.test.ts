@@ -6,7 +6,11 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
-import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
+import {
+    mockCardPaymentMethod,
+    mockCustomer,
+    mockSepaDebitPaymentMethod,
+} from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
@@ -2917,4 +2921,109 @@ describe("EUR checkout branch (flag on)", () => {
         expectUsdPriceData(body, 5);
         expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     });
+});
+
+test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and persists charged values", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    // Pre-seed FX rate so getEurMidRate does not hit the network.
+    // 1 EUR = 1.155 USD  →  $10 USD pack = round(10 / 1.155 * 100) = 866 EUR cents
+    const fxRate = "1.155";
+    await env.KV.put("fx:eur-usd:current", fxRate);
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const pack = getPollenPackByAmount(10);
+    expect(pack).toBeDefined();
+    if (!pack) throw new Error("Expected $10 pollen pack");
+
+    const expectedEurCents = Math.round((pack.amountUsd / 1.155) * 100);
+
+    const customer = mockCustomer("cus_auto_top_up_eur");
+    customer.invoice_settings.default_payment_method = "pm_sepa_de";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockSepaDebitPaymentMethod("pm_sepa_de", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        status: string;
+        invoiceId?: string;
+    };
+    expect(data.status).toBe("created");
+    expect(data.invoiceId).toBe("in_mock_1");
+
+    // Invoice create must use EUR.
+    const invoiceRequest = mocks.stripe.state.requests.find(
+        (r) => r.path === "/v1/invoices",
+    );
+    expect(invoiceRequest?.body.currency).toBe("eur");
+
+    // Invoice item must use the converted EUR cents amount.
+    const itemRequest = mocks.stripe.state.requests.find(
+        (r) => r.path === "/v1/invoiceitems",
+    );
+    expect(itemRequest?.body.currency).toBe("eur");
+    expect(itemRequest?.body.amount).toBe(String(expectedEurCents));
+
+    // DB row must persist charged_currency and charged_amount_cents.
+    const attempt = await env.DB.prepare(
+        `SELECT charged_currency AS chargedCurrency,
+            charged_amount_cents AS chargedAmountCents,
+            status
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{
+            chargedCurrency: string | null;
+            chargedAmountCents: number | null;
+            status: string;
+        }>();
+
+    expect(attempt?.chargedCurrency).toBe("eur");
+    expect(attempt?.chargedAmountCents).toBe(expectedEurCents);
+    expect(attempt?.status).toBe("pending");
+
+    // Pollen credit path is unchanged — pack balance not yet credited (pending).
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    expect(updatedUser?.packBalance).toBe(1);
+
+    // Cleanup KV.
+    await env.KV.delete("fx:eur-usd:current");
 });

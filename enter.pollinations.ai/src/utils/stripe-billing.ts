@@ -9,6 +9,7 @@ import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
+import { getEurMidRate, usdToEurCents } from "./fx.ts";
 import { createStripeClient } from "./stripe.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
@@ -57,6 +58,8 @@ type AutoTopUpAttemptRow = {
     stripeInvoiceId: string | null;
     amountUsd: number;
     status: string;
+    chargedCurrency: string | null;
+    chargedAmountCents: number | null;
 };
 
 type AutoTopUpInput = {
@@ -498,6 +501,12 @@ export async function processAutoTopUpForUser(
             return { status: "skipped", reason: "missing billing details" };
         }
 
+        const topUpCurrency = resolveAutoTopUpCurrency(paymentMethod, customer);
+        const chargedAmountCents =
+            topUpCurrency === "eur"
+                ? usdToEurCents(pack.amountUsd, await getEurMidRate(env))
+                : pack.amountUsd * 100;
+
         const idempotencyKey = createAutoTopUpIdempotencyKey(attemptId);
         const metadata = {
             [METADATA_USER_ID]: userId,
@@ -510,7 +519,7 @@ export async function processAutoTopUpForUser(
         const invoice = await stripe.invoices.create(
             {
                 customer: customerId,
-                currency: "usd",
+                currency: topUpCurrency,
                 collection_method: "charge_automatically",
                 auto_advance: false,
                 automatic_tax: { enabled: true },
@@ -522,14 +531,20 @@ export async function processAutoTopUpForUser(
         );
         createdInvoiceId = invoice.id;
 
-        await setAutoTopUpAttemptInvoice(env.DB, attemptId, invoice.id);
+        await setAutoTopUpAttemptInvoice(
+            env.DB,
+            attemptId,
+            invoice.id,
+            topUpCurrency,
+            chargedAmountCents,
+        );
 
         await stripe.invoiceItems.create(
             {
                 customer: customerId,
                 invoice: invoice.id,
-                amount: pack.amountUsd * 100,
-                currency: "usd",
+                amount: chargedAmountCents,
+                currency: topUpCurrency,
                 description: pack.checkoutName,
                 tax_behavior: "inclusive",
                 tax_code: pack.taxCode,
@@ -602,8 +617,9 @@ export async function creditAutoTopUpInvoice(
             invoiceStatus: invoice.status,
             amountPaid: invoice.amount_paid,
             currency: invoice.currency,
-            expectedAmountCents: attempt.amountUsd * 100,
-            expectedCurrency: "usd",
+            expectedAmountCents:
+                attempt.chargedAmountCents ?? attempt.amountUsd * 100,
+            expectedCurrency: attempt.chargedCurrency ?? "usd",
         });
         await markAttemptFailedByInvoice(
             env.DB,
@@ -978,11 +994,15 @@ async function setAutoTopUpAttemptInvoice(
     db: D1Database,
     attemptId: string,
     invoiceId: string,
+    chargedCurrency: string,
+    chargedAmountCents: number,
 ): Promise<void> {
     const result = await db
         .prepare(
             `UPDATE stripe_auto_top_up_attempt
                 SET stripe_invoice_id = ?,
+                    charged_currency = ?,
+                    charged_amount_cents = ?,
                     status = ?,
                     updated_at = ?
                 WHERE id = ?
@@ -990,6 +1010,8 @@ async function setAutoTopUpAttemptInvoice(
         )
         .bind(
             invoiceId,
+            chargedCurrency,
+            chargedAmountCents,
             AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
             Date.now(),
             attemptId,
@@ -1015,7 +1037,9 @@ async function getAutoTopUpAttemptByInvoiceId(
                     user_id AS userId,
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
-                    status
+                    status,
+                    charged_currency AS chargedCurrency,
+                    charged_amount_cents AS chargedAmountCents
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?
                 LIMIT 1`,
@@ -1092,14 +1116,16 @@ function verifyAutoTopUpInvoicePayment(
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    if (invoice.amount_paid !== attempt.amountUsd * 100) {
+    // Legacy rows (pre-EUR) have null charged_* — fall back to the USD anchor.
+    const expectedCents = attempt.chargedAmountCents ?? attempt.amountUsd * 100;
+    const expectedCurrency = attempt.chargedCurrency ?? "usd";
+
+    if (invoice.amount_paid !== expectedCents) {
         return { ok: false, reason: "amount mismatch" };
     }
-
-    if (invoice.currency !== "usd") {
+    if (invoice.currency !== expectedCurrency) {
         return { ok: false, reason: "currency mismatch" };
     }
-
     return { ok: true };
 }
 

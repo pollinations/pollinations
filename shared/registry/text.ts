@@ -1,13 +1,13 @@
 import {
-    GEMINI_3_SEARCH_BILLING,
-    GEMINI_25_GROUNDING_BILLING,
-    GEMINI_31_PRO_BILLING,
+    GEMINI_3_SEARCH_PRICE_MULTIPLIER,
+    GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
+    GEMINI_31_PRO_PRICE_MULTIPLIER,
 } from "./gemini-billing";
 import {
-    PERPLEXITY_DEEP_BILLING,
-    PERPLEXITY_FAST_BILLING,
-    PERPLEXITY_PRO_BILLING,
-    PERPLEXITY_REASONING_BILLING,
+    PERPLEXITY_DEEP_PRICE_MULTIPLIER,
+    PERPLEXITY_FAST_PRICE_MULTIPLIER,
+    PERPLEXITY_PRO_PRICE_MULTIPLIER,
+    PERPLEXITY_REASONING_PRICE_MULTIPLIER,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -282,7 +282,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -290,7 +290,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.0),
             completionTextTokens: perMillion(3.0),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3 Flash",
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -310,7 +309,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
         // Non-global regions add ~10%; we route through global.
@@ -320,7 +319,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
             completionTextTokens: perMillion(9.0),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.5 Flash",
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -344,7 +342,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.25),
@@ -352,7 +350,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Flash Lite",
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio", "video"],
@@ -372,7 +369,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
@@ -380,7 +377,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: GEMINI_25_GROUNDING_BILLING,
         title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image", "video"],
@@ -569,7 +565,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
         // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
         // calculateCost when the response includes web search metadata.
         cost: {
@@ -578,7 +574,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
-        billing: GEMINI_25_GROUNDING_BILLING,
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
@@ -600,7 +595,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
         // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
         // free queries/month shared across all Gemini 3 models; absorbed by
@@ -611,7 +606,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
@@ -633,7 +627,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
         // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
         cost: {
@@ -642,7 +636,6 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5),
             completionTextTokens: perMillion(9.0),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.5 Flash Search",
         description: "Gemini 3.5 Flash Search - Premium grounded web research",
         inputModalities: ["text", "image", "audio", "video"],
@@ -827,8 +820,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_FAST_BILLING,
+        priceMultiplier: PERPLEXITY_FAST_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -851,8 +843,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_DEEP_BILLING,
+        priceMultiplier: PERPLEXITY_DEEP_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -873,8 +864,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_PRO_BILLING,
+        priceMultiplier: PERPLEXITY_PRO_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -895,8 +885,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_REASONING_BILLING,
+        priceMultiplier: PERPLEXITY_REASONING_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
@@ -974,7 +963,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_31_PRO_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -984,7 +973,6 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        billing: GEMINI_31_PRO_BILLING,
         title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",

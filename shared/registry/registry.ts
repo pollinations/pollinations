@@ -116,6 +116,29 @@ export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
 };
 
+export type PriceMultiplierContext = {
+    model: ModelName;
+    usage: Usage;
+    output?: unknown;
+    baseCost: CostDefinition;
+};
+
+export type PriceMultiplierEffect = {
+    cost?: CostDefinition;
+    multiplier?: number;
+    costAdjustment?: number;
+    priceAdjustment?: number;
+};
+
+export type PriceMultiplierFunctor = {
+    multiplier: number;
+    description: string;
+    billing?: BillingRules;
+    apply: (context: PriceMultiplierContext) => PriceMultiplierEffect;
+};
+
+export type PriceMultiplier = number | PriceMultiplierFunctor;
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
@@ -125,7 +148,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     cost: CostDefinition;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
-    priceMultiplier: number;
+    // Dynamic models can provide a functor that adjusts rated cost/price from
+    // usage and provider output while still exposing a base multiplier.
+    priceMultiplier: PriceMultiplier;
+    // Static catalog metadata only. Dynamic runtime behavior belongs in a
+    // priceMultiplier functor; this is kept for compatibility with simple docs.
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -182,8 +209,14 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
+export function getBasePriceMultiplier(svc: ModelDefinition): number {
+    return typeof svc.priceMultiplier === "number"
+        ? svc.priceMultiplier
+        : svc.priceMultiplier.multiplier;
+}
+
 function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
+    const m = getBasePriceMultiplier(svc);
     if (m === 1) return svc.cost;
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
@@ -206,144 +239,59 @@ function calculateLinearCost(
     };
 }
 
-function getPromptTokenCount(usage: Usage): number {
-    return (
-        (usage.promptTextTokens ?? 0) +
-        (usage.promptCachedTokens ?? 0) +
-        (usage.promptAudioTokens ?? 0) +
-        (usage.promptImageTokens ?? 0) +
-        (usage.promptVideoTokens ?? 0)
-    );
-}
-
-type GroundedOutput = {
-    choices?: { groundingMetadata?: { webSearchQueries?: string[] } }[];
-    streamEvents?: GroundedOutput[];
-};
-
-function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
-    const o = output as GroundedOutput | undefined;
-    const events = o?.streamEvents ?? (o ? [o] : []);
-    const queries = new Set<string>();
-    for (const event of events) {
-        for (const choice of event.choices ?? []) {
-            for (const q of choice.groundingMetadata?.webSearchQueries ?? []) {
-                if (q?.trim()) queries.add(q);
-            }
-        }
-    }
-    return queries.size;
-}
-
-function countBillingAdjustmentUnits(
-    counter: BillingAdjustmentCounter,
-    output: unknown,
-): number {
-    if (counter === "perplexityRequest") return 1;
-    const geminiQueryCount = getGeminiGroundingWebSearchQueryCount(output);
-    if (counter === "geminiGroundedPrompt") {
-        return geminiQueryCount > 0 ? 1 : 0;
-    }
-    return geminiQueryCount;
-}
-
-type PerplexityCostOutput = {
-    usage?: {
-        cost?: {
-            request_cost?: unknown;
-        };
+export function getBillingRules(
+    svc: ModelDefinition,
+): BillingRules | undefined {
+    if (typeof svc.priceMultiplier === "number") return svc.billing;
+    if (!svc.billing) return svc.priceMultiplier.billing;
+    return {
+        tiers: [
+            ...(svc.billing.tiers ?? []),
+            ...(svc.priceMultiplier.billing?.tiers ?? []),
+        ],
+        adjustments: [
+            ...(svc.billing.adjustments ?? []),
+            ...(svc.priceMultiplier.billing?.adjustments ?? []),
+        ],
     };
-    streamEvents?: unknown[];
+}
+
+type EvaluatedPriceMultiplier = {
+    cost: CostDefinition;
+    multiplier: number;
+    costAdjustment: number;
+    priceAdjustment: number;
 };
 
-function asProviderUnitCost(value: unknown): number | undefined {
-    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-        return undefined;
-    }
-    return value;
-}
-
-function getPerplexityReportedRequestCost(output: unknown): number | undefined {
-    const o = output as PerplexityCostOutput | undefined;
-    const events = o?.streamEvents ?? (o ? [o] : []);
-
-    for (const event of [...events].reverse()) {
-        const requestCost = (event as PerplexityCostOutput | undefined)?.usage
-            ?.cost?.request_cost;
-        const unitCost = asProviderUnitCost(requestCost);
-        if (unitCost !== undefined) return unitCost;
-    }
-
-    return undefined;
-}
-
-// Trust a provider-reported unit cost only up to this multiple of the static
-// registry fee — a malformed or hostile value beyond it bills the static fee.
-const PROVIDER_UNIT_COST_MAX_RATIO = 10;
-
-function getBillingAdjustmentUnitCost(
-    rule: BillingAdjustmentRule,
-    output: unknown,
-): number {
-    if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
-        const reported = getPerplexityReportedRequestCost(output);
-        if (
-            reported !== undefined &&
-            reported <= rule.unitCost * PROVIDER_UNIT_COST_MAX_RATIO
-        ) {
-            return reported;
-        }
-        return rule.unitCost;
-    }
-    return rule.unitCost;
-}
-
-function selectBillingTier(
+function evaluatePriceMultiplier(
+    model: ModelName,
     svc: ModelDefinition,
     usage: Usage,
-): BillingTierRule | undefined {
-    const promptTokens = getPromptTokenCount(usage);
-    return svc.billing?.tiers?.find(
-        (tier) => promptTokens > tier.when.promptTokensGt,
-    );
-}
+    output?: unknown,
+): EvaluatedPriceMultiplier {
+    if (typeof svc.priceMultiplier === "number") {
+        return {
+            cost: svc.cost,
+            multiplier: svc.priceMultiplier,
+            costAdjustment: 0,
+            priceAdjustment: 0,
+        };
+    }
 
-function getBillingCostDefinition(
-    svc: ModelDefinition,
-    usage: Usage,
-): CostDefinition {
-    const billingTier = selectBillingTier(svc, usage);
-    return billingTier ? { ...svc.cost, ...billingTier.cost } : svc.cost;
-}
-
-function calculateBillingAdjustmentCost(
-    svc: ModelDefinition,
-    output: unknown,
-): number {
-    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
-        const units = countBillingAdjustmentUnits(rule.count, output);
-        if ((rule.when ?? "grounded") !== "always" && units === 0) {
-            return total;
-        }
-        return total + units * getBillingAdjustmentUnitCost(rule, output);
-    }, 0);
-}
-
-function calculateBillingAdjustmentPrice(
-    svc: ModelDefinition,
-    output: unknown,
-): number {
-    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
-        const units = countBillingAdjustmentUnits(rule.count, output);
-        if ((rule.when ?? "grounded") !== "always" && units === 0) {
-            return total;
-        }
-        const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
-        return (
-            total +
-            units * getBillingAdjustmentUnitCost(rule, output) * priceMultiplier
-        );
-    }, 0);
+    const effect = svc.priceMultiplier.apply({
+        model,
+        usage,
+        output,
+        baseCost: svc.cost,
+    });
+    const multiplier = effect.multiplier ?? svc.priceMultiplier.multiplier;
+    const costAdjustment = effect.costAdjustment ?? 0;
+    return {
+        cost: effect.cost ?? svc.cost,
+        multiplier,
+        costAdjustment,
+        priceAdjustment: effect.priceAdjustment ?? costAdjustment * multiplier,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -456,12 +404,9 @@ export function calculateCost(
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = calculateLinearCost(
-        model,
-        usage,
-        getBillingCostDefinition(svc, usage),
-    );
-    const adjustmentCost = calculateBillingAdjustmentCost(svc, output);
+    const evaluated = evaluatePriceMultiplier(model, svc, usage, output);
+    const usageCost = calculateLinearCost(model, usage, evaluated.cost);
+    const adjustmentCost = evaluated.costAdjustment;
     if (adjustmentCost === 0) return usageCost;
     return {
         ...usageCost,
@@ -482,26 +427,24 @@ export function calculatePrice(
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usageCost = calculateLinearCost(
-        model,
-        usage,
-        getBillingCostDefinition(svc, usage),
-    );
+    const evaluated = evaluatePriceMultiplier(model, svc, usage, output);
+    const usageCost = calculateLinearCost(model, usage, evaluated.cost);
     const usagePrice = Object.fromEntries(
         Object.entries(usageCost)
             .filter(([usageType]) => usageType !== "totalCost")
             .map(([usageType, cost]) => [
                 usageType,
-                (cost as number) * svc.priceMultiplier,
+                (cost as number) * evaluated.multiplier,
             ]),
     ) as Usage;
     const tokenTotalPrice = Object.values(usagePrice).reduce(
         (total, price) => total + price,
         0,
     );
-    const adjustmentPrice = calculateBillingAdjustmentPrice(svc, output);
     return {
         ...usagePrice,
-        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
+        totalPrice: roundPollenLedgerAmount(
+            tokenTotalPrice + evaluated.priceAdjustment,
+        ),
     };
 }

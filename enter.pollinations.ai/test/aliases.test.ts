@@ -4,6 +4,7 @@ import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
     calculatePrice,
+    getBasePriceMultiplier,
     getCostDefinition,
     getModelDefinition,
     getModels,
@@ -63,14 +64,16 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
     );
 });
 
-test("public price equals provider cost times priceMultiplier for every model", () => {
-    // Invariant: price = cost × priceMultiplier, for every model, no exceptions.
-    // Asserted per cost field so it holds at any multiplier (currently all 1×).
+test("public price equals provider cost times base priceMultiplier for every model", () => {
+    // The static price table is derived from base cost × base multiplier.
+    // Dynamic functors add runtime adjustments in calculateCost/calculatePrice.
     for (const model of getModels()) {
         const cost = getCostDefinition(model);
         const price = getPriceDefinition(model);
         if (!cost || !price) continue; // no cost block → nothing billed
-        const { priceMultiplier } = getModelDefinition(model);
+        const priceMultiplier = getBasePriceMultiplier(
+            getModelDefinition(model),
+        );
         for (const [field, rate] of Object.entries(cost)) {
             const priceRate = price[field as keyof typeof price] as number;
             expect(priceRate).toBeCloseTo(
@@ -86,7 +89,7 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     // cost × priceMultiplier. Assert the runtime aggregation honours that for a
     // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
-    const { priceMultiplier } = getModelDefinition("flux");
+    const priceMultiplier = getBasePriceMultiplier(getModelDefinition("flux"));
     const cost = calculateCost("flux", usage);
     const price = calculatePrice("flux", usage);
 

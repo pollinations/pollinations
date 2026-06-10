@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+    getBasePriceMultiplier,
+    getBillingRules,
     getModelDefinition,
     getPriceDefinition,
     getVisibleAudioModels,
@@ -41,6 +43,7 @@ export const ModelInfoSchema = z.object({
         .and(z.object({ currency: z.literal("pollen") })),
     billing: z
         .object({
+            description: z.string().optional(),
             tiers: z
                 .array(
                     z.object({
@@ -125,13 +128,20 @@ function getModelInfo(modelName: ModelName): ModelInfo {
             pricing[key] = toFixedPoint(value);
         }
     }
-    const billing = service.billing
+    const billingRules = getBillingRules(service);
+    const basePriceMultiplier = getBasePriceMultiplier(service);
+    const billingDescription =
+        typeof service.priceMultiplier === "number"
+            ? undefined
+            : service.priceMultiplier.description;
+    const billing = billingRules
         ? {
-              tiers: service.billing.tiers?.map((tier) => ({
+              description: billingDescription,
+              tiers: billingRules.tiers?.map((tier) => ({
                   id: tier.id,
                   description: tier.description,
               })),
-              adjustments: service.billing.adjustments?.map((adjustment) => ({
+              adjustments: billingRules.adjustments?.map((adjustment) => ({
                   id: adjustment.id,
                   description: adjustment.description,
                   kind: adjustment.kind,
@@ -140,8 +150,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
                   when: adjustment.when ?? "grounded",
                   unit_price: toFixedPoint(
                       adjustment.unitCost *
-                          (adjustment.priceMultiplier ??
-                              service.priceMultiplier),
+                          (adjustment.priceMultiplier ?? basePriceMultiplier),
                   ),
               })),
           }

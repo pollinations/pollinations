@@ -1,0 +1,35 @@
+{
+  "pr_number": 11712,
+  "title": "chore: remove dead image params (negative_prompt, enhance, nologo)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11712",
+  "merged_at": "2026-06-10T09:12:53Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Removes three dead/no-op image-API params, one commit per concern:\n\n- **`negative_prompt`** (#11506) — dead end-to-end: flux moved to Fireworks (doesn't use it) and the zimage backend servers ignore the field.\n- **`enhance`** (#11368) — a no-op flag: nothing in the gen worker reads the parsed value to rewrite the prompt, and the per-model `enhance` capability flag in `models.ts` had no consumer.\n- **`nologo`** (#9929) — never declared in either gen image schema, so Zod already strips it before any backend sees it; pure stale plumbing.\n\nSurface touched: gen schemas/params/routes/models + self-hosted forward, SDK (client/types/README), MCP tool schemas + forwarders, polli-cli flags (image + video), the Play UI checkbox + copy, the 4 image/video test fixtures, and first-party scripts/docs (healthcheck rotation scripts, social helper, monitor skill, z-image example).\n\nBoth gen schemas use `z.object()`, so unknown keys are stripped — existing requests sending these params are silently ignored (no rejection, no grace period needed).\n\n`APIDOCS.md` is auto-generated from the deployed schema and regenerates post-deploy, so it is intentionally not hand-edited here.\n\nVerified: gen / SDK / frontend / polli-cli typecheck, biome, and gen image + docs + index tests all pass.\n\nFixes #11506\nFixes #11368\nFixes #9929",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Trimming the dead leaves",
+    "blurb": "We've swept away some dusty, unused image parameters like negative_prompt and enhance to keep our API schemas clean and snappy.",
+    "summary": "Removed the deprecated negative_prompt, enhance, and nologo parameters from the image API, SDK, MCP, and CLI since they were no longer functional.",
+    "impact": "Developers will see a cleaner API surface and SDK types, while existing requests sending these old parameters will continue to be safely ignored.",
+    "keywords": [
+      "api",
+      "cleanup",
+      "sdk",
+      "mcp",
+      "cli"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a digital garden. Nomnom eating old, withered code-leaves representing the dead parameters.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dusty, withered code-leaves labeled 'enhance' and 'nologo' in a digital garden. The cute bee mascot wearing a tiny bandana sweeps the path with a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-10/PR-11712.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating dusty, withered code-leaves labeled 'enhance' and 'nologo' in a digital garden. The cute bee mascot wearing a tiny bandana sweeps the path with a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-10T09:14:02.273555+00:00"
+}

@@ -1,8 +1,9 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
     EUR_USD_FLOOR,
     FX_RATE_MAX,
     FX_RATE_MIN,
+    getEurMidRate,
     isPlausibleRate,
     parseEcbUsdRate,
     usdToEurCents,
@@ -49,5 +50,62 @@ describe("usdToEurCents", () => {
     });
     test("floor is within the plausible band", () => {
         expect(isPlausibleRate(EUR_USD_FLOOR)).toBe(true);
+    });
+});
+
+// Minimal in-memory KV so the ladder is testable without miniflare semantics.
+function fakeKv(initial: Record<string, string> = {}) {
+    const store = new Map(Object.entries(initial));
+    return {
+        store,
+        get: vi.fn(async (k: string) => store.get(k) ?? null),
+        put: vi.fn(async (k: string, v: string) => void store.set(k, v)),
+    };
+}
+const envWith = (kv: ReturnType<typeof fakeKv>) =>
+    ({ KV: kv }) as unknown as CloudflareBindings;
+
+const ecbXml = (rate: string) => `<Cube currency='USD' rate='${rate}'/>`;
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe("getEurMidRate", () => {
+    test("returns cached current rate without fetching", async () => {
+        const kv = fakeKv({ "fx:eur-usd:current": "1.142" });
+        const fetchSpy = vi.fn();
+        vi.stubGlobal("fetch", fetchSpy);
+        expect(await getEurMidRate(envWith(kv))).toBeCloseTo(1.142, 4);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    test("fetches, clamps, caches current + last-good on cold cache", async () => {
+        const kv = fakeKv();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(ecbXml("1.1550"), { status: 200 })),
+        );
+        expect(await getEurMidRate(envWith(kv))).toBeCloseTo(1.155, 4);
+        expect(kv.store.get("fx:eur-usd:current")).toBe("1.155");
+        expect(kv.store.get("fx:eur-usd:last-good")).toBe("1.155");
+    });
+
+    test("rejects implausible fetched rate -> last-good", async () => {
+        const kv = fakeKv({ "fx:eur-usd:last-good": "1.10" });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(ecbXml("115.5"), { status: 200 })),
+        );
+        expect(await getEurMidRate(envWith(kv))).toBeCloseTo(1.1, 4);
+    });
+
+    test("fetch failure with no last-good -> floor", async () => {
+        const kv = fakeKv();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                throw new Error("net");
+            }),
+        );
+        expect(await getEurMidRate(envWith(kv))).toBe(EUR_USD_FLOOR);
     });
 });

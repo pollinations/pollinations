@@ -36,3 +36,47 @@ export function isPlausibleRate(rate: number): boolean {
 export function usdToEurCents(usdAmount: number, usdPerEur: number): number {
     return Math.round((usdAmount / usdPerEur) * 100);
 }
+
+const FX_RATE_CURRENT_KEY = "fx:eur-usd:current";
+const FX_RATE_LAST_GOOD_KEY = "fx:eur-usd:last-good"; // never expires
+const FX_RATE_TTL_SECONDS = 86_400; // daily refresh
+
+async function fetchEcbUsdRate(): Promise<number | null> {
+    try {
+        const res = await fetch(ECB_DAILY_URL);
+        if (!res.ok) return null;
+        const rate = parseEcbUsdRate(await res.text());
+        return rate != null && isPlausibleRate(rate) ? rate : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * USD-per-EUR mid-market rate. Ladder (always returns a EUR rate, never USD):
+ * fresh daily fetch (clamped) -> last-known-good in KV -> hardcoded floor.
+ */
+export async function getEurMidRate(env: CloudflareBindings): Promise<number> {
+    const cached = await env.KV.get(FX_RATE_CURRENT_KEY);
+    if (cached) {
+        const rate = Number.parseFloat(cached);
+        if (isPlausibleRate(rate)) return rate;
+    }
+
+    const fresh = await fetchEcbUsdRate();
+    if (fresh != null) {
+        await env.KV.put(FX_RATE_CURRENT_KEY, String(fresh), {
+            expirationTtl: FX_RATE_TTL_SECONDS,
+        });
+        await env.KV.put(FX_RATE_LAST_GOOD_KEY, String(fresh));
+        return fresh;
+    }
+
+    const lastGood = await env.KV.get(FX_RATE_LAST_GOOD_KEY);
+    if (lastGood) {
+        const rate = Number.parseFloat(lastGood);
+        if (isPlausibleRate(rate)) return rate;
+    }
+
+    return EUR_USD_FLOOR;
+}

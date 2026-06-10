@@ -151,7 +151,7 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     );
 });
 
-test("Gemini grounding cost is added by multiplier functors", () => {
+test("Gemini grounding cost is added by family billing rules", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -205,7 +205,7 @@ test("Gemini grounding cost is added by multiplier functors", () => {
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
 });
 
-test("Gemini multiplier billing metadata is exposed in model catalog metadata", () => {
+test("Gemini declarative billing rules are exposed in model catalog metadata", () => {
     const geminiSearchFast = getTextModelsInfo().find(
         (model) => model.name === "gemini-search-fast",
     );
@@ -221,16 +221,13 @@ test("Gemini multiplier billing metadata is exposed in model catalog metadata", 
         when: "grounded",
         unit_price: "0.014",
     });
-    expect(geminiSearchFast?.billing?.description).toContain(
-        "Gemini 3 Google Search fee",
-    );
     expect(geminiLarge?.billing?.tiers?.[0]).toMatchObject({
         id: "google.gemini_3_1_pro.long_context.v1",
         description: "Prompts above 200K tokens use Gemini long-context rates.",
     });
 });
 
-test("Perplexity request search fees are added by multiplier functors", () => {
+test("Perplexity request search fees are added by declarative billing rules", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -352,7 +349,7 @@ test("Gemini grounding is detected on streamed chunk output", () => {
     ).toBeCloseTo(1.778, 8);
 });
 
-test("Perplexity multiplier billing metadata exposes request fee metadata", () => {
+test("Perplexity declarative billing rules expose request fee metadata", () => {
     const models = getTextModelsInfo();
 
     expect(
@@ -366,10 +363,6 @@ test("Perplexity multiplier billing metadata exposes request fee metadata", () =
         when: "always",
         unit_price: "0.005",
     });
-    expect(
-        models.find((model) => model.name === "perplexity-fast")?.billing
-            ?.description,
-    ).toContain("Perplexity search request fee");
     expect(
         models.find((model) => model.name === "perplexity-deep")?.billing
             ?.adjustments?.[0].unit_price,

@@ -17,7 +17,7 @@
  *   --report       Path to report CSV (default: src/tier-progression/spore-to-microbe-report-reviewed.csv)
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
@@ -86,15 +86,25 @@ function parseCSV(content: string): AbuseReportRow[] {
     });
 }
 
+// execFileSync (no shell) so CSV-sourced ids never hit a shell command line.
 function queryD1(env: Environment, sql: string): string {
-    const cmd = `npx wrangler d1 execute DB --remote --env ${env} --command "${sql}" --json`;
-
     try {
-        return execSync(cmd, {
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-            maxBuffer: 100 * 1024 * 1024,
-        });
+        return execFileSync(
+            "npx",
+            [
+                "wrangler",
+                "d1",
+                "execute",
+                "DB",
+                "--remote",
+                "--env",
+                env,
+                "--json",
+                "--command",
+                sql,
+            ],
+            { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
+        );
     } catch (error) {
         console.error(
             "D1 query failed:",
@@ -219,6 +229,7 @@ const applyBlocksCommand = command({
         let processed = 0;
         let succeeded = 0;
         let failed = 0;
+        let guarded = 0;
 
         console.log(`\n🔄 Processing ${batches} batches...\n`);
 
@@ -246,9 +257,21 @@ const applyBlocksCommand = command({
                             continue;
                         }
                         const safeId = user.id.replace(/'/g, "''");
-                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id = '${safeId}'`;
-                        queryD1(env, sql);
-                        succeeded++;
+                        const safeTier = user.tier.replace(/'/g, "''");
+                        // Guard on the tier recorded at scan time: a user who was
+                        // upgraded (or bought in) since the scan no longer matches
+                        // and must not be demoted on stale data.
+                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id = '${safeId}' AND tier = '${safeTier}'`;
+                        const raw = queryD1(env, sql);
+                        const changes = JSON.parse(raw)[0]?.meta?.changes;
+                        if (changes === 0) {
+                            console.error(
+                                `   ⚠️  Guarded: ${user.id} no longer '${user.tier}' (changed since scan), not demoted`,
+                            );
+                            guarded++;
+                        } else {
+                            succeeded++;
+                        }
                     } catch {
                         console.error(`   ❌ Failed: ${user.id}`);
                         failed++;
@@ -280,6 +303,7 @@ const applyBlocksCommand = command({
         console.log(`   📊 Total processed: ${processed}`);
         if (!opts["dry-run"]) {
             console.log(`   ✅ Succeeded: ${succeeded}`);
+            console.log(`   🛡️  Guarded (tier changed since scan): ${guarded}`);
             console.log(`   ❌ Failed: ${failed}`);
         }
     },

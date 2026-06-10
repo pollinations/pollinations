@@ -224,9 +224,11 @@ async function main(): Promise<void> {
         if (u.tier === "microbe") continue; // already at floor
         if (args.tiers && !args.tiers.includes(u.tier)) continue;
         const subnets = c.subnets ?? [];
-        const ipClusterSize = subnets.reduce(
-            (m, s) => Math.max(m, clusterSize.get(s) ?? 1),
-            1,
+        const sizes = subnets.map((s) => clusterSize.get(s) ?? 1);
+        const ipClusterSize = sizes.reduce((m, n) => Math.max(m, n), 1);
+        const tightClusterSize = sizes.reduce(
+            (m, n) => (n >= 3 && n <= 50 ? Math.max(m, n) : m),
+            0,
         );
         signals.push({
             id: u.id,
@@ -242,6 +244,7 @@ async function main(): Promise<void> {
             uniqIpHash: Number(c.uniq_ip_hash),
             topIpSubnet: subnets[0] ?? "",
             ipClusterSize,
+            tightClusterSize,
             hasCheckoutCredits: u.has_checkout === 1,
             packBalance: Number(u.pack_balance ?? 0),
             hasStripeCustomerId: !!u.stripe_customer_id,

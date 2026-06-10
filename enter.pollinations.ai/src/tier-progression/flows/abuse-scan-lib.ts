@@ -40,6 +40,7 @@ export interface UserSignals {
     uniqIpHash: number;
     topIpSubnet: string;
     ipClusterSize: number; // max users sharing any of this user's /24 subnets
+    tightClusterSize: number; // largest of the user's subnets within the tight band (3..50); 0 if none
     hasCheckoutCredits: boolean; // D1 stripe_checkout_credits row exists
     packBalance: number; // D1 user.pack_balance
     hasStripeCustomerId: boolean; // D1 user.stripe_customer_id not null
@@ -88,10 +89,12 @@ export function computeScore(u: UserSignals): {
 
     // A *tight* shared-subnet cluster (a handful of accounts on one /24) is a farm
     // signal; huge subnets (hundreds of users) are shared infra (CGNAT / cloud / VPN),
-    // NOT abuse — they score zero. The raw size is still surfaced for humans.
-    if (u.ipClusterSize >= 3 && u.ipClusterSize <= 50) {
+    // NOT abuse — they score zero. tightClusterSize is evaluated per subnet, so one
+    // big infra subnet can't mask a small farm subnet the same user also sits on.
+    // The raw max is still surfaced for humans via ipClusterSize.
+    if (u.tightClusterSize >= 3) {
         score += 15;
-        signals.push(`subnetcluster=${u.ipClusterSize}`);
+        signals.push(`subnetcluster=${u.tightClusterSize}`);
     }
 
     if (u.clusterId) {
@@ -135,16 +138,27 @@ export function decideAction(u: UserSignals, score: number): Action {
 }
 
 // Mutates users: sets clusterId for >=3 accounts that share an email local-part root
-// (digits stripped). Catches numbered-sibling farms like numberphotos2/3/4.
+// (digits stripped) on the SAME domain. Catches numbered-sibling farms like
+// numberphotos2/3/4@gmail.com. The domain is part of the key — generic locals
+// (support@, admin@) across unrelated domains must not form a +20 cluster signal
+// that could push a lone broken integration over the auto-block threshold.
 export function detectClusters(users: UserSignals[]): void {
     const byRoot = new Map<string, UserSignals[]>();
     for (const u of users) {
-        const local = (u.email.split("@")[0] ?? "").toLowerCase();
-        const root = local.replace(/\d+/g, "").replace(/[._-]+$/, "");
-        if (root.length < 4) continue;
-        const group = byRoot.get(root) ?? [];
+        const email = (u.email ?? "").toLowerCase();
+        const at = email.lastIndexOf("@");
+        if (at <= 0) continue;
+        const domain = email.slice(at + 1);
+        if (!domain) continue;
+        const root = email
+            .slice(0, at)
+            .replace(/\d+/g, "")
+            .replace(/[._-]+$/, "");
+        if (root.length < 5) continue; // matches account-linkage-lib's normalizer
+        const key = `${root}@${domain}`;
+        const group = byRoot.get(key) ?? [];
         group.push(u);
-        byRoot.set(root, group);
+        byRoot.set(key, group);
     }
     for (const [root, group] of byRoot) {
         if (group.length >= 3) {

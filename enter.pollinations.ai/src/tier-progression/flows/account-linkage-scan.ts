@@ -170,19 +170,22 @@ interface SessionGroupRow {
     ids: string; // GROUP_CONCAT(DISTINCT user_id) — comma separated
 }
 
-// Shared linkage keys done server-side: only IPs (or IP+UA pairs) shared by
-// 3..cap distinct accounts come back, so we never pull raw sessions. The cap
-// keeps shared-infra (office/VPN/CGNAT) IPs from unioning the whole table.
+// Shared linkage keys done server-side: only keys shared by enough distinct
+// accounts come back, so we never pull raw sessions. The cap keeps shared-infra
+// (office/VPN/CGNAT) IPs from unioning the whole table. Bare-IP pairs are noisy
+// (family / roommates), so IP edges need >=3 accounts; an IP+UA pair is precise
+// enough to surface the most common abuse shape — one operator, two accounts.
 function fetchSessionGroups(cap: number, byUa: boolean): IdGroup[] {
     const groupCols = byUa ? "ip_address, user_agent" : "ip_address";
     const keyCol = byUa
         ? "ip_address || '|' || COALESCE(user_agent, '')"
         : "ip_address";
+    const minShare = byUa ? 2 : 3;
     const rows = d1<SessionGroupRow & { key: string }>(
         `SELECT ${keyCol} AS key, COUNT(DISTINCT user_id) AS n, GROUP_CONCAT(DISTINCT user_id) AS ids ` +
             `FROM session WHERE ip_address IS NOT NULL AND ip_address != '' ` +
             `GROUP BY ${groupCols} ` +
-            `HAVING COUNT(DISTINCT user_id) >= 3 AND COUNT(DISTINCT user_id) <= ${cap}`,
+            `HAVING COUNT(DISTINCT user_id) >= ${minShare} AND COUNT(DISTINCT user_id) <= ${cap}`,
     );
     return rows.map((r) => ({
         key: r.key,

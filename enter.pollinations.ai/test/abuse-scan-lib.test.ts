@@ -26,6 +26,7 @@ const base: UserSignals = {
     uniqIpHash: 1,
     topIpSubnet: "1.2.3.0",
     ipClusterSize: 1,
+    tightClusterSize: 0,
     hasCheckoutCredits: false,
     packBalance: 0,
     hasStripeCustomerId: false,
@@ -51,13 +52,30 @@ describe("computeScore", () => {
     });
 
     it("rewards a tight shared-subnet cluster but ignores huge infra subnets", () => {
-        const tight = computeScore({ ...base, ipClusterSize: 8 });
-        const infra = computeScore({ ...base, ipClusterSize: 900 });
+        const tight = computeScore({
+            ...base,
+            ipClusterSize: 8,
+            tightClusterSize: 8,
+        });
+        const infra = computeScore({
+            ...base,
+            ipClusterSize: 900,
+            tightClusterSize: 0,
+        });
         expect(tight.signals).toContain("subnetcluster=8");
         expect(tight.score).toBeGreaterThan(infra.score);
         expect(infra.signals.some((s) => s.startsWith("subnetcluster"))).toBe(
             false,
         );
+    });
+
+    it("a big infra subnet does not mask a tight farm subnet the user also uses", () => {
+        const { signals } = computeScore({
+            ...base,
+            ipClusterSize: 900, // raw max (CGNAT)
+            tightClusterSize: 8, // farm /24 the same user sits on
+        });
+        expect(signals).toContain("subnetcluster=8");
     });
 
     it("caps at 100", () => {
@@ -67,6 +85,7 @@ describe("computeScore", () => {
             errorRate: 100,
             uniqIpHash: 999,
             ipClusterSize: 999,
+            tightClusterSize: 40,
             clusterId: "x",
         };
         expect(computeScore(u).score).toBeLessThanOrEqual(100);
@@ -143,9 +162,9 @@ describe("detectClusters", () => {
             },
         ];
         detectClusters(users);
-        expect(users[0].clusterId).toBe("root:numberphotos");
-        expect(users[1].clusterId).toBe("root:numberphotos");
-        expect(users[2].clusterId).toBe("root:numberphotos");
+        expect(users[0].clusterId).toBe("root:numberphotos@gmail.com");
+        expect(users[1].clusterId).toBe("root:numberphotos@gmail.com");
+        expect(users[2].clusterId).toBe("root:numberphotos@gmail.com");
         expect(users[3].clusterId).toBeUndefined();
     });
 
@@ -156,6 +175,16 @@ describe("detectClusters", () => {
         ];
         detectClusters(users);
         expect(users[0].clusterId).toBeUndefined();
+    });
+
+    it("does not cluster generic locals across unrelated domains", () => {
+        const users: UserSignals[] = [
+            { ...base, id: "a", email: "support@acme.com" },
+            { ...base, id: "b", email: "support@bravo.org" },
+            { ...base, id: "c", email: "support@circle.net" },
+        ];
+        detectClusters(users);
+        expect(users.every((u) => u.clusterId === undefined)).toBe(true);
     });
 });
 
@@ -193,6 +222,7 @@ describe("toReportCsv", () => {
         uniqIpHash: 3,
         topIpSubnet: "1.2.3.0",
         ipClusterSize: 5,
+        tightClusterSize: 5,
         hasCheckoutCredits: false,
         packBalance: 0,
         hasStripeCustomerId: false,

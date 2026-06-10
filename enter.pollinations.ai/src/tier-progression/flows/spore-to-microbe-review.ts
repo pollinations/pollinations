@@ -7,6 +7,8 @@
  *
  * Rules:
  *   - block/review + pack_pollen > 0 → skip (paying customer)
+ *   - block + 100+ successful requests + error_rate <= 50% → review
+ *     (healthy usage contradicts a name-pattern-only LLM block — let a human decide)
  *   - review + error_rate > 80% + requests > 20 → block (hammering API)
  *   - ok users are not modified
  *
@@ -72,6 +74,7 @@ async function main(): Promise<void> {
     let skippedPayingBlock = 0;
     let skippedPayingReview = 0;
     let upgradedToBlock = 0;
+    let downgradedToReview = 0;
     let unchangedBlock = 0;
     let unchangedReview = 0;
     let unchangedOk = 0;
@@ -83,6 +86,7 @@ async function main(): Promise<void> {
         const packPollen = Number.parseFloat(row.pack_pollen) || 0;
         const errorRate = Number.parseFloat(row.error_rate_pct) || 0;
         const requestCount = Number.parseInt(row.request_count) || 0;
+        const successCount = Number.parseInt(row.success_count) || 0;
 
         let newAction = action;
 
@@ -93,6 +97,15 @@ async function main(): Promise<void> {
             newAction = "skip";
             if (action === "block") skippedPayingBlock++;
             else skippedPayingReview++;
+        } else if (
+            action === "block" &&
+            successCount >= 100 &&
+            errorRate <= 50
+        ) {
+            // Healthy successful usage contradicts a name-pattern-only LLM block
+            // — send to a human instead of auto-demoting
+            newAction = "review";
+            downgradedToReview++;
         } else if (action === "review" && errorRate > 80 && requestCount > 20) {
             // Hammering the API with high error rate — upgrade to block
             newAction = "block";
@@ -112,11 +125,13 @@ async function main(): Promise<void> {
 
     const finalBlock = unchangedBlock + upgradedToBlock;
     const finalSkip = skippedPayingBlock + skippedPayingReview;
+    const finalReview = unchangedReview + downgradedToReview;
 
     console.log("Changes:");
     console.log(`   block → skip (paying customer):  ${skippedPayingBlock}`);
     console.log(`   review → skip (paying customer): ${skippedPayingReview}`);
     console.log(`   review → block (high error):     ${upgradedToBlock}`);
+    console.log(`   block → review (healthy usage):  ${downgradedToReview}`);
     console.log(`   block unchanged:                 ${unchangedBlock}`);
     console.log(`   review unchanged:                ${unchangedReview}`);
     console.log(`   ok unchanged:                    ${unchangedOk}`);
@@ -124,7 +139,7 @@ async function main(): Promise<void> {
     console.log(`Final counts:`);
     console.log(`   block: ${finalBlock}`);
     console.log(`   skip:  ${finalSkip}`);
-    console.log(`   review: ${unchangedReview}`);
+    console.log(`   review: ${finalReview}`);
     console.log(`   ok:    ${unchangedOk}`);
     console.log(`\n✅ Reviewed CSV: ${OUTPUT_CSV}`);
 }

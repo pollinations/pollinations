@@ -57,8 +57,12 @@ High-level behavior:
 2. Fetch users created after that cutoff from D1.
 3. Score users via LLM (Gemini) in overlapping chunks, looking for coordinated abuse patterns (`scan`, outputs CSV).
 4. Enrich the CSV with Tinybird consumption data (`enrich`).
-5. Apply usage-based rules to adjust block actions (`review`).
-6. Downgrade users with a `block` action to `microbe` tier with 0.1 pollen balance (`apply`).
+5. Apply usage-based rules to adjust block actions (`review`): payers are skipped,
+   blocks contradicted by healthy successful usage drop to review, hammering reviews
+   escalate to block.
+6. Downgrade users with a `block` action to `microbe` tier (`apply`). Each UPDATE is
+   guarded on the tier recorded at scan time, so users upgraded (or converted to paid)
+   between scan and apply are not demoted on stale data.
 
 There is no scheduled workflow for this pipeline. Run the steps manually from
 `enter.pollinations.ai/`:
@@ -99,17 +103,22 @@ bonus-eligible (non-microbe) population so one operator can't collect the tier
 bonus N times. It is account-centric (covers dormant, zero-usage accounts), driven
 by D1 `user` + `session`:
 
-- **Linkage edges (primary):** shared normalized email-root, exact `session.ip_address`,
-  and `ip_address`+`user_agent`. Emails are normalized (gmail dots/`+` stripped,
-  numeric locals dropped, root len ≥ 5) to kill artifacts. An IP shared by more than
+- **Linkage edges (primary):** shared normalized email-root, exact `session.ip_address`
+  (≥ 3 accounts), and `ip_address`+`user_agent` (≥ 2 accounts — catches the common
+  one-operator-two-accounts shape). Emails are normalized (gmail dots/`+` stripped,
+  numeric locals dropped, root len ≥ 5) to kill artifacts. A key shared by more than
   `--ip-cap` (default 15) accounts is treated as shared infra and forms no edge.
+  Email-only clusters need corroboration (a second link type, hammering, or a 24h
+  signup burst) before they can reach the high band — gmail digit-stripping merges
+  real people who share a common name root.
 - **Clustering:** union-find over the edges → connected components (singletons dropped).
 - **Usage (corroboration):** per-account failing/error/free-burn from Tinybird
   (reusing `abuse-scan-lib.buildUsageQuery`) rides on every cluster — best-effort, so
   the scan still completes if the usage window times out.
 - **Output:** `account-linkage-clusters.csv` (one row per cluster, ranked by confidence)
   and `account-linkage-members.csv` (apply-compatible: `block` for high-band, `review`
-  for medium, `skip` for clusters with a payer), plus usage columns at hand.
+  for medium; in payer clusters the payer member is `skip` and its unpaid siblings are
+  `review` — one small purchase must not shield a whole farm), plus usage columns at hand.
 
 ```bash
 npx tsx src/tier-progression/flows/account-linkage-scan.ts

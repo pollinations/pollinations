@@ -244,6 +244,19 @@ export function clusterAccounts(
     return clusters;
 }
 
+// A member counts as a payer from D1 purchase history, a live pack balance, or
+// paid pollen burned in the usage window. Shared by scoring and member actions.
+export function isPayerMember(
+    m: AccountRow,
+    usageByUser: Map<string, LinkUsage>,
+): boolean {
+    return (
+        m.hasCheckout ||
+        m.packBalance > 0 ||
+        (usageByUser.get(m.id)?.packPollen ?? 0) > 0
+    );
+}
+
 // Score a cluster 0..100. Linkage is the core (independent signals agreeing),
 // then size / signup-burst / disposable-domain / gibberish-names, then usage
 // behaviour as corroboration, then the paid gate. Returns a scored copy.
@@ -279,11 +292,13 @@ export function scoreCluster(
         signals.push(`size=${size}`);
     }
 
+    let burst24 = false;
     const times = c.members.map((m) => m.createdAt).filter((t) => t > 0);
     if (times.length >= 3) {
         const span = Math.max(...times) - Math.min(...times);
         if (span <= 86400) {
             score += 12;
+            burst24 = true;
             signals.push("burst<=24h");
         } else if (span <= 7 * 86400) {
             score += 6;
@@ -334,12 +349,7 @@ export function scoreCluster(
         signals.push("free-burn");
     }
 
-    const hasPayer = c.members.some(
-        (m) =>
-            m.hasCheckout ||
-            m.packBalance > 0 ||
-            (usageByUser.get(m.id)?.packPollen ?? 0) > 0,
-    );
+    const hasPayer = c.members.some((m) => isPayerMember(m, usageByUser));
     if (hasPayer) {
         signals.push("has-payer");
     } else {
@@ -356,13 +366,23 @@ export function scoreCluster(
               : "low";
     // Never recommend auto-blocking a cluster that contains a payer.
     if (hasPayer && band === "high") band = "medium";
+    // Email-root linkage alone is collision-prone: gmail digit-stripping merges
+    // real people who share a common name root (johnsmith1990 / johnsmith2024).
+    // Require a second link type, hammering, or a 24h signup burst before "high".
+    const emailOnly = c.linkTypes.length === 1 && c.linkTypes[0] === "email";
+    if (band === "high" && emailOnly && hammering === 0 && !burst24) {
+        band = "medium";
+    }
 
     return { ...c, confidence, band, hasPayer, signals };
 }
 
-// Recommended action for every member of a cluster (apply-compatible).
-export function memberAction(c: Cluster): LinkAction {
-    if (c.hasPayer) return "skip";
+// Recommended action for one member of a cluster (apply-compatible). The payer
+// member is always skipped, but its unpaid siblings still go to a human (review)
+// — one small purchase must not shield a whole farm from bonus protection.
+export function memberAction(c: Cluster, isPayer = false): LinkAction {
+    if (isPayer) return "skip";
+    if (c.hasPayer) return c.band === "low" ? "ok" : "review";
     if (c.band === "high") return "block";
     if (c.band === "medium") return "review";
     return "ok";
@@ -384,10 +404,10 @@ export function toMembersCsv(
     const ordered = [...clusters].sort((a, b) => b.confidence - a.confidence);
     const rows: string[] = [];
     for (const c of ordered) {
-        const action = memberAction(c);
         for (const m of [...c.members].sort((a, b) =>
             a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
         )) {
+            const action = memberAction(c, isPayerMember(m, usageByUser));
             const u = usageByUser.get(m.id);
             rows.push(
                 [

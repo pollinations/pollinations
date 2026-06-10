@@ -184,7 +184,39 @@ describe("scoreCluster", () => {
         expect(c.band).toBe("high");
     });
 
-    it("caps a cluster with a payer at medium and skips its members", () => {
+    it("caps an email-only cluster without corroboration at medium (name-root collisions)", () => {
+        // Spread signups over months: no burst, no usage, no second link type —
+        // could be unrelated john.smith1990 / johnsmith2024 style real people.
+        const members = Array.from({ length: 12 }, (_, i) =>
+            acct({
+                id: `m${i}`,
+                email: `johnsmith${i}@gmail.com`,
+                createdAt: 1767387198 + i * 10 * 86400,
+            }),
+        );
+        const quiet = scoreCluster(
+            mk({ members, linkTypes: ["email"] }),
+            noUsage,
+        );
+        expect(quiet.band).toBe("medium");
+
+        // Same cluster hammering the API → corroborated → high stands.
+        const usage = new Map<string, LinkUsage>([
+            [
+                "m0",
+                {
+                    failingReqs: 5000,
+                    errorRate: 99,
+                    tierPollen: 30,
+                    packPollen: 0,
+                },
+            ],
+        ]);
+        const loud = scoreCluster(mk({ members, linkTypes: ["email"] }), usage);
+        expect(loud.band).toBe("high");
+    });
+
+    it("caps a cluster with a payer at medium, skips the payer, reviews siblings", () => {
         const members = [
             acct({ id: "a", hasCheckout: true }),
             acct({ id: "b" }),
@@ -195,7 +227,8 @@ describe("scoreCluster", () => {
         );
         expect(c.hasPayer).toBe(true);
         expect(c.band).not.toBe("high");
-        expect(memberAction(c)).toBe("skip");
+        expect(memberAction(c, true)).toBe("skip"); // the payer
+        expect(memberAction(c, false)).toBe("review"); // unpaid sibling
     });
 
     it("maps bands to apply actions", () => {
@@ -246,10 +279,13 @@ describe("CSV output", () => {
         expect(header).toContain("cluster_id");
     });
 
-    it("emits block rows for high clusters and skip for payer clusters", () => {
+    it("emits block for high clusters, skip for the payer, review for its siblings", () => {
         const csv = toMembersCsv(clusters, noUsage);
         expect(csv).toContain('"block"');
-        expect(csv).toContain('"skip"');
+        const payerRow = csv.split("\n").find((l) => l.startsWith('"p0"'));
+        const siblingRow = csv.split("\n").find((l) => l.startsWith('"p1"'));
+        expect(payerRow).toContain('"skip"');
+        expect(siblingRow).toContain('"review"');
     });
 
     it("clusters CSV lists members and pipe-joined link types", () => {

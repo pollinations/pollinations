@@ -1,0 +1,19 @@
+{
+  "date": "2026-06-09",
+  "period_start": "2026-06-09",
+  "period_end": "2026-06-09",
+  "title": "Pruna models get reliable routing and explicit resolutions",
+  "summary": "A quick tune-up for video generation: Pruna models stop hanging indefinitely, and Wan-Pro image-to-video is back online.\n\nWe routed Pruna models (p-image, p-image-edit, p-video) through Replicate. The main win here is bounded polling—failed requests now return a crisp 400 error instead of hanging indefinitely. We also split p-video into explicit p-video-720p and p-video-1080p models, so you can choose your resolution instead of relying on inferred heights.\n\nWan-Pro (wan2.7) image-to-video generation was throwing 500 errors because the upstream API changed its expected payload from a simple string to a media array. We updated the plumbing to match the new format. Pixels are flowing normally again.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 11698,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11701,
+      "date": "2026-06-09"
+    }
+  ],
+  "generated_at": "2026-06-10T07:24:37.659831+00:00"
+}

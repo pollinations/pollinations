@@ -950,7 +950,7 @@ const PATH_PARAM_OVERRIDES: Record<string, string> = {
  */
 const PATH_PARAM_BLOCKLIST: Record<string, Set<string>> = {
     "/image/{prompt}": new Set(["duration", "aspectRatio", "audio"]),
-    "/video/{prompt}": new Set(["negative_prompt", "quality", "transparent"]),
+    "/video/{prompt}": new Set(["quality", "transparent"]),
 };
 
 function visibleParams(path: string, params: Schema[]): Schema[] {

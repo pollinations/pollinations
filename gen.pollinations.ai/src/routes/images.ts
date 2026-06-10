@@ -24,15 +24,7 @@ type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-const PASSTHROUGH_PARAMS = [
-    "nologo",
-    "enhance",
-    "safe",
-    "private",
-    "transparent",
-    "negative_prompt",
-    "guidance_scale",
-] as const;
+const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
 
 function imageResponse(
     data: { url?: string; b64_json?: string },
@@ -206,7 +198,6 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
             ...collectPassthrough(body, "image"),
             ...resolved,
             model,
-            nofeed: true,
         });
         c.var.track.overrideResponseTracking(response.clone());
 
@@ -218,7 +209,6 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
             for (const [key, value] of Object.entries({
                 model,
                 ...resolved,
-                nologo: "true",
             }))
                 imageUrl.searchParams.set(key, String(value));
             const safeValue = normalizeSafeValue(body.safe as SafeValue);
@@ -255,7 +245,6 @@ export function handleImageEdit(checkBalance: CheckBalanceFn) {
             ...extra,
             ...resolved,
             model: c.var.model.resolved,
-            nofeed: true,
         });
         c.var.track.overrideResponseTracking(response.clone());
 

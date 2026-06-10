@@ -51,12 +51,8 @@ export interface ImageGenerateOptions extends RequestOptions {
     enhance?: boolean;
     /** Negative prompt - what to avoid in the image */
     negativePrompt?: string;
-    /** Keep generation private (default: false) */
-    private?: boolean;
     /** Remove watermark logo (default: false) */
     nologo?: boolean;
-    /** Don't show in public feed (default: false) */
-    nofeed?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
     /** Output quality (default: 'medium') */
@@ -111,8 +107,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
-    /** Keep generation private (default: false) */
-    private?: boolean;
     /** Remove watermark logo (default: false) */
     nologo?: boolean;
     /** Enable safety content filters (default: false) */

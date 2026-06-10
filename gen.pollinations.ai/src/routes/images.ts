@@ -28,7 +28,6 @@ const PASSTHROUGH_PARAMS = [
     "nologo",
     "enhance",
     "safe",
-    "private",
     "transparent",
     "negative_prompt",
     "guidance_scale",
@@ -206,7 +205,6 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
             ...collectPassthrough(body, "image"),
             ...resolved,
             model,
-            nofeed: true,
         });
         c.var.track.overrideResponseTracking(response.clone());
 
@@ -255,7 +253,6 @@ export function handleImageEdit(checkBalance: CheckBalanceFn) {
             ...extra,
             ...resolved,
             model: c.var.model.resolved,
-            nofeed: true,
         });
         c.var.track.overrideResponseTracking(response.clone());
 

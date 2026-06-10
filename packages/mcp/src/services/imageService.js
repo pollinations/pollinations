@@ -48,9 +48,7 @@ async function prepareImageRequest(params) {
         image,
         transparent,
         nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {
@@ -80,9 +78,7 @@ async function prepareImageRequest(params) {
         image,
         transparent,
         nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     });
 
     return { encodedPrompt, queryParams };
@@ -105,9 +101,7 @@ async function prepareVideoRequest(params) {
         image,
         seed,
         nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {
@@ -147,9 +141,7 @@ async function prepareVideoRequest(params) {
         image,
         seed,
         nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     });
 
     return { encodedPrompt, queryParams };
@@ -272,9 +264,7 @@ async function generateImageBatch(params) {
         image,
         transparent,
         nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     } = params;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
@@ -302,9 +292,7 @@ async function generateImageBatch(params) {
                 image,
                 transparent,
                 nologo,
-                nofeed,
                 safe,
-                private: isPrivate,
             });
 
             const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
@@ -686,20 +674,12 @@ const imageParamsSchema = {
         .boolean()
         .optional()
         .describe("Remove Pollinations watermark from image (default: false)"),
-    nofeed: z
-        .boolean()
-        .optional()
-        .describe("Don't add image to public feed (default: false)"),
     safe: z
         .boolean()
         .optional()
         .describe(
             "Enable safety content filters (default: false). Blocks NSFW content",
         ),
-    private: z
-        .boolean()
-        .optional()
-        .describe("Hide image from public feeds/gallery (default: false)"),
 };
 
 const videoParamsSchema = {
@@ -755,18 +735,10 @@ const videoParamsSchema = {
         .boolean()
         .optional()
         .describe("Remove Pollinations watermark (default: false)"),
-    nofeed: z
-        .boolean()
-        .optional()
-        .describe("Don't add to public feed (default: false)"),
     safe: z
         .boolean()
         .optional()
         .describe("Enable safety content filters (default: false)"),
-    private: z
-        .boolean()
-        .optional()
-        .describe("Hide from public feeds (default: false)"),
 };
 
 export const imageTools = [
@@ -833,9 +805,7 @@ export const imageTools = [
                 .boolean()
                 .optional()
                 .describe("Remove watermark from all"),
-            nofeed: z.boolean().optional().describe("Don't add any to feed"),
             safe: z.boolean().optional().describe("Safety filters for all"),
-            private: z.boolean().optional().describe("Hide all from public"),
         },
         generateImageBatch,
     ],

@@ -1,6 +1,8 @@
 // Generates src/theme-palette.json — sRGB-hex brand colors for non-CSS tooling
-// (app icons, web manifests). Single-accent model: `accent` is the app accent
-// (its bg-pale), `neutral` is the no-hue surface.
+// (app icons, web manifests). Single-accent model: `bgPale.accent` is the washed
+// accent tint (large fields behind a dark logo), `bgActive.accent` is the
+// brighter accent step (small standalone marks like the favicon), `neutral` is
+// the no-hue surface.
 //
 // Single source of truth: the accent hue + bg-pale recipe + neutral surface all
 // come from tokens.css. Nothing is hardcoded here, so the JSON can't drift from
@@ -52,6 +54,15 @@ export async function generatePalette() {
     );
     if (!recipe) throw new Error("bg-pale recipe not found in tokens.css");
 
+    // bg-active = the brighter accent step (favicon / small standalone marks).
+    // Its lightness is `calc(<base> + var(--polli-nudge))`, so read the nudge too.
+    const nudge = css.match(/--polli-nudge:\s*([\d.]+)/);
+    if (!nudge) throw new Error("--polli-nudge not found in tokens.css");
+    const active = css.match(
+        /--polli-color-bg-active:\s*oklch\(calc\(([\d.]+) \+ var\(--polli-nudge\)\) ([\d.]+) var\(--polli-hue\)\)/,
+    );
+    if (!active) throw new Error("bg-active recipe not found in tokens.css");
+
     // neutral bg-pale === light surface-opaque (first/`:root` occurrence).
     const surf = css.match(
         /--polli-color-surface-opaque:\s*oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/,
@@ -65,6 +76,13 @@ export async function generatePalette() {
         bgPale: {
             accent: oklchToHex(+recipe[1], +recipe[2], +accentHue[1]),
             neutral: oklchToHex(+surf[1], +surf[2], +surf[3]),
+        },
+        bgActive: {
+            accent: oklchToHex(
+                +active[1] + +nudge[1],
+                +active[2],
+                +accentHue[1],
+            ),
         },
         brandDark: brand[1],
     };

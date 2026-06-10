@@ -3,6 +3,8 @@
         "accent": "#fef8eb",
         "neutral": "#fffefb"
     },
-    "brandMark": "#ffd76d",
+    "bgActive": {
+        "accent": "#ffd76d"
+    },
     "brandDark": "#110518"
 }

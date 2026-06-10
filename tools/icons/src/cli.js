@@ -25,18 +25,20 @@ const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
 //   - FIELD (`bgPale.accent`, washed cream): the field a DARK lotus/wordmark
 //     sits on — large/lockup use. The dark mark does the contrast work, so the
 //     field stays pale and calm (OG, apple-touch, maskable, manifest theme_color).
-//   - MARK (`brandMark`, saturated gold = the normal button bg): the lotus
-//     painted IN this color on transparent, standing alone and small — only the
-//     line color carries it, so it needs the chroma (favicon, padded app icons).
+//   - MARK (`bgActive.accent`, the brighter accent step): the lotus painted IN
+//     this color on transparent, standing alone and small — only the line color
+//     carries it, so it needs the chroma (favicon, padded app icons).
 //   - `brandDark`: the dark lotus/contrast color. No color is ever per-app.
 const palette = JSON.parse(
     await readFile(join(UI_ROOT, "src/theme-palette.json"), "utf8"),
 );
 const FIELD_COLOR = palette.bgPale?.accent;
-const MARK_COLOR = palette.brandMark;
+const MARK_COLOR = palette.bgActive?.accent;
 const CONTRAST_COLOR = palette.brandDark;
 if (!FIELD_COLOR || !MARK_COLOR) {
-    throw new Error('theme-palette.json needs "bgPale.accent" and "brandMark"');
+    throw new Error(
+        'theme-palette.json needs "bgPale.accent" and "bgActive.accent"',
+    );
 }
 
 const APPS = {

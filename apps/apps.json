@@ -13,6 +13,13 @@
         "title": "Playground | pollinations.ai",
         "description": "Generate images, text, audio and video with Pollinations AI"
     },
+    "brainrotdex": {
+        "subdomain": "brainrotdex",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "BrainrotDex",
+        "description": "Fuse cards to AI-generate new Italian brainrot characters with image, rarity and voice"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": null,

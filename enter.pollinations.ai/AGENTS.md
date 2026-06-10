@@ -109,7 +109,7 @@ curl "$BASE_URL/generate/image/test4?model=seedream&width=1024&height=1024" \
 
 ```bash
 # All parameters
-curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&enhance=true&nologo=true&private=true&guidance_scale=7.5" \
+curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&enhance=true&nologo=true&guidance_scale=7.5" \
   -H "Authorization: Bearer $TOKEN"
 
 # Image-to-image (with reference image URL)
@@ -158,8 +158,6 @@ echo "All images generated!"
 - `negative_prompt`: What to avoid (default: "worst quality, blurry")
 - `guidance_scale`: How closely to follow prompt (number)
 - `nologo`: Remove watermark (default: false)
-- `private`: Don't show in public feed (default: false)
-- `nofeed`: Don't add to feed (default: false)
 - `safe`: Enable safety filters (default: false)
 - `image`: Reference image URL for image-to-image
 - `transparent`: Generate with transparent background (default: false)

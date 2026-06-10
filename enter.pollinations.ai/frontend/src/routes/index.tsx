@@ -34,6 +34,7 @@ import {
     PollenBalance,
     SidebarWallet,
     TierPanel,
+    TransactionHistory,
 } from "../components/pollen";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
@@ -317,6 +318,7 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
+                    <TransactionHistory />
                 </div>
             )}
             {activePage === "activity" && (

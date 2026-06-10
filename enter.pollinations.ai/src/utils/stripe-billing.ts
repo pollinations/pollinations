@@ -384,6 +384,21 @@ export async function updateAutoTopUpSettings(
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
 
+/**
+ * Off-session top-up currency. PM capability wins: an iDEAL-with-save checkout
+ * leaves a SEPA mandate (EUR-only) while customer.currency stays "usd"
+ * (multi-currency customers charges EUR without re-pinning). Charging USD on a
+ * SEPA mandate would fail and disable auto top-up — so sepa_debit ⇒ eur.
+ */
+export function resolveAutoTopUpCurrency(
+    paymentMethod: Stripe.PaymentMethod,
+    customer: Stripe.Customer,
+): "eur" | "usd" {
+    if (paymentMethod.type === "sepa_debit") return "eur";
+    if (customer.currency === "eur") return "eur";
+    return "usd";
+}
+
 export async function processAutoTopUpForUser(
     env: CloudflareBindings,
     userId: string,

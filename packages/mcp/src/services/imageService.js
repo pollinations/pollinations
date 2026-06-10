@@ -42,7 +42,6 @@ async function prepareImageRequest(params) {
         height,
         seed,
         enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
@@ -74,7 +73,6 @@ async function prepareImageRequest(params) {
         height,
         seed,
         enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
@@ -266,7 +264,6 @@ async function generateImageBatch(params) {
         height,
         seed: baseSeed,
         enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
@@ -296,7 +293,6 @@ async function generateImageBatch(params) {
                 height,
                 seed: baseSeed !== undefined ? baseSeed + index : undefined,
                 enhance,
-                negative_prompt,
                 guidance_scale,
                 quality,
                 image,
@@ -648,12 +644,6 @@ const imageParamsSchema = {
         .describe(
             "Let AI improve your prompt for better results (default: false). Adds detail and style suggestions",
         ),
-    negative_prompt: z
-        .string()
-        .optional()
-        .describe(
-            "What to avoid in the image (default: 'worst quality, blurry'). Example: 'blurry, low quality, text, watermark'",
-        ),
     guidance_scale: z
         .number()
         .min(1)
@@ -809,10 +799,6 @@ export const imageTools = [
                 .optional()
                 .describe("Base seed (incremented for each image)"),
             enhance: z.boolean().optional().describe("Enhance all prompts"),
-            negative_prompt: z
-                .string()
-                .optional()
-                .describe("Negative prompt for all images"),
             guidance_scale: z
                 .number()
                 .optional()

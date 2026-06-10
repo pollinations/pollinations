@@ -19,7 +19,6 @@ export function createImageCommand() {
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")
         .option("--enhance", "AI prompt improvement")
-        .option("--negative <text>", "Content to avoid")
         .option("--safe", "Enable safety filters")
         .option("--transparent", "Transparent background (PNG)")
         .option(
@@ -38,7 +37,6 @@ export function createImageCommand() {
             });
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.enhance) params.set("enhance", "true");
-            if (opts.negative) params.set("negative_prompt", opts.negative);
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
             if (opts.image?.length) {

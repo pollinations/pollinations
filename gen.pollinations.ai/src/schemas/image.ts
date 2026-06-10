@@ -59,14 +59,6 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         description:
             "Let AI improve your prompt for better results. Applied during prompt processing.",
     }),
-    negative_prompt: z.coerce
-        .string()
-        .optional()
-        .default("worst quality, blurry")
-        .meta({
-            description:
-                "What to avoid in the generated image. Only supported by `zimage` — other models ignore this.",
-        }),
     safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])

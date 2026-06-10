@@ -49,8 +49,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     seed?: number;
     /** Let AI enhance/improve your prompt (default: false) */
     enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
     /** Keep generation private (default: false) */
     private?: boolean;
     /** Remove watermark logo (default: false) */
@@ -926,8 +924,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     seed?: number;
     /** Output quality */
     quality?: ImageQuality;
-    /** Negative prompt - what to avoid */
-    negativePrompt?: string;
 }
 
 // ============================================================================

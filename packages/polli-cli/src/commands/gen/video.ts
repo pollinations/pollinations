@@ -25,7 +25,6 @@ export function createVideoCommand() {
         .option("--audio", "Include AI soundtrack")
         .option("--seed <n>", "Random seed")
         .option("--enhance", "AI prompt improvement")
-        .option("--negative <text>", "Content to avoid")
         .option("--image <url>", "Reference frame URL")
         .option("--output <path>", "Save to file", "video.mp4")
         .action(async (prompt, opts) => {
@@ -42,7 +41,6 @@ export function createVideoCommand() {
             if (opts.audio) params.set("audio", "true");
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.enhance) params.set("enhance", "true");
-            if (opts.negative) params.set("negative_prompt", opts.negative);
             if (opts.image) {
                 if (!/^https?:\/\//i.test(opts.image)) {
                     printError(

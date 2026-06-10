@@ -30,7 +30,6 @@ const PASSTHROUGH_PARAMS = [
     "safe",
     "private",
     "transparent",
-    "negative_prompt",
     "guidance_scale",
 ] as const;
 

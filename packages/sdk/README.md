@@ -281,7 +281,6 @@ const url = await imageUrl('a sunset');
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
 | `enhance` | boolean | `false` | AI prompt enhancement |
-| `negativePrompt` | string | - | What to avoid in the image |
 | `nologo` | boolean | `false` | Remove watermark |
 | `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |

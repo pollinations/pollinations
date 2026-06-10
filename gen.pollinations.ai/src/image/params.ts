@@ -59,7 +59,6 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         enhance: sanitizedBoolean.catch(false),
-        negative_prompt: z.coerce.string().catch("worst quality, blurry"),
         nofeed: sanitizedBoolean.catch(false),
         safe: sanitizedBoolean.catch(false),
         private: sanitizedBoolean.catch(false).optional(),

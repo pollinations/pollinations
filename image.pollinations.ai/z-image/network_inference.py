@@ -15,7 +15,6 @@ params = {
     "height": 1024,
     "seed": 42,
     "enhance": "false",
-    "negative_prompt": "worst quality, blurry",
     "private": "false",
     "nologo": "false",
     "nofeed": "false",

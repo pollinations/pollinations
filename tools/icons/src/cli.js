@@ -18,11 +18,11 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 // Single brand source: the logos shipped in the UI package (use currentColor).
 const UI_ROOT = dirname(require.resolve("@pollinations/ui/package.json"));
 const uiAsset = (file) => readFile(join(UI_ROOT, "src/assets", file), "utf8");
-const loadLogo = () => uiAsset("logo.svg"); // flower — icons
-const loadWordmark = () => uiAsset("logo-wordmark.svg"); // wordmark — OG card
+const loadLogo = () => uiAsset("logo.svg"); // lotus mark — icons + OG
+const loadText = () => uiAsset("logo-text.svg"); // logotype — OG card
 
 // One lotus mark, two tones from the UI palette:
-//   - FIELD (`bgPale.accent`, washed cream): the field a DARK lotus/wordmark
+//   - FIELD (`bgPale.accent`, washed cream): the field a DARK lotus/logotype
 //     sits on — large/lockup use. The dark mark does the contrast work, so the
 //     field stays pale and calm (OG, apple-touch, maskable, manifest theme_color).
 //   - MARK (`bgActive.accent`, the brighter accent step): the lotus painted IN
@@ -179,12 +179,15 @@ async function generate(name) {
         );
     }
 
-    // OG card: dark wordmark on a washed field — the black does the contrast work.
+    // OG card: lotus stacked above the logotype on a washed field — the dark mark
+    // does the contrast work, and stacking stays inside the central square so small
+    // link-preview thumbnails crop to 1:1 without losing the name. Both pieces are
+    // modular brand atoms, composed here — nothing extracted at render time.
     if (cfg.og) {
-        const wordmark = await loadWordmark();
+        const text = await loadText();
         await write(
             "og-image.png",
-            await renderOg(wordmark, {
+            await renderOg(svg, text, {
                 bg: FIELD_COLOR,
                 logoColor: CONTRAST_COLOR,
             }),

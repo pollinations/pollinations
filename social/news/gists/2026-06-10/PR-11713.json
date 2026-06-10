@@ -1,0 +1,35 @@
+{
+  "pr_number": 11713,
+  "title": "chore: remove nofeed and private image params",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11713",
+  "merged_at": "2026-06-10T09:28:31Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Follow-up cleanup to #11712. Removes two more inert image params.\n\n- **`nofeed`** — there is no image feed in the current gen worker. The parsed value is never read to gate publishing (no feed-publish code, no `/feed` route, not in the tracking path); it was only force-set on the v1 routes and stripped from the cache key.\n- **`private`** (image) — just an alias folded into `nofeed` in `ImageParamsSchema` (`nofeed = data.nofeed || data.private`), so it did nothing on its own.\n\nRemoved from: `ImageParamsSchema`, the v1 image/edit routes (`nofeed: true` + `private` passthrough), the SDK image/video options (types + client + README), the MCP image tool schemas/forwarders, and the example/social scripts.\n\nDeliberately left untouched:\n- The **text** `private`/`isPrivate` flag (`text/requestUtils.ts` etc.) — a separate, live feature.\n- `media-cache.ts` `EXCLUDED_PARAMS` still lists `nofeed`, so legacy/community clients still sending `?nofeed=true` keep sharing the cache (avoids fragmentation). Behavior-neutral.\n\nNo public OpenAPI/APIDOCS change — these were never declared in the GET image query schema.\n\nVerified: gen + SDK typecheck, biome, gen image + index tests (57) pass.\n\nNote: overlaps with #11712 (same files); whichever merges second will need a trivial rebase.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the hive",
+    "blurb": "We've done some spring cleaning in the codebase, removing the old nofeed and private image parameters that weren't doing anything anymore. Just keeping the hive tidy!",
+    "summary": "Removed the inert nofeed and private image parameters from the generation worker, SDK, and MCP tools.",
+    "impact": "Developers will see cleaner SDK types and MCP schemas, while legacy requests using these parameters will continue to work without cache fragmentation.",
+    "keywords": [
+      "api",
+      "cleanup",
+      "sdk",
+      "mcp",
+      "parameters"
+    ],
+    "visual_concept": "Polly the bee sweeping up old code snippets or dead leaves in a cozy digital garden. A chunky robot monitor holds a dustpan.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny bandana, sweeping up old pixelated code snippets with a small broom. A chunky robot with a CRT monitor head holds a dustpan, screen glowing lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-10/PR-11713.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny bandana, sweeping up old pixelated code snippets with a small broom. A chunky robot with a CRT monitor head holds a dustpan, screen glowing lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-10T09:29:37.342520+00:00"
+}

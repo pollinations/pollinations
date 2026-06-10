@@ -27,6 +27,12 @@ import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { createProgressTracker } from "./progressBar.ts";
 import { sleep } from "./util.ts";
+import {
+    CONTENT_POLICY_ERROR_CODE,
+    CONTENT_POLICY_STATUS,
+    contentPolicyMessage,
+    isContentPolicyViolation,
+} from "./utils/contentModeration.ts";
 import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
@@ -166,6 +172,36 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
 
 function throwImageError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
+
+    // Content-policy rejections from any provider (DashScope green-net, Replicate
+    // moderation, Vertex safety, Azure content safety) are client errors, not
+    // backend failures. Catch them here — the single funnel for image/video
+    // errors — so they surface as 422 with a stable, detectable code instead of
+    // a 500 that pollutes model-health stats.
+    const rawMessage =
+        error instanceof HttpError
+            ? parseUpstreamErrorBody(error).text || error.message
+            : error instanceof Error
+              ? error.message
+              : String(error);
+    if (isContentPolicyViolation(rawMessage)) {
+        throw new UpstreamError(CONTENT_POLICY_STATUS, {
+            message: contentPolicyMessage(rawMessage),
+            errorCode: CONTENT_POLICY_ERROR_CODE,
+            requestUrl:
+                error instanceof HttpError
+                    ? safeUpstreamUrl(error.upstreamUrl)
+                    : undefined,
+            upstreamStatus:
+                error instanceof HttpError ? error.status : undefined,
+            responseBody:
+                error instanceof HttpError
+                    ? imageResponseBody(error)
+                    : undefined,
+            cause: error,
+        });
+    }
+
     if (error instanceof HttpError) {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {

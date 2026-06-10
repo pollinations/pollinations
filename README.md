@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-09** – **🎬 HD Video Generation** Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai).
 - **2026-06-08** – **🔄 Live Model Catalog** The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop.
 - **2026-06-05** – **🚀 Standalone Playground** Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads.
 - **2026-06-04** – **📦 SDK Model Catalog** Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing.
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-02** – **🚀 MiniMax M3 arrives** Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
 - **2026-06-02** – **✨ Lunar AI** A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) <!-- app -->
 - **2026-06-02** – **🔗 Anura Hub AI** A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all) <!-- app -->
-- **2026-06-02** – **🎨 NebulaCraft** Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app) <!-- app -->
 ---
 
 ## 🌱 Introduction

@@ -1327,9 +1327,10 @@ All endpoints return errors in this envelope:
 | `405` | `METHOD_NOT_ALLOWED` | HTTP method not supported on this route. |
 | `409` | `CONFLICT` | Request conflicts with current resource state (e.g. duplicate key name). |
 | `422` | `UNPROCESSABLE_ENTITY` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
+| `422` | `content_policy_violation` | Prompt, input, or generated content was blocked by content moderation. Adjust the input and retry. |
 | `429` | `RATE_LIMITED` | Too many requests. Slow down. |
 | `500` | `INTERNAL_ERROR` | Server error. We're on it. |
-| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing). |
 | `503` | `SERVICE_UNAVAILABLE` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |
 
 ## 🧩 Schemas

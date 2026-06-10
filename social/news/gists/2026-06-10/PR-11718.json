@@ -1,0 +1,34 @@
+{
+  "pr_number": 11718,
+  "title": "add enter test snapshots and agents.md snapshot note",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11718",
+  "merged_at": "2026-06-10T09:55:13Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Adds 31 recorded mock snapshots under `enter.pollinations.ai/test/mocks/snapshots` that currently exist only on `production`\n- Adds the AGENTS.md note on shrinking large video/image test snapshots (also production-only)\n- Reconciles `main` with `production` so the two branches stop diverging on these files",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Syncing the test hive",
+    "blurb": "Ported some missing test snapshots from production to main to keep our branches perfectly in sync.",
+    "summary": "Added 31 recorded mock snapshots to the enter.pollinations.ai test suite and updated AGENTS.md to reconcile the main branch with production.",
+    "impact": "Developers will have consistent test environments across branches without missing snapshot errors.",
+    "keywords": [
+      "tests",
+      "snapshots",
+      "chore",
+      "sync"
+    ],
+    "visual_concept": "Polly the bee organizing a filing cabinet of 'snapshots' (polaroid pictures) with the Monitor Robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, organizing polaroid pictures into a lime green (#ecf874) filing cabinet. A chunky Monitor Robot helps by handing her the snapshots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-10/PR-11718.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, organizing polaroid pictures into a lime green (#ecf874) filing cabinet. A chunky Monitor Robot helps by handing her the snapshots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-10T09:56:18.015700+00:00"
+}

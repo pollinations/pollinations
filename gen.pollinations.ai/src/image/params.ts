@@ -58,7 +58,6 @@ export const ImageParamsSchema = z
         height: sanitizedSideLength,
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
-        enhance: sanitizedBoolean.catch(false),
         nofeed: sanitizedBoolean.catch(false),
         safe: sanitizedBoolean.catch(false),
         private: sanitizedBoolean.catch(false).optional(),

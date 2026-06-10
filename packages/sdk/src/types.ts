@@ -47,8 +47,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
     /** Keep generation private (default: false) */
     private?: boolean;
     /** Remove watermark logo (default: false) */

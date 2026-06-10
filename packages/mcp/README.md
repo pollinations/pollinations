@@ -49,7 +49,7 @@ npx @pollinations/mcp
 | `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
 | `listImageModels`    | List available image & video models (live)                 |
 
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `enhance`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
+Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
 
 ### Text Generation
 

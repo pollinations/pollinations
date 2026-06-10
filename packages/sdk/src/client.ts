@@ -416,7 +416,6 @@ export class Pollinations {
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            enhance: options.enhance,
             private: options.private,
             nologo: options.nologo,
             nofeed: options.nofeed,

@@ -41,7 +41,6 @@ async function prepareImageRequest(params) {
         width,
         height,
         seed,
-        enhance,
         guidance_scale,
         quality,
         image,
@@ -72,7 +71,6 @@ async function prepareImageRequest(params) {
         width,
         height,
         seed,
-        enhance,
         guidance_scale,
         quality,
         image,
@@ -213,16 +211,7 @@ async function generateImageUrl(params) {
 async function generateImage(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        quality,
-        enhance,
-        transparent,
-    } = params;
+    const { prompt, model, width, height, seed, quality, transparent } = params;
     const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
@@ -238,7 +227,6 @@ async function generateImage(params) {
             height: height || 1024,
             seed,
             quality: quality || "medium",
-            enhance: enhance || false,
             transparent: transparent || false,
         };
 
@@ -263,7 +251,6 @@ async function generateImageBatch(params) {
         width,
         height,
         seed: baseSeed,
-        enhance,
         guidance_scale,
         quality,
         image,
@@ -292,7 +279,6 @@ async function generateImageBatch(params) {
                 width,
                 height,
                 seed: baseSeed !== undefined ? baseSeed + index : undefined,
-                enhance,
                 guidance_scale,
                 quality,
                 image,
@@ -638,12 +624,6 @@ const imageParamsSchema = {
         .describe(
             "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images",
         ),
-    enhance: z
-        .boolean()
-        .optional()
-        .describe(
-            "Let AI improve your prompt for better results (default: false). Adds detail and style suggestions",
-        ),
     guidance_scale: z
         .number()
         .min(1)
@@ -798,7 +778,6 @@ export const imageTools = [
                 .int()
                 .optional()
                 .describe("Base seed (incremented for each image)"),
-            enhance: z.boolean().optional().describe("Enhance all prompts"),
             guidance_scale: z
                 .number()
                 .optional()

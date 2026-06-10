@@ -18,7 +18,6 @@ export function createImageCommand() {
         .option("--width <n>", "Image width", "1024")
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")
-        .option("--enhance", "AI prompt improvement")
         .option("--safe", "Enable safety filters")
         .option("--transparent", "Transparent background (PNG)")
         .option(
@@ -36,7 +35,6 @@ export function createImageCommand() {
                 height: opts.height,
             });
             if (opts.seed) params.set("seed", opts.seed);
-            if (opts.enhance) params.set("enhance", "true");
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
             if (opts.image?.length) {

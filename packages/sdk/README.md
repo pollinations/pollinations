@@ -280,7 +280,6 @@ const url = await imageUrl('a sunset');
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
-| `enhance` | boolean | `false` | AI prompt enhancement |
 | `nologo` | boolean | `false` | Remove watermark |
 | `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |

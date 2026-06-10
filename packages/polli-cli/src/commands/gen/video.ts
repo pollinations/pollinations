@@ -24,7 +24,6 @@ export function createVideoCommand() {
         .option("--aspect-ratio <ratio>", "16:9 or 9:16")
         .option("--audio", "Include AI soundtrack")
         .option("--seed <n>", "Random seed")
-        .option("--enhance", "AI prompt improvement")
         .option("--image <url>", "Reference frame URL")
         .option("--output <path>", "Save to file", "video.mp4")
         .action(async (prompt, opts) => {
@@ -40,7 +39,6 @@ export function createVideoCommand() {
             if (opts.aspectRatio) params.set("aspectRatio", opts.aspectRatio);
             if (opts.audio) params.set("audio", "true");
             if (opts.seed) params.set("seed", opts.seed);
-            if (opts.enhance) params.set("enhance", "true");
             if (opts.image) {
                 if (!/^https?:\/\//i.test(opts.image)) {
                     printError(

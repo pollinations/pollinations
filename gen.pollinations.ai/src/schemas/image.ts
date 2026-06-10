@@ -55,10 +55,6 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
         }),
-    enhance: z.coerce.boolean().optional().default(false).meta({
-        description:
-            "Let AI improve your prompt for better results. Applied during prompt processing.",
-    }),
     safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])

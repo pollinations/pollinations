@@ -49,8 +49,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     seed?: number;
     /** Keep generation private (default: false) */
     private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Don't show in public feed (default: false) */
     nofeed?: boolean;
     /** Enable safety content filters (default: false) */
@@ -109,8 +107,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     referenceImage?: string | string[];
     /** Keep generation private (default: false) */
     private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }

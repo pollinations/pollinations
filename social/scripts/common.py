@@ -385,7 +385,6 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "width": width,
             "height": height,
             "quality": "hd",
-            "nologo": "true",
             "private": "true",
             "nofeed": "true",
             "seed": seed,

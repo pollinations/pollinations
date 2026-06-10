@@ -45,7 +45,6 @@ async function prepareImageRequest(params) {
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -75,7 +74,6 @@ async function prepareImageRequest(params) {
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -100,7 +98,6 @@ async function prepareVideoRequest(params) {
         audio,
         image,
         seed,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -142,7 +139,6 @@ async function prepareVideoRequest(params) {
         audio,
         image,
         seed,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -255,7 +251,6 @@ async function generateImageBatch(params) {
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -283,7 +278,6 @@ async function generateImageBatch(params) {
                 quality,
                 image,
                 transparent,
-                nologo,
                 nofeed,
                 safe,
                 private: isPrivate,
@@ -652,10 +646,6 @@ const imageParamsSchema = {
         .describe(
             "Generate with transparent background (default: false). Useful for logos, stickers, overlays",
         ),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark from image (default: false)"),
     nofeed: z
         .boolean()
         .optional()
@@ -721,10 +711,6 @@ const videoParamsSchema = {
         .min(0)
         .optional()
         .describe("Random seed for reproducible results"),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark (default: false)"),
     nofeed: z
         .boolean()
         .optional()
@@ -794,10 +780,6 @@ export const imageTools = [
                 .boolean()
                 .optional()
                 .describe("Transparent background for all"),
-            nologo: z
-                .boolean()
-                .optional()
-                .describe("Remove watermark from all"),
             nofeed: z.boolean().optional().describe("Don't add any to feed"),
             safe: z.boolean().optional().describe("Safety filters for all"),
             private: z.boolean().optional().describe("Hide all from public"),

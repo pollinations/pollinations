@@ -33,6 +33,12 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
+    /**
+     * Overrides the status-derived error code in the response envelope. Used to
+     * surface a stable, machine-readable code (e.g. `content_policy_violation`)
+     * that callers can detect regardless of the HTTP status.
+     */
+    errorCode?: string;
 };
 
 export class UpstreamError extends HTTPException {
@@ -41,6 +47,7 @@ export class UpstreamError extends HTTPException {
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
+    public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
         super(status, options);
@@ -48,6 +55,7 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
+        this.errorCode = options?.errorCode;
     }
 }
 
@@ -239,12 +247,13 @@ function createErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
     details?: Record<string, unknown>,
+    code?: string,
 ): ErrorResponse {
     return {
         success: false,
         error: {
             message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
+            code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
             ...(!!error.cause && { cause: error.cause }),
@@ -280,15 +289,21 @@ function createUpstreamErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return createErrorResponse(error, status, timestamp, {
-        name: error.name,
-        upstreamStatus: error.upstreamStatus,
-        upstreamHost: error.requestUrl?.hostname,
-        upstreamBody: truncateString(
-            error.responseBody,
-            MAX_UPSTREAM_BODY_LENGTH,
-        ),
-    });
+    return createErrorResponse(
+        error,
+        status,
+        timestamp,
+        {
+            name: error.name,
+            upstreamStatus: error.upstreamStatus,
+            upstreamHost: error.requestUrl?.hostname,
+            upstreamBody: truncateString(
+                error.responseBody,
+                MAX_UPSTREAM_BODY_LENGTH,
+            ),
+        },
+        error.errorCode,
+    );
 }
 
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {

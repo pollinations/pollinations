@@ -4,7 +4,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import { afterEach, beforeEach, describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -2840,5 +2840,81 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
         currency: "eur",
         payment_status: "unpaid",
         payment_methods_offered: "sepa_debit",
+    });
+});
+
+// Sibling of expectUsdPriceData — asserts native-EUR price_data + AP omitted.
+function expectEurPriceData(
+    body: Record<string, string> | undefined,
+    eurCents: number,
+): void {
+    expect(body?.["line_items[0][price]"]).toBeUndefined();
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
+        String(eurCents),
+    );
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    expect(body?.["adaptive_pricing[enabled]"]).toBeUndefined(); // native EUR ⇒ no AP
+}
+
+describe("EUR checkout branch (flag on)", () => {
+    // String vars in wrangler are passed as value copies to each fetch handler —
+    // mutating the cloudflare:test `env` object does not propagate to the worker.
+    // Instead we use a KV key as a runtime toggle that IS shared across the
+    // test/worker boundary (service bindings are live references). The route
+    // checks KV key "eur-checkout-enabled" = "true" as an override of the env var.
+    beforeEach(async () => {
+        await env.KV.put("eur-checkout-enabled", "true");
+        // Pre-seed the daily rate so getEurMidRate returns 1.155 with NO outbound
+        // ECB fetch — deterministic: $5 / 1.155 = €4.33 = 433 cents.
+        await env.KV.put("fx:eur-usd:current", "1.155");
+    });
+    afterEach(async () => {
+        await env.KV.delete("eur-checkout-enabled");
+        await env.KV.delete("fx:eur-usd:current");
+    });
+
+    test("EU_CORE (DE) → native EUR price_data, no adaptive pricing", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("stripe", "tinybird");
+        const response = await SELF.fetch(`${base}/checkout/p5`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "cf-ipcountry": "DE",
+            },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (r) => r.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(body).toBeTruthy();
+        expectEurPriceData(body, 433); // $5 / 1.155
+        expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
+        expect(body?.payment_method_configuration).toBe(stripePmcId);
+    });
+
+    test("non-EU (US) → still USD + AP even with flag on", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("stripe", "tinybird");
+        const response = await SELF.fetch(`${base}/checkout/p5`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "cf-ipcountry": "US",
+            },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (r) => r.path === "/v1/checkout/sessions",
+        )?.body;
+        expectUsdPriceData(body, 5);
+        expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     });
 });

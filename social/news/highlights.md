@@ -1,3 +1,4 @@
+- **2026-06-09** – **🎬 HD Video Generation** Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai).
 - **2026-06-08** – **🔄 Live Model Catalog** The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop.
 - **2026-06-05** – **🚀 Standalone Playground** Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads.
 - **2026-06-04** – **📦 SDK Model Catalog** Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing.

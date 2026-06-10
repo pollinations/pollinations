@@ -553,7 +553,7 @@ footer a { color: var(--red); }
     <div class="masthead-actions">
         <span class="counter">Scoperte: <b id="discoveryCount">0</b></span>
         <button id="muteBtn" class="chip-btn" title="Narrator on/off">🔊 Voce</button>
-        <button id="keyBtn" class="chip-btn">🔑 Chiave</button>
+        <button id="authBtn" class="chip-btn warn">🔑 Accedi</button>
     </div>
 </header>
 
@@ -589,20 +589,6 @@ footer a { color: var(--red); }
     <div id="revealContent"></div>
 </div>
 
-<div class="overlay" id="keyOverlay">
-    <div class="panel">
-        <h3>🔑 La Chiave</h3>
-        <p>Fusions call the Pollinations API (text + image + voice), so you need an API key.
-           Create one at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener noreferrer">enter.pollinations.ai</a>.
-           It is stored only in this browser.</p>
-        <input id="keyInput" type="password" placeholder="pk_… or sk_…" autocomplete="off" />
-        <div class="reveal-actions">
-            <button class="chip-btn" id="keySave">Salva</button>
-            <button class="chip-btn" id="keyCancel">Annulla</button>
-        </div>
-    </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -611,13 +597,21 @@ footer a { color: var(--red); }
 /* ================= Config ================= */
 
 const API = "https://gen.pollinations.ai";
+const ENTER_URL = "https://enter.pollinations.ai";
 const TEXT_MODEL = "claude";
 const IMAGE_MODEL = "zimage";
 const VOICE_MODEL = "elevenlabs";
 // The canonical brainrot narrator: deep, theatrical Italian male delivery.
 const VOICE_NAME = "adam";
-const KEY_STORAGE = "brainrotdex:key";
+// No committed app key: with an empty client_id, Enter binds the delegated
+// key to the redirect_uri alone (same approach as the other demo apps).
+const APP_KEY = "";
+const TOKEN_STORAGE = `polli:${APP_KEY}:token`;
+const STATE_STORAGE = `polli:${APP_KEY}:oauth_state`;
 const MUTE_STORAGE = "brainrotdex:muted";
+const AUTH_MODELS = [TEXT_MODEL, IMAGE_MODEL, VOICE_MODEL];
+const AUTH_BUDGET = 6; // pollen the delegated key may spend
+const AUTH_EXPIRY_DAYS = 7;
 
 const SEEDS = [
     { key: "seed:squalo", name: "Squalo", emoji: "🦈", lore: "A great white shark dreaming of dry land." },
@@ -696,7 +690,76 @@ let audioEl = null;
 let speakToken = 0;
 
 function apiKey() {
-    return localStorage.getItem(KEY_STORAGE) || "";
+    return localStorage.getItem(TOKEN_STORAGE) || "";
+}
+
+/* ================= Pollinations auth (BYOP redirect flow) ================= */
+
+function login() {
+    const redirect = window.location.href.split("#")[0];
+    const state = crypto.randomUUID();
+    localStorage.setItem(STATE_STORAGE, state);
+    const params = new URLSearchParams();
+    params.set("redirect_uri", redirect);
+    params.set("client_id", APP_KEY);
+    params.set("state", state);
+    params.set("models", AUTH_MODELS.join(","));
+    params.set("budget", String(AUTH_BUDGET));
+    params.set("expiry", String(AUTH_EXPIRY_DAYS));
+    window.location.href = `${ENTER_URL}/authorize?${params}`;
+}
+
+function logout() {
+    localStorage.removeItem(TOKEN_STORAGE);
+    refreshAuthUi();
+    toast("A presto!");
+}
+
+/* Enter redirects back with #api_key=…&state=… (or #error=…). Validate the
+   state we stored at login time (CSRF), then strip the params from the URL. */
+function consumeAuthCallback() {
+    const rawHash = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
+    if (!rawHash) return;
+    const queryIdx = rawHash.indexOf("?");
+    const routePrefix = queryIdx === -1 ? "" : rawHash.slice(0, queryIdx);
+    const params = new URLSearchParams(queryIdx === -1 ? rawHash : rawHash.slice(queryIdx + 1));
+    const key = params.get("api_key");
+    const error = params.get("error");
+    const receivedState = params.get("state");
+    const description = params.get("error_description");
+    if (!key && !error) return;
+
+    for (const p of ["api_key", "state", "error", "error_description"]) params.delete(p);
+    const remaining = params.toString();
+    const newHash = remaining ? (routePrefix ? `${routePrefix}?${remaining}` : remaining) : routePrefix;
+    history.replaceState({}, "", location.pathname + location.search + (newHash ? `#${newHash}` : ""));
+
+    const expected = localStorage.getItem(STATE_STORAGE);
+    if (key) {
+        if (!expected || receivedState !== expected) {
+            toast("Login scartato: state non valido.");
+            return;
+        }
+        localStorage.removeItem(STATE_STORAGE);
+        localStorage.setItem(TOKEN_STORAGE, key);
+        toast("Sei dentro! Scegli due carte e FONDI.");
+    } else {
+        if (expected && receivedState === expected) localStorage.removeItem(STATE_STORAGE);
+        toast(`Login fallito: ${description ?? error}`);
+    }
+}
+
+function dropExpiredSession() {
+    localStorage.removeItem(TOKEN_STORAGE);
+    refreshAuthUi();
+}
+
+function refreshAuthUi() {
+    const btn = $("authBtn");
+    const loggedIn = Boolean(apiKey());
+    btn.textContent = loggedIn ? "🚪 Esci" : "🔑 Accedi";
+    btn.classList.toggle("warn", !loggedIn);
+    btn.title = loggedIn ? "Log out" : "Log in with Pollinations";
 }
 
 /* ================= Helpers ================= */
@@ -1104,7 +1167,7 @@ function showBustina() {
 
 async function fuse() {
     if (!slotA || !slotB || fusing) return;
-    if (!apiKey()) { openKeyModal(); return; }
+    if (!apiKey()) { login(); return; }
 
     const key = recipeKey(slotA, slotB);
     const existing = cards.get(key);
@@ -1151,20 +1214,20 @@ async function fuse() {
     } catch (error) {
         clearInterval(statusTimer);
         showOverlay("revealOverlay", false);
-        toast(`Mamma mia! La fusione è fallita: ${error.message ?? error}`);
+        const message = String(error?.message ?? error);
+        if (/401|UNAUTHORIZED|Authentication/i.test(message)) {
+            dropExpiredSession();
+            toast("Sessione scaduta — accedi di nuovo (🔑).");
+        } else {
+            toast(`Mamma mia! La fusione è fallita: ${message}`);
+        }
     } finally {
         fusing = false;
         refreshBench();
     }
 }
 
-/* ================= Key + chrome ================= */
-
-function openKeyModal() {
-    $("keyInput").value = apiKey();
-    showOverlay("keyOverlay", true);
-    $("keyInput").focus();
-}
+/* ================= Chrome ================= */
 
 function refreshMute() {
     $("muteBtn").textContent = muted ? "🔇 Voce" : "🔊 Voce";
@@ -1174,18 +1237,15 @@ function refreshMute() {
 /* ================= Init ================= */
 
 async function init() {
+    consumeAuthCallback();
+
     $("fuseBtn").addEventListener("click", () => void fuse());
     $("slotA").addEventListener("click", () => { slotA = null; refreshBench(); });
     $("slotB").addEventListener("click", () => { slotB = null; refreshBench(); });
-    $("keyBtn").addEventListener("click", openKeyModal);
-    $("keySave").addEventListener("click", () => {
-        const value = $("keyInput").value.trim();
-        if (value) localStorage.setItem(KEY_STORAGE, value);
-        else localStorage.removeItem(KEY_STORAGE);
-        showOverlay("keyOverlay", false);
-        toast(value ? "Chiave salvata. Andiamo!" : "Chiave rimossa.");
+    $("authBtn").addEventListener("click", () => {
+        if (apiKey()) logout();
+        else login();
     });
-    $("keyCancel").addEventListener("click", () => showOverlay("keyOverlay", false));
     $("muteBtn").addEventListener("click", () => {
         muted = !muted;
         localStorage.setItem(MUTE_STORAGE, muted ? "1" : "0");
@@ -1195,13 +1255,11 @@ async function init() {
         if (event.target === event.currentTarget && !fusing) showOverlay("revealOverlay", false);
     });
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !fusing) {
-            showOverlay("revealOverlay", false);
-            showOverlay("keyOverlay", false);
-        }
+        if (event.key === "Escape" && !fusing) showOverlay("revealOverlay", false);
     });
 
     refreshMute();
+    refreshAuthUi();
     renderSeeds();
 
     try {
@@ -1214,7 +1272,7 @@ async function init() {
     refreshBench();
 
     if (!apiKey()) {
-        setTimeout(() => toast("Benvenuto! Add your Pollinations key (🔑) to start fusing."), 800);
+        setTimeout(() => toast("Benvenuto! Accedi con Pollinations (🔑) per fondere."), 800);
     }
 }
 

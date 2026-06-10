@@ -37,7 +37,6 @@ export const PLAY_PAGE = {
     heightLabel: "Height",
     seedLabel: "Seed",
     seedPlaceholder: "0 = random",
-    logoLabel: "Logo",
 
     // Reference images
     referenceImagesLabel: "Reference images",

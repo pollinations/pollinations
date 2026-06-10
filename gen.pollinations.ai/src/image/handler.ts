@@ -31,7 +31,7 @@ import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
     contentPolicyMessage,
-    isContentPolicyViolation,
+    firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
 import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
@@ -178,15 +178,14 @@ function throwImageError(error: unknown): never {
     // backend failures. Catch them here — the single funnel for image/video
     // errors — so they surface as 422 with a stable, detectable code instead of
     // a 500 that pollutes model-health stats.
-    const rawMessage =
+    const candidateMessages =
         error instanceof HttpError
-            ? parseUpstreamErrorBody(error).text || error.message
-            : error instanceof Error
-              ? error.message
-              : String(error);
-    if (isContentPolicyViolation(rawMessage)) {
+            ? [parseUpstreamErrorBody(error).text, error.message]
+            : [error instanceof Error ? error.message : String(error)];
+    const moderationMessage = firstContentPolicyMessage(candidateMessages);
+    if (moderationMessage) {
         throw new UpstreamError(CONTENT_POLICY_STATUS, {
-            message: contentPolicyMessage(rawMessage),
+            message: contentPolicyMessage(moderationMessage),
             errorCode: CONTENT_POLICY_ERROR_CODE,
             requestUrl:
                 error instanceof HttpError

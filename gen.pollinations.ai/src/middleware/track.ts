@@ -879,16 +879,20 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-function collectErrorData(response: Response, error?: Error): ErrorData {
+export function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
     let source: string | undefined;
+    let explicitCode: string | undefined;
     if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
+        explicitCode = error.errorCode;
     }
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(response.status),
+        // Prefer the error's explicit code (e.g. content_policy_violation) so
+        // analytics can distinguish it from a generic status-derived code.
+        errorResponseCode: explicitCode ?? getErrorCode(response.status),
         errorSource: source,
         errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };

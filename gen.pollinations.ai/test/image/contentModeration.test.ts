@@ -3,6 +3,7 @@ import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
     contentPolicyMessage,
+    firstContentPolicyMessage,
     isContentPolicyViolation,
 } from "../../src/image/utils/contentModeration.ts";
 
@@ -41,6 +42,11 @@ const NON_MODERATION_MESSAGES = [
     "fetch failed: getaddrinfo ENOTFOUND",
     "Rate limit exceeded, please retry",
     "Internal server error",
+    // Infra failures of the moderation service itself must stay 5xx — they are
+    // NOT a rejection of the user's content. Guards against the bare-"moderation"
+    // matcher swallowing outages (and against re-adding a space-separated form).
+    "moderation service unavailable",
+    "Content moderation service temporarily unavailable",
 ];
 
 describe("isContentPolicyViolation", () => {
@@ -67,6 +73,35 @@ describe("isContentPolicyViolation", () => {
         expect(isContentPolicyViolation("content FLAGGED for: sexual")).toBe(
             true,
         );
+    });
+});
+
+describe("firstContentPolicyMessage", () => {
+    it("returns the matching message even when an earlier candidate is generic", () => {
+        // Defends against a provider putting a generic message in the JSON body
+        // while the real moderation reason lives only in error.message.
+        expect(
+            firstContentPolicyMessage([
+                "Image provider error",
+                "Content flagged for: sexual",
+            ]),
+        ).toBe("Content flagged for: sexual");
+    });
+
+    it("skips null/undefined candidates", () => {
+        expect(
+            firstContentPolicyMessage([
+                null,
+                undefined,
+                "Green net check failed",
+            ]),
+        ).toBe("Green net check failed");
+    });
+
+    it("returns undefined when no candidate is a content-policy violation", () => {
+        expect(
+            firstContentPolicyMessage(["Request timed out", "Internal error"]),
+        ).toBeUndefined();
     });
 });
 

@@ -24,7 +24,9 @@ const MODERATION_PATTERNS = [
     "inappropriate", // "... may contain inappropriate content"
     "content filter",
     "content polic", // "Content policy violation ..." (Vertex AI)
-    "moderation", // Replicate "ContentModerationError"
+    "contentmoderation", // Replicate "ContentModerationError" (one word —
+    // deliberately NOT bare "moderation", which would also match infra
+    // failures like "moderation service unavailable" and hide a real 5xx)
     "flagged", // Replicate "Content flagged for ...", "flagged as sensitive"
     "illegal material",
     "unsafe content", // Azure Content Safety "contains unsafe content"
@@ -37,6 +39,20 @@ export function isContentPolicyViolation(
     if (!message) return false;
     const lower = message.toLowerCase();
     return MODERATION_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
+/**
+ * Returns the first candidate message that is a content-policy violation, or
+ * undefined if none are. Used at the error funnel to check every place a
+ * provider might surface the reason (parsed response body AND error.message),
+ * so a generic body can't shadow moderation wording in the message.
+ */
+export function firstContentPolicyMessage(
+    messages: Array<string | null | undefined>,
+): string | undefined {
+    return messages.find((message): message is string =>
+        isContentPolicyViolation(message),
+    );
 }
 
 /**

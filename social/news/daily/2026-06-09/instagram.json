@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-09",
+  "period_start": "2026-06-09",
+  "period_end": "2026-06-09",
+  "generated_at": "2026-06-10T07:24:37.659831+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-09/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-09/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-09/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A couple of plumbing updates this week. 🛠️\n\nFirst, we rerouted Pruna models through Replicate. The connection is much more reliable now, and you get explicit resolution control instead of just hoping for the best.\n\nSecond, Wan-Pro image-to-video was throwing 500 errors. We tracked down the bug, fed the logs to the void, and the video pipeline is back online and humming. 📼✨\n\nGo build something weird: pollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #aivideo #webdev #retroaesthetic #cozyvibes",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

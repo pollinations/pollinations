@@ -109,7 +109,7 @@ curl "$BASE_URL/generate/image/test4?model=seedream&width=1024&height=1024" \
 
 ```bash
 # All parameters
-curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&enhance=true&nologo=true&private=true&guidance_scale=7.5" \
+curl "$BASE_URL/generate/image/test5?model=gptimage&width=1024&height=1024&seed=123&quality=high&guidance_scale=7.5" \
   -H "Authorization: Bearer $TOKEN"
 
 # Image-to-image (with reference image URL)
@@ -117,7 +117,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true&nologo=true" \
+curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file
@@ -154,12 +154,7 @@ echo "All images generated!"
   - **seedream**: Minimum 960x960 (921600 pixels required)
 - `seed`: Random seed (default: 42)
 - `quality`: low, medium (default), high, hd
-- `enhance`: Enhance prompt with AI (default: false)
-- `negative_prompt`: What to avoid (default: "worst quality, blurry")
 - `guidance_scale`: How closely to follow prompt (number)
-- `nologo`: Remove watermark (default: false)
-- `private`: Don't show in public feed (default: false)
-- `nofeed`: Don't add to feed (default: false)
 - `safe`: Enable safety filters (default: false)
 - `image`: Reference image URL for image-to-image
 - `transparent`: Generate with transparent background (default: false)

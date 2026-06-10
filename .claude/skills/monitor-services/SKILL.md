@@ -38,7 +38,7 @@ Expected: `{"status":"healthy","model":"ltx-2-comfyui"}`
 ```bash
 curl -s -o /dev/null -w "HTTP %{http_code}, Size: %{size_download}, Time: %{time_total}s" \
   --max-time 120 \
-  "https://gen.pollinations.ai/video/health_check_$(date +%s)?model=ltx-2&duration=3&nologo=true" \
+  "https://gen.pollinations.ai/video/health_check_$(date +%s)?model=ltx-2&duration=3" \
   -H "Authorization: Bearer $TEST_TOKEN"
 ```
 Expected: HTTP 200, ~500-800KB, ~11-13s
@@ -106,17 +106,17 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 
 | Property | Value |
 |----------|-------|
-| **Pod ID** | `lqh6weiexk4sth` (current — pod ID changes if recreated) |
+| **Pod ID** | `jmrbmje2fyuy46` (current — pod ID changes if recreated) |
 | **Host** | `<pod-id>-8000.proxy.runpod.net` |
 | **Port** | `8000` |
-| **Provider** | RunPod (RTX 3090, community cloud) |
-| **SSH** | RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (get full command from dashboard "Connect" tab) |
+| **Provider** | RunPod (RTX A5000 secure cloud, $0.27/hr via API) |
+| **SSH** | Full SSH with `SSH_RUNPOD_KLEIN` from SOPS; get current public host/port from RunPod runtime ports |
 | **Auth** | `x-backend-token` header with `PLN_GPU_TOKEN` |
-| **Config** | `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` (sops); fallback in `image.pollinations.ai/src/models/fluxKleinModel.ts` |
+| **Config** | `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` (sops); fallback in `gen.pollinations.ai/src/image/models/fluxKleinModel.ts` |
 
 **Health check:**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 https://lqh6weiexk4sth-8000.proxy.runpod.net/health
+curl -s --connect-timeout 5 --max-time 10 https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 ```
 Expected: `{"status":"ok","model":"black-forest-labs/FLUX.2-klein-4B"}`
 
@@ -131,10 +131,40 @@ Wait ~30s for model load, then re-check health.
 
 Symptom: dashboard banner "*This server has recently suffered a network outage*"; control plane reports RUNNING but HTTPS proxy / SSH / ICMP all unreachable. Restart/reset reschedules onto the same broken host. Recreate on a different host:
 
-1. `runpodctl pod create --name klein-worker-v2 --image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404 --gpu-id "NVIDIA GeForce RTX 3090" --gpu-count 1 --container-disk-in-gb 20 --volume-in-gb 100 --volume-mount-path /workspace --ports "8000/http,22/tcp" --cloud-type COMMUNITY --env "$(jq -nc --arg t "$(sops -d gen.pollinations.ai/secrets/prod.vars.json | jq -r .PLN_GPU_TOKEN)" '{PLN_GPU_TOKEN:$t}')"`
-2. SSH via dashboard relay; install deps + drop in `image.pollinations.ai/klein-runpod/handler.py`; start with `nohup python3 -u /workspace/handler.py > /workspace/klein.log 2>&1 &`. Model download is ~24 GB (~5–10 min).
-3. Update `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` (sops) and the hardcoded fallback in `fluxKleinModel.ts` to the new `<pod-id>-8000.proxy.runpod.net`. Deploy `.env` to EC2 image service and restart `image-pollinations.service`.
-4. Verify end-to-end via `gen.pollinations.ai/image/test?model=klein`, then delete the old pod.
+1. Create cheap replacement capacity first: prefer secure A5000 at <= $0.30/hr, fallback to community 3090 at <= $0.23/hr. Reject any assigned host with `machine.note` or `maintenanceNote` mentioning an outage. Do not use a 4090 unless the higher cost is explicitly accepted.
+2. Use `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, `8000/http,22/tcp`, `20GB` container disk, `100GB` volume, and `/workspace`.
+3. Get SSH runtime port from RunPod GraphQL and connect with `SSH_RUNPOD_KLEIN`:
+   ```bash
+   sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r .SSH_RUNPOD_KLEIN > /tmp/klein-key
+   chmod 600 /tmp/klein-key
+   ssh -i /tmp/klein-key -p <publicPort> root@<publicIp>
+   ```
+4. Copy `image.pollinations.ai/klein-runpod/handler.py` and `requirements.txt` to `/workspace`.
+5. Install runtime packages without replacing the base CUDA torch:
+   ```bash
+   python -m venv --system-site-packages /workspace/venv
+   /workspace/venv/bin/python -m pip install --upgrade pip
+   /workspace/venv/bin/python -m pip install --no-cache-dir -r /workspace/requirements.txt
+   ```
+6. Put `PLN_GPU_TOKEN` in `/root/.gpu_token` (not `/workspace`, which may ignore Unix mode bits) and create `/workspace/restart.sh`:
+   ```bash
+   export HF_HUB_CACHE=/workspace/hf-cache
+   export HF_XET_HIGH_PERFORMANCE=1
+   export PLN_GPU_TOKEN="$(cat /root/.gpu_token)"
+   pkill -f "/workspace/handler.py" 2>/dev/null || true
+   nohup /workspace/venv/bin/python -u /workspace/handler.py > /workspace/klein.log 2>&1 &
+   echo $! > /workspace/klein.pid
+   ```
+7. Run `bash /workspace/restart.sh`; first startup downloads ~15-24GB of model files and should end with `Model loaded and ready!`.
+8. Update `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` and the hardcoded fallback in `gen.pollinations.ai/src/image/models/fluxKleinModel.ts`.
+9. Push the production Worker secret:
+   ```bash
+   tmp=$(mktemp)
+   sops -d gen.pollinations.ai/secrets/prod.vars.json > "$tmp"
+   (cd gen.pollinations.ai && node scripts/push-generation-secrets.mjs "$tmp" production)
+   rm -f "$tmp"
+   ```
+10. Verify direct pod `/health`, direct authenticated `/generate`, and production `gen.pollinations.ai/image/...model=klein`, remove `/tmp/klein-key`, then terminate the old outage pod.
 
 Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.sh` live on the pod volume only (not baked into a Docker image despite `image.pollinations.ai/klein-runpod/Dockerfile`). The pod volume is destroyed on terminate.
 

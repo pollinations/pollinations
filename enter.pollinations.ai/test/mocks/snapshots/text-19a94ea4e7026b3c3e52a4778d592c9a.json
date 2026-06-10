@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1771033637100"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2706",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 01:47:24 GMT",
+      "etag": "W/\"a92-qksAatVqY/uDIiv9YVqgRBF0soQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "363",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Are you running a duplicate-check on that ID (1771033637100) or asking for general dedup help? I can do either — here are quick options depending on what you mean.\n\nIf you just want to check whether that exact value appears more than once:\n- Python (simple count):\n  items.count(\"1771033637100\")  # >0 means present, >1 means duplicated\n- Unix shell (count occurrences in a file):\n  grep -c \"1771033637100\" filename\n- SQL (find duplicates of a column named val):\n  SELECT val, COUNT(*) c FROM table GROUP BY val HAVING c>1;\n\nIf you want to remove duplicates from a list while preserving order:\n- Python:\n  deduped = list(dict.fromkeys(items))\n\nIf you want to remove duplicates from tabular data:\n- pandas:\n  df = df.drop_duplicates(subset=[\"column_name\"])  # or drop_duplicates() for whole rows\n\nIf you want to find all duplicated values (not just that one):\n- SQL:\n  SELECT val, COUNT(*) c FROM table GROUP BY val HAVING c>1;\n- Unix:\n  sort file | uniq -d  # prints values that are duplicated\n  sort file | uniq -c | sort -nr  # shows counts sorted descending\n\nIf you meant fuzzy/near-duplicate detection (e.g., similar strings, near-duplicate records), say so and I’ll outline approaches (fingerprinting, locality-sensitive hashing, similarity thresholds).\n\nTell me which format you’ve got (plain list, CSV, database, file path) and what outcome you want (report duplicates, delete duplicates, keep latest/earliest), and I’ll give the exact command or script.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771033637,
+        "id": "pllns_d962a0c56acb906014acb2bb50d7beb1",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 747,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 384,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1003
+        }
+      }
+    }
+  }
+}

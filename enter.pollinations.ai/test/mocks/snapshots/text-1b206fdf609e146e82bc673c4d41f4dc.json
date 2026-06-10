@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1771033908187"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2080",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 01:52:02 GMT",
+      "etag": "W/\"820-jRH8RJjGyttgU1ksYsI6KuoP1NM\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1536",
+      "x-usage-completion-text-tokens": "273",
+      "x-usage-prompt-text-tokens": "258"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Looks like a label with a timestamp. If that’s a Unix millisecond value (1771033908187), it converts to:\n\n- 2026-02-14 01:51:48.187 UTC\n\nWant it shown in a different timezone? Or did you mean something else by that string?\n\nIf you want alternate versions of the message text, here are a few options you can pick from or tweak:\n\n1) Plain label: \"Different message 1 — 2026-02-14 01:51:48 UTC\"  \n2) Human-friendly: \"Message 1 (sent on Feb 14, 2026 at 01:51:48 UTC)\"  \n3) Log-style: \"[2026-02-14T01:51:48.187Z] Different message #1\"  \n4) File-name safe: \"Different_message_1_20260214_015148\"  \n5) Short/SMS: \"Msg1 — Feb 14 01:51\"  \n6) Friendly note: \"Different message 1 — captured on Valentine’s Day, 2026 at 01:51:48 UTC 🕒\"\n\nWhich direction do you want — convert to local time, rename a file, or produce different wording or formats?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771033909,
+        "id": "pllns_b95cb68c3728b94b0fc8392d948756bc",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1809,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1536,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2067
+        }
+      }
+    }
+  }
+}

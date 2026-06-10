@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Dedup test 1771033900118"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2306",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 01:51:48 GMT",
+      "etag": "W/\"902-+5ncLk80g6qSzZjF/H3F8xIhq8E\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "512",
+      "x-usage-completion-text-tokens": "287",
+      "x-usage-prompt-text-tokens": "256"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Got the test ID: 1771033900118. What do you want me to do with it?\n\nOptions I can help with:\n- Check or interpret a deduplication result if you paste it here.\n- Run a dedup on a dataset (upload or paste the data).\n- Show quick dedup examples (Python, SQL, shell) you can run locally.\n- Troubleshoot a dedup pipeline that’s failing or producing unexpected results.\n\nQuick examples you can use right away\n\n- Python (pandas, exact dedupe)\nimport pandas as pd\ndf = pd.read_csv('data.csv')\ndeduped = df.drop_duplicates()  # remove exact duplicate rows\ndeduped.to_csv('deduped.csv', index=False)\n\n- SQL (keep newest row per key)\nSELECT * FROM (\n  SELECT *, ROW_NUMBER() OVER (PARTITION BY key_column ORDER BY updated_at DESC) rn\n  FROM my_table\n) t\nWHERE rn = 1;\n\n- Shell (simple line dedupe)\nsort input.txt | uniq > deduped.txt\n\nIf you need fuzzy deduplication (typos, name/address matching), I can show a dedupe library example or a rules-based approach.\n\nTell me which path you want (check results, run dedup, show code), and drop the data or error messages if you have them.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771033901,
+        "id": "pllns_d67caa329a3001a67196ef787c386087",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 799,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 512,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 256,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1055
+        }
+      }
+    }
+  }
+}

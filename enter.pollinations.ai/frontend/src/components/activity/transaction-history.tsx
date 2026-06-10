@@ -12,13 +12,10 @@ const PAGE_SIZE_COMPACT = 5;
 
 type UsageRecord = {
     timestamp: string;
-    type: string;
     model: string;
     api_key: string | null;
-    api_key_type: string | null;
     meter_source: string | null;
     cost_usd: number;
-    response_time_ms: number | null;
 };
 
 type FetchState = {
@@ -115,10 +112,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 return;
             }
 
-            const data = (await response.json()) as {
-                usage: UsageRecord[];
-                count: number;
-            };
+            const data = (await response.json()) as { usage: UsageRecord[] };
             const rows = data.usage ?? [];
             const hasMore = mode === "full" && rows.length >= pageSize;
             const last = rows[rows.length - 1];

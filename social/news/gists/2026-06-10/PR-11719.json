@@ -1,0 +1,34 @@
+{
+  "pr_number": 11719,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11719",
+  "merged_at": "2026-06-10T10:50:09Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Dusting the API scrolls",
+    "blurb": "Polly's automated helpers just swept through the API documentation to keep everything perfectly in sync with the latest production deploy.",
+    "summary": "Automated synchronization of APIDOCS.md with the latest OpenAPI specification following a production deployment.",
+    "impact": "Developers referencing the API documentation will see the most up-to-date endpoint specifications.",
+    "keywords": [
+      "docs",
+      "openapi",
+      "automation",
+      "api"
+    ],
+    "visual_concept": "Polly the bee wearing a librarian's glasses, dusting off a giant glowing scroll of code in a cozy library setting. Nomnom creature eating some old dusty pages.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, dusting off a glowing digital scroll of code in a warm, wood-paneled library. The round tan Nomnom creature happily eats a few dusty old pages nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-10/PR-11719.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny librarian glasses, dusting off a glowing digital scroll of code in a warm, wood-paneled library. The round tan Nomnom creature happily eats a few dusty old pages nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-10T10:51:06.974024+00:00"
+}

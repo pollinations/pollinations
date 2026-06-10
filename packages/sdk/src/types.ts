@@ -47,14 +47,8 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
     /** Keep generation private (default: false) */
     private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Don't show in public feed (default: false) */
     nofeed?: boolean;
     /** Enable safety content filters (default: false) */
@@ -113,8 +107,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     referenceImage?: string | string[];
     /** Keep generation private (default: false) */
     private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -926,8 +918,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     seed?: number;
     /** Output quality */
     quality?: ImageQuality;
-    /** Negative prompt - what to avoid */
-    negativePrompt?: string;
 }
 
 // ============================================================================

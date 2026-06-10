@@ -41,13 +41,10 @@ async function prepareImageRequest(params) {
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -73,13 +70,10 @@ async function prepareImageRequest(params) {
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -104,7 +98,6 @@ async function prepareVideoRequest(params) {
         audio,
         image,
         seed,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -146,7 +139,6 @@ async function prepareVideoRequest(params) {
         audio,
         image,
         seed,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -215,16 +207,7 @@ async function generateImageUrl(params) {
 async function generateImage(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        quality,
-        enhance,
-        transparent,
-    } = params;
+    const { prompt, model, width, height, seed, quality, transparent } = params;
     const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
@@ -240,7 +223,6 @@ async function generateImage(params) {
             height: height || 1024,
             seed,
             quality: quality || "medium",
-            enhance: enhance || false,
             transparent: transparent || false,
         };
 
@@ -265,13 +247,10 @@ async function generateImageBatch(params) {
         width,
         height,
         seed: baseSeed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
         nofeed,
         safe,
         private: isPrivate,
@@ -295,13 +274,10 @@ async function generateImageBatch(params) {
                 width,
                 height,
                 seed: baseSeed !== undefined ? baseSeed + index : undefined,
-                enhance,
-                negative_prompt,
                 guidance_scale,
                 quality,
                 image,
                 transparent,
-                nologo,
                 nofeed,
                 safe,
                 private: isPrivate,
@@ -642,18 +618,6 @@ const imageParamsSchema = {
         .describe(
             "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images",
         ),
-    enhance: z
-        .boolean()
-        .optional()
-        .describe(
-            "Let AI improve your prompt for better results (default: false). Adds detail and style suggestions",
-        ),
-    negative_prompt: z
-        .string()
-        .optional()
-        .describe(
-            "What to avoid in the image (default: 'worst quality, blurry'). Example: 'blurry, low quality, text, watermark'",
-        ),
     guidance_scale: z
         .number()
         .min(1)
@@ -682,10 +646,6 @@ const imageParamsSchema = {
         .describe(
             "Generate with transparent background (default: false). Useful for logos, stickers, overlays",
         ),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark from image (default: false)"),
     nofeed: z
         .boolean()
         .optional()
@@ -751,10 +711,6 @@ const videoParamsSchema = {
         .min(0)
         .optional()
         .describe("Random seed for reproducible results"),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark (default: false)"),
     nofeed: z
         .boolean()
         .optional()
@@ -808,11 +764,6 @@ export const imageTools = [
                 .int()
                 .optional()
                 .describe("Base seed (incremented for each image)"),
-            enhance: z.boolean().optional().describe("Enhance all prompts"),
-            negative_prompt: z
-                .string()
-                .optional()
-                .describe("Negative prompt for all images"),
             guidance_scale: z
                 .number()
                 .optional()
@@ -829,10 +780,6 @@ export const imageTools = [
                 .boolean()
                 .optional()
                 .describe("Transparent background for all"),
-            nologo: z
-                .boolean()
-                .optional()
-                .describe("Remove watermark from all"),
             nofeed: z.boolean().optional().describe("Don't add any to feed"),
             safe: z.boolean().optional().describe("Safety filters for all"),
             private: z.boolean().optional().describe("Hide all from public"),

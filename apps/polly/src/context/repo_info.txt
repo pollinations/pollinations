@@ -70,7 +70,7 @@ MCP: `npx @pollinations/mcp` → Claude Desktop compatible, 15+ tools
 
 ## Image Params
 
-width, height (default 1024) | seed (-1=random) | model | enhance (AI prompt enhancement) | negative_prompt | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20) | nofeed/private
+width, height (default 1024) | seed (-1=random) | model | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20) | nofeed/private
 
 ## TTS Voices
 

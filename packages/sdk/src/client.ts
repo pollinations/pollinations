@@ -416,10 +416,7 @@ export class Pollinations {
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            enhance: options.enhance,
-            negative_prompt: options.negativePrompt,
             private: options.private,
-            nologo: options.nologo,
             nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
@@ -624,8 +621,6 @@ export class Pollinations {
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
         if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
         if (options.quality) body.quality = options.quality;
-        if (options.negativePrompt)
-            body.negative_prompt = options.negativePrompt;
 
         const response = await fetchWithTimeout(
             `${this.baseUrl}/v1/images/generations`,
@@ -737,7 +732,6 @@ export class Pollinations {
             audio: options.audio,
             image: options.referenceImage,
             private: options.private,
-            nologo: options.nologo,
             safe: options.safe,
         };
 

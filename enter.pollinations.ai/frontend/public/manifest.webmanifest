@@ -1,7 +1,7 @@
 {
     "name": "Dashboard | pollinations.ai",
     "short_name": "Dashboard",
-    "description": "Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps.",
+    "description": "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
     "icons": [{
             "src": "/icon-192.png",
             "sizes": "192x192",

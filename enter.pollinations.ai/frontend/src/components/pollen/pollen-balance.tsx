@@ -138,7 +138,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                             <SproutIcon className="h-4 w-4" />
                                         }
                                         items={[
-                                            "Free Pollen that refills hourly",
+                                            "Hourly Pollen refill from your tier",
                                             "Earnings from tier-side spend in your apps",
                                             "Used first for regular models, when it can cover",
                                         ]}

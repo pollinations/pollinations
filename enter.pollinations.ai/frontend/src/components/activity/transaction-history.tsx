@@ -147,6 +147,15 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
     const showEmpty = state.rows.length === 0 && !state.loading && !state.error;
     const isCompact = mode === "compact";
 
+    function renderStatus(): string {
+        if (state.rows.length > 0) {
+            return `Showing ${state.rows.length} ${
+                isCompact ? "recent" : "most recent"
+            }`;
+        }
+        return state.loading ? "Loading…" : "";
+    }
+
     return (
         <div className="flex flex-col gap-3">
             {!isCompact && (
@@ -262,15 +271,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
             )}
 
             <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-ink-500">
-                    {state.rows.length === 0
-                        ? state.loading
-                            ? "Loading…"
-                            : ""
-                        : `Showing ${state.rows.length} ${
-                              isCompact ? "recent" : "most recent"
-                          }`}
-                </span>
+                <span className="text-xs text-ink-500">{renderStatus()}</span>
                 {isCompact && state.rows.length > 0 && (
                     <a
                         href={viewAllHref}

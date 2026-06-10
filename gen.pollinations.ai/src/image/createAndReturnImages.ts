@@ -180,7 +180,6 @@ export const callSelfHostedServer = async (
             width: safeParams.width,
             height: safeParams.height,
             seed: safeParams.seed,
-            negative_prompt: safeParams.negative_prompt,
             steps: steps,
         };
 

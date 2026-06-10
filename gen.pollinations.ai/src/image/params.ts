@@ -58,8 +58,6 @@ export const ImageParamsSchema = z
         height: sanitizedSideLength,
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
-        enhance: sanitizedBoolean.catch(false),
-        negative_prompt: z.coerce.string().catch("worst quality, blurry"),
         safe: sanitizedBoolean.catch(false),
         quality: z.literal(validQualities).catch("medium"),
         image: z

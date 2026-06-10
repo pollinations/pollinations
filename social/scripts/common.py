@@ -385,7 +385,6 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "width": width,
             "height": height,
             "quality": "hd",
-            "nologo": "true",
             "seed": seed,
             "key": token,
             "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",

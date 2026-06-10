@@ -280,9 +280,6 @@ const url = await imageUrl('a sunset');
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
-| `enhance` | boolean | `false` | AI prompt enhancement |
-| `negativePrompt` | string | - | What to avoid in the image |
-| `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
 | `referenceImage` | string | - | URL for image-to-image |
@@ -427,7 +424,6 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
-| `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 

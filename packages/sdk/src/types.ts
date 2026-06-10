@@ -47,12 +47,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
     /** Output quality (default: 'medium') */
@@ -107,8 +101,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -920,8 +912,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     seed?: number;
     /** Output quality */
     quality?: ImageQuality;
-    /** Negative prompt - what to avoid */
-    negativePrompt?: string;
 }
 
 // ============================================================================

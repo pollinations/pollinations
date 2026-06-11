@@ -1,5 +1,5 @@
 import os, sys, io, base64, logging, torch, time, threading, warnings, asyncio, aiohttp
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
@@ -116,8 +116,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SANA-Sprint", lifespan=lifespan)
 
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    expected_token = os.getenv("PLN_GPU_TOKEN")
+    if not expected_token:
+        logger.error("PLN_GPU_TOKEN not configured - refusing request")
+        raise HTTPException(status_code=500, detail="Backend token is not configured")
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
 @app.post("/generate")
-def generate(request: ImageRequest):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")

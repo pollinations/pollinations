@@ -201,8 +201,8 @@ def verify_backend_token(
     """
     expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
-        return True
+        logger.error("PLN_GPU_TOKEN not configured - refusing request")
+        raise HTTPException(status_code=500, detail="Backend token is not configured")
     
     if x_backend_token != expected_token:
         logger.warning("Invalid or missing backend token")

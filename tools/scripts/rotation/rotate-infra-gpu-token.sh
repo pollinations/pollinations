@@ -334,7 +334,7 @@ HC_TMP=$(mktemp)
 trap 'rm -f "$HC_TMP"' EXIT
 HC_META=$(curl -sS --max-time 120 -o "$HC_TMP" \
     -w "%{http_code}|%{content_type}|%{size_download}" \
-    "$GEN_BASE/image/healthcheck%20cat?model=$HEALTH_IMAGE_MODEL&width=512&height=512&nologo=true&seed=$(date +%s)" \
+    "$GEN_BASE/image/healthcheck%20cat?model=$HEALTH_IMAGE_MODEL&width=512&height=512&seed=$(date +%s)" \
     -H "Authorization: Bearer $TEST_TOKEN")
 HC_CODE="${HC_META%%|*}"
 HC_REST="${HC_META#*|}"

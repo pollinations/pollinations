@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1771026663274"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2054",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 13 Feb 2026 23:51:37 GMT",
+      "etag": "W/\"806-+7wFLgUVpzPvAb+T30tfCLiUuBY\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "3200",
+      "x-usage-completion-text-tokens": "257",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you mean that as a test ID you want looked up, or do you want some numeric/sequence analysis of the number 1771026663274? I can do either — quick breakdown below in case you meant the latter.\n\nQuick numeric facts about 1771026663274\n- Digits: 13\n- Even (ends with 4)\n- Sum of digits: 52\n- Not divisible by 3 or 9 (sum 52)\n- Divisible by 11 (alternating sum = 0), and by 2 — so divisible by 22\n- Further factorization so far: 1771026663274 = 2 × 11 × 11 × 7,318,291,997 = 242 × 7,318,291,997\n- Not a palindrome\n- Longest repeated run: three 6s in a row (…666…)\n- No strictly increasing or decreasing consecutive-digit run of length >2\n\nIf you meant something else by “Sequential test 1771026663274” (a lookup, a log ID, run a specific statistical or cryptographic test, etc.), tell me what you want and I’ll run it.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771026663,
+        "id": "pllns_4f151ac1b6f2e936c7c2140cad33cbd8",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 3457,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 3200,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 3712
+        }
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@ Expected: `{"status":"healthy","model":"ltx-2-comfyui"}`
 ```bash
 curl -s -o /dev/null -w "HTTP %{http_code}, Size: %{size_download}, Time: %{time_total}s" \
   --max-time 120 \
-  "https://gen.pollinations.ai/video/health_check_$(date +%s)?model=ltx-2&duration=3&nologo=true" \
+  "https://gen.pollinations.ai/video/health_check_$(date +%s)?model=ltx-2&duration=3" \
   -H "Authorization: Bearer $TEST_TOKEN"
 ```
 Expected: HTTP 200, ~500-800KB, ~11-13s

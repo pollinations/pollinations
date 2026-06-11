@@ -1,4 +1,7 @@
 // Pollinations API utilities — updated to match gen.pollinations.ai spec
+// Context transparency logging authored by stormdede515-eng
+import { contextLogger } from "./contextLogger.js";
+
 const BASE_URL = "https://gen.pollinations.ai";
 const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || "";
 export const BYOP_STORAGE_KEY = "pollinations_byop_api_key";
@@ -211,7 +214,17 @@ const extractBase64FromDataUrl = (dataUrl) => {
     return { base64: dataUrl, mimeType: null };
 };
 
-export const formatMessagesForAPI = (messages, _modelId) => {
+/**
+ * Formats the message history for the API request.
+ *
+ * @param {object[]} messages
+ * @param {string}   _modelId  - Unused; kept for call-site compatibility.
+ * @param {string}   [turnId]  - Assistant message ID for the current turn.
+ *                               When provided, silently dropped attachments are
+ *                               recorded via contextLogger so the UI can surface
+ *                               them to the user. Authored by stormdede515-eng.
+ */
+export const formatMessagesForAPI = (messages, _modelId, turnId = null) => {
     return messages.map((msg) => {
         const parts = [];
         const textContent = typeof msg.content === "string" ? msg.content : "";
@@ -250,10 +263,20 @@ export const formatMessagesForAPI = (messages, _modelId) => {
                 base64Data = e.base64;
                 if (e.mimeType) mimeType = e.mimeType;
             }
-            if (!base64Data) continue;
+            if (!base64Data) {
+                // Attachment has no recoverable data — log and skip.
+                if (turnId) {
+                    contextLogger.dropped(turnId, "attachment", "no-data", {
+                        name: attachment.name || "(unnamed)",
+                        mimeType,
+                    });
+                }
+                continue;
+            }
 
             const isImage = attachment.isImage ?? mimeType.startsWith("image/");
             if (isImage && attachment.preview?.startsWith("http")) {
+                if (turnId) contextLogger.received(turnId, "image", { source: "url" });
                 parts.push({
                     type: "image_url",
                     image_url: { url: attachment.preview },
@@ -261,6 +284,7 @@ export const formatMessagesForAPI = (messages, _modelId) => {
                 continue;
             }
             if (isImage && base64Data) {
+                if (turnId) contextLogger.received(turnId, "image", { source: "base64", mimeType });
                 parts.push({
                     type: "image_url",
                     image_url: { url: `data:${mimeType};base64,${base64Data}` },
@@ -293,6 +317,7 @@ export const sendMessage = async (
     onError,
     modelId,
     generationConfig = {},
+    turnId = null,
 ) => {
     const selectedModelId = modelId || "openai-large";
     const { maxTokens = 2000, temperature = 0.7, topP = 1 } = generationConfig;
@@ -348,6 +373,7 @@ export const sendMessage = async (
         const formattedMessages = formatMessagesForAPI(
             messages,
             selectedModelId,
+            turnId,
         );
         const requestBody = {
             model: selectedModelId,

@@ -2134,3 +2134,75 @@ body.dark .error-details {
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
+
+/* ── Context transparency log (stormdede515-eng) ───────────────────────────
+   Shows which data was silently dropped before an AI reply.
+   Uses <details>/<summary> so it stays collapsed by default and never
+   forces itself into the user's reading flow. */
+.context-drop-log {
+  margin-top: 0.625rem;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 6px;
+  background: rgba(234, 179, 8, 0.06);
+  font-size: 0.8125rem;
+  overflow: hidden;
+}
+
+.context-drop-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  color: #ca8a04;
+  user-select: none;
+  list-style: none;
+}
+
+.context-drop-summary::-webkit-details-marker { display: none; }
+
+.context-drop-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: #ca8a04;
+}
+
+.context-drop-list {
+  margin: 0;
+  padding: 0 0.75rem 0.5rem 2rem;
+  list-style: disc;
+  color: #92400e;
+  line-height: 1.6;
+}
+
+.context-drop-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+.context-drop-type {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  background: rgba(234, 179, 8, 0.15);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+}
+
+.context-drop-reason {
+  color: inherit;
+}
+
+body.light .context-drop-log {
+  border-color: rgba(202, 138, 4, 0.3);
+  background: rgba(254, 243, 199, 0.5);
+}
+
+body.light .context-drop-summary,
+body.light .context-drop-icon { color: #b45309; }
+
+body.light .context-drop-list { color: #78350f; }

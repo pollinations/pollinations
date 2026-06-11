@@ -17,6 +17,7 @@ import {
     sendMessage,
     stopGeneration,
 } from "./utils/api";
+import { contextLogger } from "./utils/contextLogger";
 import {
     getSelectedModel,
     getTheme,
@@ -344,6 +345,47 @@ function App() {
                   ]
                 : updatedChat.messages;
 
+            // ── Context transparency (stormdede515-eng) ──────────────
+            // Check model vision capability against all messages that
+            // carry image attachments. Any image the model cannot see
+            // is logged as a drop BEFORE the request is sent so it
+            // appears on the reply bubble regardless of outcome.
+            try {
+                const modelDef = models[selectedModel];
+                const modelSupportsImages =
+                    modelDef?.inputModalities?.includes("image") ?? false;
+                if (!modelSupportsImages) {
+                    for (const msg of runtimeMessages) {
+                        const hasImageAttachment =
+                            Array.isArray(msg.attachments) &&
+                            msg.attachments.some((a) => a?.isImage);
+                        const hasLegacyImage = !!msg.image?.src;
+                        if (hasImageAttachment || hasLegacyImage) {
+                            contextLogger.dropped(
+                                assistantId,
+                                "image",
+                                "model-no-vision",
+                                { model: selectedModel },
+                            );
+                        }
+                    }
+                }
+            } catch {
+                // logger errors must never block the send flow
+            }
+
+            // Helper: attach accumulated context log to the reply bubble.
+            const flushContextLog = () => {
+                try {
+                    const drops = contextLogger.getDroppedForTurn(assistantId);
+                    if (drops.length > 0) {
+                        updateMessage(assistantId, { contextDrops: drops });
+                    }
+                } catch {
+                    // must never crash
+                }
+            };
+
             const applyError = (error) => {
                 if (error.message === "User aborted") {
                     updateMessage(assistantId, {
@@ -360,6 +402,7 @@ function App() {
                         errorCode: error.code || null,
                     });
                 }
+                flushContextLog();
                 setIsGenerating(false);
             };
 
@@ -376,6 +419,7 @@ function App() {
                             content: fullContent,
                             isStreaming: false,
                         });
+                        flushContextLog();
                         setIsGenerating(false);
                     },
                     applyError,
@@ -385,6 +429,7 @@ function App() {
                         temperature: sessionSettings.temperature,
                         topP: sessionSettings.topP,
                     },
+                    assistantId,
                 );
             } catch (error) {
                 applyError(error);

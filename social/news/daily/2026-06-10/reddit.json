@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-10",
+  "period_start": "2026-06-10",
+  "period_end": "2026-06-10",
+  "generated_at": "2026-06-11T07:35:26.366474+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/reddit.jpg"
+    }
+  ],
+  "title": "Fix: Content policy rejections now return 422 instead of 500",
+  "text": "Small but necessary API fix shipped today. Previously, if an image or text generation request hit the upstream content policy filters, our API was throwing a generic 500 Internal Server Error.\n\nThat was a bad pattern. A 500 implies the server crashed or the infrastructure fell over, which was triggering blind retries from client apps and muddying up error logs. It made it impossible to programmatically tell the difference between a broken endpoint and a blocked prompt.\n\nPR #11722 fixes this routing. Content policy rejections now correctly return a 422 Unprocessable Entity.\n\nIf you are building an app on top of pollinations.ai, you can now update your error handling. Catching a 422 lets you specifically detect when a prompt gets flagged by the safety filters and pass that feedback to your users, rather than treating it as a general API outage. It should make your retry logic much cleaner.\n\nThe PR is merged and live. You can check the code and infrastructure setup on our [GitHub repo](https://github.com/pollinations/pollinations). As always, the API remains open for anyone building."
+}

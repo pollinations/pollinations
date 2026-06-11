@@ -1,0 +1,35 @@
+{
+  "pr_number": 11737,
+  "title": "chore: update app metrics 2026-06-11",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11737",
+  "merged_at": "2026-06-11T05:46:49Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Greenhouse metrics refreshed",
+    "blurb": "Our automated bots just finished their daily rounds, watering the code-plants and updating the community app metrics.",
+    "summary": "Automated daily update of community app metrics and greenhouse health checks in APPS.md and GREENHOUSE.md.",
+    "impact": "Ensures the community app showcase reflects the latest health and usage statistics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "bot",
+      "chore"
+    ],
+    "visual_concept": "The monitor robot acting as an automated gardener, watering code-plants in a greenhouse while Polly the bee checks them off on a clipboard.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering a row of glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-11/PR-11737.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering a row of glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes."
+  },
+  "generated_at": "2026-06-11T05:47:51.007136+00:00"
+}

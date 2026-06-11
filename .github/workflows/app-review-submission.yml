@@ -242,7 +242,7 @@ jobs:
             const botSlug = '${{ steps.token.outputs.app-slug }}[bot]';
             let rowData = null;
             for (const c of comments.data.reverse()) {
-              if (c.user.login === botSlug || c.user.type === 'Bot') {
+              if (c.user.login === botSlug) {
                 const match = c.body.match(/<!-- APP_REVIEW_DATA -->\s*```json\n([\s\S]+?)\n```/);
                 if (match) {
                   rowData = match[1].trim();

@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🧠 Wikimind](https://chpalitom09-bot.github.io/Wikimind-5/) | Uses Google Translate to write messages to you. | [@chpalitom09-bot](https://github.com/chpalitom09-bot) |
 | [🧩 AuraForge](https://autoforge-iota.vercel.app/) | AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities. | [@dreamm160-ops](https://github.com/dreamm160-ops) |
 | [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |
 | [🤖 OtakuBox Bot](https://badamchuk.github.io/otakubox/) | OtakuBox Bot is a Telegram bot for anime fans that uses the Pollinations.ai API. | [@badamchuk](https://github.com/badamchuk) |
@@ -29,7 +30,6 @@
 | [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |
 | [🤖 Anura Hub AI](https://meow-script.vercel.all) | Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa. | [@anuragaming1](https://github.com/anuragaming1) |
 | [🌙 Lunar AI](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html) | Uses AI chat to hold conversations. Provides a simple, elegant interface that is easy to use. | [@LuquinhasAMC](https://github.com/LuquinhasAMC) |
-| [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

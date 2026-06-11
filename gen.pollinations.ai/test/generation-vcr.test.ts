@@ -266,6 +266,18 @@ async function fakePortkeyResponse(request: Request) {
             },
         },
         {
+            matches: prompt.includes("vcr perplexity invalid cost"),
+            content: "snapshot perplexity response",
+            promptTokens: 10,
+            completionTokens: 5,
+            usageExtras: {
+                search_context_size: "low",
+                cost: {
+                    request_cost: "not-a-number",
+                },
+            },
+        },
+        {
             matches: prompt.includes("vcr moderated text"),
             content: "snapshot moderated response",
             promptTokens: 6,
@@ -508,6 +520,36 @@ test("streaming chat completions bill provider-reported Perplexity request cost"
     });
     // 0.007 provider-reported request fee + 0.00001 token cost.
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
+});
+
+test("malformed provider-reported cost fails the request with a 5xx", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity-fast",
+            messages: [
+                { role: "user", content: "vcr perplexity invalid cost" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await wait();
+
+    // The anomaly is never billed.
+    const billed = mocks.tinybird.state.events.filter(
+        (event) => event.isBilledUsage,
+    );
+    expect(billed).toHaveLength(0);
 });
 
 test("non-stream chat completions keep moderation telemetry in generation events", async ({

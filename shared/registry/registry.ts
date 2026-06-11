@@ -256,9 +256,27 @@ type PerplexityCostOutput = {
     streamEvents?: unknown[];
 };
 
-function asProviderUnitCost(value: unknown): number | undefined {
+// Provider-reported billing data that is present but malformed is a billing
+// fault — fail loudly instead of silently normalizing it.
+export class ProviderBillingError extends Error {}
+
+// Read `usage.cost.request_cost` from a response or stream event. Returns
+// undefined when no cost data is present; throws ProviderBillingError when
+// cost data is present but request_cost is not a finite non-negative number.
+export function readProviderRequestCost(event: unknown): number | undefined {
+    const cost = (event as PerplexityCostOutput | undefined)?.usage?.cost;
+    if (cost == null) return undefined;
+    if (typeof cost !== "object") {
+        throw new ProviderBillingError(
+            `Provider-reported usage.cost is not an object: ${JSON.stringify(cost)}`,
+        );
+    }
+    if (!("request_cost" in cost)) return undefined;
+    const value = cost.request_cost;
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-        return undefined;
+        throw new ProviderBillingError(
+            `Provider-reported request_cost is invalid: ${JSON.stringify(value) ?? String(value)}`,
+        );
     }
     return value;
 }
@@ -268,32 +286,19 @@ function getPerplexityReportedRequestCost(output: unknown): number | undefined {
     const events = o?.streamEvents ?? (o ? [o] : []);
 
     for (const event of [...events].reverse()) {
-        const requestCost = (event as PerplexityCostOutput | undefined)?.usage
-            ?.cost?.request_cost;
-        const unitCost = asProviderUnitCost(requestCost);
+        const unitCost = readProviderRequestCost(event);
         if (unitCost !== undefined) return unitCost;
     }
 
     return undefined;
 }
 
-// Trust a provider-reported unit cost only up to this multiple of the static
-// registry fee — a malformed or hostile value beyond it bills the static fee.
-const PROVIDER_UNIT_COST_MAX_RATIO = 10;
-
 function getBillingAdjustmentUnitCost(
     rule: BillingAdjustmentRule,
     output: unknown,
 ): number {
     if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
-        const reported = getPerplexityReportedRequestCost(output);
-        if (
-            reported !== undefined &&
-            reported <= rule.unitCost * PROVIDER_UNIT_COST_MAX_RATIO
-        ) {
-            return reported;
-        }
-        return rule.unitCost;
+        return getPerplexityReportedRequestCost(output) ?? rule.unitCost;
     }
     return rule.unitCost;
 }

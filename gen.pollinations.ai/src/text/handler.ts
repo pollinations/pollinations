@@ -2,6 +2,7 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
     type ModelName,
+    readProviderRequestCost,
 } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
@@ -308,6 +309,18 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
+        try {
+            // Billing reads provider-reported cost from this completion later
+            // (post-response, in track) — malformed cost data must fail the
+            // request now, while a 5xx can still reach the client.
+            readProviderRequestCost(completion);
+        } catch (billingError) {
+            const error = new Error(
+                (billingError as Error).message,
+            ) as ServiceError;
+            error.status = 502;
+            throw error;
+        }
         const trackingResponse = sendOpenAIResponse(completion);
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {

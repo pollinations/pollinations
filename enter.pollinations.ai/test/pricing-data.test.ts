@@ -13,6 +13,7 @@ import {
     calculatePrice,
     getModelDefinition,
     getPriceDefinition,
+    ProviderBillingError,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
@@ -287,30 +288,38 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
     ).toBeCloseTo(2.012, 8);
 });
 
-test("Perplexity provider-reported request cost is sanity bounded", () => {
+test("Perplexity provider-reported request cost fails loudly when malformed", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
 
-    // Malformed or out-of-bound values fall back to the static $0.005 fee,
-    // never to 0: huge (>10x static), negative, and NaN are all rejected.
-    const rejected = [9.99, -0.5, Number.NaN];
-    for (const requestCost of rejected) {
+    // Cost data present but malformed is a billing fault — it throws instead
+    // of silently billing a fallback.
+    const malformed = [-0.5, Number.NaN, "0.005", null];
+    for (const requestCost of malformed) {
         const output = { usage: { cost: { request_cost: requestCost } } };
-        expect(
-            calculateCost("perplexity-fast", usage, output).totalCost,
-        ).toBeCloseTo(2.005, 8);
-        expect(
-            calculatePrice("perplexity-fast", usage, output).totalPrice,
-        ).toBeCloseTo(2.005, 8);
+        expect(() => calculateCost("perplexity-fast", usage, output)).toThrow(
+            ProviderBillingError,
+        );
+        expect(() => calculatePrice("perplexity-fast", usage, output)).toThrow(
+            ProviderBillingError,
+        );
     }
 
-    // The bound is inclusive: exactly 10x the static fee is still trusted.
-    const atBound = { usage: { cost: { request_cost: 0.05 } } };
-    expect(
-        calculateCost("perplexity-fast", usage, atBound).totalCost,
-    ).toBeCloseTo(2.05, 8);
+    // Any finite non-negative reported value is trusted verbatim — Perplexity
+    // is authoritative for its own request fee.
+    const high = { usage: { cost: { request_cost: 9.99 } } };
+    expect(calculateCost("perplexity-fast", usage, high).totalCost).toBeCloseTo(
+        11.99,
+        8,
+    );
+
+    // Absent cost data falls back to the static registry fee.
+    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
+        2.005,
+        8,
+    );
 });
 
 test("Gemini grounding is detected on streamed chunk output", () => {

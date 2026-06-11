@@ -1,5 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -148,6 +149,76 @@ const CreateKeySchema = z.object({
             "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
 });
+
+type CreateKeyInput = z.infer<typeof CreateKeySchema>;
+
+function requireChildKeyWithinCallerBounds(
+    callerKey: {
+        permissions?: Record<string, string[]>;
+        pollenBalance?: number | null;
+    },
+    callerExpiresAt: Date | null | undefined,
+    input: CreateKeyInput,
+): void {
+    if (callerKey.pollenBalance != null) {
+        if (
+            input.pollenBudget == null ||
+            input.pollenBudget > callerKey.pollenBalance
+        ) {
+            throw new HTTPException(403, {
+                message: "Child key budget cannot exceed parent key budget",
+            });
+        }
+    }
+
+    const parentModels = callerKey.permissions?.models;
+    if (parentModels?.length) {
+        const childModels = input.allowedModels;
+        if (
+            !childModels?.length ||
+            childModels.some((model) => !parentModels.includes(model))
+        ) {
+            throw new HTTPException(403, {
+                message:
+                    "Child key models must be a subset of parent key models",
+            });
+        }
+    }
+
+    const requestedAccountPermissions =
+        sanitizeAuthorizeAccountPermissions(input.accountPermissions)?.filter(
+            (permission) => permission !== "keys",
+        ) ?? [];
+    if (requestedAccountPermissions.length) {
+        const parentAccountPermissions = callerKey.permissions?.account ?? [];
+        if (
+            requestedAccountPermissions.some(
+                (permission) => !parentAccountPermissions.includes(permission),
+            )
+        ) {
+            throw new HTTPException(403, {
+                message:
+                    "Child key account permissions must be a subset of parent key permissions",
+            });
+        }
+    }
+
+    if (callerExpiresAt && input.expiresIn == null) {
+        throw new HTTPException(403, {
+            message: "Child key expiry cannot exceed parent key expiry",
+        });
+    }
+    if (callerExpiresAt && input.expiresIn != null) {
+        const requestedExpiresAt = new Date(
+            Date.now() + input.expiresIn * 1000,
+        );
+        if (requestedExpiresAt > callerExpiresAt) {
+            throw new HTTPException(403, {
+                message: "Child key expiry cannot exceed parent key expiry",
+            });
+        }
+    }
+}
 
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
@@ -1370,8 +1441,10 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            const callerKey = c.var.auth.apiKey;
+            requireKeysPermission(callerKey);
 
+            const input = c.req.valid("json");
             const {
                 name,
                 type,
@@ -1381,7 +1454,33 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
-            } = c.req.valid("json");
+            } = input;
+
+            if (callerKey) {
+                const db = drizzle(c.env.DB);
+                const parent = await db
+                    .select({ expiresAt: apikeyTable.expiresAt })
+                    .from(apikeyTable)
+                    .where(
+                        and(
+                            eq(apikeyTable.id, callerKey.id),
+                            eq(apikeyTable.userId, user.id),
+                        ),
+                    )
+                    .get();
+
+                if (!parent) {
+                    throw new HTTPException(401, {
+                        message: "Invalid API key",
+                    });
+                }
+
+                requireChildKeyWithinCallerBounds(
+                    callerKey,
+                    parent.expiresAt,
+                    input,
+                );
+            }
 
             const metadata =
                 type === "publishable"

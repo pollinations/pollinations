@@ -226,6 +226,171 @@ describe("Account Key Management API", () => {
             expect(data.name).toBe("child-from-api");
         });
 
+        test("should reject child keys broader than API key parent bounds", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createParent = await auth.apiKey.create({
+                name: "bounded-parent-key",
+                prefix: "sk",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            if (!createParent.data)
+                throw new Error("Failed to create parent key");
+
+            const updateResp = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createParent.data.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        allowedModels: ["flux"],
+                        pollenBudget: 1,
+                        accountPermissions: ["keys"],
+                    }),
+                },
+            );
+            expect(updateResp.status).toBe(200);
+
+            for (const body of [
+                {
+                    name: "unbounded-child",
+                    allowedModels: ["flux"],
+                    pollenBudget: null,
+                },
+                {
+                    name: "larger-budget-child",
+                    allowedModels: ["flux"],
+                    pollenBudget: 2,
+                },
+                {
+                    name: "broader-model-child",
+                    allowedModels: ["openai"],
+                    pollenBudget: 1,
+                },
+                {
+                    name: "account-scope-child",
+                    allowedModels: ["flux"],
+                    pollenBudget: 1,
+                    accountPermissions: ["usage"],
+                },
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/account/keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${createParent.data.key}`,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                );
+
+                expect(response.status).toBe(403);
+            }
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${createParent.data.key}`,
+                    },
+                    body: JSON.stringify({
+                        name: "bounded-child",
+                        allowedModels: ["flux"],
+                        pollenBudget: 1,
+                        accountPermissions: ["keys"],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.permissions.models).toEqual(["flux"]);
+            expect(data.permissions.account).toBeUndefined();
+            expect(data.pollenBudget).toBe(1);
+        });
+
+        test("should reject child keys that outlive API key parent expiry", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createParent = await auth.apiKey.create({
+                name: "expiring-parent-key",
+                prefix: "sk",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            if (!createParent.data)
+                throw new Error("Failed to create parent key");
+
+            const parentExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+            const updateResp = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createParent.data.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        accountPermissions: ["keys"],
+                        expiresAt: parentExpiresAt.toISOString(),
+                    }),
+                },
+            );
+            expect(updateResp.status).toBe(200);
+
+            for (const body of [
+                { name: "never-expiring-child" },
+                { name: "longer-lived-child", expiresIn: 2 * 60 * 60 },
+            ]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/account/keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${createParent.data.key}`,
+                        },
+                        body: JSON.stringify(body),
+                    },
+                );
+
+                expect(response.status).toBe(403);
+            }
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${createParent.data.key}`,
+                    },
+                    body: JSON.stringify({
+                        name: "shorter-lived-child",
+                        expiresIn: 60,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+        });
+
         test("should reject API key without account:keys permission", async ({
             apiKey,
         }) => {

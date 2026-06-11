@@ -215,6 +215,7 @@ export async function authenticateApiKeyRequest(opts: {
     const [apiKeyExtra, userData] = await Promise.all([
         db
             .select({
+                prefix: schema.apikey.prefix,
                 pollenBalance: schema.apikey.pollenBalance,
                 byopClientKeyId: schema.apikey.byopClientKeyId,
                 byopClientName: byopClientKey.name,
@@ -241,13 +242,22 @@ export async function authenticateApiKeyRequest(opts: {
     }
     assertStagingAccess(opts.env, userData);
 
+    let metadata = normalizeMetadata(key.metadata);
+    if (!metadata?.keyType) {
+        if (apiKeyExtra?.prefix === "pk") {
+            metadata = { ...metadata, keyType: "publishable" };
+        } else if (apiKeyExtra?.prefix === "sk") {
+            metadata = { ...metadata, keyType: "secret" };
+        }
+    }
+
     return {
         user: userData ?? undefined,
         apiKey: {
             id: keyId,
             name: typeof key.name === "string" ? key.name : undefined,
             permissions: normalizePermissions(key.permissions),
-            metadata: normalizeMetadata(key.metadata),
+            metadata,
             pollenBalance: apiKeyExtra?.pollenBalance ?? null,
             byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
             byopClientName: apiKeyExtra?.byopClientName ?? null,

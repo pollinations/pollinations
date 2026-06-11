@@ -25,7 +25,7 @@ test("GET /api/account/key - returns 401 with invalid API key", async () => {
 });
 
 test(
-    "GET /api/account/key - returns key status for secret key",
+    "GET /api/account/key - returns key status for native default publishable key",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird");
@@ -39,13 +39,14 @@ test(
 
         const data = await response.json();
         expect(data.valid).toBe(true);
-        expect(data.type).toBe("secret");
+        expect(data.type).toBe("publishable");
         expect(data.name).toBeTruthy();
         expect(data).toHaveProperty("expiresAt");
         expect(data).toHaveProperty("expiresIn");
         expect(data).toHaveProperty("permissions");
         expect(data).toHaveProperty("pollenBudget");
         expect(data).toHaveProperty("rateLimitEnabled");
+        expect(data.rateLimitEnabled).toBe(true);
     },
 );
 
@@ -64,6 +65,36 @@ test(
 
         const data = await response.json();
         expect(data.valid).toBe(true);
+        expect(data.type).toBe("publishable");
+        expect(data.rateLimitEnabled).toBe(true);
+    },
+);
+
+test(
+    "GET /api/account/key - derives publishable type from native pk prefix",
+    { timeout: 30000 },
+    async ({ auth, sessionToken, mocks }) => {
+        await mocks.enable("tinybird");
+
+        const createResponse = await auth.apiKey.create({
+            name: "native-pk-without-key-type",
+            prefix: "pk",
+            fetchOptions: {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        expect(createResponse.data?.key).toBeTruthy();
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${createResponse.data?.key}`,
+            },
+        });
+        expect(response.status).toBe(200);
+
+        const data = await response.json();
         expect(data.type).toBe("publishable");
         expect(data.rateLimitEnabled).toBe(true);
     },

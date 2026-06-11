@@ -255,9 +255,11 @@ export async function createApiKeyForUser({
 
     const sanitizedAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
-    const safeAccountPerms = allowAccountKeysPermission
-        ? sanitizedAccountPerms
-        : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
+    const safeAccountPerms = isPublishable
+        ? null
+        : allowAccountKeysPermission
+          ? sanitizedAccountPerms
+          : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) permissions.models = allowedModels;

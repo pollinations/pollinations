@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-10",
+  "period_start": "2026-06-10",
+  "period_end": "2026-06-10",
+  "generated_at": "2026-06-11T07:35:26.366474+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/twitter.jpg"
+    }
+  ],
+  "text": "returning a 500 when someone hits the content filter is basically gaslighting our own uptime monitors. shipped a fix today: content policy rejections now return 422 (unprocessable). the servers are fine."
+}

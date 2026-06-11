@@ -28,7 +28,10 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
-        if (!authHeader?.includes("mock_github_auth_token")) {
+        if (
+            !authHeader?.includes("mock_github_auth_token") &&
+            !authHeader?.startsWith("Basic ")
+        ) {
             return c.json({ message: "Bad credentials" }, 401);
         }
         return await next();
@@ -47,6 +50,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             ]);
         })
         .get("/user", (c) => {
+            return c.json(state.user);
+        })
+        .get("/user/:id", (c) => {
             return c.json(state.user);
         });
 

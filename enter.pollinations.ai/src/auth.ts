@@ -24,10 +24,34 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { sendTierEventToTinybird } from "./events.ts";
+import { getEnabledSocialProviderIds } from "./social-providers.ts";
+
+const LOCAL_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+];
+
+function getTrustedOrigins(env: Cloudflare.Env) {
+    const trustedOrigins = new Set<string>(AUTH_TRUSTED_ORIGINS);
+    trustedOrigins.add(env.BETTER_AUTH_URL);
+
+    if (
+        env.ENVIRONMENT === "local" ||
+        env.ENVIRONMENT === "development" ||
+        env.ENVIRONMENT === "test"
+    ) {
+        for (const origin of LOCAL_TRUSTED_ORIGINS) {
+            trustedOrigins.add(origin);
+        }
+    }
+
+    return Array.from(trustedOrigins);
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
+    const enabledSocialProviders = getEnabledSocialProviderIds(env);
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -69,23 +93,42 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 : undefined,
         },
 
-        trustedOrigins: [
-            ...AUTH_TRUSTED_ORIGINS,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        trustedOrigins: getTrustedOrigins(env),
         user: {
             additionalFields: authAdditionalFields.user,
         },
-        socialProviders: {
-            github: {
-                clientId: env.GITHUB_CLIENT_ID,
-                clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
+        account: {
+            // Link a social sign-in to an existing account when the provider
+            // returns a verified email that matches an existing user — so a
+            // returning GitHub user can sign in with Google and land in the
+            // same account (preserving pollen balance + tier).
+            encryptOAuthTokens: true,
+            accountLinking: {
+                enabled: true,
             },
+        },
+        socialProviders: {
+            ...(enabledSocialProviders.includes("github")
+                ? {
+                      github: {
+                          clientId: env.GITHUB_CLIENT_ID,
+                          clientSecret: env.GITHUB_CLIENT_SECRET,
+                          mapProfileToUser: (profile) => ({
+                              githubId: profile.id,
+                              githubUsername: profile.login,
+                          }),
+                      },
+                  }
+                : {}),
+            ...(enabledSocialProviders.includes("google")
+                ? {
+                      google: {
+                          clientId: env.GOOGLE_CLIENT_ID,
+                          clientSecret: env.GOOGLE_CLIENT_SECRET,
+                          prompt: "select_account" as const,
+                      },
+                  }
+                : {}),
         },
         plugins: [
             adminPlugin,
@@ -271,8 +314,8 @@ function onAfterUserCreate(
 }
 
 /**
- * Restricts new signups on staging to an allowlist of GitHub user IDs
- * (immutable, unlike usernames). No-op outside staging.
+ * Restricts new signups on staging to an allowlist of verified emails.
+ * No-op outside staging.
  *
  * This is a thin UX layer only — it rejects disallowed users during OAuth
  * before a `user` row is created, so /error shows "staging is invite-only"
@@ -295,9 +338,8 @@ function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                             before: async (user: GenericUser) => {
                                 try {
                                     assertStagingAccess(env, {
-                                        githubId: (
-                                            user as { githubId?: number }
-                                        ).githubId,
+                                        email: user.email,
+                                        emailVerified: user.emailVerified,
                                     });
                                 } catch (e) {
                                     if (e instanceof StagingAccessDeniedError) {

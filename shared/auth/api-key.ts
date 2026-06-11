@@ -31,7 +31,7 @@ export interface ApiKeyAuthResult {
 export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
-    STAGING_ALLOWED_GITHUB_IDS?: string;
+    STAGING_ALLOWED_EMAILS?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -48,39 +48,47 @@ export class StagingAccessDeniedError extends Error {
     }
 }
 
-/**
- * Parse a comma-separated list of numeric GitHub user IDs.
- * Strict: only entries matching /^\d+$/ are kept (so "123abc" is dropped,
- * not silently truncated to 123).
- */
-export function parseGithubIdList(raw: string | undefined | null): Set<number> {
-    if (!raw) return new Set();
-    const ids = new Set<number>();
-    for (const part of raw.split(",")) {
-        const trimmed = part.trim();
-        if (!/^\d+$/.test(trimmed)) continue;
-        const n = Number(trimmed);
-        if (n > 0) ids.add(n);
-    }
-    return ids;
+function normalizeEmail(email: string | undefined | null): string | null {
+    const normalized = email?.trim().toLowerCase();
+    return normalized || null;
 }
 
 /**
- * Throws StagingAccessDeniedError if the env is staging and the user's
- * GitHub ID is not in STAGING_ALLOWED_GITHUB_IDS. No-op outside staging.
- * Fails closed: a missing githubId or empty/missing allowlist denies access.
+ * Parse a comma-separated list of staging allowlist emails.
+ * Strict enough for config: malformed or blank entries are ignored, not widened.
+ */
+export function parseStagingEmailList(
+    raw: string | undefined | null,
+): Set<string> {
+    if (!raw) return new Set();
+    const emails = new Set<string>();
+    for (const part of raw.split(",")) {
+        const email = normalizeEmail(part);
+        if (!email || /\s/.test(email) || !email.includes("@")) continue;
+        emails.add(email);
+    }
+    return emails;
+}
+
+/**
+ * Throws StagingAccessDeniedError if the env is staging and the user's verified
+ * email is not in STAGING_ALLOWED_EMAILS. No-op outside staging.
+ * Fails closed: missing/unverified email or empty/missing allowlist denies access.
  *
  * Called at request-time (every API-key or session-cookie request) to defend
  * against pre-existing sessions/keys that predate the lockdown. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string; STAGING_ALLOWED_GITHUB_IDS?: string },
-    user: { githubId?: number | null } | null | undefined,
+    env: { ENVIRONMENT?: string; STAGING_ALLOWED_EMAILS?: string },
+    user:
+        | { email?: string | null; emailVerified?: boolean | null }
+        | null
+        | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
-    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
-    const ghId = user?.githubId;
-    if (!ghId || !allowed.has(Number(ghId))) {
+    const allowed = parseStagingEmailList(env.STAGING_ALLOWED_EMAILS);
+    const email = normalizeEmail(user?.email);
+    if (!email || user?.emailVerified !== true || !allowed.has(email)) {
         throw new StagingAccessDeniedError();
     }
 }

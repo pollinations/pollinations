@@ -1,0 +1,35 @@
+{
+  "pr_number": 11743,
+  "title": "Add Wikimind to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11743",
+  "merged_at": "2026-06-11T21:28:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Wikimind](https://chpalitom09-bot.github.io/Wikimind-5/) to learn\n- Uses Google Translate to write messages to you.\n\nFixes #11704",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Wikimind joins the greenhouse",
+    "blurb": "A new community app called Wikimind just sprouted in our showcase! It uses Google Translate to help write messages and facilitate learning.",
+    "summary": "Added the community-built app Wikimind, a learning tool that integrates Google Translate for messaging, to the apps showcase.",
+    "impact": "Users can now explore Wikimind in the apps directory to see how it leverages translation for interactive learning.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "wikimind",
+      "translation"
+    ],
+    "visual_concept": "Polly the bee in a cozy digital greenhouse or library setting, interacting with a glowing book or retro monitor that displays translation symbols (like a globe or different language characters).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, hovering in a lush digital greenhouse where code-plants sprout from pots. She is looking at a glowing retro computer monitor displaying a pixelated globe and translation symbols. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-11/PR-11743.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, hovering in a lush digital greenhouse where code-plants sprout from pots. She is looking at a glowing retro computer monitor displaying a pixelated globe and translation symbols. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-11T21:29:53.667043+00:00",
+  "app_name": "Wikimind",
+  "app_url": "https://chpalitom09-bot.github.io/Wikimind-5/"
+}

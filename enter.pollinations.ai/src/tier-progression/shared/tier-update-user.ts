@@ -14,7 +14,7 @@
  *   CLOUDFLARE_ACCOUNT_ID - Required for D1 access via wrangler
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
 import type { TierName } from "../../../../shared/tier-config.ts";
 
@@ -41,6 +41,10 @@ interface D1User {
     tier: string | null;
 }
 
+function sqlString(value: string): string {
+    return `'${value.replace(/'/g, "''")}'`;
+}
+
 // GitHub usernames: alphanumeric + hyphens, max 39 chars
 // https://docs.github.com/en/rest/users#get-a-user
 function sanitizeGitHubUsername(username: string): string {
@@ -55,16 +59,27 @@ function sanitizeGitHubUsername(username: string): string {
 }
 
 function queryD1(env: Environment, sql: string): string {
-    const envFlag = env === "production" ? "--env production" : "--env staging";
-    const cmd = `npx wrangler d1 execute DB --remote ${envFlag} --command "${sql}" --json`;
-
     try {
-        const result = execSync(cmd, {
-            cwd: process.cwd(),
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-        });
-        return result;
+        return execFileSync(
+            "npx",
+            [
+                "wrangler",
+                "d1",
+                "execute",
+                "DB",
+                "--remote",
+                "--env",
+                env,
+                "--command",
+                sql,
+                "--json",
+            ],
+            {
+                cwd: process.cwd(),
+                encoding: "utf-8",
+                stdio: ["pipe", "pipe", "pipe"],
+            },
+        );
     } catch (error) {
         console.error(
             "D1 query failed:",
@@ -76,7 +91,7 @@ function queryD1(env: Environment, sql: string): string {
 
 function getD1User(env: Environment, githubUsername: string): D1User | null {
     const safeUsername = sanitizeGitHubUsername(githubUsername);
-    const sql = `SELECT id, github_username, email, tier FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}') LIMIT 1;`;
+    const sql = `SELECT id, github_username, email, tier FROM user WHERE LOWER(github_username) = LOWER(${sqlString(safeUsername)}) LIMIT 1;`;
     const result = queryD1(env, sql);
 
     try {
@@ -102,7 +117,7 @@ function updateD1Tier(
     userId: string,
     tier: TierName,
 ): { success: boolean; error?: string } {
-    const sql = `UPDATE user SET tier = '${tier}' WHERE id = '${userId}';`;
+    const sql = `UPDATE user SET tier = ${sqlString(tier)} WHERE id = ${sqlString(userId)};`;
 
     try {
         queryD1(env, sql);

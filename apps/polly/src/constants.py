@@ -1104,9 +1104,10 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool, is_collaborator
 # API TOOL FILTERING - Stricter than Discord non-admin
 # =============================================================================
 
-# Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
+# Actions blocked for API users (GitHub writes are Discord-only)
 API_RESTRICTED_ACTIONS = {
-    "github_issue": ADMIN_ACTIONS["github_issue"],
+    "github_issue": ADMIN_ACTIONS["github_issue"]
+    | {"create", "comment", "edit_comment", "delete_comment"},
     "github_pr": ADMIN_ACTIONS["github_pr"] | {"comment", "review"},
     "github_project": ADMIN_ACTIONS["github_project"],
 }
@@ -1348,13 +1349,13 @@ API_PROMPT_ADDON = """
 Running as an OpenAI-compatible HTTP API (`/v1/chat/completions`).
 
 **Response format:** Clean markdown. Links as `[text](url)`. Tables allowed.
-**Permissions:** Read + create + comment on issues. No admin actions (close, merge, label, assign).
+**Permissions:** Read-only GitHub access. No issue/PR/project writes.
 **Tone:** Professional, concise. Match user's technical level.
 **Errors:** Return clear error descriptions with suggested next steps."""
 
-# Tools section for API mode — read-only + create/comment (no subscriptions, no admin ops)
+# Tools section for API mode — read-only GitHub access
 API_TOOLS_SECTION = """- `github_overview` - Repo summary
-- `github_issue` - Issues: get, search, create, comment (no close/edit/label/assign)
+- `github_issue` - Issues: get, search, history, labels, milestones (read-only)
 - `github_pr` - PRs: get, list, diff, files (read-only)
 - `github_project` - Projects V2: list, view (read-only)
 - `web_search` - Web search

@@ -9,6 +9,7 @@ export const DASHBOARD_NAV_ITEMS = [
     { id: "news-faq", label: "News & FAQ", theme: "violet" },
     { id: "models", label: "Models", theme: "teal" },
     { id: "keys", label: "Keys", theme: "blue" },
+    { id: "quests", label: "Quests", theme: "coral" },
     { id: "pollen", label: "Pollen", theme: "amber" },
     { id: "activity", label: "Activity", theme: "pink" },
 ] as const satisfies readonly {

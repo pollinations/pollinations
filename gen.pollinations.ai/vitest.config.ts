@@ -41,6 +41,7 @@ const genAliases = [
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/remoteMedia.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];

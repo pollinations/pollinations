@@ -162,11 +162,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    // Opus 4.6 is the pilot for the new Myceli prod Bedrock account (514585225061):
+    // lowest-traffic activated Anthropic model, fits its quota in normal operation.
+    // Sonnet/Haiku stay on the default account until their RPM quota is raised;
+    // Opus 4.7/4.8 are not yet activated on the new account.
     "claude-opus-4-6": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
-            defaultOptions: { max_tokens: 128000 },
-        }),
+        createBedrockNativeConfig(
+            {
+                model: "global.anthropic.claude-opus-4-6-v1",
+                defaultOptions: { max_tokens: 128000 },
+            },
+            "myceli",
+        ),
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-7",

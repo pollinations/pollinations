@@ -1,0 +1,15 @@
+{
+  "date": "2026-06-10",
+  "period_start": "2026-06-10",
+  "period_end": "2026-06-10",
+  "title": "Proper error codes for content policy rejections",
+  "summary": "A quiet day fixing HTTP status codes so content policy rejections return a 422 instead of a panic-inducing 500.\n\nWe stopped throwing generic 500 errors when upstream content moderation kicks in. You'll now get a proper 422 with a `content_policy_violation` code, meaning you can actually handle these programmatically instead of regexing error strings. As a bonus, our status monitors will stop panicking about degraded models when users just ask for spicy things.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11722,
+      "date": "2026-06-10"
+    }
+  ],
+  "generated_at": "2026-06-11T07:35:26.366474+00:00"
+}

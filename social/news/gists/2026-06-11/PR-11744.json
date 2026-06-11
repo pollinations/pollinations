@@ -1,0 +1,36 @@
+{
+  "pr_number": 11744,
+  "title": "add claude fable 5 on bedrock",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11744",
+  "merged_at": "2026-06-11T21:51:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Claude Fable 5 as a text model, served via the existing Bedrock global inference profile `global.anthropic.claude-fable-5`.\n\n- Slug `claude-fable-5`; `$10`/`$50` per M input/output (2× Opus 4.8), standard Anthropic cache ratios ($1 read / $12.5 write), 1M context, text+image input, tools. `priceMultiplier: 1` (at-cost, matching the Claude family).\n- Reuses existing Bedrock wiring/creds — no new provider integration.\n- Regenerated `effective-prices` snapshot. It also absorbs pre-existing `p-video` → `p-video-720p`/`p-video-1080p` drift that was already failing on `main`.\n\nOperational note — Fable 5 is a Mythos-class model and on Bedrock only runs under `provider_data_share` data-retention (30-day retention, shared with Anthropic for trust & safety; no ZDR, applies on every surface incl. the direct Anthropic API). The Bedrock account is already configured for this; other models keep AWS-only retention.\n\nVerified e2e through local gen against real Bedrock (us-east-1): basic, streaming, `max_tokens` edge, reasoning, tools, vision; error paths return 4xx; Tinybird billing rows correct ($10/$50 math, markup 0); no missing-conversion-rate warnings.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Storytime with Claude Fable 5",
+    "blurb": "Anthropic's Claude Fable 5 has landed in the hive. Bring your biggest prompts—this one packs a massive 1M token context window, vision, and tool support.",
+    "summary": "Added Claude Fable 5 (`claude-fable-5`) via AWS Bedrock, featuring a 1M token context window, vision, and tool support at $10/$50 per million input/output tokens.",
+    "impact": "Developers can now access Anthropic's Mythos-class model directly through the text generation endpoint with standard caching and at-cost pricing.",
+    "keywords": [
+      "claude",
+      "fable-5",
+      "anthropic",
+      "bedrock",
+      "models",
+      "api"
+    ],
+    "visual_concept": "Polly the bee reading a glowing storybook (fable) resting on a chunky stone pedestal (bedrock), with the Monitor Robot listening eagerly.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, reading from a glowing magical storybook resting on a chunky stone pedestal. The cute monitor robot sits nearby, its screen showing a happy face as it listens to the fable. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-11/PR-11744.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, reading from a glowing magical storybook resting on a chunky stone pedestal. The cute monitor robot sits nearby, its screen showing a happy face as it listens to the fable. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-11T21:52:25.303109+00:00"
+}

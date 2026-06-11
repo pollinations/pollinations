@@ -245,7 +245,19 @@ export const formatMessagesForAPI = (messages, _modelId, turnId = null) => {
                   ]
                 : [];
 
-        for (const attachment of [...attachments, ...legacyImage]) {
+        const allAttachments = [...attachments, ...legacyImage];
+
+        // Count image attachments entering this message so we can audit
+        // how many actually make it into the formatted output.
+        const imageAttachmentsIn = allAttachments.filter((a) => {
+            if (!a) return false;
+            return (
+                a.isImage ??
+                (a.mimeType?.startsWith("image/") || false)
+            );
+        }).length;
+
+        for (const attachment of allAttachments) {
             if (!attachment) continue;
             let base64Data = attachment.data || attachment.base64 || "";
             let mimeType =
@@ -289,6 +301,27 @@ export const formatMessagesForAPI = (messages, _modelId, turnId = null) => {
                     type: "image_url",
                     image_url: { url: `data:${mimeType};base64,${base64Data}` },
                 });
+            }
+        }
+
+        // Post-format audit: if fewer image_url parts came out than image
+        // attachments went in, something was dropped by an unhandled path.
+        if (turnId && imageAttachmentsIn > 0) {
+            const imageUrlsOut = parts.filter(
+                (p) => p.type === "image_url",
+            ).length;
+            const unaccounted = imageAttachmentsIn - imageUrlsOut;
+            if (unaccounted > 0) {
+                contextLogger.dropped(
+                    turnId,
+                    "image",
+                    "unexpected-drop",
+                    {
+                        expected: imageAttachmentsIn,
+                        sent: imageUrlsOut,
+                        missed: unaccounted,
+                    },
+                );
             }
         }
 

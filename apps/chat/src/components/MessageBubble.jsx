@@ -237,8 +237,12 @@ const MessageBubble = ({
                                         {drop.reason === "model-no-vision"
                                             ? `Model "${drop.detail?.model}" does not support image input`
                                             : drop.reason === "no-data"
-                                              ? `Attachment "${drop.detail?.name}" had no recoverable data`
-                                              : drop.reason}
+                                              ? `Attachment "${drop.detail?.name}" had no recoverable data — it may have been lost from storage`
+                                              : drop.reason === "no-explicit-prompt"
+                                                ? `Image "${drop.detail?.name}" was sent with no text prompt — the AI may not have analyzed it`
+                                                : drop.reason === "unexpected-drop"
+                                                  ? `${drop.detail?.missed} of ${drop.detail?.expected} image(s) were lost in an unknown pipeline step`
+                                                  : drop.reason}
                                     </span>
                                 </li>
                             ))}

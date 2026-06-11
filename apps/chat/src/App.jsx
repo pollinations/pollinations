@@ -346,6 +346,26 @@ function App() {
                 : updatedChat.messages;
 
             // ── Context transparency (stormdede515-eng) ──────────────
+            // Log when the current message carries an image but no text
+            // prompt. The AI receives the image data but has no instruction
+            // to look at it, so it often replies to surrounding context
+            // instead — a known silent failure pattern.
+            try {
+                if (attachments.length > 0 && attachments[0]?.isImage && !trimmed) {
+                    contextLogger.dropped(
+                        assistantId,
+                        "image",
+                        "no-explicit-prompt",
+                        {
+                            name: attachments[0].name || "(unnamed)",
+                            note: "Image sent without a text prompt — the AI may not analyze it",
+                        },
+                    );
+                }
+            } catch {
+                // must never block the send flow
+            }
+
             // Check model vision capability against all messages that
             // carry image attachments. Any image the model cannot see
             // is logged as a drop BEFORE the request is sent so it

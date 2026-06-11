@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-10",
+  "period_start": "2026-06-10",
+  "period_end": "2026-06-10",
+  "generated_at": "2026-06-11T07:35:26.366474+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/instagram-3.jpg"
+    }
+  ],
+  "text": "When an AI refuses a prompt, it shouldn't look like the server caught on fire. \n\nWe just merged a tiny but satisfying fix (PR #11722): content policy rejections now correctly return a 422 error instead of a 500.\n\n500 means \"we broke.\" \n422 means \"we understood you, but we can't draw that.\"\n\nIt's a small quality-of-life update for everyone building apps with the API. Less panic in your error logs, more accurate debugging. \n\nEverything is open on our GitHub. Happy coding. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #api #debugging #softwareengineering #cozygaming",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

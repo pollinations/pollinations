@@ -1,4 +1,5 @@
 import type { Logger } from "@logtape/logtape";
+import type { TinybirdEvent } from "./schemas/generation-event.ts";
 import { exponentialBackoffDelay, removeUnset } from "./util.ts";
 
 const MAX_RETRIES = 3;
@@ -29,6 +30,66 @@ export type TinybirdErrorEvent = {
     user_tier?: string;
     api_key_id?: string;
 };
+
+export async function sendToTinybird(
+    event: TinybirdEvent,
+    tinybirdIngestUrl: string,
+    tinybirdIngestToken: string,
+    log: Logger,
+): Promise<void> {
+    const body = JSON.stringify(removeUnset(event));
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(tinybirdIngestUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${tinybirdIngestToken}`,
+                    "Content-Type": "application/x-ndjson",
+                },
+                body,
+            });
+
+            if (response.ok) {
+                return;
+            }
+
+            const errorText = await response.text();
+            const isRetryable =
+                response.status >= 500 || response.status === 429;
+            const isLastAttempt = attempt === MAX_RETRIES;
+
+            if (!isRetryable || isLastAttempt) {
+                log.error(
+                    "Tinybird API error: status={status} error={error} attempt={attempt}",
+                    { status: response.status, error: errorText, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird retry",
+                response.status,
+            );
+        } catch (error) {
+            if (attempt === MAX_RETRIES) {
+                log.error(
+                    "Failed to send event to Tinybird: {error} attempt={attempt}",
+                    { error, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird network error, retrying",
+            );
+        }
+    }
+}
 
 export async function sendErrorEventToTinybird(
     event: TinybirdErrorEvent,
@@ -66,24 +127,6 @@ export function getTinybirdDatasourceIngestUrl(
     const url = new URL(referenceIngestUrl);
     url.searchParams.set("name", datasourceName);
     return url.toString();
-}
-
-async function retryWithBackoff(
-    attempt: number,
-    log: Logger,
-    message: string,
-    status?: number,
-): Promise<void> {
-    const delay = exponentialBackoffDelay(attempt, {
-        minDelay: MIN_DELAY,
-        maxDelay: MAX_DELAY,
-        maxAttempts: MAX_RETRIES,
-    });
-
-    const logData = status ? { status, attempt, delay } : { attempt, delay };
-
-    log.warn(`${message}: attempt={attempt} delay={delay}ms`, logData);
-    await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 // Tier event types for Tinybird tier_event datasource
@@ -181,6 +224,24 @@ export async function sendTierEventToTinybird(
             }
         }
     }
+}
+
+async function retryWithBackoff(
+    attempt: number,
+    log: Logger,
+    message: string,
+    status?: number,
+): Promise<void> {
+    const delay = exponentialBackoffDelay(attempt, {
+        minDelay: MIN_DELAY,
+        maxDelay: MAX_DELAY,
+        maxAttempts: MAX_RETRIES,
+    });
+
+    const logData = status ? { status, attempt, delay } : { attempt, delay };
+
+    log.warn(`${message}: attempt={attempt} delay={delay}ms`, logData);
+    await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 async function delayForRetry(attempt: number): Promise<void> {

@@ -1,28 +1,34 @@
 import { getLogger, type Logger } from "@logtape/logtape";
-import { ValidationError } from "@shared/http/validation-error.ts";
-import {
-    collectRequestInputs,
-    type RequestInputs,
-    stringifyRequestInputs,
-} from "@shared/observability/request-inputs.ts";
 import { APIError } from "better-auth";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import type { ErrorVariables } from "./env.ts";
 import {
     getTinybirdDatasourceIngestUrl,
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
 } from "./events.ts";
-import type { LoggerVariables } from "./middleware/logger.ts";
+import { ValidationError } from "./http/validation-error.ts";
+import {
+    collectRequestInputs,
+    type RequestInputs,
+    stringifyRequestInputs,
+} from "./observability/request-inputs.ts";
 import { getRoutePath } from "./util.ts";
 
+export type ErrorVariables = {
+    error?: Error;
+};
+
 type ErrorHandlerEnv = {
-    Bindings: CloudflareBindings;
-    Variables: RequestIdVariables & LoggerVariables & ErrorVariables;
+    Bindings: {
+        ENVIRONMENT: string;
+        TINYBIRD_INGEST_URL: string;
+        TINYBIRD_INGEST_TOKEN: string;
+    };
+    Variables: RequestIdVariables & ErrorVariables;
 };
 
 type UpstreamErrorOptions = {
@@ -33,6 +39,12 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
+    /**
+     * Overrides the status-derived error code in the response envelope. Used to
+     * surface a stable, machine-readable code (e.g. `content_policy_violation`)
+     * that callers can detect regardless of the HTTP status.
+     */
+    errorCode?: string;
 };
 
 export class UpstreamError extends HTTPException {
@@ -41,6 +53,7 @@ export class UpstreamError extends HTTPException {
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
+    public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
         super(status, options);
@@ -48,6 +61,7 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
+        this.errorCode = options?.errorCode;
     }
 }
 
@@ -243,12 +257,13 @@ function createErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
     details?: Record<string, unknown>,
+    code?: string,
 ): ErrorResponse {
     return {
         success: false,
         error: {
             message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
+            code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
             ...(!!error.cause && { cause: error.cause }),
@@ -284,15 +299,21 @@ function createUpstreamErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return createErrorResponse(error, status, timestamp, {
-        name: error.name,
-        upstreamStatus: error.upstreamStatus,
-        upstreamHost: error.requestUrl?.hostname,
-        upstreamBody: truncateString(
-            error.responseBody,
-            MAX_UPSTREAM_BODY_LENGTH,
-        ),
-    });
+    return createErrorResponse(
+        error,
+        status,
+        timestamp,
+        {
+            name: error.name,
+            upstreamStatus: error.upstreamStatus,
+            upstreamHost: error.requestUrl?.hostname,
+            upstreamBody: truncateString(
+                error.responseBody,
+                MAX_UPSTREAM_BODY_LENGTH,
+            ),
+        },
+        error.errorCode,
+    );
 }
 
 /**
@@ -325,7 +346,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 426, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -340,6 +361,7 @@ export function getDefaultErrorMessage(status: number): string {
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",
         422: "Your request looks good, but some required fields are missing or invalid.",
+        426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",

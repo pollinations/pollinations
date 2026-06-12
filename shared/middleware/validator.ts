@@ -1,11 +1,11 @@
-import {
-    ValidationError,
-    type ValidationTarget,
-} from "@shared/http/validation-error.ts";
 import type { ValidationTargets } from "hono";
 import { validator as zValidator } from "hono-openapi";
 import { ZodError, type z } from "zod";
 import type { $ZodIssue } from "zod/v4/core";
+import {
+    ValidationError,
+    type ValidationTarget,
+} from "../http/validation-error.ts";
 
 export const validator = <
     T extends z.ZodType,

@@ -1,6 +1,5 @@
+import { ensureUpstreamOk } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-
-import { ensureUpstreamOk } from "@/error.ts";
 import type { OpenAIEmbeddingResponse } from "./openai.ts";
 
 const FIREWORKS_EMBEDDINGS_ENDPOINT =

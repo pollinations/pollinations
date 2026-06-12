@@ -1,0 +1,35 @@
+{
+  "pr_number": 11752,
+  "title": "chore(image): remove legacy vendored backends and stale artifacts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11752",
+  "merged_at": "2026-06-12T21:37:59Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes `image.pollinations.ai/image_gen_dmd2/` vendored DMD2/SDXL-turbo backend (~54K lines, dead since the 'turbo' model left the registry — only remaining 'turbo' is the `z-image-turbo` alias served by the z-image backend), plus its OVH launchers `turbo-startup.sh` / `pollinations-turbo.service` and the turbo lines in `install-services.sh`\n- Removes stale build/ops artifacts: `profile.txt`, `tableLogs.txt`, `infinite_loop.sh`, `langdetect.py`, `edit_catgpt.sh`, `catgpt/catgpt_original.png`, `image_gen_cloudflare/` (only a package.json whose `main` points at a nonexistent file)\n- Removes `webshare_100_proxies.txt` (~100 proxy host:port:user:password credentials). The credentials remain in git history — the webshare account should be rotated/cancelled if still active\n- Removes orphaned `image.pollinations.ai/auth/` (googleCloudAuth.ts + GOOGLE_CLOUD_AUTH.md); zero importers — all live consumers use `gen.pollinations.ai/src/text/auth/googleCloudAuth.ts` (gen typecheck passes)\n- Deployment caveat: image.pollinations.ai GPU services deploy outside CI (legacy OVH/RunPod hosts), so these deletions affect the repo only\n\nNet: -56,173 lines. Repo-wide greps confirm zero remaining references to every deleted tree.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "56K lines lighter",
+    "blurb": "We just did some massive spring cleaning in the image generation backend. Over 56,000 lines of legacy code and stale artifacts have been swept away.",
+    "summary": "Removed the deprecated DMD2/SDXL-turbo backend and various stale build artifacts from the image repository, deleting over 56,000 lines of dead code.",
+    "impact": "This keeps the codebase lean and maintainable for developers without affecting any active image generation endpoints.",
+    "keywords": [
+      "cleanup",
+      "refactor",
+      "legacy-code",
+      "backend",
+      "chore"
+    ],
+    "visual_concept": "Nomnom creature eating a giant pile of old code printouts while Polly the bee sweeps up.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a massive pile of dusty old code printouts and floppy disks. The cute bee mascot wearing a tiny cleaning bandana sweeps up nearby with a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11752.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a massive pile of dusty old code printouts and floppy disks. The cute bee mascot wearing a tiny cleaning bandana sweeps up nearby with a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-12T21:39:04.190016+00:00"
+}

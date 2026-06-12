@@ -42,7 +42,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 AWS_BEDROCK_REGION = "us-east-1"
@@ -103,7 +102,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 POLLEN_REFILL_PER_HOUR = 1
@@ -161,7 +159,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 AWS_BEDROCK_REGION = "us-east-1"
@@ -215,7 +212,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

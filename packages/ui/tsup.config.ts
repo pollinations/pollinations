@@ -4,11 +4,9 @@ export default defineConfig({
     entry: {
         index: "src/index.ts",
         "auth/index": "src/modules/auth/index.ts",
-        "auth/sdk": "src/modules/auth/sdk.ts",
         "app-user-menu/sdk": "src/modules/app-user-menu/sdk.ts",
         "gen/index": "src/modules/gen/index.ts",
         "wallet/index": "src/modules/wallet/index.ts",
-        "wallet/sdk": "src/modules/wallet/sdk.ts",
     },
     format: ["esm", "cjs"],
     dts: true,
@@ -29,12 +27,7 @@ export default defineConfig({
         "!app.css",
     ],
     minify: false,
-    external: [
-        "@pollinations/sdk",
-        "@pollinations/sdk/client",
-        "@pollinations/sdk/react",
-        "react",
-    ],
+    external: ["@pollinations/sdk", "@pollinations/sdk/react", "react"],
     loader: {
         ".svg": "dataurl",
     },

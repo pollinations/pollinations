@@ -20,9 +20,9 @@ import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
+import { closestByRatio, closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -37,7 +37,7 @@ const logError = debug("pollinations:pruna:error");
 const MAX_EDIT_IMAGES = 5;
 
 // Supported dimensions for prunaai/p-image (custom aspect_ratio mode).
-const SUPPORTED_DIMENSIONS: Array<[number, number]> = [
+const SUPPORTED_DIMENSIONS = [
     [1024, 1024],
     [1184, 896],
     [896, 1184],
@@ -45,7 +45,7 @@ const SUPPORTED_DIMENSIONS: Array<[number, number]> = [
     [768, 1376],
     [1248, 832],
     [832, 1248],
-];
+].map(([width, height]) => ({ width, height, ratio: width / height }));
 
 // prunaai/p-video aspect_ratio enum (verified against the live Replicate schema).
 const PVIDEO_ASPECT_RATIOS = [
@@ -81,61 +81,6 @@ interface PVideoInput {
     aspect_ratio?: PVideoAspectRatio;
     fps?: 24 | 48;
     seed?: number;
-}
-
-/**
- * Find the closest supported dimension pair for prunaai/p-image by aspect ratio.
- */
-function findClosestDimensions(
-    width: number,
-    height: number,
-): { width: number; height: number } {
-    const targetRatio = width / height;
-    let bestMatch = SUPPORTED_DIMENSIONS[0];
-    let bestDiff = Infinity;
-
-    for (const [w, h] of SUPPORTED_DIMENSIONS) {
-        const ratio = w / h;
-        const diff = Math.abs(ratio - targetRatio);
-        if (diff < bestDiff) {
-            bestDiff = diff;
-            bestMatch = [w, h];
-        }
-    }
-
-    return { width: bestMatch[0], height: bestMatch[1] };
-}
-
-/**
- * Map requested dimensions to the closest supported p-video aspect ratio by
- * minimum distance in log space (1920×1080 → 16:9, 720×1280 → 9:16, …).
- */
-function deriveVideoAspectRatio(
-    width: number,
-    height: number,
-): PVideoAspectRatio {
-    const target = Math.log(width / height);
-    let best: PVideoAspectRatio = "16:9";
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const ar of PVIDEO_ASPECT_RATIOS) {
-        const [w, h] = ar.split(":").map(Number);
-        const dist = Math.abs(Math.log(w / h) - target);
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = ar;
-        }
-    }
-    return best;
-}
-
-/**
- * Download a user-supplied image and return it as a data URI. Replicate's
- * server-side URL fetcher chokes on query strings and missing extensions, so
- * we fetch here and inline the bytes (matches seedream/seedance handlers).
- */
-async function toDataUri(url: string): Promise<string> {
-    const { buffer, mimeType } = await downloadUserImage(url);
-    return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
 
 /**
@@ -196,19 +141,11 @@ async function downloadOutput(
 export async function callPrunaImageAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Generating with Pruna p-image...",
-    );
-
-    const dims = findClosestDimensions(
+    const dims = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
+        SUPPORTED_DIMENSIONS,
     );
 
     const input: PImageInput = {
@@ -227,11 +164,8 @@ export async function callPrunaImageAPI(
         "Pruna p-image",
     );
 
-    progress.updateBar(requestId, 90, "Processing", "Downloading image...");
     const buffer = await downloadOutput(output, "Pruna p-image");
     logOps("Downloaded image, buffer size:", buffer.length);
-
-    progress.updateBar(requestId, 95, "Success", "Pruna p-image completed");
 
     return {
         buffer,
@@ -254,8 +188,6 @@ export async function callPrunaImageAPI(
 export async function callPrunaImageEditAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     // p-image-edit is an image-to-image model: at least one input image is
     // required. Validate at the boundary so a missing image is a clean 400
@@ -275,21 +207,7 @@ export async function callPrunaImageEditAPI(
         );
     }
 
-    progress.updateBar(
-        requestId,
-        30,
-        "Processing",
-        "Preparing image for editing...",
-    );
-
     const resolvedImages = await Promise.all(images.map(toDataUri));
-
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        `Processed ${resolvedImages.length} image(s)`,
-    );
 
     const input: PImageEditInput = { prompt, images: resolvedImages };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
@@ -299,29 +217,14 @@ export async function callPrunaImageEditAPI(
         images: `[${resolvedImages.length} data uris]`,
     });
 
-    progress.updateBar(
-        requestId,
-        55,
-        "Processing",
-        "Generating with Pruna p-image-edit...",
-    );
-
     const { output } = await runPrunaPrediction<PImageEditInput>(
         "prunaai/p-image-edit",
         input,
         "Pruna p-image-edit",
     );
 
-    progress.updateBar(requestId, 90, "Processing", "Downloading image...");
     const buffer = await downloadOutput(output, "Pruna p-image-edit");
     logOps("Downloaded edited image, buffer size:", buffer.length);
-
-    progress.updateBar(
-        requestId,
-        95,
-        "Success",
-        "Pruna p-image-edit completed",
-    );
 
     return {
         buffer,
@@ -351,17 +254,8 @@ async function generatePrunaVideo(
     resolution: "720p" | "1080p",
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     const displayName = `Pruna p-video ${resolution}`;
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Starting video generation with ${displayName}...`,
-    );
 
     const duration = Math.max(
         1,
@@ -374,18 +268,13 @@ async function generatePrunaVideo(
     if (images.length > 0) {
         // Image-to-video: the input image drives dimensions; aspect_ratio is
         // ignored by the upstream in this mode.
-        progress.updateBar(
-            requestId,
-            30,
-            "Processing",
-            "Preparing reference image...",
-        );
         input.image = await toDataUri(images[0]);
     } else {
         // Text-to-video: pick the closest supported aspect ratio.
-        input.aspect_ratio = deriveVideoAspectRatio(
+        input.aspect_ratio = closestRatioLogSpace(
             safeParams.width || 1024,
             safeParams.height || 1024,
+            PVIDEO_ASPECT_RATIOS,
         );
     }
 
@@ -398,13 +287,6 @@ async function generatePrunaVideo(
         image: input.image ? "[data uri]" : undefined,
     });
 
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        "Submitting to Replicate (this may take 1-3 minutes)...",
-    );
-
     const { output, videoOutputDurationSeconds } =
         await runPrunaPrediction<PVideoInput>(
             "prunaai/p-video",
@@ -412,7 +294,6 @@ async function generatePrunaVideo(
             displayName,
         );
 
-    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
     const buffer = await downloadOutput(output, displayName);
     logOps(
         `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
@@ -421,8 +302,6 @@ async function generatePrunaVideo(
     // Bill on the actual output length Replicate reports; fall back to the
     // requested duration if the metric is missing.
     const billedDuration = videoOutputDurationSeconds ?? duration;
-
-    progress.updateBar(requestId, 95, "Success", `${displayName} completed`);
 
     return {
         buffer,
@@ -441,16 +320,12 @@ async function generatePrunaVideo(
 export const callPrunaVideo720API = (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("720p", prompt, safeParams, progress, requestId);
+    generatePrunaVideo("720p", prompt, safeParams);
 
 /** Pruna p-video at 1080p ($0.04/s). */
 export const callPrunaVideo1080API = (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> =>
-    generatePrunaVideo("1080p", prompt, safeParams, progress, requestId);
+    generatePrunaVideo("1080p", prompt, safeParams);

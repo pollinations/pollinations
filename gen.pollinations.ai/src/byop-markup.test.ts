@@ -217,8 +217,6 @@ describe("BYOP markup", () => {
                     tierBalance: 1,
                     packBalance: 2,
                 }),
-                requirePositiveBalance: async () => undefined,
-                requirePaidBalance: async () => undefined,
             },
             model: { requested: "openai", resolved: "openai" },
             log: fakeLog(),

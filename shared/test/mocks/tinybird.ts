@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import type { SelectGenerationEvent } from "../../schemas/generation-event.ts";
+import type { TinybirdEvent } from "../../schemas/generation-event.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 type TinybirdGenerationEvent = Omit<
-    SelectGenerationEvent,
+    TinybirdEvent,
     | "eventStatus"
     | "tinybirdDeliveryAttempts"
     | "tinybirdDeliveredAt"

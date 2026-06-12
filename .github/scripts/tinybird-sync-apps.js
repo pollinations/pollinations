@@ -12,10 +12,8 @@
  *   TINYBIRD_SYNC_TOKEN  Required — Tinybird token with append+delete on app_directory
  */
 
-const fs = require("node:fs");
-const path = require("node:path");
+const { parseApps } = require("./lib/parse-apps.js");
 
-const APPS_FILE = path.resolve(__dirname, "../../apps/APPS.md");
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "app_directory";
 const MAX_RETRIES = 3;
@@ -26,65 +24,34 @@ if (!TOKEN) {
     process.exit(1);
 }
 
-// Column names in APPS.md → snake_case field names for Tinybird
-const COLUMN_MAP = [
-    ["Emoji", "emoji"],
-    ["Name", "name"],
-    ["Web_URL", "web_url"],
-    ["Description", "description"],
-    ["Language", "language"],
-    ["Category", "category"],
-    ["Platform", "platform"],
-    ["GitHub_Username", "github_username"],
-    ["GitHub_UserID", "github_user_id"],
-    ["Github_Repository_URL", "github_repository_url"],
-    ["Github_Repository_Stars", "github_repository_stars"],
-    ["Discord_Username", "discord_username"],
-    ["Other", "other"],
-    ["Submitted_Date", "submitted_date"],
-    ["Issue_URL", "issue_url"],
-    ["Approved_Date", "approved_date"],
-    ["BYOP", "byop"],
-    ["Requests_24h", "requests_24h"],
+// Canonical parser fields → snake_case field names for Tinybird
+const FIELD_MAP = [
+    ["emoji", "emoji"],
+    ["name", "name"],
+    ["webUrl", "web_url"],
+    ["description", "description"],
+    ["language", "language"],
+    ["category", "category"],
+    ["platform", "platform"],
+    ["githubUsername", "github_username"],
+    ["githubUserId", "github_user_id"],
+    ["repoUrl", "github_repository_url"],
+    ["stars", "github_repository_stars"],
+    ["discord", "discord_username"],
+    ["other", "other"],
+    ["submittedDate", "submitted_date"],
+    ["issueUrl", "issue_url"],
+    ["approvedDate", "approved_date"],
+    ["byop", "byop"],
+    ["requests24h", "requests_24h"],
 ];
 
 function parseAppsMarkdown() {
-    const content = fs.readFileSync(APPS_FILE, "utf8");
-    const lines = content.split("\n");
-
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) {
-        console.error("Error: Could not find header row in APPS.md");
-        process.exit(1);
-    }
-
-    const headers = lines[headerIdx].split("|").map((h) => h.trim());
-
-    // Build column index map: header name → position
-    const colIndex = {};
-    for (const [mdName] of COLUMN_MAP) {
-        const idx = headers.findIndex(
-            (h) => h.toLowerCase() === mdName.toLowerCase(),
-        );
-        if (idx === -1) {
-            console.warn(
-                `Warning: column "${mdName}" not found in APPS.md header`,
-            );
-        }
-        colIndex[mdName] = idx;
-    }
-
     const rows = [];
-    for (let i = headerIdx + 2; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.startsWith("|")) continue;
-
-        const cols = line.split("|").map((c) => c.trim());
-
+    for (const app of parseApps().apps) {
         const row = {};
-        for (const [mdName, fieldName] of COLUMN_MAP) {
-            const idx = colIndex[mdName];
-            row[fieldName] = idx !== -1 && idx < cols.length ? cols[idx] : "";
+        for (const [field, name] of FIELD_MAP) {
+            row[name] = app[field];
         }
 
         // Strip @ prefix from github_username
@@ -92,12 +59,11 @@ function parseAppsMarkdown() {
             row.github_username = row.github_username.slice(1);
         }
 
-        // Skip rows with no category or no github_user_id
+        // Skip rows with no category and no github_user_id
         if (!row.category && !row.github_user_id) continue;
 
         rows.push(row);
     }
-
     return rows;
 }
 

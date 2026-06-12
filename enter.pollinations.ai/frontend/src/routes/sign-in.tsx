@@ -38,10 +38,9 @@ export const Route = createFileRoute("/sign-in")({
         const result = await authClient.getSession();
         if (result.data?.user) {
             // Check for pending redirect URL from authorize flow
-            const pendingRedirectUrl =
-                typeof window !== "undefined"
-                    ? localStorage.getItem("pending_redirect_url")
-                    : null;
+            const pendingRedirectUrl = localStorage.getItem(
+                "pending_redirect_url",
+            );
 
             if (pendingRedirectUrl) {
                 // Clear the stored URL and redirect to authorize

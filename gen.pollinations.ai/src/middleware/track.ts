@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -12,6 +13,13 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import type { ErrorVariables } from "@shared/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@shared/error.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -29,10 +37,9 @@ import {
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import type {
-    ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
-    InsertGenerationEvent,
+    TinybirdEvent as InsertGenerationEvent,
 } from "@shared/schemas/generation-event.ts";
 import {
     contentFilterResultsToEventParams,
@@ -46,6 +53,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
@@ -54,23 +62,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import type { ErrorVariables } from "@/env.ts";
-import {
-    getDefaultErrorMessage,
-    getErrorCode,
-    UpstreamError,
-} from "@/error.ts";
-import { sendToTinybird } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import {
-    generateRandomId,
-    getRoutePath,
-    parseBooleanLike,
-    removeUnset,
-} from "@/util.ts";
+import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -826,6 +822,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -838,7 +840,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -848,9 +850,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:

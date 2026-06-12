@@ -6,8 +6,8 @@
 
 import type { Logger } from "@logtape/logtape";
 import { parseSafeFeatures } from "@shared/schemas/safety.ts";
+import { removeUnset } from "@shared/util.ts";
 import type { Context } from "hono";
-import { removeUnset } from "@/util.ts";
 
 // "nofeed" is a removed/no-op param kept here on purpose: external and
 // community clients still send `?nofeed=true`, and excluding it from the

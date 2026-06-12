@@ -37,11 +37,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showAlpha = isAlpha(model);
 
     const genPerPollen = calculatePerPollen(model);
-    const balanceLabel = showPaidOnly ? "Paid balance only" : "Tier balance";
+    const balanceLabel = showPaidOnly
+        ? "Paid balance only"
+        : "Tier or Paid balance";
     const perPollenTooltip =
         genPerPollen === "—"
             ? balanceLabel
-            : `${balanceLabel} · ≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen`;
+            : `≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen\n${balanceLabel}`;
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],

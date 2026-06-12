@@ -1,3 +1,4 @@
+import type { ApiKeyType } from "../auth/api-key-creation.ts";
 import type { PriceDefinition, Usage } from "../registry/registry.ts";
 import type { ContentFilterResult } from "./openai.ts";
 
@@ -7,7 +8,6 @@ export type EventType =
     | "generate.audio"
     | "generate.embedding"
     | "generate.realtime";
-export type ApiKeyType = "secret" | "publishable";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -118,10 +118,6 @@ export type TinybirdEvent = {
     errorSource?: string;
     errorMessage?: string;
 };
-
-// Alias for backward compatibility with track.ts
-export type InsertGenerationEvent = TinybirdEvent;
-export type SelectGenerationEvent = TinybirdEvent;
 
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;

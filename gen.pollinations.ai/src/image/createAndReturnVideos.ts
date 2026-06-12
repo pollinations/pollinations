@@ -19,6 +19,7 @@ import {
 import {
     callWanAPI,
     callWanFastAPI,
+    callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
 import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
@@ -57,6 +58,9 @@ export async function createAndReturnVideo(
             break;
         case "wan-pro":
             result = await callWanProAPI(prompt, safeParams);
+            break;
+        case "wan-pro-1080p":
+            result = await callWanPro1080pAPI(prompt, safeParams);
             break;
         case "ltx-2":
             result = await callLtx2API(prompt, safeParams);

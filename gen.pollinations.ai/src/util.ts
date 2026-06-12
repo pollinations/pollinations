@@ -31,3 +31,22 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
     return btoa(binary);
 }
+
+const TRUE_TOKENS = ["true", "1", "yes", "on"];
+const FALSE_TOKENS = ["false", "0", "no", "off", ""];
+
+/**
+ * Parse boolean-ish query/body values. Returns null when the value is not
+ * recognizably boolean, so callers decide between defaulting and rejecting.
+ * (z.coerce.boolean() treats the string "false" as true.)
+ */
+export function parseBooleanLike(value: unknown): boolean | null {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value !== "string") return null;
+
+    const normalized = value.trim().toLowerCase();
+    if (TRUE_TOKENS.includes(normalized)) return true;
+    if (FALSE_TOKENS.includes(normalized)) return false;
+    return null;
+}

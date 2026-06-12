@@ -880,12 +880,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-coder-large": {
     "cost": {
-      "completionTextTokens": 0.0000015,
-      "promptTextTokens": 3e-7,
+      "completionTextTokens": 8e-7,
+      "promptTextTokens": 1.1e-7,
     },
     "price": {
-      "completionTextTokens": 0.0000015,
-      "promptTextTokens": 3e-7,
+      "completionTextTokens": 8e-7,
+      "promptTextTokens": 1.1e-7,
     },
   },
   "qwen-image": {
@@ -1080,18 +1080,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "wan-image": {
     "cost": {
-      "completionImageTokens": 0.035,
+      "completionImageTokens": 0.03,
     },
     "price": {
-      "completionImageTokens": 0.035,
+      "completionImageTokens": 0.03,
     },
   },
   "wan-image-pro": {
     "cost": {
-      "completionImageTokens": 0.075,
+      "completionImageTokens": 0.03,
     },
     "price": {
-      "completionImageTokens": 0.075,
+      "completionImageTokens": 0.03,
     },
   },
   "wan-pro": {

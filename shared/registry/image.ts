@@ -377,14 +377,15 @@ export const IMAGE_SERVICES = {
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
         modelId: "wan-image",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
         cost: {
-            completionImageTokens: 0.035, // per image
+            completionImageTokens: 0.03, // per image
         },
         title: "Wan 2.7 Image",
         description:
@@ -396,14 +397,16 @@ export const IMAGE_SERVICES = {
     "wan-image-pro": {
         aliases: ["wan2.7-image-pro", "wan-img-pro"],
         modelId: "wan-image-pro",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Moved off Alibaba DashScope ($0.075) to Replicate wan-2.7-image-pro,
+        // which prices Pro identically to standard ($0.03/img).
         cost: {
-            completionImageTokens: 0.075, // per image
+            completionImageTokens: 0.03, // per image
         },
         title: "Wan 2.7 Image Pro",
         description:
@@ -420,12 +423,14 @@ export const IMAGE_SERVICES = {
             "qwen-image-edit-plus",
         ],
         modelId: "qwen-image",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
+        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
         cost: {
             completionImageTokens: 0.03, // per image
         },

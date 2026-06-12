@@ -144,19 +144,19 @@ export const IMAGE_CONFIG = {
 
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-wan-image",
         defaultSideLength: 1024,
     },
 
     // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
     "wan-image-pro": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-wan-image-pro",
         defaultSideLength: 2048,
     },
 
     // Alibaba Qwen Image Plus - Text-to-image and image editing
     "qwen-image": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-qwen-image",
         defaultSideLength: 1024,
     },
 

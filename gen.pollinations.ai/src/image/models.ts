@@ -142,6 +142,15 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.7 via Replicate - 1080p variant (one price: $0.15/s)
+    "wan-pro-1080p": {
+        type: "replicate-wan-video",
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "1080p",
+    },
+
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
         type: "replicate-wan-image",

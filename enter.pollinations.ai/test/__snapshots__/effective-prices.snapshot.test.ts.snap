@@ -1098,6 +1098,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1,
     },
   },
+  "wan-pro-1080p": {
+    "cost": {
+      "completionVideoSeconds": 0.15,
+    },
+    "price": {
+      "completionVideoSeconds": 0.15,
+    },
+  },
   "whisper": {
     "cost": {
       "promptAudioSeconds": 0.0000445,

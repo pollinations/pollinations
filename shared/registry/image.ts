@@ -373,6 +373,29 @@ export const IMAGE_SERVICES = {
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
+    "wan-pro-1080p": {
+        aliases: ["wan2.7-1080p", "wan-pro-1080"],
+        modelId: "wan-pro-1080p",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-06-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate wan-2.7 locked to 1080p. i2v bills $0.15/s at 1080p and t2v
+        // $0.10/s; we charge the single higher rate so the model has one price
+        // and never under-bills. Audio bundled into the per-second rate.
+        cost: {
+            completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+        },
+        title: "Wan 2.7 1080p",
+        description:
+            "Wan 2.7 1080p - text/image-to-video with bundled audio (1080p, keyframes)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
         modelId: "wan-image",

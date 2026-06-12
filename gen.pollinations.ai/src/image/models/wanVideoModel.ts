@@ -153,41 +153,52 @@ const WAN_26_CONFIG: WanVariantConfig = {
     },
 };
 
-const WAN_27_CONFIG: WanVariantConfig = {
-    t2vModel: "wan-video/wan-2.7-t2v",
-    i2vModel: "wan-video/wan-2.7-i2v",
-    trackingName: "wan-pro",
-    displayName: "Wan 2.7",
-    resolveDuration: (p) =>
-        Math.max(
-            WAN_PRO_MIN_DURATION,
-            Math.min(WAN_PRO_MAX_DURATION, Math.floor(p.duration ?? 5)),
-        ),
-    buildInput(mode, prompt, safeParams, frames) {
-        const duration = this.resolveDuration(safeParams);
-        if (mode === "i2v") {
+// Wan 2.7 is offered at two locked resolutions as separate models (one price
+// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
+// schemas are identical apart from the resolution value, so share a factory.
+function makeWan27Config(
+    resolution: "720p" | "1080p",
+    trackingName: string,
+): WanVariantConfig {
+    return {
+        t2vModel: "wan-video/wan-2.7-t2v",
+        i2vModel: "wan-video/wan-2.7-i2v",
+        trackingName,
+        displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
+        resolveDuration: (p) =>
+            Math.max(
+                WAN_PRO_MIN_DURATION,
+                Math.min(WAN_PRO_MAX_DURATION, Math.floor(p.duration ?? 5)),
+            ),
+        buildInput(mode, prompt, safeParams, frames) {
+            const duration = this.resolveDuration(safeParams);
+            if (mode === "i2v") {
+                return withSeed(
+                    {
+                        prompt,
+                        first_frame: frames[0],
+                        resolution,
+                        duration,
+                        ...(frames[1] ? { last_frame: frames[1] } : {}),
+                    },
+                    safeParams,
+                );
+            }
             return withSeed(
                 {
                     prompt,
-                    first_frame: frames[0],
-                    resolution: "720p",
+                    resolution,
+                    aspect_ratio: pickAspect(safeParams, WAN_PRO_RATIOS),
                     duration,
-                    ...(frames[1] ? { last_frame: frames[1] } : {}),
                 },
                 safeParams,
             );
-        }
-        return withSeed(
-            {
-                prompt,
-                resolution: "720p",
-                aspect_ratio: pickAspect(safeParams, WAN_PRO_RATIOS),
-                duration,
-            },
-            safeParams,
-        );
-    },
-};
+        },
+    };
+}
+
+const WAN_27_CONFIG = makeWan27Config("720p", "wan-pro");
+const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
 
 async function generateWanVideo(
     config: WanVariantConfig,
@@ -293,4 +304,12 @@ export function callWanProAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     return generateWanVideo(WAN_27_CONFIG, prompt, safeParams);
+}
+
+/** Wan 2.7 via Replicate at locked 1080p (billed at the higher i2v rate). */
+export function callWanPro1080pAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    return generateWanVideo(WAN_27_1080P_CONFIG, prompt, safeParams);
 }

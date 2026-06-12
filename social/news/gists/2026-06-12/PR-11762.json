@@ -1,0 +1,36 @@
+{
+  "pr_number": 11762,
+  "title": "Move Wan/Qwen image+video off Alibaba (Replicate), qwen-coder-large to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11762",
+  "merged_at": "2026-06-12T23:18:41Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Consolidates Alibaba DashScope models onto providers we already use (Replicate, OpenRouter). After this, the only models left on Alibaba are the two Qwen3-TTS audio models (no cheaper home on a provider we use).\n\n**Rule applied throughout: one price per model.** Where Replicate prices by resolution, each model is locked to a single resolution; a second resolution becomes its own model.\n\n### Image (DashScope → Replicate)\n- `wan-image` → wan-2.7-image: $0.035 → **$0.03**/img\n- `wan-image-pro` → wan-2.7-image-pro: $0.075 → **$0.03**/img\n- `qwen-image` → qwen/qwen-image (t2i) + qwen/qwen-image-edit-plus (multi-image edit). Flat **$0.03**/img.\n\n### Video (DashScope → Replicate, t2v/i2v split into separate Replicate models, resolution locked)\n- `wan-fast` → wan-2.2-fast: **480p**, silent, ~5s → flat **$0.05**/clip (was $0.10)\n- `wan` → wan-2.6: **720p**, native audio bundled → **$0.10/s**\n- `wan-pro` → wan-2.7: **720p**, audio bundled, + end-frame keyframes → **$0.10/s**\n- `wan-pro-1080p` → wan-2.7: **1080p** (NEW model) → **$0.15/s**. Bills the higher i2v 1080p rate flat so the model has one price; t2v costs us $0.10/s (small margin), never under-bills.\n- Audio bundled into the per-second rate; separate `completionAudioSeconds` lines dropped.\n\n### Text (DashScope → OpenRouter)\n- `qwen-coder-large`: $0.30/$1.50 → **$0.11/$0.80** per 1M (~2.5× cheaper, same SKU)\n\n### Cleanup\n- Removes the dead `dashScopeImage` util + `createDashScopeModelConfig` helper. DashScope key stays (Qwen TTS still uses it).\n\n### Verified locally (gen on :8788, real upstream calls)\n- **Image:** all t2i + edit paths 200; usage headers correct.\n- **Video:** wan-fast/wan/wan-pro/wan-pro-1080p t2v + i2v 200; ffprobe confirms resolution (wan-pro-1080p = 1920×1080) and audio (present on wan/wan-pro(-1080p), silent on wan-fast).\n- **Text:** qwen-coder-large 200 via OpenRouter; `qwen3-coder-next` alias resolves.\n- **Billing (Tinybird staging):** image $0.03; video wan $0.50, wan-pro $0.50, wan-fast $0.05, w",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Moving day for Wan & Qwen",
+    "blurb": "We packed up our Wan and Qwen models and moved them to new infrastructure. The result? A shiny new 1080p video model and massive price drops across the board.",
+    "summary": "Wan and Qwen models have migrated to Replicate and OpenRouter, introducing a new wan-pro-1080p video model and dropping qwen-coder-large costs by 2.5x.",
+    "impact": "Users get access to 1080p Wan video generation, flat $0.03 pricing for Wan and Qwen images, and significantly cheaper Qwen text generation.",
+    "keywords": [
+      "models",
+      "pricing",
+      "video",
+      "qwen",
+      "wan",
+      "api"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot moving boxes labeled 'QWEN' and 'WAN' into a new server rack, with a glowing '1080p' display highlighting the new video resolution.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny sweatband, helping a chunky CRT-monitor robot carry cardboard boxes labeled 'QWEN' and 'WAN' into a new server rack. A glowing monitor displays '1080p' in chunky pixels. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11762.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny sweatband, helping a chunky CRT-monitor robot carry cardboard boxes labeled 'QWEN' and 'WAN' into a new server rack. A glowing monitor displays '1080p' in chunky pixels. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-12T23:19:51.313691+00:00"
+}

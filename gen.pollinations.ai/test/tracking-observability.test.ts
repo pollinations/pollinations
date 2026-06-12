@@ -37,8 +37,6 @@ function createTestApp(
             requireModelAccess: () => {},
         });
         c.set("balance", {
-            requirePositiveBalance: async () => {},
-            requirePaidBalance: async () => {},
             getBalance: async () => ({
                 tierBalance: 1,
                 packBalance: 0,
@@ -102,8 +100,6 @@ function createWrongContentTypeApp(
             requireModelAccess: () => {},
         });
         c.set("balance", {
-            requirePositiveBalance: async () => {},
-            requirePaidBalance: async () => {},
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });

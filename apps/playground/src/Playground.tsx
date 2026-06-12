@@ -4,7 +4,7 @@ import {
     type ModelCatalogItem,
     type ModelCategory,
     Pollinations,
-} from "@pollinations/sdk/client";
+} from "@pollinations/sdk";
 import { useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,

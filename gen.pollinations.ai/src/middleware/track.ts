@@ -822,6 +822,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -834,7 +840,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -844,9 +850,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:

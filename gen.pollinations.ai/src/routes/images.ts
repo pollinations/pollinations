@@ -14,12 +14,11 @@ import {
 import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
-
-// biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
-type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
+import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
@@ -34,13 +33,6 @@ function imageResponse(
         created: Math.floor(Date.now() / 1000),
         data: [{ ...data, revised_prompt: prompt }],
     };
-}
-
-/** Auth + balance checks shared by both handlers. */
-async function requireAuthAndBalance(c: Context, checkBalance: CheckBalanceFn) {
-    await c.var.auth.requireAuthorization();
-    c.var.auth.requireModelAccess();
-    await checkBalance(c.var, c.env);
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -178,80 +170,76 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-export function handleImageGeneration(checkBalance: CheckBalanceFn) {
-    return async (c: Context) => {
-        await requireAuthAndBalance(c, checkBalance);
+export async function handleImageGeneration(c: Context<Env>) {
+    await requireGenerationAccess(c.var, c.env);
 
-        const body = c.req.valid("json" as never) as CreateImageRequest &
-            Record<string, unknown>;
-        const model = c.var.model.resolved;
-        const resolved = resolveParams(body);
-        const safePrompt = await applySafety(
-            c,
-            body.prompt,
-            body.safe as SafeValue,
+    const body = c.req.valid("json" as never) as CreateImageRequest &
+        Record<string, unknown>;
+    const model = c.var.model.resolved;
+    const resolved = resolveParams(body);
+    const safePrompt = await applySafety(
+        c,
+        body.prompt,
+        body.safe as SafeValue,
+    );
+
+    const response = await generateImageOrVideoResponse(c, safePrompt, {
+        ...body,
+        prompt: safePrompt,
+        ...collectPassthrough(body, "image"),
+        ...resolved,
+        model,
+    });
+    c.var.track.overrideResponseTracking(response.clone());
+
+    if (body.response_format === "url") {
+        const origin = getPublicOrigin(c);
+        const imageUrl = new URL(
+            `${origin}/image/${encodeURIComponent(safePrompt)}`,
         );
-
-        const response = await generateImageOrVideoResponse(c, safePrompt, {
-            ...body,
-            prompt: safePrompt,
-            ...collectPassthrough(body, "image"),
-            ...resolved,
+        for (const [key, value] of Object.entries({
             model,
-        });
-        c.var.track.overrideResponseTracking(response.clone());
-
-        if (body.response_format === "url") {
-            const origin = getPublicOrigin(c);
-            const imageUrl = new URL(
-                `${origin}/image/${encodeURIComponent(safePrompt)}`,
-            );
-            for (const [key, value] of Object.entries({
-                model,
-                ...resolved,
-            }))
-                imageUrl.searchParams.set(key, String(value));
-            const safeValue = normalizeSafeValue(body.safe as SafeValue);
-            if (safeValue) {
-                imageUrl.searchParams.set("safe", safeValue);
-            }
-            await response.arrayBuffer();
-            return withSafetyHeaders(
-                c,
-                c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
-            );
+            ...resolved,
+        }))
+            imageUrl.searchParams.set(key, String(value));
+        const safeValue = normalizeSafeValue(body.safe as SafeValue);
+        if (safeValue) {
+            imageUrl.searchParams.set("safe", safeValue);
         }
-
-        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        await response.arrayBuffer();
         return withSafetyHeaders(
             c,
-            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+            c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
         );
-    };
+    }
+
+    const base64 = arrayBufferToBase64(await response.arrayBuffer());
+    return withSafetyHeaders(
+        c,
+        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+    );
 }
 
-export function handleImageEdit(checkBalance: CheckBalanceFn) {
-    return async (c: Context) => {
-        await requireAuthAndBalance(c, checkBalance);
+export async function handleImageEdit(c: Context<Env>) {
+    await requireGenerationAccess(c.var, c.env);
 
-        const { prompt, imageUrls, size, quality, seed, safe, extra } =
-            await parseEditInput(c);
-        const safePrompt = await applySafety(c, prompt, safe);
-        const resolved = resolveParams({ size, quality, seed });
+    const { prompt, imageUrls, size, quality, seed, safe, extra } =
+        await parseEditInput(c);
+    const safePrompt = await applySafety(c, prompt, safe);
+    const resolved = resolveParams({ size, quality, seed });
 
-        const response = await generateImageOrVideoResponse(c, safePrompt, {
-            prompt: safePrompt,
-            image: imageUrls,
-            ...extra,
-            ...resolved,
-            model: c.var.model.resolved,
-        });
-        c.var.track.overrideResponseTracking(response.clone());
+    const response = await generateImageOrVideoResponse(c, safePrompt, {
+        prompt: safePrompt,
+        image: imageUrls,
+        ...extra,
+        ...resolved,
+        model: c.var.model.resolved,
+    });
+    c.var.track.overrideResponseTracking(response.clone());
 
-        const base64 = arrayBufferToBase64(await response.arrayBuffer());
-        return withSafetyHeaders(
-            c,
-            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
-        );
-    };
+    const base64 = arrayBufferToBase64(await response.arrayBuffer());
+    return withSafetyHeaders(
+        c,
+        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+    );
 }

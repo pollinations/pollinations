@@ -565,22 +565,10 @@ const toolSchema = z.object({
 
 const audioOptionsSchema = z.object({
     voice: z
-        .enum([
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "coral",
-            "verse",
-            "ballad",
-            "ash",
-            "sage",
-            "amuch",
-            "dan",
-        ])
-        .describe("Voice for audio output"),
+        .string()
+        .describe(
+            "Voice for audio output. The canonical list lives in the registry — use listAudioVoices to discover valid values; the server rejects unknown voices.",
+        ),
     format: z
         .enum(["wav", "mp3", "flac", "opus", "pcm16"])
         .describe("Audio format"),

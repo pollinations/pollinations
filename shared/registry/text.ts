@@ -802,6 +802,31 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "claude-fable-5": {
+        aliases: [],
+        modelId: "claude-fable-5",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-06-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(1),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5",
+        description: "Claude Fable 5 - Frontier reasoning & agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",
@@ -950,6 +975,32 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262000,
+        isSpecialized: false,
+    },
+    "kimi-k2.7-code": {
+        aliases: ["kimi-k2.7", "kimi-k2p7"],
+        modelId: "moonshotai/kimi-k2.7-code",
+        provider: "openrouter",
+        brand: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-06-12").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter moonshotai/kimi-k2.7-code rates (2026-06-12):
+            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
+            promptTextTokens: perMillion(0.95),
+            promptCachedTokens: perMillion(0.19),
+            completionTextTokens: perMillion(4.0),
+        },
+        title: "Moonshot Kimi K2.7 Code",
+        description:
+            "Moonshot Kimi K2.7 Code - Agentic coding model with CoT reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "gemini-large": {

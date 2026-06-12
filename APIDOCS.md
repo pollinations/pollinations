@@ -413,8 +413,6 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p). · default: `1024` |
 | `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p). · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
-| `enhance` | `query` | `boolean` | Let AI improve your prompt for better results. Applied during prompt processing. · default: `false` |
-| `negative_prompt` | `query` | `string` | What to avoid in the generated image. Only supported by `zimage` — other models ignore this. · default: `"worst quality, blurry"` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`. · default: `"medium"` |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
@@ -518,7 +516,6 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p). · default: `1024` |
 | `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p). · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
-| `enhance` | `query` | `boolean` | Let AI improve your prompt for better results. Applied during prompt processing. · default: `false` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
@@ -1327,9 +1324,10 @@ All endpoints return errors in this envelope:
 | `405` | `METHOD_NOT_ALLOWED` | HTTP method not supported on this route. |
 | `409` | `CONFLICT` | Request conflicts with current resource state (e.g. duplicate key name). |
 | `422` | `UNPROCESSABLE_ENTITY` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
+| `422` | `content_policy_violation` | Prompt, input, or generated content was blocked by content moderation. Adjust the input and retry. |
 | `429` | `RATE_LIMITED` | Too many requests. Slow down. |
 | `500` | `INTERNAL_ERROR` | Server error. We're on it. |
-| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| `502` | `BAD_GATEWAY` | Upstream provider returned an unexpected error (auth, billing). |
 | `503` | `SERVICE_UNAVAILABLE` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |
 
 ## 🧩 Schemas

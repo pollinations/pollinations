@@ -141,7 +141,6 @@ flowchart TD
 | Script                 | Purpose        | AI Model                  | Trigger               |
 | ---------------------- | -------------- | ------------------------- | --------------------- |
 | `project-manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
-| `pr_comment_review.py` | AI code review | claude-large              | Comment `Review=True` |
 
 **project-manager.py details:**
 
@@ -149,11 +148,6 @@ flowchart TD
 - Timeout: 5 minutes for AI, 30s for GraphQL
 - Routing: PRs → Dev (always). Issues: internal author → Dev, external author → Support
 - Fallback: AI failure → skip (no project assignment)
-
-**pr_comment_review.py details:**
-
-- Context: 900k tokens, Max output: 65k tokens
-- Skips: lock files, minified, assets, source maps
 
 ---
 

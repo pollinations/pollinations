@@ -177,6 +177,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "claude-fable-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -234,6 +239,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "minimax/minimax-m3": () =>
         createOpenRouterModelConfig({
             model: "minimax/minimax-m3",
+        }),
+
+    // -- OpenRouter (Kimi K2.7 Code) -----------------------------------------
+    // K2.7 (Code variant) is not on Fireworks/Azure yet (both top out at K2.6);
+    // OpenRouter is the only route.
+    "moonshotai/kimi-k2.7-code": () =>
+        createOpenRouterModelConfig({
+            model: "moonshotai/kimi-k2.7-code",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

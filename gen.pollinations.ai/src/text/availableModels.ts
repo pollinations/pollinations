@@ -138,10 +138,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-8"],
     },
     {
+        name: "claude-fable-5",
+        config: portkeyConfig["claude-fable-5"],
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -151,7 +155,7 @@ const models: ModelDefinition[] = [
         name: "gemini-3.5-flash",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -161,7 +165,7 @@ const models: ModelDefinition[] = [
         name: "gemini-flash-lite-3.1",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -169,7 +173,7 @@ const models: ModelDefinition[] = [
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -177,7 +181,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -186,7 +190,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search-fast",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -195,7 +199,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search-large",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -241,10 +245,14 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "kimi-k2.7-code",
+        config: portkeyConfig["moonshotai/kimi-k2.7-code"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),

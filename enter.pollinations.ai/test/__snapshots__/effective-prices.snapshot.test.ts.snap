@@ -24,6 +24,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "claude-fable-5": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+    "price": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+  },
   "claude-fast": {
     "cost": {
       "completionTextTokens": 0.000005,
@@ -466,6 +480,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 9.5e-7,
     },
   },
+  "kimi-k2.7-code": {
+    "cost": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 1.9e-7,
+      "promptTextTokens": 9.5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 1.9e-7,
+      "promptTextTokens": 9.5e-7,
+    },
+  },
   "klein": {
     "cost": {
       "completionImageTokens": 0.01,
@@ -776,12 +802,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
-  "p-video": {
+  "p-video-1080p": {
     "cost": {
-      "completionVideoSeconds": 0.024,
+      "completionVideoSeconds": 0.04,
     },
     "price": {
-      "completionVideoSeconds": 0.024,
+      "completionVideoSeconds": 0.04,
+    },
+  },
+  "p-video-720p": {
+    "cost": {
+      "completionVideoSeconds": 0.02,
+    },
+    "price": {
+      "completionVideoSeconds": 0.02,
     },
   },
   "perplexity": {

@@ -6,7 +6,6 @@ import {
     callWanProAPI,
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
-import type { ProgressManager } from "../../src/image/progressBar.ts";
 
 const DASHSCOPE_SUBMIT_URL =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis";
@@ -27,26 +26,12 @@ interface DashScopeRequest {
     };
 }
 
-const asProgress = (progress: ReturnType<typeof makeProgress>) =>
-    progress as unknown as ProgressManager;
-
-function makeProgress() {
-    return {
-        updateBar: vi.fn(),
-        finishBar: vi.fn(),
-        removeBar: vi.fn(),
-    };
-}
-
 const baseParams: ImageParams = {
     model: "wan-pro",
     width: 1280,
     height: 720,
     dimensionsExplicit: false,
     seed: 42,
-    enhance: false,
-    negative_prompt: "",
-    nofeed: false,
     safe: false,
     quality: "medium",
     image: [],
@@ -122,8 +107,6 @@ describe("wanVideoModel billing usage", () => {
         const result = await callWanProAPI(
             "a calm ocean at sunrise",
             baseParams,
-            asProgress(makeProgress()),
-            "req-wan-pro",
         );
 
         expect(requests).toHaveLength(1);
@@ -155,12 +138,11 @@ describe("wanVideoModel billing usage", () => {
         const requests: DashScopeRequest[] = [];
         mockDashScopeFetch(requests, 3);
 
-        const result = await callWanAPI(
-            "a calm ocean at sunrise",
-            { ...baseParams, model: "wan", duration: 3 },
-            asProgress(makeProgress()),
-            "req-wan",
-        );
+        const result = await callWanAPI("a calm ocean at sunrise", {
+            ...baseParams,
+            model: "wan",
+            duration: 3,
+        });
 
         expect(requests[0].body.model).toBe("wan2.6-t2v");
         expect(requests[0].body.parameters.audio).toBe(true);
@@ -183,12 +165,10 @@ describe("wanVideoModel image-to-video input schema", () => {
         const requests: DashScopeRequest[] = [];
         mockDashScopeFetch(requests);
 
-        await callWanProAPI(
-            "a cat walking",
-            { ...baseParams, image: [INPUT_IMAGE_URL] },
-            asProgress(makeProgress()),
-            "req-wan-pro-i2v",
-        );
+        await callWanProAPI("a cat walking", {
+            ...baseParams,
+            image: [INPUT_IMAGE_URL],
+        });
 
         expect(requests).toHaveLength(1);
         expect(requests[0].body.model).toBe("wan2.7-i2v");
@@ -209,12 +189,11 @@ describe("wanVideoModel image-to-video input schema", () => {
         const requests: DashScopeRequest[] = [];
         mockDashScopeFetch(requests);
 
-        await callWanFastAPI(
-            "a cat walking",
-            { ...baseParams, model: "wan-fast", image: [INPUT_IMAGE_URL] },
-            asProgress(makeProgress()),
-            "req-wan-fast-i2v",
-        );
+        await callWanFastAPI("a cat walking", {
+            ...baseParams,
+            model: "wan-fast",
+            image: [INPUT_IMAGE_URL],
+        });
 
         expect(requests[0].body.model).toBe("wan2.2-i2v-flash");
         const input = requests[0].body.input;

@@ -9,10 +9,6 @@ import {
     callPrunaVideo1080API,
 } from "../../src/image/models/prunaModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
-import type { ProgressManager } from "../../src/image/progressBar.ts";
-
-const asProgress = (m: ReturnType<typeof makeProgress>) =>
-    m as unknown as ProgressManager;
 
 interface ReplicateRequest {
     url: string;
@@ -60,21 +56,12 @@ function mockReplicateFetch(
         });
 }
 
-const makeProgress = () => ({
-    updateBar: vi.fn(),
-    finishBar: vi.fn(),
-    removeBar: vi.fn(),
-});
-
 const baseParams: ImageParams = {
     model: "p-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
     seed: 42,
-    enhance: false,
-    negative_prompt: "",
-    nofeed: false,
     safe: false,
     quality: "medium",
     image: [],
@@ -105,12 +92,7 @@ describe("prunaModel - p-image", () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
-        const result = await callPrunaImageAPI(
-            "a red apple",
-            baseParams,
-            asProgress(makeProgress()),
-            "req-pimage-1",
-        );
+        const result = await callPrunaImageAPI("a red apple", baseParams);
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
@@ -131,12 +113,10 @@ describe("prunaModel - p-image-edit", () => {
         mockReplicateFetch([]);
 
         await expect(
-            callPrunaImageEditAPI(
-                "make it green",
-                { ...baseParams, image: [] },
-                asProgress(makeProgress()),
-                "req-edit-noimg",
-            ),
+            callPrunaImageEditAPI("make it green", {
+                ...baseParams,
+                image: [],
+            }),
         ).rejects.toMatchObject({ status: 400 });
     });
 
@@ -144,18 +124,13 @@ describe("prunaModel - p-image-edit", () => {
         mockReplicateFetch([]);
 
         await expect(
-            callPrunaImageEditAPI(
-                "make it green",
-                {
-                    ...baseParams,
-                    image: Array.from(
-                        { length: 6 },
-                        (_, i) => `https://example.com/${i}.jpg`,
-                    ),
-                },
-                asProgress(makeProgress()),
-                "req-edit-overflow",
-            ),
+            callPrunaImageEditAPI("make it green", {
+                ...baseParams,
+                image: Array.from(
+                    { length: 6 },
+                    (_, i) => `https://example.com/${i}.jpg`,
+                ),
+            }),
         ).rejects.toMatchObject({ status: 400 });
     });
 
@@ -163,12 +138,10 @@ describe("prunaModel - p-image-edit", () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
-        const result = await callPrunaImageEditAPI(
-            "make it green",
-            { ...baseParams, image: ["https://example.com/apple.jpg"] },
-            asProgress(makeProgress()),
-            "req-edit-ok",
-        );
+        const result = await callPrunaImageEditAPI("make it green", {
+            ...baseParams,
+            image: ["https://example.com/apple.jpg"],
+        });
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
@@ -194,12 +167,12 @@ describe("prunaModel - p-video", () => {
             video_output_duration_seconds: 5,
         });
 
-        const result = await callPrunaVideo720API(
-            "a butterfly on a flower",
-            { ...baseParams, width: 1280, height: 720, duration: 8 },
-            asProgress(makeProgress()),
-            "req-video-720",
-        );
+        const result = await callPrunaVideo720API("a butterfly on a flower", {
+            ...baseParams,
+            width: 1280,
+            height: 720,
+            duration: 8,
+        });
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
@@ -225,12 +198,12 @@ describe("prunaModel - p-video", () => {
         });
 
         // height=720 must NOT downgrade the 1080p model — resolution is locked.
-        const result = await callPrunaVideo1080API(
-            "a butterfly on a flower",
-            { ...baseParams, width: 1280, height: 720, duration: 5 },
-            asProgress(makeProgress()),
-            "req-video-1080",
-        );
+        const result = await callPrunaVideo1080API("a butterfly on a flower", {
+            ...baseParams,
+            width: 1280,
+            height: 720,
+            duration: 5,
+        });
 
         const input = inputOf(requests[0]);
         expect(input.resolution).toBe("1080p");
@@ -242,12 +215,10 @@ describe("prunaModel - p-video", () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
-        await callPrunaVideo720API(
-            "animate this",
-            { ...baseParams, image: ["https://example.com/frame.jpg"] },
-            asProgress(makeProgress()),
-            "req-video-i2v",
-        );
+        await callPrunaVideo720API("animate this", {
+            ...baseParams,
+            image: ["https://example.com/frame.jpg"],
+        });
 
         const input = inputOf(requests[0]);
         expect(input.image).toMatch(DATA_URI);

@@ -440,7 +440,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <button
                     type="button"
                     onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left cursor-pointer hover:text-theme-text-base"
+                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
                 >
                     <span className="text-sm font-bold text-ink-900">
                         Model {sortArrow("name")}

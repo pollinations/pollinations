@@ -1060,21 +1060,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "wan": {
     "cost": {
-      "completionAudioSeconds": 0.05,
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.1,
     },
     "price": {
-      "completionAudioSeconds": 0.05,
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.1,
     },
   },
   "wan-fast": {
     "cost": {
-      "completionAudioSeconds": 0.01,
       "completionVideoSeconds": 0.01,
     },
     "price": {
-      "completionAudioSeconds": 0.01,
       "completionVideoSeconds": 0.01,
     },
   },

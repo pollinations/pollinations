@@ -311,20 +311,20 @@ export const IMAGE_SERVICES = {
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // into the per-second rate, so there is no separate audio line.
         cost: {
-            // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
-            completionVideoSeconds: 0.05, // per sec
-            completionAudioSeconds: 0.05, // per sec
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         title: "Wan 2.6",
         description:
-            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - text/image-to-video with audio (720p, 5/10/15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -333,18 +333,19 @@ export const IMAGE_SERVICES = {
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
         modelId: "wan-fast",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05).
         cost: {
-            completionVideoSeconds: 0.01, // per sec
-            completionAudioSeconds: 0.01, // per sec
+            completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",
-        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P)",
+        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -353,26 +354,24 @@ export const IMAGE_SERVICES = {
     "wan-pro": {
         aliases: ["wan2.7", "wan-2.7"],
         modelId: "wan-pro",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // DashScope `wan2.7-i2v` / `wan2.7-t2v` bill bundled video+audio at
-        // $0.10/s (720P) or $0.15/s (1080P). Handler currently locked to 720P
-        // (see prepareVideoParameters); revisit if registry supports tiered
-        // pricing. Audio bundled into the video duration per upstream invoice.
+        // Replicate wan-2.7, locked to 720p ($0.10/s). Audio bundled into the
+        // per-second rate. 1080p would be a separate model (one price each).
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720P, includes audio)
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         title: "Wan 2.7",
         description:
-            "Wan 2.7 - Alibaba text/image-to-video with bundled audio (720P / 1080P)",
+            "Wan 2.7 - text/image-to-video with bundled audio (720p, keyframes)",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],

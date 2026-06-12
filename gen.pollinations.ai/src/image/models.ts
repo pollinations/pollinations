@@ -115,27 +115,27 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio
+    // Alibaba Wan 2.6 via Replicate - 720p video with native audio
     wan: {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
+    // Alibaba Wan 2.2 via Replicate - fast/cheap 480p video (5s fixed, silent)
     "wan-fast": {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 5,
         defaultResolution: "480p",
     },
 
-    // Alibaba Wan 2.7 - Newer video generation (720P default, bundled audio)
+    // Alibaba Wan 2.7 via Replicate - 720p video with bundled audio + keyframes
     "wan-pro": {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,

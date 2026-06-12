@@ -1,0 +1,35 @@
+{
+  "pr_number": 11757,
+  "title": "chore(packages,scripts): remove dead components and scripts, unify drifted lists",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11757",
+  "merged_at": "2026-06-12T21:45:08Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes 6 unused BYOP widgets + dead `./auth/sdk` / `./wallet/sdk` subpath exports from @pollinations/ui (~140 lines; alpha-only surface, bumped to 0.1.0-alpha.1)\n- Removes @pollinations/sdk `./client` alias (byte-identical to root, #11610); dedupes the diverged HTTP error parser between client and react hooks; stops the catalog silently dropping unknown model categories (5.1.0-alpha.1 + CHANGELOG)\n- Extracts one APPS.md parser for the 6 .github/scripts consumers — header-name lookup fixes app-check-duplicate's silently broken repo/author matching (fields shifted by the Platform column); regen parity verified byte-identical (808/808 rows)\n- Deletes dead scripts: pr_comment_review.py (806 lines, workflow gone since #6870), backfill.py (653), app-update-readme.js (duplicate of greenhouse updateRootReadme), social format_pr_summary/add_pr_comment\n- Removes lefthook (config 100% commented out) and unread ALLOW_ANONYMOUS_USAGE vars from gen wrangler.toml; syncs MCP voice fallback list (was missing amuch, dan)\n\nNot included: enter.pollinations.ai/wrangler.toml ALLOW_ANONYMOUS_USAGE lines (sibling PR owns that file), dashboard/frontend model-category copies (owned by open PRs), useApps.ts browser parser copy (different runtime).\n\nNote: root package-lock.json regenerated (lefthook removal) — may conflict with sibling cleanup PRs #11754/#11752; regenerate on rebase.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping out the dead leaves",
+    "blurb": "We did some spring cleaning! Removed thousands of lines of dead code, unified our scripts, and made the codebase a little lighter.",
+    "summary": "Removed over 1,500 lines of dead code and unused scripts while unifying the APPS.md parser and HTTP error handling across the SDK.",
+    "impact": "This reduces technical debt, ensures GitHub Actions correctly parse app submissions, and provides consistent error responses in the React hooks.",
+    "keywords": [
+      "cleanup",
+      "refactor",
+      "scripts",
+      "sdk",
+      "ui"
+    ],
+    "visual_concept": "Polly the bee sweeping up dead leaves and old floppy disks with a tiny broom. A chunky robot holding a trash bin. Clean, organized garden.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny maid headband, sweeping up dead leaves and old floppy disks with a small broom. A chunky pixel robot with a CRT monitor head holds a lime green (#ecf874) recycling bin. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11757.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny maid headband, sweeping up dead leaves and old floppy disks with a small broom. A chunky pixel robot with a CRT monitor head holds a lime green (#ecf874) recycling bin. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-12T21:45:59.596576+00:00"
+}

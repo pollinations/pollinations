@@ -1,0 +1,19 @@
+{
+  "date": "2026-06-11",
+  "period_start": "2026-06-11",
+  "period_end": "2026-06-11",
+  "title": "Claude Fable 5 joins the text endpoint",
+  "summary": "A heavy-hitting new Claude model drops into the text API, and a new community learning app joins the showcase.\n\nAnthropic's new Mythos-class model, Claude Fable 5, is now wired up via AWS Bedrock. It brings a massive 1M token context window, vision capabilities, and tool support directly to the standard text generation API.\n\nThe apps directory grows by one with the addition of Wikimind, a community-built learning tool that integrates translation for interactive messaging.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 11743,
+      "date": "2026-06-11"
+    },
+    {
+      "number": 11744,
+      "date": "2026-06-11"
+    }
+  ],
+  "generated_at": "2026-06-12T07:33:12.808105+00:00"
+}

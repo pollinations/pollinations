@@ -2136,16 +2136,45 @@ body.dark .error-details {
 }
 
 /* ── Context transparency log (stormdede515-eng) ───────────────────────────
-   Shows which data was silently dropped before an AI reply.
-   Uses <details>/<summary> so it stays collapsed by default and never
-   forces itself into the user's reading flow. */
+   Two variants:
+   --error  confirmed data drop  (yellow)
+   --warn   advisory / uncertain (blue-gray)
+   Both use <details>/<summary> so they stay collapsed by default. */
 .context-drop-log {
-  margin-top: 0.625rem;
-  border: 1px solid rgba(234, 179, 8, 0.3);
+  margin-top: 0.5rem;
   border-radius: 6px;
-  background: rgba(234, 179, 8, 0.06);
   font-size: 0.8125rem;
   overflow: hidden;
+}
+
+/* confirmed drop — yellow */
+.context-drop-log--error {
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  background: rgba(234, 179, 8, 0.06);
+}
+
+.context-drop-log--error .context-drop-summary,
+.context-drop-log--error .context-drop-icon { color: #ca8a04; }
+
+.context-drop-log--error .context-drop-list { color: #92400e; }
+
+.context-drop-log--error .context-drop-type {
+  background: rgba(234, 179, 8, 0.15);
+}
+
+/* advisory — blue-gray */
+.context-drop-log--warn {
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.context-drop-log--warn .context-drop-summary,
+.context-drop-log--warn .context-drop-icon { color: #6366f1; }
+
+.context-drop-log--warn .context-drop-list { color: #4338ca; }
+
+.context-drop-log--warn .context-drop-type {
+  background: rgba(99, 102, 241, 0.12);
 }
 
 .context-drop-summary {
@@ -2154,7 +2183,6 @@ body.dark .error-details {
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
   cursor: pointer;
-  color: #ca8a04;
   user-select: none;
   list-style: none;
 }
@@ -2165,14 +2193,12 @@ body.dark .error-details {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: #ca8a04;
 }
 
 .context-drop-list {
   margin: 0;
   padding: 0 0.75rem 0.5rem 2rem;
   list-style: disc;
-  color: #92400e;
   line-height: 1.6;
 }
 
@@ -2188,21 +2214,25 @@ body.dark .error-details {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.05em;
-  background: rgba(234, 179, 8, 0.15);
   padding: 0.1em 0.4em;
   border-radius: 3px;
 }
 
-.context-drop-reason {
-  color: inherit;
-}
+.context-drop-reason { color: inherit; }
 
-body.light .context-drop-log {
+/* light mode overrides */
+body.light .context-drop-log--error {
   border-color: rgba(202, 138, 4, 0.3);
   background: rgba(254, 243, 199, 0.5);
 }
+body.light .context-drop-log--error .context-drop-summary,
+body.light .context-drop-log--error .context-drop-icon { color: #b45309; }
+body.light .context-drop-log--error .context-drop-list { color: #78350f; }
 
-body.light .context-drop-summary,
-body.light .context-drop-icon { color: #b45309; }
-
-body.light .context-drop-list { color: #78350f; }
+body.light .context-drop-log--warn {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(238, 242, 255, 0.6);
+}
+body.light .context-drop-log--warn .context-drop-summary,
+body.light .context-drop-log--warn .context-drop-icon { color: #4f46e5; }
+body.light .context-drop-log--warn .context-drop-list { color: #3730a3; }

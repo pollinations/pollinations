@@ -204,51 +204,83 @@ const MessageBubble = ({
             )}
 
             {/* Context transparency log (stormdede515-eng)
-                Shows what data was silently dropped before this AI reply.
-                Only renders when at least one item was not received. */}
+                Confirmed drops (severity=drop) and soft advisories
+                (severity=warning) are rendered separately so the user
+                can tell the difference between a proven failure and a
+                heads-up that may or may not apply. */}
             {message.role === "assistant" &&
                 Array.isArray(message.contextDrops) &&
-                message.contextDrops.length > 0 && (
-                    <details className="context-drop-log">
-                        <summary className="context-drop-summary">
-                            <svg
-                                className="context-drop-icon"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                aria-hidden="true"
-                            >
-                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                <line x1="12" y1="9" x2="12" y2="13" />
-                                <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                            {message.contextDrops.length === 1
-                                ? "1 item was not seen by the AI"
-                                : `${message.contextDrops.length} items were not seen by the AI`}
-                        </summary>
-                        <ul className="context-drop-list">
-                            {message.contextDrops.map((drop, i) => (
-                                <li key={i} className="context-drop-item">
-                                    <span className="context-drop-type">
-                                        {drop.type}
-                                    </span>
-                                    <span className="context-drop-reason">
-                                        {drop.reason === "model-no-vision"
-                                            ? `Model "${drop.detail?.model}" does not support image input`
-                                            : drop.reason === "no-data"
-                                              ? `Attachment "${drop.detail?.name}" had no recoverable data — it may have been lost from storage`
-                                              : drop.reason === "no-explicit-prompt"
-                                                ? `Image "${drop.detail?.name}" was sent with no text prompt — the AI may not have analyzed it`
-                                                : drop.reason === "unexpected-drop"
-                                                    ? `${drop.detail?.missed} of ${drop.detail?.expected} image(s) were lost in an unknown pipeline step`
-                                                    : drop.reason}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </details>
-                )}
+                message.contextDrops.length > 0 &&
+                (() => {
+                    const drops = message.contextDrops.filter(
+                        (d) => d.severity === "drop",
+                    );
+                    const warnings = message.contextDrops.filter(
+                        (d) => d.severity === "warning",
+                    );
+                    const renderReason = (entry) => {
+                        switch (entry.reason) {
+                            case "model-no-vision":
+                                return `Model "${entry.detail?.model}" does not support image input`;
+                            case "no-data":
+                                return `Attachment "${entry.detail?.name}" had no recoverable data — it may have been lost from storage`;
+                            case "no-explicit-prompt":
+                                return `Image "${entry.detail?.name}" was sent with no text prompt — the AI may not have analyzed it`;
+                            case "model-ignored-image":
+                                return "The AI's response indicates it did not see the previously shared image — try re-attaching it to your next message";
+                            case "unexpected-drop":
+                                return `${entry.detail?.missed} of ${entry.detail?.expected} image(s) were lost in an unknown pipeline step`;
+                            case "image-in-prior-turn":
+                                return "An image from a previous message is in context — most modern models see it, but some may not";
+                            default:
+                                return entry.reason;
+                        }
+                    };
+                    return (
+                        <>
+                            {drops.length > 0 && (
+                                <details className="context-drop-log context-drop-log--error">
+                                    <summary className="context-drop-summary">
+                                        <svg className="context-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                            <line x1="12" y1="9" x2="12" y2="13" />
+                                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                                        </svg>
+                                        {drops.length === 1 ? "1 item was not seen by the AI" : `${drops.length} items were not seen by the AI`}
+                                    </summary>
+                                    <ul className="context-drop-list">
+                                        {drops.map((d, i) => (
+                                            <li key={i} className="context-drop-item">
+                                                <span className="context-drop-type">{d.type}</span>
+                                                <span className="context-drop-reason">{renderReason(d)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </details>
+                            )}
+                            {warnings.length > 0 && (
+                                <details className="context-drop-log context-drop-log--warn">
+                                    <summary className="context-drop-summary">
+                                        <svg className="context-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                        </svg>
+                                        {warnings.length === 1 ? "1 advisory note about this request" : `${warnings.length} advisory notes about this request`}
+                                    </summary>
+                                    <ul className="context-drop-list">
+                                        {warnings.map((w, i) => (
+                                            <li key={i} className="context-drop-item">
+                                                <span className="context-drop-type">{w.type}</span>
+                                                <span className="context-drop-reason">{renderReason(w)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </details>
+                            )}
+                        </>
+                    );
+                })()}
 
             {/* Message action bar (assistant only, not streaming, not error) */}
             {message.role === "assistant" &&

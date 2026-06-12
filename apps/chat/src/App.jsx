@@ -346,41 +346,31 @@ function App() {
                 : updatedChat.messages;
 
             // ── Context transparency (stormdede515-eng) ──────────────
-            // Log when the current message carries an image but no text
-            // prompt. The AI receives the image data but has no instruction
-            // to look at it, so it often replies to surrounding context
-            // instead — a known silent failure pattern.
+
+            // 1. Confirmed drop: image sent with no text prompt.
             try {
                 if (attachments.length > 0 && attachments[0]?.isImage && !trimmed) {
                     contextLogger.dropped(
                         assistantId,
                         "image",
                         "no-explicit-prompt",
-                        {
-                            name: attachments[0].name || "(unnamed)",
-                            note: "Image sent without a text prompt — the AI may not analyze it",
-                        },
+                        { name: attachments[0].name || "(unnamed)" },
                     );
                 }
-            } catch {
-                // must never block the send flow
-            }
+            } catch { /* must never block */ }
 
-            // Check model vision capability against all messages that
-            // carry image attachments. Any image the model cannot see
-            // is logged as a drop BEFORE the request is sent so it
-            // appears on the reply bubble regardless of outcome.
+            // 2. Confirmed drop: model registry says no vision support.
             try {
                 const modelDef = models[selectedModel];
                 const modelSupportsImages =
                     modelDef?.inputModalities?.includes("image") ?? false;
                 if (!modelSupportsImages) {
                     for (const msg of runtimeMessages) {
-                        const hasImageAttachment =
-                            Array.isArray(msg.attachments) &&
-                            msg.attachments.some((a) => a?.isImage);
-                        const hasLegacyImage = !!msg.image?.src;
-                        if (hasImageAttachment || hasLegacyImage) {
+                        const hasImage =
+                            (Array.isArray(msg.attachments) &&
+                                msg.attachments.some((a) => a?.isImage)) ||
+                            !!msg.image?.src;
+                        if (hasImage) {
                             contextLogger.dropped(
                                 assistantId,
                                 "image",
@@ -390,20 +380,79 @@ function App() {
                         }
                     }
                 }
-            } catch {
-                // logger errors must never block the send flow
-            }
+            } catch { /* must never block */ }
 
-            // Helper: attach accumulated context log to the reply bubble.
-            const flushContextLog = () => {
-                try {
-                    const drops = contextLogger.getDroppedForTurn(assistantId);
-                    if (drops.length > 0) {
-                        updateMessage(assistantId, { contextDrops: drops });
+            // 3. Soft warning: the current message has no image but a prior
+            //    message in history does. Some models handle cross-turn images
+            //    fine (GPT-5.4, Claude); others silently ignore them. This is
+            //    not a confirmed drop — just an advisory.
+            let hasPriorImage = false;
+            try {
+                const currentHasImage =
+                    attachments.length > 0 && attachments.some((a) => a?.isImage);
+                if (!currentHasImage) {
+                    hasPriorImage = updatedChat.messages
+                        .slice(0, -1)
+                        .some(
+                            (msg) =>
+                                Array.isArray(msg.attachments) &&
+                                msg.attachments.some((a) => a?.isImage),
+                        );
+                    if (hasPriorImage) {
+                        contextLogger.warn(
+                            assistantId,
+                            "image",
+                            "image-in-prior-turn",
+                            {
+                                note: "An image from a previous message is in context — most modern models see it, but some may not",
+                            },
+                        );
                     }
-                } catch {
-                    // must never crash
                 }
+            } catch { /* must never block */ }
+
+            // Helper: write all visible log entries (drops + warnings) onto
+            // the reply bubble. Called after every response, including errors.
+            const flushContextLog = (responseText = "") => {
+                try {
+                    // 4. Sanity check: scan the response for phrases that
+                    //    signal the model could not see a prior-turn image.
+                    //    Only runs when we know there was one.
+                    if (hasPriorImage && responseText) {
+                        const lower = responseText.toLowerCase();
+                        const ignored = [
+                            "i don't see an image",
+                            "i don't see any image",
+                            "i can't see the image",
+                            "i can't see an image",
+                            "no image",
+                            "didn't receive",
+                            "haven't received",
+                            "unable to see",
+                            "please share the image",
+                            "please send the image",
+                            "could you share the image",
+                            "can you share the image",
+                            "could you send the image",
+                            "can you send the image",
+                            "don't have access to the image",
+                        ].some((p) => lower.includes(p));
+                        if (ignored) {
+                            contextLogger.dropped(
+                                assistantId,
+                                "image",
+                                "model-ignored-image",
+                                {
+                                    note: "AI response indicates it did not see the previously shared image",
+                                },
+                            );
+                        }
+                    }
+                    const visible = contextLogger.getVisibleForTurn(assistantId);
+                    if (visible.length > 0) {
+                        updateMessage(assistantId, { contextDrops: visible });
+                    }
+                } catch { /* must never crash */ }
             };
 
             const applyError = (error) => {
@@ -439,7 +488,7 @@ function App() {
                             content: fullContent,
                             isStreaming: false,
                         });
-                        flushContextLog();
+                        flushContextLog(fullContent);
                         setIsGenerating(false);
                     },
                     applyError,

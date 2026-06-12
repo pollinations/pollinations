@@ -5,6 +5,10 @@
  * before or during a request. Every method is fully try/catch guarded —
  * a failure here must never propagate to the caller or crash the send flow.
  *
+ * Severity levels:
+ *   "drop"    — confirmed data loss (provable from code path)
+ *   "warning" — possible data loss (uncertain, model-dependent)
+ *
  * Authored by stormdede515-eng
  * https://github.com/stormdede515-eng
  */
@@ -12,29 +16,55 @@
 const _entries = [];
 
 /**
- * Record one dropped item for a given turn.
- * @param {string} turnId     - Assistant message ID that owns this turn.
- * @param {"image"|"attachment"|"chat-history"} type - Category of dropped data.
- * @param {string} reason     - Machine-readable reason code.
- * @param {object} [detail]   - Optional extra context (model name, file name, etc.).
+ * Record a confirmed dropped item for a given turn.
+ * @param {string} turnId
+ * @param {"image"|"attachment"|"chat-history"} type
+ * @param {string} reason
+ * @param {object} [detail]
  */
 function dropped(turnId, type, reason, detail = {}) {
     try {
-        const entry = {
+        _entries.push({
             turnId,
             type,
             reason,
             detail,
-            dropped: true,
+            severity: "drop",
             ts: Date.now(),
-        };
-        _entries.push(entry);
+        });
         console.warn(
             `[context-drop] turn=${turnId} type=${type} reason=${reason}`,
             detail,
         );
     } catch {
         // intentionally swallowed — logger must never crash caller
+    }
+}
+
+/**
+ * Record a non-critical warning — data may or may not have been received
+ * depending on model behaviour. Does not indicate confirmed loss.
+ * @param {string} turnId
+ * @param {"image"|"attachment"} type
+ * @param {string} reason
+ * @param {object} [detail]
+ */
+function warn(turnId, type, reason, detail = {}) {
+    try {
+        _entries.push({
+            turnId,
+            type,
+            reason,
+            detail,
+            severity: "warning",
+            ts: Date.now(),
+        });
+        console.info(
+            `[context-warn] turn=${turnId} type=${type} reason=${reason}`,
+            detail,
+        );
+    } catch {
+        // intentionally swallowed
     }
 }
 
@@ -46,33 +76,55 @@ function dropped(turnId, type, reason, detail = {}) {
  */
 function received(turnId, type, detail = {}) {
     try {
-        _entries.push({ turnId, type, detail, dropped: false, ts: Date.now() });
+        _entries.push({
+            turnId,
+            type,
+            detail,
+            severity: "received",
+            ts: Date.now(),
+        });
     } catch {
         // intentionally swallowed
     }
 }
 
 /**
- * Return all log entries for a specific turn, in insertion order.
+ * Return all entries (drops + warnings) that should surface to the user
+ * for a given turn, in insertion order.
  * @param {string} turnId
- * @returns {{ turnId: string, type: string, reason?: string, detail: object, dropped: boolean, ts: number }[]}
+ * @returns {object[]}
  */
-function getForTurn(turnId) {
+function getVisibleForTurn(turnId) {
     try {
-        return _entries.filter((e) => e.turnId === turnId);
+        return _entries.filter(
+            (e) =>
+                e.turnId === turnId &&
+                (e.severity === "drop" || e.severity === "warning"),
+        );
     } catch {
         return [];
     }
 }
 
 /**
- * Return only the dropped entries for a turn.
+ * Return only confirmed drops for a turn (no warnings).
  * @param {string} turnId
  * @returns {object[]}
  */
 function getDroppedForTurn(turnId) {
     try {
-        return _entries.filter((e) => e.turnId === turnId && e.dropped);
+        return _entries.filter(
+            (e) => e.turnId === turnId && e.severity === "drop",
+        );
+    } catch {
+        return [];
+    }
+}
+
+/** Return all log entries for a turn (for debugging). */
+function getForTurn(turnId) {
+    try {
+        return _entries.filter((e) => e.turnId === turnId);
     } catch {
         return [];
     }
@@ -87,4 +139,12 @@ function flush() {
     }
 }
 
-export const contextLogger = { dropped, received, getForTurn, getDroppedForTurn, flush };
+export const contextLogger = {
+    dropped,
+    warn,
+    received,
+    getVisibleForTurn,
+    getDroppedForTurn,
+    getForTurn,
+    flush,
+};

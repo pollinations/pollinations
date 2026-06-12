@@ -245,6 +245,10 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "kimi-k2.7-code",
+        config: portkeyConfig["moonshotai/kimi-k2.7-code"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(

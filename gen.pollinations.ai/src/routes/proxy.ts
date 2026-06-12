@@ -67,7 +67,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
+import { generationAccess } from "@/utils/generation-access.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
@@ -372,16 +372,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
-            const models = filterModelsByPermissions(
-                getImageModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            return c.json(models);
-        },
+        modelsListHandler(() => getImageModelsInfo()),
     )
     .get(
         "/text/models",
@@ -907,7 +898,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageGeneration(checkBalance),
+        handleImageGeneration,
     )
     .post(
         "/v1/images/edits",
@@ -936,7 +927,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageEdit(checkBalance),
+        handleImageEdit,
     );
 
 export function contentFilterResultsToHeaders(

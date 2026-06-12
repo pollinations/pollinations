@@ -1,7 +1,6 @@
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "./fetchUpstream.ts";
 
 const logOps = debug("pollinations:dashscope-image:ops");
@@ -35,8 +34,6 @@ export async function callDashScopeMultimodalImage(
     requestBody: Record<string, unknown>,
     actualModel: string,
     modelLabel: string,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     // Log request safely (hide base64 data)
     const safeBody = JSON.stringify(requestBody, (key, value) => {
@@ -83,14 +80,12 @@ export async function callDashScopeMultimodalImage(
     }
 
     logOps("Image generated, downloading from:", imageUrl);
-    progress.updateBar(requestId, 80, "Processing", "Downloading image...");
 
     const imageResponse = await fetchUpstream(imageUrl, {
         errorLabel: "Failed to download generated image",
     });
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
     logOps(`Image downloaded, size: ${(buffer.length / 1024).toFixed(1)} KB`);
-    progress.updateBar(requestId, 95, "Success", "Image generation completed");
 
     return {
         buffer,

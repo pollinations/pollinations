@@ -241,6 +241,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "minimax/minimax-m3",
         }),
 
+    // -- OpenRouter (Kimi K2.7 Code) -----------------------------------------
+    // K2.7 (Code variant) is not on Fireworks/Azure yet (both top out at K2.6);
+    // OpenRouter is the only route.
+    "moonshotai/kimi-k2.7-code": () =>
+        createOpenRouterModelConfig({
+            model: "moonshotai/kimi-k2.7-code",
+        }),
+
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
         createAzureModelConfig(

@@ -977,6 +977,32 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.7-code": {
+        aliases: ["kimi-k2.7", "kimi-k2p7"],
+        modelId: "moonshotai/kimi-k2.7-code",
+        provider: "openrouter",
+        brand: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-06-12").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter moonshotai/kimi-k2.7-code rates (2026-06-12):
+            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
+            promptTextTokens: perMillion(0.95),
+            promptCachedTokens: perMillion(0.19),
+            completionTextTokens: perMillion(4.0),
+        },
+        title: "Moonshot Kimi K2.7 Code",
+        description:
+            "Moonshot Kimi K2.7 Code - Agentic coding model with CoT reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",

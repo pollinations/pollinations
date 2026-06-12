@@ -65,7 +65,12 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
+import {
+    generateRandomId,
+    getRoutePath,
+    parseBooleanLike,
+    removeUnset,
+} from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -622,8 +627,8 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.param("stream");
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        // "stream" is a query param, not a route param.
+        return parseBooleanLike(request.query("stream")) ?? false;
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -638,7 +643,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return z.safeParse(z.coerce.boolean(), stream).data || false;
+                return parseBooleanLike(stream) ?? false;
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -647,7 +652,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return z.safeParse(z.coerce.boolean(), stream).data || false;
+            return parseBooleanLike(stream) ?? false;
         } catch {
             return false;
         }
@@ -821,6 +826,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -833,7 +844,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -843,9 +854,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:

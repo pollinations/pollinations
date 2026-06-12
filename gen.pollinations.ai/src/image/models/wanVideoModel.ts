@@ -3,10 +3,9 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -148,16 +147,8 @@ interface DashScopeRequest {
 export async function callWanAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
-    return await callWanAlibabaAPI(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        WAN_26_CONFIG,
-    );
+    return await callWanAlibabaAPI(prompt, safeParams, WAN_26_CONFIG);
 }
 
 /**
@@ -166,16 +157,8 @@ export async function callWanAPI(
 export async function callWanFastAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
-    return await callWanAlibabaAPI(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        WAN_22_CONFIG,
-    );
+    return await callWanAlibabaAPI(prompt, safeParams, WAN_22_CONFIG);
 }
 
 /**
@@ -184,16 +167,8 @@ export async function callWanFastAPI(
 export async function callWanProAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
-    return await callWanAlibabaAPI(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        WAN_27_CONFIG,
-    );
+    return await callWanAlibabaAPI(prompt, safeParams, WAN_27_CONFIG);
 }
 
 /**
@@ -272,13 +247,7 @@ function createVideoResult(
 /**
  * Download video from URL
  */
-async function downloadVideo(
-    videoUrl: string,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<Buffer> {
-    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
-
+async function downloadVideo(videoUrl: string): Promise<Buffer> {
     const response = await fetchUpstream(videoUrl, {
         errorLabel: "Failed to download video",
     });
@@ -287,7 +256,6 @@ async function downloadVideo(
     logOps(
         `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
     );
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
     return buffer;
 }
@@ -299,8 +267,6 @@ async function downloadVideo(
 async function callWanAlibabaAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
     config: WanModelConfig,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("DASHSCOPE_API_KEY");
@@ -329,23 +295,9 @@ async function callWanAlibabaAPI(
         },
     );
 
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Starting video generation with ${config.displayName} (${mode})...`,
-    );
-
-    // Download image(s) and convert to base64 data URI for reliability
-    // (DashScope can't fetch URLs that redirect or require special headers).
     // For KF2V (wan2.2-kf2v-flash), Alibaba's docs nominally require public
     // HTTP/HTTPS URLs for first_frame_url/last_frame_url, but DashScope
     // empirically accepts data: URIs — verified end-to-end on 2026-05-16.
-    const toDataUri = async (url: string): Promise<string> => {
-        logOps("Downloading image for base64 encoding:", url);
-        const { buffer, mimeType } = await downloadUserImage(url);
-        return `data:${mimeType};base64,${buffer.toString("base64")}`;
-    };
     const firstDataUri = firstFrameUrl
         ? await toDataUri(firstFrameUrl)
         : undefined;
@@ -362,14 +314,8 @@ async function callWanAlibabaAPI(
     );
     logRequestSafely(requestBody);
 
-    const taskId = await createDashScopeTask(
-        apiKey,
-        requestBody,
-        progress,
-        requestId,
-        useKf2v,
-    );
-    const result = await pollWanTask(taskId, apiKey, progress, requestId);
+    const taskId = await createDashScopeTask(apiKey, requestBody, useKf2v);
+    const result = await pollWanTask(taskId, apiKey);
     return createVideoResult(
         result.buffer,
         videoParams,
@@ -495,17 +441,8 @@ function logRequestSafely(requestBody: DashScopeRequest): void {
 async function createDashScopeTask(
     apiKey: string,
     requestBody: DashScopeRequest,
-    progress: ProgressManager,
-    requestId: string,
     useKf2v = false,
 ): Promise<string> {
-    progress.updateBar(
-        requestId,
-        45,
-        "Processing",
-        "Initiating video generation...",
-    );
-
     const path = useKf2v ? DASHSCOPE_KF2V_PATH : DASHSCOPE_VIDEO_PATH;
     const submitUrl = `${DASHSCOPE_API_BASE}${path}`;
     const response = await fetchUpstream(submitUrl, {
@@ -541,12 +478,6 @@ async function createDashScopeTask(
         );
     }
 
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (this takes 1-5 minutes)...",
-    );
     return taskId;
 }
 
@@ -556,27 +487,15 @@ async function createDashScopeTask(
 async function pollWanTask(
     taskId: string,
     apiKey: string,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<{ buffer: Buffer; usage: { video_duration: number } }> {
     const pollUrl = `${DASHSCOPE_API_BASE}/tasks/${taskId}`;
     logOps("Polling task:", taskId);
 
     for (let attempt = 1; attempt <= POLL_MAX_ATTEMPTS; attempt++) {
-        const pollResult = await pollTaskOnce(
-            pollUrl,
-            apiKey,
-            attempt,
-            progress,
-            requestId,
-        );
+        const pollResult = await pollTaskOnce(pollUrl, apiKey, attempt);
 
         if (pollResult.status === "completed") {
-            const buffer = await downloadVideo(
-                pollResult.videoUrl,
-                progress,
-                requestId,
-            );
+            const buffer = await downloadVideo(pollResult.videoUrl);
             return {
                 buffer,
                 usage: { video_duration: pollResult.videoDuration },
@@ -610,22 +529,12 @@ async function pollTaskOnce(
     pollUrl: string,
     apiKey: string,
     attempt: number,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<
     | { status: "pending" }
     | { status: "completed"; videoUrl: string; videoDuration: number }
     | { status: "failed"; error: string }
 > {
     logOps(`Poll attempt ${attempt}/${POLL_MAX_ATTEMPTS}...`);
-
-    const progressPercent = 50 + Math.min(40, Math.floor(attempt * 0.7));
-    progress.updateBar(
-        requestId,
-        progressPercent,
-        "Processing",
-        `Generating video... (${attempt}/${POLL_MAX_ATTEMPTS})`,
-    );
 
     const response = await fetch(pollUrl, {
         method: "GET",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11759,
+  "title": "refactor(gen): remove dead code, no-op plumbing, and duplicated helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11759",
+  "merged_at": "2026-06-12T21:41:49Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes dead DeepInfra plumbing (provider config, env key, bindings, rotation script — dead since #11562), the all-no-op ProgressManager threaded through ~20 image files, the unreachable flux self-hosted pool (dead since #11502), the translation-era normalizeAndTranslatePrompt memo, and dead balance middleware methods + orphaned shared/billing helpers\n- Removes dead-end text request plumbing: private/isPrivate/referrer fields, duplicate stream boolean parser, unreachable maxTokens branch; stops leaking voice:\"alloy\" and internal config keys (x-portkey-defaultOptions: \"[object Object]\") into upstream bodies/headers\n- Dedupes copy-pasted helpers: toDataUri (5 verbatim copies → utils/imageDownload.ts), closest-aspect-ratio matching (9 implementations → 2 generic helpers in utils/aspectRatio.ts), requireSafePrompt (kontext inline dup → shared util), /image/models route (→ modelsListHandler)\n- Bugfix: moderation boolean headers (jailbreak/protected-material) never parsed into Tinybird events on the non-streaming path — z.boolean() always failed on \"true\" header strings and .catch(undefined) masked it; now parsed as \"true\"/\"false\"\n- Shrinks AuthResult to its 3 live fields, drops unused callVertexAIGemini userInfo param, removes the any-typed checkBalance injection in images.ts, fixes stale comments claiming enter.pollinations.ai still does tier gating\n- Removes unused deps clsx, tailwind-merge, nanoid from gen package.json; root package-lock.json regenerated — may conflict with sibling cleanup PRs #11754/#11752 and should be regenerated on rebase\n\nNot included: nothing skipped — all 17 findings re-verified and applied on main.\n\nVerification: `tsc --noEmit` clean; full gen suite 42 files / 328 tests passed; biome clean (remaining warnings pre-existing).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We just did a massive sweep of the generation worker, feeding hundreds of lines of dead code to the Nomnom creature. The codebase is lighter, cleaner, and ready for what's next.",
+    "summary": "Refactored the generation worker to remove deprecated DeepInfra plumbing, deduplicate image helpers, and fix a bug where moderation headers weren't parsing correctly into Tinybird analytics.",
+    "impact": "The codebase is significantly lighter and easier to maintain, and internal analytics now correctly track moderation events.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "analytics",
+      "tinybird",
+      "worker"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature cleaning up a server room. Nomnom eating dead code (represented as old documents), Polly sweeping. Represents removing dead code and cleaning the repo.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature cleaning up a retro server room. Nomnom is happily eating a pile of old documents representing dead code, while the bee hovers nearby holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11759.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature cleaning up a retro server room. Nomnom is happily eating a pile of old documents representing dead code, while the bee hovers nearby holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-12T21:42:59.255601+00:00"
+}

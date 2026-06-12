@@ -1,0 +1,34 @@
+{
+  "pr_number": 11761,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11761",
+  "merged_at": "2026-06-12T23:26:15Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Syncing the Scrolls",
+    "blurb": "Our automated bots just synced the latest API documentation. Keeping the scrolls fresh and accurate for all your building needs!",
+    "summary": "Automated synchronization of APIDOCS.md to reflect the latest OpenAPI spec changes following a production deployment.",
+    "impact": "Developers referencing the API documentation will see the most up-to-date endpoints and parameters.",
+    "keywords": [
+      "docs",
+      "openapi",
+      "automation",
+      "api"
+    ],
+    "visual_concept": "The Nomnom creature eating old documentation pages while the Bee mascot (Polly) prints out fresh new scrolls from a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, printing fresh documentation scrolls from a retro terminal glowing lime green (#ecf874). Nearby, the round tan nomnom creature happily eats a stack of old papers with a 'NOMNOM' speech bubble. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11761.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, printing fresh documentation scrolls from a retro terminal glowing lime green (#ecf874). Nearby, the round tan nomnom creature happily eats a stack of old papers with a 'NOMNOM' speech bubble. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-12T23:27:14.194518+00:00"
+}

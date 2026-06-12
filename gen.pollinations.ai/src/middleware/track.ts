@@ -65,7 +65,12 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
+import {
+    generateRandomId,
+    getRoutePath,
+    parseBooleanLike,
+    removeUnset,
+} from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -622,8 +627,8 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.param("stream");
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        // "stream" is a query param, not a route param.
+        return parseBooleanLike(request.query("stream")) ?? false;
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -638,7 +643,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return z.safeParse(z.coerce.boolean(), stream).data || false;
+                return parseBooleanLike(stream) ?? false;
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -647,7 +652,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return z.safeParse(z.coerce.boolean(), stream).data || false;
+            return parseBooleanLike(stream) ?? false;
         } catch {
             return false;
         }

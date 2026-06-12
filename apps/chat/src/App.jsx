@@ -366,38 +366,6 @@ function App() {
                 // must never block the send flow
             }
 
-            // Log when the current message has no image but a prior
-            // message in history does. Many vision models only process
-            // images in the latest user turn — so the prior image is
-            // effectively invisible. This is the root cause of the
-            // "I didn't receive your image" pattern (step 3 scenario).
-            try {
-                const currentHasImage =
-                    attachments.length > 0 &&
-                    attachments.some((a) => a?.isImage);
-                if (!currentHasImage) {
-                    const priorWithImage = updatedChat.messages
-                        .slice(0, -1)
-                        .find(
-                            (msg) =>
-                                Array.isArray(msg.attachments) &&
-                                msg.attachments.some((a) => a?.isImage),
-                        );
-                    if (priorWithImage) {
-                        contextLogger.dropped(
-                            assistantId,
-                            "image",
-                            "image-in-prior-turn",
-                            {
-                                note: "An image exists in a previous message but not in the current one — some models only process images in the latest turn",
-                            },
-                        );
-                    }
-                }
-            } catch {
-                // must never block the send flow
-            }
-
             // Check model vision capability against all messages that
             // carry image attachments. Any image the model cannot see
             // is logged as a drop BEFORE the request is sent so it

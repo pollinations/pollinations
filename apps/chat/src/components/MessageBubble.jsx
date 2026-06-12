@@ -240,9 +240,7 @@ const MessageBubble = ({
                                               ? `Attachment "${drop.detail?.name}" had no recoverable data — it may have been lost from storage`
                                               : drop.reason === "no-explicit-prompt"
                                                 ? `Image "${drop.detail?.name}" was sent with no text prompt — the AI may not have analyzed it`
-                                                : drop.reason === "image-in-prior-turn"
-                                                  ? "Your image is in a previous message, not this one — many models only see images in the most recent message. Re-attach the image to this message if the AI says it cannot see it."
-                                                  : drop.reason === "unexpected-drop"
+                                                : drop.reason === "unexpected-drop"
                                                     ? `${drop.detail?.missed} of ${drop.detail?.expected} image(s) were lost in an unknown pipeline step`
                                                     : drop.reason}
                                     </span>

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11754,
+  "title": "refactor(enter): remove dead bindings, config, and unreachable helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11754",
+  "merged_at": "2026-06-12T21:35:16Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes unread wrangler.toml bindings from all 6 enter envs: IMAGE_BUCKET, TEXT_BUCKET, EDGE_RATE_LIMITER, POLLEN_REFILL_PER_HOUR, ALLOW_ANONYMOUS_USAGE (78 lines; only consumers are in gen, which declares its own copies); regenerates worker-bindings.d.ts\n- Removes isLoopbackUrl + its test — zero callers; the comment claiming the consent UI uses it was stale. redirectUriMatchesAllowlist re-export kept (used by app-lookup.ts)\n- Removes pollenTierMeterId/pollenPackMeterId from frontend config — zero consumers since b888fde64\n- Drops the last SSR guard in sign-in.tsx (straggler from #11473; client-only SPA)\n- Removes unused deps: nanoid, neverthrow, hono-rate-limiter, @hono-rate-limiter/cloudflare (last usage removed in the Nov 2025 token-bucket commit)\n\nNot included: sendTierEventToTinybird logger cleanup (src/events.ts owned by a sibling infra-modules PR) and gen wrangler.toml's ALLOW_ANONYMOUS_USAGE (owned by the gen cleanup PR).\n\nVerified: tsc --noEmit clean, url-utils tests 13/13, integration/api-keys 31/31 against trimmed wrangler.toml, frontend vite build OK.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the hive",
+    "blurb": "We did some spring cleaning in the auth gateway, sweeping away unused code, old bindings, and forgotten dependencies. A lighter codebase is a happier codebase!",
+    "summary": "Removed 78 lines of unused wrangler.toml bindings, dead helper functions like isLoopbackUrl, and stale dependencies from the enter.pollinations.ai gateway.",
+    "impact": "This internal cleanup reduces deployment size and simplifies the auth gateway codebase for future development.",
+    "keywords": [
+      "refactor",
+      "cleanup",
+      "enter",
+      "wrangler",
+      "dependencies"
+    ],
+    "visual_concept": "Polly the bee doing some spring cleaning, sweeping up dead leaves/code snippets, while the Nomnom creature happily eats the discarded code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small pixelated dead leaves and old code snippets with a tiny broom. The round tan nomnom creature happily eats a stack of discarded documents. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11754.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up small pixelated dead leaves and old code snippets with a tiny broom. The round tan nomnom creature happily eats a stack of discarded documents. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-12T21:36:14.829302+00:00"
+}

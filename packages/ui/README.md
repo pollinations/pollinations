@@ -18,56 +18,22 @@ npm install @pollinations/ui
 npm install @pollinations/ui@alpha
 ```
 
-Install `@pollinations/sdk` too when using `@pollinations/ui/*/sdk`
-subpaths.
+Install `@pollinations/sdk` too when using the
+`@pollinations/ui/app-user-menu/sdk` subpath.
 
 ## Usage
 
 ```tsx
 import "@pollinations/ui/styles.css";
-import { PolliProvider, useAccountKeyUsage } from "@pollinations/sdk/react";
+import { PolliProvider } from "@pollinations/sdk/react";
 import { Surface } from "@pollinations/ui";
-import {
-    LoginButton,
-    LogoutButton,
-    UserAvatar,
-    UserName,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "@pollinations/ui/auth/sdk";
-import {
-    Balance,
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
-} from "@pollinations/ui/wallet/sdk";
-
-function RecentRequests() {
-    const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
-    return <span>{usage?.usage.length ?? 0} recent requests</span>;
-}
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 
 export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface data-theme="amber">
-                <WhenLoggedOut>
-                    <LoginButton theme="amber">
-                        Log in with Pollinations
-                    </LoginButton>
-                </WhenLoggedOut>
-                <WhenLoggedIn>
-                    <UserAvatar size="md" />
-                    <UserName />
-                    <Balance />
-                    <KeyPrefix />
-                    <KeyBudget />
-                    <KeyExpiry />
-                    <KeyModels />
-                    <RecentRequests />
-                    <LogoutButton theme="amber">Log out</LogoutButton>
-                </WhenLoggedIn>
+                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
             </Surface>
         </PolliProvider>
     );
@@ -105,21 +71,10 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/auth` exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
-- `@pollinations/ui/auth/sdk` exports identity/session components that read
-  from the surrounding `<PolliProvider>`:
-  - **null when not logged in (or before data loads):** `LogoutButton`,
-    `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
-  - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
-
-  These are intentionally bare wrappers around `useAuth*` hooks. They render
-  the data and nothing else — no default copy, no default theme, no default
-  intent. The app composes layout, copy, and color.
 - `@pollinations/ui/wallet` exports SDK-free wallet-specific display helpers
   and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
-- `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
-  `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
 - `@pollinations/ui/app-user-menu/sdk` exports the SDK-backed app account
   menu module.
 - `@pollinations/ui/gen` exports the generation UI — `ModelSelector`,
@@ -150,8 +105,7 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 - `src/modules/*` contains package-owned recipes with domain assumptions
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
-  `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
-  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/gen`,
+  `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
   `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
   layers.
 

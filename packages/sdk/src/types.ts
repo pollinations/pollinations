@@ -775,7 +775,9 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
-/** All model categories, in catalog display order. Single source of truth. */
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
 export const MODEL_CATEGORIES = [
     "image",
     "video",

@@ -706,31 +706,6 @@ def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str
     return None
 
 
-def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
-    """Format PRs into a summary string for prompts
-    
-    Args:
-        prs: List of PR dictionaries
-        time_label: Label to use (e.g., "TODAY", "WEEKLY")
-    
-    Returns:
-        Formatted summary string
-    """
-    if prs:
-        pr_summary = f"{time_label}'S UPDATES ({len(prs)} merged PRs):\n"
-        for pr in prs[:20]:
-            labels = pr.get("labels", [])
-            labels_str = f" [{', '.join(labels)}]" if labels else ""
-            pr_summary += f"- #{pr.get('number', '?')}: {pr.get('title', 'Untitled')}{labels_str}\n"
-            body = pr.get("body", "")
-            if body:
-                pr_summary += f"  {body[:150]}...\n"
-    else:
-        pr_summary = f"NO UPDATES {time_label}"
-    
-    return pr_summary
-
-
 def generate_platform_post(
     platform: str,
     summary: Dict,

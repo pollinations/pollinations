@@ -24,7 +24,6 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "DEEPINFRA_API_KEY",
     "FIREWORKS_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
@@ -80,7 +79,7 @@ function prepareRequestParameters(requestParams: RequestData): RequestData {
 
     if (!isAudioModel) return requestParams;
 
-    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
+    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {

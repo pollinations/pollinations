@@ -4,7 +4,8 @@ import type { ImageModelName } from "@shared/registry/image.ts";
 /**
  * Image/Video-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
- * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
+ * Tier/balance gating runs in this worker (auth/balance middleware +
+ * utils/generation-access.ts) - this file only contains implementation details
  */
 interface ImageModelConfig {
     type: string;

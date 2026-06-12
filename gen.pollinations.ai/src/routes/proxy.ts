@@ -19,6 +19,8 @@ import { handleImageEdit, handleImageGeneration } from "./images.ts";
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { UpstreamError } from "@shared/error.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
     DEFAULT_IMAGE_MODEL,
@@ -44,16 +46,15 @@ import {
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
-import { UpstreamError } from "@/error.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
-import { validator } from "@/middleware/validator.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -66,7 +67,6 @@ import {
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";

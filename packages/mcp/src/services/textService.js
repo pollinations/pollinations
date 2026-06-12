@@ -232,7 +232,6 @@ async function chatCompletion(params) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
-                    user_tier: result.user_tier,
                 },
                 true,
             ),

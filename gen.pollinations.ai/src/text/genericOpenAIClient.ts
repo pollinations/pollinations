@@ -1,5 +1,5 @@
+import { remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
-import { remapUpstreamStatus } from "@/error.ts";
 import {
     normalizeOptions,
     validateAndNormalizeMessages,

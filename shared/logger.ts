@@ -8,7 +8,7 @@ import {
     getJsonLinesFormatter,
     type LogLevel,
 } from "@logtape/logtape";
-import { applyColor } from "@/util";
+import { applyColor } from "./util.ts";
 
 export type LogFormat = "json" | "text";
 
@@ -36,7 +36,7 @@ const jsonLinesFormatter = () =>
         categorySeparator: ":",
     });
 
-export const ansiColorFormatter = () =>
+const ansiColorFormatter = () =>
     getAnsiColorFormatter({
         level: "FULL",
         value: formatValue,
@@ -64,7 +64,7 @@ export async function ensureConfigured(options: {
                 lowestLevel: "warning",
             },
             {
-                category: [],
+                category: [], // catches all categories
                 sinks: ["console"],
                 lowestLevel: options.level,
             },

@@ -12,6 +12,12 @@ interface CacheEntry<T> {
     ttl: number;
 }
 
+/**
+ * Creates a cached version of an async function using Cloudflare KV
+ * @param fn The async function to cache
+ * @param options Cache configuration options
+ * @returns A cached version of the function
+ */
 export function cached<TArgs extends unknown[], TReturn>(
     fn: (...args: TArgs) => Promise<TReturn>,
     options: CacheOptions<TArgs>,

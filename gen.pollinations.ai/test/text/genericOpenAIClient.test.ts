@@ -45,8 +45,6 @@ describe("genericOpenAIClient", () => {
                 modelDef: { name: "openai-fast" },
                 requestedModel: "openai-fast",
                 userApiKey: "sk_should_not_leak",
-                isPrivate: true,
-                referrer: "https://example.com",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
                 temperature: 1,
@@ -63,11 +61,9 @@ describe("genericOpenAIClient", () => {
             temperature: 1,
         });
         expect(upstreamBody).not.toHaveProperty("additionalHeaders");
-        expect(upstreamBody).not.toHaveProperty("isPrivate");
         expect(upstreamBody).not.toHaveProperty("modelConfig");
         expect(upstreamBody).not.toHaveProperty("modelDef");
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
-        expect(upstreamBody).not.toHaveProperty("referrer");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
     });

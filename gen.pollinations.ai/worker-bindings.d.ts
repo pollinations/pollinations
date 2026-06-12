@@ -41,7 +41,6 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
-    DEEPINFRA_API_KEY: string;
     FIREWORKS_API_KEY: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;

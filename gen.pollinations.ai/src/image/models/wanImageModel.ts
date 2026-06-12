@@ -3,7 +3,6 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { callDashScopeMultimodalImage } from "../utils/dashScopeImage.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -54,8 +53,6 @@ function clampDimensions(
 export async function callWanImageAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
     isPro = false,
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("DASHSCOPE_API_KEY");
@@ -76,12 +73,6 @@ export async function callWanImageAPI(
     if (hasImage) {
         const imageUrls = safeParams.image.slice(0, 9);
         logOps(`${modelLabel} editing with ${imageUrls.length} image(s)`);
-        progress.updateBar(
-            requestId,
-            25,
-            "Processing",
-            `Preparing images for ${modelLabel}...`,
-        );
 
         for (const url of imageUrls) {
             if (!url) continue;
@@ -102,12 +93,6 @@ export async function callWanImageAPI(
     );
 
     logOps(`Calling ${modelLabel} (${w}x${h}):`, prompt);
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Generating image with ${modelLabel}...`,
-    );
 
     const parameters: Record<string, unknown> = {
         size: `${w}*${h}`,
@@ -138,7 +123,5 @@ export async function callWanImageAPI(
         requestBody,
         isPro ? "wan-image-pro" : "wan-image",
         modelLabel,
-        progress,
-        requestId,
     );
 }

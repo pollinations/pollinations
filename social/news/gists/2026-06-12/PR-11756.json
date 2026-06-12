@@ -1,0 +1,35 @@
+{
+  "pr_number": 11756,
+  "title": "refactor(shared): dedupe gen/enter twin infra modules into shared",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11756",
+  "merged_at": "2026-06-12T21:56:35Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Hoists the 7 twin infra modules duplicated between gen and enter (`error.ts`, `events.ts`, `util.ts`, `logger.ts`, `cache.ts`, `middleware/validator.ts`, `utils/api-docs.ts`) into `shared/` as single source of truth; deletes both originals and rewrites all imports (net **-1,062 lines**).\n- `error.ts` unified on the gen superset — the only semantic deltas were gen's `errorCode` override (#11722) and the 426 status entry; both are no-ops for enter, which never constructs `UpstreamError`. Enter's unreachable upstream-error machinery is now live shared code (gen has 15+ `ensureUpstreamOk` call sites).\n- Deletes gen's dead Polar/tier-event code (`PolarEvent`, `flattenBalances`, dead `sendTierEventToTinybird` copy — zero callers since #10466/#10625); enter's live tier-event sender is the shared one.\n- Unifies `cache.ts` generics, so `shared/utils/model-stats.ts` imports `cached` directly — removes the documented `CachedFn` injection workaround at both call sites.\n- Single `ApiKeyType` definition in `shared/auth/api-key-creation.ts`; deletes `InsertGenerationEvent`/`SelectGenerationEvent` aliases; removes the never-populated legacy `user_tier` field from the chat-completion schema + the `@pollinations/mcp` pass-through.\n\nNot included: `middleware/logger.ts` stays per-service (gen's credential-query redaction is intentional drift); gen's unused `TINYBIRD_TIER_INGEST_URL` wrangler.toml/bindings vars left alone (adjacent-line conflict risk with #11705/#11171); `track.ts` keeps a local `TinybirdEvent as InsertGenerationEvent` import alias to avoid touching billing-PR territory (#11683/#11721) beyond import lines.\n\nNote: `package-lock.json` regenerated at root (adds `hono`/`hono-openapi` to `shared/package.json` + npm metadata normalization) — may conflict with #11754/#11752 siblings; regenerate on rebase.\n\nTests: gen `tsc --noEmit` clean, 42 files / 328 tests pass; enter `npm run typecheck` clean, full suite 26 files / 466 tests pass.\n\n🤖 Generated with [Claude Code](https://",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less Code, Same Buzz",
+    "blurb": "We just deleted over 1,000 lines of duplicate code by merging our twin infrastructure modules into a single shared library. A cleaner codebase means faster updates and fewer bugs hiding in the weeds!",
+    "summary": "Refactored the gen and enter services to use a single shared infrastructure library, removing over 1,000 lines of duplicated code across error handling, caching, and event logging.",
+    "impact": "This internal cleanup makes the codebase easier to maintain and reduces the risk of inconsistent behavior between the API gateway and billing services.",
+    "keywords": [
+      "refactor",
+      "infrastructure",
+      "shared",
+      "cleanup",
+      "tech-debt"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot organizing files or sweeping up duplicate code blocks into a single shared bin. A tidy, organized workspace representing deduplication.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-headed robot sweeping up duplicate glowing code blocks into a shared lime green (#ecf874) storage bin. A tidy, organized retro server room with soft pastel gradient lighting. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11756.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-headed robot sweeping up duplicate glowing code blocks into a shared lime green (#ecf874) storage bin. A tidy, organized retro server room with soft pastel gradient lighting. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-12T21:57:41.456709+00:00"
+}

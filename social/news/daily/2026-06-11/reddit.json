@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-11",
+  "period_start": "2026-06-11",
+  "period_end": "2026-06-11",
+  "generated_at": "2026-06-12T07:33:12.808105+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged today: Claude Fable 5 on Bedrock, Wikimind added to showcase",
+  "text": "Just merged a couple of PRs today to keep the infrastructure moving.\n\nFirst, we added Claude Fable 5 via AWS Bedrock to the text endpoint (PR #11744). If you've been hitting rate limits or just want to test how Anthropic's models handle your prompts compared to OpenAI or Mistral, it's live now. You don't need to manage AWS credentials or wrestle with IAM roles. Just pass the model name to the text endpoint and we handle the Bedrock routing in the background.\n\nSecond, we merged Wikimind into the community learn and showcase section (PR #11743). It's always interesting to see how people actually use the infrastructure once we get out of the way. You can check out the source to see how they structured their API calls.\n\nStandard reminder: submitting an app to the showcase automatically bumps your account to the Flower tier, which increases your allowance to 0.4 pollen per hour for heavier workloads.\n\nCode is open as always: https://github.com/pollinations/pollinations\nDocumentation for the text endpoint: https://pollinations.ai/docs"
+}

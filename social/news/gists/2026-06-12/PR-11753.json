@@ -1,0 +1,35 @@
+{
+  "pr_number": 11753,
+  "title": "add kimi k2.7 code via openrouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11753",
+  "merged_at": "2026-06-12T21:29:21Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds **Kimi K2.7 Code** (Moonshot AI) as a text model via OpenRouter (`moonshotai/kimi-k2.7-code`) — K2.7 isn't on Fireworks or Azure AI Foundry yet (both top out at K2.6); OpenRouter is the only route we already integrate.\n\n- Slug `kimi-k2.7-code` (aliases `kimi-k2.7`, `kimi-k2p7`). Wiring mirrors `minimax-m3`.\n- `$0.95`/`$4.00` per M in/out, `$0.19`/M cache-read. **Free** (no `paidOnly`), `priceMultiplier: 1` — at-cost, matching the Kimi family.\n- 256K context, tools, reasoning, text+image input.\n- It's the **Code variant** (coding-specialized); there's no general K2.7 yet. Canonical `kimi` stays on K2.5.\n\nVerified e2e through local gen against real OpenRouter: basic, streaming, tools, reasoning (correct CoT answer), error paths → 4xx. **Reasoning tokens bill correctly** at the `completionTextTokens` rate (Tinybird cost == price, markup 0, no missing-rate warnings). Vision is functional but imperfect on synthetic color swatches (blue ✓, pure-red read as \"black\") — kept `image` to stay consistent with the K2.5/K2.6 family and OpenRouter's advertised modality.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kimi learns to code",
+    "blurb": "Moonshot AI's new Kimi K2.7 Code model is now live on the text API. It's specialized for coding, supports reasoning, and is completely free to use.",
+    "summary": "Added Moonshot AI's Kimi K2.7 Code model (kimi-k2.7-code) via OpenRouter, featuring 256K context, tool use, and reasoning capabilities.",
+    "impact": "You can now generate code and use reasoning with the kimi-k2.7-code slug, available immediately on the free tier.",
+    "keywords": [
+      "models",
+      "text",
+      "kimi",
+      "moonshot-ai",
+      "coding"
+    ],
+    "visual_concept": "The pollinations bee and the Monitor Robot coding together under a moon (referencing Moonshot AI). The robot's screen shows code, and the bee is wearing tiny reading glasses.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting with the chunky Monitor Robot under a glowing crescent moon. The robot's CRT screen displays glowing lime green (#ecf874) code. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-12/PR-11753.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting with the chunky Monitor Robot under a glowing crescent moon. The robot's CRT screen displays glowing lime green (#ecf874) code. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-12T21:30:34.373144+00:00"
+}

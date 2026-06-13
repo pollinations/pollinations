@@ -135,6 +135,3 @@ export const fetchFromLeastBusyServer = async (
     }
     return response;
 };
-
-export const fetchFromLeastBusyFluxServer = (options: RequestInit) =>
-    fetchFromLeastBusyServer("flux", options);

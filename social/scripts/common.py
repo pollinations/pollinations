@@ -385,8 +385,6 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "width": width,
             "height": height,
             "quality": "hd",
-            "private": "true",
-            "nofeed": "true",
             "seed": seed,
             "key": token,
             "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
@@ -706,31 +704,6 @@ def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str
     if resp.status_code == 200:
         return _b64.b64decode(resp.json()["content"]).decode()
     return None
-
-
-def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
-    """Format PRs into a summary string for prompts
-    
-    Args:
-        prs: List of PR dictionaries
-        time_label: Label to use (e.g., "TODAY", "WEEKLY")
-    
-    Returns:
-        Formatted summary string
-    """
-    if prs:
-        pr_summary = f"{time_label}'S UPDATES ({len(prs)} merged PRs):\n"
-        for pr in prs[:20]:
-            labels = pr.get("labels", [])
-            labels_str = f" [{', '.join(labels)}]" if labels else ""
-            pr_summary += f"- #{pr.get('number', '?')}: {pr.get('title', 'Untitled')}{labels_str}\n"
-            body = pr.get("body", "")
-            if body:
-                pr_summary += f"  {body[:150]}...\n"
-    else:
-        pr_summary = f"NO UPDATES {time_label}"
-    
-    return pr_summary
 
 
 def generate_platform_post(

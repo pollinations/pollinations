@@ -14,7 +14,9 @@ const TOOLTIP_VIEWPORT_MARGIN = 12;
 type TooltipProps = {
     children: ReactNode;
     content: ReactNode;
+    align?: "start" | "center";
     ariaLabel?: string;
+    clampToViewport?: boolean;
     className?: string;
     onClick?: () => void;
     style?: CSSProperties;
@@ -30,7 +32,9 @@ type TooltipProps = {
 export const Tooltip: FC<TooltipProps> = ({
     children,
     content,
+    align = "start",
     ariaLabel,
+    clampToViewport = true,
     className,
     onClick,
     style,
@@ -38,7 +42,12 @@ export const Tooltip: FC<TooltipProps> = ({
     displayContents = false,
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({
+    const [tooltipPosition, setTooltipPosition] = useState<{
+        top: number;
+        left: number;
+        maxWidth: number;
+        transform?: CSSProperties["transform"];
+    }>({
         top: 0,
         left: 0,
         maxWidth: TOOLTIP_MAX_WIDTH,
@@ -52,17 +61,25 @@ export const Tooltip: FC<TooltipProps> = ({
                 TOOLTIP_MAX_WIDTH,
                 window.innerWidth - TOOLTIP_VIEWPORT_MARGIN * 2,
             );
-            const left = Math.min(
-                Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
-                Math.max(
-                    TOOLTIP_VIEWPORT_MARGIN,
-                    window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
-                ),
-            );
+            let left =
+                align === "center" ? rect.left + rect.width / 2 : rect.left;
+            let transform: CSSProperties["transform"] =
+                align === "center" ? "translateX(-50%)" : undefined;
+            if (clampToViewport) {
+                left = Math.min(
+                    Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
+                    Math.max(
+                        TOOLTIP_VIEWPORT_MARGIN,
+                        window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
+                    ),
+                );
+                transform = undefined;
+            }
             setTooltipPosition({
                 top: rect.bottom + 4,
                 left,
                 maxWidth,
+                transform,
             });
         }
     };
@@ -78,13 +95,11 @@ export const Tooltip: FC<TooltipProps> = ({
         ? "polli:contents"
         : "polli:cursor-help";
 
-    // Thin theme-cascade popup. bg + border + text all follow the active
-    // page theme so the tooltip reads as "part of the page", not system
-    // chrome. Uses the pale theme bg (one step lighter than chip-bg) so
-    // it doesn't dominate. Same recipe on desktop and mobile —
-    // viewport-clamped via `tooltipPosition`.
+    // Thin theme-cascade popup. bg + border + text follow the active page
+    // theme, while typography opts out of trigger inheritance so bold labels
+    // do not make the whole tooltip shout.
     const popupClasses =
-        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-strong polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
+        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
 
     const contentNode = (
         <>
@@ -94,6 +109,7 @@ export const Tooltip: FC<TooltipProps> = ({
                     top: tooltipPosition.top,
                     left: tooltipPosition.left,
                     maxWidth: tooltipPosition.maxWidth,
+                    transform: tooltipPosition.transform,
                 }}
                 className={`${
                     showTooltip

@@ -56,7 +56,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 border-accent-blue-200 bg-accent-blue-50 focus:outline-none focus:ring-2 focus:ring-accent-blue-200"
+                            className="flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
@@ -81,7 +81,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         <div className="text-sm font-semibold">
                             Developer earnings
                         </div>
-                        <p className="mt-0.5 text-xs text-accent-blue-800/75">
+                        <p className="mt-0.5 text-xs text-theme-text-soft">
                             Users pay 25% over base rates. Markup credits to
                             your balance.
                         </p>

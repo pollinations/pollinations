@@ -1,6 +1,5 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 /** Semantic chip labels for status and metadata badges. */
 type ChipIntent =
@@ -27,9 +26,7 @@ const intentClasses: Record<ChipIntent, string> = {
 };
 
 export type ChipProps = ComponentPropsWithoutRef<"span"> & {
-    /** Override the cascade theme for this chip's subtree. */
-    theme?: ThemeName;
-    /** Semantic intent. Wins over `theme` when set. */
+    /** Semantic intent. */
     intent?: ChipIntent;
     size?: keyof typeof chipSizes;
 };
@@ -38,7 +35,6 @@ export type ChipProps = ComponentPropsWithoutRef<"span"> & {
 // Reads `bg-theme-bg-active` / `text-theme-text-strong` from the cascade unless
 // `intent` is set (semantic, theme-independent).
 export const Chip: FC<ChipProps> = ({
-    theme,
     intent,
     size = "md",
     className,
@@ -51,7 +47,6 @@ export const Chip: FC<ChipProps> = ({
     return (
         <span
             {...rest}
-            data-theme={theme}
             className={cn(
                 "polli:inline-flex polli:shrink-0 polli:items-center polli:gap-1 polli:rounded-lg polli:font-medium polli:leading-normal",
                 chipSizes[size],

@@ -1,3 +1,4 @@
+import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
     AccountKey,
@@ -25,7 +26,6 @@ import type {
     Message,
     ModelInfo,
     PollinationsConfig,
-    PollinationsErrorDetails,
     RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
@@ -54,12 +54,6 @@ const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
 
 // HTTP status codes that should NOT be retried
 const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
-
-// Default Retry-After delay when header is missing (seconds)
-const DEFAULT_RETRY_AFTER = 60;
-// Cap honored Retry-After so a malicious or misconfigured upstream
-// cannot force the client into an indefinite sleep.
-const MAX_RETRY_AFTER_SECONDS = 300;
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -107,30 +101,6 @@ function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
         return retryAfterSeconds * 1000;
     }
     return 2 ** attempt * 1000;
-}
-
-// Parse Retry-After header (can be seconds or HTTP date)
-function parseRetryAfter(response: Response): number | undefined {
-    const retryAfter = response.headers.get("Retry-After");
-    if (!retryAfter) return undefined;
-
-    // Try parsing as number of seconds.
-    // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
-    // are rejected instead of being silently truncated into an aggressive
-    // retry delay.
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
-    }
-
-    // Try parsing as HTTP date
-    const date = Date.parse(retryAfter);
-    if (!Number.isNaN(date)) {
-        const delayMs = date - Date.now();
-        return delayMs > 0 ? Math.ceil(delayMs / 1000) : undefined;
-    }
-
-    return undefined;
 }
 
 // Check if an error should be retried
@@ -300,33 +270,7 @@ export class Pollinations {
     }
 
     private async handleErrorResponse(response: Response): Promise<never> {
-        let errorData: PollinationsErrorDetails | null = null;
-        try {
-            const json = (await response.json()) as {
-                error?: PollinationsErrorDetails;
-            };
-            if (json.error) {
-                errorData = json.error;
-            }
-        } catch {
-            // Response wasn't JSON
-        }
-
-        // Parse Retry-After header for rate limit errors
-        const retryAfter =
-            response.status === 429
-                ? (parseRetryAfter(response) ?? DEFAULT_RETRY_AFTER)
-                : undefined;
-
-        throw new PollinationsError(
-            errorData?.message ||
-                `Request failed with status ${response.status}`,
-            errorData?.code || "UNKNOWN_ERROR",
-            response.status,
-            errorData?.details,
-            errorData?.requestId,
-            retryAfter,
-        );
+        throw await pollinationsErrorFromResponse(response);
     }
 
     private buildQueryParams(
@@ -416,8 +360,6 @@ export class Pollinations {
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            private: options.private,
-            nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
@@ -731,7 +673,6 @@ export class Pollinations {
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
             audio: options.audio,
             image: options.referenceImage,
-            private: options.private,
             safe: options.safe,
         };
 

@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/sdk",
-  "version": "5.1.0-alpha.0",
+  "version": "5.1.0-alpha.1",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -10,11 +10,6 @@
   "jsdelivr": "./dist/index.browser.min.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./client": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"

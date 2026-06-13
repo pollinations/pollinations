@@ -4,7 +4,8 @@ import type { ImageModelName } from "@shared/registry/image.ts";
 /**
  * Image/Video-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
- * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
+ * Tier/balance gating runs in this worker (auth/balance middleware +
+ * utils/generation-access.ts) - this file only contains implementation details
  */
 interface ImageModelConfig {
     type: string;
@@ -114,48 +115,57 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio
+    // Alibaba Wan 2.6 via Replicate - 720p video with native audio
     wan: {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
+    // Alibaba Wan 2.2 via Replicate - fast/cheap 480p video (5s fixed, silent)
     "wan-fast": {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 5,
         defaultResolution: "480p",
     },
 
-    // Alibaba Wan 2.7 - Newer video generation (720P default, bundled audio)
+    // Alibaba Wan 2.7 via Replicate - 720p video with bundled audio + keyframes
     "wan-pro": {
-        type: "alibaba-dashscope-video",
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.7 via Replicate - 1080p variant (one price: $0.15/s)
+    "wan-pro-1080p": {
+        type: "replicate-wan-video",
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "1080p",
+    },
+
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-wan-image",
         defaultSideLength: 1024,
     },
 
     // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
     "wan-image-pro": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-wan-image-pro",
         defaultSideLength: 2048,
     },
 
     // Alibaba Qwen Image Plus - Text-to-image and image editing
     "qwen-image": {
-        type: "alibaba-dashscope-image",
+        type: "replicate-qwen-image",
         defaultSideLength: 1024,
     },
 

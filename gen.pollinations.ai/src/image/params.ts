@@ -58,9 +58,7 @@ export const ImageParamsSchema = z
         height: sanitizedSideLength,
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
-        nofeed: sanitizedBoolean.catch(false),
         safe: sanitizedBoolean.catch(false),
-        private: sanitizedBoolean.catch(false).optional(),
         quality: z.literal(validQualities).catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
@@ -115,10 +113,8 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
-        const nofeed = data.nofeed || data.private || false;
-        delete data.private;
 
-        return { ...data, nofeed, width, height, dimensionsExplicit };
+        return { ...data, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

@@ -1,0 +1,34 @@
+{
+  "pr_number": 11775,
+  "title": "fix: refresh model monitor package lock",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11775",
+  "merged_at": "2026-06-13T16:44:04Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Refreshes `apps/model-monitor/package-lock.json` so its local `@pollinations/sdk` and `@pollinations/ui` snapshots match current main.\n- Leaves CatGPT PR #11614 untouched.\n- Scope is limited to the active package consumer that still had SDK 4.4.0 / UI 0.0.1 lock metadata.\n\nVerified:\n- `npm run build --prefix apps/model-monitor`\n- `git diff --check`\n- package-consumer detector: `model-monitor`, `playground`, `react`\n\nNote: `npx biome check --write apps/model-monitor/package-lock.json` processed no files because lockfiles are ignored by Biome config.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh locks for the monitor",
+    "blurb": "Gave the model monitor's package lock a quick refresh to keep its SDK and UI dependencies perfectly in sync with the rest of the hive.",
+    "summary": "Refreshed the package-lock.json for the model-monitor app to sync its local @pollinations/sdk and @pollinations/ui snapshots with the current main branch.",
+    "impact": "Ensures the model monitor builds reliably with the latest internal package versions.",
+    "keywords": [
+      "chore",
+      "dependencies",
+      "model-monitor",
+      "package-lock"
+    ],
+    "visual_concept": "Polly the bee doing some light maintenance, tightening a padlock on a retro monitor to represent the package-lock refresh for the model-monitor app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wrench to tighten a shiny padlock on a retro CRT monitor. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11775.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wrench to tighten a shiny padlock on a retro CRT monitor. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-13T16:45:01.914467+00:00"
+}

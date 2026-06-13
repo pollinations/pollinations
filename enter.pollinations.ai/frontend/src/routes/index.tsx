@@ -8,6 +8,7 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
+    TransactionHistory,
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
@@ -317,6 +318,13 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
+                    <Section title="Recent transactions" theme="amber" framed>
+                        <TransactionHistory
+                            mode="compact"
+                            apiKeys={selectableKeys}
+                            theme="amber"
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
@@ -350,6 +358,17 @@ function RouteComponent() {
                             theme={dashboardThemeByPage.activity}
                         />
                     )}
+                    <Section
+                        title="Transactions"
+                        theme={dashboardThemeByPage.activity}
+                        framed
+                    >
+                        <TransactionHistory
+                            mode="full"
+                            apiKeys={selectableKeys}
+                            theme={dashboardThemeByPage.activity}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "keys" && (

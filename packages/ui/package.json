@@ -18,6 +18,11 @@
       "import": "./dist/auth/index.js",
       "require": "./dist/auth/index.cjs"
     },
+    "./auth/sdk": {
+      "types": "./dist/auth/sdk.d.ts",
+      "import": "./dist/auth/sdk.js",
+      "require": "./dist/auth/sdk.cjs"
+    },
     "./app-user-menu/sdk": {
       "types": "./dist/app-user-menu/sdk.d.ts",
       "import": "./dist/app-user-menu/sdk.js",

@@ -1,0 +1,36 @@
+{
+  "pr_number": 11777,
+  "title": "feat: add @pollinations/ui browser bundle",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11777",
+  "merged_at": "2026-06-13T19:08:04Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds a browser IIFE build for the root `@pollinations/ui` entry so primitives + tokens load via a plain `<script>` tag in no-build pages (standalone HTML, CodePen, prototypes).\n\n- Root-only IIFE tsup build exposing `window.PollinationsUI`; existing ESM/CJS entries unchanged\n- Keeps React/ReactDOM external via `globalThis` shims (incl. `react/jsx-runtime` and `react-dom` `createPortal` for Ark Portal) — no bundled React\n- Adds `unpkg`/`jsdelivr` + `./umd` export; ships `styles.css` alongside\n- Documents React 19 CDN setup (esm.sh; React 19 dropped UMD) with reliable script ordering\n- SDK-backed subpaths stay ESM/CJS only\n\nVerified: build, typecheck, tests, biome; bundle has no `Dynamic require` / no bundled React; real no-build page renders and exercises the portal path.\n\nFixes #11574\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The script tag returns",
+    "blurb": "We've added a browser-ready bundle for @pollinations/ui. Now you can drop our components straight into a plain HTML file or CodePen with a simple script tag—no bundler required.",
+    "summary": "Added a browser IIFE build for @pollinations/ui that exposes window.PollinationsUI, enabling CDN usage via unpkg or jsdelivr without bundling React.",
+    "impact": "Developers can now prototype with Pollinations UI components directly in standalone HTML files, CodePens, or other no-build environments.",
+    "keywords": [
+      "ui",
+      "cdn",
+      "browser",
+      "script-tag",
+      "no-build",
+      "prototyping"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny construction hard hat, placing a glowing '<script>' tag block onto a retro computer monitor. Represents building without complex tools (no-build/script tag).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, carefully placing a glowing '<script>' tag block onto a retro computer monitor. The monitor screen glows softly. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11777.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, carefully placing a glowing '<script>' tag block onto a retro computer monitor. The monitor screen glows softly. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-13T19:09:18.234012+00:00"
+}

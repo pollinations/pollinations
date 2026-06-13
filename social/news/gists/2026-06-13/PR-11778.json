@@ -1,0 +1,35 @@
+{
+  "pr_number": 11778,
+  "title": "fix: make Websim BYOP compliant",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11778",
+  "merged_at": "2026-06-13T19:37:13Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Replaces the inline Websim form with a package-backed React app using `@pollinations/sdk`, `@pollinations/ui`, and `AppUserMenu`.\n- Updates the Worker to serve static assets, expose `/api/generate` and `/api/health`, use `openai-fast`, and surface upstream 401/402 errors directly.\n- Configures the new Myceli Worker route at `websim.myceli.ai` and deploys version `da179b54-07a9-4e55-ae3e-9ea927042ae7`.\n- Makes generation fully BYOP: legacy `GET /{prompt}/` and `/api/generate` now require an incoming bearer token and no longer fall back to app-key or secret Worker credentials.\n- Shares one model list between Worker and UI, removes the extra `openai` worker-only model, and keeps only the frontend publishable app key in `config.ts`.\n- Refines the responsive layout, centers the empty preview state, removes footer text below panels, matches both panel surfaces, and keeps the primary action labeled `Generate` with auth copy in a shared UI tooltip.\n- Moves `Open` into the preview header next to `Save`; both actions appear only once generated HTML is displayed.\n- Replaces regex HTML filtering in Websim error text handling with inert DOM parsing to satisfy CodeQL.\n- Adds generated app icons/manifest for Websim.\n\nVerification:\n- `npx biome check --write apps/websim/worker.js apps/websim/models.js apps/websim/src/config.ts apps/websim/src/App.tsx apps/websim/wrangler.toml apps/websim/README.md`\n- `npm run build --prefix apps/websim`\n- `npm run typecheck --prefix apps/websim`\n- `npx wrangler deploy worker.js --dry-run` from `apps/websim`\n- Local Worker: `/api/health` reports `auth: \"bearer\"` and matching UI model ids.\n- Local Worker: unauthenticated `GET /A%20tiny%20calculator/` returns 401.\n- Local Worker: unauthenticated `POST /api/generate` returns 401.\n- Live `curl https://websim.myceli.ai/api/health` reports `auth: \"bearer\"` and matching UI model ids.\n- Live `curl https://websim.myceli.ai/A%20tiny%20calculator/` returns 401 instead of spending app pollen or returning app-",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Websim gets a glow-up",
+    "blurb": "Websim just got a complete React rewrite. It's now fully integrated with our UI components and runs on your own Pollen balance, making it a proper citizen of the hive.",
+    "summary": "Websim has been rebuilt as a React app using @pollinations/sdk and @pollinations/ui, introducing a refined responsive layout and standardizing on Bring-Your-Own-Pollen (BYOP) authentication for all generation requests.",
+    "impact": "Users get a cleaner, centered interface with dedicated 'Save' and 'Open' actions, and can now seamlessly use their own Pollen balance to generate web apps.",
+    "keywords": [
+      "websim",
+      "react",
+      "byop",
+      "ui",
+      "apps"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working together to build a website. Polly is inserting a glowing token (representing BYOP/Pollen) into the robot's retro computer setup.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute bee mascot wearing a tiny tool belt, inserting a glowing golden coin into a chunky retro computer terminal. The Monitor Robot companion stands nearby, its screen displaying a tiny colorful website layout. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11778.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute bee mascot wearing a tiny tool belt, inserting a glowing golden coin into a chunky retro computer terminal. The Monitor Robot companion stands nearby, its screen displaying a tiny colorful website layout. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-13T19:38:14.966584+00:00"
+}

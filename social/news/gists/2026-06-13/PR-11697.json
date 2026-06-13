@@ -1,0 +1,35 @@
+{
+  "pr_number": 11697,
+  "title": "Single-accent theme: canonical tokens, icon system, borderless UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11697",
+  "merged_at": "2026-06-13T08:31:53Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Experimental reduction of the theme system to a single accent, with a shared icon set and a borderless control language.\n\n- Collapse theming to one parameterized accent recipe (`--polli-hue`/`--polli-nudge`); drop the `theme=` prop, `ThemeName`, and the fixed accent ramps — one canonical token per function.\n- Modality colors become fixed per-modality tokens; modality dots replaced by icons.\n- Add a shared icon set (modality, capability, price, wallet, key, globe…) to `@pollinations/ui` and replace every emoji across the dashboard with an icon.\n- Borderless controls: `soft` is the default `TabButton`, borderless dropdowns/selects, surface-based elevation.\n- Wallet Paid/Tier rendered as icons (gold card / green sprout) instead of dots and badges.\n- Dark-mode and contrast pass (warmer charcoal), applied across enter, react, playground, and model-monitor.\n- Layout refinements: models table, activity graphs, news/announcements, keys/pollen, model selector.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh coat of paint",
+    "blurb": "We've stripped back the clutter and given the dashboard a sleek, borderless redesign. Say goodbye to scattered emojis and hello to a crisp new icon system.",
+    "summary": "Simplified the UI theme system to a single parameterized accent, replaced all dashboard emojis with a custom icon set, and rolled out borderless controls across the playground and model monitor.",
+    "impact": "You'll notice a cleaner, warmer dark mode, sleeker borderless dropdowns, and crisp new icons for wallets and models instead of the old colored dots.",
+    "keywords": [
+      "ui",
+      "design",
+      "dashboard",
+      "icons",
+      "theme"
+    ],
+    "visual_concept": "Polly the bee acting as a designer/painter, cleaning up a workspace. Representing the 'single accent' and 'borderless' UI by having her paint a single bright lime green line on a clean, floating canvas, replacing cluttered items.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, using a brush to paint a glowing lime green (#ecf874) accent line on a clean, borderless floating digital canvas. A cute chunky monitor robot watches happily, holding a palette of soft pastels. Soft lavender and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11697.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, using a brush to paint a glowing lime green (#ecf874) accent line on a clean, borderless floating digital canvas. A cute chunky monitor robot watches happily, holding a palette of soft pastels. Soft lavender and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-13T08:32:56.397296+00:00"
+}

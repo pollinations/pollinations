@@ -86,11 +86,7 @@ export type BillingOverview = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
-    paymentMethod: {
-        hasDefault: boolean;
-        brand: string | null;
-        last4: string | null;
-    };
+    paymentMethod: PaymentMethodSummary;
     billingDetails: {
         name: string | null;
         email: string | null;
@@ -141,6 +137,43 @@ export async function getOrCreateStripeCustomerId(
     return updated.stripeCustomerId ?? customer.id;
 }
 
+export type PaymentMethodSummary = {
+    hasDefault: boolean;
+    type: "card" | "sepa_debit" | "other" | null;
+    brand: string | null;
+    last4: string | null;
+};
+
+/**
+ * Map a Stripe default payment method to a UI-facing summary. Cards expose
+ * brand + last4; SEPA mandates expose the IBAN last4 (no brand); anything else
+ * degrades to "other" so the UI can render a generic label.
+ */
+export function paymentMethodSummary(
+    paymentMethod: Stripe.PaymentMethod | null,
+): PaymentMethodSummary {
+    if (!paymentMethod) {
+        return { hasDefault: false, type: null, brand: null, last4: null };
+    }
+    if (paymentMethod.type === "card") {
+        return {
+            hasDefault: true,
+            type: "card",
+            brand: paymentMethod.card?.brand ?? null,
+            last4: paymentMethod.card?.last4 ?? null,
+        };
+    }
+    if (paymentMethod.type === "sepa_debit") {
+        return {
+            hasDefault: true,
+            type: "sepa_debit",
+            brand: null,
+            last4: paymentMethod.sepa_debit?.last4 ?? null,
+        };
+    }
+    return { hasDefault: true, type: "other", brand: null, last4: null };
+}
+
 export async function getBillingOverview(
     env: CloudflareBindings,
     userId: string,
@@ -169,13 +202,7 @@ export async function getBillingOverview(
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
             lastIssue,
         },
-        paymentMethod: paymentMethod
-            ? {
-                  hasDefault: true,
-                  brand: paymentMethod.card?.brand ?? "card",
-                  last4: paymentMethod.card?.last4 ?? null,
-              }
-            : { hasDefault: false, brand: null, last4: null },
+        paymentMethod: paymentMethodSummary(paymentMethod),
         billingDetails: customer
             ? getBillingDetailsSummary(customer, paymentMethod)
             : null,

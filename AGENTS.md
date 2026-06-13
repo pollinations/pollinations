@@ -94,6 +94,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
+- When adding a React browser/IIFE bundle, grep bundled dependencies'
+  published dist for `react/jsx-runtime` and `react-dom` imports before
+  choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
+  reintroduce externals the package source does not import.
 
 ## Common Mistakes to Avoid
 

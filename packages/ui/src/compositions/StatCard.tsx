@@ -1,7 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Text } from "../primitives/Typography.tsx";
-import type { ThemeName } from "../theme.ts";
 
 /**
  * - `stat` — large numeric value (default)
@@ -10,7 +9,7 @@ import type { ThemeName } from "../theme.ts";
 type StatCardVariant = "stat" | "fact";
 
 const valueVariantClasses: Record<StatCardVariant, string> = {
-    stat: "polli:min-h-8 polli:text-2xl polli:font-bold polli:leading-tight polli:tabular-nums polli:text-theme-text-strong",
+    stat: "polli:min-h-8 polli:text-2xl polli:font-bold polli:leading-tight polli:tabular-nums polli:text-theme-text-base",
     fact: "polli:text-sm polli:leading-6 polli:text-theme-text-soft",
 };
 
@@ -19,7 +18,6 @@ export type StatCardProps = {
     value: ReactNode;
     detail?: ReactNode;
     variant?: StatCardVariant;
-    theme?: ThemeName;
     className?: string;
     labelClassName?: string;
     valueClassName?: string;
@@ -31,17 +29,16 @@ export const StatCard: FC<StatCardProps> = ({
     value,
     detail,
     variant = "stat",
-    theme,
     className,
     labelClassName,
     valueClassName,
     detailClassName,
 }) => (
-    <div data-theme={theme} className={cn("polli:text-sm", className)}>
+    <div className={cn("polli:text-sm", className)}>
         <Text
             as="div"
             size="micro"
-            tone="strong"
+            tone="soft"
             weight="bold"
             className={cn(
                 "polli:uppercase polli:tracking-wide",

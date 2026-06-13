@@ -1,11 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 import { ExternalLinkIcon } from "./icons/index.tsx";
 
 type BaseInlineLinkProps = {
-    /** Override the cascade theme for this link's subtree. */
-    theme?: ThemeName;
     /** Set explicitly for non-http external links, or false for custom routing components. */
     external?: boolean;
     showIcon?: boolean;
@@ -26,7 +23,6 @@ function isExternalHref(href: unknown): boolean {
 
 export function InlineLink<T extends React.ElementType = "a">({
     as,
-    theme,
     external,
     showIcon = true,
     className,
@@ -39,7 +35,6 @@ export function InlineLink<T extends React.ElementType = "a">({
 
     return (
         <Component
-            data-theme={theme}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
             className={cn(

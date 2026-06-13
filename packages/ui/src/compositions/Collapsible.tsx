@@ -9,8 +9,11 @@ export type CollapsibleProps = {
     onToggle: () => void;
     children: ReactNode;
     disabled?: boolean;
-    /** Outer wrapper classes — base bg, border, etc. */
+    /** Outer wrapper classes — border, rounding, etc. Keep it bg-free if the
+     *  expanded panel should stay transparent; put any fill on the trigger. */
     wrapperClassName?: string;
+    /** Trigger/header base classes (e.g. a selected background). */
+    triggerClassName?: string;
     /** Trigger hover classes. Defaults to `polli:hover:bg-theme-bg-active`. */
     hoverClassName?: string;
     /** Trigger focus classes. */
@@ -36,6 +39,7 @@ export const Collapsible: FC<CollapsibleProps> = ({
     children,
     disabled = false,
     wrapperClassName,
+    triggerClassName,
     hoverClassName = "polli:hover:bg-theme-bg-active",
     focusClassName,
     panelClassName = "polli:border-t polli:border-theme-border polli:px-3 polli:pt-3 polli:pb-3",
@@ -57,6 +61,7 @@ export const Collapsible: FC<CollapsibleProps> = ({
             className={cn(
                 "polli-control polli:w-full polli:flex polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:transition-colors",
                 expanded ? "polli:rounded-t-lg" : "polli:rounded-lg",
+                triggerClassName,
                 !disabled && hoverClassName,
                 focusClassName,
                 disabled ? "polli:cursor-not-allowed" : "polli:cursor-pointer",

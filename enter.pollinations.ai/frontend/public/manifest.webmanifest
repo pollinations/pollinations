@@ -1,19 +1,28 @@
 {
-    "name": "Console | pollinations.ai",
-    "short_name": "Console",
-    "description": "Free AI image, text, video & audio generation API. Get API keys, manage usage, and integrate generative AI into your apps.",
-    "icons": [{
+    "name": "Dashboard | pollinations.ai",
+    "short_name": "Dashboard",
+    "description": "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
+    "icons": [
+        {
             "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
-    "theme_color": "#d1fae5",
+    "theme_color": "#fef8eb",
     "background_color": "#110518",
     "display": "standalone",
     "start_url": "/"

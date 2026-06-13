@@ -3,9 +3,6 @@
     "type": "module",
     "version": "1.0.0",
     "description": "Next generation auth service for pollinations.ai",
-    "pollinations": {
-        "theme": "emerald"
-    },
     "main": "src/index.ts",
     "scripts": {
         "typecheck": "tsc --noEmit",

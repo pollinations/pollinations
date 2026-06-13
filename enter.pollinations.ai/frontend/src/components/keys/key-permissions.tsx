@@ -63,7 +63,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
 
     return (
         <div className="space-y-6">
-            <hr className="border-ink-200" />
+            <hr className="border-divider" />
             <PollenBudgetInput
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
@@ -76,7 +76,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 inline={inline}
             />
-            <hr className="border-ink-200" />
+            <hr className="border-divider" />
             <AccountPermissionsInput
                 value={permissions.accountPermissions}
                 onChange={setAccountPermissions}

@@ -1,0 +1,16 @@
+{
+  "name": "Pollinations x Hermes Agent",
+  "short_name": "Hermes x Pollinations",
+  "description": "Use 25+ AI models as your Hermes Agent brain through Pollinations' unified API",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}

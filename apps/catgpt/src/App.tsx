@@ -88,10 +88,30 @@ function isTrustedMediaUrl(value: string): boolean {
     }
 }
 
+function isBundledAssetUrl(value: string): boolean {
+    return /^(?:\/src\/|\/assets\/|\.\/assets\/)[^?#]+\.(?:gif|jpe?g|png|svg|webp)$/i.test(
+        value,
+    );
+}
+
+function getSafeMemeImageUrl(value: string): string | null {
+    if (isTrustedMediaUrl(value) || isBundledAssetUrl(value)) return value;
+    return null;
+}
+
 function getSavedMemes(): SavedMeme[] {
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        return Array.isArray(saved) ? saved : [];
+        if (!Array.isArray(saved)) return [];
+        return saved.filter(
+            (item): item is SavedMeme =>
+                typeof item === "object" &&
+                item !== null &&
+                typeof item.prompt === "string" &&
+                typeof item.url === "string" &&
+                typeof item.model === "string" &&
+                isTrustedMediaUrl(item.url),
+        );
     } catch {
         return [];
     }
@@ -603,22 +623,27 @@ function MemeGrid({
                 </Text>
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {memes.map((meme) => (
-                        <article
-                            key={`${meme.prompt}-${meme.url}`}
-                            className="overflow-hidden rounded-xl bg-surface-opaque shadow-well"
-                        >
-                            <img
-                                src={meme.url}
-                                alt={meme.prompt}
-                                loading="lazy"
-                                className="aspect-square w-full object-cover"
-                            />
-                            <Text as="p" size="sm" className="p-3">
-                                "{meme.prompt}"
-                            </Text>
-                        </article>
-                    ))}
+                    {memes.map((meme) => {
+                        const imageUrl = getSafeMemeImageUrl(meme.url);
+                        if (!imageUrl) return null;
+
+                        return (
+                            <article
+                                key={`${meme.prompt}-${imageUrl}`}
+                                className="overflow-hidden rounded-xl bg-surface-opaque shadow-well"
+                            >
+                                <img
+                                    src={imageUrl}
+                                    alt={meme.prompt}
+                                    loading="lazy"
+                                    className="aspect-square w-full object-cover"
+                                />
+                                <Text as="p" size="sm" className="p-3">
+                                    "{meme.prompt}"
+                                </Text>
+                            </article>
+                        );
+                    })}
                 </div>
             )}
         </section>

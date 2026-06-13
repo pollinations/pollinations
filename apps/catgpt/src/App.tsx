@@ -25,7 +25,7 @@ import {
     AppUserMenu,
     isEmbeddedContext,
 } from "@pollinations/ui/app-user-menu/sdk";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import example1Url from "../images/example1.png";
 import example2Url from "../images/example2.png";
 import example3Url from "../images/example3.png";
@@ -86,17 +86,6 @@ function isTrustedMediaUrl(value: string): boolean {
     } catch {
         return false;
     }
-}
-
-function isBundledAssetUrl(value: string): boolean {
-    return /^(?:\/src\/|\/assets\/|\.\/assets\/)[^?#]+\.(?:gif|jpe?g|png|svg|webp)$/i.test(
-        value,
-    );
-}
-
-function getSafeMemeImageUrl(value: string): string | null {
-    if (isTrustedMediaUrl(value) || isBundledAssetUrl(value)) return value;
-    return null;
 }
 
 function getSavedMemes(): SavedMeme[] {
@@ -577,8 +566,8 @@ export function App() {
                 )}
 
                 <Surface variant="panel" className="flex flex-col gap-5">
-                    <MemeGrid title="Your Memes" memes={savedMemes} />
-                    <MemeGrid title="Examples" memes={EXAMPLES} />
+                    <SavedMemeGrid title="Your Memes" memes={savedMemes} />
+                    <ExampleMemeGrid title="Examples" />
                 </Surface>
 
                 <footer className="flex flex-col gap-2 border-t border-divider pt-5 text-sm text-theme-text-muted sm:flex-row sm:items-center sm:justify-between">
@@ -600,7 +589,7 @@ export function App() {
     );
 }
 
-function MemeGrid({
+function SavedMemeGrid({
     title,
     memes,
 }: {
@@ -608,11 +597,54 @@ function MemeGrid({
     memes: Array<{ prompt: string; url: string }>;
 }) {
     return (
+        <MemeGridShell title={title} isEmpty={memes.length === 0}>
+            {memes.map((meme) => (
+                <MemeCard
+                    key={`${meme.prompt}-${meme.url}`}
+                    prompt={meme.prompt}
+                >
+                    <RemoteMemeImage url={meme.url} prompt={meme.prompt} />
+                </MemeCard>
+            ))}
+        </MemeGridShell>
+    );
+}
+
+function ExampleMemeGrid({ title }: { title: string }) {
+    return (
+        <MemeGridShell title={title} isEmpty={EXAMPLES.length === 0}>
+            {EXAMPLES.map((meme) => (
+                <MemeCard
+                    key={`${meme.prompt}-${meme.url}`}
+                    prompt={meme.prompt}
+                >
+                    <img
+                        src={meme.url}
+                        alt={meme.prompt}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover"
+                    />
+                </MemeCard>
+            ))}
+        </MemeGridShell>
+    );
+}
+
+function MemeGridShell({
+    title,
+    isEmpty,
+    children,
+}: {
+    title: string;
+    isEmpty: boolean;
+    children: ReactNode;
+}) {
+    return (
         <section className="flex flex-col gap-3">
             <Text as="h2" size="sm" tone="strong" weight="semibold">
                 {title}
             </Text>
-            {memes.length === 0 ? (
+            {isEmpty ? (
                 <Text
                     as="p"
                     size="sm"
@@ -623,29 +655,82 @@ function MemeGrid({
                 </Text>
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {memes.map((meme) => {
-                        const imageUrl = getSafeMemeImageUrl(meme.url);
-                        if (!imageUrl) return null;
-
-                        return (
-                            <article
-                                key={`${meme.prompt}-${imageUrl}`}
-                                className="overflow-hidden rounded-xl bg-surface-opaque shadow-well"
-                            >
-                                <img
-                                    src={imageUrl}
-                                    alt={meme.prompt}
-                                    loading="lazy"
-                                    className="aspect-square w-full object-cover"
-                                />
-                                <Text as="p" size="sm" className="p-3">
-                                    "{meme.prompt}"
-                                </Text>
-                            </article>
-                        );
-                    })}
+                    {children}
                 </div>
             )}
         </section>
+    );
+}
+
+function MemeCard({
+    prompt,
+    children,
+}: {
+    prompt: string;
+    children: ReactNode;
+}) {
+    return (
+        <article className="overflow-hidden rounded-xl bg-surface-opaque shadow-well">
+            {children}
+            <Text as="p" size="sm" className="p-3">
+                "{prompt}"
+            </Text>
+        </article>
+    );
+}
+
+function RemoteMemeImage({ url, prompt }: { url: string; prompt: string }) {
+    const [objectUrl, setObjectUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isTrustedMediaUrl(url)) {
+            setObjectUrl(null);
+            return;
+        }
+
+        let cancelled = false;
+        let nextObjectUrl: string | null = null;
+
+        async function loadImage() {
+            try {
+                const response = await fetch(url);
+                const contentType = response.headers.get("content-type") || "";
+                if (!response.ok || !contentType.startsWith("image/")) {
+                    throw new Error("Expected an image response.");
+                }
+                const blob = await response.blob();
+                if (cancelled) return;
+                nextObjectUrl = URL.createObjectURL(blob);
+                setObjectUrl(nextObjectUrl);
+            } catch {
+                if (!cancelled) setObjectUrl(null);
+            }
+        }
+
+        void loadImage();
+
+        return () => {
+            cancelled = true;
+            if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+        };
+    }, [url]);
+
+    if (!objectUrl) {
+        return (
+            <MediaPlaceholder
+                label="Preview unavailable"
+                detail="CatGPT misplaced this one."
+                className="aspect-square min-h-0 rounded-none border-0"
+            />
+        );
+    }
+
+    return (
+        <img
+            src={objectUrl}
+            alt={prompt}
+            loading="lazy"
+            className="aspect-square w-full object-cover"
+        />
     );
 }

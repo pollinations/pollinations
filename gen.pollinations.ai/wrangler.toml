@@ -54,6 +54,15 @@ port = 8788
 # Production routes
 [env.production]
 
+# Pin Worker isolate to a Frankfurt-area CF colo (aws:eu-central-1). Outbound
+# fetch() from that isolate egresses from that colo's IP pool, which reduces
+# per-region reputation variance with CF-protected upstreams. `mode = "smart"`
+# and `region` are mutually exclusive in the Wrangler parser; setting `region`
+# alone is explicit pinning, not heuristic Smart Placement.
+# https://developers.cloudflare.com/workers/configuration/smart-placement/
+[env.production.placement]
+region = "aws:eu-central-1"
+
 [env.production.images]
 binding = "IMAGES"
 

@@ -36,14 +36,8 @@ body.polli-ui-shell #root {
     min-height: clamp(16rem, 45dvh, 26rem);
 }
 
-.websim-preview-shell .websim-preview-frame {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.websim-preview-shell .websim-preview-frame > div {
-    margin: auto;
+.websim-preview-placeholder {
+    aspect-ratio: auto;
 }
 
 .websim-model-options {

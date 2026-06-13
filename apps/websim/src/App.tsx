@@ -116,7 +116,7 @@ function PreviewPanel({
                                 ? "The page will appear in this frame."
                                 : "Generated HTML appears here."
                         }
-                        className="websim-preview-frame h-full rounded-none border-0"
+                        className="websim-preview-frame websim-preview-placeholder h-full w-full rounded-none border-0"
                     />
                 )}
             </div>

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { getCohortFromCountry } from "../src/utils/currency-router.ts";
+import {
+    checkoutCurrencyForCohort,
+    getCohortFromCountry,
+} from "../src/utils/currency-router.ts";
 
 describe("getCohortFromCountry", () => {
     describe("USD cohort (default)", () => {
@@ -69,11 +72,18 @@ describe("getCohortFromCountry", () => {
             "EE",
             "LV",
             "LT",
-            "IS",
-            "LI",
         ])("routes %s to EU_CORE", (country) => {
             const cohort = getCohortFromCountry(country);
             expect(cohort).toBe("EU_CORE");
+        });
+
+        // IS (Iceland, ISK) and LI (Liechtenstein, CHF) are NOT eurozone —
+        // corrected from prior test that documented wrong behavior
+        test.each([
+            "IS",
+            "LI",
+        ])("routes %s to USD (non-euro, was wrongly EU_CORE)", (country) => {
+            expect(getCohortFromCountry(country)).toBe("USD");
         });
     });
 
@@ -100,5 +110,29 @@ describe("getCohortFromCountry", () => {
             expect(getCohortFromCountry("gb")).toBe("UK");
             expect(getCohortFromCountry("us")).toBe("USD");
         });
+    });
+});
+
+describe("eurozone membership (Phase 2 fix)", () => {
+    test.each(["FI", "HR", "BG"])("%s is EU_CORE", (c) => {
+        expect(getCohortFromCountry(c)).toBe("EU_CORE");
+    });
+    test.each(["IS", "LI"])("%s is NOT EU_CORE (non-euro)", (c) => {
+        expect(getCohortFromCountry(c)).toBe("USD");
+    });
+});
+
+describe("checkoutCurrencyForCohort", () => {
+    test("EU_CORE -> eur", () => {
+        expect(checkoutCurrencyForCohort("EU_CORE")).toBe("eur");
+    });
+    test.each([
+        "USD",
+        "BR",
+        "APAC_ALIPAY",
+        "INDIA",
+        "UK",
+    ] as const)("%s -> usd", (cohort) => {
+        expect(checkoutCurrencyForCohort(cohort)).toBe("usd");
     });
 });

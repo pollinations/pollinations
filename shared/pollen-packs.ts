@@ -1,5 +1,3 @@
-import { PUBLIC_URLS } from "./public-urls.ts";
-
 export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 
 export type PollenPack = {
@@ -7,11 +5,9 @@ export type PollenPack = {
     amountUsd: number;
     checkoutName: string;
     checkoutDescription: string;
-    checkoutImageUrl: string;
     taxCode: string;
 };
 
-const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
@@ -39,9 +35,8 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ packKey, amountUsd }) => ({
         packKey,
         amountUsd,
-        checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen`,
-        checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`,
-        checkoutImageUrl: CHECKOUT_IMAGE_URL,
+        checkoutName: `${formatPollenPackValue(amountUsd)} Pollen`,
+        checkoutDescription: `Creative credits for pollinations.ai. 1 Pollen ≈ $1. Questions or feedback: ${CHECKOUT_FEEDBACK_URL}`,
         taxCode: POLLEN_TAX_CODE,
     }),
 );

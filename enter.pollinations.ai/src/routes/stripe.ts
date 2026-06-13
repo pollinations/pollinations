@@ -9,7 +9,11 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { getCohortFromCountry } from "../utils/currency-router.ts";
+import {
+    checkoutCurrencyForCohort,
+    getCohortFromCountry,
+} from "../utils/currency-router.ts";
+import { getEurMidRate, usdToEurCents } from "../utils/fx.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -87,6 +91,28 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
             );
 
+            // Production is gated SOLELY by the EUR_CHECKOUT_ENABLED env var
+            // (wrangler types it as the literal "false", so widen with String()).
+            // Outside production, a KV key "eur-checkout-enabled"="true" also
+            // enables it — a test/sandbox runtime toggle (vitest-pool-workers
+            // can't flip string vars per-test). The && short-circuits so the KV
+            // read never runs in production.
+            const eurCheckoutEnabled =
+                String(c.env.EUR_CHECKOUT_ENABLED) === "true" ||
+                (c.env.ENVIRONMENT !== "production" &&
+                    (await c.env.KV.get("eur-checkout-enabled")) === "true");
+            const checkoutCurrency = eurCheckoutEnabled
+                ? checkoutCurrencyForCohort(cohort)
+                : "usd";
+
+            let currency: "eur" | "usd" = "usd";
+            let unitAmount = pack.amountUsd * 100;
+            if (checkoutCurrency === "eur") {
+                const rate = await getEurMidRate(c.env);
+                currency = "eur";
+                unitAmount = usdToEurCents(pack.amountUsd, rate);
+            }
+
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
             // the presentment currency.
@@ -102,20 +128,23 @@ export const stripeRoutes = new Hono<Env>()
                 line_items: [
                     {
                         price_data: {
-                            currency: "usd",
-                            unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "inclusive",
+                            currency,
+                            unit_amount: unitAmount,
+                            // Net price; Stripe Tax adds VAT on top for buyers
+                            // in registered jurisdictions (EU via OSS).
+                            tax_behavior: "exclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
                                 tax_code: pack.taxCode,
                             },
                         },
                         quantity: 1,
                     },
                 ],
-                adaptive_pricing: { enabled: true },
+                ...(currency === "usd"
+                    ? { adaptive_pricing: { enabled: true } }
+                    : {}),
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT
@@ -137,7 +166,7 @@ export const stripeRoutes = new Hono<Env>()
                     enabled: true,
                     invoice_data: {
                         rendering_options: {
-                            amount_tax_display: "include_inclusive_tax",
+                            amount_tax_display: "exclude_tax",
                         },
                     },
                 },

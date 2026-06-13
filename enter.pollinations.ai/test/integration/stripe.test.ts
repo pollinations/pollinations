@@ -4,9 +4,13 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import { afterEach, beforeEach, describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
-import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
+import {
+    mockCardPaymentMethod,
+    mockCustomer,
+    mockSepaDebitPaymentMethod,
+} from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
@@ -38,7 +42,7 @@ function expectUsdPriceData(
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
         String(amountUsd * 100),
     );
-    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("exclusive");
     if (expectedName) {
         expect(body?.["line_items[0][price_data][product_data][name]"]).toBe(
             expectedName,
@@ -102,6 +106,8 @@ async function insertAutoTopUpAttempt({
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
+    chargedCurrency = null,
+    chargedAmountCents = null,
 }: {
     id?: string;
     userId: string;
@@ -111,6 +117,8 @@ async function insertAutoTopUpAttempt({
     completedAt?: number | null;
     createdAt?: number;
     updatedAt?: number;
+    chargedCurrency?: string | null;
+    chargedAmountCents?: number | null;
 }) {
     await env.DB.prepare(
         `INSERT INTO stripe_auto_top_up_attempt (
@@ -121,8 +129,10 @@ async function insertAutoTopUpAttempt({
             status,
             created_at,
             updated_at,
-            completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            completed_at,
+            charged_currency,
+            charged_amount_cents
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
@@ -133,6 +143,8 @@ async function insertAutoTopUpAttempt({
             createdAt,
             updatedAt,
             completedAt,
+            chargedCurrency,
+            chargedAmountCents,
         )
         .run();
 }
@@ -304,7 +316,7 @@ test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     expect(body).toBeTruthy();
 
     // No cf-ipcountry header → USD default cohort.
-    expectUsdPriceData(body, 2, "🪷 2 Pollen");
+    expectUsdPriceData(body, 2, "2 Pollen");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     expect(body?.["metadata[packKey]"]).toBe("p2");
@@ -2036,6 +2048,66 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
     expect(updatedUser?.packBalance).toBe(11);
 });
 
+test("POST /api/webhooks/stripe credits paid EUR invoice with canonical USD pollen amount", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe");
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    // EUR attempt: $10 USD → 866 EUR cents (round($10 / 1.155 * 100))
+    const invoiceId = "in_eur_paid_verify";
+    await insertAutoTopUpAttempt({
+        userId: user.id,
+        invoiceId,
+        amountUsd: 10,
+        chargedCurrency: "eur",
+        chargedAmountCents: 866,
+    });
+
+    const response = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
+            currency: "eur",
+            amount_paid: 866,
+            amount_due: 866,
+        }),
+    );
+    expect(response.status).toBe(200);
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind(invoiceId)
+        .first<{ status: string; failureReason: string | null }>();
+
+    // Must credit the canonical USD-anchored Pollen amount (+10), NOT 866 or 8.66
+    expect(updatedUser?.packBalance).toBe(11);
+    expect(attempt?.status).toBe("paid");
+    expect(attempt?.failureReason).toBeNull();
+});
+
 test.for([
     {
         name: "amount",
@@ -2841,4 +2913,185 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
         payment_status: "unpaid",
         payment_methods_offered: "sepa_debit",
     });
+});
+
+// Sibling of expectUsdPriceData — asserts native-EUR price_data + AP omitted.
+function expectEurPriceData(
+    body: Record<string, string> | undefined,
+    eurCents: number,
+): void {
+    expect(body?.["line_items[0][price]"]).toBeUndefined();
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("eur");
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
+        String(eurCents),
+    );
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("exclusive");
+    expect(body?.["adaptive_pricing[enabled]"]).toBeUndefined(); // native EUR ⇒ no AP
+}
+
+describe("EUR checkout branch (flag on)", () => {
+    // String vars in wrangler are passed as value copies to each fetch handler —
+    // mutating the cloudflare:test `env` object does not propagate to the worker.
+    // Instead we use a KV key as a runtime toggle that IS shared across the
+    // test/worker boundary (service bindings are live references). The route
+    // checks KV key "eur-checkout-enabled" = "true" as an override of the env var.
+    beforeEach(async () => {
+        await env.KV.put("eur-checkout-enabled", "true");
+        // Pre-seed the daily rate so getEurMidRate returns 1.155 with NO outbound
+        // ECB fetch — deterministic: $5 / 1.155 = €4.33 = 433 cents.
+        await env.KV.put("fx:eur-usd:current", "1.155");
+    });
+    afterEach(async () => {
+        await env.KV.delete("eur-checkout-enabled");
+        await env.KV.delete("fx:eur-usd:current");
+    });
+
+    test("EU_CORE (DE) → native EUR price_data, no adaptive pricing", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("stripe", "tinybird");
+        const response = await SELF.fetch(`${base}/checkout/p5`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "cf-ipcountry": "DE",
+            },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (r) => r.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(body).toBeTruthy();
+        expectEurPriceData(body, 433); // $5 / 1.155
+        expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
+        expect(body?.payment_method_configuration).toBe(stripePmcId);
+    });
+
+    test("non-EU (US) → still USD + AP even with flag on", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("stripe", "tinybird");
+        const response = await SELF.fetch(`${base}/checkout/p5`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "cf-ipcountry": "US",
+            },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (r) => r.path === "/v1/checkout/sessions",
+        )?.body;
+        expectUsdPriceData(body, 5);
+        expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
+    });
+});
+
+test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and persists charged values", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    // Pre-seed FX rate so getEurMidRate does not hit the network.
+    // 1 EUR = 1.155 USD  →  $10 USD pack = round(10 / 1.155 * 100) = 866 EUR cents
+    const fxRate = "1.155";
+    await env.KV.put("fx:eur-usd:current", fxRate);
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const pack = getPollenPackByAmount(10);
+    expect(pack).toBeDefined();
+    if (!pack) throw new Error("Expected $10 pollen pack");
+
+    const expectedEurCents = Math.round((pack.amountUsd / 1.155) * 100);
+
+    const customer = mockCustomer("cus_auto_top_up_eur");
+    customer.invoice_settings.default_payment_method = "pm_sepa_de";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockSepaDebitPaymentMethod("pm_sepa_de", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        status: string;
+        invoiceId?: string;
+    };
+    expect(data.status).toBe("created");
+    expect(data.invoiceId).toBe("in_mock_1");
+
+    // Invoice create must use EUR.
+    const invoiceRequest = mocks.stripe.state.requests.find(
+        (r) => r.path === "/v1/invoices",
+    );
+    expect(invoiceRequest?.body.currency).toBe("eur");
+
+    // Invoice item must use the converted EUR cents amount.
+    const itemRequest = mocks.stripe.state.requests.find(
+        (r) => r.path === "/v1/invoiceitems",
+    );
+    expect(itemRequest?.body.currency).toBe("eur");
+    expect(itemRequest?.body.amount).toBe(String(expectedEurCents));
+
+    // DB row must persist charged_currency and charged_amount_cents.
+    const attempt = await env.DB.prepare(
+        `SELECT charged_currency AS chargedCurrency,
+            charged_amount_cents AS chargedAmountCents,
+            status
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{
+            chargedCurrency: string | null;
+            chargedAmountCents: number | null;
+            status: string;
+        }>();
+
+    expect(attempt?.chargedCurrency).toBe("eur");
+    expect(attempt?.chargedAmountCents).toBe(expectedEurCents);
+    expect(attempt?.status).toBe("pending");
+
+    // Pollen credit path is unchanged — pack balance not yet credited (pending).
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    expect(updatedUser?.packBalance).toBe(1);
+
+    // Cleanup KV.
+    await env.KV.delete("fx:eur-usd:current");
 });

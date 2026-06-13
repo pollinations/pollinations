@@ -1,0 +1,35 @@
+{
+  "pr_number": 11780,
+  "title": "fix: route Websim through app proxy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11780",
+  "merged_at": "2026-06-13T20:48:31Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Registers Websim in apps.json so the app proxy source of truth includes websim.pollinations.ai.\\n- Adds a Worker deploy target to apps/_scripts/deploy.sh, keeping Pages as the default for existing apps.\\n- Points Websim canonical/OG metadata at websim.pollinations.ai.\\n\\nChecks:\\n- npx biome check --write apps/apps.json apps/websim/index.html\\n- bash -n apps/_scripts/deploy.sh\\n- npm run build --prefix apps/websim\\n- npm run typecheck --prefix apps/websim\\n- npx wrangler deploy worker.js --dry-run\\n- npm test --prefix pollinations-myceli-proxy",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Websim finds its way",
+    "blurb": "Websim is now officially routed through our app proxy, complete with shiny new canonical URLs and metadata.",
+    "summary": "Registered Websim in apps.json to route websim.pollinations.ai through the app proxy, updated canonical metadata, and added Worker deployment support to the deploy script.",
+    "impact": "Websim now correctly resolves through the main proxy with accurate OpenGraph metadata, and developers can now deploy Worker-based apps alongside Pages.",
+    "keywords": [
+      "websim",
+      "proxy",
+      "routing",
+      "deployment",
+      "workers"
+    ],
+    "visual_concept": "Polly the bee acting as a network engineer, plugging a glowing routing cable into a retro computer monitor representing Websim.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, plugging a glowing routing cable into a chunky retro computer monitor. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11780.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, plugging a glowing routing cable into a chunky retro computer monitor. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-13T20:49:33.854872+00:00"
+}

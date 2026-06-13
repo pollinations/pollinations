@@ -71,7 +71,9 @@ if [ "$DEPLOY_TARGET" = "worker" ]; then
     # Worker-backed apps define their Myceli origin route in wrangler.toml.
     echo ""
     echo "🚀 Deploying Cloudflare Worker..."
-    npx wrangler deploy "$WORKER_ENTRYPOINT"
+    CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN_WORKER:-$CLOUDFLARE_API_TOKEN}" \
+        CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID_WORKER:-$CLOUDFLARE_ACCOUNT_ID}" \
+        npx wrangler deploy "$WORKER_ENTRYPOINT"
 else
     # Step 4: Provision the Myceli origin before upload
     echo ""

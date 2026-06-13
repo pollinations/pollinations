@@ -43,6 +43,30 @@ export const saveChats = (chats) => {
 
         localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatsToSave));
     } catch (error) {
+        // Detect storage quota exhaustion separately — large base64 image data
+        // is the most common cause. Log it so the context transparency layer
+        // can surface it to the user rather than failing silently.
+        // Authored by stormdede515-eng.
+        try {
+            if (
+                error?.name === "QuotaExceededError" ||
+                error?.code === 22 ||
+                error?.name === "NS_ERROR_DOM_QUOTA_REACHED"
+            ) {
+                console.warn(
+                    "[context-drop] storage quota exceeded — chat history (including image attachments) could not be saved. Images will be lost on page reload.",
+                    { approximateBytes: JSON.stringify(chats).length },
+                );
+                if (typeof window !== "undefined" && window?.showToast) {
+                    window.showToast(
+                        "Images can't be saved — they'll be lost if you reload this page",
+                        "warning",
+                    );
+                }
+            }
+        } catch {
+            // quota-logging must never throw
+        }
         console.error("Error saving chats:", error);
     }
 };

@@ -136,7 +136,9 @@ export const stripeRoutes = new Hono<Env>()
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
+                                images: [
+                                    `${new URL(c.req.url).origin}${pack.checkoutImagePath}`,
+                                ],
                                 tax_code: pack.taxCode,
                             },
                         },

@@ -46,8 +46,8 @@ test("pack descriptions stay aligned with the shared catalog", () => {
     );
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain("1 Pollen ≈ $1");
 
-    expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
-        "https://enter.pollinations.ai/checkout/pollen-pack-wide.png",
+    expect(POLLEN_PACKS[0]?.checkoutImagePath).toBe(
+        "/checkout/pollen-pack-wide.png",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(

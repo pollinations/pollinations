@@ -1,5 +1,3 @@
-import { PUBLIC_URLS } from "./public-urls.ts";
-
 export type PollenPackKey = "p2" | "p5" | "p10" | "p20" | "p50" | "p100";
 
 export type PollenPack = {
@@ -7,14 +5,16 @@ export type PollenPack = {
     amountUsd: number;
     checkoutName: string;
     checkoutDescription: string;
-    checkoutImageUrl: string;
+    // Path on the enter worker; the route resolves the absolute URL from the
+    // request origin so staging and prod each serve their own asset.
+    checkoutImagePath: string;
     taxCode: string;
 };
 
-// 1200x400 transparent PNG with the logo small + centered. Stripe Checkout
+// 1200x440 transparent PNG with the logo small + centered. Stripe Checkout
 // scales the source to band width, so a landscape canvas yields a short
 // header on mobile and the transparency lets the band color show through.
-const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack-wide.png`;
+const CHECKOUT_IMAGE_PATH = "/checkout/pollen-pack-wide.png";
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 
@@ -44,7 +44,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
         amountUsd,
         checkoutName: `${formatPollenPackValue(amountUsd)} Pollen`,
         checkoutDescription: `Creative credits for pollinations.ai. 1 Pollen ≈ $1. Questions or feedback: ${CHECKOUT_FEEDBACK_URL}`,
-        checkoutImageUrl: CHECKOUT_IMAGE_URL,
+        checkoutImagePath: CHECKOUT_IMAGE_PATH,
         taxCode: POLLEN_TAX_CODE,
     }),
 );

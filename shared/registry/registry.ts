@@ -83,6 +83,39 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+export type BillingAdjustmentCounter =
+    | "geminiGroundedPrompt"
+    | "geminiWebSearchQueries"
+    | "perplexityRequest";
+
+export type ProviderReportedUnitCostSource = "perplexityUsageCostRequest";
+
+export type BillingTierRule = {
+    id: string;
+    description: string;
+    when: {
+        promptTokensGt: number;
+    };
+    cost: CostDefinition;
+};
+
+export type BillingAdjustmentRule = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    count: BillingAdjustmentCounter;
+    unitCost: number;
+    providerReportedUnitCost?: ProviderReportedUnitCostSource;
+    priceMultiplier?: number;
+    when?: "grounded" | "always";
+};
+
+export type BillingRules = {
+    tiers?: BillingTierRule[];
+    adjustments?: BillingAdjustmentRule[];
+};
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
@@ -93,6 +126,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -154,6 +188,167 @@ function derivePrice(svc: ModelDefinition): PriceDefinition {
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
     ) as PriceDefinition;
+}
+
+function calculateLinearCost(
+    model: ModelName,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    const usageCost = convertUsage(usage, costDefinition, model);
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
+    );
+    return {
+        ...usageCost,
+        totalCost,
+    };
+}
+
+function getPromptTokenCount(usage: Usage): number {
+    return (
+        (usage.promptTextTokens ?? 0) +
+        (usage.promptCachedTokens ?? 0) +
+        (usage.promptAudioTokens ?? 0) +
+        (usage.promptImageTokens ?? 0) +
+        (usage.promptVideoTokens ?? 0)
+    );
+}
+
+type GroundedOutput = {
+    choices?: { groundingMetadata?: { webSearchQueries?: string[] } }[];
+    streamEvents?: GroundedOutput[];
+};
+
+function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+    const o = output as GroundedOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    const queries = new Set<string>();
+    for (const event of events) {
+        for (const choice of event.choices ?? []) {
+            for (const q of choice.groundingMetadata?.webSearchQueries ?? []) {
+                if (q?.trim()) queries.add(q);
+            }
+        }
+    }
+    return queries.size;
+}
+
+function countBillingAdjustmentUnits(
+    counter: BillingAdjustmentCounter,
+    output: unknown,
+): number {
+    if (counter === "perplexityRequest") return 1;
+    const geminiQueryCount = getGeminiGroundingWebSearchQueryCount(output);
+    if (counter === "geminiGroundedPrompt") {
+        return geminiQueryCount > 0 ? 1 : 0;
+    }
+    return geminiQueryCount;
+}
+
+type PerplexityCostOutput = {
+    usage?: {
+        cost?: {
+            request_cost?: unknown;
+        };
+    };
+    streamEvents?: unknown[];
+};
+
+// Provider-reported billing data that is present but malformed is a billing
+// fault — fail loudly instead of silently normalizing it.
+export class ProviderBillingError extends Error {}
+
+// Read `usage.cost.request_cost` from a response or stream event. Returns
+// undefined when no cost data is present; throws ProviderBillingError when
+// cost data is present but request_cost is not a finite non-negative number.
+export function readProviderRequestCost(event: unknown): number | undefined {
+    const cost = (event as PerplexityCostOutput | undefined)?.usage?.cost;
+    if (cost == null) return undefined;
+    if (typeof cost !== "object") {
+        throw new ProviderBillingError(
+            `Provider-reported usage.cost is not an object: ${JSON.stringify(cost)}`,
+        );
+    }
+    if (!("request_cost" in cost)) return undefined;
+    const value = cost.request_cost;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+        throw new ProviderBillingError(
+            `Provider-reported request_cost is invalid: ${JSON.stringify(value) ?? String(value)}`,
+        );
+    }
+    return value;
+}
+
+function getPerplexityReportedRequestCost(output: unknown): number | undefined {
+    const o = output as PerplexityCostOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+
+    for (const event of [...events].reverse()) {
+        const unitCost = readProviderRequestCost(event);
+        if (unitCost !== undefined) return unitCost;
+    }
+
+    return undefined;
+}
+
+function getBillingAdjustmentUnitCost(
+    rule: BillingAdjustmentRule,
+    output: unknown,
+): number {
+    if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
+        return getPerplexityReportedRequestCost(output) ?? rule.unitCost;
+    }
+    return rule.unitCost;
+}
+
+function selectBillingTier(
+    svc: ModelDefinition,
+    usage: Usage,
+): BillingTierRule | undefined {
+    const promptTokens = getPromptTokenCount(usage);
+    return svc.billing?.tiers?.find(
+        (tier) => promptTokens > tier.when.promptTokensGt,
+    );
+}
+
+function getBillingCostDefinition(
+    svc: ModelDefinition,
+    usage: Usage,
+): CostDefinition {
+    const billingTier = selectBillingTier(svc, usage);
+    return billingTier ? { ...svc.cost, ...billingTier.cost } : svc.cost;
+}
+
+function calculateBillingAdjustmentCost(
+    svc: ModelDefinition,
+    output: unknown,
+): number {
+    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
+        const units = countBillingAdjustmentUnits(rule.count, output);
+        if ((rule.when ?? "grounded") !== "always" && units === 0) {
+            return total;
+        }
+        return total + units * getBillingAdjustmentUnitCost(rule, output);
+    }, 0);
+}
+
+function calculateBillingAdjustmentPrice(
+    svc: ModelDefinition,
+    output: unknown,
+): number {
+    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
+        const units = countBillingAdjustmentUnits(rule.count, output);
+        if ((rule.when ?? "grounded") !== "always" && units === 0) {
+            return total;
+        }
+        const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
+        return (
+            total +
+            units * getBillingAdjustmentUnitCost(rule, output) * priceMultiplier
+        );
+    }, 0);
 }
 
 const MODEL_REGISTRY = {
@@ -256,38 +451,62 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 /**
  * Calculate cost for a model based on usage
  */
-export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getCostDefinition(model);
-    if (!costDefinition)
+export function calculateCost(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsageCost {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = convertUsage(usage, costDefinition, model);
-    const totalCost = Object.values(usageCost).reduce(
-        (total, cost) => total + cost,
-        0,
+    const usageCost = calculateLinearCost(
+        model,
+        usage,
+        getBillingCostDefinition(svc, usage),
     );
+    const adjustmentCost = calculateBillingAdjustmentCost(svc, output);
+    if (adjustmentCost === 0) return usageCost;
     return {
         ...usageCost,
-        totalCost,
+        totalCost: usageCost.totalCost + adjustmentCost,
     };
 }
 
 /**
  * Calculate price for a model based on usage
  */
-export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getPriceDefinition(model);
-    if (!priceDefinition)
+export function calculatePrice(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsagePrice {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = roundPollenLedgerAmount(
-        Object.values(usagePrice).reduce((total, price) => total + price, 0),
+    const usageCost = calculateLinearCost(
+        model,
+        usage,
+        getBillingCostDefinition(svc, usage),
     );
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, cost]) => [
+                usageType,
+                (cost as number) * svc.priceMultiplier,
+            ]),
+    ) as Usage;
+    const tokenTotalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
+    );
+    const adjustmentPrice = calculateBillingAdjustmentPrice(svc, output);
     return {
         ...usagePrice,
-        totalPrice,
+        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 }

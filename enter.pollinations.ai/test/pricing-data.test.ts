@@ -13,6 +13,7 @@ import {
     calculatePrice,
     getModelDefinition,
     getPriceDefinition,
+    ProviderBillingError,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
@@ -149,6 +150,260 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
         16.2,
         8,
     );
+});
+
+test("Gemini grounding cost is added by family billing rules", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const groundedOutput = {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["weather in Berlin", "Berlin forecast"],
+                },
+            },
+        ],
+    };
+
+    const geminiSearchCost = calculateCost(
+        "gemini-search",
+        usage,
+        groundedOutput,
+    );
+    const geminiSearchPrice = calculatePrice(
+        "gemini-search",
+        usage,
+        groundedOutput,
+    );
+    const gemini3Cost = calculateCost("gemini", usage, groundedOutput);
+    const geminiSearchFastCost = calculateCost(
+        "gemini-search-fast",
+        usage,
+        groundedOutput,
+    );
+    const geminiSearchLargeCost = calculateCost(
+        "gemini-search-large",
+        usage,
+        groundedOutput,
+    );
+    const ungroundedGeminiSearchFastCost = calculateCost(
+        "gemini-search-fast",
+        usage,
+        { choices: [] },
+    );
+
+    // Gemini 2.5 Search bills once per grounded prompt, not once per query.
+    // priceMultiplier is 1×, so price equals cost.
+    expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
+
+    // Gemini 3.x bills per non-empty search query.
+    expect(gemini3Cost.totalCost).toBeCloseTo(3.528, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(1.778, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(10.528, 8);
+    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(1.75, 8);
+});
+
+test("Gemini declarative billing rules are exposed in model catalog metadata", () => {
+    const geminiSearchFast = getTextModelsInfo().find(
+        (model) => model.name === "gemini-search-fast",
+    );
+    const geminiLarge = getTextModelsInfo().find(
+        (model) => model.name === "gemini-large",
+    );
+
+    expect(geminiSearchFast?.billing?.adjustments?.[0]).toMatchObject({
+        id: "google.gemini_3.search_query.v1",
+        kind: "search_query",
+        unit: "query",
+        count: "geminiWebSearchQueries",
+        when: "grounded",
+        unit_price: "0.014",
+    });
+    expect(geminiLarge?.billing?.tiers?.[0]).toMatchObject({
+        id: "google.gemini_3_1_pro.long_context.v1",
+        description: "Prompts above 200K tokens use Gemini long-context rates.",
+    });
+});
+
+test("Perplexity request search fees are added by declarative billing rules", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const cases = [
+        ["perplexity-fast", 2.005],
+        ["perplexity-deep", 2.012],
+        ["perplexity", 18.014],
+        ["perplexity-reasoning", 10.014],
+    ] as const;
+
+    for (const [model, total] of cases) {
+        const cost = calculateCost(model, usage);
+        const price = calculatePrice(model, usage);
+
+        expect(cost.totalCost).toBeCloseTo(total, 8);
+        expect(price.totalPrice).toBeCloseTo(total, 8);
+    }
+});
+
+test("Perplexity request search fee prefers provider-reported request cost", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const responseOutput = {
+        usage: {
+            cost: {
+                request_cost: 0.006,
+                total_cost: 0.0061,
+            },
+            search_context_size: "low",
+        },
+    };
+    const streamOutput = {
+        streamEvents: [
+            { choices: [{ delta: { content: "ok" } }] },
+            {
+                usage: {
+                    cost: {
+                        request_cost: 0.012,
+                    },
+                },
+                choices: [{ finish_reason: "stop" }],
+            },
+        ],
+    };
+
+    expect(
+        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+    ).toBeCloseTo(2.006, 8);
+    expect(
+        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
+    ).toBeCloseTo(2.006, 8);
+    expect(
+        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
+    ).toBeCloseTo(2.012, 8);
+});
+
+test("Perplexity provider-reported request cost fails loudly when malformed", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+
+    // Cost data present but malformed is a billing fault — it throws instead
+    // of silently billing a fallback.
+    const malformed = [-0.5, Number.NaN, "0.005", null];
+    for (const requestCost of malformed) {
+        const output = { usage: { cost: { request_cost: requestCost } } };
+        expect(() => calculateCost("perplexity-fast", usage, output)).toThrow(
+            ProviderBillingError,
+        );
+        expect(() => calculatePrice("perplexity-fast", usage, output)).toThrow(
+            ProviderBillingError,
+        );
+    }
+
+    // Any finite non-negative reported value is trusted verbatim — Perplexity
+    // is authoritative for its own request fee.
+    const high = { usage: { cost: { request_cost: 9.99 } } };
+    expect(calculateCost("perplexity-fast", usage, high).totalCost).toBeCloseTo(
+        11.99,
+        8,
+    );
+
+    // Absent cost data falls back to the static registry fee.
+    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
+        2.005,
+        8,
+    );
+});
+
+test("Gemini grounding is detected on streamed chunk output", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const streamOutput = {
+        streamEvents: [
+            { choices: [{ delta: { content: "searching" } }] },
+            {
+                choices: [
+                    {
+                        groundingMetadata: {
+                            webSearchQueries: [
+                                "weather in Berlin",
+                                "Berlin forecast",
+                            ],
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    // Same totals as the non-stream fixtures: grounding billed once per
+    // prompt for Gemini 2.5, per unique query for Gemini 3.x.
+    expect(
+        calculateCost("gemini-search", usage, streamOutput).totalCost,
+    ).toBeCloseTo(0.535, 8);
+    expect(
+        calculatePrice("gemini-search", usage, streamOutput).totalPrice,
+    ).toBeCloseTo(0.535, 8);
+    expect(
+        calculateCost("gemini-search-fast", usage, streamOutput).totalCost,
+    ).toBeCloseTo(1.778, 8);
+});
+
+test("Perplexity declarative billing rules expose request fee metadata", () => {
+    const models = getTextModelsInfo();
+
+    expect(
+        models.find((model) => model.name === "perplexity-fast")?.billing
+            ?.adjustments?.[0],
+    ).toMatchObject({
+        id: "perplexity.sonar_low.search_request.v1",
+        kind: "search_request",
+        unit: "request",
+        count: "perplexityRequest",
+        when: "always",
+        unit_price: "0.005",
+    });
+    expect(
+        models.find((model) => model.name === "perplexity-deep")?.billing
+            ?.adjustments?.[0].unit_price,
+    ).toBe("0.012");
+    expect(
+        models.find((model) => model.name === "perplexity")?.billing
+            ?.adjustments?.[0].unit_price,
+    ).toBe("0.014");
+    expect(
+        models.find((model) => model.name === "perplexity-reasoning")?.billing
+            ?.adjustments?.[0].unit_price,
+    ).toBe("0.014");
+});
+
+test("Gemini 3.1 Pro uses long-context rates above 200k prompt tokens", () => {
+    const shortContextCost = calculateCost("gemini-large", {
+        promptTextTokens: 200_000,
+        completionTextTokens: 1_000,
+    });
+    const longContextCost = calculateCost("gemini-large", {
+        promptTextTokens: 200_001,
+        completionTextTokens: 1_000,
+    });
+    const longContextPrice = calculatePrice("gemini-large", {
+        promptTextTokens: 200_001,
+        completionTextTokens: 1_000,
+    });
+
+    // priceMultiplier is 1×, so price equals cost.
+    expect(shortContextCost.totalCost).toBeCloseTo(0.412, 8);
+    expect(longContextCost.totalCost).toBeCloseTo(0.818004, 8);
+    expect(longContextPrice.totalPrice).toBeCloseTo(0.818004, 8);
 });
 
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {

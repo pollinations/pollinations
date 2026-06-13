@@ -21,7 +21,6 @@ import {
 } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
@@ -29,6 +28,7 @@ import {
     getPriceDefinition,
     type ModelName,
     type PriceDefinition,
+    type Usage,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -78,6 +78,7 @@ type ModelVariables = {
 export type ModelUsage = {
     model: string;
     usage: Usage;
+    output?: unknown;
 };
 
 type RequestTrackingData = {
@@ -159,7 +160,7 @@ export const track = (eventType: EventType) =>
                 c.var.auth.apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
-        let responseOverride = null;
+        let responseOverride: Response | null = null;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -176,7 +177,14 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res.clone();
+                // Routes attach telemetry headers (x-moderation-*, cache
+                // status) to the final response AFTER the override is
+                // captured, so read the body from the override but headers
+                // from c.res — keeping the override's content-type since it
+                // describes the body that usage extraction parses.
+                const response = responseOverride
+                    ? withFinalResponseHeaders(responseOverride, c.res)
+                    : c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -383,6 +391,24 @@ async function trackRequest(
     };
 }
 
+// Tracking overrides capture the upstream body before route handlers attach
+// telemetry headers to the final response. Combine the override body with the
+// final headers so header-based extraction (moderation, cache) stays intact.
+function withFinalResponseHeaders(
+    override: Response,
+    final: Response,
+): Response {
+    const headers = new Headers(final.headers);
+    const contentType = override.headers.get("content-type");
+    if (contentType) {
+        headers.set("content-type", contentType);
+    }
+    return new Response(override.body, {
+        status: override.status,
+        headers,
+    });
+}
+
 async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
@@ -439,8 +465,16 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
-    const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
+    const cost = calculateCost(
+        resolvedModelRequested,
+        modelUsage.usage,
+        modelUsage.output,
+    );
+    const price = calculatePrice(
+        resolvedModelRequested,
+        modelUsage.usage,
+        modelUsage.output,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -670,6 +704,18 @@ function extractUsageHeaders(response: Response): ModelUsage {
     };
 }
 
+async function extractResponseJsonOutput(
+    response: Response,
+): Promise<unknown | undefined> {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) return undefined;
+    try {
+        return await response.clone().json();
+    } catch {
+        return undefined;
+    }
+}
+
 function extractContentFilterHeaders(
     response: Response,
 ): GenerationEventContentFilterParams {
@@ -679,12 +725,16 @@ function extractContentFilterHeaders(
     return parseResult.data || {};
 }
 
-function extractUsageAndContentFilterResultsHeaders(response: Response): {
+async function extractUsageAndContentFilterResultsHeaders(
+    response: Response,
+): Promise<{
     modelUsage: ModelUsage;
     contentFilterResults: GenerationEventContentFilterParams;
-} {
+}> {
+    const modelUsage = extractUsageHeaders(response);
+    modelUsage.output = await extractResponseJsonOutput(response);
     return {
-        modelUsage: extractUsageHeaders(response),
+        modelUsage,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
@@ -717,9 +767,11 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    const streamEvents: unknown[] = [];
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+        streamEvents.push(event);
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -765,6 +817,7 @@ async function extractUsageAndContentFilterResultsStream(
         modelUsage: {
             model,
             usage: openaiUsageToUsage(usage),
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
         contentFilterResults,
     };
@@ -788,7 +841,7 @@ async function extractUsageAndContentFilterResults(
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
-    return extractUsageAndContentFilterResultsHeaders(response);
+    return await extractUsageAndContentFilterResultsHeaders(response);
 }
 
 type CacheData = {

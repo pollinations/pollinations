@@ -1,0 +1,36 @@
+{
+  "pr_number": 11781,
+  "title": "fix: use Worker token for Worker-backed app deploys",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11781",
+  "merged_at": "2026-06-13T20:53:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Keeps the Apps token as the default for Pages app deploys.\\n- Passes the existing Myceli Worker token only to Worker-backed app deploys.\\n- Fixes the Websim deploy failure after adding deployTarget: worker.\\n\\nChecks:\\n- bash -n apps/_scripts/deploy.sh\\n- git diff --check",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Worker bees get the right keys",
+    "blurb": "Fixed a deployment hiccup where Worker-backed apps were getting the wrong access tokens. Websim and other worker apps are back to deploying smoothly!",
+    "summary": "Updated the automatic app deployment workflow to pass the Myceli Worker token specifically for Worker-backed apps while keeping the Apps token default for Pages.",
+    "impact": "Worker-backed apps like Websim will now deploy successfully without token authentication failures.",
+    "keywords": [
+      "deployment",
+      "ci-cd",
+      "github-actions",
+      "worker",
+      "websim",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a dispatcher, handing the correct glowing key (token) to a worker robot, while another robot (Pages) holds a different key.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, handing a glowing lime green (#ecf874) digital key to a chunky worker robot. Another robot nearby holds a different pastel-colored key. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11781.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, handing a glowing lime green (#ecf874) digital key to a chunky worker robot. Another robot nearby holds a different pastel-colored key. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-13T20:54:28.794927+00:00"
+}

@@ -305,53 +305,6 @@ async function deleteCname(zoneId, headers, name) {
     console.log(`Removed old CNAME ${name}`);
 }
 
-function workerRouteMatchesHost(pattern, hostname) {
-    const normalized = pattern.replace(/^https?:\/\//, "");
-    return normalized === hostname || normalized === `${hostname}/*`;
-}
-
-async function deleteWorkerRoutes(zoneId, headers, hostname) {
-    let page = 1;
-    let removed = 0;
-
-    while (true) {
-        const { ok, json } = await cf(
-            `${CF_API}/zones/${zoneId}/workers/routes?per_page=100&page=${page}`,
-            headers,
-        );
-        if (!ok) {
-            throw new Error(
-                `List Worker routes failed: ${JSON.stringify(json)}`,
-            );
-        }
-
-        for (const route of json.result || []) {
-            if (!workerRouteMatchesHost(route.pattern, hostname)) continue;
-
-            const { ok: deleteOk, json: deleted } = await cf(
-                `${CF_API}/zones/${zoneId}/workers/routes/${route.id}`,
-                headers,
-                { method: "DELETE" },
-            );
-            if (!deleteOk) {
-                throw new Error(
-                    `Delete Worker route ${route.pattern} failed: ${JSON.stringify(deleted)}`,
-                );
-            }
-            removed += 1;
-            console.log(`Removed old Worker route ${route.pattern}`);
-        }
-
-        const totalPages = json.result_info?.total_pages || 1;
-        if (page >= totalPages) break;
-        page += 1;
-    }
-
-    if (!removed) {
-        console.log(`No old Worker routes found for ${hostname}`);
-    }
-}
-
 async function attachWorkerDomain(account, headers, hostname, zoneId) {
     const { ok, json } = await cf(
         `${CF_API}/accounts/${account}/workers/domains`,
@@ -424,11 +377,6 @@ async function runCutover(appName) {
     const oldHeaders = headersFor(OLD_TOKEN);
     await detachPagesDomain(OLD_ACCOUNT, oldHeaders, publicDomain);
     await deleteCname(OLD_POLLINATIONS_ZONE_ID, oldHeaders, publicDomain);
-    await deleteWorkerRoutes(
-        OLD_POLLINATIONS_ZONE_ID,
-        oldHeaders,
-        publicDomain,
-    );
     await attachWorkerDomain(
         OLD_ACCOUNT,
         oldHeaders,

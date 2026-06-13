@@ -15,6 +15,7 @@ import {
     TerminalIcon,
     Text,
     Textarea,
+    Tooltip,
 } from "@pollinations/ui";
 import {
     AppUserMenu,
@@ -77,7 +78,6 @@ function PreviewPanel({
         <Surface
             variant="panel"
             className="websim-output-panel flex flex-col gap-4 p-4"
-            data-theme="neutral"
         >
             <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-2">
@@ -125,7 +125,7 @@ function PreviewPanel({
 }
 
 export function App() {
-    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { apiKey, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const isEmbedded = isEmbeddedContext();
     const [prompt, setPrompt] = useState(INITIAL_PROMPT);
@@ -206,6 +206,17 @@ export function App() {
         activeRequest.current = null;
         setIsGenerating(false);
     }
+
+    const generateButton = (
+        <Button
+            type={apiKey ? "submit" : "button"}
+            size="lg"
+            disabled={!prompt.trim() || !isHydrated}
+            onClick={apiKey ? undefined : () => login()}
+        >
+            Generate
+        </Button>
+    );
 
     return (
         <div
@@ -300,15 +311,7 @@ export function App() {
                                         >
                                             {error}
                                         </Text>
-                                    ) : (
-                                        <Text size="sm" tone="soft">
-                                            {isLoggedIn
-                                                ? "Using your delegated key."
-                                                : isHydrated
-                                                  ? "Authorize Websim to generate."
-                                                  : "Preparing auth."}
-                                        </Text>
-                                    )}
+                                    ) : null}
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
@@ -321,21 +324,16 @@ export function App() {
                                         >
                                             Stop
                                         </Button>
+                                    ) : apiKey ? (
+                                        generateButton
                                     ) : (
-                                        <Button
-                                            type={apiKey ? "submit" : "button"}
-                                            size="lg"
-                                            disabled={
-                                                !prompt.trim() || !isHydrated
-                                            }
-                                            onClick={
-                                                apiKey
-                                                    ? undefined
-                                                    : () => login()
-                                            }
+                                        <Tooltip
+                                            triggerAs="span"
+                                            align="center"
+                                            content="Authorize Websim to generate."
                                         >
-                                            {apiKey ? "Generate" : "Authorize"}
-                                        </Button>
+                                            {generateButton}
+                                        </Tooltip>
                                     )}
                                     <Button
                                         type="button"

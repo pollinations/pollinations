@@ -199,6 +199,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             <CopyButton
                                 value={model.name}
                                 tooltip={`Copy "${model.name}"`}
+                                copiedTooltip={null}
                                 aria-label={`Copy model id ${model.name}`}
                                 className={(copied) =>
                                     cn(

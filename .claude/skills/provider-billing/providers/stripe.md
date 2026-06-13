@@ -232,6 +232,38 @@ curl -sS "https://api.stripe.com/v1/customers?limit=10" -u "$STRIPE_API_KEY:"
 curl -sS "https://api.stripe.com/v1/disputes?limit=10" -u "$STRIPE_API_KEY:"
 ```
 
+## Endpoint: Tax registrations & EU VAT coverage
+
+Validated **2026-06-13** against both live (`acct_1SrY3q7rcjS3l7tr`) and the sandbox/test account — identical config on both. Answers "will we collect VAT for EU buyers?" — relevant to EUR-native checkout (`EUR_CHECKOUT_ENABLED`).
+
+```bash
+curl -sS https://api.stripe.com/v1/tax/settings                  -u "$STRIPE_API_KEY:"
+curl -sS "https://api.stripe.com/v1/tax/registrations?limit=100" -u "$STRIPE_API_KEY:"
+```
+
+- `tax/settings.status == "active"` → Tax is on. `defaults.tax_behavior = inferred_by_currency`, origin (`head_office.address.country`) = `EE`.
+- `tax/registrations.data[]`: `country`, `status`, `country_options.<cc>.type`. **EU coverage is one OSS registration, NOT per-country**:
+  - `EE` / type `oss_union` → **covers all 27 EU member states** (One-Stop-Shop).
+  - `EE` / type `standard` → Estonia domestic VAT.
+
+So live + sandbox already collect EU VAT — no per-country setup needed. A `€0.00` tax line at checkout is the **pre-address stage** (Stripe computes once the buyer's country is known), not a missing registration.
+
+### Preview VAT for a buyer — `POST /v1/tax/calculations` (no charge created)
+
+```bash
+curl -sS https://api.stripe.com/v1/tax/calculations -u "$STRIPE_API_KEY:" \
+  --data-urlencode "currency=eur" \
+  --data-urlencode "line_items[0][amount]=432" \
+  --data-urlencode "line_items[0][tax_behavior]=inclusive" \
+  --data-urlencode "line_items[0][tax_code]=txcd_10103001" \
+  --data-urlencode "customer_details[address][country]=DE" \
+  --data-urlencode "customer_details[address_source]=billing"
+```
+
+Returns `amount_total`, `tax_amount_inclusive` (VAT carved out when inclusive), `tax_amount_exclusive` (added on top when exclusive), `tax_breakdown[].tax_rate_details.percentage_decimal`.
+
+**Validated 2026-06-13** — €4.32 inclusive 5-Pollen pack: DE → €0.69 (19%), FR → €0.72 (20%), reason `standard_rated`. Pollen packs are **tax-inclusive**, so the EU buyer pays the same headline price and VAT is remitted out of net (≈16–21% lower net on EU sales vs US); `amount_total` is unchanged by country.
+
 ## Stripe CLI vs raw curl
 
 The `stripe` CLI wraps the REST API with nicer config (`~/.config/stripe/config.toml`) but **defaults to TEST mode**:

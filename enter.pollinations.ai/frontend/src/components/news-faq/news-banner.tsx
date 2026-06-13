@@ -66,7 +66,7 @@ function renderWithLinks(text: string): ReactNode[] {
                 href={match[2]}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-accent-violet-600 hover:text-accent-violet-800 hover:underline font-medium"
+                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
             >
                 {match[1]}
             </a>,
@@ -110,6 +110,18 @@ function formatNewsDate(date: string): string {
     });
 }
 
+/** Hand-curated, pinned announcements — stacked white cards. */
+export const Announcements: FC = () => {
+    if (PINNED_NEWS.length === 0) return null;
+    return (
+        <div className="flex flex-col gap-3">
+            {PINNED_NEWS.map((item) => (
+                <PinnedNews key={item.title} item={item} />
+            ))}
+        </div>
+    );
+};
+
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
@@ -122,39 +134,21 @@ export const NewsBanner: FC = () => {
             .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
 
-    if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
+    if (highlights.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-3">
-            {PINNED_NEWS.length > 0 && (
-                <Surface
-                    variant="card-themed"
-                    theme="violet"
-                    className="flex flex-col divide-y divide-accent-violet-300/40 leading-relaxed"
-                >
-                    {PINNED_NEWS.map((item) => (
-                        <PinnedNews key={item.title} item={item} />
-                    ))}
-                </Surface>
-            )}
-            {highlights.length > 0 && (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {highlights.map((item) => (
-                        <DynamicNews
-                            key={`${item.date}-${item.title}`}
-                            item={item}
-                        />
-                    ))}
-                </div>
-            )}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {highlights.map((item) => (
+                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
+            ))}
         </div>
     );
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <div className="min-w-0 py-3 first:pt-0 last:pb-0">
+    <Surface variant="card" className="min-w-0 leading-relaxed">
         {(item.dateLabel || item.date) && (
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-accent-violet-700/70">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 {item.dateLabel ??
                     (item.date ? formatNewsDate(item.date) : null)}
             </div>
@@ -173,13 +167,13 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
             </p>
         )}
         {item.details && item.details.length > 0 && (
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-accent-violet-400">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-theme-text-soft">
                 {item.details.map((detail) => (
                     <li key={detail}>{renderWithLinks(detail)}</li>
                 ))}
             </ul>
         )}
-    </div>
+    </Surface>
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
@@ -192,7 +186,7 @@ const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
             <div className="min-w-0">
                 <div className="font-semibold text-ink-900">{item.title}</div>
                 {item.date && (
-                    <div className="mt-1 text-xs font-medium text-ink-400">
+                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
                         {formatNewsDate(item.date)}
                     </div>
                 )}

@@ -3,7 +3,8 @@
  * Shows 2 examples each from video, image, and text models
  */
 
-import { type FC, useEffect, useMemo, useState } from "react";
+import { ChatIcon, ImageIcon, VideoIcon } from "@pollinations/ui";
+import { type FC, type ReactNode, useEffect, useMemo, useState } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
     type ApiModelInfo,
@@ -72,27 +73,27 @@ const getExamples = (
 };
 
 const CategorySection: FC<{
-    emoji: string;
+    icon: ReactNode;
     title: string;
     models: ExampleModel[];
-}> = ({ emoji, title, models }) => {
+}> = ({ icon, title, models }) => {
     if (models.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <div className="font-semibold text-ink-700">
-                {emoji} {title}
+            <div className="flex items-center gap-1.5 font-semibold text-ink-700">
+                {icon} {title}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((model) => (
                     <div
                         key={model.name}
-                        className="bg-accent-violet-100/80 rounded-lg px-3 py-2"
+                        className="bg-theme-bg-pale rounded-lg px-3 py-2"
                     >
-                        <span className="font-medium text-accent-violet-800 capitalize">
+                        <span className="font-medium text-theme-text-soft capitalize">
                             {model.name}
                         </span>
-                        <span className="text-ink-600">
+                        <span className="text-theme-text-muted">
                             {" "}
                             — {model.perPollen} {model.unit}/pollen
                         </span>
@@ -138,15 +139,27 @@ export const PollenExamples: FC = () => {
 
     return (
         <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
-            <div className="text-sm text-ink-600 mb-3">
+            <div className="text-sm text-theme-text-muted mb-3">
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
-            <CategorySection emoji="🎬" title="Video" models={examples.video} />
-            <CategorySection emoji="🎨" title="Image" models={examples.image} />
-            <CategorySection emoji="💬" title="Text" models={examples.text} />
+            <CategorySection
+                icon={<VideoIcon className="h-4 w-4" />}
+                title="Video"
+                models={examples.video}
+            />
+            <CategorySection
+                icon={<ImageIcon className="h-4 w-4" />}
+                title="Image"
+                models={examples.image}
+            />
+            <CategorySection
+                icon={<ChatIcon className="h-4 w-4" />}
+                title="Text"
+                models={examples.text}
+            />
 
-            <div className="text-xs text-ink-500 pt-2">
+            <div className="text-xs text-theme-text-muted pt-2">
                 Values are estimates based on typical usage. See{" "}
                 <strong>Pricing</strong> below for exact rates.
             </div>

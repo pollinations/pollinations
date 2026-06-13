@@ -1,28 +1,25 @@
 {
-  "name": "model-monitor",
-  "private": true,
-  "version": "0.0.1",
-  "type": "module",
-  "pollinations": {
-    "theme": "violet"
-  },
-  "scripts": {
-    "dev": "vite",
-    "predev": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
-    "build": "vite build",
-    "prebuild": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@pollinations/sdk": "file:../../packages/sdk",
-    "@pollinations/ui": "file:../../packages/ui",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
-    "@vitejs/plugin-react": "^5.1.1",
-    "tailwindcss": "^4.0.0",
-    "vite": "^7.0.0"
-  }
+    "name": "model-monitor",
+    "private": true,
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "predev": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+        "build": "vite build",
+        "prebuild": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@pollinations/sdk": "file:../../packages/sdk",
+        "@pollinations/ui": "file:../../packages/ui",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-react": "^5.1.1",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.0"
+    }
 }

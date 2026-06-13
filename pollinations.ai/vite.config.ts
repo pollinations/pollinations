@@ -6,7 +6,12 @@ import svgr from "vite-plugin-svgr";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-    plugins: [react(), tsconfigPaths(), svgr(), cloudflare()],
+    plugins: [
+        react(),
+        tsconfigPaths({ projects: ["tsconfig.json"] }),
+        svgr(),
+        cloudflare(),
+    ],
     resolve: {
         alias: {
             "@shared": path.resolve(__dirname, "../shared"),

@@ -582,7 +582,7 @@ const responseFormatSchema = z.object({
         .object({
             name: z.string().optional(),
             description: z.string().optional(),
-            schema: z.record(z.any()),
+            schema: z.record(z.string(), z.any()),
             strict: z.boolean().optional(),
         })
         .optional()
@@ -714,7 +714,7 @@ const chatParamsSchema = {
             z.object({
                 name: z.string(),
                 description: z.string().optional(),
-                parameters: z.record(z.any()).optional(),
+                parameters: z.record(z.string(), z.any()).optional(),
             }),
         )
         .optional()

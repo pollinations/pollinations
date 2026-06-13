@@ -44,7 +44,7 @@
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.1",
         "play-sound": "^1.1.6",
-        "zod": "^3.24.3"
+        "zod": "^4.4.3"
     },
     "repository": {
         "type": "git",

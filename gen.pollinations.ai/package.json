@@ -46,12 +46,12 @@
         "drizzle-orm": "^0.44.7",
         "eventsource-parser": "3.0.6",
         "fast-json-stable-stringify": "^2.1.0",
-        "hono": "4.10.6",
+        "hono": "^4.12.25",
         "hono-openapi": "1.2.0",
         "jose": "^6.2.3",
         "marked": "^18.0.4",
         "piexif-ts": "^2.1.0",
         "yaml": "^2.9.0",
-        "zod": "4.3.5"
+        "zod": "^4.4.3"
     }
 }

@@ -1,0 +1,20 @@
+{
+    // Shared TypeScript baseline for all workspaces. Workspaces extend this and
+    // override only where they intentionally differ (e.g. enter/gen use a newer
+    // `target`, shared opts out of `strict`, emitters set `noEmit: false`).
+    // Keeping the common options here stops per-workspace config drift.
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "allowImportingTsExtensions": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": true
+    }
+}

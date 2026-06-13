@@ -50,7 +50,9 @@ type Attribution = {
     earningsEnabled?: boolean;
 };
 
-async function readAttribution(response: Response): Promise<Attribution> {
+async function readAttribution(response: {
+    json: () => Promise<unknown>;
+}): Promise<Attribution> {
     return (await response.json()) as Attribution;
 }
 

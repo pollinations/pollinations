@@ -1,0 +1,35 @@
+{
+  "pr_number": 11768,
+  "title": "fix(ui): export @pollinations/ui/auth/sdk subpath",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11768",
+  "merged_at": "2026-06-13T08:57:17Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "PR #11697 added the `auth/sdk` module and an `apps/react` consumer (`UserAvatar`) but never wired the subpath, so the `react.pollinations.ai` vite build failed on main with `Missing \"./auth/sdk\" specifier in \"@pollinations/ui\"` ([run](https://github.com/pollinations/pollinations/actions/runs/27461729232)).\n\n- Add `auth/sdk` entry to `packages/ui/tsup.config.ts` so `dist/auth/sdk.*` is built\n- Add `./auth/sdk` export to `packages/ui/package.json` (matches sibling subpaths + the README)\n\nVerified locally: `packages/ui` build emits `dist/auth/sdk.{js,cjs,d.ts}`; the `react.pollinations.ai` build now succeeds.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Wiring the Subpaths",
+    "blurb": "Fixed a missing export path in the UI package so the React app can build smoothly again.",
+    "summary": "Added the missing `./auth/sdk` export to the `@pollinations/ui` package and updated the tsup config to resolve Vite build failures.",
+    "impact": "Developers using the UI package can now correctly import from `@pollinations/ui/auth/sdk`, and internal React builds succeed.",
+    "keywords": [
+      "bug fix",
+      "ui",
+      "sdk",
+      "build",
+      "exports"
+    ],
+    "visual_concept": "Polly the bee fixing a broken wire or plugging a cable into a retro computer/server rack to represent fixing a broken build path.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a retro server rack. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11768.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a retro server rack. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-13T08:58:14.112539+00:00"
+}

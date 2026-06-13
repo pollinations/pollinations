@@ -14,20 +14,21 @@ export type SwitchProps = {
     className?: string;
 };
 
-// Switch is theme-independent. Universal switch palette:
-//  off   — pale neutral grey (so the white thumb stays visible)
-//  on    — soft green (universal "enabled" affordance)
-//  invalid — soft red (incomplete / error / setup needed)
+// Switch is theme-independent. Universal, mode-aware palette (tokens in
+// tokens.css). The thumb stays light in BOTH modes; tracks:
+//  off     — neutral grey (light in light mode, mid-grey in dark)
+//  on      — vivid green (universal "enabled" affordance)
+//  invalid — vivid red (incomplete / error / setup needed)
 const trackClasses: Record<SwitchStatus, string> = {
-    off: "polli:bg-gray-200",
-    on: "polli:bg-intent-success-bg-light",
-    invalid: "polli:bg-intent-danger-bg-light",
+    off: "polli:bg-switch-track-off",
+    on: "polli:bg-switch-track-on",
+    invalid: "polli:bg-switch-track-invalid",
 };
 
 /**
  * Binary toggle primitive. Universal palette — does NOT follow the page
- * theme. Three states: off (white), on (soft green), invalid (soft red,
- * for "enabled but needs attention").
+ * theme. Light thumb in both modes; track states: off (grey), on (green),
+ * invalid (red, for "enabled but needs attention").
  *
  * `checked` drives thumb position; `status` drives track colour. So
  * `checked={true} status="invalid"` renders thumb-right with a red track.
@@ -60,7 +61,7 @@ export const Switch: FC<SwitchProps> = ({
         >
             <span
                 className={cn(
-                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-white polli:shadow-sm polli:transition-transform",
+                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-switch-thumb polli:shadow-sm polli:transition-transform",
                     checked ? "polli:translate-x-6" : "polli:translate-x-1",
                 )}
             />

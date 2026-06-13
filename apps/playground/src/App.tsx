@@ -1,4 +1,4 @@
-import { cn, type ThemeName } from "@pollinations/ui";
+import { ColorModeToggle, cn } from "@pollinations/ui";
 import {
     AppUserMenu,
     isEmbeddedContext,
@@ -7,15 +7,12 @@ import { ENTER_URL } from "./config";
 import { Playground } from "./Playground";
 
 export function App() {
-    const theme: ThemeName = "violet";
     const isEmbedded = isEmbeddedContext();
 
     return (
-        <div
-            data-theme={theme}
-            className="relative flex min-h-dvh flex-col bg-white font-body text-theme-text-base"
-        >
-            <div className="fixed top-4 right-4 z-40">
+        <div className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
+            <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+                {!isEmbedded && <ColorModeToggle />}
                 <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
             </div>
             <main
@@ -24,7 +21,7 @@ export function App() {
                     isEmbedded ? "pt-5" : "pt-16",
                 )}
             >
-                <Playground theme={theme} />
+                <Playground />
             </main>
         </div>
     );

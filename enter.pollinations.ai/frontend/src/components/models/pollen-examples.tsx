@@ -3,11 +3,16 @@
  * Shows 2 examples each from video, image, and text models
  */
 
-import type { FC } from "react";
+import { ChatIcon, ImageIcon, VideoIcon } from "@pollinations/ui";
+import { type FC, type ReactNode, useEffect, useMemo, useState } from "react";
 import { calculatePerPollen } from "./calculations.ts";
-import { getModelPrices } from "./data.ts";
+import {
+    type ApiModelInfo,
+    fetchModelCatalog,
+    getModelPricesFromCatalog,
+} from "./model-catalog.ts";
 import type { ModelPrice } from "./types.ts";
-import { type ModelStats, useModelStats } from "./use-model-stats.ts";
+import { useModelStats } from "./use-model-stats.ts";
 
 type ExampleModel = {
     name: string;
@@ -22,14 +27,12 @@ const getUnit = (model: ModelPrice): string => {
 };
 
 const getExamples = (
-    stats: ModelStats,
+    allModels: ModelPrice[],
 ): {
     video: ExampleModel[];
     image: ExampleModel[];
     text: ExampleModel[];
 } => {
-    const allModels = getModelPrices(stats);
-
     const pickTwo = (
         models: ModelPrice[],
         type: "video" | "image" | "text",
@@ -70,27 +73,27 @@ const getExamples = (
 };
 
 const CategorySection: FC<{
-    emoji: string;
+    icon: ReactNode;
     title: string;
     models: ExampleModel[];
-}> = ({ emoji, title, models }) => {
+}> = ({ icon, title, models }) => {
     if (models.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <div className="font-semibold text-gray-700">
-                {emoji} {title}
+            <div className="flex items-center gap-1.5 font-semibold text-ink-700">
+                {icon} {title}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((model) => (
                     <div
                         key={model.name}
-                        className="bg-violet-100/80 rounded-lg px-3 py-2"
+                        className="bg-theme-bg-pale rounded-lg px-3 py-2"
                     >
-                        <span className="font-medium text-violet-800 capitalize">
+                        <span className="font-medium text-theme-text-soft capitalize">
                             {model.name}
                         </span>
-                        <span className="text-gray-600">
+                        <span className="text-theme-text-muted">
                             {" "}
                             — {model.perPollen} {model.unit}/pollen
                         </span>
@@ -102,20 +105,61 @@ const CategorySection: FC<{
 };
 
 export const PollenExamples: FC = () => {
+    const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const { stats } = useModelStats();
-    const examples = getExamples(stats);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) setCatalogModels(models);
+            })
+            .catch(() => {
+                if (!cancelled) setCatalogModels([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const examples = useMemo(() => {
+        const allModels = getModelPricesFromCatalog(catalogModels, stats);
+        return getExamples(allModels);
+    }, [catalogModels, stats]);
+
+    if (
+        examples.video.length === 0 &&
+        examples.image.length === 0 &&
+        examples.text.length === 0
+    ) {
+        return null;
+    }
 
     return (
-        <div className="mt-4 bg-white/80 rounded-xl p-4 space-y-4">
-            <div className="text-sm text-gray-600 mb-3">
+        <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
+            <div className="text-sm text-theme-text-muted mb-3">
                 <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
-            <CategorySection emoji="🎬" title="Video" models={examples.video} />
-            <CategorySection emoji="🎨" title="Image" models={examples.image} />
-            <CategorySection emoji="💬" title="Text" models={examples.text} />
+            <CategorySection
+                icon={<VideoIcon className="h-4 w-4" />}
+                title="Video"
+                models={examples.video}
+            />
+            <CategorySection
+                icon={<ImageIcon className="h-4 w-4" />}
+                title="Image"
+                models={examples.image}
+            />
+            <CategorySection
+                icon={<ChatIcon className="h-4 w-4" />}
+                title="Text"
+                models={examples.text}
+            />
 
-            <div className="text-xs text-gray-500 pt-2">
+            <div className="text-xs text-theme-text-muted pt-2">
                 Values are estimates based on typical usage. See{" "}
                 <strong>Pricing</strong> below for exact rates.
             </div>

@@ -1,65 +1,39 @@
 # @pollinations/ui
 
-Internal UI primitives for Pollinations apps. SDK-backed subpaths consume auth
-state from [`@pollinations/sdk/react`](../sdk/README.md#react-auth-provider);
-core primitives and display recipes stay SDK-free.
+Internal UI primitives, compositions, and modules for Pollinations apps.
+SDK-backed subpaths consume auth state from
+[`@pollinations/sdk/react`](../sdk/README.md#react-auth-provider); core
+primitives and display recipes stay SDK-free.
 
 ## Install
 
+> [!WARNING]
+> **The `alpha` line (`0.1.0-alpha.x`) is unstable and breakage-prone.** It ships the in-progress design-system rebuild (new `--polli-color-*` token system, new primitives, renamed size props `sm|md|lg`) and its API may change between alpha versions without notice. The stable `latest` line is `0.0.2`. Opt into the alpha deliberately, and pin an exact version.
+
 ```bash
+# stable (recommended)
 npm install @pollinations/ui
+
+# alpha (in-progress rebuild — pin exactly)
+npm install @pollinations/ui@alpha
 ```
 
-Install `@pollinations/sdk` too when using `@pollinations/ui/*/sdk`
-subpaths.
+Install `@pollinations/sdk` too when using the
+`@pollinations/ui/app-user-menu/sdk` subpath.
 
 ## Usage
 
 ```tsx
 import "@pollinations/ui/styles.css";
-import { PolliProvider, useAccountKeyUsage } from "@pollinations/sdk/react";
+import { PolliProvider } from "@pollinations/sdk/react";
 import { Surface } from "@pollinations/ui";
-import {
-    LoginButton,
-    LogoutButton,
-    UserAvatar,
-    UserName,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "@pollinations/ui/auth/sdk";
-import {
-    Balance,
-    KeyBudget,
-    KeyExpiry,
-    KeyModels,
-    KeyPrefix,
-} from "@pollinations/ui/wallet/sdk";
-
-function RecentRequests() {
-    const { data: usage } = useAccountKeyUsage({ days: 7, limit: 5 });
-    return <span>{usage?.usage.length ?? 0} recent requests</span>;
-}
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 
 export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
-            <Surface data-theme="amber">
-                <WhenLoggedOut>
-                    <LoginButton theme="amber">
-                        Log in with Pollinations
-                    </LoginButton>
-                </WhenLoggedOut>
-                <WhenLoggedIn>
-                    <UserAvatar size="md" />
-                    <UserName />
-                    <Balance />
-                    <KeyPrefix />
-                    <KeyBudget />
-                    <KeyExpiry />
-                    <KeyModels />
-                    <RecentRequests />
-                    <LogoutButton theme="amber">Log out</LogoutButton>
-                </WhenLoggedIn>
+            <Surface>
+                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
             </Surface>
         </PolliProvider>
     );
@@ -87,46 +61,47 @@ The SVG sources use `currentColor`. Apps control the rendered color by inlining
 them or using them as masks. Root-level favicon, PWA icon, and SEO files stay
 app-owned.
 
-Wallet-specific colors and utilities live in a separate stylesheet:
-
-```css
-@import "@pollinations/ui/wallet.css";
-```
+Wallet colors and utilities are bundled into the main stylesheet
+(`@pollinations/ui/styles.css`) — no separate import needed.
 
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
-  theme data. These can be used without Pollinations auth.
+  compositions. These can be used without Pollinations auth.
 - `@pollinations/ui/auth` exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
 - `@pollinations/ui/auth/sdk` exports identity/session components that read
   from the surrounding `<PolliProvider>`:
-  - **null when not logged in (or before data loads):** `LogoutButton`,
-    `UserAvatar`, `UserEmail`, `UserName`, `WhenLoggedIn`.
+  - **null when not logged in (or before data loads):** `UserAvatar`,
+    `UserName`, `WhenLoggedIn`.
   - **shown only when logged out:** `LoginButton`, `WhenLoggedOut`.
 
   These are intentionally bare wrappers around `useAuth*` hooks. They render
-  the data and nothing else — no default copy, no default theme, no default
-  intent. The app composes layout, copy, and color.
+  the data and nothing else — no default copy and no default intent. The app
+  composes layout, copy, and color.
 - `@pollinations/ui/wallet` exports SDK-free wallet-specific display helpers
-  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletDot`,
+  and recipes: `formatPollen`, `PaidChip`, `TierChip`, `WalletKindIcon`,
   `WalletBalanceCard`, `PAID_BALANCE_CHART_COLOR`, and
   `TIER_BALANCE_CHART_COLOR`.
-- `@pollinations/ui/wallet/sdk` exports SDK-backed wallet components:
-  `Balance`, `KeyBudget`, `KeyExpiry`, `KeyModels`, and `KeyPrefix`.
-- `@pollinations/ui/modality` exports model-modality color recipes.
+- `@pollinations/ui/app-user-menu/sdk` exports the SDK-backed app account
+  menu module.
+- `@pollinations/ui/gen` exports generation UI modules and modality helpers:
+  `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
+  `categoryLabel`, and `getModalityKey`.
 - `@pollinations/ui/assets/*` exports canonical Pollinations source SVGs:
   `logo.svg` and `logo-wordmark.svg`.
-- **Design primitives** — `Alert`, `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
-  `Collapsible`, `CopyButton`, `Dialog`, `Dropdown`, `ExternalLinkButton`,
-  `IconButton`, `InfoTip`, `Input`, `MultiSelect`, `PeriodPicker`,
-  `ScrollArea`, `Section`, `Slider`, `StatCard`, `Surface`, `Switch`,
-  `Table`, `TableBody`, `TableCell`, `TableHead`, `TableHeaderCell`,
-  `TableRow`, `TabButton`, `Tooltip`.
+- **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
+  `Dialog`, `DialogTitle`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
+  `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
+  `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
+  `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
+- **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
+  `CopyButton`, `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`,
+  `LinkCard`, `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`,
+  `PeriodPicker`, `Prose`, `Section`, `StatCard`.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
-- **Theme** — `themes` (runtime array of theme names), `ThemeName` (type).
 
 For per-request usage data and other dynamic queries, call the opt-in hooks
 from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
@@ -135,19 +110,24 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 ## Source Layout
 
 - `src/primitives/*` contains generic, SDK-free building blocks.
+- `src/compositions/*` contains SDK-free recipes that compose primitives.
 - `src/modules/*` contains package-owned recipes with domain assumptions
-  such as auth, wallet, and modality.
+  such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
-  `@pollinations/ui/auth/sdk`, `@pollinations/ui/wallet`,
-  `@pollinations/ui/wallet/sdk`, `@pollinations/ui/modality`) are built
-  directly from those modules.
+  `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
+  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
+  layers.
 
 ## Theming
 
-Set `data-theme="amber" | "blue" | "pink" | "teal" | "violet" | "green"`
-on any ancestor (or per-component via the `theme` prop on Button-family
-components) to switch the cascade. Theme variables are defined in
-`styles.css` — import it once at your app entry.
+Import `@pollinations/ui/styles.css` once at the app entry. The package uses a
+single app accent by default; primitives read the current cascade through
+`--polli-color-*` variables.
+
+Use `data-theme="neutral"` on chrome that should carry no accent, such as a
+global rail. Use `data-theme="accent"` inside a neutral subtree to re-assert
+the app accent for controls. Do not use per-component theme props; compose
+layout and state with primitives instead.
 
 ## Public design tokens
 
@@ -158,7 +138,7 @@ count as breaking.
 Public tokens sit under the `--polli-*` namespace so they do not collide
 with host app tokens.
 
-**Theme-aware (resolve against the active `data-theme`):**
+**Accent-aware (resolve against the current accent or neutral scope):**
 
 | Token                         | Purpose                                       |
 | ----------------------------- | --------------------------------------------- |
@@ -185,7 +165,7 @@ with host app tokens.
 | `--polli-text-base`           | Base text size.                               |
 | `--polli-color-surface-white` | Translucent white surface.                    |
 
-Wallet tokens are public when `@pollinations/ui/wallet.css` is imported:
+Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 
 | Token                         | Purpose                                       |
 | ----------------------------- | --------------------------------------------- |

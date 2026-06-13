@@ -3,13 +3,10 @@ import { Portal } from "@ark-ui/react/portal";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
-const DEFAULT_PANEL =
-    "polli:rounded-lg polli:border polli:border-theme-border polli:bg-surface-white polli:shadow-lg";
+const DEFAULT_PANEL = "polli:rounded-lg polli:bg-theme-bg-pale polli:shadow-lg";
 
 export type DropdownProps = {
-    theme: ThemeName;
     /** Trigger element; receives the current open state (e.g. to rotate a chevron). */
     trigger: (open: boolean) => ReactNode;
     /** Panel content. As a function, receives `close` to dismiss after a selection. */
@@ -19,20 +16,16 @@ export type DropdownProps = {
     /** Controlled open state. Omit to let the Dropdown manage its own. */
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
-    /** Replaces the default themed surface (e.g. a differently-coloured menu). */
-    panelClassName?: string;
     /** Appended after the surface (widths, padding, max-height…). */
     className?: string;
 };
 
 export const Dropdown: FC<DropdownProps> = ({
-    theme,
     trigger,
     children,
     align = "start",
     open: openProp,
     onOpenChange,
-    panelClassName,
     className,
 }) => {
     const [internalOpen, setInternalOpen] = useState(false);
@@ -56,10 +49,9 @@ export const Dropdown: FC<DropdownProps> = ({
             <Portal>
                 <Popover.Positioner>
                     <Popover.Content
-                        data-theme={theme}
                         className={cn(
                             "polli:z-50 polli:overflow-hidden polli:focus:outline-none",
-                            panelClassName ?? DEFAULT_PANEL,
+                            DEFAULT_PANEL,
                             className,
                         )}
                     >

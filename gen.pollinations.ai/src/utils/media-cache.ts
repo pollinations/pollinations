@@ -6,9 +6,13 @@
 
 import type { Logger } from "@logtape/logtape";
 import { parseSafeFeatures } from "@shared/schemas/safety.ts";
+import { removeUnset } from "@shared/util.ts";
 import type { Context } from "hono";
-import { removeUnset } from "@/util.ts";
 
+// "nofeed" is a removed/no-op param kept here on purpose: external and
+// community clients still send `?nofeed=true`, and excluding it from the
+// cache key prevents those requests from fragmenting the cache. "no-cache"
+// and "key" are request controls that must never affect the cache key.
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];

@@ -1,11 +1,15 @@
 import {
     Alert,
+    AppHeader,
+    AppIcon,
     Button,
     Chip,
+    ColorModeToggle,
     cn,
     DiscordIcon,
-    ExternalLinkIcon,
+    ExternalLinkButton,
     GitHubIcon,
+    Heading,
     ScrollArea,
     Surface,
     TabButton,
@@ -16,17 +20,9 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
-import { getModalityColors } from "@pollinations/ui/modality";
-import { useState } from "react";
+import { ModalityChip } from "@pollinations/ui/gen";
+import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
-
-const APP_THEME = "violet";
-
-const brandWordmarkMask = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
@@ -37,18 +33,19 @@ const WINDOW_OPTIONS = [
 ];
 
 const MODEL_TYPES = [
-    { key: "text", title: "Text" },
     { key: "image", title: "Image" },
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
+    { key: "realtime", title: "Realtime" },
+    { key: "text", title: "Text" },
     { key: "embedding", title: "Embedding" },
 ];
 
 const EXTERNAL_LINKS = [
     {
         href: "https://enter.pollinations.ai",
-        label: "Log In",
-        icon: <ExternalLinkIcon className="h-4 w-4" />,
+        label: "Dashboard",
+        icon: <AppIcon className="h-4 w-4 shrink-0" />,
         showLabel: true,
     },
     {
@@ -76,8 +73,6 @@ function statusSeverity(model) {
     if (model.catalogStatus === "unregistered") return 4;
     if (model.catalogStatus === "anomaly") return 3;
     if (model.catalogStatus === "catalog-unavailable") return 2;
-    if (model.catalogStatus === "registry-only") return 1;
-    if (model.catalogStatus === "hidden") return 0.5;
     return 0;
 }
 
@@ -109,8 +104,11 @@ function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
     const success = stats.status_2xx || 0;
     const total5xx = stats.errors_5xx || 0;
+    // 4xx are client errors and don't count. Judge purely on the 5xx share of
+    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
+    // volume is not a reason to call a failing model healthy.
     const modelRequests = success + total5xx;
-    if (modelRequests < 3) return "on";
+    if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
     if (pct5xx >= 50) return "off";
     if (pct5xx >= 10) return "degraded";
@@ -129,131 +127,116 @@ function rowIntent(status) {
     return "default";
 }
 
-function modalityChipClass(category) {
-    return getModalityColors(category)?.filled ?? "bg-gray-200 text-gray-900";
+function calcGroupStats(group) {
+    let total2xx = 0;
+    let total5xx = 0;
+    let countOn = 0;
+    let countDegraded = 0;
+    let countOff = 0;
+
+    for (const model of group) {
+        const stats = model.stats;
+        if (!stats) continue;
+        total2xx += stats.status_2xx || 0;
+        total5xx += stats.errors_5xx || 0;
+        const status = computeHealthStatus(stats);
+        if (status === "on") countOn++;
+        else if (status === "degraded") countDegraded++;
+        else countOff++;
+    }
+
+    const modelRequests = total2xx + total5xx;
+    const successRate =
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
+
+    return {
+        successRate,
+        countOn,
+        countDegraded,
+        countOff,
+        totalModels: group.length,
+    };
 }
 
-function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
-    if (models.length === 0) return null;
+// A count badge for a tab: red = off, orange = degraded. Just the number;
+// the native title carries the detail on hover.
+function CountBadge({ intent, count, label }) {
+    return (
+        <Chip
+            intent={intent}
+            size="sm"
+            className="tabular-nums"
+            title={`${count} ${label}`}
+        >
+            {count}
+        </Chip>
+    );
+}
 
-    const calcGroupStats = (group) => {
-        let total2xx = 0;
-        let total5xx = 0;
-        let countOn = 0;
-        let countDegraded = 0;
-        let countOff = 0;
+// A tab's contents: category name + success rate, plus up to two count badges
+// (off, then degraded). Healthy categories show name + % only.
+function CategoryTab({ title, stats, showBadges = true }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            <span className="text-xs tabular-nums opacity-70">
+                {stats.successRate.toFixed(1)}%
+            </span>
+            {showBadges && stats.countOff > 0 && (
+                <CountBadge
+                    intent="danger"
+                    count={stats.countOff}
+                    label="off"
+                />
+            )}
+            {showBadges && stats.countDegraded > 0 && (
+                <CountBadge
+                    intent="warning"
+                    count={stats.countDegraded}
+                    label="degraded"
+                />
+            )}
+        </span>
+    );
+}
 
-        for (const model of group) {
-            const stats = model.stats;
-            if (!stats) continue;
-            total2xx += stats.status_2xx || 0;
-            total5xx += stats.errors_5xx || 0;
-            const status = computeHealthStatus(stats);
-            if (status === "on") countOn++;
-            else if (status === "degraded") countDegraded++;
-            else countOff++;
-        }
-
-        const modelRequests = total2xx + total5xx;
-        const successRate =
-            modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
-
-        let status = "healthy";
-        if (successRate < 75) status = "critical";
-        else if (successRate < 95) status = "degraded";
-
-        return {
-            successRate,
-            status,
-            countOn,
-            countDegraded,
-            countOff,
-            totalModels: group.length,
-        };
-    };
+// Category filter — the shared soft TabButton, same selector as the Window
+// picker. "All" clears the filter and shows the aggregate rate; only
+// categories with models are shown, each carrying its own rate + badges.
+function CategoryTabs({ models, value, onChange }) {
+    const available = MODEL_TYPES.filter(({ key }) =>
+        models.some((model) => model.type === key),
+    );
+    if (available.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-5">
-            {MODEL_TYPES.map(({ key, title }) => {
-                const group = models.filter((model) => model.type === key);
-                if (group.length === 0) return null;
-
-                const stats = calcGroupStats(group);
-                const isActive = typeFilter === key;
-                const isDimmed = typeFilter !== null && !isActive;
-                const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-                const colors = getModalityColors(key);
-
-                return (
-                    <button
-                        key={key}
-                        type="button"
-                        onClick={() => onTypeFilter(isActive ? null : key)}
-                        className={cn(
-                            "min-w-0 h-full w-full rounded-xl text-left transition",
-                            isDimmed && "opacity-40",
+        <div className="flex flex-wrap gap-1.5">
+            <TabButton
+                active={value === null}
+                onClick={() => onChange(null)}
+                size="sm"
+            >
+                <CategoryTab
+                    title="All"
+                    stats={calcGroupStats(models)}
+                    showBadges={false}
+                />
+            </TabButton>
+            {available.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="sm"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => model.type === key),
                         )}
-                        aria-pressed={isActive}
-                    >
-                        <Surface
-                            theme={colors?.theme}
-                            variant="card-themed"
-                            className={cn(
-                                "flex h-full min-h-24 flex-col gap-3 border border-theme-border sm:min-h-48",
-                                isActive && "ring-2 ring-theme-bg-active",
-                            )}
-                        >
-                            <div className="flex min-w-0 items-start justify-between gap-3">
-                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-col sm:items-start">
-                                    <h2 className="min-w-0 truncate font-serif text-2xl font-black leading-none text-theme-text-strong">
-                                        {title}
-                                    </h2>
-                                    <Chip intent="neutral" size="sm">
-                                        {stats.totalModels} models
-                                    </Chip>
-                                </div>
-                                <div className="shrink-0 text-right sm:hidden">
-                                    <div className="text-2xl font-bold leading-none tabular-nums text-theme-text-strong">
-                                        {stats.successRate.toFixed(1)}%
-                                    </div>
-                                    <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
-                                        success
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block">
-                                <div className="text-4xl font-bold leading-none tabular-nums text-theme-text-strong md:text-3xl lg:text-4xl">
-                                    {stats.successRate.toFixed(1)}%
-                                </div>
-                                <div className="mt-1 text-xs font-bold tracking-wide text-theme-text-strong">
-                                    success
-                                </div>
-                            </div>
-
-                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-theme-border pt-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {stats.countOff > 0 && (
-                                        <Chip intent="danger" size="sm">
-                                            {stats.countOff} off
-                                        </Chip>
-                                    )}
-                                    {stats.countDegraded > 0 && (
-                                        <Chip intent="warning" size="sm">
-                                            {stats.countDegraded} degraded
-                                        </Chip>
-                                    )}
-                                    {!hasIssues && (
-                                        <Chip intent="success" size="sm">
-                                            healthy
-                                        </Chip>
-                                    )}
-                                </div>
-                            </div>
-                        </Surface>
-                    </button>
-                );
-            })}
+                    />
+                </TabButton>
+            ))}
         </div>
     );
 }
@@ -274,16 +257,14 @@ function StatusBadge({ stats }) {
 }
 
 function CatalogStatusBadge({ status }) {
-    if (!status || status === "visible" || status === "endpoint-fallback") {
+    if (!status || status === "visible") {
         return null;
     }
 
     const variants = {
-        hidden: { label: "hidden", intent: "neutral" },
         anomaly: { label: "anomaly", intent: "warning" },
         unregistered: { label: "unknown", intent: "warning" },
         "catalog-unavailable": { label: "unverified", intent: "neutral" },
-        "registry-only": { label: "registry", intent: "neutral" },
     };
 
     const variant = variants[status];
@@ -314,6 +295,17 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 }
 
 function HeaderLink({ href, label, icon, showLabel = false }) {
+    if (showLabel) {
+        return (
+            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+                <span className="inline-flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                </span>
+            </ExternalLinkButton>
+        );
+    }
+
     return (
         <Button
             as="a"
@@ -321,35 +313,12 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             target="_blank"
             rel="noopener noreferrer"
             title={label}
-            size="small"
-            className={cn(
-                "h-9 gap-2 py-0",
-                showLabel ? "w-auto px-3" : "w-9 px-0",
-            )}
+            size="sm"
+            className="h-9 w-9 gap-2 px-0 py-0"
             aria-label={label}
         >
             {icon}
-            {showLabel && <span>{label}</span>}
         </Button>
-    );
-}
-
-function BrandMark() {
-    return (
-        <a
-            href="https://pollinations.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex text-theme-text-strong"
-            aria-label="Pollinations"
-        >
-            <span className="sr-only">Pollinations</span>
-            <span
-                aria-hidden="true"
-                className="block h-9 w-[292px] max-w-[70vw] shrink-0 bg-current"
-                style={brandWordmarkMask}
-            />
-        </a>
     );
 }
 
@@ -363,7 +332,7 @@ function WindowTabs({ value, onChange }) {
                         key={key}
                         active={value === key}
                         onClick={() => onChange(key)}
-                        size="small"
+                        size="sm"
                     >
                         {label}
                     </TabButton>
@@ -381,9 +350,8 @@ function App() {
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);
-    const failedCatalogEndpoints = Object.entries(endpointStatus)
-        .filter(([, ok]) => ok === false)
-        .map(([name]) => name);
+    const scrollAreaRef = useRef(null);
+    const catalogUnavailable = endpointStatus.catalog === false;
 
     const handleSort = (key) => {
         setSort((prev) => ({
@@ -504,64 +472,63 @@ function App() {
         : sortedModels;
 
     return (
-        <div
-            className="h-dvh bg-theme-bg-subtle text-theme-text-base"
-            data-theme={APP_THEME}
-        >
-            <ScrollArea axis="y" className="h-full">
+        <div className="h-dvh bg-app-bg text-theme-text-base">
+            <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
+                <AppHeader
+                    navLabel="Model Monitor links"
+                    autoHide
+                    scrollTargetRef={scrollAreaRef}
+                    innerClassName={adminMode ? "polli:max-w-6xl" : undefined}
+                >
+                    {EXTERNAL_LINKS.map((link) => (
+                        <HeaderLink key={link.href} {...link} />
+                    ))}
+                    <ColorModeToggle />
+                </AppHeader>
                 <main
                     className={cn(
-                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 md:px-6 md:py-7",
+                        "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-4 py-5 sm:px-6 md:py-7",
                         adminMode ? "max-w-6xl" : "max-w-5xl",
                     )}
                 >
-                    <header className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <BrandMark />
-                            <div className="flex items-center gap-2">
-                                {EXTERNAL_LINKS.map((link) => (
-                                    <HeaderLink key={link.href} {...link} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div className="min-w-0">
-                                <h1 className="font-serif text-2xl font-black text-theme-text-strong">
-                                    Model Monitor
-                                </h1>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm leading-6 text-theme-text-soft">
-                                    <span>
-                                        Real-time health monitoring for models.
-                                    </span>
-                                    <span>
-                                        Last update:{" "}
-                                        {lastUpdated?.toLocaleTimeString(
-                                            "en-GB",
-                                            {
-                                                timeZone: "UTC",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                                second: "2-digit",
-                                            },
-                                        ) || "-"}{" "}
-                                        UTC
-                                    </span>
+                    <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <Heading
+                                as="h1"
+                                size="title"
+                                className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
+                            >
+                                Model Monitor
+                            </Heading>
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                                Real-time health monitoring for Pollinations AI
+                                models.
+                            </p>
+                            {!tinybirdConfigured && (
+                                <div className="mt-2">
+                                    <Chip intent="warning" size="sm">
+                                        Tinybird not configured
+                                    </Chip>
                                 </div>
-                                {!tinybirdConfigured && (
-                                    <div className="mt-2">
-                                        <Chip intent="warning" size="sm">
-                                            Tinybird not configured
-                                        </Chip>
-                                    </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-start gap-2 sm:items-end">
                             <WindowTabs
                                 value={aggregationWindow}
                                 onChange={setAggregationWindow}
                             />
+                            <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                                Last update:{" "}
+                                {lastUpdated?.toLocaleTimeString("en-GB", {
+                                    timeZone: "UTC",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                }) || "-"}{" "}
+                                UTC
+                            </p>
                         </div>
-                    </header>
+                    </section>
 
                     {error && (
                         <Alert intent="danger" title="Monitor error">
@@ -569,21 +536,20 @@ function App() {
                         </Alert>
                     )}
 
-                    {failedCatalogEndpoints.length > 0 && (
-                        <Alert intent="warning" title="Catalog fallback">
-                            Fallback active for{" "}
-                            {failedCatalogEndpoints.join(", ")} model
-                            {failedCatalogEndpoints.length > 1
-                                ? " endpoints"
-                                : " endpoint"}
-                            ; using bundled registry metadata.
+                    {catalogUnavailable && (
+                        <Alert
+                            intent="warning"
+                            title="Model catalog unavailable"
+                        >
+                            Showing observed Tinybird traffic only until the
+                            live model catalog responds.
                         </Alert>
                     )}
 
-                    <GlobalHealthSummary
+                    <CategoryTabs
                         models={models}
-                        typeFilter={typeFilter}
-                        onTypeFilter={setTypeFilter}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
                     />
 
                     <Surface variant="card" className="overflow-hidden p-0">
@@ -704,29 +670,25 @@ function App() {
                                                     intent={rowIntent(health)}
                                                 >
                                                     <TableCell>
-                                                        <Chip
+                                                        <ModalityChip
+                                                            modality={
+                                                                model.type
+                                                            }
                                                             size="sm"
-                                                            className={cn(
-                                                                "text-micro font-bold uppercase tracking-wide",
-                                                                modalityChipClass(
-                                                                    model.type,
-                                                                ),
-                                                            )}
+                                                            className="text-micro font-bold uppercase tracking-wide"
                                                         >
                                                             {model.type}
-                                                        </Chip>
+                                                        </ModalityChip>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-medium text-theme-text-strong">
                                                                 {model.name}
                                                             </span>
-                                                            {model.description && (
+                                                            {model.title && (
                                                                 <span className="max-w-[24rem] truncate text-xs text-theme-text-muted">
                                                                     {
-                                                                        model.description.split(
-                                                                            " - ",
-                                                                        )[0]
+                                                                        model.title
                                                                     }
                                                                 </span>
                                                             )}

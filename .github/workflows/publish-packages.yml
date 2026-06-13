@@ -76,7 +76,12 @@ jobs:
       - name: Publish to NPM
         if: steps.check.outputs.skip != 'true'
         working-directory: packages/sdk
-        run: npm publish --access public
+        run: |
+          v=$(node -p "require('./package.json').version")
+          tag=latest
+          case "$v" in *-*) tag="${v#*-}"; tag="${tag%%.*}";; esac
+          echo "Publishing $v under dist-tag: $tag"
+          npm publish --access public --tag "$tag"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -116,7 +121,12 @@ jobs:
       - name: Publish to NPM
         if: steps.check.outputs.skip != 'true'
         working-directory: packages/ui
-        run: npm publish --access public
+        run: |
+          v=$(node -p "require('./package.json').version")
+          tag=latest
+          case "$v" in *-*) tag="${v#*-}"; tag="${tag%%.*}";; esac
+          echo "Publishing $v under dist-tag: $tag"
+          npm publish --access public --tag "$tag"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

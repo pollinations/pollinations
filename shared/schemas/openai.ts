@@ -489,9 +489,6 @@ export const PromptFilterResultSchema = z.array(
     }),
 );
 
-const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
-export type UserTier = z.infer<typeof UserTierSchema>;
-
 const CompletionChoiceSchema = z.object({
     // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
     finish_reason: z.string().nullable().optional(),
@@ -510,7 +507,6 @@ export const CreateChatCompletionResponseSchema = z.object({
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
-    user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
@@ -598,7 +594,7 @@ export const CreateImageRequestSchema = z
             }),
         safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, safe, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;

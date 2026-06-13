@@ -36,7 +36,6 @@ export function AuthModal({
     return (
         <Dialog
             open
-            theme="amber"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
@@ -58,7 +57,8 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:block polli:shrink-0 polli:text-theme-text-strong polli:focus:outline-none polli:focus-visible:outline-none"
+            tabIndex={-1}
+            className="polli:block polli:shrink-0 polli:text-theme-text-strong polli:focus:outline-none"
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>

@@ -11,7 +11,10 @@ export type PollenPack = {
     taxCode: string;
 };
 
-const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
+// Wide (1200x630) OG image — Stripe Checkout scales to band width, so a
+// landscape source renders a short header instead of a tall mobile-dominating
+// square. Keep this asset wide if swapping.
+const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/og-image.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 

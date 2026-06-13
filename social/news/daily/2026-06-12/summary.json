@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-12",
+  "period_start": "2026-06-12",
+  "period_end": "2026-06-12",
+  "title": "New coding models and cheaper inference",
+  "summary": "We added Kimi K2.7 for coding, unlocked 1080p video generation, dropped Qwen costs, and fixed a stubborn boolean bug in the text API.\n\nWe wired up Moonshot AI's Kimi K2.7 Code model (256K context, reasoning) to the free tier. We also migrated Wan and Qwen models to new providers, which unlocked 1080p Wan video generation and dropped Qwen text generation costs by 2.5x.\n\nFixed a classic string-to-boolean parsing bug in the text API. Passing '?stream=false' or '?json=false' will now actually disable streaming and JSON modes, rather than enthusiastically enabling them.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11753,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11758,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11762,
+      "date": "2026-06-12"
+    }
+  ],
+  "generated_at": "2026-06-13T07:15:37.930822+00:00"
+}

@@ -14,7 +14,6 @@ run_worker_first = true
 
 [vars]
 PORT = "16386"
-WEBSIM_APP_KEY = "pk_wYCqFfSdCXZL8UBW"
 
 [observability]
 enabled = true

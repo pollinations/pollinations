@@ -1,13 +1,6 @@
-const WEBSIM_APP_KEY = "pk_wYCqFfSdCXZL8UBW";
-const DEFAULT_MODEL = "openai-fast";
-const ALLOWED_MODELS = [
-    DEFAULT_MODEL,
-    "openai",
-    "claude-fast",
-    "gemini-fast",
-    "gemini",
-];
-const ALLOWED_MODEL_SET = new Set(ALLOWED_MODELS);
+import { ALLOWED_MODEL_IDS, DEFAULT_MODEL } from "./models.js";
+
+const ALLOWED_MODEL_SET = new Set(ALLOWED_MODEL_IDS);
 
 const systemPrompt = `You are an HTML generator. Your task is to return a single, complete HTML file that implements what the user asks for.
 The HTML should be valid, self-contained, and ready to be rendered in a browser.
@@ -28,7 +21,7 @@ Make the design clean, modern, and responsive.
 Write the code in a sequence that lets the browser already render something meaningful while it is being transmitted.
 Imagine you are coding for a demoscene challenge where code should be short and elegant.
 Use images from src="https://image.pollinations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"
-Links to subpages should always be relative without a leading slash. Don't use JS-based links unless it is triggering something interactive. New content should usually come by following a real link.
+Do not create links to generated subpages. Keep navigation within this single HTML file using anchors, buttons, tabs, details/summary, dialogs, or other browser-native interactions.
 You are targeting modern browsers.
 Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview. include 'og:image:width' and 'og:image:height`;
 
@@ -66,15 +59,15 @@ async function handleRequest(request, env) {
         return jsonResponse({
             ok: true,
             defaultModel: DEFAULT_MODEL,
-            models: ALLOWED_MODELS,
+            models: ALLOWED_MODEL_IDS,
             generationMode: "non-streaming",
-            auth: env.TEXT_API_TOKEN ? "secret" : "app-key",
+            auth: "bearer",
             assets: Boolean(env.ASSETS),
         });
     }
 
     if (url.pathname === "/api/generate") {
-        return handleGenerateApi(request, env);
+        return handleGenerateApi(request);
     }
 
     if (request.method === "HEAD" && isAssetPath(url.pathname)) {
@@ -101,10 +94,10 @@ async function handleRequest(request, env) {
     const prompt = extractPromptFromPath(url.pathname);
     if (!prompt) return serveAsset(request, env);
 
-    return generateHtml(prompt, request, env);
+    return generateHtml(prompt, request);
 }
 
-async function handleGenerateApi(request, env) {
+async function handleGenerateApi(request) {
     if (request.method !== "POST") {
         return new Response("Method not allowed", {
             status: 405,
@@ -127,7 +120,7 @@ async function handleGenerateApi(request, env) {
         return jsonResponse({ error: "Prompt is required" }, 400);
     }
 
-    return generateHtml(prompt, request, env, body.model);
+    return generateHtml(prompt, request, body.model);
 }
 
 function isAssetPath(pathname) {
@@ -208,10 +201,16 @@ function extractPromptFromPath(path) {
     }
 }
 
-async function generateHtml(prompt, request, env, modelOverride) {
+async function generateHtml(prompt, request, modelOverride) {
     const url = new URL(request.url);
     const model = resolveModel(modelOverride || url.searchParams.get("model"));
-    const upstream = await fetchFromTextApi(prompt, model, request, env);
+    const token = bearerToken(request.headers.get("Authorization"));
+
+    if (!token) {
+        return authRequiredResponse();
+    }
+
+    const upstream = await fetchFromTextApi(prompt, model, token);
 
     if (!upstream.ok) {
         return upstreamErrorResponse(upstream);
@@ -223,7 +222,6 @@ async function generateHtml(prompt, request, env, modelOverride) {
     return new Response(html, {
         headers: {
             "Content-Type": "text/html; charset=utf-8",
-            "Content-Encoding": "identity",
             "Cache-Control": "no-store",
             ...getCorsHeaders(),
         },
@@ -236,15 +234,11 @@ function resolveModel(model) {
     return ALLOWED_MODEL_SET.has(trimmed) ? trimmed : DEFAULT_MODEL;
 }
 
-function fetchFromTextApi(prompt, model, request, env) {
+function fetchFromTextApi(prompt, model, token) {
     const headers = {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
     };
-    const token = resolveTextApiToken(request, env);
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
 
     return fetch("https://gen.pollinations.ai/v1/chat/completions", {
         method: "POST",
@@ -302,20 +296,27 @@ function renderGeneratedFallback(content) {
 </html>`;
 }
 
-function resolveTextApiToken(request, env) {
-    const requestToken = bearerToken(request.headers.get("Authorization"));
-    return (
-        requestToken ||
-        env.TEXT_API_TOKEN ||
-        env.WEBSIM_APP_KEY ||
-        WEBSIM_APP_KEY
-    );
-}
-
 function bearerToken(value) {
     if (!value) return "";
     const match = value.match(/^Bearer\s+(.+)$/i);
     return match?.[1]?.trim() || "";
+}
+
+function authRequiredResponse() {
+    return new Response(
+        renderErrorPage(
+            "Authorization required",
+            "Open Websim and authorize with Pollinations before generating HTML.",
+        ),
+        {
+            status: 401,
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                ...getCorsHeaders(),
+            },
+        },
+    );
 }
 
 async function upstreamErrorResponse(upstream) {

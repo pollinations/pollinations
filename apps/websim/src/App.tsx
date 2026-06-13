@@ -174,22 +174,7 @@ export function App() {
                 );
             }
 
-            if (!response.body) {
-                setHtml(await response.text());
-                return;
-            }
-
-            const reader = response.body
-                .pipeThrough(new TextDecoderStream())
-                .getReader();
-            let nextHtml = "";
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                nextHtml += value;
-                setHtml(nextHtml);
-            }
+            setHtml(await response.text());
         } catch (err) {
             if (err instanceof DOMException && err.name === "AbortError") {
                 return;

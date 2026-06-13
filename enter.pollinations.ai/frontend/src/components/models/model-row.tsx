@@ -1,4 +1,12 @@
-import { CardIcon, SproutIcon, Surface, Tooltip } from "@pollinations/ui";
+import {
+    CardIcon,
+    CopyButton,
+    cn,
+    InfoTip,
+    SproutIcon,
+    Surface,
+    Tooltip,
+} from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
@@ -163,21 +171,37 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             >
                 <div className="flex min-w-0 flex-col gap-1.5">
                     <div className="flex min-w-0 items-center gap-2">
-                        {modelDescription ? (
-                            <Tooltip
-                                triggerAs="span"
+                        <CopyButton
+                            value={model.name}
+                            tooltip={`Copy "${model.name}"`}
+                            aria-label={`Copy model id ${model.name}`}
+                            className={(copied) =>
+                                cn(
+                                    "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
+                                    copied
+                                        ? "text-intent-success-text"
+                                        : "hover:text-theme-text-soft",
+                                )
+                            }
+                        >
+                            {(copied) => (
+                                <>
+                                    <span className="min-w-0 truncate">
+                                        {publicModelName}
+                                    </span>
+                                    {copied && (
+                                        <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
+                                            copied
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                        </CopyButton>
+                        {modelDescription && (
+                            <InfoTip
                                 content={modelDescription}
-                                className="min-w-0"
-                                displayContents
-                            >
-                                <span className="block min-w-0 truncate text-base font-medium leading-none">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-base font-medium leading-none">
-                                {publicModelName}
-                            </span>
+                                label={`About ${publicModelName}`}
+                            />
                         )}
                         <ModelStatusChips
                             showNew={showNew}

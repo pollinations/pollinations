@@ -2220,6 +2220,20 @@ body.dark .error-details {
 
 .context-drop-reason { color: inherit; }
 
+.context-note-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+  color: inherit;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.context-note-dismiss:hover { opacity: 1; }
+
 /* light mode overrides */
 body.light .context-drop-log--error {
   border-color: rgba(202, 138, 4, 0.3);
@@ -2236,3 +2250,26 @@ body.light .context-drop-log--warn {
 body.light .context-drop-log--warn .context-drop-summary,
 body.light .context-drop-log--warn .context-drop-icon { color: #4f46e5; }
 body.light .context-drop-log--warn .context-drop-list { color: #3730a3; }
+
+/* integrity note — violet/purple, distinct from drops (yellow) and advisories (indigo) */
+.context-integrity-note {
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.context-integrity-note .context-drop-summary,
+.context-integrity-note .context-drop-icon { color: #8b5cf6; }
+
+.context-integrity-note .context-drop-list { color: #7c3aed; }
+
+.context-integrity-note .context-drop-type {
+  background: rgba(139, 92, 246, 0.12);
+}
+
+body.light .context-integrity-note {
+  border-color: rgba(124, 58, 237, 0.3);
+  background: rgba(245, 243, 255, 0.6);
+}
+body.light .context-integrity-note .context-drop-summary,
+body.light .context-integrity-note .context-drop-icon { color: #6d28d9; }
+body.light .context-integrity-note .context-drop-list { color: #4c1d95; }

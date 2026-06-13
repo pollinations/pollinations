@@ -28,6 +28,9 @@ const MessageBubble = ({
     scrollToBottom,
 }) => {
     const [copied, setCopied] = useState(false);
+    const [dismissedNotes, setDismissedNotes] = useState(new Set());
+    const dismissNote = (key) =>
+        setDismissedNotes((prev) => new Set([...prev, key]));
 
     const handleCopy = () => {
         copyToClipboard(displayContent || message.content || "");
@@ -221,24 +224,36 @@ const MessageBubble = ({
                     const renderReason = (entry) => {
                         switch (entry.reason) {
                             case "model-no-vision":
-                                return `Model "${entry.detail?.model}" does not support image input`;
+                                return `You sent an image to a text-only model — ${entry.detail?.model || "this model"} doesn't accept images. Switch to a vision-capable model.`;
                             case "no-data":
-                                return `Attachment "${entry.detail?.name}" had no recoverable data — it may have been lost from storage`;
+                                return `The image data was lost before it reached the model — platform-side failure, not your error. Try re-attaching the file.`;
                             case "no-explicit-prompt":
-                                return `Image "${entry.detail?.name}" was sent with no text prompt — the AI may not have analyzed it`;
+                                return `Image sent without a text prompt — the model will decide how to respond on its own. Add a question or instruction if you want a specific outcome.`;
                             case "model-ignored-image":
-                                return "The AI's response indicates it did not see the previously shared image — try re-attaching it to your next message";
+                                return "The model supports vision but didn't use it — this is a model-side failure, not your error. Try re-sending or switching to a different model.";
                             case "unexpected-drop":
-                                return `${entry.detail?.missed} of ${entry.detail?.expected} image(s) were lost in an unknown pipeline step`;
+                                return `${entry.detail?.missed} of ${entry.detail?.expected} image(s) were lost somewhere in the pipeline — platform-side failure. Try re-attaching.`;
                             case "image-in-prior-turn":
-                                return "An image from a previous message is in context — most modern models see it, but some may not";
+                                return "Some models don't look back at images from earlier turns. If the model seems to have missed it, re-attach the image to your next message.";
                             default:
                                 return entry.reason;
                         }
                     };
+
+                    const faultSuffix = (entries) => {
+                        if (!entries.length) return "";
+                        const first = entries[0].detail?.fault;
+                        if (!first || first === "none") return "";
+                        const allSame = entries.every(e => e.detail?.fault === first);
+                        if (!allSame) return "";
+                        if (first === "user") return " — check your model selection";
+                        if (first === "model") return " — model did not process it";
+                        if (first === "platform") return " — platform pipeline issue";
+                        return "";
+                    };
                     return (
                         <>
-                            {drops.length > 0 && (
+                            {drops.length > 0 && !dismissedNotes.has("drops") && (
                                 <details className="context-drop-log context-drop-log--error">
                                     <summary className="context-drop-summary">
                                         <svg className="context-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -246,7 +261,8 @@ const MessageBubble = ({
                                             <line x1="12" y1="9" x2="12" y2="13" />
                                             <line x1="12" y1="17" x2="12.01" y2="17" />
                                         </svg>
-                                        {drops.length === 1 ? "1 item was not seen by the AI" : `${drops.length} items were not seen by the AI`}
+                                        {drops.length === 1 ? "1 item was not seen by the AI" : `${drops.length} items were not seen by the AI`}{faultSuffix(drops)}
+                                        <button type="button" className="context-note-dismiss" aria-label="Dismiss" onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissNote("drops"); }}>×</button>
                                     </summary>
                                     <ul className="context-drop-list">
                                         {drops.map((d, i) => (
@@ -258,7 +274,7 @@ const MessageBubble = ({
                                     </ul>
                                 </details>
                             )}
-                            {warnings.length > 0 && (
+                            {warnings.length > 0 && !dismissedNotes.has("warnings") && (
                                 <details className="context-drop-log context-drop-log--warn">
                                     <summary className="context-drop-summary">
                                         <svg className="context-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -267,6 +283,7 @@ const MessageBubble = ({
                                             <line x1="12" y1="16" x2="12.01" y2="16" />
                                         </svg>
                                         {warnings.length === 1 ? "1 advisory note about this request" : `${warnings.length} advisory notes about this request`}
+                                        <button type="button" className="context-note-dismiss" aria-label="Dismiss" onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissNote("warnings"); }}>×</button>
                                     </summary>
                                     <ul className="context-drop-list">
                                         {warnings.map((w, i) => (
@@ -281,6 +298,44 @@ const MessageBubble = ({
                         </>
                     );
                 })()}
+
+            {/* Conversation integrity note (stormdede515-eng)
+                Shown when the user's message referenced something the AI
+                supposedly said but the claim isn't found in conversation
+                history. Advisory only — never blocks the message. */}
+            {message.role === "assistant" && message.integrityNote && !dismissedNotes.has("integrity") && (() => {
+                const { phrase, claimText, matchCount, totalKeywords } = message.integrityNote;
+                const snippet = claimText && claimText.length > 60
+                    ? `${claimText.slice(0, 60)}…`
+                    : claimText || "";
+                return (
+                    <details className="context-drop-log context-integrity-note">
+                        <summary className="context-drop-summary">
+                            <svg className="context-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            Reference to prior AI output could not be verified
+                            <button type="button" className="context-note-dismiss" aria-label="Dismiss" onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissNote("integrity"); }}>×</button>
+                        </summary>
+                        <ul className="context-drop-list">
+                            <li className="context-drop-item">
+                                <span className="context-drop-type">claim</span>
+                                <span className="context-drop-reason">
+                                    {`"${phrase}${snippet ? ` ${snippet}` : ""}" — `}
+                                    {totalKeywords === 0
+                                        ? "the claim was too short to verify"
+                                        : matchCount === 0
+                                          ? "none of the key terms appear in any prior AI response in this conversation"
+                                          : `only ${matchCount} of ${totalKeywords} key terms matched the conversation history`}
+                                    . The AI will respond based on what was actually recorded.
+                                </span>
+                            </li>
+                        </ul>
+                    </details>
+                );
+            })()}
 
             {/* Message action bar (assistant only, not streaming, not error) */}
             {message.role === "assistant" &&

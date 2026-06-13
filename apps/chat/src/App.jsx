@@ -18,12 +18,19 @@ import {
     stopGeneration,
 } from "./utils/api";
 import { contextLogger } from "./utils/contextLogger";
+import { storeHash } from "./utils/integrityStore";
+import { detectReference, verifyAgainstHistory } from "./utils/phraseDetector";
 import {
     getSelectedModel,
     getTheme,
     saveSelectedModel,
     saveTheme,
 } from "./utils/storage";
+
+// Injected into every system message to anchor the model against false
+// claims about prior AI output. Users cannot edit or remove this.
+const INTEGRITY_ANCHOR =
+    "When a user claims you previously said something specific, verify it against the actual conversation history before agreeing. If you cannot find it in the prior messages, say so directly rather than accepting the claim.";
 
 function App() {
     const {
@@ -335,36 +342,41 @@ function App() {
                 Date.now().toString(36) + Math.random().toString(36).slice(2);
             addMessage("assistant", "", assistantId, { isStreaming: true });
 
-            const runtimeMessages = sessionSettings.systemPrompt?.trim()
-                ? [
-                      {
-                          role: "system",
-                          content: sessionSettings.systemPrompt.trim(),
-                      },
-                      ...updatedChat.messages,
-                  ]
-                : updatedChat.messages;
+            const basePrompt = sessionSettings.systemPrompt?.trim() ||
+                "You are a helpful AI assistant who speaks concisely and helpfully.";
+            const runtimeMessages = [
+                {
+                    role: "system",
+                    content: `${basePrompt}\n\n${INTEGRITY_ANCHOR}`,
+                },
+                ...updatedChat.messages,
+            ];
 
             // ── Context transparency (stormdede515-eng) ──────────────
 
-            // 1. Confirmed drop: image sent with no text prompt.
+            // 1. Advisory: image sent with no text prompt.
+            //    Not a confirmed drop — vision models will still analyze the
+            //    image, they just have no instruction to guide them.
             try {
                 if (attachments.length > 0 && attachments[0]?.isImage && !trimmed) {
-                    contextLogger.dropped(
+                    contextLogger.warn(
                         assistantId,
                         "image",
                         "no-explicit-prompt",
-                        { name: attachments[0].name || "(unnamed)" },
+                        { name: attachments[0].name || "(unnamed)", fault: "none" },
                     );
                 }
             } catch { /* must never block */ }
 
-            // 2. Confirmed drop: model registry says no vision support.
+            // 2. Confirmed drop: model registry explicitly says no vision support.
+            //    Only fires when inputModalities is present AND excludes "image".
+            //    Missing/undefined inputModalities means unknown — assume capable.
             try {
                 const modelDef = models[selectedModel];
-                const modelSupportsImages =
-                    modelDef?.inputModalities?.includes("image") ?? false;
-                if (!modelSupportsImages) {
+                const modalities = modelDef?.inputModalities;
+                const modelExplicitlyRejectsImages =
+                    Array.isArray(modalities) && !modalities.includes("image");
+                if (modelExplicitlyRejectsImages) {
                     for (const msg of runtimeMessages) {
                         const hasImage =
                             (Array.isArray(msg.attachments) &&
@@ -375,17 +387,35 @@ function App() {
                                 assistantId,
                                 "image",
                                 "model-no-vision",
-                                { model: selectedModel },
+                                { model: selectedModel, fault: "user" },
                             );
                         }
                     }
                 }
             } catch { /* must never block */ }
 
-            // 3. Soft warning: the current message has no image but a prior
-            //    message in history does. Some models handle cross-turn images
-            //    fine (GPT-5.4, Claude); others silently ignore them. This is
-            //    not a confirmed drop — just an advisory.
+            // ── Phrase-detection / integrity check (stormdede515-eng) ──
+            // Scan the outgoing text for reference phrases ("you told me",
+            // "you said", etc.). If found, verify the claimed content against
+            // conversation history. An unsupported reference — one whose
+            // keywords don't appear in any prior assistant message — is logged
+            // as an integrity note on the reply bubble. Supported references
+            // pass silently; this only surfaces when there is a clear mismatch.
+            let integrityCheck = { found: false };
+            try {
+                if (trimmed) {
+                    const ref = detectReference(trimmed);
+                    if (ref.found) {
+                        const verification = verifyAgainstHistory(ref.claimText, runtimeMessages);
+                        integrityCheck = { ...ref, ...verification };
+                    }
+                }
+            } catch { /* must never block */ }
+
+            // 3. Track whether a prior turn has an image — used only by the
+            //    response sanity check below. No advisory is shown proactively;
+            //    we only surface a note if the model's response text proves it
+            //    missed the image.
             let hasPriorImage = false;
             try {
                 const currentHasImage =
@@ -398,26 +428,15 @@ function App() {
                                 Array.isArray(msg.attachments) &&
                                 msg.attachments.some((a) => a?.isImage),
                         );
-                    if (hasPriorImage) {
-                        contextLogger.warn(
-                            assistantId,
-                            "image",
-                            "image-in-prior-turn",
-                            {
-                                note: "An image from a previous message is in context — most modern models see it, but some may not",
-                            },
-                        );
-                    }
                 }
             } catch { /* must never block */ }
 
-            // Helper: write all visible log entries (drops + warnings) onto
-            // the reply bubble. Called after every response, including errors.
-            const flushContextLog = (responseText = "") => {
+            // Build the context/integrity patch to merge into the final
+            // updateMessage call. Returns an object (never throws).
+            const buildLogPatch = (responseText = "") => {
                 try {
-                    // 4. Sanity check: scan the response for phrases that
-                    //    signal the model could not see a prior-turn image.
-                    //    Only runs when we know there was one.
+                    // 4. Sanity check: if the model's response text proves it
+                    //    could not see a prior-turn image, log a confirmed drop.
                     if (hasPriorImage && responseText) {
                         const lower = responseText.toLowerCase();
                         const ignored = [
@@ -444,23 +463,51 @@ function App() {
                                 "model-ignored-image",
                                 {
                                     note: "AI response indicates it did not see the previously shared image",
+                                    fault: "model",
                                 },
                             );
                         }
                     }
-                    const visible = contextLogger.getVisibleForTurn(assistantId);
-                    if (visible.length > 0) {
-                        updateMessage(assistantId, { contextDrops: visible });
+
+                    // 5. Store integrity hash for future reference checks.
+                    if (responseText) storeHash(assistantId, responseText);
+
+                    // 6. Attach an integrity note when the user's message
+                    //    referenced something the AI supposedly said but that
+                    //    claim isn't supported by the conversation history.
+                    let integrityNote = null;
+                    if (
+                        integrityCheck.found &&
+                        (integrityCheck.supported === false ||
+                            (integrityCheck.supported === null &&
+                                integrityCheck.totalKeywords > 0))
+                    ) {
+                        integrityNote = {
+                            phrase: integrityCheck.phrase,
+                            claimText: integrityCheck.claimText,
+                            matchCount: integrityCheck.matchCount,
+                            totalKeywords: integrityCheck.totalKeywords,
+                        };
                     }
-                } catch { /* must never crash */ }
+
+                    const visible = contextLogger.getVisibleForTurn(assistantId);
+                    const patch = {};
+                    if (visible.length > 0) patch.contextDrops = visible;
+                    if (integrityNote) patch.integrityNote = integrityNote;
+                    return patch;
+                } catch {
+                    return {};
+                }
             };
 
             const applyError = (error) => {
+                const logPatch = buildLogPatch();
                 if (error.message === "User aborted") {
                     updateMessage(assistantId, {
                         content: "**Message stopped by user**",
                         isStreaming: false,
                         isError: false,
+                        ...logPatch,
                     });
                 } else {
                     updateMessage(assistantId, {
@@ -469,9 +516,9 @@ function App() {
                         isError: true,
                         errorType: error.errorType || "unknown",
                         errorCode: error.code || null,
+                        ...logPatch,
                     });
                 }
-                flushContextLog();
                 setIsGenerating(false);
             };
 
@@ -487,8 +534,8 @@ function App() {
                         updateMessage(assistantId, {
                             content: fullContent,
                             isStreaming: false,
+                            ...buildLogPatch(fullContent),
                         });
-                        flushContextLog(fullContent);
                         setIsGenerating(false);
                     },
                     applyError,
@@ -673,15 +720,15 @@ function App() {
                 Date.now().toString(36) + Math.random().toString(36).slice(2);
             addMessage("assistant", "", aid, { isStreaming: true });
             setIsGenerating(true);
-            const runtimeMessages = sessionSettings.systemPrompt?.trim()
-                ? [
-                      {
-                          role: "system",
-                          content: sessionSettings.systemPrompt.trim(),
-                      },
-                      ...updated.messages,
-                  ]
-                : updated.messages;
+            const regenBasePrompt = sessionSettings.systemPrompt?.trim() ||
+                "You are a helpful AI assistant who speaks concisely and helpfully.";
+            const runtimeMessages = [
+                {
+                    role: "system",
+                    content: `${regenBasePrompt}\n\n${INTEGRITY_ANCHOR}`,
+                },
+                ...updated.messages,
+            ];
             sendMessage(
                 runtimeMessages,
                 (_, full) =>

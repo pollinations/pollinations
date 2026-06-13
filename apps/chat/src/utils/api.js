@@ -281,6 +281,7 @@ export const formatMessagesForAPI = (messages, _modelId, turnId = null) => {
                     contextLogger.dropped(turnId, "attachment", "no-data", {
                         name: attachment.name || "(unnamed)",
                         mimeType,
+                        fault: "platform",
                     });
                 }
                 continue;
@@ -320,6 +321,7 @@ export const formatMessagesForAPI = (messages, _modelId, turnId = null) => {
                         expected: imageAttachmentsIn,
                         sent: imageUrlsOut,
                         missed: unaccounted,
+                        fault: "platform",
                     },
                 );
             }

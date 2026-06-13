@@ -1,0 +1,1282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BrainrotDex — L'Album delle Fusioni</title>
+<meta name="description" content="Fuse two cards and the AI invents a brand-new Italian brainrot character — with image, lore, rarity and a dramatic Italian voice. Collect them all in your album." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+:root {
+    --paper: #f4ead6;
+    --paper-dark: #e9dcc0;
+    --ink: #2a1c10;
+    --ink-soft: #5d4a35;
+    --green: #008c45;
+    --red: #cd212a;
+    --gold: #c9a227;
+    --kraft: #b59a72;
+    --teal: #1e7f8e;
+    --purple: #7b4fa6;
+    --display: "Titan One", system-ui, sans-serif;
+    --serif: "IM Fell English", Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(rgba(42, 28, 16, 0.055) 1px, transparent 1.5px),
+        linear-gradient(180deg, var(--paper) 0%, var(--paper-dark) 100%);
+    background-size: 14px 14px, 100% 100%;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+}
+
+/* paper grain over everything */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2"/></filter><rect width="160" height="160" filter="url(%23n)"/></svg>');
+}
+
+/* ---- Masthead ---------------------------------------------------- */
+
+.masthead {
+    border-bottom: 3px solid var(--ink);
+    background:
+        linear-gradient(90deg, var(--green) 0 33.4%, #f6f1e4 33.4% 66.7%, var(--red) 66.7%) top / 100% 9px no-repeat,
+        repeating-linear-gradient(-45deg, rgba(42,28,16,.05) 0 2px, transparent 2px 9px),
+        #efe3c8;
+    padding: 26px 22px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 20px;
+}
+
+.brand h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: clamp(34px, 6vw, 58px);
+    line-height: 0.95;
+    letter-spacing: 1px;
+    color: var(--red);
+    text-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(-1.2deg);
+}
+.brand h1 span { color: var(--green); }
+.brand p {
+    margin: 6px 0 0 3px;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 15px;
+}
+
+.masthead-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.counter {
+    font-family: var(--display);
+    font-size: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 999px;
+    padding: 7px 14px 8px;
+    transform: rotate(1deg);
+}
+.counter b { color: #f3c64b; }
+
+button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.chip-btn {
+    font-family: var(--display);
+    font-size: 13px;
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ink);
+    padding: 7px 13px 8px;
+    box-shadow: 2px 2px 0 var(--ink);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.chip-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.chip-btn:active { transform: translate(1px, 1px); box-shadow: 0 0 0 var(--ink); }
+.chip-btn.warn { background: #ffe9a8; }
+
+/* ---- Lab --------------------------------------------------------- */
+
+main { max-width: 1060px; margin: 0 auto; padding: 26px 18px 90px; }
+
+.lab {
+    position: relative;
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    background:
+        repeating-linear-gradient(0deg, rgba(42,28,16,.04) 0 1px, transparent 1px 26px),
+        #fbf4e2;
+    box-shadow: 5px 6px 0 rgba(42, 28, 16, 0.28);
+    padding: 22px 18px 24px;
+    margin-bottom: 40px;
+}
+
+.lab-title {
+    position: absolute;
+    top: -17px;
+    left: 22px;
+    font-family: var(--display);
+    font-size: 17px;
+    background: var(--green);
+    color: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 4px 14px 6px;
+    transform: rotate(-2deg);
+    box-shadow: 2px 2px 0 var(--ink);
+}
+
+.bench {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 3vw, 26px);
+    flex-wrap: wrap;
+}
+
+.slot {
+    width: 148px;
+    height: 196px;
+    border: 3px dashed var(--kraft);
+    border-radius: 14px;
+    background: rgba(181, 154, 114, 0.12);
+    display: grid;
+    place-items: center;
+    color: var(--kraft);
+    font-family: var(--display);
+    font-size: 38px;
+    position: relative;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.slot.filled { border-style: solid; border-color: var(--ink); background: #fff; cursor: pointer; }
+.slot .hint {
+    position: absolute;
+    bottom: -24px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+.op {
+    font-family: var(--display);
+    font-size: 42px;
+    color: var(--ink);
+    text-shadow: 2px 2px 0 rgba(201, 162, 39, 0.55);
+}
+
+.fuse-btn {
+    font-family: var(--display);
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: #fff;
+    background: linear-gradient(180deg, #e23636, #b71722);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 14px 34px 17px;
+    box-shadow: 0 5px 0 var(--ink), 0 10px 18px rgba(42, 28, 16, 0.3);
+    text-shadow: 2px 2px 0 rgba(42, 28, 16, 0.45);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.fuse-btn:hover:not(:disabled) { transform: translateY(-2px) rotate(-1deg) scale(1.03); }
+.fuse-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.fuse-btn:disabled { filter: grayscale(0.9) brightness(1.1); cursor: not-allowed; box-shadow: 0 3px 0 var(--ink); }
+
+.lab-note {
+    text-align: center;
+    margin: 26px 0 0;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 14px;
+}
+
+/* ---- Album ------------------------------------------------------- */
+
+.album h2 {
+    font-family: var(--display);
+    font-size: 24px;
+    margin: 34px 0 14px;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.album h2 small { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 14px; color: var(--ink-soft); }
+.album h2::after {
+    content: "";
+    flex: 1;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 14px, transparent 14px 22px);
+    opacity: 0.35;
+    transform: translateY(-6px);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+    gap: 20px 16px;
+}
+
+.sticker {
+    --rot: 0deg;
+    position: relative;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    transform: rotate(var(--rot));
+    transition: transform 0.15s ease, filter 0.15s ease;
+    text-align: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+.sticker:hover { transform: rotate(0deg) scale(1.045); z-index: 5; filter: drop-shadow(0 10px 14px rgba(42, 28, 16, 0.3)); }
+.sticker.pop { animation: pop-in 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes pop-in { 0% { transform: scale(0.2) rotate(14deg); opacity: 0; } 100% { transform: scale(1) rotate(var(--rot)); opacity: 1; } }
+
+.card-face {
+    border-radius: 12px;
+    border: 5px solid #fff;
+    outline: 2.5px solid var(--ink);
+    box-shadow: 3px 4px 0 rgba(42, 28, 16, 0.25);
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-art {
+    aspect-ratio: 1;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    background: #eee;
+}
+.card-art.emoji {
+    display: grid;
+    place-items: center;
+    font-size: 64px;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.85), transparent 60%),
+        repeating-linear-gradient(45deg, rgba(0, 140, 69, 0.1) 0 10px, rgba(205, 33, 42, 0.08) 10px 20px),
+        #f3ead2;
+}
+
+.card-name {
+    font-family: var(--display);
+    font-size: 12.5px;
+    line-height: 1.15;
+    padding: 7px 8px 8px;
+    text-align: center;
+    color: #fff;
+    background: var(--ink);
+    min-height: 38px;
+    display: grid;
+    place-items: center;
+}
+
+/* rarity frames */
+.r-comune .card-face { outline-color: var(--kraft); }
+.r-comune .card-name { background: var(--kraft); color: var(--ink); }
+.r-raro .card-face { outline-color: var(--teal); }
+.r-raro .card-name { background: linear-gradient(100deg, #155e6b, var(--teal), #2fa3b5, var(--teal)); }
+.r-epico .card-face { outline-color: var(--purple); }
+.r-epico .card-name { background: linear-gradient(100deg, #5a3580, var(--purple), #9a6fc8, var(--purple)); }
+.r-leggendario .card-face { outline-color: var(--gold); box-shadow: 0 0 0 1px #fff7d6, 3px 4px 0 rgba(150, 110, 10, 0.4), 0 0 18px rgba(201, 162, 39, 0.55); }
+.r-leggendario .card-name { background: linear-gradient(100deg, #8a6a12, var(--gold) 30%, #ffe9a3 50%, var(--gold) 70%, #8a6a12); background-size: 220% 100%; animation: sheen 2.6s linear infinite; color: #2c2206; }
+.r-god .card-face { outline-color: transparent; box-shadow: 0 0 0 3px #fff, 0 0 22px rgba(255, 0, 128, 0.4); }
+.r-god .card-face { background: conic-gradient(from 0deg, #ff5f6d, #ffc371, #47e891, #4aa8ff, #c86dd7, #ff5f6d); animation: hue 5s linear infinite; padding: 3px; }
+.r-god .card-name { background: rgba(20, 8, 26, 0.88); }
+.r-segreto .card-face { outline-color: #000; background: #0c0c0e; border-color: #1d1d22; }
+.r-segreto .card-name { background: #0c0c0e; color: #e8e6ef; text-shadow: 2px 0 #ff2b5e, -2px 0 #2bd9ff; animation: glitch 1.4s steps(2) infinite; }
+@keyframes sheen { to { background-position: -220% 0; } }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+@keyframes glitch { 0%, 92% { transform: translate(0); } 94% { transform: translate(1px, -1px); } 97% { transform: translate(-1px, 1px); } }
+
+.mini-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+.sticker:hover .mini-actions, .sticker:focus-within .mini-actions { opacity: 1; }
+.mini-actions button {
+    border: 2px solid var(--ink);
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1;
+    padding: 4px 5px;
+}
+
+.empty-slot {
+    border: 3px dashed rgba(42, 28, 16, 0.25);
+    border-radius: 12px;
+    aspect-ratio: 152 / 196;
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-size: 34px;
+    color: rgba(42, 28, 16, 0.22);
+}
+
+/* ---- Reveal modal ------------------------------------------------- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    place-items: center;
+    padding: 18px;
+    background: radial-gradient(circle at 50% 38%, rgba(64, 36, 14, 0.88), rgba(20, 10, 4, 0.96));
+}
+.overlay.open { display: grid; }
+
+.bustina {
+    width: min(320px, 82vw);
+    aspect-ratio: 3 / 4.1;
+    border-radius: 14px;
+    position: relative;
+    background:
+        radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.5), transparent 36%),
+        repeating-linear-gradient(125deg, #b9bec9 0 14px, #dfe3ea 14px 22px, #98a0af 22px 38px),
+        #c3c9d4;
+    border: 3px solid #2b2f38;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.bustina.shaking { animation: shake 0.55s ease-in-out infinite; }
+@keyframes shake {
+    0%, 100% { transform: rotate(-2deg) translateX(-2px); }
+    25% { transform: rotate(2.5deg) translateX(3px) translateY(-2px); }
+    50% { transform: rotate(-3deg) translateY(2px); }
+    75% { transform: rotate(1.5deg) translateX(-3px); }
+}
+.bustina::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 34px;
+    background: repeating-linear-gradient(90deg, #8d95a5 0 16px, #aab1bf 16px 32px);
+    border-bottom: 3px dashed #2b2f38;
+}
+.bustina-logo {
+    font-family: var(--display);
+    color: var(--red);
+    font-size: 30px;
+    text-align: center;
+    line-height: 1;
+    text-shadow: 2px 2px 0 #2b2f38;
+    transform: rotate(-6deg);
+}
+.bustina-logo small { display: block; font-size: 12px; color: #2b2f38; text-shadow: none; margin-top: 8px; font-family: var(--serif); font-style: italic; }
+.bustina-status {
+    position: absolute;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    text-align: center;
+    font-style: italic;
+    font-size: 14px;
+    color: #2b2f38;
+}
+
+.reveal-card {
+    width: min(360px, 88vw);
+    background: #fffdf6;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: card-in 0.55s cubic-bezier(0.18, 1.5, 0.35, 1);
+    position: relative;
+}
+@keyframes card-in { 0% { transform: scale(0.3) rotate(-9deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+
+.ribbon {
+    position: absolute;
+    top: 16px;
+    left: -42px;
+    transform: rotate(-35deg);
+    z-index: 3;
+    font-family: var(--display);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 6px 48px;
+    background: var(--gold);
+    color: #2c2206;
+    border: 2px solid var(--ink);
+}
+
+.reveal-art { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; border-bottom: 3px solid var(--ink); background: #eee; }
+.reveal-art.emoji { display: grid; place-items: center; font-size: 120px; }
+
+.reveal-body { padding: 14px 18px 18px; }
+.reveal-name { font-family: var(--display); font-size: 24px; line-height: 1.05; margin: 0 0 2px; }
+.reveal-rarity { font-family: var(--display); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.r-comune .reveal-rarity { color: #8a7350; }
+.r-raro .reveal-rarity { color: var(--teal); }
+.r-epico .reveal-rarity { color: var(--purple); }
+.r-leggendario .reveal-rarity { color: #9a7a10; }
+.r-god .reveal-rarity { background: linear-gradient(90deg, #ff5f6d, #c86dd7, #4aa8ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.r-segreto .reveal-rarity { color: #111; text-shadow: 1px 0 #ff2b5e, -1px 0 #2bd9ff; }
+
+.reveal-lore { margin: 0 0 10px; font-size: 15.5px; }
+.reveal-quote {
+    font-style: italic;
+    font-size: 15px;
+    border-left: 3px solid var(--gold);
+    margin: 0 0 12px;
+    padding: 2px 0 2px 10px;
+    color: var(--ink-soft);
+}
+
+.follia { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; }
+.follia-bar { flex: 1; height: 10px; border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; background: #efe6cf; }
+.follia-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #e8c01f 55%, var(--red)); }
+
+.reveal-meta { font-size: 12.5px; font-style: italic; color: var(--ink-soft); margin-bottom: 12px; }
+
+.reveal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 110; }
+.confetti i {
+    position: absolute;
+    top: -12px;
+    width: 9px;
+    height: 14px;
+    animation: fall linear forwards;
+}
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+/* ---- Key modal / toast ------------------------------------------- */
+
+.panel {
+    background: #fffdf6;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    padding: 22px;
+    width: min(420px, 92vw);
+}
+.panel h3 { font-family: var(--display); margin: 0 0 10px; font-size: 20px; }
+.panel p { margin: 0 0 12px; font-size: 14.5px; }
+.panel input {
+    width: 100%;
+    font: 15px monospace;
+    padding: 10px;
+    border: 2.5px solid var(--ink);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+.panel a { color: var(--red); }
+
+#toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%);
+    z-index: 200;
+    background: var(--ink);
+    color: var(--paper);
+    font-style: italic;
+    padding: 11px 20px;
+    border-radius: 999px;
+    border: 2px solid var(--paper);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    max-width: 88vw;
+    text-align: center;
+}
+#toast.show { opacity: 1; }
+
+footer {
+    text-align: center;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    padding: 30px 16px 40px;
+}
+footer a { color: var(--red); }
+
+@media (max-width: 560px) {
+    .bench { gap: 10px; }
+    .slot { width: 116px; height: 154px; }
+    .fuse-btn { width: 100%; order: 9; }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+    <div class="brand">
+        <h1>BRAINROT<span>DEX</span></h1>
+        <p>L'album ufficiale delle fusioni impossibili — collect them all, mamma mia.</p>
+    </div>
+    <div class="masthead-actions">
+        <span class="counter">Scoperte: <b id="discoveryCount">0</b></span>
+        <button id="muteBtn" class="chip-btn" title="Narrator on/off">🔊 Voce</button>
+        <button id="authBtn" class="chip-btn warn">🔑 Accedi</button>
+    </div>
+</header>
+
+<main>
+    <section class="lab" aria-label="Fusion laboratory">
+        <span class="lab-title">IL LABORATORIO</span>
+        <div class="bench">
+            <button class="slot" id="slotA" title="Click a card below to place it here"><span class="slot-content">?</span><span class="hint">Ingrediente A</span></button>
+            <span class="op">+</span>
+            <button class="slot" id="slotB"><span class="slot-content">?</span><span class="hint">Ingrediente B</span></button>
+            <span class="op">=</span>
+            <button class="fuse-btn" id="fuseBtn" disabled>FONDI!</button>
+        </div>
+        <p class="lab-note" id="labNote">Pick two cards from the album, then unleash the fusion. Same recipe, same creature — sempre.</p>
+    </section>
+
+    <section class="album">
+        <h2>Ingredienti di Base <small>the raw material of every legend</small></h2>
+        <div class="grid" id="seedGrid"></div>
+
+        <h2>Le Creature <small id="creatureCount">0 discovered</small></h2>
+        <div class="grid" id="cardGrid"></div>
+    </section>
+</main>
+
+<footer>
+    Every creature is invented live by AI — image, lore &amp; voice by
+    <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer">pollinations.ai</a>.
+    Your album lives in this browser.
+</footer>
+
+<div class="overlay" id="revealOverlay">
+    <div id="revealContent"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= Config ================= */
+
+const API = "https://gen.pollinations.ai";
+const ENTER_URL = "https://enter.pollinations.ai";
+const TEXT_MODEL = "claude";
+const IMAGE_MODEL = "zimage";
+const VOICE_MODEL = "elevenlabs";
+// The canonical brainrot narrator: deep, theatrical Italian male delivery.
+const VOICE_NAME = "adam";
+// No committed app key: with an empty client_id, Enter binds the delegated
+// key to the redirect_uri alone (same approach as the other demo apps).
+const APP_KEY = "";
+const TOKEN_STORAGE = `polli:${APP_KEY}:token`;
+const STATE_STORAGE = `polli:${APP_KEY}:oauth_state`;
+const MUTE_STORAGE = "brainrotdex:muted";
+const AUTH_MODELS = [TEXT_MODEL, IMAGE_MODEL, VOICE_MODEL];
+const AUTH_BUDGET = 6; // pollen the delegated key may spend
+const AUTH_EXPIRY_DAYS = 7;
+
+const SEEDS = [
+    { key: "seed:squalo", name: "Squalo", emoji: "🦈", lore: "A great white shark dreaming of dry land." },
+    { key: "seed:sneakers", name: "Sneakers", emoji: "👟", lore: "A pair of blue sneakers with nobody inside them." },
+    { key: "seed:cappuccino", name: "Cappuccino", emoji: "☕", lore: "A foamy cappuccino that refuses to be decaf." },
+    { key: "seed:coccodrillo", name: "Coccodrillo", emoji: "🐊", lore: "A crocodile with suspiciously big plans." },
+    { key: "seed:aereo", name: "Aereo", emoji: "✈️", lore: "A propeller airplane looking for a new body." },
+    { key: "seed:banana", name: "Banana", emoji: "🍌", lore: "A ripe banana of unusual confidence." },
+    { key: "seed:scimmia", name: "Scimmia", emoji: "🐒", lore: "A chimpanzee ready to fuse with anything." },
+    { key: "seed:ballerina", name: "Ballerina", emoji: "🩰", lore: "A ballerina spinning toward her destiny." },
+];
+
+const RARITIES = [
+    { id: "comune", label: "Comune", max: 46 },
+    { id: "raro", label: "Raro", max: 62 },
+    { id: "epico", label: "Epico", max: 76 },
+    { id: "leggendario", label: "Leggendario", max: 88 },
+    { id: "god", label: "Brainrot God", max: 96 },
+    { id: "segreto", label: "Segreto", max: Infinity },
+];
+
+const STATUS_LINES = [
+    "Si mescolano gli ingredienti…",
+    "L'oracolo italiano sta improvvisando…",
+    "Il narratore si schiarisce la voce…",
+    "Una bustina si materializza…",
+    "Quasi pronto… mamma mia…",
+];
+
+/* The meme's canonical lines are blasphemous; generated ones must not be.
+   Defense in depth on top of the prompt instructions. */
+const BLOCKLIST = /porco\W*d?dio|porco\W*all|d?dio\W*(cane|porco|bestia|boia)|porca\W*(madonna|troia)|madonna\W*(cane|porca|troia)|troi|cazz|fottut|stronz|merd|vaffancul|puttan|coglion|minchi|bestemmi|gaza|palestin/i;
+
+function isBlocked(value) {
+    const probe = value.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    return BLOCKLIST.test(probe);
+}
+
+/* ================= Tiny IndexedDB ================= */
+
+let db = null;
+function openDb() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open("brainrotdex", 1);
+        request.onupgradeneeded = () => {
+            request.result.createObjectStore("cards", { keyPath: "key" });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+function dbPut(card) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("cards", "readwrite");
+        tx.objectStore("cards").put(card);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+    });
+}
+function dbAll() {
+    return new Promise((resolve, reject) => {
+        const request = db.transaction("cards").objectStore("cards").getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+/* ================= State ================= */
+
+const cards = new Map(); // recipe key -> card record
+let slotA = null; // card-like {key,name,lore,...}
+let slotB = null;
+let muted = localStorage.getItem(MUTE_STORAGE) === "1";
+let fusing = false;
+let audioEl = null;
+let speakToken = 0;
+
+function apiKey() {
+    return localStorage.getItem(TOKEN_STORAGE) || "";
+}
+
+/* ================= Pollinations auth (BYOP redirect flow) ================= */
+
+function login() {
+    const redirect = window.location.href.split("#")[0];
+    const state = crypto.randomUUID();
+    localStorage.setItem(STATE_STORAGE, state);
+    const params = new URLSearchParams();
+    params.set("redirect_uri", redirect);
+    params.set("client_id", APP_KEY);
+    params.set("state", state);
+    params.set("models", AUTH_MODELS.join(","));
+    params.set("budget", String(AUTH_BUDGET));
+    params.set("expiry", String(AUTH_EXPIRY_DAYS));
+    window.location.href = `${ENTER_URL}/authorize?${params}`;
+}
+
+function logout() {
+    localStorage.removeItem(TOKEN_STORAGE);
+    refreshAuthUi();
+    toast("A presto!");
+}
+
+/* Enter redirects back with #api_key=…&state=… (or #error=…). Validate the
+   state we stored at login time (CSRF), then strip the params from the URL. */
+function consumeAuthCallback() {
+    const rawHash = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
+    if (!rawHash) return;
+    const queryIdx = rawHash.indexOf("?");
+    const routePrefix = queryIdx === -1 ? "" : rawHash.slice(0, queryIdx);
+    const params = new URLSearchParams(queryIdx === -1 ? rawHash : rawHash.slice(queryIdx + 1));
+    const key = params.get("api_key");
+    const error = params.get("error");
+    const receivedState = params.get("state");
+    const description = params.get("error_description");
+    if (!key && !error) return;
+
+    for (const p of ["api_key", "state", "error", "error_description"]) params.delete(p);
+    const remaining = params.toString();
+    const newHash = remaining ? (routePrefix ? `${routePrefix}?${remaining}` : remaining) : routePrefix;
+    history.replaceState({}, "", location.pathname + location.search + (newHash ? `#${newHash}` : ""));
+
+    const expected = localStorage.getItem(STATE_STORAGE);
+    if (key) {
+        if (!expected || receivedState !== expected) {
+            toast("Login scartato: state non valido.");
+            return;
+        }
+        localStorage.removeItem(STATE_STORAGE);
+        localStorage.setItem(TOKEN_STORAGE, key);
+        toast("Sei dentro! Scegli due carte e FONDI.");
+    } else {
+        if (expected && receivedState === expected) localStorage.removeItem(STATE_STORAGE);
+        toast(`Login fallito: ${description ?? error}`);
+    }
+}
+
+function dropExpiredSession() {
+    localStorage.removeItem(TOKEN_STORAGE);
+    refreshAuthUi();
+}
+
+function refreshAuthUi() {
+    const btn = $("authBtn");
+    const loggedIn = Boolean(apiKey());
+    btn.textContent = loggedIn ? "🚪 Esci" : "🔑 Accedi";
+    btn.classList.toggle("warn", !loggedIn);
+    btn.title = loggedIn ? "Log out" : "Log in with Pollinations";
+}
+
+/* ================= Helpers ================= */
+
+const $ = (id) => document.getElementById(id);
+
+function hashCode(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) hash = Math.imul(31, hash) + value.charCodeAt(i);
+    return Math.abs(hash);
+}
+
+function recipeKey(a, b) {
+    return `fuse:${[a.name, b.name].map((n) => n.trim().toLowerCase()).sort().join(" + ")}`;
+}
+
+function rarityFor(name, follia, depth) {
+    const score = follia * 0.55 + Math.min(depth, 6) * 7 + (hashCode(name) % 22);
+    let allowed = RARITIES.length;
+    if (depth < 3) allowed = 5; // Segreto needs deep lineage
+    if (depth < 2) allowed = 4; // Brainrot God too
+    for (let i = 0; i < allowed; i += 1) {
+        if (score <= RARITIES[i].max || i === allowed - 1) return RARITIES[i];
+    }
+    return RARITIES[0];
+}
+
+function toast(message, ms = 3200) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove("show"), ms);
+}
+
+function showOverlay(id, open) {
+    $(id).classList.toggle("open", open);
+}
+
+/* ================= API ================= */
+
+async function apiError(response) {
+    try {
+        const payload = await response.json();
+        return payload.error?.message ?? payload.message ?? `${response.status}`;
+    } catch {
+        return `${response.status} ${response.statusText}`;
+    }
+}
+
+function buildPrompt(a, b) {
+    return [
+        `Parent A: ${a.name} — ${a.lore}`,
+        `Parent B: ${b.name} — ${b.lore}`,
+        "Invent one NEW Italian brainrot character by fusing the two parents into a single absurd hybrid creature.",
+        "The order of the parents does not matter; both must be physically visible in the hybrid.",
+        "Name grammar (follow exactly): 2-3 pseudo-Italian words. The main words must rhyme or share their final syllable. Italianize every word: end in a vowel, double a consonant, use suffixes like -ino, -ini, -ina, -ello, -illo, -oni, -etto. Optionally start with a repeated onomatopoeia of the sound it makes.",
+        "Good name shapes: Bombardiro Crocodilo, Chimpanzini Bananini, Trippi Troppi, Brr Brr Patapim.",
+        "Do NOT copy existing famous brainrot character names; invent a new one in the same style.",
+        "The description is one absurd deadpan English sentence of lore about the character, under 90 chars.",
+        "The catchphrase is its dramatic Italian intro line, 6-16 words: start by chanting the name, then describe the creature with total operatic seriousness. It may declare its parentage (figlio di ... e ...). Simple Italian, present tense.",
+        "The catchphrase must be family-friendly: absolutely no blasphemy, profanity, religion, war, real people, or real brands.",
+        "The imagePrompt describes the hybrid creature plainly in English: which animal and object are fused, body parts, what it wears. 10-18 words.",
+        "follia is an integer 1-100 rating how unhinged this fusion is; reserve 85+ for truly deranged combinations.",
+        'Return JSON: {"name":"2-3 pseudo-Italian words","description":"one absurd English sentence under 90 chars","imagePrompt":"plain visual description of the hybrid creature, 10-18 words","catchphrase":"dramatic Italian intro, 6-16 words","follia":42}',
+    ].join("\n");
+}
+
+function cleanName(value) {
+    if (typeof value !== "string") return null;
+    const cleaned = value
+        .replace(/[^a-zA-ZÀ-ÿ0-9 -]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (!cleaned || isBlocked(cleaned)) return null;
+    const words = cleaned.split(/[\s-]+/).filter(Boolean).slice(0, 4);
+    if (!words.length || words.some((w) => w.length > 14)) return null;
+    return words.join(" ");
+}
+
+function cleanText(value, max) {
+    if (typeof value !== "string") return null;
+    const cleaned = value.replace(/\s+/g, " ").trim();
+    return cleaned ? cleaned.slice(0, max) : null;
+}
+
+function cleanCatchphrase(value, name) {
+    const text = cleanText(value, 140);
+    if (!text || isBlocked(text)) return `Mamma mia! ${name}!`;
+    return text;
+}
+
+async function generateIdentity(a, b) {
+    const response = await fetch(`${API}/v1/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: TEXT_MODEL,
+            response_format: { type: "json_object" },
+            temperature: 0,
+            max_tokens: 700,
+            messages: [
+                { role: "system", content: "You invent Italian brainrot characters for a collectible card game. Return only valid JSON." },
+                { role: "user", content: buildPrompt(a, b) },
+            ],
+        }),
+    });
+    if (!response.ok) throw new Error(await apiError(response));
+    const payload = await response.json();
+    let parsed = {};
+    try {
+        const content = payload.choices?.[0]?.message?.content ?? "";
+        parsed = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] ?? content);
+    } catch { /* handled below */ }
+    const name = cleanName(parsed.name);
+    const lore = cleanText(parsed.description, 90);
+    const imagePrompt = cleanText(parsed.imagePrompt, 300);
+    const follia = Math.min(100, Math.max(1, Math.round(Number(parsed.follia) || 50)));
+    if (!name || !lore || !imagePrompt) throw new Error("The oracle mumbled — incomplete character.");
+    return { name, lore, imagePrompt, follia, catchphrase: cleanCatchphrase(parsed.catchphrase, name) };
+}
+
+async function generateImage(identity) {
+    const prompt = [
+        identity.imagePrompt,
+        `a depiction of ${identity.name}`,
+        "one single character, whole figure fully visible, full body shot, centered",
+        "isolated on a plain solid white background",
+        "hyperrealistic photo, glossy 3d-render look, oversaturated colors",
+        "bright studio lighting, slightly uncanny viral AI meme aesthetic",
+        "no text, no watermark",
+    ].join(", ");
+    const params = new URLSearchParams({
+        model: IMAGE_MODEL,
+        width: "512",
+        height: "512",
+        nologo: "true",
+        safe: "true",
+        seed: String(hashCode(prompt) % 2147483647),
+    });
+    const response = await fetch(`${API}/image/${encodeURIComponent(prompt)}?${params}`, {
+        headers: { Authorization: `Bearer ${apiKey()}` },
+    });
+    if (!response.ok) throw new Error(await apiError(response));
+    return response.blob();
+}
+
+async function generateVoice(text) {
+    const params = new URLSearchParams({ model: VOICE_MODEL, voice: VOICE_NAME });
+    const response = await fetch(`${API}/audio/${encodeURIComponent(`[dramatic] ${text}`)}?${params}`, {
+        headers: { Authorization: `Bearer ${apiKey()}` },
+    });
+    if (!response.ok) throw new Error(await apiError(response));
+    return response.blob();
+}
+
+/* ================= Audio ================= */
+
+async function playVoice(card) {
+    if (muted) return;
+    const token = ++speakToken;
+    try {
+        if (!card.audioBlob && card.catchphrase && apiKey()) {
+            card.audioBlob = await generateVoice(card.catchphrase);
+            if (card.key.startsWith("fuse:")) await dbPut(card);
+        }
+        if (!card.audioBlob || muted || token !== speakToken) return;
+        if (!audioEl) audioEl = new Audio();
+        const url = URL.createObjectURL(card.audioBlob);
+        audioEl.pause();
+        audioEl.src = url;
+        audioEl.onended = () => URL.revokeObjectURL(url);
+        await audioEl.play();
+    } catch {
+        /* the narrator is garnish — never block play */
+    }
+}
+
+/* ================= Rendering ================= */
+
+// One object URL per card per session, reused across re-renders.
+const artUrls = new Map();
+function artElement(card, className) {
+    if (card.emoji) {
+        const div = document.createElement("div");
+        div.className = `${className} emoji`;
+        div.textContent = card.emoji;
+        return div;
+    }
+    const img = document.createElement("img");
+    img.className = className;
+    img.alt = card.name;
+    img.draggable = false;
+    if (card.imageBlob) {
+        if (!artUrls.has(card.key)) {
+            artUrls.set(card.key, URL.createObjectURL(card.imageBlob));
+        }
+        img.src = artUrls.get(card.key);
+    }
+    return img;
+}
+
+function stickerFor(card) {
+    const wrap = document.createElement("div");
+    wrap.className = `sticker r-${card.rarity ?? "comune"}`;
+    wrap.style.setProperty("--rot", `${((hashCode(card.key) % 50) - 25) / 10}deg`);
+
+    const face = document.createElement("button");
+    face.type = "button";
+    face.className = "card-face";
+    face.title = `${card.name} — ${card.lore}`;
+    face.appendChild(artElement(card, "card-art"));
+    const plate = document.createElement("span");
+    plate.className = "card-name";
+    plate.textContent = card.name;
+    face.appendChild(plate);
+    face.addEventListener("click", () => placeInSlot(card));
+    wrap.appendChild(face);
+
+    const actions = document.createElement("div");
+    actions.className = "mini-actions";
+    if (card.catchphrase) {
+        const speak = document.createElement("button");
+        speak.textContent = "🔊";
+        speak.title = "Riascolta";
+        speak.addEventListener("click", (e) => { e.stopPropagation(); void playVoice(card); });
+        actions.appendChild(speak);
+    }
+    if (card.key.startsWith("fuse:")) {
+        const zoom = document.createElement("button");
+        zoom.textContent = "🔍";
+        zoom.title = "Guarda la figurina";
+        zoom.addEventListener("click", (e) => { e.stopPropagation(); openReveal(card, { fresh: false }); });
+        actions.appendChild(zoom);
+    }
+    wrap.appendChild(actions);
+    return wrap;
+}
+
+function renderSeeds() {
+    const grid = $("seedGrid");
+    grid.textContent = "";
+    for (const seed of SEEDS) grid.appendChild(stickerFor(seed));
+}
+
+function renderAlbum(newKey) {
+    const grid = $("cardGrid");
+    grid.textContent = "";
+    const list = [...cards.values()].sort((a, b) => b.discoveredAt - a.discoveredAt);
+    for (const card of list) {
+        const sticker = stickerFor(card);
+        if (card.key === newKey) sticker.classList.add("pop");
+        grid.appendChild(sticker);
+    }
+    const empties = Math.max(4 - list.length % 4, list.length ? 2 : 4);
+    for (let i = 0; i < empties; i += 1) {
+        const slot = document.createElement("div");
+        slot.className = "empty-slot";
+        slot.textContent = "?";
+        grid.appendChild(slot);
+    }
+    $("discoveryCount").textContent = String(list.length);
+    $("creatureCount").textContent = `${list.length} discovered`;
+}
+
+function renderSlot(el, card) {
+    const content = el.querySelector(".slot-content");
+    content.textContent = "";
+    el.classList.toggle("filled", Boolean(card));
+    if (!card) {
+        content.textContent = "?";
+        return;
+    }
+    const art = artElement(card, "card-art");
+    art.style.width = "100%";
+    art.style.height = "100%";
+    art.style.borderRadius = "10px";
+    if (card.emoji) art.style.fontSize = "52px";
+    content.style.width = "88%";
+    content.style.height = "82%";
+    content.appendChild(art);
+}
+
+function refreshBench() {
+    renderSlot($("slotA"), slotA);
+    renderSlot($("slotB"), slotB);
+    $("fuseBtn").disabled = !(slotA && slotB) || fusing;
+    if (slotA && slotB) {
+        const existing = cards.get(recipeKey(slotA, slotB));
+        $("labNote").textContent = existing
+            ? `Ricetta già scoperta: ${existing.name}. FONDI to admire it again — gratis.`
+            : "Nuova ricetta! FONDI to summon a creature never seen before.";
+    } else {
+        $("labNote").textContent = "Pick two cards from the album, then unleash the fusion. Same recipe, same creature — sempre.";
+    }
+}
+
+function placeInSlot(card) {
+    if (slotA && slotA.key === card.key && !slotB) { slotB = card; }
+    else if (!slotA) slotA = card;
+    else if (!slotB) slotB = card;
+    else slotB = card;
+    refreshBench();
+}
+
+/* ================= Reveal ================= */
+
+function confettiBurst(host) {
+    const box = document.createElement("div");
+    box.className = "confetti";
+    const colors = ["#008C45", "#CD212A", "#c9a227", "#4aa8ff", "#fffdf6"];
+    for (let i = 0; i < 36; i += 1) {
+        const piece = document.createElement("i");
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDuration = `${1.6 + Math.random() * 1.8}s`;
+        piece.style.animationDelay = `${Math.random() * 0.4}s`;
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        box.appendChild(piece);
+    }
+    host.appendChild(box);
+    setTimeout(() => box.remove(), 4200);
+}
+
+function openReveal(card, { fresh }) {
+    const host = $("revealContent");
+    host.textContent = "";
+    const rarity = RARITIES.find((r) => r.id === card.rarity) ?? RARITIES[0];
+
+    const wrap = document.createElement("div");
+    wrap.className = `r-${rarity.id}`;
+    const cardEl = document.createElement("div");
+    cardEl.className = "reveal-card";
+
+    if (fresh) {
+        const ribbon = document.createElement("div");
+        ribbon.className = "ribbon";
+        ribbon.textContent = "PRIMA SCOPERTA!";
+        cardEl.appendChild(ribbon);
+    }
+
+    cardEl.appendChild(artElement(card, "reveal-art"));
+
+    const body = document.createElement("div");
+    body.className = "reveal-body";
+    body.innerHTML = `
+        <h3 class="reveal-name"></h3>
+        <div class="reveal-rarity"></div>
+        <p class="reveal-lore"></p>
+        <p class="reveal-quote"></p>
+        <div class="follia"><span>Follia</span><span class="follia-bar"><i></i></span><b></b></div>
+        <p class="reveal-meta"></p>
+    `;
+    body.querySelector(".reveal-name").textContent = card.name;
+    body.querySelector(".reveal-rarity").textContent = `★ ${rarity.label}`;
+    body.querySelector(".reveal-lore").textContent = card.lore;
+    body.querySelector(".reveal-quote").textContent = card.catchphrase ? `“${card.catchphrase}”` : "";
+    body.querySelector(".follia-bar i").style.width = `${card.follia ?? 0}%`;
+    body.querySelector(".follia b").textContent = String(card.follia ?? 0);
+    body.querySelector(".reveal-meta").textContent = card.parents
+        ? `Figlio di ${card.parents[0]} e ${card.parents[1]} · profondità ${card.depth}`
+        : "";
+
+    const actions = document.createElement("div");
+    actions.className = "reveal-actions";
+    const speak = document.createElement("button");
+    speak.className = "chip-btn";
+    speak.textContent = "🔊 Riascolta";
+    speak.addEventListener("click", () => void playVoice(card));
+    const close = document.createElement("button");
+    close.className = "chip-btn";
+    close.textContent = "Chiudi";
+    close.addEventListener("click", () => showOverlay("revealOverlay", false));
+    actions.append(speak, close);
+    body.appendChild(actions);
+
+    cardEl.appendChild(body);
+    wrap.appendChild(cardEl);
+    host.appendChild(wrap);
+    showOverlay("revealOverlay", true);
+
+    const rank = RARITIES.findIndex((r) => r.id === rarity.id);
+    if (fresh && rank >= 3) confettiBurst($("revealOverlay"));
+    void playVoice(card);
+}
+
+function showBustina() {
+    const host = $("revealContent");
+    host.innerHTML = `
+        <div class="bustina shaking">
+            <div class="bustina-logo">BRAINROT<br/>DEX<small>edizione fusione</small></div>
+            <div class="bustina-status" id="bustinaStatus">${STATUS_LINES[0]}</div>
+        </div>
+    `;
+    showOverlay("revealOverlay", true);
+    let i = 0;
+    return setInterval(() => {
+        i = (i + 1) % STATUS_LINES.length;
+        const el = $("bustinaStatus");
+        if (el) el.textContent = STATUS_LINES[i];
+    }, 2300);
+}
+
+/* ================= Fusion ================= */
+
+async function fuse() {
+    if (!slotA || !slotB || fusing) return;
+    if (!apiKey()) { login(); return; }
+
+    const key = recipeKey(slotA, slotB);
+    const existing = cards.get(key);
+    if (existing) {
+        openReveal(existing, { fresh: false });
+        return;
+    }
+
+    fusing = true;
+    refreshBench();
+    const statusTimer = showBustina();
+    const [a, b] = [slotA, slotB];
+
+    try {
+        const identity = await generateIdentity(a, b);
+        const depth = Math.max(a.depth ?? 0, b.depth ?? 0) + 1;
+        const rarity = rarityFor(identity.name, identity.follia, depth);
+        // Voice + image in parallel — both deterministic for this identity.
+        const [imageBlob, audioBlob] = await Promise.all([
+            generateImage(identity),
+            generateVoice(identity.catchphrase).catch(() => null),
+        ]);
+        const card = {
+            key,
+            name: identity.name,
+            lore: identity.lore,
+            catchphrase: identity.catchphrase,
+            imagePrompt: identity.imagePrompt,
+            follia: identity.follia,
+            rarity: rarity.id,
+            depth,
+            parents: [a.name, b.name],
+            imageBlob,
+            audioBlob,
+            discoveredAt: Date.now(),
+        };
+        cards.set(key, card);
+        await dbPut(card).catch(() => toast("Album non salvato (storage pieno?)"));
+        clearInterval(statusTimer);
+        slotA = null;
+        slotB = null;
+        renderAlbum(key);
+        openReveal(card, { fresh: true });
+    } catch (error) {
+        clearInterval(statusTimer);
+        showOverlay("revealOverlay", false);
+        const message = String(error?.message ?? error);
+        if (/401|UNAUTHORIZED|Authentication/i.test(message)) {
+            dropExpiredSession();
+            toast("Sessione scaduta — accedi di nuovo (🔑).");
+        } else {
+            toast(`Mamma mia! La fusione è fallita: ${message}`);
+        }
+    } finally {
+        fusing = false;
+        refreshBench();
+    }
+}
+
+/* ================= Chrome ================= */
+
+function refreshMute() {
+    $("muteBtn").textContent = muted ? "🔇 Voce" : "🔊 Voce";
+    if (muted && audioEl) audioEl.pause();
+}
+
+/* ================= Init ================= */
+
+async function init() {
+    consumeAuthCallback();
+
+    $("fuseBtn").addEventListener("click", () => void fuse());
+    $("slotA").addEventListener("click", () => { slotA = null; refreshBench(); });
+    $("slotB").addEventListener("click", () => { slotB = null; refreshBench(); });
+    $("authBtn").addEventListener("click", () => {
+        if (apiKey()) logout();
+        else login();
+    });
+    $("muteBtn").addEventListener("click", () => {
+        muted = !muted;
+        localStorage.setItem(MUTE_STORAGE, muted ? "1" : "0");
+        refreshMute();
+    });
+    $("revealOverlay").addEventListener("click", (event) => {
+        if (event.target === event.currentTarget && !fusing) showOverlay("revealOverlay", false);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !fusing) showOverlay("revealOverlay", false);
+    });
+
+    refreshMute();
+    refreshAuthUi();
+    renderSeeds();
+
+    try {
+        db = await openDb();
+        for (const card of await dbAll()) cards.set(card.key, card);
+    } catch {
+        toast("Album storage unavailable — discoveries won't persist.");
+    }
+    renderAlbum();
+    refreshBench();
+
+    if (!apiKey()) {
+        setTimeout(() => toast("Benvenuto! Accedi con Pollinations (🔑) per fondere."), 800);
+    }
+}
+
+void init();
+</script>
+</body>
+</html>

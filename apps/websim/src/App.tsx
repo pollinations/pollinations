@@ -89,15 +89,26 @@ function PreviewPanel({
                     </Text>
                 </span>
                 {html ? (
-                    <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => saveHtml(html)}
-                        className="gap-1.5"
-                    >
-                        <DownloadIcon className="h-4 w-4" />
-                        Save
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => saveHtml(html)}
+                            className="gap-1.5"
+                        >
+                            <DownloadIcon className="h-4 w-4" />
+                            Save
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => openHtml(html)}
+                            className="gap-1.5"
+                        >
+                            <ExternalLinkIcon className="h-4 w-4" />
+                            Open
+                        </Button>
+                    </div>
                 ) : null}
             </div>
 
@@ -322,16 +333,6 @@ export function App() {
                                             {generateButton}
                                         </Tooltip>
                                     )}
-                                    <Button
-                                        type="button"
-                                        size="lg"
-                                        disabled={!html}
-                                        onClick={() => openHtml(html)}
-                                        className="gap-1.5"
-                                    >
-                                        <ExternalLinkIcon className="h-4 w-4" />
-                                        Open
-                                    </Button>
                                 </div>
                             </div>
                         </form>

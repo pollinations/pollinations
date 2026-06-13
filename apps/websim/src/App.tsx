@@ -76,7 +76,7 @@ function PreviewPanel({
     return (
         <Surface
             variant="panel"
-            className="websim-output-panel flex min-h-[420px] flex-col gap-4 p-4"
+            className="websim-output-panel flex flex-col gap-4 p-4"
             data-theme="neutral"
         >
             <div className="flex items-center justify-between gap-3">
@@ -99,13 +99,13 @@ function PreviewPanel({
                 ) : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-theme-border bg-surface-white">
+            <div className="websim-preview-shell min-h-0 flex-1 overflow-hidden rounded-lg border border-theme-border bg-surface-white">
                 {html ? (
                     <iframe
                         title="Generated Websim page"
                         srcDoc={html}
                         sandbox="allow-forms allow-modals allow-popups allow-scripts"
-                        className="h-full min-h-[360px] w-full border-0 bg-white"
+                        className="websim-preview-frame h-full w-full border-0 bg-white"
                     />
                 ) : (
                     <MediaPlaceholder
@@ -116,7 +116,7 @@ function PreviewPanel({
                                 ? "The page will appear in this frame."
                                 : "Generated HTML appears here."
                         }
-                        className="h-full min-h-[360px] rounded-none border-0"
+                        className="websim-preview-frame h-full rounded-none border-0"
                     />
                 )}
             </div>
@@ -244,13 +244,13 @@ export function App() {
                     </Text>
                 </section>
 
-                <section className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(24rem,1.05fr)] lg:items-stretch">
+                <section className="websim-main-grid grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,1.05fr)] lg:items-stretch">
                     <Surface
                         variant="panel"
-                        className="flex min-h-[420px] flex-col gap-6"
+                        className="websim-control-panel flex flex-col gap-5 p-4 sm:p-6"
                     >
                         <form
-                            className="flex flex-1 flex-col gap-5"
+                            className="flex min-h-0 flex-1 flex-col gap-5"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 void generate();
@@ -264,14 +264,14 @@ export function App() {
                                     }
                                     rows={9}
                                     disabled={isGenerating}
-                                    className="websim-prompt-input min-h-52"
+                                    className="websim-prompt-input"
                                 />
                             </FieldStack>
 
-                            <FieldStack label="Model">
+                            <FieldStack label="Generation style">
                                 <ButtonGroup
-                                    aria-label="Model"
-                                    className="flex-wrap"
+                                    aria-label="Generation style"
+                                    className="websim-model-options flex-wrap"
                                 >
                                     {WEB_SIM_MODELS.map((item) => (
                                         <TabButton
@@ -280,8 +280,8 @@ export function App() {
                                             active={item.id === model}
                                             onClick={() => setModel(item.id)}
                                             disabled={isGenerating}
-                                            ariaLabel={item.label}
-                                            className="flex-col gap-0.5 px-4"
+                                            ariaLabel={`${item.label}: ${item.detail}`}
+                                            className="websim-model-option flex-col gap-0.5 px-4"
                                         >
                                             <span>{item.label}</span>
                                             <span className="text-xs font-normal opacity-75">
@@ -359,7 +359,9 @@ export function App() {
 
                 <div className="flex flex-wrap items-center justify-between gap-3 px-1">
                     <Text size="sm" tone="soft">
-                        {selectedModel?.detail || "OpenAI fast"} model selected.
+                        {selectedModel
+                            ? `${selectedModel.label}: ${selectedModel.detail}.`
+                            : "Quick Draft selected."}
                     </Text>
                     <Text size="sm" tone="muted">
                         Generated pages open without exposing your key.

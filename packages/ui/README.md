@@ -40,6 +40,54 @@ export function App() {
 }
 ```
 
+### CDN / `<script>` Tag
+
+The root `@pollinations/ui` entry also ships a browser IIFE bundle for
+no-build pages. It exposes SDK-free primitives and compositions on
+`window.PollinationsUI`. Non-root subpaths such as `@pollinations/ui/auth`,
+`@pollinations/ui/wallet`, `@pollinations/ui/gen`, and
+`@pollinations/ui/app-user-menu/sdk` remain ESM/CJS-only.
+
+React 19 no longer ships UMD builds, so load React from an ESM CDN first, set
+the globals expected by the IIFE bundle, then load `@pollinations/ui`:
+
+```html
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@pollinations/ui@alpha/styles.css"
+/>
+<div id="root"></div>
+<script type="module">
+  import React from "https://esm.sh/react@19";
+  import * as ReactDOM from "https://esm.sh/react-dom@19";
+  import * as ReactDOMClient from "https://esm.sh/react-dom@19/client";
+
+  window.React = React;
+  window.ReactDOM = { ...ReactDOM, ...ReactDOMClient };
+
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@pollinations/ui@alpha";
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+
+  const { Button } = window.PollinationsUI;
+
+  window.ReactDOM.createRoot(document.getElementById("root")).render(
+    React.createElement(Button, null, "Generate"),
+  );
+</script>
+```
+
+The browser bundle keeps React and ReactDOM external via those globals, but it
+does bundle the root entry's package dependencies, including Ark UI,
+react-markdown, remark, and rehype.
+
+React's guidance on loading React 19 without UMD builds:
+https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed
+
 For Pollinations apps that use unprefixed Tailwind utilities, import the
 package-owned app stylesheet instead:
 

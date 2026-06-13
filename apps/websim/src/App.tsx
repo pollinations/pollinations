@@ -33,10 +33,12 @@ const INITIAL_PROMPT =
     "A tiny interactive museum for impossible plants, with a collection wall, specimen cards, and a night mode.";
 
 function stripHtml(value: string) {
-    return value
-        .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/<[^>]*>/g, " ")
+    const document = new DOMParser().parseFromString(value, "text/html");
+    return (
+        document.body.textContent ||
+        document.documentElement.textContent ||
+        ""
+    )
         .replace(/\s+/g, " ")
         .trim();
 }

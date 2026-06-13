@@ -1,0 +1,35 @@
+{
+  "pr_number": 11783,
+  "title": "fix: remove legacy app Worker routes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11783",
+  "merged_at": "2026-06-13T21:06:26Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Deletes exact old-account Worker routes for an app public hostname during cutover.\\n- Keeps cleanup scoped to <app>.pollinations.ai and <app>.pollinations.ai/*.\\n- Lets websim.pollinations.ai move from the legacy Worker route to pollinations-proxy.\\n\\nChecks:\\n- npx biome check --write apps/_scripts/deploy-app.js\\n- git diff --check",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Clearing the old flight paths",
+    "blurb": "We've updated our deployment scripts to automatically clean up legacy Worker routes during app cutovers. Smoother migrations for the hive!",
+    "summary": "Updated the app deployment script to automatically delete legacy Worker routes for <app>.pollinations.ai hostnames during cutover.",
+    "impact": "This allows apps like websim to seamlessly migrate from legacy Worker routes to the new pollinations-proxy without routing conflicts.",
+    "keywords": [
+      "routing",
+      "deployment",
+      "infrastructure",
+      "workers",
+      "proxy"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot cleaning up old glowing pathways or wires in a server room, making way for a shiny new router/proxy box.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hard hat, working with a chunky monitor-head robot to unplug old glowing cables from a retro server rack. A shiny new router box sits nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11783.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hard hat, working with a chunky monitor-head robot to unplug old glowing cables from a retro server rack. A shiny new router box sits nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-13T21:07:25.587413+00:00"
+}

@@ -39,11 +39,12 @@ test("pack lookup validates pack keys", () => {
 test("pack descriptions stay aligned with the shared catalog", () => {
     const lastPack = POLLEN_PACKS[POLLEN_PACKS.length - 1];
 
-    expect(POLLEN_PACKS[0]?.checkoutName).toBe("🪷 2 Pollen");
-    expect(POLLEN_PACKS[1]?.checkoutName).toBe("🪷 5 Pollen");
+    expect(POLLEN_PACKS[0]?.checkoutName).toBe("2 Pollen");
+    expect(POLLEN_PACKS[1]?.checkoutName).toBe("5 Pollen");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(
-        "Tiny bits of creative energy for pollinations.ai",
+        "Creative credits for pollinations.ai",
     );
+    expect(POLLEN_PACKS[0]?.checkoutDescription).toContain("1 Pollen ≈ $1");
 
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
         "https://enter.pollinations.ai/checkout/pollen-pack.png",

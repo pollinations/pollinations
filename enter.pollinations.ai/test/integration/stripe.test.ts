@@ -316,7 +316,7 @@ test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     expect(body).toBeTruthy();
 
     // No cf-ipcountry header → USD default cohort.
-    expectUsdPriceData(body, 2, "🪷 2 Pollen");
+    expectUsdPriceData(body, 2, "2 Pollen");
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     expect(body?.["metadata[packKey]"]).toBe("p2");

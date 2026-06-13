@@ -88,7 +88,7 @@ export async function renderOg(
     {
         width = 1200,
         height = 630,
-        bg = null,
+        bg,
         logoColor,
         lotusSize = 230,
         textWidth = 470,
@@ -106,7 +106,7 @@ export async function renderOg(
             width,
             height,
             channels: 4,
-            background: bg ? { ...hexToRgb(bg), alpha: 1 } : TRANSPARENT,
+            background: { ...hexToRgb(bg), alpha: 1 },
         },
     })
         .composite([

@@ -1,0 +1,371 @@
+import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+import {
+    AppIcon,
+    Button,
+    ButtonGroup,
+    ColorModeToggle,
+    cn,
+    DownloadIcon,
+    ExternalLinkIcon,
+    FieldStack,
+    Heading,
+    MediaPlaceholder,
+    Surface,
+    TabButton,
+    TerminalIcon,
+    Text,
+    Textarea,
+} from "@pollinations/ui";
+import {
+    AppUserMenu,
+    isEmbeddedContext,
+} from "@pollinations/ui/app-user-menu/sdk";
+import { useEffect, useRef, useState } from "react";
+import {
+    DEFAULT_MODEL,
+    ENTER_URL,
+    WEB_SIM_MODELS,
+    type WebsimModelId,
+} from "./config";
+
+const INITIAL_PROMPT =
+    "A tiny interactive museum for impossible plants, with a collection wall, specimen cards, and a night mode.";
+
+function stripHtml(value: string) {
+    return value
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function errorMessage(error: unknown) {
+    if (error instanceof Error) return error.message;
+    return String(error || "Generation failed");
+}
+
+function saveHtml(html: string) {
+    const blobUrl = URL.createObjectURL(
+        new Blob([html], { type: "text/html;charset=utf-8" }),
+    );
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl;
+    anchor.download = "websim.html";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(blobUrl);
+}
+
+function openHtml(html: string) {
+    const blobUrl = URL.createObjectURL(
+        new Blob([html], { type: "text/html;charset=utf-8" }),
+    );
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+}
+
+function PreviewPanel({
+    html,
+    isGenerating,
+}: {
+    html: string;
+    isGenerating: boolean;
+}) {
+    return (
+        <Surface
+            variant="panel"
+            className="websim-output-panel flex min-h-[420px] flex-col gap-4 p-4"
+            data-theme="neutral"
+        >
+            <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2">
+                    <AppIcon className="h-5 w-5 text-theme-text-soft" />
+                    <Text as="h2" size="sm" tone="strong" weight="semibold">
+                        Preview
+                    </Text>
+                </span>
+                {html ? (
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => saveHtml(html)}
+                        className="gap-1.5"
+                    >
+                        <DownloadIcon className="h-4 w-4" />
+                        Save
+                    </Button>
+                ) : null}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-theme-border bg-surface-white">
+                {html ? (
+                    <iframe
+                        title="Generated Websim page"
+                        srcDoc={html}
+                        sandbox="allow-forms allow-modals allow-popups allow-scripts"
+                        className="h-full min-h-[360px] w-full border-0 bg-white"
+                    />
+                ) : (
+                    <MediaPlaceholder
+                        icon={<TerminalIcon className="h-5 w-5" />}
+                        label={isGenerating ? "Generating..." : "Preview"}
+                        detail={
+                            isGenerating
+                                ? "The page will appear in this frame."
+                                : "Generated HTML appears here."
+                        }
+                        className="h-full min-h-[360px] rounded-none border-0"
+                    />
+                )}
+            </div>
+        </Surface>
+    );
+}
+
+export function App() {
+    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { login } = useAuthActions();
+    const isEmbedded = isEmbeddedContext();
+    const [prompt, setPrompt] = useState(INITIAL_PROMPT);
+    const [model, setModel] = useState<WebsimModelId>(DEFAULT_MODEL);
+    const [html, setHtml] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const activeRequest = useRef<AbortController | null>(null);
+
+    const selectedModel = WEB_SIM_MODELS.find((item) => item.id === model);
+
+    useEffect(() => {
+        return () => activeRequest.current?.abort();
+    }, []);
+
+    async function generate() {
+        const trimmedPrompt = prompt.trim();
+        if (!trimmedPrompt) return;
+        if (!apiKey) {
+            login();
+            return;
+        }
+
+        activeRequest.current?.abort();
+        const controller = new AbortController();
+        activeRequest.current = controller;
+        setHtml("");
+        setError(null);
+        setIsGenerating(true);
+
+        try {
+            const response = await fetch("/api/generate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({ prompt: trimmedPrompt, model }),
+                signal: controller.signal,
+            });
+
+            if (!response.ok) {
+                const body = stripHtml(await response.text());
+                throw new Error(
+                    body || `Generation failed with ${response.status}`,
+                );
+            }
+
+            if (!response.body) {
+                setHtml(await response.text());
+                return;
+            }
+
+            const reader = response.body
+                .pipeThrough(new TextDecoderStream())
+                .getReader();
+            let nextHtml = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                nextHtml += value;
+                setHtml(nextHtml);
+            }
+        } catch (err) {
+            if (err instanceof DOMException && err.name === "AbortError") {
+                return;
+            }
+            setError(errorMessage(err));
+        } finally {
+            if (activeRequest.current === controller) {
+                activeRequest.current = null;
+                setIsGenerating(false);
+            }
+        }
+    }
+
+    function stopGenerating() {
+        activeRequest.current?.abort();
+        activeRequest.current = null;
+        setIsGenerating(false);
+    }
+
+    return (
+        <div
+            data-theme="accent"
+            className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
+        >
+            <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+                {!isEmbedded && <ColorModeToggle />}
+                <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
+            </div>
+
+            <main
+                className={cn(
+                    "mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-5 sm:px-6",
+                    isEmbedded ? "pt-5" : "pt-16",
+                )}
+            >
+                <section className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-theme-text-strong">
+                            <AppIcon className="h-6 w-6" />
+                        </span>
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="websim-title m-0 text-theme-text-strong"
+                        >
+                            Websim
+                        </Heading>
+                    </div>
+                    <Text as="p" className="m-0 max-w-3xl">
+                        Generate shareable single-file web pages with
+                        Pollinations.
+                    </Text>
+                </section>
+
+                <section className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(24rem,1.05fr)] lg:items-stretch">
+                    <Surface
+                        variant="panel"
+                        className="flex min-h-[420px] flex-col gap-6"
+                    >
+                        <form
+                            className="flex flex-1 flex-col gap-5"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                void generate();
+                            }}
+                        >
+                            <FieldStack label="Prompt" className="flex-1">
+                                <Textarea
+                                    value={prompt}
+                                    onChange={(event) =>
+                                        setPrompt(event.currentTarget.value)
+                                    }
+                                    rows={9}
+                                    disabled={isGenerating}
+                                    className="websim-prompt-input min-h-52"
+                                />
+                            </FieldStack>
+
+                            <FieldStack label="Model">
+                                <ButtonGroup
+                                    aria-label="Model"
+                                    className="flex-wrap"
+                                >
+                                    {WEB_SIM_MODELS.map((item) => (
+                                        <TabButton
+                                            key={item.id}
+                                            size="sm"
+                                            active={item.id === model}
+                                            onClick={() => setModel(item.id)}
+                                            disabled={isGenerating}
+                                            ariaLabel={item.label}
+                                            className="flex-col gap-0.5 px-4"
+                                        >
+                                            <span>{item.label}</span>
+                                            <span className="text-xs font-normal opacity-75">
+                                                {item.detail}
+                                            </span>
+                                        </TabButton>
+                                    ))}
+                                </ButtonGroup>
+                            </FieldStack>
+
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-h-6">
+                                    {error ? (
+                                        <Text
+                                            size="sm"
+                                            tone="strong"
+                                            className="text-intent-danger-text"
+                                        >
+                                            {error}
+                                        </Text>
+                                    ) : (
+                                        <Text size="sm" tone="soft">
+                                            {isLoggedIn
+                                                ? "Using your delegated key."
+                                                : isHydrated
+                                                  ? "Authorize Websim to generate."
+                                                  : "Preparing auth."}
+                                        </Text>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {isGenerating ? (
+                                        <Button
+                                            type="button"
+                                            size="lg"
+                                            intent="danger"
+                                            onClick={stopGenerating}
+                                        >
+                                            Stop
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type={apiKey ? "submit" : "button"}
+                                            size="lg"
+                                            disabled={
+                                                !prompt.trim() || !isHydrated
+                                            }
+                                            onClick={
+                                                apiKey
+                                                    ? undefined
+                                                    : () => login()
+                                            }
+                                        >
+                                            {apiKey ? "Generate" : "Authorize"}
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        disabled={!html}
+                                        onClick={() => openHtml(html)}
+                                        className="gap-1.5"
+                                    >
+                                        <ExternalLinkIcon className="h-4 w-4" />
+                                        Open
+                                    </Button>
+                                </div>
+                            </div>
+                        </form>
+                    </Surface>
+
+                    <PreviewPanel html={html} isGenerating={isGenerating} />
+                </section>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                    <Text size="sm" tone="soft">
+                        {selectedModel?.detail || "OpenAI fast"} model selected.
+                    </Text>
+                    <Text size="sm" tone="muted">
+                        Generated pages open without exposing your key.
+                    </Text>
+                </div>
+            </main>
+        </div>
+    );
+}

@@ -82,6 +82,16 @@ const APPS = {
                 "Real-time health monitoring for Pollinations AI models.",
         },
     },
+    websim: {
+        outDir: "apps/websim/public",
+        og: true,
+        manifest: {
+            name: "Websim | pollinations.ai",
+            short_name: "Websim",
+            description:
+                "Generate shareable single-file HTML pages with Pollinations Websim.",
+        },
+    },
 };
 
 const FAVICON_SIZES = [16, 32];

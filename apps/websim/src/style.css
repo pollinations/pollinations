@@ -1,0 +1,33 @@
+body.polli-ui-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body.polli-ui-shell #root {
+    height: auto;
+    min-height: 100dvh;
+}
+
+.websim-output-panel {
+    min-height: 32rem;
+}
+
+.websim-prompt-input {
+    line-height: 1.55;
+}
+
+@media (min-width: 640px) {
+    .websim-title {
+        font-size: 3rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .websim-output-panel {
+        position: sticky;
+        top: 1rem;
+        min-height: calc(100dvh - 6rem);
+    }
+}

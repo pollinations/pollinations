@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-12",
+  "period_start": "2026-06-12",
+  "period_end": "2026-06-12",
+  "generated_at": "2026-06-13T07:15:37.930822+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-12/images/twitter.jpg"
+    }
+  ],
+  "text": "added kimi k2.7 and qwen-coder-large for code generation. moved wan/qwen media generation off alibaba to replicate for better stability. also fixed text routes so boolean query params for stream/json actually parse correctly. strings that say \"false\" are tricky."
+}

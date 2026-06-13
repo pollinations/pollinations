@@ -1,0 +1,35 @@
+{
+  "pr_number": 11779,
+  "title": "feat: restore copy model slug on models page",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11779",
+  "merged_at": "2026-06-13T19:51:01Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Restores one-click copy of a model's API id (slug). The slug was the persistent grey line under each name dropped in 8130299bb to de-noise the table — that line was the only way to copy it, so copy went with it. This brings copy back without the line.\n\n- Model name is now the copy trigger — hover shows `Copy \"flux\"` (also lets you read the slug), click copies and flashes a `copied` badge\n- Description moves off the name's hover onto an `ⓘ` info icon; opens on hover/click/focus, so it's reachable on touch (it wasn't shown on mobile before)\n- Mobile: the name is a `pointer-events-auto` tap island that copies; chevron/logo/chips/price/whitespace still expand the row\n- Reuses the existing `@pollinations/ui` `CopyButton` + `InfoTip` — no new components, no slug line back\n\nbiome and `tsc --noEmit` clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Copy that, slug",
+    "blurb": "We brought back the ability to one-click copy model API slugs from the models page. Just click a model's name to grab its ID, keeping the table clean and your workflow fast.",
+    "summary": "Restored one-click copying of model API slugs on the models page by making the model name a clickable copy trigger, and moved model descriptions to a dedicated info icon.",
+    "impact": "Users can easily copy model IDs directly from the table without the UI feeling cluttered, and mobile users can now access model descriptions via the new info tooltip.",
+    "keywords": [
+      "ui",
+      "ux",
+      "models",
+      "copy",
+      "frontend"
+    ],
+    "visual_concept": "The bee mascot interacting with a clean, organized list or table, copying a specific item. The monitor robot holding a neatly organized list. Focus on UI cleanliness and the action of 'copying' data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, happily using a small glowing stamp on a clean retro computer terminal screen. A chunky monitor robot stands nearby holding a neatly organized list. Soft lime green (#ecf874) and lavender gradient background. Text in pixel font: 'COPY'. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11779.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, happily using a small glowing stamp on a clean retro computer terminal screen. A chunky monitor robot stands nearby holding a neatly organized list. Soft lime green (#ecf874) and lavender gradient background. Text in pixel font: 'COPY'. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-13T19:51:58.692686+00:00"
+}

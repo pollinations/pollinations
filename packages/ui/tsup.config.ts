@@ -4,6 +4,7 @@ export default defineConfig({
     entry: {
         index: "src/index.ts",
         "auth/index": "src/modules/auth/index.ts",
+        "auth/sdk": "src/modules/auth/sdk.ts",
         "app-user-menu/sdk": "src/modules/app-user-menu/sdk.ts",
         "gen/index": "src/modules/gen/index.ts",
         "wallet/index": "src/modules/wallet/index.ts",

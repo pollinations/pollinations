@@ -1,0 +1,88 @@
+import "dotenv/config";
+import {
+    AttachmentBuilder,
+    Client,
+    Events,
+    GatewayIntentBits,
+    type Message,
+    Partials,
+} from "discord.js";
+
+// Deno variant Discord adapter — talks to the deno web server over HTTP.
+// Same shape as hono/bun: surfaces compose, Discord is a client.
+//
+// Note: this file is run from Node (discord.js doesn't target Deno). The
+// point of the deno variant is the *web server*, not Discord — Discord
+// stays on Node either way. The adapter is included for parity with the
+// other variants so anyone reading along sees the full picture.
+
+const TOKEN = process.env.BOT_TOKEN_CATGPT;
+const CHANNEL_ID = process.env.CATGPT_CHANNEL_ID;
+const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
+const DENO_BASE = process.env.DENO_BASE ?? "http://localhost:8787";
+
+async function askDeno(question: string, imageUrl?: string) {
+    const res = await fetch(`${DENO_BASE}/chat`, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
+        },
+        body: JSON.stringify({ question, imageUrl }),
+    });
+    if (!res.ok) throw new Error(`deno ${res.status}`);
+    return (await res.json()) as { reply: string; comicUrl: string };
+}
+
+async function fetchImage(url: string): Promise<Buffer> {
+    const res = await fetch(url, {
+        headers: API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {},
+    });
+    if (!res.ok) throw new Error(`image ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+}
+
+async function handle(msg: Message, client: Client) {
+    if (msg.author.bot) return;
+    const mentioned = client.user && msg.mentions.users?.has(client.user.id);
+    if (CHANNEL_ID && msg.channelId !== CHANNEL_ID && !mentioned) return;
+
+    const question = msg.content.replace(/<@!?\d+>/g, "").trim();
+    if (!question || question.startsWith("!")) return;
+
+    try {
+        if ("sendTyping" in msg.channel)
+            await (msg.channel as any).sendTyping();
+    } catch {}
+
+    const avatarUrl = msg.author.displayAvatarURL({
+        size: 1024,
+        extension: "png",
+    });
+    const turn = await askDeno(question, avatarUrl);
+    const buf = await fetchImage(turn.comicUrl);
+    await msg.reply({
+        files: [new AttachmentBuilder(buf, { name: "catgpt.png" })],
+    });
+}
+
+if (!TOKEN) {
+    console.error("Missing BOT_TOKEN_CATGPT");
+    process.exit(1);
+}
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
+    partials: [Partials.Channel, Partials.Message],
+});
+client.once(Events.ClientReady, (c) =>
+    console.log(`[deno] CatGPT online as ${c.user.tag}`),
+);
+client.on(Events.MessageCreate, (msg) =>
+    handle(msg, client).catch(console.error),
+);
+client.login(TOKEN);

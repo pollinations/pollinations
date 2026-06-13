@@ -1,0 +1,6 @@
+{
+  "name": "@pollinations/catgpt-openai-compat-surface",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module"
+}

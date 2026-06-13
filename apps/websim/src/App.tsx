@@ -135,8 +135,6 @@ export function App() {
     const [isGenerating, setIsGenerating] = useState(false);
     const activeRequest = useRef<AbortController | null>(null);
 
-    const selectedModel = WEB_SIM_MODELS.find((item) => item.id === model);
-
     useEffect(() => {
         return () => activeRequest.current?.abort();
     }, []);
@@ -356,17 +354,6 @@ export function App() {
 
                     <PreviewPanel html={html} isGenerating={isGenerating} />
                 </section>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                    <Text size="sm" tone="soft">
-                        {selectedModel
-                            ? `${selectedModel.label}: ${selectedModel.detail}.`
-                            : "Quick Draft selected."}
-                    </Text>
-                    <Text size="sm" tone="muted">
-                        Generated pages open without exposing your key.
-                    </Text>
-                </div>
             </main>
         </div>
     );

@@ -2,11 +2,12 @@ import {
     type Message,
     Pollinations,
     PollinationsError,
-} from "@pollinations/sdk/client";
+} from "@pollinations/sdk";
 import { useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
     Button,
+    ColorModeToggle,
     cn,
     DownloadIcon,
     ExternalLinkButton,
@@ -299,7 +300,6 @@ export function App() {
             const imageOptions = {
                 width: 1024,
                 height: 1024,
-                enhance: !uploadedImageUrl,
                 referenceImage: uploadedImageUrl
                     ? [uploadedImageUrl, SELFIE_CATGPT]
                     : ORIGINAL_CATGPT,
@@ -312,7 +312,7 @@ export function App() {
             let usedModel = activeModel;
             const response = await client
                 .image(imagePrompt, { model: usedModel, ...imageOptions })
-                .catch((err) => {
+                .catch((err: unknown) => {
                     if (
                         usedModel === FALLBACK_MODEL ||
                         !(err instanceof PollinationsError) ||
@@ -381,12 +381,15 @@ export function App() {
 
     return (
         <div
-            data-theme="pink"
-            className="relative flex min-h-dvh flex-col bg-white font-body text-gray-950"
+            data-theme="accent"
+            className="catgpt-app relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
         >
-            <div className="fixed top-4 right-4 z-40">
-                <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
-            </div>
+            {!isEmbedded && (
+                <div className="fixed top-4 right-4 left-4 z-40 flex items-center justify-end gap-2">
+                    <ColorModeToggle />
+                    <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
+                </div>
+            )}
 
             <main
                 className={cn(
@@ -399,14 +402,14 @@ export function App() {
                         <Heading
                             as="h1"
                             size="title"
-                            className="m-0 text-gray-950 sm:text-5xl"
+                            className="m-0 text-theme-text-strong sm:text-5xl"
                         >
                             CatGPT
                         </Heading>
-                        <p className="max-w-2xl text-base text-gray-600">
+                        <p className="max-w-2xl text-base text-theme-text-base">
                             Ask a question. Get a cat response.
                         </p>
-                        <p className="max-w-2xl text-sm text-gray-500">
+                        <p className="max-w-2xl text-sm text-theme-text-muted">
                             Original comic by{" "}
                             <InlineLink
                                 href="https://www.instagram.com/missfitcomics/"
@@ -421,7 +424,7 @@ export function App() {
                         href="https://www.instagram.com/missfitcomics/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full max-w-52 shrink-0 overflow-hidden rounded-lg bg-white"
+                        className="block w-full max-w-52 shrink-0 overflow-hidden rounded-lg bg-surface-opaque shadow-well"
                     >
                         <img
                             src={originalComicUrl}
@@ -432,15 +435,12 @@ export function App() {
                 </section>
 
                 {!isHydrated && (
-                    <Surface theme="pink" variant="panel">
-                        Loading CatGPT...
-                    </Surface>
+                    <Surface variant="panel">Loading CatGPT...</Surface>
                 )}
 
                 {isHydrated && (
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]">
                         <Surface
-                            theme="pink"
                             variant="panel"
                             className="flex flex-col gap-4"
                         >
@@ -473,7 +473,6 @@ export function App() {
                                     }
                                     maxFiles={1}
                                     maxSizeBytes={5 * 1024 * 1024}
-                                    theme="pink"
                                     onReject={() =>
                                         setError("Use one image under 5 MB.")
                                     }
@@ -485,7 +484,6 @@ export function App() {
 
                             <Button
                                 type="button"
-                                theme="pink"
                                 size="lg"
                                 disabled={
                                     !isLoggedIn ||
@@ -501,7 +499,6 @@ export function App() {
                         </Surface>
 
                         <Surface
-                            theme="pink"
                             variant="panel"
                             className="flex min-h-[32rem] flex-col gap-4"
                         >
@@ -515,21 +512,19 @@ export function App() {
                             </Text>
                             {isGenerating ? (
                                 <MediaPlaceholder
-                                    theme="pink"
                                     label="Generating..."
                                     detail={PROGRESS_MESSAGES[progressIndex]}
                                     className="flex-1"
                                 />
                             ) : !generatedMeme ? (
                                 <MediaPlaceholder
-                                    theme="pink"
                                     icon={<ImageIcon className="h-5 w-5" />}
                                     label="No meme yet"
                                     detail="CatGPT will ignore you here."
                                     className="flex-1"
                                 />
                             ) : (
-                                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-white p-3">
+                                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-opaque p-3 shadow-well">
                                     <img
                                         src={generatedMeme.url}
                                         alt={generatedMeme.prompt}
@@ -542,7 +537,6 @@ export function App() {
                                 <div className="flex flex-wrap gap-2">
                                     <Button
                                         type="button"
-                                        theme="pink"
                                         size="sm"
                                         onClick={handleDownload}
                                     >
@@ -551,7 +545,6 @@ export function App() {
                                     </Button>
                                     <Button
                                         type="button"
-                                        theme="pink"
                                         size="sm"
                                         onClick={shareCurrentMeme}
                                     >
@@ -563,16 +556,12 @@ export function App() {
                     </div>
                 )}
 
-                <Surface
-                    theme="pink"
-                    variant="panel"
-                    className="flex flex-col gap-5"
-                >
+                <Surface variant="panel" className="flex flex-col gap-5">
                     <MemeGrid title="Your Memes" memes={savedMemes} />
                     <MemeGrid title="Examples" memes={EXAMPLES} />
                 </Surface>
 
-                <footer className="flex flex-col gap-2 border-t border-gray-200 pt-5 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                <footer className="flex flex-col gap-2 border-t border-divider pt-5 text-sm text-theme-text-muted sm:flex-row sm:items-center sm:justify-between">
                     <span>
                         Original CatGPT by{" "}
                         <InlineLink href="https://www.instagram.com/missfitcomics/">
@@ -581,7 +570,6 @@ export function App() {
                     </span>
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/tree/main/apps/catgpt"
-                        theme="pink"
                         size="sm"
                     >
                         GitHub
@@ -609,7 +597,7 @@ function MemeGrid({
                     as="p"
                     size="sm"
                     tone="soft"
-                    className="rounded-xl bg-white p-4 text-center"
+                    className="rounded-xl bg-surface-opaque p-4 text-center"
                 >
                     No memes yet. Generate one to see it here.
                 </Text>
@@ -618,7 +606,7 @@ function MemeGrid({
                     {memes.map((meme) => (
                         <article
                             key={`${meme.prompt}-${meme.url}`}
-                            className="overflow-hidden rounded-xl bg-white"
+                            className="overflow-hidden rounded-xl bg-surface-opaque shadow-well"
                         >
                             <img
                                 src={meme.url}

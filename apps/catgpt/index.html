@@ -3,7 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#a3e635" />
+
+    <!-- Set color mode before first paint to avoid a flash. Source of truth
+         after mount: @pollinations/ui ColorModeToggle (STORAGE_KEY must match). -->
+    <script>
+      (() => {
+        try {
+          let mode = localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+        } catch {
+          /* ignore storage / matchMedia failures */
+        }
+      })();
+    </script>
+
     <meta name="description" content="CatGPT Meme Generator - your questions, a cat's indifference." />
 
     <title>CatGPT Meme Generator | Pollinations.AI</title>

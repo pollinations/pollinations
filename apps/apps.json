@@ -17,8 +17,8 @@
         "subdomain": "catgpt",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "title": "CatGPT",
-        "description": "A cat-themed AI chatbot that responds like a feline friend"
+        "title": "CatGPT | pollinations.ai",
+        "description": "Ask CatGPT a question and generate a dismissive cat comic meme"
     },
     "ai-dungeon-master": {
         "subdomain": "ai-dungeon-master",

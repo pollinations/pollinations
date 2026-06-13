@@ -62,6 +62,16 @@ const APPS = {
                 "Generate images, text, and audio with the Pollinations API in one focused playground.",
         },
     },
+    catgpt: {
+        outDir: "apps/catgpt/public",
+        og: true,
+        manifest: {
+            name: "CatGPT | pollinations.ai",
+            short_name: "CatGPT",
+            description:
+                "Ask CatGPT a question and generate a dismissive cat comic meme.",
+        },
+    },
     enter: {
         outDir: "enter.pollinations.ai/frontend/public",
         og: true,

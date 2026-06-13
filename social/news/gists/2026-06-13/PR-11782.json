@@ -1,0 +1,35 @@
+{
+  "pr_number": 11782,
+  "title": "fix: override existing app proxy domains",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11782",
+  "merged_at": "2026-06-13T20:58:23Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Passes override_existing_origin when attaching app public domains to pollinations-proxy.\\n- Handles cutovers where the public hostname is still attached to an older Worker or Pages custom domain.\\n- Unblocks the Websim public-domain cutover.\\n\\nChecks:\\n- npx biome check --write apps/_scripts/deploy-app.js\\n- git diff --check",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Smooth Domain Cutovers",
+    "blurb": "Fixed a deployment hiccup so app domains can smoothly override existing origins. No more traffic jams when updating public hostnames!",
+    "summary": "Updated the app deployment script to pass the `override_existing_origin` flag when attaching public domains to the pollinations-proxy.",
+    "impact": "This allows seamless cutovers for apps like Websim by automatically overriding older Worker or Pages custom domains during deployment.",
+    "keywords": [
+      "deployment",
+      "domains",
+      "proxy",
+      "infrastructure",
+      "bug-fix"
+    ],
+    "visual_concept": "The bee mascot acting as a construction worker or traffic director, smoothly redirecting glowing pathways or changing a signpost. Represents routing and domain cutovers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, adjusting a glowing lime green (#ecf874) signpost that points to different digital pathways. A chunky retro robot companion helps hold a blueprint. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-13/PR-11782.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, adjusting a glowing lime green (#ecf874) signpost that points to different digital pathways. A chunky retro robot companion helps hold a blueprint. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-13T20:59:25.127248+00:00"
+}

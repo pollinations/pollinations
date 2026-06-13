@@ -130,7 +130,9 @@ export const stripeRoutes = new Hono<Env>()
                         price_data: {
                             currency,
                             unit_amount: unitAmount,
-                            tax_behavior: "inclusive",
+                            // Net price; Stripe Tax adds VAT on top for buyers
+                            // in registered jurisdictions (EU via OSS).
+                            tax_behavior: "exclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
@@ -165,7 +167,7 @@ export const stripeRoutes = new Hono<Env>()
                     enabled: true,
                     invoice_data: {
                         rendering_options: {
-                            amount_tax_display: "include_inclusive_tax",
+                            amount_tax_display: "exclude_tax",
                         },
                     },
                 },

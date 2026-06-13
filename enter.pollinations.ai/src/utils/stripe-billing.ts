@@ -546,7 +546,7 @@ export async function processAutoTopUpForUser(
                 amount: chargedAmountCents,
                 currency: topUpCurrency,
                 description: pack.checkoutName,
-                tax_behavior: "inclusive",
+                tax_behavior: "exclusive",
                 tax_code: pack.taxCode,
                 metadata,
             },

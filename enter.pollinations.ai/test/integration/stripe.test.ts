@@ -42,7 +42,7 @@ function expectUsdPriceData(
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
         String(amountUsd * 100),
     );
-    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("exclusive");
     if (expectedName) {
         expect(body?.["line_items[0][price_data][product_data][name]"]).toBe(
             expectedName,
@@ -2925,7 +2925,7 @@ function expectEurPriceData(
     expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
         String(eurCents),
     );
-    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("exclusive");
     expect(body?.["adaptive_pricing[enabled]"]).toBeUndefined(); // native EUR ⇒ no AP
 }
 

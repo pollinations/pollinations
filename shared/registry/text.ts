@@ -1,3 +1,14 @@
+import {
+    GEMINI_3_SEARCH_PRICE_MULTIPLIER,
+    GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
+    GEMINI_31_PRO_PRICE_MULTIPLIER,
+} from "./gemini-billing";
+import {
+    PERPLEXITY_DEEP_PRICE_MULTIPLIER,
+    PERPLEXITY_FAST_PRICE_MULTIPLIER,
+    PERPLEXITY_PRO_PRICE_MULTIPLIER,
+    PERPLEXITY_REASONING_PRICE_MULTIPLIER,
+} from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -271,7 +282,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -298,7 +309,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
         // Non-global regions add ~10%; we route through global.
@@ -331,7 +342,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.25),
@@ -358,7 +369,7 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
@@ -554,9 +565,9 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding fee ($0.035/grounded
-        // prompt after 1,500 RPD free) is not yet modeled; absorbed by Pollinations.
+        priceMultiplier: GEMINI_25_GROUNDING_PRICE_MULTIPLIER,
+        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
+        // calculateCost when the response includes web search metadata.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -584,7 +595,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         // Vertex base rates for gemini-3.1-flash-lite-preview. Grounding fee
         // dropped to $14/1K queries on Gemini 3 (vs $35/1K on 2.x), with 5K
         // free queries/month shared across all Gemini 3 models; absorbed by
@@ -616,7 +627,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_3_SEARCH_PRICE_MULTIPLIER,
         // Vertex base rates for gemini-3.5-flash. Grounding fee $14/1K queries
         // with 5K/month free shared across Gemini 3; absorbed by Pollinations.
         cost: {
@@ -834,10 +845,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
-        // (~$5/1k at low search_context_size), which our token-based billing
-        // cannot capture directly. Temporary until a per-request fee field exists.
-        priceMultiplier: 1,
+        priceMultiplier: PERPLEXITY_FAST_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -860,11 +868,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        // Same sonar base as perplexity-fast but high search_context_size for
-        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
-        // matches fast for now — they bill identically until a per-request fee
-        // field lets us price the deeper search separately.
-        priceMultiplier: 1,
+        priceMultiplier: PERPLEXITY_DEEP_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -885,7 +889,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: PERPLEXITY_PRO_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -906,7 +910,7 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: PERPLEXITY_REASONING_PRICE_MULTIPLIER,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
@@ -1010,11 +1014,14 @@ export const TEXT_SERVICES = {
         brand: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: GEMINI_31_PRO_PRICE_MULTIPLIER,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
+            promptAudioTokens: perMillion(2.0),
+            promptImageTokens: perMillion(2.0),
+            promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
         title: "Gemini 3.1 Pro",

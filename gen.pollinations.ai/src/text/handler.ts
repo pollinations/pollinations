@@ -121,6 +121,38 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
+const PUBLIC_USAGE_FIELDS = new Set([
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+    "completion_tokens",
+    "completion_tokens_details",
+    "prompt_tokens",
+    "prompt_tokens_details",
+    "total_tokens",
+]);
+
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
+    );
+}
+
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (usage === completion.usage) return completion;
+
+    return {
+        ...completion,
+        usage,
+    };
+}
+
 function sendOpenAIResponse(completion: ChatCompletion): Response {
     const headers = usageHeaders(completion);
     headers.set("Content-Type", "application/json; charset=utf-8");
@@ -275,8 +307,14 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const trackingResponse = sendOpenAIResponse(completion);
+        const publicCompletion = publicChatCompletion(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(publicCompletion);
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }

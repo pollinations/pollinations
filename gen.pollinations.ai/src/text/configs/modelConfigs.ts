@@ -2,7 +2,6 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
-    createDashScopeModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
@@ -270,11 +269,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "meta-llama/llama-4-scout",
         }),
 
-    // -- Alibaba DashScope (Qwen) ---------------------------------------------
-    "qwen3-coder-next": () =>
-        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-
-    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
+    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
+    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
+    "qwen/qwen3-coder-next": () =>
+        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",

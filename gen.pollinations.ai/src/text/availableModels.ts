@@ -48,7 +48,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder-large",
-        config: portkeyConfig["qwen3-coder-next"],
+        config: portkeyConfig["qwen/qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {

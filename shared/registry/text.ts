@@ -1275,16 +1275,18 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
-        modelId: "qwen3-coder-next",
-        provider: "alibaba",
+        modelId: "qwen/qwen3-coder-next",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.30/$1.50) to OpenRouter — same SKU,
+        // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
         cost: {
-            promptTextTokens: perMillion(0.3), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // per 1M tokens
+            promptTextTokens: perMillion(0.11), // per 1M tokens
+            completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
         description: "Qwen3 Coder Next - Advanced Code Generation",

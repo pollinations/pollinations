@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "generated_at": "2026-06-14T07:32:39.772782+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/twitter.jpg"
+    }
+  ],
+  "text": "13 PRs merged. played musical chairs with model providers (replicate, bedrock, openrouter) to keep things stable. fixed the api so content policy rejections return a polite 422 instead of a panic 500. plus a fresh borderless ui theme."
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "generated_at": "2026-06-14T07:32:39.772782+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, here's what shipped this week. 13 PRs merged, mostly shuffling models around to keep things fast and making the API responses actually make sense.\n\n## Weekly Update - 2026-06-14\n\n**🪑 Model Musical Chairs**\nWe shifted some routing around to keep generation reliable:\n- Moved Wan and Qwen image/video off Alibaba over to Replicate\n- Added Claude Fable 5 (via Bedrock) and Kimi k2.7 code (via OpenRouter)\n- Pruna models are now routing through Replicate\n- `qwen-coder-large` is now on OpenRouter\n\n**✨ UI & Dashboard Cleanup**\n- Dashboards now pull directly from the live model catalog\n- Shipped a visual overhaul: single-accent colors, borderless UI, and a new icon system\n- Restored the \"copy model slug\" button on the models page (because manually typing out slugs is tedious)\n\n**🛠️ API Sanity & No-Build**\n- Added a `@pollinations/ui` browser bundle so you can prototype without a build step\n- Content policy rejections now correctly return a `422 Unprocessable Entity` instead of a generic `500` error\n- Fixed boolean parsing for `stream` and `json` query params on text routes\n- Fixed `wan-pro` image-to-video failing with 500s\n\n**🌱 Community**\n- Websim is now officially BYOP (Bring Your Own Pollen) compliant\n- Added Wikimind to the learn section"
+}

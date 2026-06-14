@@ -1,0 +1,36 @@
+{
+  "pr_number": 11793,
+  "title": "[codex] feat: move model routes to Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11793",
+  "merged_at": "2026-06-14T12:38:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Summary\n- Moves Kimi K2.7 Code, MiniMax M3, and Qwen Large to Fireworks routes.\n- Updates Qwen Large to Qwen3.7 Plus.\n- Halves MiniMax M3 registered context from 1M to 512K for the Fireworks route.\n\n| Model | Before | After | Price in/cache/out per 1M |\n|---|---|---|---|\n| Kimi K2.7 Code | OpenRouter `moonshotai/kimi-k2.7-code` | Fireworks `kimi-k2p7-code` | `$0.95/$0.19/$4.00` -> same |\n| MiniMax M3 | OpenRouter `minimax/minimax-m3`, 1M ctx | Fireworks `minimax-m3`, 512K ctx | `$0.30/$0.06/$1.20` -> same |\n| Qwen Large | Fireworks `qwen3p6-plus` | Fireworks `qwen3p7-plus` | `$0.50/$0.10/$3.00` -> `$0.40/$0.08/$1.60` |\n\n## Checks\n- `npx biome check --write gen.pollinations.ai/src/text/availableModels.ts gen.pollinations.ai/src/text/configs/modelConfigs.ts shared/registry/text.ts enter.pollinations.ai/test/__snapshots__/effective-prices.snapshot.test.ts.snap`\n- `npm run decrypt-vars` in `enter.pollinations.ai`\n- `npx vitest run test/effective-prices.snapshot.test.ts test/aliases.test.ts test/pricing-data.test.ts`\n- `npx vitest run test/text/transforms/stripCacheControl.test.ts`\n- Local `/v1/chat/completions` smoke: `kimi-k2.7-code`, `qwen-large`, `minimax-m3` -> Fireworks upstream ids",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fireworks in the sky",
+    "blurb": "We've rewired some of our favorite models to run through Fireworks! Qwen Large gets a shiny upgrade to 3.7 Plus (with a sweet price drop), while Kimi and MiniMax get fresh new routes.",
+    "summary": "Moved Kimi K2.7 Code and MiniMax M3 to Fireworks routes, updated Qwen Large to Qwen3.7 Plus with reduced pricing ($0.40/$0.08/$1.60 per 1M tokens), and adjusted MiniMax M3's context window to 512K.",
+    "impact": "Users will see lower costs for Qwen Large, while MiniMax M3 and Kimi K2.7 Code benefit from Fireworks' infrastructure with a 512K context limit for MiniMax.",
+    "keywords": [
+      "models",
+      "fireworks",
+      "qwen",
+      "minimax",
+      "kimi",
+      "pricing"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot watching a literal fireworks display in the night sky, with the fireworks exploding into glowing code blocks or API routes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot watching a beautiful fireworks display in a starry night sky. The fireworks explode into glowing lime green (#ecf874) and pastel code symbols. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11793.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot watching a beautiful fireworks display in a starry night sky. The fireworks explode into glowing lime green (#ecf874) and pastel code symbols. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-14T12:39:46.197962+00:00"
+}

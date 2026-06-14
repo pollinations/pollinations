@@ -14,16 +14,16 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
-    "hono": "^4.6.0",
+    "hono": "^4.12.25",
     "hono-openapi": "^1.2.0",
-    "zod": "^3.25.76",
+    "zod": "^4.4.3",
     "zod-openapi": "^4.2.4"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.10",
     "@cloudflare/workers-types": "^4.20260111.0",
-    "typescript": "^5.6.0",
-    "vitest": "^3.2.4",
+    "typescript": "^5.9.3",
+    "vitest": "3.2.4",
     "wrangler": "^4.58.0"
   }
 }

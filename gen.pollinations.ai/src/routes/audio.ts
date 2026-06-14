@@ -891,7 +891,7 @@ async function dispatchAudioGeneration(
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
-    const rawText = c.req.param("text");
+    const rawText = c.req.param("text") ?? "";
     let text: string;
     try {
         text = decodeURIComponent(rawText);

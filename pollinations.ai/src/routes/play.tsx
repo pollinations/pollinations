@@ -1,5 +1,4 @@
 import { ButtonGroup, cn, TabButton } from "@pollinations/ui";
-import { parseEmbedHeightMessage } from "@pollinations/ui/embed";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -81,21 +80,34 @@ function PlayRoute() {
 }
 
 /**
- * Embedded apps that opt into the embed contract report their content height so
- * the iframe grows to fit (no inner scroll). Until a message arrives we fall
- * back to a fixed viewport-based height — so apps that don't emit yet behave
- * exactly as before. Keyed by app id in the parent, so switching apps remounts
- * this and resets the height cleanly.
+ * Embedded apps post their content height so the iframe grows to fit (no inner
+ * scroll). Small local message contract shared with the apps:
+ * `{ source: "polli-embed", type: "height", value: <px> }`. Until a message
+ * arrives we fall back to a fixed viewport-based height — so apps that don't
+ * emit behave as before. Keyed by app id so switching apps resets cleanly.
  */
 function AppFrame({ app }: { app: (typeof PLAY_APPS)[number] }) {
     const [reportedHeight, setReportedHeight] = useState<number | null>(null);
 
     useEffect(() => {
         const onMessage = (event: MessageEvent) => {
-            const height = parseEmbedHeightMessage(event, ALLOWED_APP_ORIGINS);
-            if (height !== null) {
-                setReportedHeight(Math.min(height, MAX_IFRAME_HEIGHT));
+            if (!ALLOWED_APP_ORIGINS.includes(event.origin)) return;
+            const data = event.data as {
+                source?: unknown;
+                type?: unknown;
+                value?: unknown;
+            } | null;
+            if (
+                !data ||
+                data.source !== "polli-embed" ||
+                data.type !== "height" ||
+                typeof data.value !== "number" ||
+                !Number.isFinite(data.value) ||
+                data.value <= 0
+            ) {
+                return;
             }
+            setReportedHeight(Math.min(data.value, MAX_IFRAME_HEIGHT));
         };
         window.addEventListener("message", onMessage);
         return () => window.removeEventListener("message", onMessage);

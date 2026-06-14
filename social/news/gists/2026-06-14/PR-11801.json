@@ -1,0 +1,35 @@
+{
+  "pr_number": 11801,
+  "title": "fix: match the auth modal backdrop to the app background",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11801",
+  "merged_at": "2026-06-14T21:24:40Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "The `AuthModal` positioner painted its full-bleed backdrop with `bg-theme-bg-pale` — a warm, theme-tinted surface. Standalone that reads as a soft modal scrim, but embedded full-bleed in `/play` it fills the whole iframe and clashes with the website's neutral `bg-app-bg` page background (cream vs. gray).\n\n- Switch the positioner backdrop to `bg-app-bg` — the same neutral, theme-independent token the website and apps use for their page background — so the auth surface matches the page everywhere (light and dark).\n- The white card (`surface-white`) and the inner accent panels (the \"Authorize\" strip, info cards) are unchanged, so it doesn't go flat.\n\nVerified: the generated `polli:bg-app-bg` utility resolves to `var(--polli-color-app-bg)` — identical to the website background — and biome/build are clean. Full visual confirmation lands once enter redeploys with this.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Seamless auth screens",
+    "blurb": "The auth modal backdrop now perfectly matches the app background. A tiny CSS change for a much smoother, clash-free login experience.",
+    "summary": "Switched the AuthModal backdrop token from bg-theme-bg-pale to bg-app-bg to prevent visual clashing when embedded full-bleed in the /play iframe.",
+    "impact": "Users will see a seamless, matching background color when the authorization modal appears, eliminating the previous cream-on-gray mismatch.",
+    "keywords": [
+      "ui",
+      "auth",
+      "frontend",
+      "design",
+      "css"
+    ],
+    "visual_concept": "The bee mascot acting as a painter, carefully matching the color of a floating digital window to the wall behind it. Represents UI polishing and color matching.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a brush to paint a floating digital pop-up window so it perfectly matches the soft cream wall behind it. A chunky retro monitor nearby displays clean UI elements. Soft lime green (#ecf874) and warm pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11801.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a brush to paint a floating digital pop-up window so it perfectly matches the soft cream wall behind it. A chunky retro monitor nearby displays clean UI elements. Soft lime green (#ecf874) and warm pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-14T21:25:39.626103+00:00"
+}

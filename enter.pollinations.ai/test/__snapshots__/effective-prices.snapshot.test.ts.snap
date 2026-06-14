@@ -898,14 +898,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-large": {
     "cost": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.0000016,
+      "promptCachedTokens": 0.00000008,
+      "promptTextTokens": 0.0000004,
     },
     "price": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000005,
+      "completionTextTokens": 0.0000016,
+      "promptCachedTokens": 0.00000008,
+      "promptTextTokens": 0.0000004,
     },
   },
   "qwen-safety": {

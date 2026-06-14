@@ -1,0 +1,36 @@
+{
+  "pr_number": 11795,
+  "title": "feat: report embed height from playground and websim",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11795",
+  "merged_at": "2026-06-14T13:37:39Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Makes the `/play` iframe size to its app's content so there's no scrollbar inside the iframe.\n\n- Playground and Websim now call `useReportEmbedHeight` when embedded and drop `min-h-dvh`, so each reports its natural content height instead of padding to the iframe viewport.\n- Standalone behavior unchanged — height reporting only fires inside a frame; `min-h-dvh` is kept when not embedded.\n\nDepends on #11792, which adds `@pollinations/ui/embed` (the shared hook + the host-side listener in `/play`). No file overlap with #11792, so no merge conflict — but merge #11792 first; this won't build until that lands.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Perfectly sized playgrounds",
+    "blurb": "Embedded apps now automatically resize to fit their content perfectly. No more awkward double scrollbars when playing with Websim or the Playground!",
+    "summary": "Playground and Websim apps now report their natural content height via the `useReportEmbedHeight` hook when embedded, eliminating internal scrollbars in the `/play` iframe.",
+    "impact": "Users viewing embedded apps will experience a seamless, perfectly sized interface without double scrollbars, while standalone apps retain their normal viewport height.",
+    "keywords": [
+      "ui",
+      "embed",
+      "iframe",
+      "playground",
+      "websim",
+      "ux"
+    ],
+    "visual_concept": "The bee mascot and the monitor robot adjusting a picture frame or window to perfectly fit a beautiful digital landscape, representing the dynamic resizing of the iframe.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to adjust a glowing lime green (#ecf874) picture frame so it perfectly fits a beautiful digital garden inside. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11795.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot working together to adjust a glowing lime green (#ecf874) picture frame so it perfectly fits a beautiful digital garden inside. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-14T13:38:34.648022+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11791,
+  "title": "feat: make playground and websim embed-friendly",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11791",
+  "merged_at": "2026-06-14T12:21:54Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Makes the Playground and Websim apps render correctly when embedded in the pollinations.ai `/play` iframe — the reference implementation of the self-contained embeddable-app pattern.\n\n- Show the BYOP auth menu when embedded (previously hidden via `hiddenWhenEmbedded`); each app keeps its own auth on its own origin.\n- Hide the app title when embedded — the host tab selector already names the app; the subtitle stays.\n- Tighten top spacing in embed mode (`pt-2`, menu `top-2`); standalone unchanged.\n\nCatGPT gets the same treatment in #11614.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Perfecting the /play pen",
+    "blurb": "Huge thanks to ElliotEtag for making Playground and Websim look right at home when embedded. You can now bring your own pollen (BYOP) straight from the iframe!",
+    "summary": "ElliotEtag updated the Playground and Websim apps to render correctly when embedded in the /play iframe by enabling the BYOP auth menu, hiding redundant titles, and optimizing top spacing.",
+    "impact": "Users can now access their BYOP auth settings and enjoy a cleaner, tighter UI when using Playground and Websim directly within the pollinations.ai iframe.",
+    "keywords": [
+      "ui",
+      "embed",
+      "playground",
+      "websim",
+      "byop"
+    ],
+    "visual_concept": "Polly the bee acting as a builder/decorator, fitting a smaller screen or puzzle piece into a larger frame, representing the seamless embedding of apps. A retro monitor displaying a playground.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat and tool belt, carefully sliding a glowing digital puzzle piece into a retro CRT monitor. The monitor screen glows with a soft lime green (#ecf874) light, displaying a tiny digital playground. Soft pastel lavender and cream gradient background with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11791.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat and tool belt, carefully sliding a glowing digital puzzle piece into a retro CRT monitor. The monitor screen glows with a soft lime green (#ecf874) light, displaying a tiny digital playground. Soft pastel lavender and cream gradient background with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-14T12:22:55.298105+00:00"
+}

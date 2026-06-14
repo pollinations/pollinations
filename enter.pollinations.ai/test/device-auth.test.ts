@@ -26,7 +26,10 @@ async function insertDeviceCode(
 }
 
 /** Insert an API key directly into D1, returning the plaintext key. */
-async function insertApiKey(userId: string) {
+async function insertApiKey(
+    userId: string,
+    overrides: Partial<typeof schema.apikey.$inferInsert> = {},
+) {
     const db = drizzle(env.DB, { schema });
     const key = `sk_${crypto.randomUUID().replace(/-/g, "")}`;
     const row = {
@@ -38,6 +41,7 @@ async function insertApiKey(userId: string) {
         userId,
         createdAt: new Date(),
         updatedAt: new Date(),
+        ...overrides,
     };
     await db.insert(schema.apikey).values(row);
     return { key, id: row.id };
@@ -188,6 +192,37 @@ describe("Device Authorization Flow", () => {
         expect(res.status).toBe(401);
     });
 
+    test("POST /api/device/approve rejects arbitrary key material", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: "sk_attacker_supplied_value",
+                apiKeyId: crypto.randomUUID(),
+            }),
+        });
+        expect(approveRes.status).toBe(400);
+
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        const tokenBody = (await tokenRes.json()) as { error: string };
+        expect(tokenRes.status).toBe(400);
+        expect(tokenBody.error).toBe("authorization_pending");
+    }, 30000);
+
     test("full flow: approve device code, poll for key", async ({
         sessionToken,
         mocks,
@@ -204,7 +239,9 @@ describe("Device Authorization Flow", () => {
         const session = (await sessionRes.json()) as {
             user: { id: string };
         };
-        const { key, id: keyId } = await insertApiKey(session.user.id);
+        const { key, id: keyId } = await insertApiKey(session.user.id, {
+            metadata: JSON.stringify({ deviceUserCode: device.userCode }),
+        });
 
         // Approve the device code
         const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {

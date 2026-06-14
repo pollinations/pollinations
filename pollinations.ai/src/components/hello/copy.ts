@@ -50,10 +50,18 @@ export const HERO: {
     ],
 };
 
-export const STATS: { value: string; label: string }[] = [
+export type StatLiveKey = "dailyRequests" | "liveApps";
+
+export type Stat = {
+    value: string;
+    label: string;
+    liveKey?: StatLiveKey;
+};
+
+export const STATS: Stat[] = [
     { value: "10K", label: "weekly active devs" },
-    { value: "1.5M", label: "daily requests" },
-    { value: "500+", label: "live apps" },
+    { value: "1.5M", label: "daily requests", liveKey: "dailyRequests" },
+    { value: "500+", label: "live apps", liveKey: "liveApps" },
 ];
 
 export type ToolboxItem = {

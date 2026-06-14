@@ -1,3 +1,4 @@
+import { useColorMode } from "@pollinations/ui";
 import { createRootRoute, HeadContent, Outlet } from "@tanstack/react-router";
 import { Footer } from "../components/shell/Footer.tsx";
 import { Header } from "../components/shell/Header.tsx";
@@ -10,6 +11,8 @@ export const Route = createRootRoute({
 });
 
 function RootLayout() {
+    useColorMode();
+
     return (
         <div className="flex h-full min-w-0 flex-col">
             <HeadContent />

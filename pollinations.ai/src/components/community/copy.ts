@@ -1,6 +1,8 @@
 import {
+    AppIcon,
     BotIcon,
     CardIcon,
+    CodeIcon,
     DiscordIcon,
     GitHubIcon,
     type IconProps,
@@ -32,10 +34,29 @@ export const HERO = {
         " Share what you need, meet the people using it, and help build what comes next.",
 };
 
-export const HERO_STATS: { value: string; label: string; href?: string }[] = [
-    { value: "17K+", label: "Discord members", href: DISCORD },
-    { value: "4K+", label: "GitHub stars", href: GITHUB },
-    { value: "500+", label: "live apps" },
+export type HeroStatLiveKey = "discordMembers" | "githubStars" | "liveApps";
+
+export type HeroStat = {
+    value: string;
+    label: string;
+    href?: string;
+    liveKey?: HeroStatLiveKey;
+};
+
+export const HERO_STATS: HeroStat[] = [
+    {
+        value: "17K+",
+        label: "Discord members",
+        href: DISCORD,
+        liveKey: "discordMembers",
+    },
+    {
+        value: "4K+",
+        label: "GitHub stars",
+        href: GITHUB,
+        liveKey: "githubStars",
+    },
+    { value: "500+", label: "live apps", liveKey: "liveApps" },
 ];
 
 export const CONTRIBUTE = {
@@ -50,21 +71,25 @@ export const CONTRIBUTE = {
 };
 
 export const CONTRIBUTE_CARDS: {
+    icon: IconComponent;
     title: string;
     body: string;
     href: string;
 }[] = [
     {
+        icon: AppIcon,
         title: "Ship an app",
         body: "Share what you built, get feedback, and help users discover it.",
         href: GITHUB_SUBMIT_APP,
     },
     {
+        icon: CodeIcon,
         title: "Fix a bug or improve the docs",
         body: "Open a PR, close an issue, improve examples, or make the docs clearer.",
         href: GITHUB_NEW_ISSUE,
     },
     {
+        icon: DiscordIcon,
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
         href: DISCORD,

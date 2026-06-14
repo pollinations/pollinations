@@ -1,14 +1,21 @@
 import { Button, ExternalLinkButton, Section, Surface } from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
     CTA,
     HELLO_META,
     HERO,
     ROADMAP,
     STATS,
+    type StatLiveKey,
     TOOLBOX,
 } from "../components/hello/copy.ts";
 import { ToolboxCard } from "../components/hello/ToolboxCard.tsx";
+import { loadApps } from "../lib/apps.ts";
+
+const PUBLIC_MODEL_STATS_URL =
+    "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=200";
+const MODEL_STATS_DAYS = 7;
 
 export const Route = createFileRoute("/")({
     head: () => ({
@@ -20,7 +27,67 @@ export const Route = createFileRoute("/")({
     component: HelloPage,
 });
 
+type LiveStatValues = Partial<Record<StatLiveKey, string>>;
+
+function formatStatCount(count: number): string {
+    return new Intl.NumberFormat("en", {
+        maximumFractionDigits: 1,
+        notation: "compact",
+    }).format(count);
+}
+
+async function fetchAverageDailyRequests(signal: AbortSignal): Promise<number> {
+    const res = await fetch(PUBLIC_MODEL_STATS_URL, { signal });
+    if (!res.ok) throw new Error("Daily requests unavailable");
+
+    const data = (await res.json()) as {
+        data?: Array<{ request_count?: unknown }>;
+    };
+    const requests = (data.data ?? []).reduce((sum, row) => {
+        return (
+            sum +
+            (typeof row.request_count === "number" ? row.request_count : 0)
+        );
+    }, 0);
+
+    return Math.round(requests / MODEL_STATS_DAYS);
+}
+
+function useLiveStats(): LiveStatValues {
+    const [liveStats, setLiveStats] = useState<LiveStatValues>({});
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        async function loadStats() {
+            const [dailyRequests, liveApps] = await Promise.allSettled([
+                fetchAverageDailyRequests(controller.signal),
+                loadApps(),
+            ]);
+
+            if (controller.signal.aborted) return;
+
+            const nextStats: LiveStatValues = {};
+            if (dailyRequests.status === "fulfilled") {
+                nextStats.dailyRequests = formatStatCount(dailyRequests.value);
+            }
+            if (liveApps.status === "fulfilled") {
+                nextStats.liveApps = formatStatCount(liveApps.value.length);
+            }
+            setLiveStats(nextStats);
+        }
+
+        void loadStats();
+
+        return () => controller.abort();
+    }, []);
+
+    return liveStats;
+}
+
 function HelloPage() {
+    const liveStats = useLiveStats();
+
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-10 sm:px-6">
             {/* Hero */}
@@ -43,17 +110,28 @@ function HelloPage() {
                     ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-theme-text-soft">
-                    {STATS.map((s, i) => (
-                        <span key={s.label} className="flex items-center gap-2">
-                            {i > 0 && (
-                                <span className="text-theme-text-muted">·</span>
-                            )}
-                            <strong className="font-subheading text-base text-theme-text-strong">
-                                {s.value}
-                            </strong>
-                            {s.label}
-                        </span>
-                    ))}
+                    {STATS.map((s, i) => {
+                        const value = s.liveKey
+                            ? (liveStats[s.liveKey] ?? s.value)
+                            : s.value;
+
+                        return (
+                            <span
+                                key={s.label}
+                                className="flex items-center gap-2"
+                            >
+                                {i > 0 && (
+                                    <span className="text-theme-text-muted">
+                                        ·
+                                    </span>
+                                )}
+                                <strong className="font-subheading text-base text-theme-text-strong">
+                                    {value}
+                                </strong>
+                                {s.label}
+                            </span>
+                        );
+                    })}
                 </div>
             </section>
 

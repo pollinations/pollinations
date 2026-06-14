@@ -6,6 +6,7 @@ import {
     Surface,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Contributors } from "../components/community/Contributors.tsx";
 import {
     COMMUNITY_META,
@@ -13,6 +14,7 @@ import {
     CONTRIBUTE_CARDS,
     HERO,
     HERO_STATS,
+    type HeroStatLiveKey,
     START,
     START_CARDS,
     START_DISCORD,
@@ -22,6 +24,12 @@ import {
     VOTING,
     VOTING_ISSUES,
 } from "../components/community/copy.ts";
+import { loadApps } from "../lib/apps.ts";
+
+const GITHUB_REPO_API =
+    "https://api.github.com/repos/pollinations/pollinations";
+const DISCORD_INVITE_API =
+    "https://discord.com/api/v10/invites/pollinations-ai-885844321461485618?with_counts=true";
 
 export const Route = createFileRoute("/community")({
     head: () => ({
@@ -32,6 +40,79 @@ export const Route = createFileRoute("/community")({
     }),
     component: CommunityPage,
 });
+
+type LiveStatValues = Partial<Record<HeroStatLiveKey, string>>;
+
+function formatStatCount(count: number): string {
+    return new Intl.NumberFormat("en", {
+        maximumFractionDigits: 1,
+        notation: "compact",
+    }).format(count);
+}
+
+async function fetchGitHubStars(signal: AbortSignal): Promise<number> {
+    const res = await fetch(GITHUB_REPO_API, {
+        headers: { Accept: "application/vnd.github+json" },
+        signal,
+    });
+    if (!res.ok) throw new Error("GitHub stars unavailable");
+
+    const data = (await res.json()) as { stargazers_count?: unknown };
+    if (typeof data.stargazers_count !== "number") {
+        throw new Error("GitHub stars missing");
+    }
+    return data.stargazers_count;
+}
+
+async function fetchDiscordMembers(signal: AbortSignal): Promise<number> {
+    const res = await fetch(DISCORD_INVITE_API, { signal });
+    if (!res.ok) throw new Error("Discord members unavailable");
+
+    const data = (await res.json()) as { approximate_member_count?: unknown };
+    if (typeof data.approximate_member_count !== "number") {
+        throw new Error("Discord members missing");
+    }
+    return data.approximate_member_count;
+}
+
+function useLiveHeroStats(): LiveStatValues {
+    const [liveStats, setLiveStats] = useState<LiveStatValues>({});
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        async function loadStats() {
+            const [discordMembers, githubStars, liveApps] =
+                await Promise.allSettled([
+                    fetchDiscordMembers(controller.signal),
+                    fetchGitHubStars(controller.signal),
+                    loadApps(),
+                ]);
+
+            if (controller.signal.aborted) return;
+
+            const nextStats: LiveStatValues = {};
+            if (discordMembers.status === "fulfilled") {
+                nextStats.discordMembers = formatStatCount(
+                    discordMembers.value,
+                );
+            }
+            if (githubStars.status === "fulfilled") {
+                nextStats.githubStars = formatStatCount(githubStars.value);
+            }
+            if (liveApps.status === "fulfilled") {
+                nextStats.liveApps = formatStatCount(liveApps.value.length);
+            }
+            setLiveStats(nextStats);
+        }
+
+        void loadStats();
+
+        return () => controller.abort();
+    }, []);
+
+    return liveStats;
+}
 
 function initials(name: string): string {
     const words = name
@@ -45,6 +126,8 @@ function initials(name: string): string {
 }
 
 function CommunityPage() {
+    const liveHeroStats = useLiveHeroStats();
+
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-10 sm:px-6">
             {/* Hero */}
@@ -61,10 +144,13 @@ function CommunityPage() {
                 </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-theme-text-soft">
                     {HERO_STATS.map((stat, i) => {
+                        const value = stat.liveKey
+                            ? (liveHeroStats[stat.liveKey] ?? stat.value)
+                            : stat.value;
                         const inner = (
                             <>
                                 <strong className="font-subheading text-base text-theme-text-strong">
-                                    {stat.value}
+                                    {value}
                                 </strong>
                                 {stat.label}
                             </>
@@ -104,16 +190,28 @@ function CommunityPage() {
                 intro={<p>{CONTRIBUTE.body}</p>}
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {CONTRIBUTE_CARDS.map((card) => (
-                        <LinkCard key={card.title} href={card.href}>
-                            <h3 className="font-subheading text-base text-theme-text-strong">
-                                {card.title}
-                            </h3>
-                            <p className="text-sm text-theme-text-base">
-                                {card.body}
-                            </p>
-                        </LinkCard>
-                    ))}
+                    {CONTRIBUTE_CARDS.map((card) => {
+                        const Icon = card.icon;
+
+                        return (
+                            <LinkCard key={card.title} href={card.href}>
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        aria-hidden="true"
+                                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-theme-bg-active text-theme-text-strong"
+                                    >
+                                        <Icon className="h-5 w-5" />
+                                    </span>
+                                    <h3 className="font-subheading text-base text-theme-text-strong">
+                                        {card.title}
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-theme-text-base">
+                                    {card.body}
+                                </p>
+                            </LinkCard>
+                        );
+                    })}
                 </div>
 
                 <p className="max-w-2xl text-sm text-theme-text-soft">

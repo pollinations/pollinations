@@ -5,7 +5,7 @@ import {
     Section,
     Surface,
 } from "@pollinations/ui";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Contributors } from "../components/community/Contributors.tsx";
 import {
@@ -156,7 +156,17 @@ function CommunityPage() {
                                         ·
                                     </span>
                                 )}
-                                {stat.href ? (
+                                {stat.liveKey === "liveApps" ? (
+                                    <InlineLink
+                                        as={Link}
+                                        to="/apps"
+                                        external={false}
+                                        showIcon={false}
+                                        className="gap-2 text-sm"
+                                    >
+                                        {inner}
+                                    </InlineLink>
+                                ) : stat.href ? (
                                     <InlineLink
                                         href={stat.href}
                                         className="gap-2 text-sm"

@@ -1,4 +1,10 @@
-import { Button, ExternalLinkButton, Section, Surface } from "@pollinations/ui";
+import {
+    Button,
+    ExternalLinkButton,
+    InlineLink,
+    Section,
+    Surface,
+} from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -116,6 +122,14 @@ function HelloPage() {
                         const value = s.liveKey
                             ? (liveStats[s.liveKey] ?? s.value)
                             : s.value;
+                        const inner = (
+                            <>
+                                <strong className="font-subheading text-base text-theme-text-strong">
+                                    {value}
+                                </strong>
+                                {s.label}
+                            </>
+                        );
 
                         return (
                             <span
@@ -127,10 +141,21 @@ function HelloPage() {
                                         ·
                                     </span>
                                 )}
-                                <strong className="font-subheading text-base text-theme-text-strong">
-                                    {value}
-                                </strong>
-                                {s.label}
+                                {s.liveKey === "liveApps" ? (
+                                    <InlineLink
+                                        as={Link}
+                                        to="/apps"
+                                        external={false}
+                                        showIcon={false}
+                                        className="gap-2 text-sm"
+                                    >
+                                        {inner}
+                                    </InlineLink>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        {inner}
+                                    </span>
+                                )}
                             </span>
                         );
                     })}

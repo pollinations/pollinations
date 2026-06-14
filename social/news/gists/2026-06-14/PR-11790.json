@@ -1,0 +1,34 @@
+{
+  "pr_number": 11790,
+  "title": "fix: match Websim shell width to Playground",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11790",
+  "merged_at": "2026-06-14T08:28:46Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Changes Websim app shell from max-w-6xl to max-w-5xl.\\n- Matches the Playground app container width while keeping the same centered shell behavior.\\n\\nChecks:\\n- npx biome check --write apps/websim/src/App.tsx\\n- npm run build --prefix apps/websim",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Perfectly Proportioned",
+    "blurb": "We've tucked in the Websim app shell to match the Playground's width. Everything feels just a little more cohesive now.",
+    "summary": "Updated the Websim app shell maximum width from 6xl to 5xl to perfectly match the Playground container.",
+    "impact": "Users will notice a slightly narrower, more consistent layout when switching between the Websim app and the Playground.",
+    "keywords": [
+      "ui",
+      "websim",
+      "layout",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee acting as a tailor or carpenter, adjusting the width of a glowing digital window to match another one, using a tiny measuring tape.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, using a measuring tape to adjust the width of a glowing digital window. A chunky retro monitor robot stands nearby giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11790.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, using a measuring tape to adjust the width of a glowing digital window. A chunky retro monitor robot stands nearby giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-06-14T08:29:37.475919+00:00"
+}

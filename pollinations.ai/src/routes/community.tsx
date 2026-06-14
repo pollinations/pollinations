@@ -114,17 +114,6 @@ function useLiveHeroStats(): LiveStatValues {
     return liveStats;
 }
 
-function initials(name: string): string {
-    const words = name
-        .replace(/[^a-zA-Z0-9 ]/g, " ")
-        .trim()
-        .split(/\s+/);
-    if (words.length >= 2) {
-        return (words[0][0] + words[1][0]).toUpperCase();
-    }
-    return (words[0] ?? name).slice(0, 2).toUpperCase();
-}
-
 function CommunityPage() {
     const liveHeroStats = useLiveHeroStats();
 
@@ -280,20 +269,38 @@ function CommunityPage() {
                 framed
                 intro={<p>{SUPPORTERS.subtitle}</p>}
             >
-                <div className="grid grid-cols-3 gap-x-6 gap-y-8 sm:grid-cols-4 md:grid-cols-6">
+                <div
+                    data-theme="accent"
+                    className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
+                >
                     {SUPPORTERS_LIST.map((supporter) => (
-                        <LinkCard
+                        <a
                             key={supporter.name}
                             href={supporter.url}
-                            surfaceClassName="items-center gap-2 p-3 pr-8 text-center"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-xl bg-surface-opaque/80 p-4 text-center shadow-well outline-none transition hover:-translate-y-0.5 hover:bg-surface-opaque/95 focus-visible:ring-2 focus-visible:ring-theme-border"
                         >
-                            <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-theme-bg-active font-heading text-lg text-theme-text-strong">
-                                {initials(supporter.name)}
+                            <span className="flex h-16 w-full items-center justify-center text-ink-900">
+                                <span
+                                    aria-hidden="true"
+                                    className="block h-12 w-12 bg-current transition group-hover:scale-105"
+                                    style={{
+                                        maskImage: `url(${supporter.logo})`,
+                                        WebkitMaskImage: `url(${supporter.logo})`,
+                                        maskRepeat: "no-repeat",
+                                        WebkitMaskRepeat: "no-repeat",
+                                        maskPosition: "center",
+                                        WebkitMaskPosition: "center",
+                                        maskSize: "contain",
+                                        WebkitMaskSize: "contain",
+                                    }}
+                                />
                             </span>
                             <span className="text-[10px] font-medium leading-tight text-theme-text-soft">
                                 {supporter.name}
                             </span>
-                        </LinkCard>
+                        </a>
                     ))}
                 </div>
             </Section>

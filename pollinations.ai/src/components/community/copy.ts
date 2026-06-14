@@ -181,22 +181,60 @@ export const SUPPORTERS = {
     subtitle: "We're grateful to the partners who back the platform.",
 };
 
-export const SUPPORTERS_LIST: { name: string; url: string }[] = [
-    { name: "Perplexity AI", url: "https://www.perplexity.ai/" },
-    { name: "AWS Activate", url: "https://aws.amazon.com/" },
-    { name: "io.net", url: "https://io.net/" },
-    { name: "BytePlus", url: "https://www.byteplus.com/" },
-    { name: "Google Cloud for Startups", url: "https://cloud.google.com/" },
+export const SUPPORTERS_LIST: { name: string; url: string; logo: string }[] = [
+    {
+        name: "Perplexity AI",
+        url: "https://www.perplexity.ai/",
+        logo: "/supporters/perplexity.svg",
+    },
+    {
+        name: "AWS Activate",
+        url: "https://aws.amazon.com/",
+        logo: "/supporters/aws.svg",
+    },
+    {
+        name: "io.net",
+        url: "https://io.net/",
+        logo: "/supporters/io-net.svg",
+    },
+    {
+        name: "BytePlus",
+        url: "https://www.byteplus.com/",
+        logo: "/supporters/byteplus.svg",
+    },
+    {
+        name: "Google Cloud for Startups",
+        url: "https://cloud.google.com/",
+        logo: "/supporters/google-cloud.svg",
+    },
     {
         name: "NVIDIA Inception",
         url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
+        logo: "/supporters/nvidia.svg",
     },
-    { name: "Azure (MS for Startups)", url: "https://azure.microsoft.com/" },
+    {
+        name: "Azure (MS for Startups)",
+        url: "https://azure.microsoft.com/",
+        logo: "/supporters/azure.svg",
+    },
     {
         name: "Cloudflare",
         url: "https://developers.cloudflare.com/workers-ai/",
+        logo: "/supporters/cloudflare.svg",
     },
-    { name: "Scaleway", url: "https://www.scaleway.com/" },
-    { name: "Modal", url: "https://modal.com/" },
-    { name: "Nebius", url: "https://nebius.com/" },
+    {
+        name: "Scaleway",
+        url: "https://www.scaleway.com/",
+        logo: "/supporters/scaleway.svg",
+    },
+    {
+        name: "Modal",
+        url: "https://modal.com/",
+        logo: "/supporters/modal.svg",
+    },
+    {
+        name: "Nebius",
+        url: "https://nebius.com/",
+        logo: "/supporters/nebius.svg",
+    },
 ];

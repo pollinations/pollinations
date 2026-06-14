@@ -1,0 +1,35 @@
+{
+  "pr_number": 11789,
+  "title": "chore: update app metrics 2026-06-14",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11789",
+  "merged_at": "2026-06-14T05:46:20Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the greenhouse",
+    "blurb": "Our automated bots just finished their daily rounds, updating health metrics and stats for all the community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics in the repository.",
+    "impact": "Ensures the community app directory reflects the latest health and usage data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot walking through a digital greenhouse, checking on glowing code-plants with a clipboard to represent automated health checks.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot walking through a digital greenhouse filled with glowing code-plants. The robot holds a tiny clipboard checking metrics. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11789.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot walking through a digital greenhouse filled with glowing code-plants. The robot holds a tiny clipboard checking metrics. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-14T05:47:21.681285+00:00"
+}

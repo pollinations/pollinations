@@ -30,7 +30,6 @@ import example1Url from "../images/example1.png";
 import example2Url from "../images/example2.png";
 import example3Url from "../images/example3.png";
 import example4Url from "../images/example4.png";
-import originalComicUrl from "../images/original-catgpt.png";
 import { ENTER_URL } from "./config";
 
 const ORIGINAL_CATGPT =
@@ -393,21 +392,24 @@ export function App() {
             data-theme="accent"
             className="catgpt-app relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
         >
-            {!isEmbedded && (
-                <div className="fixed top-4 right-4 left-4 z-40 flex items-center justify-end gap-2">
-                    <ColorModeToggle />
-                    <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
-                </div>
-            )}
+            <div
+                className={cn(
+                    "fixed right-4 z-40 flex items-center gap-2",
+                    isEmbedded ? "top-2" : "top-4",
+                )}
+            >
+                {!isEmbedded && <ColorModeToggle />}
+                <AppUserMenu dashboardHref={ENTER_URL} />
+            </div>
 
             <main
                 className={cn(
                     "mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-6 sm:px-6",
-                    isEmbedded ? "pt-6" : "pt-16",
+                    isEmbedded ? "pt-2" : "pt-16",
                 )}
             >
-                <section className="flex flex-wrap items-end justify-between gap-5">
-                    <div className="flex min-w-0 flex-1 basis-64 flex-col gap-3">
+                <section className="flex flex-col gap-3">
+                    {!isEmbedded && (
                         <Heading
                             as="h1"
                             size="title"
@@ -415,32 +417,20 @@ export function App() {
                         >
                             CatGPT
                         </Heading>
-                        <p className="max-w-2xl text-base text-theme-text-base">
-                            Ask a question. Get a cat response.
-                        </p>
-                        <p className="max-w-2xl text-sm text-theme-text-muted">
-                            Original comic by{" "}
-                            <InlineLink
-                                href="https://www.instagram.com/missfitcomics/"
-                                className="text-sm"
-                            >
-                                @missfitcomics
-                            </InlineLink>{" "}
-                            (Tanika Godbole).
-                        </p>
-                    </div>
-                    <a
-                        href="https://www.instagram.com/missfitcomics/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full max-w-52 shrink-0 overflow-hidden rounded-lg bg-surface-opaque shadow-well"
-                    >
-                        <img
-                            src={originalComicUrl}
-                            alt="Original CatGPT comic by @missfitcomics"
-                            className="aspect-square w-full rounded-lg object-cover"
-                        />
-                    </a>
+                    )}
+                    <p className="max-w-2xl text-base text-theme-text-base">
+                        Ask a question. Get a cat response.
+                    </p>
+                    <p className="max-w-2xl text-sm text-theme-text-muted">
+                        Original comic by{" "}
+                        <InlineLink
+                            href="https://www.instagram.com/missfitcomics/"
+                            className="text-sm"
+                        >
+                            @missfitcomics
+                        </InlineLink>{" "}
+                        (Tanika Godbole).
+                    </p>
                 </section>
 
                 {!isHydrated && (

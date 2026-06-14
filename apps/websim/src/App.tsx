@@ -21,7 +21,6 @@ import {
     AppUserMenu,
     isEmbeddedContext,
 } from "@pollinations/ui/app-user-menu/sdk";
-import { useReportEmbedHeight } from "@pollinations/ui/embed";
 import { useEffect, useRef, useState } from "react";
 import {
     DEFAULT_MODEL,
@@ -142,7 +141,6 @@ export function App() {
     const { apiKey, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const isEmbedded = isEmbeddedContext();
-    useReportEmbedHeight(isEmbedded);
     const [prompt, setPrompt] = useState(INITIAL_PROMPT);
     const [model, setModel] = useState<WebsimModelId>(DEFAULT_MODEL);
     const [html, setHtml] = useState("");
@@ -153,6 +151,26 @@ export function App() {
     useEffect(() => {
         return () => activeRequest.current?.abort();
     }, []);
+
+    // Report content height to the embedding host (/play) so it can size the
+    // iframe to fit — no inner scroll. Message: { source, type, value }.
+    useEffect(() => {
+        if (!isEmbedded || window.parent === window.self) return;
+        const report = () => {
+            window.parent.postMessage(
+                {
+                    source: "polli-embed",
+                    type: "height",
+                    value: Math.ceil(document.documentElement.scrollHeight),
+                },
+                "*",
+            );
+        };
+        const observer = new ResizeObserver(report);
+        observer.observe(document.body);
+        report();
+        return () => observer.disconnect();
+    }, [isEmbedded]);
 
     async function generate() {
         const trimmedPrompt = prompt.trim();

@@ -10,6 +10,8 @@ import { Link, useMatchRoute } from "@tanstack/react-router";
 import { ENTER_HREF, NAV_ITEMS } from "./links.ts";
 import { useHideOnScroll } from "./useHideOnScroll.ts";
 
+const headerNavItemClass = "polli:font-bold";
+
 export function Header() {
     const hidden = useHideOnScroll("app-scroll");
     const matchRoute = useMatchRoute();
@@ -53,6 +55,7 @@ export function Header() {
                                     fuzzy: !item.exact,
                                 }),
                             )}
+                            className={headerNavItemClass}
                         >
                             {item.label}
                         </NavItem>
@@ -66,6 +69,7 @@ export function Header() {
                         target="_blank"
                         rel="noopener noreferrer"
                         icon={AppIcon}
+                        className={headerNavItemClass}
                     >
                         <span className="hidden sm:inline">Dashboard</span>
                         <ExternalLinkIcon className="h-4 w-4 shrink-0 opacity-60" />

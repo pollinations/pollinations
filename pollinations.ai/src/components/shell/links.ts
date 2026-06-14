@@ -14,10 +14,10 @@ import { ENTER_URL } from "../../config.ts";
  * literals so TanStack `<Link>`'s typed `to` accepts them. `exact` only for home.
  */
 export const NAV_ITEMS = [
-    { to: "/", label: "hello", exact: true },
-    { to: "/play", label: "play", exact: false },
-    { to: "/apps", label: "apps", exact: false },
-    { to: "/community", label: "community", exact: false },
+    { to: "/", label: "Hello", exact: true },
+    { to: "/play", label: "Play", exact: false },
+    { to: "/apps", label: "Apps", exact: false },
+    { to: "/community", label: "Community", exact: false },
 ] as const;
 
 export const FOOTER_LEGAL = [

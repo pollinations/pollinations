@@ -1,6 +1,6 @@
-import { ButtonGroup, cn, TabButton } from "@pollinations/ui";
+import { ButtonGroup, cn, TabButton, useColorMode } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const PLAY_APPS = [
     {
@@ -81,13 +81,18 @@ function PlayRoute() {
 
 /**
  * Embedded apps post their content height so the iframe grows to fit (no inner
- * scroll). Small local message contract shared with the apps:
- * `{ source: "polli-embed", type: "height", value: <px> }`. Until a message
- * arrives we fall back to a fixed viewport-based height — so apps that don't
- * emit behave as before. Keyed by app id so switching apps resets cleanly.
+ * scroll), and the host pushes the site's current color mode back so an
+ * already-open app re-themes live. Small local message contract shared with the
+ * apps: `{ source: "polli-embed", type: "height" | "theme", value }`. Until a
+ * height message arrives we fall back to a fixed viewport-based height — so apps
+ * that don't emit behave as before. Keyed by app id so switching apps resets
+ * cleanly.
  */
 function AppFrame({ app }: { app: (typeof PLAY_APPS)[number] }) {
     const [reportedHeight, setReportedHeight] = useState<number | null>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const { mode } = useColorMode();
+    const appOrigin = new URL(app.src).origin;
 
     useEffect(() => {
         const onMessage = (event: MessageEvent) => {
@@ -113,10 +118,27 @@ function AppFrame({ app }: { app: (typeof PLAY_APPS)[number] }) {
         return () => window.removeEventListener("message", onMessage);
     }, []);
 
+    // Push the site's current theme into the embed. Initial paint is already
+    // handled by the shared cookie; this keeps an open app in sync when the
+    // user toggles. Posted to the app's own origin only (dropped after the app
+    // navigates the iframe to a different origin, e.g. the auth screen).
+    const postTheme = useCallback(() => {
+        iframeRef.current?.contentWindow?.postMessage(
+            { source: "polli-embed", type: "theme", value: mode },
+            appOrigin,
+        );
+    }, [mode, appOrigin]);
+
+    useEffect(() => {
+        postTheme();
+    }, [postTheme]);
+
     return (
         <iframe
+            ref={iframeRef}
             title={app.title}
             src={app.src}
+            onLoad={postTheme}
             className={cn(
                 "block w-full border-0 bg-app-bg",
                 reportedHeight === null &&

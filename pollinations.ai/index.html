@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en" class="polli-ui-root">
   <head>
-    <!-- Set color mode before paint to avoid a flash of light. Mirrors @pollinations/ui ColorModeToggle (STORAGE_KEY = polli-color-mode). -->
+    <!-- Set color mode before paint to avoid a flash of light. Reads the
+         cross-subdomain cookie first, then localStorage (both written by
+         @pollinations/ui ColorModeToggle; key = polli-color-mode). -->
     <script>
       (() => {
         try {
-          const stored = localStorage.getItem("polli-color-mode");
+          const cookie = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1];
+          const stored = cookie || localStorage.getItem("polli-color-mode");
           const dark =
             stored === "dark" ||
             (stored !== "light" &&

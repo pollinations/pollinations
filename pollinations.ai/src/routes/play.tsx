@@ -48,16 +48,14 @@ function PlayRoute() {
         <div className="mx-auto flex w-full max-w-5xl flex-col bg-app-bg py-10">
             <section className="flex flex-col gap-5 px-4 sm:px-6">
                 <div className="flex flex-col gap-3">
-                    <h1 className="flex flex-wrap gap-x-3 font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
-                        <span>Load</span>
-                        <span>app</span>
+                    <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
+                        Play
                     </h1>
                     <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                        Open a focused Pollinations experience inside the Play
-                        workspace.
+                        Run a Pollinations app live, right here.
                     </p>
                 </div>
-                <ButtonGroup aria-label="Load app">
+                <ButtonGroup aria-label="Play">
                     {PLAY_APPS.map((playApp) => (
                         <TabButton
                             key={playApp.id}

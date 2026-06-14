@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "generated_at": "2026-06-14T07:32:39.772782+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/reddit.jpg"
+    }
+  ],
+  "title": "13 PRs merged: model provider migrations, UI glow-up, and API fixes",
+  "text": "Merged 13 PRs this week. Mostly playing musical chairs with model providers and cleaning up the API and dashboard.\n\nOn the infra side, we moved Wan and Qwen image/video models off Alibaba and routed them through Replicate. Qwen-coder-large is now hitting OpenRouter. Also wired up Claude Fable 5 via Bedrock and Kimi k2.7 code.\n\nAPI routing got some much-needed sanity checks. If you hit a content-policy rejection, you will actually get a 422 now instead of a generic 500 error. Also fixed a bug where stream/json boolean query params on text routes were being parsed incorrectly, and patched wan-pro image-to-video failing with 500s.\n\nThe dashboard got a visual overhaul. We moved to a single-accent theme with canonical tokens and a borderless UI. It now uses the live model catalog directly. If you want to use the UI components without a build step, we shipped a @pollinations/ui browser bundle. Also restored the copy model slug button on the models page because removing it was annoying.\n\nFinally, Websim is now BYOP compliant, and we added Wikimind to the learn section.\n\nFull changelog and code are in the [repo](https://github.com/pollinations/pollinations)."
+}

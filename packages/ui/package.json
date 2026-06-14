@@ -31,6 +31,11 @@
       "import": "./dist/app-user-menu/sdk.js",
       "require": "./dist/app-user-menu/sdk.cjs"
     },
+    "./embed": {
+      "types": "./dist/embed/index.d.ts",
+      "import": "./dist/embed/index.js",
+      "require": "./dist/embed/index.cjs"
+    },
     "./gen": {
       "types": "./dist/gen/index.d.ts",
       "import": "./dist/gen/index.js",

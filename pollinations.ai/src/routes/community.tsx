@@ -124,12 +124,14 @@ function CommunityPage() {
                 <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                     {HERO.title}
                 </h1>
-                <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                    {HERO.subtitlePrefix}
-                    <strong className="font-semibold text-theme-text-strong">
-                        {HERO.subtitleBold}
-                    </strong>
-                    {HERO.subtitleSuffix}
+                <p className="flex flex-col font-body text-lg text-theme-text-base">
+                    <span>
+                        {HERO.subtitlePrefix}
+                        <strong className="font-semibold text-theme-text-strong">
+                            {HERO.subtitleBold}
+                        </strong>
+                    </span>
+                    <span>{HERO.subtitleSuffix.trim()}</span>
                 </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-theme-text-soft">
                     {HERO_STATS.map((stat, i) => {

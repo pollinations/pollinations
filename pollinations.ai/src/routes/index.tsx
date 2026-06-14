@@ -95,12 +95,14 @@ function HelloPage() {
                 <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                     {HERO.title}
                 </h1>
-                <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                    {HERO.bodyPrefix}
-                    <strong className="font-semibold text-theme-text-strong">
-                        {HERO.bodyBold}
-                    </strong>
-                    {HERO.bodySuffix}
+                <p className="flex flex-col font-body text-lg text-theme-text-base">
+                    <span>{HERO.bodyPrefix.trim()}</span>
+                    <span>
+                        <strong className="font-semibold text-theme-text-strong">
+                            {HERO.bodyBold}
+                        </strong>
+                        {HERO.bodySuffix}
+                    </span>
                 </p>
                 <div className="flex flex-wrap gap-3">
                     {HERO.ctas.map((c) => (

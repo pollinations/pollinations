@@ -73,12 +73,14 @@ function AppsPage() {
                     <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
                         {APPS_COPY.title}
                     </h1>
-                    <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                        {APPS_COPY.subtitlePrefix}
-                        <strong className="font-semibold text-theme-text-strong">
-                            {APPS_COPY.subtitleBold}
-                        </strong>
-                        {APPS_COPY.subtitleSuffix}
+                    <p className="flex flex-col font-body text-lg text-theme-text-base">
+                        <span>
+                            {APPS_COPY.subtitlePrefix}
+                            <strong className="font-semibold text-theme-text-strong">
+                                {APPS_COPY.subtitleBold}
+                            </strong>
+                        </span>
+                        <span>{APPS_COPY.subtitleSuffix.trim()}</span>
                     </p>
                 </div>
 

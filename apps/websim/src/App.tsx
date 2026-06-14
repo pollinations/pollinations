@@ -221,30 +221,37 @@ export function App() {
             data-theme="accent"
             className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
         >
-            <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+            <div
+                className={cn(
+                    "fixed right-4 z-40 flex items-center gap-2",
+                    isEmbedded ? "top-2" : "top-4",
+                )}
+            >
                 {!isEmbedded && <ColorModeToggle />}
-                <AppUserMenu dashboardHref={ENTER_URL} hiddenWhenEmbedded />
+                <AppUserMenu dashboardHref={ENTER_URL} />
             </div>
 
             <main
                 className={cn(
                     "mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pb-5 sm:px-6",
-                    isEmbedded ? "pt-5" : "pt-16",
+                    isEmbedded ? "pt-2" : "pt-16",
                 )}
             >
                 <section className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-theme-text-strong">
-                            <AppIcon className="h-6 w-6" />
-                        </span>
-                        <Heading
-                            as="h1"
-                            size="title"
-                            className="websim-title m-0 text-theme-text-strong"
-                        >
-                            Websim
-                        </Heading>
-                    </div>
+                    {!isEmbedded && (
+                        <div className="flex items-center gap-3">
+                            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-theme-text-strong">
+                                <AppIcon className="h-6 w-6" />
+                            </span>
+                            <Heading
+                                as="h1"
+                                size="title"
+                                className="websim-title m-0 text-theme-text-strong"
+                            >
+                                Websim
+                            </Heading>
+                        </div>
+                    )}
                     <Text as="p" className="m-0 max-w-3xl">
                         Generate shareable single-file web pages with
                         Pollinations.

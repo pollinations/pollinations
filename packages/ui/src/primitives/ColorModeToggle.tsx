@@ -9,8 +9,15 @@ import { MoonIcon, SunIcon } from "./icons/index.tsx";
  * `useColorMode()` consumer, so duplicate toggles never desync and changes
  * propagate across tabs.
  *
+ * The chosen mode is persisted to BOTH a cookie scoped to the registrable
+ * domain — so every `*.pollinations.ai` page reads the same value, including
+ * cross-origin embeds like the enter auth screen shown inside /play — AND
+ * localStorage, a same-origin mirror that powers the cross-tab `storage` sync
+ * below and migrates existing users. Read priority: cookie → localStorage →
+ * system preference.
+ *
  * Host apps should set the initial class pre-paint (a tiny inline script in the
- * document head, reading the same STORAGE_KEY) to avoid a flash of light before
+ * document head, reading the same cookie/key) to avoid a flash of light before
  * React mounts; this store is the source of truth after hydration.
  *
  * Side-effect-free on import: the <html> sync and the cross-tab listener are
@@ -30,6 +37,45 @@ function readStored(): ColorMode | null {
     }
 }
 
+// Persist the mode one year; refreshed on every write.
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+/**
+ * Cookie domain for cross-subdomain sharing: the registrable domain (last two
+ * hostname labels), so e.g. `enter.pollinations.ai` and the website share one
+ * value. Returns null for localhost / bare IPs (host-only cookie — already
+ * shared across ports). Every host we serve uses a single-label TLD (`.ai`),
+ * so last-two-labels equals eTLD+1 — no public-suffix list needed.
+ */
+function cookieDomain(): string | null {
+    if (typeof location === "undefined") return null;
+    const host = location.hostname;
+    if (host === "localhost" || /^[0-9.]+$/.test(host) || !host.includes(".")) {
+        return null;
+    }
+    return host.split(".").slice(-2).join(".");
+}
+
+function readCookie(): ColorMode | null {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(
+        /(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/,
+    );
+    return match ? (match[1] as ColorMode) : null;
+}
+
+function writeCookie(mode: ColorMode): void {
+    if (typeof document === "undefined" || typeof location === "undefined") {
+        return;
+    }
+    const domain = cookieDomain();
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    // biome-ignore lint/suspicious/noDocumentCookie: first-party theme key; Cookie Store API lacks Firefox/older-Safari support
+    document.cookie = `${STORAGE_KEY}=${mode}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${
+        domain ? `; Domain=${domain}` : ""
+    }${secure}`;
+}
+
 function systemPrefersDark(): boolean {
     return (
         typeof window !== "undefined" &&
@@ -38,7 +84,7 @@ function systemPrefersDark(): boolean {
 }
 
 let current: ColorMode =
-    readStored() ?? (systemPrefersDark() ? "dark" : "light");
+    readCookie() ?? readStored() ?? (systemPrefersDark() ? "dark" : "light");
 const listeners = new Set<() => void>();
 
 function apply(): void {
@@ -80,6 +126,13 @@ function handleStorage(event: StorageEvent): void {
 
 function subscribe(listener: () => void): () => void {
     if (listeners.size === 0 && typeof window !== "undefined") {
+        // Migrate existing users: seed the cross-subdomain cookie from a
+        // same-origin localStorage preference so embeds share it without a
+        // re-toggle. No-op when the cookie already exists or only a system
+        // fallback is active (readStored() returns null).
+        if (!readCookie() && readStored()) {
+            writeCookie(current);
+        }
         apply(); // safety-net sync once a consumer mounts
         window.addEventListener("storage", handleStorage);
     }
@@ -100,10 +153,17 @@ function getServerSnapshot(): ColorMode {
     return "light";
 }
 
-function setColorMode(mode: ColorMode): void {
+/**
+ * Set the color mode programmatically. Updates the shared store (so every
+ * `useColorMode()` consumer re-renders), flips the `.dark` class, and persists
+ * to the cross-subdomain cookie + the localStorage mirror. Exported so embedded
+ * apps can apply a theme pushed by their host (see /play postMessage contract).
+ */
+export function setColorMode(mode: ColorMode): void {
     if (mode === current) return;
     current = mode;
     apply();
+    writeCookie(mode);
     try {
         localStorage.setItem(STORAGE_KEY, mode);
     } catch {

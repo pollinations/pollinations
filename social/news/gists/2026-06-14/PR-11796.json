@@ -1,0 +1,35 @@
+{
+  "pr_number": 11796,
+  "title": "fix: inline embed-height in playground and websim",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11796",
+  "merged_at": "2026-06-14T14:46:01Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "#11795 merged playground + websim importing `@pollinations/ui/embed`, but that module isn't on main (it only lives in the still-open #11792) — so both apps currently fail to build on main.\n\nThis drops the package import and inlines the height reporter directly in each app: a small `useEffect` that posts `{ source: \"polli-embed\", type: \"height\", value }` to the parent when embedded, via a `ResizeObserver` on `document.body`. The apps are now self-contained — no shared-package dependency for this.\n\n- Fixes the broken main build for `apps/playground` and `apps/websim`.\n- Behavior unchanged: `/play` still auto-sizes the iframe (the host listener lives in #11792).\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Unbreaking the build",
+    "blurb": "Fixed a build issue in the playground and websim apps by inlining their embed height reporters. The hive is humming smoothly again!",
+    "summary": "Fixed a build failure on main by replacing a missing `@pollinations/ui/embed` package dependency with an inlined `ResizeObserver` height reporter in the playground and websim apps.",
+    "impact": "Playground and websim apps now build successfully on main while maintaining their auto-sizing iframe behavior.",
+    "keywords": [
+      "bug-fix",
+      "build",
+      "playground",
+      "websim",
+      "embed"
+    ],
+    "visual_concept": "The bee mascot acting as a mechanic or builder, fixing a broken block or pipe to represent fixing the build.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, using a wrench to fix a glowing lime green (#ecf874) building block. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11796.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, using a wrench to fix a glowing lime green (#ecf874) building block. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-14T14:47:00.712389+00:00"
+}

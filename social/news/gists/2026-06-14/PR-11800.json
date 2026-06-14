@@ -1,0 +1,35 @@
+{
+  "pr_number": 11800,
+  "title": "feat: share theme across *.pollinations.ai subdomains",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11800",
+  "merged_at": "2026-06-14T21:01:02Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Theme choice didn't cross the origin boundary: the enter auth screen embedded in `/play` reads its own origin's `localStorage`, so on a dark site with a light device it rendered light (the \"auth screen ignores dark mode on mobile\" report).\n\n- Persist color mode to a cookie scoped to the registrable domain (`Domain=pollinations.ai`) + a localStorage mirror, so every `*.pollinations.ai` page — website, playground, websim, react, model-monitor, and the embedded enter auth screen — reads one shared value. Same-site, so it works inside the iframe (no third-party storage partitioning).\n- Pre-paint scripts read the cookie first → no flash. Existing users migrate automatically (cookie seeded from their localStorage on first mount).\n- Embedded apps live-update via the existing `polli-embed` postMessage contract (`type: \"theme\"`); `setColorMode` is now exported for that.\n\nBackward compatible — readers fall back to localStorage and listeners stay inert until a host posts — so this lands before the website `/play` host slice (pr-05) with no broken-main risk.\n\nVerified: real-browser pre-paint (cookie beats system, system fallback intact), `cookieDomain()` across all hosts, package + both apps typecheck, biome clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One theme to rule them all",
+    "blurb": "Your dark mode preference now syncs perfectly across all pollinations.ai subdomains. No more getting blinded by a light-themed auth screen when you're coding in the dark!",
+    "summary": "Theme preferences are now persisted to a domain-scoped cookie, ensuring dark and light mode choices sync seamlessly across all *.pollinations.ai subdomains and embedded iframes.",
+    "impact": "Users will no longer experience theme mismatches or flashes of unstyled content when navigating between the main site, playground, and auth screens.",
+    "keywords": [
+      "ui",
+      "ux",
+      "theme",
+      "dark mode",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee holding a black-and-white cookie (representing the domain cookie used for the theme), with the background split between light and dark mode.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny cool sunglasses, holding a large half-black, half-white cookie. The background is split perfectly down the middle, with a bright pastel peach on one side and a deep dark purple (#110518) on the other. Soft lime green (#ecf874) glowing accents around the bee. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-14/PR-11800.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny cool sunglasses, holding a large half-black, half-white cookie. The background is split perfectly down the middle, with a bright pastel peach on one side and a deep dark purple (#110518) on the other. Soft lime green (#ecf874) glowing accents around the bee. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-14T21:02:02.435541+00:00"
+}

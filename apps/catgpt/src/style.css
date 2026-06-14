@@ -1,0 +1,18 @@
+@import "@pollinations/ui/app.css";
+
+.catgpt-app {
+    --polli-hue: 350;
+    --polli-nudge: -0.018;
+}
+
+body.polli-ui-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body.polli-ui-shell #root {
+    height: auto;
+    min-height: 100dvh;
+}

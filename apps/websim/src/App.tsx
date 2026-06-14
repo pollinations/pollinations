@@ -21,6 +21,7 @@ import {
     AppUserMenu,
     isEmbeddedContext,
 } from "@pollinations/ui/app-user-menu/sdk";
+import { useReportEmbedHeight } from "@pollinations/ui/embed";
 import { useEffect, useRef, useState } from "react";
 import {
     DEFAULT_MODEL,
@@ -141,6 +142,7 @@ export function App() {
     const { apiKey, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const isEmbedded = isEmbeddedContext();
+    useReportEmbedHeight(isEmbedded);
     const [prompt, setPrompt] = useState(INITIAL_PROMPT);
     const [model, setModel] = useState<WebsimModelId>(DEFAULT_MODEL);
     const [html, setHtml] = useState("");
@@ -219,7 +221,10 @@ export function App() {
     return (
         <div
             data-theme="accent"
-            className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
+            className={cn(
+                "relative flex flex-col bg-app-bg font-body text-theme-text-base",
+                !isEmbedded && "min-h-dvh",
+            )}
         >
             <div
                 className={cn(

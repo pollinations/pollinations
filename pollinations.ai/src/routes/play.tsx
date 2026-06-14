@@ -1,5 +1,7 @@
-import { ButtonGroup, TabButton } from "@pollinations/ui";
+import { ButtonGroup, cn, TabButton } from "@pollinations/ui";
+import { parseEmbedHeightMessage } from "@pollinations/ui/embed";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 const PLAY_APPS = [
     {
@@ -15,6 +17,11 @@ const PLAY_APPS = [
         src: "https://websim.pollinations.ai/?embed=1",
     },
 ] as const;
+
+/** Origins allowed to drive the iframe height via the embed contract. */
+const ALLOWED_APP_ORIGINS = PLAY_APPS.map((app) => new URL(app.src).origin);
+/** Safety cap so a misbehaving app can't request an unbounded iframe. */
+const MAX_IFRAME_HEIGHT = 20000;
 
 type PlayAppId = (typeof PLAY_APPS)[number]["id"];
 type PlaySearch = {
@@ -68,13 +75,45 @@ function PlayRoute() {
                 </ButtonGroup>
             </section>
 
-            <iframe
-                key={selectedApp.id}
-                title={selectedApp.title}
-                src={selectedApp.src}
-                className="block h-[calc(100vh-10rem)] min-h-[760px] w-full border-0 bg-app-bg"
-                allow="clipboard-read; clipboard-write; fullscreen"
-            />
+            <AppFrame key={selectedApp.id} app={selectedApp} />
         </div>
+    );
+}
+
+/**
+ * Embedded apps that opt into the embed contract report their content height so
+ * the iframe grows to fit (no inner scroll). Until a message arrives we fall
+ * back to a fixed viewport-based height — so apps that don't emit yet behave
+ * exactly as before. Keyed by app id in the parent, so switching apps remounts
+ * this and resets the height cleanly.
+ */
+function AppFrame({ app }: { app: (typeof PLAY_APPS)[number] }) {
+    const [reportedHeight, setReportedHeight] = useState<number | null>(null);
+
+    useEffect(() => {
+        const onMessage = (event: MessageEvent) => {
+            const height = parseEmbedHeightMessage(event, ALLOWED_APP_ORIGINS);
+            if (height !== null) {
+                setReportedHeight(Math.min(height, MAX_IFRAME_HEIGHT));
+            }
+        };
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, []);
+
+    return (
+        <iframe
+            title={app.title}
+            src={app.src}
+            className={cn(
+                "block w-full border-0 bg-app-bg",
+                reportedHeight === null &&
+                    "h-[calc(100vh-10rem)] min-h-[760px]",
+            )}
+            style={
+                reportedHeight !== null ? { height: reportedHeight } : undefined
+            }
+            allow="clipboard-read; clipboard-write; fullscreen"
+        />
     );
 }

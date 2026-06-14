@@ -123,6 +123,7 @@ export async function genericOpenAIClient(
         const validatedMessages = validateAndNormalizeMessages(messages);
         const {
             additionalHeaders: _additionalHeaders,
+            dynamicModelDef: _dynamicModelDef,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,

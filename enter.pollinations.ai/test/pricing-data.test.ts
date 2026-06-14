@@ -60,6 +60,37 @@ test("catalog prices format text rates through formatPricePer1M", () => {
     });
 });
 
+test("catalog prices keep community models in their own category", () => {
+    const [communityModel] = getModelPricesFromCatalog([
+        {
+            name: "community/voodoohop/openai",
+            category: "community",
+            brand: "Community",
+            title: "OpenAI relay",
+            description: "OpenAI relay",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.0000001",
+                completionTextTokens: "0.0000002",
+            },
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            capabilities: [],
+        },
+    ]);
+
+    expect(communityModel).toMatchObject({
+        name: "community/voodoohop/openai",
+        type: "community",
+        displayName: "OpenAI relay",
+        brand: "Community",
+        promptTextPrice: "0.1",
+        completionTextPrice: "0.2",
+        capabilities: [],
+    });
+    expect(communityModel.description).toBeUndefined();
+});
+
 test("model info exposes built-in model capabilities without raw implementation flags", () => {
     const geminiSearch = getTextModelsInfo().find(
         (model) => model.name === "gemini-search",

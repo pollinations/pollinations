@@ -4,7 +4,8 @@ export type ModelCategory =
     | "audio"
     | "video"
     | "embedding"
-    | "realtime";
+    | "realtime"
+    | "community";
 
 export type ModelCapability =
     | "tool_calling"

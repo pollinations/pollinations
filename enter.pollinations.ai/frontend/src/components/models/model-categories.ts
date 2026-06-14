@@ -12,7 +12,8 @@ export type ModelCategoryLabel =
     | "Video"
     | "Audio"
     | "Realtime"
-    | "Embedding";
+    | "Embedding"
+    | "Community";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelCategory;
@@ -28,6 +29,7 @@ const CATEGORY_ORDER: ModelCategory[] = [
     "audio",
     "realtime",
     "embedding",
+    "community",
 ];
 
 const CATEGORY_LABELS: Record<ModelCategory, ModelCategoryLabel> = {
@@ -37,6 +39,7 @@ const CATEGORY_LABELS: Record<ModelCategory, ModelCategoryLabel> = {
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
+    community: "Community",
 };
 
 const CATEGORY_MODALITIES: Record<
@@ -49,6 +52,7 @@ const CATEGORY_MODALITIES: Record<
     Audio: "audio",
     Realtime: "realtime",
     Embedding: "embeddings",
+    Community: "text",
 };
 
 const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [

@@ -245,9 +245,7 @@ async function deductUserBalance(
     postDeductionPackBalance: number | null;
 }> {
     try {
-        const isPaidOnly = modelResolved
-            ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
-            : false;
+        const isPaidOnly = isStaticPaidOnlyModel(modelResolved);
 
         const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
@@ -283,5 +281,14 @@ async function deductUserBalance(
             error: error instanceof Error ? error.message : String(error),
         });
         throw error;
+    }
+}
+
+function isStaticPaidOnlyModel(modelResolved: string | undefined): boolean {
+    if (!modelResolved) return false;
+    try {
+        return getModelDefinition(modelResolved as ModelName).paidOnly ?? false;
+    } catch {
+        return false;
     }
 }

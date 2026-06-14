@@ -19,6 +19,7 @@ export interface ChatMessage {
 export interface TransformOptions {
     model?: string;
     modelDef?: unknown;
+    dynamicModelDef?: boolean;
     modelConfig?: Record<string, unknown>;
     requestedModel?: string;
     stream?: boolean;

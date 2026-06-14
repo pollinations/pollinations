@@ -1,4 +1,5 @@
 import { Button, DownloadIcon, Section } from "@pollinations/ui";
+import { canManageCommunityEndpoints } from "@shared/community-endpoints.ts";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -137,6 +138,9 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const showCommunityEndpoints = canManageCommunityEndpoints(
+        tierData?.active?.tier,
+    );
 
     const selectableKeys = useMemo(
         () =>
@@ -344,7 +348,9 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
             )}
-            {activePage === "models" && <Models />}
+            {activePage === "models" && (
+                <Models showCommunityEndpoints={showCommunityEndpoints} />
+            )}
         </DashboardShell>
     );
 }

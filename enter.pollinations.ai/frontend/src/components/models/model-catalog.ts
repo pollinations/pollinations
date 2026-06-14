@@ -76,9 +76,14 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
 
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 
-export async function fetchModelCatalog(): Promise<ApiModelInfo[]> {
+export async function fetchModelCatalog(
+    options: { refresh?: boolean } = {},
+): Promise<ApiModelInfo[]> {
+    if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
-        .then(({ config }) => fetch(`${config.genBaseUrl}/models`))
+        .then(({ config }) =>
+            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
+        )
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch models (${response.status})`);
@@ -109,6 +114,7 @@ export const getCatalogDescriptionWithoutName = (
     const { description } = model;
     if (!description) return undefined;
     const title = model.title?.trim();
+    if (title && description.trim() === title) return undefined;
     const prefix = title ? `${title} - ` : "";
     if (prefix && description.startsWith(prefix)) {
         return description.slice(prefix.length).trim() || undefined;

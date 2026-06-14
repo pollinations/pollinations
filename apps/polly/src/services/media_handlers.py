@@ -479,9 +479,25 @@ async def render_table_image(
         col_widths = _calc_col_widths(sanitized_headers, sanitized_rows, header_fonts, body_fonts, PADDING)
 
         total_width = sum(col_widths) + len(col_widths) + 1
-        total_height = HEADER_HEIGHT + len(sanitized_rows) * MIN_CELL_HEIGHT + len(sanitized_rows) + 1
+        total_height = header_height + len(sanitized_rows) * min_cell_height + len(sanitized_rows) + 1
 
-        img = Image.new("RGB", (total_width, total_height), PALETTE["bg"])
+        img = Image.new("RGB", (total_width, total_height), colors["bg"])
+
+        def _draw_formatted(pilmoji_ctx, pos, text, base_font_key, fonts_dict, fill, anchor):
+            segments = _parse_text_formatting(text)
+            cx, cy = pos
+            for style, content in segments:
+                if style["bold"] and style["italic"]:
+                    fkey = "bold_italic"
+                elif style["bold"]:
+                    fkey = base_font_key.replace("reg", "bold", 1) if "reg" in base_font_key else "bold_reg"
+                elif style["italic"]:
+                    fkey = "reg_italic"
+                else:
+                    fkey = base_font_key
+                font = fonts_dict.get(fkey, fonts_dict[base_font_key])
+                pilmoji_ctx.text((cx, cy), content, font=font, fill=fill, anchor=anchor)
+                cx += pilmoji_ctx.draw.textlength(content, font=font)
 
         with Pilmoji(img) as pilmoji:
             draw = ImageDraw.Draw(img)
@@ -632,6 +648,8 @@ def format_table_as_markdown(headers: list[str], rows: list[list[str]]) -> str:
 def replace_latex_with_unicode(text: str) -> str:
     def replacer(match):
         expr = match.group(1)
+        if not any(c in expr for c in "\\^_{}"):
+            return match.group(0)
         for latex_cmd, unicode_symbol in LATEX_TO_EMOJI.items():
             expr = expr.replace(latex_cmd, unicode_symbol)
         expr = expr.replace(r"\text", "")
@@ -640,6 +658,19 @@ def replace_latex_with_unicode(text: str) -> str:
 
     inline_pattern = re.compile(r"\$([^$\n]+?)\$")
     return inline_pattern.sub(replacer, text)
+
+
+def truncate_long_decimals(text: str) -> str:
+    def replacer(match):
+        try:
+            short = f"{float(match.group(0)):.4f}".rstrip("0")
+            if short.endswith("."):
+                short += "0"
+            return short + "..."
+        except ValueError:
+            return match.group(0)
+
+    return re.sub(r"\d+\.\d{8,}", replacer, text)
 
 
 # =============================================================================

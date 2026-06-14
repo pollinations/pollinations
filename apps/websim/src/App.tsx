@@ -152,6 +152,26 @@ export function App() {
         return () => activeRequest.current?.abort();
     }, []);
 
+    // Report content height to the embedding host (/play) so it can size the
+    // iframe to fit — no inner scroll. Message: { source, type, value }.
+    useEffect(() => {
+        if (!isEmbedded || window.parent === window.self) return;
+        const report = () => {
+            window.parent.postMessage(
+                {
+                    source: "polli-embed",
+                    type: "height",
+                    value: Math.ceil(document.documentElement.scrollHeight),
+                },
+                "*",
+            );
+        };
+        const observer = new ResizeObserver(report);
+        observer.observe(document.body);
+        report();
+        return () => observer.disconnect();
+    }, [isEmbedded]);
+
     async function generate() {
         const trimmedPrompt = prompt.trim();
         if (!trimmedPrompt) return;
@@ -219,7 +239,10 @@ export function App() {
     return (
         <div
             data-theme="accent"
-            className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
+            className={cn(
+                "relative flex flex-col bg-app-bg font-body text-theme-text-base",
+                !isEmbedded && "min-h-dvh",
+            )}
         >
             <div
                 className={cn(

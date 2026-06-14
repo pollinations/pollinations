@@ -65,6 +65,7 @@ type PlaygroundResult =
 export type PlaygroundProps = {
     title?: string;
     subtitle?: string;
+    showTitle?: boolean;
     className?: string;
 };
 
@@ -303,6 +304,7 @@ async function uploadReferenceImages(
 export function Playground({
     title = "Playground",
     subtitle = "Create and refine images, text, audio, and video from one focused workspace.",
+    showTitle = true,
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
@@ -543,13 +545,15 @@ export function Playground({
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                <Heading
-                    as="h1"
-                    size="title"
-                    className="polli-playground-title polli:m-0 polli:text-theme-text-strong"
-                >
-                    {title}
-                </Heading>
+                {showTitle && (
+                    <Heading
+                        as="h1"
+                        size="title"
+                        className="polli-playground-title polli:m-0 polli:text-theme-text-strong"
+                    >
+                        {title}
+                    </Heading>
+                )}
                 <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-theme-text-base">
                     {subtitle}
                 </p>

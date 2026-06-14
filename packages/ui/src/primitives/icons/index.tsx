@@ -384,4 +384,68 @@ export function GlobeIcon(props: IconProps) {
     );
 }
 
+export function SparklesIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6Z" />
+            <path d="m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8Z" />
+            <path d="m5 13 .7 1.8 1.8.7-1.8.7L5 18l-.7-1.8-1.8-.7 1.8-.7Z" />
+        </svg>
+    );
+}
+
+export function CloudUploadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M16 16l-4-4-4 4" />
+            <path d="M12 12v9" />
+            <path d="M20.4 17.2A5 5 0 0 0 18 8h-1.3A7 7 0 1 0 5.3 16.7" />
+        </svg>
+    );
+}
+
+export function CompassIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="16 8 14 14 8 16 10 10 16 8" />
+        </svg>
+    );
+}
+
+export function MegaphoneIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M3 11v2a2 2 0 0 0 2 2h2l11 4V5L7 9H5a2 2 0 0 0-2 2Z" />
+            <path d="M7 15l1.5 4.5A2 2 0 0 0 10.4 21H12" />
+            <path d="M18 9.5a3 3 0 0 1 0 5" />
+        </svg>
+    );
+}
+
+export function RocketIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4.5 16.5 3 21l4.5-1.5" />
+            <path d="M12 15 9 12a18 18 0 0 1 7-8l5-1-1 5a18 18 0 0 1-8 7Z" />
+            <path d="M9 12 4 11l4-4 4 1" />
+            <path d="m12 15 1 4 4-4-1-4" />
+            <circle cx="16" cy="8" r="1.5" />
+        </svg>
+    );
+}
+
+export function BotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <rect x="4" y="7" width="16" height="12" rx="3" />
+            <path d="M12 7V3" />
+            <path d="M9 3h6" />
+            <circle cx="9" cy="13" r="1" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="13" r="1" fill="currentColor" stroke="none" />
+            <path d="M9 17h6" />
+        </svg>
+    );
+}
+
 export type { IconProps } from "./types.ts";

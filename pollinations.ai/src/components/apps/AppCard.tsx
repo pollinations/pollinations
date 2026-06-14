@@ -13,22 +13,22 @@ import {
     getGitHubUsername,
     getRepoName,
 } from "../../lib/apps.ts";
-import { APPS_COPY, type BadgeFilterId, PLATFORM_LABELS } from "./copy.ts";
+import { APPS_COPY, PLATFORM_LABELS, type SignalFilterId } from "./copy.ts";
 
-const BADGE_LABELS: Record<BadgeFilterId, string> = {
-    new: APPS_COPY.newBadge,
+const BADGE_LABELS: Record<SignalFilterId, string> = {
+    fresh: APPS_COPY.freshBadge,
     pollen: APPS_COPY.pollenBadge,
     buzz: APPS_COPY.buzzBadge,
 };
 
-const BADGE_INTENTS: Record<BadgeFilterId, "alpha" | "success" | "warning"> = {
-    new: "alpha",
+const BADGE_INTENTS: Record<SignalFilterId, "alpha" | "success" | "warning"> = {
+    fresh: "alpha",
     pollen: "warning",
     buzz: "success",
 };
 
-function appBadgeIds(app: App): BadgeFilterId[] {
-    return (["pollen", "buzz", "new"] as const).filter((id) =>
+function appBadgeIds(app: App): SignalFilterId[] {
+    return (["pollen", "buzz", "fresh"] as const).filter((id) =>
         appBadges[id](app),
     );
 }
@@ -41,54 +41,34 @@ export function AppCard({ app }: { app: App }) {
     const badges = appBadgeIds(app);
 
     return (
-        <Surface
-            variant="card-themed"
-            className="flex h-full flex-col gap-4 bg-theme-bg-subtle p-5"
-        >
-            <div className="flex min-w-0 flex-col gap-3">
-                <div className="min-w-0 pr-1">
-                    <h3 className="font-subheading text-lg text-theme-text-strong">
-                        {app.url ? (
-                            <a
-                                href={app.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex max-w-full items-center gap-1 underline decoration-theme-border decoration-2 underline-offset-3 hover:decoration-theme-text-soft"
-                            >
-                                <span className="min-w-0 truncate">
-                                    {app.emoji && (
-                                        <span aria-hidden className="mr-1.5">
-                                            {app.emoji}
-                                        </span>
-                                    )}
-                                    {app.name}
-                                </span>
-                                <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                            </a>
-                        ) : (
-                            <>
-                                {app.emoji && (
-                                    <span aria-hidden className="mr-1.5">
-                                        {app.emoji}
-                                    </span>
-                                )}
-                                {app.name}
-                            </>
-                        )}
-                    </h3>
-                    {app.platforms.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                            {app.platforms.map((platform) => (
-                                <Chip key={platform} size="sm">
-                                    {PLATFORM_LABELS[platform] ?? platform}
-                                </Chip>
-                            ))}
-                        </div>
-                    )}
-                </div>
+        <Surface className="flex flex-col gap-3 transition-colors hover:bg-surface-opaque/90 md:grid md:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)] md:items-center md:gap-4">
+            <div className="flex min-w-0 gap-3">
+                <span
+                    aria-hidden
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-xl"
+                >
+                    {app.emoji || app.name.slice(0, 1).toUpperCase()}
+                </span>
 
-                {badges.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
+                <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="min-w-0 font-subheading text-lg leading-tight text-theme-text-strong">
+                            {app.url ? (
+                                <a
+                                    href={app.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex max-w-full items-center gap-1 underline decoration-theme-border decoration-2 underline-offset-3 hover:decoration-theme-text-soft"
+                                >
+                                    <span className="min-w-0 truncate">
+                                        {app.name}
+                                    </span>
+                                    <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                                </a>
+                            ) : (
+                                app.name
+                            )}
+                        </h3>
                         {badges.map((badge) => (
                             <Chip
                                 key={badge}
@@ -99,16 +79,26 @@ export function AppCard({ app }: { app: App }) {
                             </Chip>
                         ))}
                     </div>
-                )}
+
+                    {app.description && (
+                        <Markdown className="mt-1 text-sm leading-6 text-theme-text-base">
+                            {app.description}
+                        </Markdown>
+                    )}
+
+                    {app.platforms.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            {app.platforms.map((platform) => (
+                                <Chip key={platform} size="sm">
+                                    {PLATFORM_LABELS[platform] ?? platform}
+                                </Chip>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {app.description && (
-                <Markdown className="text-sm text-theme-text-base">
-                    {app.description}
-                </Markdown>
-            )}
-
-            <div className="mt-auto flex min-w-0 flex-wrap items-center gap-2 pt-1 text-xs">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs md:justify-end">
                 {repoName ? (
                     <a
                         href={app.repo}

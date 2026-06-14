@@ -1,9 +1,8 @@
 import {
     APPS_SOURCE_URL,
-    BADGE_FILTER_IDS,
-    type BadgeFilterId,
-    CATEGORY_FILTER_IDS,
     type CategoryFilterId,
+    type PlatformFilterId,
+    type SignalFilterId,
 } from "../components/apps/copy.ts";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -25,6 +24,12 @@ export type App = {
     requests24h: number;
 };
 
+export type AppFilters = {
+    categories: CategoryFilterId[];
+    platforms: PlatformFilterId[];
+    signals: SignalFilterId[];
+};
+
 type CacheEntry = {
     expiresAt: number;
     apps: App[];
@@ -33,26 +38,12 @@ type CacheEntry = {
 let appsCache: CacheEntry | null = null;
 
 export const appBadges = {
-    new: (app: App) =>
+    fresh: (app: App) =>
         !!app.approvedDate &&
         new Date(app.approvedDate).getTime() >= Date.now() - FRESH_WINDOW_MS,
     pollen: (app: App) => app.byop,
     buzz: (app: App) => app.requests24h >= 100,
-} satisfies Record<BadgeFilterId, (app: App) => boolean>;
-
-export function isCategoryFilterId(value: unknown): value is CategoryFilterId {
-    return (
-        typeof value === "string" &&
-        CATEGORY_FILTER_IDS.includes(value as CategoryFilterId)
-    );
-}
-
-export function isBadgeFilterId(value: unknown): value is BadgeFilterId {
-    return (
-        typeof value === "string" &&
-        BADGE_FILTER_IDS.includes(value as BadgeFilterId)
-    );
-}
+} satisfies Record<SignalFilterId, (app: App) => boolean>;
 
 export function normalizeExternalUrl(value: string): string {
     const trimmed = value.trim();
@@ -182,16 +173,22 @@ export function sortApps(a: App, b: App): number {
 
 export function selectApps(
     apps: App[],
-    filter: CategoryFilterId,
-    sort: BadgeFilterId,
+    { categories, platforms, signals }: AppFilters,
 ): App[] {
-    const filtered = apps
-        .filter((app) => app.category === filter)
+    return apps
+        .filter((app) => {
+            const categoryMatch =
+                categories.length === 0 ||
+                categories.some((category) => app.category === category);
+            const platformMatch =
+                platforms.length === 0 ||
+                platforms.some((platform) => app.platforms.includes(platform));
+            const signalMatch =
+                signals.length === 0 ||
+                signals.some((signal) => appBadges[signal](app));
+
+            return categoryMatch && platformMatch && signalMatch;
+        })
         .slice()
         .sort(sortApps);
-    const badgeMatch = appBadges[sort];
-    return [
-        ...filtered.filter((app) => badgeMatch(app)),
-        ...filtered.filter((app) => !badgeMatch(app)),
-    ];
 }

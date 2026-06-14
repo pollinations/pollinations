@@ -27,19 +27,18 @@ export const APPS_COPY = {
         "Let users sign in with their own Pollinations account.",
     pollenCtaButton: "Learn More",
     categoryLabel: "Category",
-    sortLabel: "Sort by",
+    platformLabel: "Platform",
+    signalLabel: "Signals",
+    clearFilters: "Clear filters",
     showingLabel: "showing",
     ofLabel: "of",
     appsLabel: "apps",
-    noAppsMessage: "No apps found in this category yet.",
+    noAppsMessage: "No apps match these filters.",
     authorPrefix: "by",
     viewOnGithub: "View on GitHub",
     pollenBadge: "Pollen",
     buzzBadge: "Buzz",
-    newBadge: "Fresh",
-    pollenLegendDesc: "in-app user sign in",
-    buzzLegendDesc: "100+ requests / 24h",
-    newLegendDesc: "recently added",
+    freshBadge: "Fresh",
 };
 
 export const CATEGORY_FILTER_IDS = [
@@ -56,8 +55,6 @@ export const CATEGORY_FILTER_IDS = [
 
 export type CategoryFilterId = (typeof CATEGORY_FILTER_IDS)[number];
 
-export const DEFAULT_CATEGORY_FILTER: CategoryFilterId = "image";
-
 export const CATEGORY_FILTERS: {
     id: CategoryFilterId;
     label: string;
@@ -73,35 +70,62 @@ export const CATEGORY_FILTERS: {
     { id: "video_audio", label: "Video & audio" },
 ];
 
-export const BADGE_FILTER_IDS = ["new", "pollen", "buzz"] as const;
+export const PLATFORM_LABELS: Record<string, string> = {
+    web: "Web",
+    api: "API",
+    telegram: "Telegram",
+    android: "Android",
+    discord: "Discord",
+    "browser-ext": "Extension",
+    cli: "CLI",
+    library: "Library",
+    ios: "iOS",
+    desktop: "Desktop",
+    macos: "macOS",
+    roblox: "Roblox",
+    whatsapp: "WhatsApp",
+    windows: "Windows",
+    wordpress: "WordPress",
+    bot: "Bot",
+};
 
-export type BadgeFilterId = (typeof BADGE_FILTER_IDS)[number];
+export const PLATFORM_FILTER_IDS = [
+    "web",
+    "api",
+    "telegram",
+    "android",
+    "discord",
+    "browser-ext",
+    "cli",
+    "library",
+    "ios",
+    "desktop",
+    "roblox",
+    "whatsapp",
+    "windows",
+    "wordpress",
+    "bot",
+] as const;
 
-export const DEFAULT_BADGE_FILTER: BadgeFilterId = "new";
+export type PlatformFilterId = (typeof PLATFORM_FILTER_IDS)[number];
 
-export const BADGE_FILTERS: {
-    id: BadgeFilterId;
+export const PLATFORM_FILTERS: {
+    id: PlatformFilterId;
+    label: string;
+}[] = PLATFORM_FILTER_IDS.map((id) => ({
+    id,
+    label: PLATFORM_LABELS[id],
+}));
+
+export const SIGNAL_FILTER_IDS = ["fresh", "pollen", "buzz"] as const;
+
+export type SignalFilterId = (typeof SIGNAL_FILTER_IDS)[number];
+
+export const SIGNAL_FILTERS: {
+    id: SignalFilterId;
     label: string;
 }[] = [
-    { id: "new", label: "Fresh" },
+    { id: "fresh", label: "Fresh" },
     { id: "pollen", label: "Pollen" },
     { id: "buzz", label: "Buzz" },
 ];
-
-export const PLATFORM_LABELS: Record<string, string> = {
-    web: "Web",
-    android: "Android",
-    ios: "iOS",
-    windows: "Windows",
-    macos: "macOS",
-    desktop: "Desktop",
-    cli: "CLI",
-    discord: "Discord",
-    telegram: "Telegram",
-    whatsapp: "WhatsApp",
-    library: "Library",
-    "browser-ext": "Extension",
-    roblox: "Roblox",
-    wordpress: "WordPress",
-    api: "API",
-};

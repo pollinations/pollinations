@@ -1,7 +1,10 @@
 import {
+    BookIcon,
+    Button,
     ButtonGroup,
-    Chip,
     ExternalLinkButton,
+    RocketIcon,
+    Section,
     Surface,
     TabButton,
 } from "@pollinations/ui";
@@ -12,24 +15,62 @@ import {
     APP_LINKS,
     APPS_COPY,
     APPS_META,
-    BADGE_FILTERS,
+    CATEGORY_FILTER_IDS,
     CATEGORY_FILTERS,
-    DEFAULT_BADGE_FILTER,
-    DEFAULT_CATEGORY_FILTER,
+    PLATFORM_FILTER_IDS,
+    PLATFORM_FILTERS,
+    SIGNAL_FILTER_IDS,
+    SIGNAL_FILTERS,
 } from "../components/apps/copy.ts";
-import {
-    isBadgeFilterId,
-    isCategoryFilterId,
-    loadApps,
-    selectApps,
-} from "../lib/apps.ts";
+import { type AppFilters, loadApps, selectApps } from "../lib/apps.ts";
+
+function parseSearchList<T extends string>(
+    value: unknown,
+    allowedValues: readonly T[],
+): T[] {
+    const rawValue = Array.isArray(value)
+        ? value.filter((item) => typeof item === "string").join(",")
+        : typeof value === "string"
+          ? value
+          : "";
+    const allowed = new Set<string>(allowedValues);
+    const selected: T[] = [];
+
+    for (const item of rawValue.split(",")) {
+        const normalized = item.trim().toLowerCase();
+        if (!allowed.has(normalized)) continue;
+
+        const typedValue = normalized as T;
+        if (!selected.includes(typedValue)) {
+            selected.push(typedValue);
+        }
+    }
+
+    return selected;
+}
+
+function normalizeSearchList<T extends string>(
+    value: unknown,
+    allowedValues: readonly T[],
+): string | undefined {
+    return encodeSearchList(parseSearchList(value, allowedValues));
+}
+
+function encodeSearchList(selected: string[]): string | undefined {
+    return selected.length > 0 ? selected.join(",") : undefined;
+}
+
+function toggleSelection<T extends string>(selected: T[], value: T): T[] {
+    return selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value];
+}
 
 export const Route = createFileRoute("/apps")({
     validateSearch: (search: Record<string, unknown>) => ({
-        filter: isCategoryFilterId(search.filter)
-            ? search.filter
-            : DEFAULT_CATEGORY_FILTER,
-        sort: isBadgeFilterId(search.sort) ? search.sort : DEFAULT_BADGE_FILTER,
+        category: normalizeSearchList(search.category, CATEGORY_FILTER_IDS),
+        platform: normalizeSearchList(search.platform, PLATFORM_FILTER_IDS),
+        signal: normalizeSearchList(search.signal, SIGNAL_FILTER_IDS),
     }),
     loader: async () => {
         try {
@@ -52,18 +93,37 @@ export const Route = createFileRoute("/apps")({
 
 function AppsPage() {
     const { apps, error } = Route.useLoaderData();
-    const { filter, sort } = Route.useSearch();
+    const { category, platform, signal } = Route.useSearch();
     const navigate = Route.useNavigate();
-    const selectedApps = useMemo(
-        () => selectApps(apps, filter, sort),
-        [apps, filter, sort],
+    const selectedFilters = useMemo<AppFilters>(
+        () => ({
+            categories: parseSearchList(category, CATEGORY_FILTER_IDS),
+            platforms: parseSearchList(platform, PLATFORM_FILTER_IDS),
+            signals: parseSearchList(signal, SIGNAL_FILTER_IDS),
+        }),
+        [category, platform, signal],
     );
+    const selectedApps = useMemo(
+        () => selectApps(apps, selectedFilters),
+        [apps, selectedFilters],
+    );
+    const activeFilterCount =
+        selectedFilters.categories.length +
+        selectedFilters.platforms.length +
+        selectedFilters.signals.length;
 
-    const setFilter = (nextFilter: typeof filter) => {
-        navigate({ search: { filter: nextFilter, sort } });
+    const setFilters = (nextFilters: AppFilters) => {
+        navigate({
+            search: {
+                category: encodeSearchList(nextFilters.categories),
+                platform: encodeSearchList(nextFilters.platforms),
+                signal: encodeSearchList(nextFilters.signals),
+            },
+        });
     };
-    const setSort = (nextSort: typeof sort) => {
-        navigate({ search: { filter, sort: nextSort } });
+
+    const clearFilters = () => {
+        setFilters({ categories: [], platforms: [], signals: [] });
     };
 
     return (
@@ -99,10 +159,12 @@ function AppsPage() {
                         </div>
                         <ExternalLinkButton
                             href={APP_LINKS.submitApp}
-                            size="sm"
                             className="shrink-0"
                         >
-                            {APPS_COPY.submitCtaButton}
+                            <span className="inline-flex items-center gap-2">
+                                <RocketIcon className="h-4 w-4 shrink-0" />
+                                {APPS_COPY.submitCtaButton}
+                            </span>
                         </ExternalLinkButton>
                     </Surface>
 
@@ -120,57 +182,23 @@ function AppsPage() {
                         </div>
                         <ExternalLinkButton
                             href={APP_LINKS.byopDocs}
-                            size="sm"
                             className="shrink-0"
                         >
-                            {APPS_COPY.pollenCtaButton}
+                            <span className="inline-flex items-center gap-2">
+                                <BookIcon className="h-4 w-4 shrink-0" />
+                                {APPS_COPY.pollenCtaButton}
+                            </span>
                         </ExternalLinkButton>
                     </Surface>
                 </div>
             </section>
 
-            <Surface
-                id="apps-filters"
-                variant="panel"
-                className="flex flex-col gap-5"
-            >
-                <div className="flex flex-col gap-2">
-                    <div className="font-body text-sm font-semibold text-theme-text-soft">
-                        {APPS_COPY.categoryLabel}
-                    </div>
-                    <ButtonGroup aria-label={APPS_COPY.categoryLabel}>
-                        {CATEGORY_FILTERS.map((item) => (
-                            <TabButton
-                                key={item.id}
-                                active={filter === item.id}
-                                onClick={() => setFilter(item.id)}
-                                size="sm"
-                            >
-                                {item.label}
-                            </TabButton>
-                        ))}
-                    </ButtonGroup>
-                </div>
-
-                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-                    <div className="flex flex-col gap-2">
-                        <div className="font-body text-sm font-semibold text-theme-text-soft">
-                            {APPS_COPY.sortLabel}
-                        </div>
-                        <ButtonGroup aria-label={APPS_COPY.sortLabel}>
-                            {BADGE_FILTERS.map((item) => (
-                                <TabButton
-                                    key={item.id}
-                                    active={sort === item.id}
-                                    onClick={() => setSort(item.id)}
-                                    size="sm"
-                                >
-                                    {item.label}
-                                </TabButton>
-                            ))}
-                        </ButtonGroup>
-                    </div>
-
+            <Section
+                id="apps-directory"
+                title="Apps"
+                framed
+                actionClassName="w-full sm:ml-auto sm:w-auto"
+                action={
                     <div className="flex flex-wrap items-center gap-2 text-sm text-theme-text-soft">
                         <span>
                             {APPS_COPY.showingLabel}{" "}
@@ -183,54 +211,124 @@ function AppsPage() {
                             </strong>{" "}
                             {APPS_COPY.appsLabel}
                         </span>
+                        {activeFilterCount > 0 && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={clearFilters}
+                            >
+                                {APPS_COPY.clearFilters}
+                            </Button>
+                        )}
+                    </div>
+                }
+            >
+                <div className="flex flex-col gap-5 pb-1">
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <div className="font-body text-sm font-semibold text-theme-text-soft">
+                            {APPS_COPY.categoryLabel}
+                        </div>
+                        <ButtonGroup aria-label={APPS_COPY.categoryLabel}>
+                            {CATEGORY_FILTERS.map((item) => (
+                                <TabButton
+                                    key={item.id}
+                                    active={selectedFilters.categories.includes(
+                                        item.id,
+                                    )}
+                                    onClick={() =>
+                                        setFilters({
+                                            ...selectedFilters,
+                                            categories: toggleSelection(
+                                                selectedFilters.categories,
+                                                item.id,
+                                            ),
+                                        })
+                                    }
+                                    size="sm"
+                                    variant="ghost"
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
+                    </div>
+
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <div className="font-body text-sm font-semibold text-theme-text-soft">
+                            {APPS_COPY.platformLabel}
+                        </div>
+                        <ButtonGroup aria-label={APPS_COPY.platformLabel}>
+                            {PLATFORM_FILTERS.map((item) => (
+                                <TabButton
+                                    key={item.id}
+                                    active={selectedFilters.platforms.includes(
+                                        item.id,
+                                    )}
+                                    onClick={() =>
+                                        setFilters({
+                                            ...selectedFilters,
+                                            platforms: toggleSelection(
+                                                selectedFilters.platforms,
+                                                item.id,
+                                            ),
+                                        })
+                                    }
+                                    size="sm"
+                                    variant="ghost"
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
+                    </div>
+
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <div className="font-body text-sm font-semibold text-theme-text-soft">
+                            {APPS_COPY.signalLabel}
+                        </div>
+                        <ButtonGroup aria-label={APPS_COPY.signalLabel}>
+                            {SIGNAL_FILTERS.map((item) => (
+                                <TabButton
+                                    key={item.id}
+                                    active={selectedFilters.signals.includes(
+                                        item.id,
+                                    )}
+                                    onClick={() =>
+                                        setFilters({
+                                            ...selectedFilters,
+                                            signals: toggleSelection(
+                                                selectedFilters.signals,
+                                                item.id,
+                                            ),
+                                        })
+                                    }
+                                    size="sm"
+                                    variant="ghost"
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-theme-text-soft">
-                    <span className="inline-flex items-center gap-1.5">
-                        <Chip intent="warning" size="sm">
-                            {APPS_COPY.pollenBadge}
-                        </Chip>
-                        <span>{APPS_COPY.pollenLegendDesc}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                        <Chip intent="success" size="sm">
-                            {APPS_COPY.buzzBadge}
-                        </Chip>
-                        <span>{APPS_COPY.buzzLegendDesc}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                        <Chip intent="alpha" size="sm">
-                            {APPS_COPY.newBadge}
-                        </Chip>
-                        <span>{APPS_COPY.newLegendDesc}</span>
-                    </span>
-                </div>
-            </Surface>
-
-            {error ? (
-                <Surface variant="panel" className="text-theme-text-base">
-                    {error}
-                </Surface>
-            ) : (
-                <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {selectedApps.map((app, index) => (
-                        <AppCard
-                            key={`${app.name}-${app.githubId || index}`}
-                            app={app}
-                        />
-                    ))}
-                </section>
-            )}
-
-            {!error && selectedApps.length === 0 && (
-                <Surface
-                    variant="panel"
-                    className="text-center text-theme-text-base"
-                >
-                    {APPS_COPY.noAppsMessage}
-                </Surface>
-            )}
+                {error ? (
+                    <Surface className="text-theme-text-base">{error}</Surface>
+                ) : selectedApps.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                        {selectedApps.map((app, index) => (
+                            <AppCard
+                                key={`${app.name}-${app.githubId || index}`}
+                                app={app}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <Surface className="text-center text-theme-text-base">
+                        {APPS_COPY.noAppsMessage}
+                    </Surface>
+                )}
+            </Section>
         </div>
     );
 }

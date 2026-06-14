@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "title": "Musical chairs with model providers",
+  "summary": "We re-routed half our models for better reliability, gave the dashboard a borderless facelift, and shipped a CDN bundle for no-build prototyping.\n\nWe added Claude Fable 5 and Kimi K2.7 Code to the text lineup. Behind the scenes, we migrated Wan, Qwen, and Pruna models to Replicate and OpenRouter. This migration gives us explicit 1080p video support, significantly cheaper Qwen text generation, and ensures failed requests actually return 400s instead of hanging indefinitely.\n\nThe UI got a much-needed aesthetic pass. We dropped the emojis for a custom icon set, rolled out a warmer dark mode with borderless controls, and restored one-click model slug copying. More importantly, the dashboard now fetches the model catalog dynamically—so when we deploy a new model, it appears in the UI instantly without us updating hardcoded lists.\n\nYou can now prototype with `@pollinations/ui` directly in a vanilla HTML file or CodePen via CDN—no React build step required. On the API side, we fixed a classic string-boolean bug where `?stream=false` was evaluating to true, and upstream content policy rejections now correctly return a 422 instead of triggering a 500 server error.\n\nWebsim got a full React rebuild, introducing a cleaner layout and standardizing on Bring-Your-Own-Pollen (BYOP) authentication so you can use your own balance for generations. We also welcomed Wikimind, a translation-based learning tool, to the app showcase.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 11613,
+      "date": "2026-06-08"
+    },
+    {
+      "number": 11698,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11701,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11722,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11743,
+      "date": "2026-06-11"
+    },
+    {
+      "number": 11744,
+      "date": "2026-06-11"
+    },
+    {
+      "number": 11753,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11758,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11762,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11697,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11777,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11778,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11779,
+      "date": "2026-06-13"
+    }
+  ],
+  "generated_at": "2026-06-14T07:32:39.772782+00:00"
+}

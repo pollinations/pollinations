@@ -1,4 +1,11 @@
-import { DiscordIcon, GitHubIcon, XIcon } from "@pollinations/ui";
+import {
+    DiscordIcon,
+    GitHubIcon,
+    InstagramIcon,
+    LinkedInIcon,
+    RedditIcon,
+    XIcon,
+} from "@pollinations/ui";
 import type { ComponentType } from "react";
 import { ENTER_URL } from "../../config.ts";
 
@@ -35,6 +42,21 @@ export const SOCIAL_LINKS: {
         Icon: DiscordIcon,
     },
     { label: "X", href: "https://twitter.com/pollinations_ai", Icon: XIcon },
+    {
+        label: "Instagram",
+        href: "https://instagram.com/pollinations_ai",
+        Icon: InstagramIcon,
+    },
+    {
+        label: "Reddit",
+        href: "https://reddit.com/r/pollinations_ai",
+        Icon: RedditIcon,
+    },
+    {
+        label: "LinkedIn",
+        href: "https://www.linkedin.com/company/pollinations-ai",
+        Icon: LinkedInIcon,
+    },
 ];
 
 /** Auth/dashboard host (external, new tab). */

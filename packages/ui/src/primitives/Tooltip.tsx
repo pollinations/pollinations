@@ -104,21 +104,23 @@ export const Tooltip: FC<TooltipProps> = ({
     const contentNode = (
         <>
             <span className={cursorClass}>{children}</span>
-            <span
-                style={{
-                    top: tooltipPosition.top,
-                    left: tooltipPosition.left,
-                    maxWidth: tooltipPosition.maxWidth,
-                    transform: tooltipPosition.transform,
-                }}
-                className={`${
-                    showTooltip
-                        ? "polli:visible polli:opacity-100"
-                        : "polli:invisible polli:opacity-0"
-                } ${popupClasses}`}
-            >
-                {content}
-            </span>
+            {content ? (
+                <span
+                    style={{
+                        top: tooltipPosition.top,
+                        left: tooltipPosition.left,
+                        maxWidth: tooltipPosition.maxWidth,
+                        transform: tooltipPosition.transform,
+                    }}
+                    className={`${
+                        showTooltip
+                            ? "polli:visible polli:opacity-100"
+                            : "polli:invisible polli:opacity-0"
+                    } ${popupClasses}`}
+                >
+                    {content}
+                </span>
+            ) : null}
         </>
     );
 

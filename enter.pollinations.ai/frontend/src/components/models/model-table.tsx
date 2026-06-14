@@ -1,4 +1,12 @@
-import { CardIcon, ChevronIcon, SproutIcon, Tooltip } from "@pollinations/ui";
+import {
+    CardIcon,
+    ChevronIcon,
+    CopyButton,
+    cn,
+    InfoTip,
+    SproutIcon,
+    Tooltip,
+} from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useState } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
@@ -7,6 +15,7 @@ import {
     type DisplayCapability,
     getModelBrandLogoPath,
     getModelCapabilities,
+    getModelDescriptionWithoutName,
     getModelDisplayName,
     getModelInputModalities,
     type InputModality,
@@ -139,6 +148,7 @@ type MobileModelRowProps = {
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const [expanded, setExpanded] = useState(false);
     const displayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const inputModalities = getModelInputModalities(model);
     const capabilities = getModelCapabilities(model);
@@ -186,9 +196,41 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     )}
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex min-w-0 items-center gap-2">
-                            <span className="min-w-0 truncate text-sm font-medium">
-                                {publicModelName}
-                            </span>
+                            <CopyButton
+                                value={model.name}
+                                tooltip={`Copy "${model.name}"`}
+                                copiedTooltip={null}
+                                aria-label={`Copy model id ${model.name}`}
+                                className={(copied) =>
+                                    cn(
+                                        "pointer-events-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-sm font-medium leading-none transition-colors",
+                                        copied
+                                            ? "text-intent-success-text"
+                                            : "hover:text-theme-text-soft",
+                                    )
+                                }
+                            >
+                                {(copied) => (
+                                    <>
+                                        <span className="min-w-0 truncate">
+                                            {publicModelName}
+                                        </span>
+                                        {copied && (
+                                            <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
+                                                copied
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </CopyButton>
+                            {modelDescription && (
+                                <span className="pointer-events-auto inline-flex">
+                                    <InfoTip
+                                        content={modelDescription}
+                                        label={`About ${publicModelName}`}
+                                    />
+                                </span>
+                            )}
                             <ModelStatusChips
                                 showNew={showNew}
                                 showAlpha={showAlpha}

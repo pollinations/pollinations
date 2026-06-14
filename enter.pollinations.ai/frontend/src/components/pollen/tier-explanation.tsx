@@ -8,27 +8,32 @@ import type { FC, ReactNode } from "react";
 
 const SeedTooltipContent = () => (
     <div className="w-72">
-        <p className="font-semibold text-ink-900 mb-2">Dev Points (need 7+)</p>
+        <p className="mb-2 text-theme-text-base">
+            <span className="font-semibold text-theme-text-strong">
+                Dev Points
+            </span>{" "}
+            <span className="text-theme-text-muted">(need 7+)</span>
+        </p>
         <table className="w-full text-left text-xs">
             <tbody>
-                <tr className="border-b border-ink-100">
-                    <td className="py-1 pr-2 text-ink-600 leading-tight">
+                <tr className="border-b border-divider">
+                    <td className="py-1 pr-2 text-theme-text-muted leading-tight">
                         Account age
                     </td>
                     <td className="py-1 text-right text-ink-800 whitespace-nowrap">
                         0.5pt/month (max 6)
                     </td>
                 </tr>
-                <tr className="border-b border-ink-100">
-                    <td className="py-1 pr-2 text-ink-600 leading-tight">
+                <tr className="border-b border-divider">
+                    <td className="py-1 pr-2 text-theme-text-muted leading-tight">
                         Public commits (last 90 days)
                     </td>
                     <td className="py-1 text-right text-ink-800 whitespace-nowrap">
                         0.1pt each (max 3)
                     </td>
                 </tr>
-                <tr className="border-b border-ink-100">
-                    <td className="py-1 pr-2 text-ink-600 leading-tight">
+                <tr className="border-b border-divider">
+                    <td className="py-1 pr-2 text-theme-text-muted leading-tight">
                         Original repos (public, non-empty)
                     </td>
                     <td className="py-1 text-right text-ink-800 whitespace-nowrap">
@@ -36,7 +41,7 @@ const SeedTooltipContent = () => (
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 pr-2 text-ink-600 leading-tight">
+                    <td className="py-1 pr-2 text-theme-text-muted leading-tight">
                         Stars (on original non-empty repos)
                     </td>
                     <td className="py-1 text-right text-ink-800 whitespace-nowrap">
@@ -45,7 +50,7 @@ const SeedTooltipContent = () => (
                 </tr>
             </tbody>
         </table>
-        <p className="mt-2 pt-2 border-t border-ink-100 text-micro text-ink-500">
+        <p className="mt-2 pt-2 border-t border-divider text-micro text-theme-text-muted">
             Evaluated weekly. No action needed.
         </p>
     </div>
@@ -66,17 +71,30 @@ const TierCard: FC<TierCardProps> = ({
     pollen,
     children,
 }) => (
+    // Active tier = the wallet's tier colour (tier-pale fill + tier-deep text)
+    // so "your current tier" reads at a glance; inactive = neutral well. The
+    // fill is an inline style using the exact wallet token, so it can't be lost
+    // to a competing themed-bg utility from the Surface variant.
     <Surface
-        variant="card-themed"
-        className={isActive ? "bg-tier-pale" : "bg-tier-pale/40"}
+        variant="card"
+        style={
+            isActive
+                ? { backgroundColor: "var(--polli-color-tier-pale)" }
+                : undefined
+        }
     >
-        <span className="text-3xl font-bold text-ink-900">
+        <span
+            className={cn(
+                "text-3xl font-bold",
+                isActive ? "text-tier-deep" : "text-ink-900",
+            )}
+        >
             {emoji} {name}
         </span>
         <p
             className={cn(
-                "text-xs font-mono text-ink-600 mt-1",
-                isActive && "font-bold text-ink-900",
+                "text-xs font-mono mt-1",
+                isActive ? "font-bold text-tier-deep" : "text-theme-text-muted",
             )}
         >
             {pollen} pollen/hour
@@ -89,7 +107,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
     currentTier,
 }) => {
     const requirementLabelStyle =
-        "text-[9px] font-semibold text-ink-400 uppercase tracking-wide";
+        "text-[9px] font-semibold text-theme-text-muted uppercase tracking-wide";
 
     return (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -99,9 +117,11 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Spore"
                 pollen={TIER_POLLEN.spore}
             >
-                <div className="mt-1.5 border-t border-theme-border pt-1.5">
+                <div className="mt-1.5 border-t border-divider pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
-                    <p className="text-xs text-ink-500">Verify account</p>
+                    <p className="text-xs text-theme-text-muted">
+                        Verify account
+                    </p>
                 </div>
             </TierCard>
 
@@ -111,16 +131,16 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Seed"
                 pollen={TIER_POLLEN.seed}
             >
-                <div className="mt-1.5 border-t border-theme-border pt-1.5">
+                <div className="mt-1.5 border-t border-divider pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
-                    <p className="text-xs text-ink-500">
+                    <p className="text-xs text-theme-text-muted">
                         <Tooltip content={<SeedTooltipContent />}>
                             <span className="cursor-default underline decoration-dotted">
                                 7+ dev points
                             </span>
                         </Tooltip>
                     </p>
-                    <p className="text-micro text-accent-emerald-600 mt-0.5">
+                    <p className="text-micro text-intent-success-text mt-0.5">
                         Auto-upgraded weekly
                     </p>
                 </div>
@@ -132,17 +152,17 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Flower"
                 pollen={TIER_POLLEN.flower}
             >
-                <div className="mt-1.5 border-t border-theme-border pt-1.5">
+                <div className="mt-1.5 border-t border-divider pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
-                    <p className="text-xs text-ink-500">
+                    <p className="text-xs text-theme-text-muted">
                         <a
                             href="https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml"
-                            className="text-accent-blue-600 hover:underline"
+                            className="text-theme-text-soft hover:underline"
                         >
                             Publish an app
                         </a>
                     </p>
-                    <p className="text-micro text-accent-amber-600 mt-0.5">
+                    <p className="text-micro text-intent-warning-text mt-0.5">
                         {TIER_EMOJIS.seed} Must be Seed first
                     </p>
                 </div>

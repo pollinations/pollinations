@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -16,6 +17,13 @@ import {
     communityPriceDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import type { ErrorVariables } from "@shared/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@shared/error.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -34,10 +42,9 @@ import {
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import type {
-    ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
-    InsertGenerationEvent,
+    TinybirdEvent as InsertGenerationEvent,
 } from "@shared/schemas/generation-event.ts";
 import {
     contentFilterResultsToEventParams,
@@ -51,6 +58,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
@@ -59,18 +67,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import type { ErrorVariables } from "@/env.ts";
-import {
-    getDefaultErrorMessage,
-    getErrorCode,
-    UpstreamError,
-} from "@/error.ts";
-import { sendToTinybird } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
+import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -648,8 +649,8 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.query("stream");
-        return parseBooleanLike(stream);
+        // "stream" is a query param, not a route param.
+        return parseBooleanLike(request.query("stream")) ?? false;
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -664,7 +665,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return parseBooleanLike(stream);
+                return parseBooleanLike(stream) ?? false;
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -673,23 +674,11 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return parseBooleanLike(stream);
+            return parseBooleanLike(stream) ?? false;
         } catch {
             return false;
         }
     }
-    return false;
-}
-
-function parseBooleanLike(value: unknown): boolean {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") return value !== 0;
-    if (typeof value !== "string") return false;
-
-    const normalized = value.trim().toLowerCase();
-    if (["true", "1", "yes", "on"].includes(normalized)) return true;
-    if (["false", "0", "no", "off", ""].includes(normalized)) return false;
-
     return false;
 }
 
@@ -859,6 +848,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -871,7 +866,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -881,9 +876,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:
@@ -917,16 +912,20 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-function collectErrorData(response: Response, error?: Error): ErrorData {
+export function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
     let source: string | undefined;
+    let explicitCode: string | undefined;
     if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
+        explicitCode = error.errorCode;
     }
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(response.status),
+        // Prefer the error's explicit code (e.g. content_policy_violation) so
+        // analytics can distinguish it from a generic status-derived code.
+        errorResponseCode: explicitCode ?? getErrorCode(response.status),
         errorSource: source,
         errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };

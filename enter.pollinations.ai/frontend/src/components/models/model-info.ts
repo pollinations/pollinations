@@ -82,16 +82,18 @@ export const getModelBrandLogoPath = (
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
-export const getModelModalityIcons = (model: ModelPrice): string[] => {
+export type InputModality = "text" | "image" | "video" | "audio";
+
+export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
     const modalities = getModalities(model);
-    const icons: string[] = [];
+    const keys: InputModality[] = [];
 
-    if (modalities.input.includes("text")) icons.push("💬");
-    if (modalities.input.includes("image")) icons.push("👁️");
-    if (modalities.input.includes("video")) icons.push("🎬");
-    if (modalities.input.includes("audio")) icons.push("🎙️");
+    if (modalities.input.includes("text")) keys.push("text");
+    if (modalities.input.includes("image")) keys.push("image");
+    if (modalities.input.includes("video")) keys.push("video");
+    if (modalities.input.includes("audio")) keys.push("audio");
 
-    return icons;
+    return keys;
 };
 
 export const getModelModalityLabel = (model: ModelPrice): string => {
@@ -106,14 +108,18 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
     return labels.length > 0 ? `Input: ${labels.join(", ")}` : "Input";
 };
 
-export const getModelCapabilityIcons = (model: ModelPrice): string[] => {
-    const icons: string[] = [];
+export type DisplayCapability = "reasoning" | "web_search" | "code_execution";
 
-    if (hasReasoning(model)) icons.push("🧠");
-    if (hasSearch(model)) icons.push("🔍");
-    if (hasCodeExecution(model)) icons.push("💻");
+export const getModelCapabilities = (
+    model: ModelPrice,
+): DisplayCapability[] => {
+    const keys: DisplayCapability[] = [];
 
-    return icons;
+    if (hasReasoning(model)) keys.push("reasoning");
+    if (hasSearch(model)) keys.push("web_search");
+    if (hasCodeExecution(model)) keys.push("code_execution");
+
+    return keys;
 };
 
 export const getModelCapabilityLabel = (model: ModelPrice): string => {

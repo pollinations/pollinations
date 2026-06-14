@@ -8,7 +8,6 @@ import {
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { cached } from "@/cache";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -42,7 +41,7 @@ export async function checkBalance(
               requestBody ?? {},
           )
         : getEstimatedPrice(
-              await getModelStats(env.KV, log, cached),
+              await getModelStats(env.KV, log),
               model.resolved as ModelName,
           );
 

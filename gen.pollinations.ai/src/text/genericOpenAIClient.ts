@@ -1,5 +1,5 @@
+import { remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
-import { remapUpstreamStatus } from "@/error.ts";
 import {
     normalizeOptions,
     validateAndNormalizeMessages,
@@ -124,12 +124,10 @@ export async function genericOpenAIClient(
         const {
             additionalHeaders: _additionalHeaders,
             dynamicModelDef: _dynamicModelDef,
-            isPrivate: _isPrivate,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
             portkeyGatewayUrl: _portkeyGatewayUrl,
-            referrer: _referrer,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
             ...cleanedOptions

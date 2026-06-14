@@ -77,6 +77,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { granularity, period } = filters.period;
+    const selectedKeyIds = filters.selectedKeyIds;
 
     useEffect(() => {
         let cancelled = false;
@@ -104,16 +106,17 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
+
         const query: {
             granularity: string;
             period: string;
             api_key_ids?: string;
         } = {
-            granularity: filters.period.granularity,
-            period: filters.period.period,
+            granularity,
+            period,
         };
-        if (filters.selectedKeyIds.length > 0) {
-            query.api_key_ids = filters.selectedKeyIds.join(",");
+        if (selectedKeyIds.length > 0) {
+            query.api_key_ids = selectedKeyIds.join(",");
         }
 
         apiClient.account.usage.daily
@@ -132,11 +135,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, [
-        filters.period.granularity,
-        filters.period.period,
-        filters.selectedKeyIds,
-    ]);
+    }, [granularity, period, selectedKeyIds]);
 
     useEffect(() => {
         fetchUsage();

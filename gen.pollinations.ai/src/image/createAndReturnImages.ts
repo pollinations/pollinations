@@ -1,8 +1,5 @@
 import debug from "debug";
-import {
-    fetchFromLeastBusyFluxServer,
-    fetchFromLeastBusyServer,
-} from "./availableServers.ts";
+import { fetchFromLeastBusyServer } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
@@ -22,14 +19,14 @@ import {
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
-import { sanitizeString } from "./translateIfNecessary.ts";
+import { sanitizeString } from "./util.ts";
+import { closestByRatio } from "./utils/aspectRatio.ts";
 import {
     analyzeImageSafety,
-    analyzeTextSafety,
     type ContentSafetyFlags,
+    requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
-import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
     bufferToUint8Array,
@@ -77,14 +74,9 @@ export type ImageGenerationResult = {
 };
 
 export type AuthResult = {
-    authenticated: boolean;
     tokenAuth: boolean;
-    referrerAuth: boolean;
-    bypass: boolean;
-    reason: string;
     userId: string | null;
     username: string | null;
-    debugInfo: object;
 };
 
 function safeTokenCount(value: unknown): number {
@@ -169,7 +161,7 @@ export const callSelfHostedServer = async (
 ): Promise<ImageGenerationResult> => {
     try {
         logOps("safeParams", safeParams);
-        // Always use max steps (4) - all requests go through enter.pollinations.ai
+        // Always use max steps (4) - every request is an authenticated gateway request
         const steps = 4;
         logOps("calculated_steps", steps);
 
@@ -180,7 +172,6 @@ export const callSelfHostedServer = async (
             width: safeParams.width,
             height: safeParams.height,
             seed: safeParams.seed,
-            negative_prompt: safeParams.negative_prompt,
             steps: steps,
         };
 
@@ -200,13 +191,7 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            // Route to appropriate server pool based on model
-            const fetchFunction =
-                safeParams.model === "zimage"
-                    ? (opts: RequestInit) =>
-                          fetchFromLeastBusyServer("zimage", opts)
-                    : fetchFromLeastBusyFluxServer;
-            response = await fetchFunction({
+            response = await fetchFromLeastBusyServer("zimage", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -335,18 +320,16 @@ const callGPTImageWithEndpoint = async (
 
     // Map safeParams to Azure API parameters
     // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
-    // Select the size with the closest aspect ratio to the input
-    const inputRatio = safeParams.width / safeParams.height;
-    const sizes = [
-        { size: "1024x1024", ratio: 1 },
+    // Select the size with the closest aspect ratio to the input.
+    // Table order preserves the historical tie behavior (e.g. a 5:4 input,
+    // equidistant from 1:1 and 3:2, picks 1536x1024).
+    const size = closestByRatio(safeParams.width, safeParams.height, [
         { size: "1536x1024", ratio: 1.5 },
         { size: "1024x1536", ratio: 1 / 1.5 },
-    ];
-    const size = sizes.reduce((a, b) =>
-        Math.abs(a.ratio - inputRatio) < Math.abs(b.ratio - inputRatio) ? a : b,
-    ).size;
+        { size: "1024x1024", ratio: 1 },
+    ]).size;
 
-    // Use requested quality - enter.pollinations.ai handles tier-based access control
+    // Use requested quality - access control runs in this worker's auth/balance middleware
     const quality = safeParams.quality === "high" ? "high" : "medium";
 
     // Set output format to png if model is gptimage, otherwise jpeg
@@ -575,56 +558,17 @@ export const callGPTImage = async (
 };
 
 /**
- * Checks prompt safety with Azure Content Safety, logs the result, and throws
- * an HttpError(400) if the prompt is unsafe.
- */
-async function requireSafePrompt(
-    prompt: string,
-    safeParams: ImageParams,
-    userInfo: AuthResult,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<void> {
-    const promptSafetyResult = await analyzeTextSafety(prompt);
-
-    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
-
-    if (!promptSafetyResult.safe) {
-        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-        logError("Azure Content Safety rejected prompt:", errorMessage);
-        progress.updateBar(
-            requestId,
-            100,
-            "Error",
-            "Prompt contains unsafe content",
-        );
-
-        const error = new HttpError(errorMessage, 400);
-        await logGptImageError(
-            prompt,
-            safeParams,
-            userInfo,
-            error,
-            promptSafetyResult,
-        );
-        throw error;
-    }
-}
-
-/**
  * Formats user auth info for logging.
  */
 function formatAuthInfo(userInfo: AuthResult): string {
     return userInfo
-        ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
+        ? `tokenAuth=${userInfo.tokenAuth}, userId=${userInfo.userId || "none"}`
         : "No userInfo provided";
 }
 
 const generateImage = async (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
@@ -636,28 +580,9 @@ const generateImage = async (
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
                 formatAuthInfo(userInfo),
             );
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
-            );
 
             try {
-                await requireSafePrompt(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    progress,
-                    requestId,
-                );
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    `Trying ${gptConfig.provider} GPT Image (${gptConfig.modelName})...`,
-                );
+                await requireSafePrompt(prompt, safeParams, userInfo);
                 return await callGPTImage(
                     prompt,
                     safeParams,
@@ -681,37 +606,13 @@ const generateImage = async (
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
             );
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
-            );
 
             try {
                 if (safeParams.safe) {
-                    await requireSafePrompt(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        progress,
-                        requestId,
-                    );
+                    await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                const modelDisplayName =
-                    safeParams.model === "nanobanana-pro"
-                        ? "Nano Banana Pro"
-                        : safeParams.model === "nanobanana-2"
-                          ? "Nano Banana 2"
-                          : "Nano Banana";
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    `Generating with ${modelDisplayName}...`,
-                );
-                return await callVertexAIGemini(prompt, safeParams, userInfo);
+                return await callVertexAIGemini(prompt, safeParams);
             } catch (error) {
                 logError(
                     "Vertex AI Gemini image generation or safety check failed:",
@@ -724,18 +625,6 @@ const generateImage = async (
 
         case "kontext": {
             try {
-                progress.updateBar(
-                    requestId,
-                    30,
-                    "Processing",
-                    "Checking prompt safety...",
-                );
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Generating with Azure Flux Kontext...",
-                );
                 return await callAzureFluxKontext(prompt, safeParams, userInfo);
             } catch (error) {
                 logError(
@@ -748,51 +637,24 @@ const generateImage = async (
         }
 
         case "seedream5":
-            return await callSeedream5API(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callSeedream5API(prompt, safeParams);
 
         case "seedream":
-            return await callSeedreamAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callSeedreamAPI(prompt, safeParams);
 
         case "seedream-pro":
-            return await callSeedreamProAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callSeedreamProAPI(prompt, safeParams);
 
         case "klein":
-            return await callFluxKleinAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callFluxKleinAPI(prompt, safeParams);
 
         case "p-image":
-            return await callPrunaImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callPrunaImageAPI(prompt, safeParams);
 
         case "grok-imagine":
             return await callXaiImageAPI(
                 prompt,
                 safeParams,
-                progress,
-                requestId,
                 "grok-imagine-image",
             );
 
@@ -800,69 +662,30 @@ const generateImage = async (
             return await callXaiImageAPI(
                 prompt,
                 safeParams,
-                progress,
-                requestId,
                 "grok-imagine-image-pro",
             );
 
         case "p-image-edit":
-            return await callPrunaImageEditAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callPrunaImageEditAPI(prompt, safeParams);
 
         case "nova-canvas":
-            return await callNovaCanvasAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callNovaCanvasAPI(prompt, safeParams);
 
         case "wan-image":
-            return await callWanImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                false,
-            );
+            return await callWanImageAPI(prompt, safeParams, false);
 
         case "wan-image-pro":
-            return await callWanImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                true,
-            );
+            return await callWanImageAPI(prompt, safeParams, true);
 
         case "qwen-image":
-            return await callQwenImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callQwenImageAPI(prompt, safeParams);
 
         case "flux":
-            progress.updateBar(
-                requestId,
-                25,
-                "Processing",
-                "Using Fireworks FLUX",
-            );
-            return await callFireworksFluxSchnellAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            return await callFireworksFluxSchnellAPI(prompt, safeParams);
 
         default:
-            // zimage and any unrecognized model fall through to self-hosted servers
+            // zimage is the only model that reaches the default branch
+            // (the model enum is closed and every other model is dispatched above)
             return await callSelfHostedServer(prompt, safeParams);
     }
 };
@@ -898,23 +721,14 @@ const prepareMetadata = (
  * @param {Buffer} buffer - The raw image buffer
  * @param {Object} metadataObj - Metadata to embed in the image
  * @param {Object} maturity - Additional maturity information
- * @param {Object} progress - Progress tracking object
- * @param {string} requestId - Request ID for progress tracking
  * @returns {Promise<Buffer>} - The processed image buffer
  */
 const processImageBuffer = async (
     buffer: Buffer,
     metadataObj: object,
     maturity: object,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<Buffer> => {
-    // Convert format to JPEG
-    progress.updateBar(requestId, 85, "Processing", "Converting to JPEG...");
     const processedBuffer = await convertToJpeg(buffer);
-
-    // Add metadata
-    progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
     return await writeExifMetadata(processedBuffer, metadataObj, maturity);
 };
 
@@ -923,33 +737,18 @@ const processImageBuffer = async (
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
  * @param {string} originalPrompt - The original prompt before any transformations.
- * @param {Object} progress - Progress tracking object.
- * @param {string} requestId - Request ID for progress tracking.
- * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
+ * @param {Object} userInfo - User authentication info for safety logging.
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
     prompt: string,
     safeParams: ImageParams,
     originalPrompt: string,
-    progress: ProgressManager,
-    requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     try {
-        // Update generation progress
-        progress.updateBar(requestId, 60, "Generation", "Calling API...");
-
         // Generate the image using the appropriate model
-        const result = await generateImage(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-            userInfo,
-        );
-        progress.updateBar(requestId, 70, "Generation", "API call complete");
-        progress.updateBar(requestId, 75, "Processing", "Checking safety...");
+        const result = await generateImage(prompt, safeParams, userInfo);
 
         // Extract maturity flags
         const maturityFlags = extractMaturityFlags(result);
@@ -973,8 +772,6 @@ export async function createAndReturnImageCached(
             result.buffer,
             metadataObj,
             maturity,
-            progress,
-            requestId,
         );
 
         return {

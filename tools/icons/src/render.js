@@ -64,29 +64,43 @@ export function renderSolidIcon(svg, size, { bg, logoColor, fraction = 0.62 }) {
     return compose(svg, { width: size, bg, logoColor, fraction });
 }
 
+// Tint an SVG and rasterize it to fit within w×h (transparent); return {buf,w,h}.
+async function rasterize(svg, color, w, h) {
+    const buf = await sharp(Buffer.from(tintLogo(svg, color)))
+        .resize(w, h, { fit: "inside", background: TRANSPARENT })
+        .png()
+        .toBuffer();
+    const m = await sharp(buf).metadata();
+    return { buf, w: m.width, h: m.height };
+}
+
 /**
- * OG card: a tinted logo (typically the wide wordmark) fit within `wFraction` ×
- * `hFraction` of the card, centered on a solid brand-color field. Uses fit
- * "inside" + gravity center so any aspect ratio is preserved without cropping.
+ * OG card: the brand lockup STACKED — the lotus mark above the "pollinations.ai"
+ * logotype — centered on a solid field. Both are modular brand atoms (`logo.svg`
+ * + `logo-text.svg`), so the card is just a composition; nothing is extracted at
+ * render time. Stacking (vs. the wide horizontal lockup) keeps the whole mark
+ * inside the central square, so it survives the 1:1 crops small link-preview
+ * thumbnails apply.
  */
 export async function renderOg(
-    svg,
+    lotusSvg,
+    textSvg,
     {
         width = 1200,
         height = 630,
         bg,
         logoColor,
-        wFraction = 0.7,
-        hFraction = 0.55,
+        lotusSize = 230,
+        textWidth = 470,
+        gap = 34,
     },
 ) {
-    const logo = await sharp(Buffer.from(tintLogo(svg, logoColor)))
-        .resize(Math.round(width * wFraction), Math.round(height * hFraction), {
-            fit: "inside",
-            background: TRANSPARENT,
-        })
-        .png()
-        .toBuffer();
+    const lotus = await rasterize(lotusSvg, logoColor, lotusSize, lotusSize);
+    const text = await rasterize(textSvg, logoColor, textWidth, height);
+
+    const stackH = lotus.h + gap + text.h;
+    const top = Math.round((height - stackH) / 2);
+    const cx = width / 2;
     return sharp({
         create: {
             width,
@@ -95,7 +109,14 @@ export async function renderOg(
             background: { ...hexToRgb(bg), alpha: 1 },
         },
     })
-        .composite([{ input: logo, gravity: "center" }])
+        .composite([
+            { input: lotus.buf, left: Math.round(cx - lotus.w / 2), top },
+            {
+                input: text.buf,
+                left: Math.round(cx - text.w / 2),
+                top: top + lotus.h + gap,
+            },
+        ])
         .png()
         .toBuffer();
 }

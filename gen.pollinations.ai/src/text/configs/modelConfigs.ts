@@ -2,7 +2,6 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
-    createDashScopeModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
@@ -177,6 +176,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "claude-fable-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -236,6 +240,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "minimax/minimax-m3",
         }),
 
+    // -- OpenRouter (Kimi K2.7 Code) -----------------------------------------
+    // K2.7 (Code variant) is not on Fireworks/Azure yet (both top out at K2.6);
+    // OpenRouter is the only route.
+    "moonshotai/kimi-k2.7-code": () =>
+        createOpenRouterModelConfig({
+            model: "moonshotai/kimi-k2.7-code",
+        }),
+
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
         createAzureModelConfig(
@@ -257,11 +269,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "meta-llama/llama-4-scout",
         }),
 
-    // -- Alibaba DashScope (Qwen) ---------------------------------------------
-    "qwen3-coder-next": () =>
-        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-
-    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
+    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
+    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
+    "qwen/qwen3-coder-next": () =>
+        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",

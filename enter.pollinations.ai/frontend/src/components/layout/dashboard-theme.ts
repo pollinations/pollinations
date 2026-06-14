@@ -1,36 +1,30 @@
-import type { ThemeName } from "@pollinations/ui";
-export type { ThemeName };
-
 // Intent maps live per-primitive now: Button/Surface/IconButton support
 // `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
+import {
+    BeakerIcon,
+    LockIcon,
+    NewspaperIcon,
+    TrendUpIcon,
+    WalletIcon,
+} from "@pollinations/ui";
+import type { ComponentType } from "react";
 
 export const DASHBOARD_NAV_ITEMS = [
-    { id: "news-faq", label: "News & FAQ", theme: "violet" },
-    { id: "models", label: "Models", theme: "teal" },
-    { id: "keys", label: "Keys", theme: "blue" },
-    { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "activity", label: "Activity", theme: "pink" },
+    { id: "news-faq", label: "News & FAQ", icon: NewspaperIcon },
+    { id: "models", label: "Models", icon: BeakerIcon },
+    { id: "keys", label: "Keys", icon: LockIcon },
+    { id: "pollen", label: "Pollen", icon: WalletIcon },
+    { id: "activity", label: "Activity", icon: TrendUpIcon },
 ] as const satisfies readonly {
     id: string;
     label: string;
-    theme: ThemeName;
+    icon: ComponentType<{ className?: string }>;
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 
 export const DASHBOARD_PAGES = DASHBOARD_NAV_ITEMS.map(({ id }) => id);
-
-// Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
-// Pages should read their theme from here so flipping a nav item's `theme`
-// retheme the corresponding page in one edit.
-export const dashboardThemeByPage = Object.fromEntries(
-    DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
-) as Record<DashboardPage, ThemeName>;
-
-// Page chrome colors are driven by @pollinations/ui CSS variables.
-// Components scope their subtree with `data-theme="..."` and read the
-// Tailwind bridge utilities from @pollinations/ui/app.css.
 
 export function isDashboardPage(page: string): page is DashboardPage {
     return DASHBOARD_PAGES.includes(page as DashboardPage);

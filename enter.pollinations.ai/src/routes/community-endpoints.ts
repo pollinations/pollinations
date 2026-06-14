@@ -8,6 +8,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -16,7 +17,6 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,

@@ -1,14 +1,14 @@
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
+import { parseBooleanLike } from "@/util.ts";
 
-const BooleanQueryParamSchema = z.preprocess((value) => {
-    if (typeof value !== "string") return value;
-    const normalized = value.trim().toLowerCase();
-    if (["true", "1", "yes", "on"].includes(normalized)) return true;
-    if (["false", "0", "no", "off", ""].includes(normalized)) return false;
-    return value;
-}, z.boolean());
+// z.coerce.boolean() coerces the string "false" to true; parse boolean-ish
+// tokens instead and let unrecognized values fail validation.
+const BooleanQueryParamSchema = z.preprocess(
+    (value) => parseBooleanLike(value) ?? value,
+    z.boolean(),
+);
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
     model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({

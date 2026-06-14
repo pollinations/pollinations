@@ -20,7 +20,13 @@ async function resolveAuthKey(
     return typeof authKey === "function" ? await authKey() : authKey;
 }
 
-const SKIPPED_CONFIG_KEYS = new Set(["authKey", "useUserApiKey"]);
+// Gateway-internal config keys that must not be forwarded as x-portkey-* headers.
+const SKIPPED_CONFIG_KEYS = new Set([
+    "authKey",
+    "useUserApiKey",
+    "defaultOptions",
+    "requiresBase64ImageUrls",
+]);
 
 export async function generatePortkeyHeaders(
     config: PortkeyConfig,

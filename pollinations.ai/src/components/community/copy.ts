@@ -237,4 +237,54 @@ export const SUPPORTERS_LIST: { name: string; url: string; logo: string }[] = [
         url: "https://nebius.com/",
         logo: "/supporters/nebius.svg",
     },
+    {
+        name: "OpenAI",
+        url: "https://openai.com/",
+        logo: "/supporters/openai.svg",
+    },
+    {
+        name: "OpenRouter",
+        url: "https://openrouter.ai/",
+        logo: "/supporters/openrouter.svg",
+    },
+    {
+        name: "Fireworks AI",
+        url: "https://fireworks.ai/",
+        logo: "/supporters/fireworks.svg",
+    },
+    {
+        name: "Replicate",
+        url: "https://replicate.com/",
+        logo: "/supporters/replicate.svg",
+    },
+    {
+        name: "RunPod",
+        url: "https://www.runpod.io/",
+        logo: "/supporters/runpod.svg",
+    },
+    {
+        name: "OVHcloud",
+        url: "https://www.ovhcloud.com/",
+        logo: "/supporters/ovhcloud.svg",
+    },
+    {
+        name: "Lambda Labs",
+        url: "https://lambda.ai/",
+        logo: "/supporters/lambda.svg",
+    },
+    {
+        name: "ElevenLabs",
+        url: "https://elevenlabs.io/",
+        logo: "/supporters/elevenlabs.svg",
+    },
+    {
+        name: "AssemblyAI",
+        url: "https://www.assemblyai.com/",
+        logo: "/supporters/assemblyai.svg",
+    },
+    {
+        name: "Alibaba Cloud",
+        url: "https://www.alibabacloud.com/",
+        logo: "/supporters/alibaba.svg",
+    },
 ];

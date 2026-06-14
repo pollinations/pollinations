@@ -283,7 +283,7 @@ function CommunityPage() {
             >
                 <div
                     data-theme="accent"
-                    className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
+                    className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8"
                 >
                     {SUPPORTERS_LIST.map((supporter) => (
                         <a
@@ -291,12 +291,12 @@ function CommunityPage() {
                             href={supporter.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-xl bg-surface-opaque/80 p-4 text-center shadow-well outline-none transition hover:-translate-y-0.5 hover:bg-surface-opaque/95 focus-visible:ring-2 focus-visible:ring-theme-border"
+                            className="group flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-xl bg-surface-opaque/80 p-2 text-center shadow-well outline-none transition hover:-translate-y-0.5 hover:bg-surface-opaque/95 focus-visible:ring-2 focus-visible:ring-theme-border"
                         >
-                            <span className="flex h-16 w-full items-center justify-center text-ink-900">
+                            <span className="flex h-12 w-full items-center justify-center text-ink-900">
                                 <span
                                     aria-hidden="true"
-                                    className="block h-12 w-12 bg-current transition group-hover:scale-105"
+                                    className="block h-10 w-10 bg-current transition group-hover:scale-105"
                                     style={{
                                         maskImage: `url(${supporter.logo})`,
                                         WebkitMaskImage: `url(${supporter.logo})`,
@@ -309,7 +309,7 @@ function CommunityPage() {
                                     }}
                                 />
                             </span>
-                            <span className="text-[10px] font-medium leading-tight text-theme-text-soft">
+                            <span className="text-[9px] font-medium leading-[1.1] text-theme-text-soft">
                                 {supporter.name}
                             </span>
                         </a>

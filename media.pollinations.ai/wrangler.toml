@@ -4,6 +4,9 @@ compatibility_date = "2025-11-12"
 compatibility_flags = ["nodejs_compat"]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
+[triggers]
+crons = ["0 4 * * *"]
+
 # Local development server
 [env.development]
 name = "pollinations-media-dev"

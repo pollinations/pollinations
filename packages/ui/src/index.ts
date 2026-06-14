@@ -58,6 +58,7 @@ export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
 export {
     ColorModeToggle,
+    setColorMode,
     useColorMode,
 } from "./primitives/ColorModeToggle.tsx";
 export {

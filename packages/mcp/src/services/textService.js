@@ -5,8 +5,13 @@ import {
     createMCPResponse,
     createTextContent,
     parseApiError,
+    postChatCompletion,
 } from "../utils/coreUtils.js";
-import { getTextModels, validateTextModel } from "../utils/models.js";
+import {
+    getImageModels,
+    getTextModels,
+    validateTextModel,
+} from "../utils/models.js";
 
 async function generateText(params) {
     requireApiKey();
@@ -59,37 +64,8 @@ async function generateText(params) {
         requestBody.response_format = { type: "json_object" };
     }
 
-    const cleanedBody = {};
-    Object.entries(requestBody).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    });
-
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(cleanedBody),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            if (response.status === 429) {
-                throw new Error("Rate limited. Please wait before retrying.");
-            }
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
+        const response = await postChatCompletion(requestBody);
         const result = await response.json();
         const content = result.choices?.[0]?.message?.content || "";
 
@@ -175,37 +151,8 @@ async function chatCompletion(params) {
         user,
     };
 
-    const cleanedBody = {};
-    Object.entries(requestBody).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    });
-
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(cleanedBody),
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            if (response.status === 429) {
-                throw new Error("Rate limited. Please wait before retrying.");
-            }
-            throw new Error(parseApiError(response.status, errorText));
-        }
-
+        const response = await postChatCompletion(requestBody);
         const result = await response.json();
 
         const choice = result.choices?.[0];
@@ -285,7 +232,6 @@ async function chatCompletion(params) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
-                    user_tier: result.user_tier,
                 },
                 true,
             ),
@@ -302,9 +248,19 @@ async function listTextModels(_params) {
     try {
         const models = await getTextModels();
 
+        const hasCapability = (model, capability) =>
+            model.capabilities?.includes(capability);
         const generalModels = models.filter((m) => !m.is_specialized);
         const specializedModels = models.filter((m) => m.is_specialized);
-        const reasoningModels = models.filter((m) => m.reasoning);
+        const reasoningModels = models.filter((m) =>
+            hasCapability(m, "reasoning"),
+        );
+        const searchModels = models.filter((m) =>
+            hasCapability(m, "web_search"),
+        );
+        const codeExecutionModels = models.filter((m) =>
+            hasCapability(m, "code_execution"),
+        );
         const audioModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("audio") ||
@@ -313,7 +269,9 @@ async function listTextModels(_params) {
         const visionModels = models.filter(
             (m) => m.input_modalities?.includes("image") || m.vision,
         );
-        const toolCapableModels = models.filter((m) => m.tools);
+        const toolCapableModels = models.filter((m) =>
+            hasCapability(m, "tool_calling"),
+        );
 
         const result = {
             models: models.map((m) => ({
@@ -322,6 +280,7 @@ async function listTextModels(_params) {
                 aliases: m.aliases || [],
                 inputModalities: m.input_modalities,
                 outputModalities: m.output_modalities,
+                capabilities: m.capabilities || [],
                 tools: m.tools,
                 reasoning: m.reasoning,
                 voices: m.voices,
@@ -331,6 +290,8 @@ async function listTextModels(_params) {
                 general: generalModels.map((m) => m.name),
                 specialized: specializedModels.map((m) => m.name),
                 reasoning: reasoningModels.map((m) => m.name),
+                search: searchModels.map((m) => m.name),
+                codeExecution: codeExecutionModels.map((m) => m.name),
                 audio: audioModels.map((m) => m.name),
                 vision: visionModels.map((m) => m.name),
                 toolCapable: toolCapableModels.map((m) => m.name),
@@ -339,6 +300,8 @@ async function listTextModels(_params) {
                 totalModels: models.length,
                 generalModels: generalModels.length,
                 reasoningModels: reasoningModels.length,
+                searchModels: searchModels.length,
+                codeExecutionModels: codeExecutionModels.length,
                 audioModels: audioModels.length,
                 visionModels: visionModels.length,
                 toolCapableModels: toolCapableModels.length,
@@ -447,7 +410,6 @@ async function getPricing(params) {
         }
 
         if (type === "all" || type === "image") {
-            const { getImageModels } = await import("../utils/modelCache.js");
             const imageModels = await getImageModels();
             results.imageModels = imageModels
                 .map((m) => ({
@@ -603,22 +565,10 @@ const toolSchema = z.object({
 
 const audioOptionsSchema = z.object({
     voice: z
-        .enum([
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "coral",
-            "verse",
-            "ballad",
-            "ash",
-            "sage",
-            "amuch",
-            "dan",
-        ])
-        .describe("Voice for audio output"),
+        .string()
+        .describe(
+            "Voice for audio output. The canonical list lives in the registry — use listAudioVoices to discover valid values; the server rejects unknown voices.",
+        ),
     format: z
         .enum(["wav", "mp3", "flac", "opus", "pcm16"])
         .describe("Audio format"),

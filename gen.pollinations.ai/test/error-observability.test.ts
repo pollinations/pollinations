@@ -2,12 +2,12 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { handleError, UpstreamError } from "@shared/error.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { handleError, UpstreamError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
 import { handleChatCompletionLocal } from "@/text/handler.ts";
 
@@ -207,7 +207,9 @@ describe("error observability", () => {
 
         const ctx = createExecutionContext();
         const response = await app.fetch(
-            new Request("https://gen.pollinations.ai/unmatched?x=1"),
+            new Request(
+                "https://gen.pollinations.ai/unmatched?x=1&key=sk_secret&token=secret_token",
+            ),
             {
                 ENVIRONMENT: "test",
                 LOG_LEVEL: "debug",
@@ -239,7 +241,13 @@ describe("error observability", () => {
             route_path: "/unmatched",
             status: 500,
             error_class: "Error",
-            request_inputs: JSON.stringify({ query: { x: "1" } }),
+            request_inputs: JSON.stringify({
+                query: {
+                    x: "1",
+                    key: "[redacted]",
+                    token: "[redacted]",
+                },
+            }),
         });
     });
 

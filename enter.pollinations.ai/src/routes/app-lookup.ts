@@ -1,4 +1,5 @@
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -6,7 +7,6 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { validator } from "../middleware/validator.ts";
 import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
@@ -65,7 +65,7 @@ const AppLookupQuerySchema = z.object({
 export const appLookupRoutes = new Hono<Env>().get(
     "/",
     describeRoute({
-        tags: ["Account"],
+        tags: ["👤 Account"],
         description:
             "Look up app attribution by client_id. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen. Without a client_id the consent screen falls back to a hostname-only display.",
         hide: ({ c }) => c?.env.ENVIRONMENT !== "development",

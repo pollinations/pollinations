@@ -1,22 +1,23 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { getPollenPack } from "@/pollen-packs.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
+const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = [
-    "/checkout/2",
-    "/checkout/5",
-    "/checkout/10",
-    "/checkout/20",
-    "/checkout/50",
-    "/checkout/100",
+    "/checkout/p2",
+    "/checkout/p5",
+    "/checkout/p10",
+    "/checkout/p20",
+    "/checkout/p50",
+    "/checkout/p100",
 ];
 
 function signStripeWebhookPayload(payload: string): string {
@@ -25,6 +26,24 @@ function signStripeWebhookPayload(payload: string): string {
         .update(`${timestamp}.${payload}`, "utf8")
         .digest("hex");
     return `t=${timestamp},v1=${signature}`;
+}
+
+function expectUsdPriceData(
+    body: Record<string, string> | undefined,
+    amountUsd: number,
+    expectedName?: string,
+): void {
+    expect(body?.["line_items[0][price]"]).toBeUndefined();
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe(
+        String(amountUsd * 100),
+    );
+    expect(body?.["line_items[0][price_data][tax_behavior]"]).toBe("inclusive");
+    if (expectedName) {
+        expect(body?.["line_items[0][price_data][product_data][name]"]).toBe(
+            expectedName,
+        );
+    }
 }
 
 function createAutoTopUpInvoiceEvent(
@@ -58,7 +77,6 @@ function createAutoTopUpInvoiceEvent(
                 metadata: {
                     pollinations_user_id: userId,
                     pollinations_purpose: "auto_top_up",
-                    packAmount: "10",
                 },
                 ...invoiceOverrides,
             },
@@ -81,7 +99,6 @@ async function insertAutoTopUpAttempt({
     invoiceId,
     status = "pending",
     amountUsd = 10,
-    pollenGrant = 13,
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
@@ -91,7 +108,6 @@ async function insertAutoTopUpAttempt({
     invoiceId: string | null;
     status?: string;
     amountUsd?: number;
-    pollenGrant?: number;
     completedAt?: number | null;
     createdAt?: number;
     updatedAt?: number;
@@ -102,19 +118,17 @@ async function insertAutoTopUpAttempt({
             user_id,
             stripe_invoice_id,
             amount_usd,
-            pollen_grant,
             status,
             created_at,
             updated_at,
             completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
             userId,
             invoiceId,
             amountUsd,
-            pollenGrant,
             status,
             createdAt,
             updatedAt,
@@ -143,7 +157,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("stripe", "tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -156,8 +170,7 @@ test.for(
         },
         redirect: "manual",
     });
-    // 302 = redirect to Stripe checkout, 500 = Stripe API error (no real API key in test)
-    expect(sessionCookieResponse.status).toBeOneOf([302, 500]);
+    expect(sessionCookieResponse.status).toBe(302);
 });
 
 test("GET /api/stripe/products returns pack list", async () => {
@@ -166,42 +179,48 @@ test("GET /api/stripe/products returns pack list", async () => {
 
     const data = (await response.json()) as {
         packs: {
+            packKey: string;
             amount: number;
-            bonusPollen: number;
-            pollenGrant: number;
             description: string;
         }[];
     };
     expect(data.packs).toHaveLength(6);
-    expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
-    expect(data.packs.map((p) => p.pollenGrant)).toEqual([
-        2, 6, 13, 28, 75, 160,
+    expect(data.packs.map((p) => p.packKey)).toEqual([
+        "p2",
+        "p5",
+        "p10",
+        "p20",
+        "p50",
+        "p100",
     ]);
+    expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
 });
 
-test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
+test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
-    const response = await SELF.fetch(`${base}/checkout/invalid`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-        },
-    });
-    expect(response.status).toBe(400);
-    const data = (await response.json()) as { error: string };
-    expect(data.error).toBe("Invalid pack amount");
+    for (const path of ["/checkout/invalid", "/checkout/10"]) {
+        const response = await SELF.fetch(`${base}${path}`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+        expect(response.status).toBe(400);
+        const data = (await response.json()) as { error: string };
+        expect(data.error).toBe("Invalid pack");
+    }
 });
 
-test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async ({
+test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
@@ -227,18 +246,18 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     );
     expect(checkoutRequest?.body.customer).toBe("cus_mock_1");
     expect(checkoutRequest?.body.payment_method_configuration).toBe(
-        "pmc_1TUpoC6O03AauPe8gaFzZxyM",
+        stripePmcId,
     );
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
-test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", async ({
+test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/10`, {
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -250,33 +269,29 @@ test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", a
     )?.body;
     expect(body).toBeTruthy();
 
-    // Line item: unit amount + product copy must match the $10 pack catalog.
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1000");
-    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
-    expect(body?.["line_items[0][price_data][product_data][name]"]).toMatch(
-        /10 Pollen \+ 3 FREE/,
-    );
+    // No cf-ipcountry header → USD default cohort. Checkout stays USD-native
+    // and Adaptive Pricing may localize presentment where supported.
+    expectUsdPriceData(body, 10);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
-    // Session metadata must snapshot the grant so the webhook credits
-    // exactly what was displayed at checkout time.
-    expect(body?.["metadata[packAmount]"]).toBe("10");
-    expect(body?.["metadata[packPollenGrant]"]).toBe("13");
-    expect(body?.["metadata[packBonusPollen]"]).toBe("3");
+    // Session metadata carries the pack identity so the webhook can look up
+    // the pack's fixed USD amount to credit. cohort identifies which routing
+    // branch was taken.
+    expect(body?.["metadata[packKey]"]).toBe("p10");
+    expect(body?.["metadata[cohort]"]).toBe("USD");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
-    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("10");
-    expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("13");
-    expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("3");
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p10");
 });
 
-test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
+test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/2`, {
+    const response = await SELF.fetch(`${base}/checkout/p2`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -288,17 +303,81 @@ test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
     )?.body;
     expect(body).toBeTruthy();
 
-    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("200");
-    expect(body?.["line_items[0][price_data][product_data][name]"]).not.toMatch(
-        /FREE/,
-    );
+    // No cf-ipcountry header → USD default cohort.
+    expectUsdPriceData(body, 2, "🪷 2 Pollen");
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
-    expect(body?.["metadata[packAmount]"]).toBe("2");
-    expect(body?.["metadata[packPollenGrant]"]).toBe("2");
-    expect(body?.["metadata[packBonusPollen]"]).toBe("0");
-    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("2");
-    expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("2");
-    expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
+    expect(body?.["metadata[packKey]"]).toBe("p2");
+    expect(body?.["metadata[cohort]"]).toBe("USD");
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
+});
+
+// Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends
+// USD price_data and leaves presentment localization to Stripe AP. Each cohort
+// label must round-trip header → handler → echoed metadata[cohort], holding the
+// USD-native price_data, AP-on, and buy-pollen PMC contract constant.
+test.for([
+    { country: "BR", cohort: "BR", pack: "p5", amountUsd: 5 },
+    { country: "NL", cohort: "EU_CORE", pack: "p10", amountUsd: 10 },
+    { country: "CN", cohort: "APAC_ALIPAY", pack: "p20", amountUsd: 20 },
+    { country: "IN", cohort: "INDIA", pack: "p10", amountUsd: 10 },
+    { country: "GB", cohort: "UK", pack: "p5", amountUsd: 5 },
+])("cohort $cohort: cf-ipcountry=$country → USD price_data + AP on + buy-pollen PMC", async ({
+    country,
+    cohort,
+    pack,
+    amountUsd,
+}, { sessionToken, mocks }) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(`${base}/checkout/${pack}`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": country,
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    expectUsdPriceData(body, amountUsd);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
+    expect(body?.["metadata[cohort]"]).toBe(cohort);
+});
+
+test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIPAY)", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    // The 5,000-charge live audit showed 99.8% of MO billing-country charges
+    // were US-issued cards. MO must drop to USD default.
+    const response = await SELF.fetch(`${base}/checkout/p5`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "MO",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    expectUsdPriceData(body, 5);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
+    expect(body?.["metadata[cohort]"]).toBe("USD");
 });
 
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
@@ -657,7 +736,6 @@ test("GET /api/stripe/billing shows pending auto top-up invoice payment link", a
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
         hosted_invoice_url: hostedInvoiceUrl,
     });
@@ -961,7 +1039,7 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
 
     expect(user).toBeTruthy();
     if (!user) throw new Error("Expected seeded test user");
-    const pack = getPollenPack("10");
+    const pack = getPollenPackByAmount(10);
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 
@@ -1097,7 +1175,7 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(14);
+    expect(afterWebhook?.packBalance).toBe(11);
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -1109,7 +1187,7 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(afterDuplicate?.packBalance).toBe(14);
+    expect(afterDuplicate?.packBalance).toBe(11);
 });
 
 test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is incomplete", async ({
@@ -1583,7 +1661,6 @@ test("POST /api/stripe/auto-top-up/trigger voids stale pending invoices", async 
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -1678,7 +1755,6 @@ test("POST /api/stripe/auto-top-up/trigger credits stale paid pending invoices",
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -1717,7 +1793,7 @@ test("POST /api/stripe/auto-top-up/trigger credits stale paid pending invoices",
         .bind("attempt_stale_paid_pending")
         .first<{ status: string; completedAt: number | null }>();
 
-    expect(updatedUser?.packBalance).toBe(14);
+    expect(updatedUser?.packBalance).toBe(11);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.completedAt).toBeTypeOf("number");
 });
@@ -1856,7 +1932,7 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .bind(invoiceId)
         .first<{ status: string; failureReason: string | null }>();
 
-    expect(updatedUser?.packBalance).toBe(14);
+    expect(updatedUser?.packBalance).toBe(11);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -1909,7 +1985,7 @@ test("POST /api/webhooks/stripe credits payment_succeeded auto top-up invoices",
         .bind(invoiceId)
         .first<{ status: string }>();
 
-    expect(updatedUser?.packBalance).toBe(14);
+    expect(updatedUser?.packBalance).toBe(11);
     expect(attempt?.status).toBe("paid");
 });
 
@@ -1957,7 +2033,7 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(updatedUser?.packBalance).toBe(14);
+    expect(updatedUser?.packBalance).toBe(11);
 });
 
 test.for([
@@ -2073,7 +2149,6 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2157,7 +2232,6 @@ test("POST /api/webhooks/stripe fails declined invoices without disabling auto t
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2300,7 +2374,6 @@ test("POST /api/webhooks/stripe deletes draft failed auto top-up invoices", asyn
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2365,7 +2438,6 @@ test("POST /api/webhooks/stripe still credits paid invoice after payment_failed 
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2403,7 +2475,7 @@ test("POST /api/webhooks/stripe still credits paid invoice after payment_failed 
         .bind(invoiceId)
         .first<{ status: string; failureReason: string | null }>();
 
-    expect(updatedUser?.packBalance).toBe(14);
+    expect(updatedUser?.packBalance).toBe(11);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -2449,7 +2521,6 @@ test("POST /api/webhooks/stripe payment_failed retry does not disable when attem
         metadata: {
             pollinations_user_id: user.id,
             pollinations_purpose: "auto_top_up",
-            packAmount: "10",
         },
     });
 
@@ -2597,6 +2668,61 @@ test("POST /api/webhooks/stripe does not credit sessions without pack metadata",
     expect(processedEvent?.count).toBe(0);
 });
 
+test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybird", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const pack = getPollenPackByAmount(10);
+    expect(pack).toBeDefined();
+    if (!pack) throw new Error("Expected $10 pollen pack");
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_checkout_paid_emit",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_checkout_paid_emit",
+                object: "checkout.session",
+                metadata: { userId: user.id, packKey: pack.packKey },
+                payment_status: "paid",
+                amount_subtotal: pack.amountUsd * 100,
+                amount_total: pack.amountUsd * 100,
+                currency: "usd",
+                customer_email: "buyer@example.com",
+                payment_method_types: ["card", "link"],
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_id: "evt_test_checkout_paid_emit",
+        event_type: "checkout.session.completed",
+        session_id: "cs_test_checkout_paid_emit",
+        amount_cents: pack.amountUsd * 100,
+        currency: "usd",
+        payment_status: "paid",
+        payment_method: "unknown",
+        payment_methods_offered: "card,link",
+        customer_email: "buyer@example.com",
+        livemode: 0,
+    });
+});
+
 test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({
     mocks,
 }) => {
@@ -2677,4 +2803,42 @@ test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
     ).first<{ count: number }>();
     expect(after?.count).toBe(before?.count);
+});
+
+test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    // Delayed-payment methods (BR Pix, EU SEPA) surface failure via
+    // checkout.session.async_payment_failed — exercise the dedicated handler.
+    const failedEvent = {
+        id: "evt_test_async_failed",
+        type: "checkout.session.async_payment_failed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_async_failed",
+                object: "checkout.session",
+                amount_total: 429,
+                currency: "eur",
+                payment_status: "unpaid",
+                payment_method_types: ["sepa_debit"],
+                metadata: { userId: "u_test" },
+                customer_email: "buyer@example.com",
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(failedEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        event_id: "evt_test_async_failed",
+        event_type: "checkout.session.async_payment_failed",
+        currency: "eur",
+        payment_status: "unpaid",
+        payment_methods_offered: "sepa_debit",
+    });
 });

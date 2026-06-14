@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import type { SelectGenerationEvent } from "../../schemas/generation-event.ts";
+import type { TinybirdEvent } from "../../schemas/generation-event.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 type TinybirdGenerationEvent = Omit<
-    SelectGenerationEvent,
+    TinybirdEvent,
     | "eventStatus"
     | "tinybirdDeliveryAttempts"
     | "tinybirdDeliveredAt"
@@ -24,6 +24,7 @@ export type MockTinybirdState = {
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
+    earningsResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -34,6 +35,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
+        earningsResponse: [],
         pipeCalls: [],
     };
 
@@ -80,6 +82,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
+        })
+        .get("/v0/pipes/developer_earnings.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.earningsResponse }, 200);
         });
 
     const handlerMap = {
@@ -92,6 +98,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
+        state.earningsResponse = [];
         state.pipeCalls = [];
     };
 

@@ -1,10 +1,10 @@
 {
-    "name": "@pollinations_ai/mcp",
-    "version": "2.1.0",
+    "name": "@pollinations/mcp",
+    "version": "2.3.0",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
     "bin": {
-        "pollinations-mcp": "./pollinations-mcp.js"
+        "pollinations-mcp": "pollinations-mcp.js"
     },
     "files": [
         "src/**/*",
@@ -14,8 +14,6 @@
     ],
     "scripts": {
         "test": "node test-mcp-client.js",
-        "test:integration": "vitest run tests/integration",
-        "test:integration:watch": "vitest watch tests/integration",
         "start": "node src/index.js"
     },
     "keywords": [
@@ -34,24 +32,23 @@
     "author": "pollinations.ai <hello@pollinations.ai>",
     "contributors": [
         {
-        "name": "Circuit-Overtime",
-        "email": "ayushman@myceli.ai"
+            "name": "Circuit-Overtime",
+            "email": "ayushman@myceli.ai"
         },
         {
-        "name": "ElliotEtag",
-        "email": "elliot@myceli.ai"
+            "name": "ElliotEtag",
+            "email": "elliot@myceli.ai"
         }
     ],
     "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.1",
-        "dotenv": "^16.5.0",
         "play-sound": "^1.1.6",
         "zod": "^3.24.3"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/pollinations/pollinations.git",
+        "url": "git+https://github.com/pollinations/pollinations.git",
         "directory": "packages/mcp"
     },
     "bugs": {
@@ -65,10 +62,7 @@
         "access": "public"
     },
     "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/pollinations"
-    },
-    "devDependencies": {
-        "vitest": "^3.1.2"
+        "type": "github",
+        "url": "https://github.com/sponsors/pollinations"
     }
 }

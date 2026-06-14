@@ -1,6 +1,8 @@
 import { getLogger, type Logger, withContext } from "@logtape/logtape";
+import { getRealClientIp } from "@shared/client-ip.ts";
+import { ensureConfigured } from "@shared/logger.ts";
+import { getPublicUrl } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
-import { ensureConfigured } from "@/logger";
 
 export type LoggerVariables = {
     log: Logger;
@@ -25,21 +27,21 @@ export const logger = createMiddleware<Env>(async (c, next) => {
     const shouldEmitRequestLogs =
         c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
 
+    const publicUrl = getPublicUrl(c).toString();
+
     await withContext(
         {
             requestId: c.var.requestId,
             method: c.req.method,
-            routePath: c.req.url,
+            routePath: publicUrl,
             userAgent: c.req.header("user-agent"),
-            ipAddress:
-                c.req.header("cf-connecting-ip") ||
-                c.req.header("x-forwarded-for"),
+            ipAddress: getRealClientIp(c),
         },
         async () => {
             if (shouldEmitRequestLogs) {
                 log.info("{method} {url}", {
                     method: c.req.method,
-                    url: c.req.url,
+                    url: publicUrl,
                 });
             }
 

@@ -1,3 +1,4 @@
+import { getRealClientIp } from "@shared/client-ip.ts";
 import { createMiddleware } from "hono/factory";
 import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
@@ -32,7 +33,7 @@ export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
             return next();
         }
 
-        const ip = c.req.header("cf-connecting-ip") || "unknown";
+        const ip = getRealClientIp(c);
         const identifier = `pk_${apiKey.id}:ip:${ip}`;
 
         log.debug(

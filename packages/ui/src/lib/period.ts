@@ -1,0 +1,143 @@
+const MS_PER_DAY = 86400000;
+
+export type PeriodGranularity = "day" | "week" | "month";
+
+export type PeriodSelection = {
+    granularity: PeriodGranularity;
+    period: string;
+};
+
+export type PeriodWindow = {
+    start: Date;
+    end: Date;
+};
+
+export function startOfUtcDay(date = new Date()): Date {
+    return new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    );
+}
+
+export function addUtcDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+}
+
+function startOfUtcMonth(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+function addUtcMonths(date: Date, months: number): Date {
+    return new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1),
+    );
+}
+
+function startOfUtcIsoWeek(date: Date): Date {
+    const day = date.getUTCDay() || 7;
+    return addUtcDays(startOfUtcDay(date), 1 - day);
+}
+
+function getUtcIsoWeekPeriod(date: Date): string {
+    const day = date.getUTCDay() || 7;
+    const thursday = addUtcDays(startOfUtcDay(date), 4 - day);
+    const isoYear = thursday.getUTCFullYear();
+    const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+    const isoWeek = Math.ceil(
+        ((thursday.getTime() - yearStart.getTime()) / MS_PER_DAY + 1) / 7,
+    );
+    return `${isoYear}-W${String(isoWeek).padStart(2, "0")}`;
+}
+
+function formatUtcDatePeriod(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+function formatUtcHourPeriod(date: Date): string {
+    return date.toISOString().slice(0, 13).replace("T", " ");
+}
+
+function formatUtcMonthPeriod(date: Date): string {
+    return date.toISOString().slice(0, 7);
+}
+
+export function periodFromDate(
+    granularity: PeriodGranularity,
+    date = new Date(),
+): PeriodSelection {
+    if (granularity === "day") {
+        return {
+            granularity,
+            period: formatUtcDatePeriod(startOfUtcDay(date)),
+        };
+    }
+    if (granularity === "week") {
+        return { granularity, period: getUtcIsoWeekPeriod(date) };
+    }
+    return { granularity, period: formatUtcMonthPeriod(startOfUtcMonth(date)) };
+}
+
+export function currentPeriod(): PeriodSelection {
+    return periodFromDate("day");
+}
+
+export function periodToWindow(selection: PeriodSelection): PeriodWindow {
+    if (selection.granularity === "day") {
+        const start = new Date(`${selection.period}T00:00:00.000Z`);
+        return { start, end: addUtcDays(start, 1) };
+    }
+
+    if (selection.granularity === "week") {
+        const [yearText, weekText] = selection.period.split("-W");
+        const isoYear = Number(yearText);
+        const isoWeek = Number(weekText);
+        const jan4 = new Date(Date.UTC(isoYear, 0, 4));
+        const start = addUtcDays(startOfUtcIsoWeek(jan4), (isoWeek - 1) * 7);
+        return { start, end: addUtcDays(start, 7) };
+    }
+
+    const [yearText, monthText] = selection.period.split("-");
+    const start = new Date(
+        Date.UTC(Number(yearText), Number(monthText) - 1, 1),
+    );
+    return { start, end: addUtcMonths(start, 1) };
+}
+
+export function getPeriodBucketKeys(selection: PeriodSelection): string[] {
+    const { start, end } = periodToWindow(selection);
+    const bucketKeys: string[] = [];
+    const cursor = new Date(start);
+    if (selection.granularity === "day") {
+        while (cursor < end) {
+            bucketKeys.push(`${formatUtcHourPeriod(cursor)}:00:00`);
+            cursor.setUTCHours(cursor.getUTCHours() + 1);
+        }
+        return bucketKeys;
+    }
+
+    while (cursor < end) {
+        bucketKeys.push(formatUtcDatePeriod(cursor));
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    return bucketKeys;
+}
+
+export function periodBucketKeyToDate(
+    bucketKey: string,
+    granularity: PeriodGranularity,
+): Date {
+    if (granularity === "day") {
+        return new Date(`${bucketKey.replace(" ", "T")}.000Z`);
+    }
+    return new Date(`${bucketKey}T00:00:00.000Z`);
+}
+
+export function isPeriodSelectable(
+    selection: PeriodSelection,
+    minDate = new Date(0),
+    maxDate = startOfUtcDay(),
+): boolean {
+    const { start, end } = periodToWindow(selection);
+    return end > minDate && start <= maxDate;
+}

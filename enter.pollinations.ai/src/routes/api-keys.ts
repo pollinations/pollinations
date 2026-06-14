@@ -4,6 +4,7 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -12,7 +13,6 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
@@ -182,16 +182,16 @@ const CreateApiKeySchema = z.object({
  */
 const UrlWithSchemeSchema = z.string().refine(
     (val) => {
-        if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val)) return false;
         try {
-            return new URL(val).hash === "";
+            validateRedirectUriFormat(val);
+            return true;
         } catch {
             return false;
         }
     },
     {
         message:
-            "Must be a valid URL with a scheme and no fragment (e.g. https://...)",
+            "Must be an https:// redirect URI with no fragment, or http:// on a loopback host",
     },
 );
 
@@ -374,7 +374,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/metadata",
         describeRoute({
-            tags: ["Account"],
+            tags: ["👤 Account"],
             description: "Update metadata for an API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

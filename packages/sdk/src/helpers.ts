@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations_ai/sdk';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * // Generate an image and save it
  * const image = await generateImage('A cute cat');
@@ -47,6 +47,7 @@ import type {
     ImageGenerateOptions,
     ImageGenerateV1Options,
     KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
     TextGenerateOptions,
@@ -86,7 +87,7 @@ export function resetClient(): void {
  *
  * @example
  * ```ts
- * import { configure } from '@pollinations_ai/sdk';
+ * import { configure } from '@pollinations/sdk';
  * configure({ apiKey: 'your-api-key' });
  * ```
  */
@@ -546,7 +547,7 @@ export async function upload(
  * ```
  */
 export function authorizeUrl(options: AuthorizeOptions): string {
-    return getClient().authorizeUrl(options);
+    return Pollinations.authorizeUrl(options);
 }
 
 /**
@@ -605,6 +606,15 @@ export async function getBalance(): Promise<AccountBalance> {
  */
 export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
     return getClient().accountUsage(options);
+}
+
+/**
+ * Get usage history for the currently configured API key only.
+ */
+export async function getKeyUsage(
+    options?: KeyUsageOptions,
+): Promise<UsageResponse> {
+    return getClient().accountKeyUsage(options);
 }
 
 /**

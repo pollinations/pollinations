@@ -1,6 +1,7 @@
 
 # Temp test scripts (may contain API keys)
 temp/
+pollinations-myceli-proxy/wrangler.generated.toml
 
 # Crush
 .crush/
@@ -8,6 +9,7 @@ temp/
 # Local-only design planning docs (kept out of the repo)
 /DESIGN_REFACTOR_PLAN.md
 /Design Audit.html
+/_local/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -146,7 +148,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 node_modules/
-lefthook.yml
 .DS_Store
 
 # Tmp folder

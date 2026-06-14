@@ -16,6 +16,7 @@ jobs:
   handle-rejection:
     if: |
       github.event.pull_request.merged == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
       !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
     runs-on: ubuntu-latest
@@ -64,6 +65,7 @@ jobs:
     # Run when an app submission PR is merged (branch: auto/app-{issue}-{slug})
     if: |
       github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
       !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
     runs-on: ubuntu-latest
@@ -149,8 +151,8 @@ jobs:
         id: upgrade
         if: steps.targets.outputs.targets != '[]'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
           npm install -g wrangler

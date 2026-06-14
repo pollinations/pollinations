@@ -47,16 +47,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
-    /** Don't show in public feed (default: false) */
-    nofeed?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
     /** Output quality (default: 'medium') */
@@ -111,10 +101,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -570,7 +556,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage";
+export type AccountPermission = "profile" | "usage" | "keys";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -578,6 +564,10 @@ export interface AuthorizeOptions {
     redirectUrl: string;
     /** Your app's publishable key (shows app name to user) */
     appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
     /** Restrict to specific models */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
@@ -650,7 +640,14 @@ export interface UsageOptions {
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
 }
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
 
 /** Options for fetching daily usage */
 export interface DailyUsageOptions {
@@ -658,6 +655,10 @@ export interface DailyUsageOptions {
     format?: "json" | "csv";
     /** Number of days to include, max 90 (default: 90) */
     days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
     /** Filter to one or more API keys by id */
     api_key_ids?: string[];
 }
@@ -681,14 +682,14 @@ export interface DailyUsageResponse {
 export interface KeyInfo {
     valid: boolean;
     type: string;
-    name?: string;
-    expiresAt?: string;
-    expiresIn?: number;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
     permissions?: {
-        models?: string[];
-        account?: string[];
+        models?: string[] | null;
+        account?: string[] | null;
     };
-    pollenBudget?: number;
+    pollenBudget?: number | null;
     rateLimitEnabled?: boolean;
 }
 
@@ -735,6 +736,18 @@ export interface CreateKeyOptions {
      * `"keys"` is auto-stripped server-side on the BYOP flow.
      */
     accountPermissions?: KeyAccountPermission[];
+    /**
+     * Allowed OAuth redirect URIs for publishable app keys. Required when
+     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * Matching pins scheme, host, port, and path; one trailing slash is
+     * ignored; loopback ports are matched port-agnostically.
+     */
+    redirectUris?: string[];
+    /**
+     * Opt the publishable app key into developer earnings. Defaults to
+     * `false` server-side; only meaningful on `type: "publishable"` keys.
+     */
+    earningsEnabled?: boolean;
 }
 
 /**
@@ -762,6 +775,20 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
@@ -770,9 +797,21 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+/** Per-model agentic/text capabilities */
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
+
 /** Model information */
 export interface ModelInfo {
+    id?: string;
     name: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
+    category?: ModelCategory;
+    brand?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;
@@ -780,6 +819,9 @@ export interface ModelInfo {
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    max_reference_images?: number;
+    max_reference_videos?: number;
+    capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;
@@ -788,17 +830,11 @@ export interface ModelInfo {
     voices?: string[];
     maxInputChars?: number;
     context_length?: number;
+    supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    pricing?: {
-        currency: "pollen";
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-    };
+    paid_only?: boolean;
+    pricing?: Record<string, string> & { currency: "pollen" };
 }
 
 // ============================================================================
@@ -878,8 +914,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     seed?: number;
     /** Output quality */
     quality?: ImageQuality;
-    /** Negative prompt - what to avoid */
-    negativePrompt?: string;
 }
 
 // ============================================================================

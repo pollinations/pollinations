@@ -93,12 +93,6 @@ export async function getRegisteredServers(
     );
 }
 
-export async function countJobs(type: ServerType = "flux"): Promise<number> {
-    return (await getRegisteredServers(type)).length;
-}
-
-export const countFluxJobs = () => countJobs("flux");
-
 export const getNextServerUrl = async (
     type: ServerType = "flux",
 ): Promise<string> => {
@@ -141,6 +135,3 @@ export const fetchFromLeastBusyServer = async (
     }
     return response;
 };
-
-export const fetchFromLeastBusyFluxServer = (options: RequestInit) =>
-    fetchFromLeastBusyServer("flux", options);

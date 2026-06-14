@@ -45,9 +45,6 @@ describe("genericOpenAIClient", () => {
                 modelDef: { name: "openai-fast" },
                 requestedModel: "openai-fast",
                 userApiKey: "sk_should_not_leak",
-                userInfo: { userId: "user-1" },
-                isPrivate: true,
-                referrer: "https://example.com",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
                 temperature: 1,
@@ -64,14 +61,92 @@ describe("genericOpenAIClient", () => {
             temperature: 1,
         });
         expect(upstreamBody).not.toHaveProperty("additionalHeaders");
-        expect(upstreamBody).not.toHaveProperty("isPrivate");
         expect(upstreamBody).not.toHaveProperty("modelConfig");
         expect(upstreamBody).not.toHaveProperty("modelDef");
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
-        expect(upstreamBody).not.toHaveProperty("referrer");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
-        expect(upstreamBody).not.toHaveProperty("userInfo");
+    });
+
+    it("strips top-level null options while preserving nested provider payloads", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
+            },
+        );
+
+        await genericOpenAIClient(
+            [
+                {
+                    role: "assistant",
+                    tool_calls: [{ id: "call_1", type: "function" }],
+                    content: null,
+                },
+            ],
+            {
+                model: "provider-model",
+                audio: null as unknown as Record<string, unknown>,
+                modalities: null as unknown as string[],
+                response_format: null as unknown as { type: string },
+                stream_options: null as unknown as Record<string, unknown>,
+                temperature: null as unknown as number,
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "lookup",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    value: { type: "string", default: null },
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(upstreamBody).toEqual({
+            model: "provider-model",
+            messages: [
+                {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [{ id: "call_1", type: "function" }],
+                },
+            ],
+            stream: false,
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "lookup",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                value: { type: "string", default: null },
+                            },
+                        },
+                    },
+                },
+            ],
+        });
     });
 
     it("drops invalid optional message names before sending upstream", async () => {

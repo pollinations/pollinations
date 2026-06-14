@@ -6,6 +6,7 @@ import type { Usage, UsageType } from "./registry.ts";
 export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
+    promptCacheWriteTokens: "x-usage-prompt-cache-write-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
     promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
@@ -20,7 +21,20 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
 };
 
 /**
- * Convert OpenAI usage format to Usage format
+ * Convert OpenAI usage format to Usage format.
+ *
+ * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the
+ * inclusive grand total, with `*_details` subcategories that sum into it.
+ * Some providers violate or extend this: Grok/xAI reasoning can report
+ * reasoning as an additive counter separate from completion_tokens. Others
+ * have returned inconsistent inclusive details greater than the headline
+ * count, which we cap to avoid impossible negative usage.
+ *
+ * We detect the convention per-row from `total_tokens`. If total_tokens is
+ * prompt + completion, details are inclusive subcategories. If total_tokens
+ * includes detail counters beyond prompt + completion, only the matching
+ * detail bucket is additive and the related top-level count is already the
+ * visible-text count.
  */
 export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens: number;
@@ -31,6 +45,8 @@ export function openaiUsageToUsage(openaiUsage: {
         audio_tokens?: number | null;
         image_tokens?: number | null;
     } | null;
+    cache_read_input_tokens?: number | null;
+    cache_creation_input_tokens?: number | null;
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
@@ -38,35 +54,138 @@ export function openaiUsageToUsage(openaiUsage: {
         rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
-    const promptDetailTokens =
-        (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.audio_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.image_tokens || 0);
+    const promptCachedTokens =
+        openaiUsage.prompt_tokens_details?.cached_tokens ||
+        openaiUsage.cache_read_input_tokens ||
+        0;
+    const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
+    const promptDetails = [
+        promptCachedTokens,
+        promptCacheWriteTokens,
+        openaiUsage.prompt_tokens_details?.audio_tokens || 0,
+        openaiUsage.prompt_tokens_details?.image_tokens || 0,
+    ];
 
-    const completionDetailTokens =
-        (openaiUsage.completion_tokens_details?.accepted_prediction_tokens ||
-            0) +
-        (openaiUsage.completion_tokens_details?.rejected_prediction_tokens ||
-            0) +
-        (openaiUsage.completion_tokens_details?.audio_tokens || 0) +
-        (openaiUsage.completion_tokens_details?.reasoning_tokens || 0);
+    const rawCompletionReasoningTokens =
+        openaiUsage.completion_tokens_details?.reasoning_tokens || 0;
+    const completionDetails = [
+        openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
+        openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,
+        openaiUsage.completion_tokens_details?.audio_tokens || 0,
+        rawCompletionReasoningTokens,
+    ];
 
-    // biome-ignore format: custom formatting
+    const promptDetailTokens = sumTokens(promptDetails);
+    const completionDetailTokens = sumTokens(completionDetails);
+    const { promptDetailsAreAdditive, completionDetailsAreAdditive } =
+        detectUsageConvention(
+            openaiUsage,
+            promptDetailTokens,
+            completionDetailTokens,
+            rawCompletionReasoningTokens,
+        );
+
+    const cappedPromptDetails = promptDetailsAreAdditive
+        ? promptDetails
+        : capDetailsToTotal(openaiUsage.prompt_tokens, promptDetails);
+    const cappedCompletionDetails = completionDetailsAreAdditive
+        ? completionDetails
+        : capDetailsToTotal(openaiUsage.completion_tokens, completionDetails);
+
+    const promptTextTokens = promptDetailsAreAdditive
+        ? openaiUsage.prompt_tokens
+        : openaiUsage.prompt_tokens - sumTokens(cappedPromptDetails);
+
+    const completionTextTokens = completionDetailsAreAdditive
+        ? openaiUsage.completion_tokens
+        : openaiUsage.completion_tokens - sumTokens(cappedCompletionDetails);
+
+    const [
+        cappedPromptCachedTokens,
+        cappedPromptCacheWriteTokens,
+        promptAudioTokens,
+        promptImageTokens,
+    ] = cappedPromptDetails;
+    const [, , completionAudioTokens, completionReasoningTokens] =
+        cappedCompletionDetails;
+
     return {
-        promptTextTokens: 
-            openaiUsage.prompt_tokens - promptDetailTokens,
-        promptCachedTokens:
-            openaiUsage.prompt_tokens_details?.cached_tokens || 0,
-        promptAudioTokens: 
-            openaiUsage.prompt_tokens_details?.audio_tokens || 0,
-        promptImageTokens:
-            openaiUsage.prompt_tokens_details?.image_tokens || 0,
-        completionTextTokens:
-            openaiUsage.completion_tokens - completionDetailTokens,
-        completionAudioTokens:
-            openaiUsage.completion_tokens_details?.audio_tokens || 0,
-        completionReasoningTokens:
-            openaiUsage.completion_tokens_details?.reasoning_tokens || 0,
+        promptTextTokens,
+        promptCachedTokens: cappedPromptCachedTokens,
+        promptCacheWriteTokens: cappedPromptCacheWriteTokens,
+        promptAudioTokens,
+        promptImageTokens,
+        completionTextTokens,
+        completionAudioTokens,
+        completionReasoningTokens,
+    };
+}
+
+function sumTokens(tokens: readonly number[]): number {
+    return tokens.reduce((sum, token) => sum + token, 0);
+}
+
+function capDetailsToTotal(totalTokens: number, details: number[]): number[] {
+    let remaining = totalTokens;
+    return details.map((token) => {
+        const capped = Math.min(token, remaining);
+        remaining -= capped;
+        return capped;
+    });
+}
+
+function detectUsageConvention(
+    openaiUsage: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+    },
+    promptDetailTokens: number,
+    completionDetailTokens: number,
+    completionReasoningTokens: number,
+): {
+    promptDetailsAreAdditive: boolean;
+    completionDetailsAreAdditive: boolean;
+} {
+    const topLevelTotal =
+        openaiUsage.prompt_tokens + openaiUsage.completion_tokens;
+    const additiveDetails = openaiUsage.total_tokens - topLevelTotal;
+
+    if (additiveDetails <= 0) {
+        return {
+            promptDetailsAreAdditive: false,
+            completionDetailsAreAdditive: false,
+        };
+    }
+
+    if (additiveDetails === promptDetailTokens + completionDetailTokens) {
+        return {
+            promptDetailsAreAdditive: promptDetailTokens > 0,
+            completionDetailsAreAdditive: completionDetailTokens > 0,
+        };
+    }
+
+    // Known additive Grok/xAI rows expose the extra total as reasoning tokens.
+    if (
+        completionReasoningTokens > 0 &&
+        additiveDetails === completionReasoningTokens
+    ) {
+        return {
+            promptDetailsAreAdditive: false,
+            completionDetailsAreAdditive: true,
+        };
+    }
+
+    const promptOnly =
+        additiveDetails === promptDetailTokens &&
+        promptDetailTokens !== completionDetailTokens;
+    const completionOnly =
+        additiveDetails === completionDetailTokens &&
+        promptDetailTokens !== completionDetailTokens;
+
+    return {
+        promptDetailsAreAdditive: promptOnly,
+        completionDetailsAreAdditive: completionOnly,
     };
 }
 
@@ -119,33 +238,6 @@ export function parseUsageHeaders(
     }
 
     return usage;
-}
-
-/**
- * Helper for image services: create TokenUsage with only image tokens
- */
-export function createImageTokenUsage(completionImageTokens: number): Usage {
-    return {
-        completionImageTokens,
-    };
-}
-
-/**
- * Helper for video services: create TokenUsage with video seconds (Veo)
- */
-export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
-    return {
-        completionVideoSeconds,
-    };
-}
-
-/**
- * Helper for video services: create TokenUsage with video tokens (Seedance)
- */
-export function createVideoTokenUsage(completionVideoTokens: number): Usage {
-    return {
-        completionVideoTokens,
-    };
 }
 
 /**

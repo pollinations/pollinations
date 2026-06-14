@@ -4,13 +4,14 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
+import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
-import { validator } from "@/middleware/validator.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -19,38 +20,6 @@ const testLog = {
     warn() {},
     error() {},
 } as unknown as Logger;
-
-type CachedObject = {
-    body: Uint8Array;
-    customMetadata?: Record<string, string>;
-    uploaded: Date;
-};
-
-function createTextBucket(): R2Bucket {
-    const objects = new Map<string, CachedObject>();
-
-    return {
-        get: async (key: string) => {
-            const object = objects.get(key);
-            if (!object) return null;
-            return {
-                ...object,
-                body: object.body.slice(),
-            };
-        },
-        put: async (key: string, value: BodyInit, options?: R2PutOptions) => {
-            const body = new Uint8Array(
-                await new Response(value).arrayBuffer(),
-            );
-            objects.set(key, {
-                body,
-                customMetadata: options?.customMetadata,
-                uploaded: new Date(),
-            });
-            return null;
-        },
-    } as unknown as R2Bucket;
-}
 
 type TestEnv = {
     Bindings: CloudflareBindings;
@@ -103,10 +72,10 @@ function createTextCacheApp() {
     };
 }
 
-function createTextCacheEnv(): CloudflareBindings {
+function createTextCacheEnv(bucket = createTestR2Bucket()): CloudflareBindings {
     return {
-        TEXT_BUCKET: createTextBucket(),
-    } as CloudflareBindings;
+        TEXT_BUCKET: bucket,
+    } as unknown as CloudflareBindings;
 }
 
 async function dispatch(
@@ -320,6 +289,27 @@ describe("text cache", () => {
         expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(body).toBe("hit:1:cache-test-prompt");
         expect(cache.originHits).toBe(1);
+    });
+
+    it("refreshes cached text TTL on aged cache hits", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const bucket = createTestR2Bucket();
+        const env = createTextCacheEnv(bucket);
+        const path = "/text/ttl-refresh?model=openai-fast";
+
+        const first = await dispatch(app, path, undefined, env);
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(bucket.putCount).toBe(1);
+
+        const second = await dispatch(app, path, undefined, env);
+        const body = await consumeAndWait(second);
+
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(body).toBe("hit:1:ttl-refresh");
+        expect(cache.originHits).toBe(1);
+        expect(bucket.putCount).toBe(2);
     });
 
     it("normalizes GET query parameter order for cache keys", async () => {

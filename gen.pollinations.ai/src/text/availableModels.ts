@@ -5,11 +5,13 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
+import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
+import { stripReasoningEffort } from "./transforms/stripReasoningEffort.js";
 import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
@@ -46,12 +48,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder-large",
-        config: portkeyConfig["qwen3-coder-next"],
+        config: portkeyConfig["qwen/qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
     },
     {
         name: "qwen-vision",
@@ -60,6 +62,14 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision-pro",
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
+    },
+    {
+        name: "step-3.5-flash",
+        config: portkeyConfig["stepfun/step-3.5-flash"],
+    },
+    {
+        name: "step-flash",
+        config: portkeyConfig["stepfun/step-3.7-flash"],
     },
     {
         name: "mistral",
@@ -73,11 +83,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek/deepseek-v4-flash"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
     },
     {
         name: "gemma",
-        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+        config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
         name: "deepseek-pro",
@@ -86,10 +96,18 @@ const models: ModelDefinition[] = [
     {
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
+        // Non-reasoning deployment 500s if reasoning_effort is forwarded.
+        transform: pipe(stripCacheControl, stripReasoningEffort),
     },
     {
         name: "grok-large",
         config: portkeyConfig["grok-4-20-reasoning"],
+        transform: stripCacheControl,
+    },
+    {
+        name: "grok-4.3",
+        config: portkeyConfig["grok-4.3"],
+        transform: stripCacheControl,
     },
     {
         name: "openai-audio",
@@ -116,10 +134,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
+        name: "claude-opus-4.8",
+        config: portkeyConfig["claude-opus-4-8"],
+    },
+    {
+        name: "claude-fable-5",
+        config: portkeyConfig["claude-fable-5"],
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -129,7 +155,7 @@ const models: ModelDefinition[] = [
         name: "gemini-3.5-flash",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -139,7 +165,7 @@ const models: ModelDefinition[] = [
         name: "gemini-flash-lite-3.1",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -147,7 +173,7 @@ const models: ModelDefinition[] = [
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -155,28 +181,58 @@ const models: ModelDefinition[] = [
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
+        name: "gemini-search-fast",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "gemini-search-large",
+        config: portkeyConfig["gemini-3.5-flash"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "midijourney",
-        config: portkeyConfig["claude-haiku-4-5"],
+        config: portkeyConfig["gpt-5.4-mini"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "midijourney-large",
-        config: portkeyConfig["claude-opus-4-6"],
+        config: portkeyConfig["gpt-5.5"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("low"),
+    },
+    {
+        name: "perplexity-deep",
+        config: portkeyConfig["sonar"],
+        transform: createPerplexitySearchTransform("high"),
+    },
+    {
+        name: "perplexity",
+        config: portkeyConfig["sonar-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
+        transform: createPerplexitySearchTransform("high"),
     },
     {
         name: "kimi",
@@ -189,10 +245,15 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "kimi-k2.7-code",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
+        transform: stripCacheControl,
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
@@ -214,6 +275,10 @@ const models: ModelDefinition[] = [
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+    },
+    {
+        name: "minimax-m3",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
     },
     {
         name: "llama",

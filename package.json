@@ -4,7 +4,11 @@
   "workspaces": [
     "shared",
     "enter.pollinations.ai",
-    "gen.pollinations.ai"
+    "gen.pollinations.ai",
+    "packages/sdk",
+    "packages/ui",
+    "apps/react",
+    "tools/icons"
   ],
   "scripts": {
     "install:all": "npm install && npm install --prefix packages/sdk && npm install --prefix packages/mcp",
@@ -22,7 +26,6 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "lefthook": "^2.0.4",
     "wrangler": "^4.59.1",
     "zod": "^4.3.5"
   }

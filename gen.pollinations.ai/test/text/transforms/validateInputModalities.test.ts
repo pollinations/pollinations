@@ -19,7 +19,7 @@ describe("validateInputModalities", () => {
     it("rejects image input for text-only models", () => {
         expect(() =>
             validateInputModalities(imageMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }),
         ).toThrow(
@@ -32,12 +32,21 @@ describe("validateInputModalities", () => {
         );
     });
 
-    it("allows image input for vision-capable models", () => {
+    // requestedModel must stay a real registry name/alias so resolveModelName
+    // succeeds (the provider model id is not a registry key).
+    it.each([
+        { model: "grok-4.3", requestedModel: "grok-4.3" },
+        {
+            model: "mistralai/mistral-small-3.2-24b-instruct",
+            requestedModel: "mistral",
+        },
+    ])("allows image input for vision-capable model $model", ({
+        model,
+        requestedModel,
+    }) => {
         expect(
-            validateInputModalities(imageMessage, {
-                model: "mistralai/mistral-small-3.2-24b-instruct",
-                requestedModel: "mistral",
-            }).messages,
+            validateInputModalities(imageMessage, { model, requestedModel })
+                .messages,
         ).toBe(imageMessage);
     });
 
@@ -46,7 +55,7 @@ describe("validateInputModalities", () => {
 
         expect(
             validateInputModalities(textMessage, {
-                model: "deepseek/deepseek-v4-flash",
+                model: "accounts/fireworks/models/deepseek-v4-flash",
                 requestedModel: "deepseek",
             }).messages,
         ).toBe(textMessage);

@@ -1,3 +1,4 @@
+import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
@@ -10,7 +11,6 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -24,7 +24,6 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "DEEPINFRA_API_KEY",
     "FIREWORKS_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
@@ -80,7 +79,7 @@ function prepareRequestParameters(requestParams: RequestData): RequestData {
 
     if (!isAudioModel) return requestParams;
 
-    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
+    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {
@@ -100,13 +99,6 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
 
     return {
         ...requestDataWithoutMessages,
-        userInfo: {
-            userId: c.var.auth?.user?.id,
-            username: c.var.auth?.user?.githubUsername,
-            tier: c.var.auth?.user?.tier,
-            referrer: requestData.referrer || "unknown",
-            cf_ray: c.req.header("cf-ray") || "",
-        },
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
     };
@@ -201,53 +193,20 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
         return new Response(completion.responseStream, { headers });
     }
 
-    return new Response(asyncIterableToStream(completion.responseStream), {
-        headers,
-    });
-}
-
-function asyncIterableToStream(
-    iterable: AsyncIterable<unknown> | null | undefined,
-): ReadableStream<Uint8Array> {
+    // Defensive: upstream produced a null stream body.
     const encoder = new TextEncoder();
-    return new ReadableStream({
-        async start(controller) {
-            if (!iterable) {
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-                    ),
-                );
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-                return;
-            }
-
-            try {
-                for await (const chunk of iterable) {
-                    if (typeof chunk === "string") {
-                        controller.enqueue(encoder.encode(chunk));
-                    } else if (chunk instanceof Uint8Array) {
-                        controller.enqueue(chunk);
-                    } else {
-                        controller.enqueue(encoder.encode(String(chunk)));
-                    }
-                }
-            } catch (thrown) {
-                const message =
-                    thrown instanceof Error
-                        ? thrown.message
-                        : "Streaming response failed";
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({ error: { message } })}\n\n`,
-                    ),
-                );
-            }
+    const fallbackStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(
+                encoder.encode(
+                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+                ),
+            );
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
         },
     });
+    return new Response(fallbackStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {

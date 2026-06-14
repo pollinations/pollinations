@@ -16,12 +16,13 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { handleError } from "@shared/error.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
-import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
@@ -88,7 +89,9 @@ function isDocsPath(path: string): boolean {
 }
 
 function redirectLegacyDocs(c: Context<Env>): Response {
-    const url = new URL(c.req.url);
+    const reqUrl = new URL(c.req.url);
+    const publicOrigin = new URL(getPublicOrigin(c));
+    const url = new URL(reqUrl.pathname + reqUrl.search, publicOrigin);
     url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
@@ -98,8 +101,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
-    .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
-    .get("/docs/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
+    .get("/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
+    .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
     .all("/api/docs/*", redirectLegacyDocs)

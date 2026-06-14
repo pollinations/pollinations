@@ -1,9 +1,8 @@
 import { env } from "cloudflare:test";
-import {
-    atomicCreditUserBalance,
-    getUserBalances,
-} from "@shared/billing/deduction.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicCreditUserBalance } from "@shared/billing/deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
     handleBalanceDeduction,
     resolveDevMarkup,
@@ -143,11 +142,11 @@ describe("BYOP markup", () => {
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             2 - 1 - MARKUP_PCT,
             10,
         );
-        const creatorBalances = await getUserBalances(db, devId);
+        const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
         expect(creatorBalances.packBalance).toBe(0);
     });
@@ -170,11 +169,11 @@ describe("BYOP markup", () => {
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
-        const payerBalances = await getUserBalances(db, payerId);
+        const payerBalances = await getUserBalance(db, payerId);
         expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
         expect(payerBalances.packBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
 
-        const creatorBalances = await getUserBalances(db, devId);
+        const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBe(0);
         expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
     });
@@ -194,11 +193,11 @@ describe("BYOP markup", () => {
 
         expect(markup?.devUserId).toBe(devId);
         expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
             1 - MARKUP_PCT,
             10,
         );
-        expect((await getUserBalances(db, devId)).tierBalance).toBeCloseTo(
+        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
             MARKUP_PCT,
             10,
         );
@@ -218,8 +217,6 @@ describe("BYOP markup", () => {
                     tierBalance: 1,
                     packBalance: 2,
                 }),
-                requirePositiveBalance: async () => undefined,
-                requirePaidBalance: async () => undefined,
             },
             model: { requested: "openai", resolved: "openai" },
             log: fakeLog(),
@@ -302,12 +299,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "gpt-5.5", resolved: "gpt-5.5" },
+            model: { requested: "llama-maverick", resolved: "llama-maverick" },
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "gpt-5.5")),
+            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });
@@ -408,8 +405,8 @@ describe("BYOP markup", () => {
         });
 
         expect(markup).toBeNull();
-        expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(2);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
 
     it("reverts dev credit when payer deduction fails", async () => {
@@ -425,7 +422,7 @@ describe("BYOP markup", () => {
             }),
         ).rejects.toThrow(/affected 0 rows/);
 
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
     });
 
     it("returns ok=false when crediting a missing user", async () => {
@@ -438,5 +435,30 @@ describe("BYOP markup", () => {
 
         expect(ok).toBe(false);
         expect(newBalance).toBeNull();
+    });
+
+    it("returns a rounded billedPrice that matches what the ledger was charged", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+
+        const totalPrice = 1.23456789;
+        const { markup, billedPrice } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice,
+            userId: payerId,
+            byopClientKeyId: pkId,
+        });
+
+        expect(markup).not.toBeNull();
+        // billedPrice is totalPrice + devCredit, snapped to ledger precision.
+        expect(billedPrice).toBe(
+            roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0)),
+        );
+
+        // Dev credit lands on the ledger at the same precision.
+        const creditBalance = (await getUserBalance(db, devId)).tierBalance;
+        expect(creditBalance).toBe(
+            roundPollenLedgerAmount(markup?.devCredit ?? 0),
+        );
     });
 });

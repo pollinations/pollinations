@@ -532,11 +532,13 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
-        # Register data visualization handler (always available)
-        from .services.charts import data_visualization
+        # Register render_visual handler (always available).
+        # Old tool name aliased for back-compat with cached AI sessions.
+        from .services.charts import data_visualization, render_visual
 
+        pollinations_client.register_tool_handler("render_visual", render_visual)
         pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered data_visualization tool handler")
+        logger.info("Registered render_visual tool handler (data_visualization alias)")
 
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
@@ -1395,7 +1397,7 @@ async def send_long_message(
     for idx, latex_expr in enumerate(latex_blocks):
         placeholder = f"__LATEX_IMG_{idx}__"
         modified_text = modified_text.replace(latex_expr, placeholder)
-        
+
         rendered = False
         try:
             latex_buffer, success = await convert_latex_to_png(latex_expr)
@@ -1406,7 +1408,7 @@ async def send_long_message(
                 rendered = True
         except Exception as e:
             logger.error(f"LaTeX block rendering error: {e}")
-        
+
         if not rendered:
             modified_text = modified_text.replace(placeholder, f"\n```latex\n{latex_expr.strip()}\n```\n")
 

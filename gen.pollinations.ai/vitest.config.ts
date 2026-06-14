@@ -32,6 +32,7 @@ const genAliases = [
     "middleware/validator.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
+    "schemas/realtime.ts",
     "schemas/text.ts",
     "util",
     "util.ts",

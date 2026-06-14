@@ -28,7 +28,13 @@ SQL >
     SELECT
         ge.api_key_client_id AS app_key_id,
         ge.user_id AS user_id,
-        ge.start_time AS start_time,
+        if(
+            {{String(grain, 'day')}} = 'hour',
+            formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
+            formatDateTime(toStartOfDay(ge.start_time), '%F')
+        ) AS date,
+        ge.dev_price AS baseline_price,
+        ge.total_price AS cost_usd,
         ge.total_price - ge.dev_price AS earned,
         ge.markup_rate AS markup_rate,
         coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
@@ -47,55 +53,30 @@ SQL >
     AND ge.api_key_client_id IN {{Array(api_key_ids, 'String')}}
     {% end %}
 
-NODE daily_buckets
-SQL >
-    %
-    SELECT
-        if(
-            {{String(grain, 'day')}} = 'hour',
-            formatDateTime(toStartOfHour(start_time), '%F %T'),
-            formatDateTime(toStartOfDay(start_time), '%F')
-        ) AS date,
-        app_key_id,
-        any(app_name) AS app_name,
-        count() AS requests,
-        sum(earned) AS pollen_earned,
-        avg(markup_rate) AS markup_rate,
-        toUInt64(0) AS unique_users
-    FROM dev_events
-    GROUP BY date, app_key_id
-
-NODE per_app_rollup
-SQL >
-    SELECT
-        '' AS date,
-        app_key_id,
-        any(app_name) AS app_name,
-        count() AS requests,
-        sum(earned) AS pollen_earned,
-        avg(markup_rate) AS markup_rate,
-        uniq(user_id) AS unique_users
-    FROM dev_events
-    GROUP BY app_key_id
-
-NODE global_rollup
-SQL >
-    SELECT
-        '' AS date,
-        '' AS app_key_id,
-        '' AS app_name,
-        count() AS requests,
-        sum(earned) AS pollen_earned,
-        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
-        uniq(user_id) AS unique_users
-    FROM dev_events
-
+# Single pass over dev_events. GROUPING SETS emits, in one scan, the three row
+# kinds the old pipe produced via three separate scans + UNION ALL:
+#   (date, app_key_id, app_name) -> daily/hourly buckets (date non-empty)
+#   (app_key_id, app_name)       -> per-app rollup (date='')
+#   ()                           -> global rollup (date='', app_key_id='')
+# Columns outside a set default to '' (String), matching the old '' literals.
+# GROUPING(date)=0 only on daily rows, preserving their unique_users=0.
 NODE developer_earnings_node
 SQL >
-    SELECT * FROM daily_buckets
-    UNION ALL
-    SELECT * FROM per_app_rollup
-    UNION ALL
-    SELECT * FROM global_rollup
+    SELECT
+        date,
+        app_key_id,
+        app_name,
+        count() AS requests,
+        sum(baseline_price) AS baseline_price,
+        sum(earned) AS pollen_earned,
+        sum(cost_usd) AS cost_usd,
+        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
+        if(GROUPING(date) = 0, toUInt64(0), uniq(user_id)) AS unique_users
+    FROM dev_events
+    GROUP BY GROUPING SETS (
+        (date, app_key_id, app_name),
+        (app_key_id, app_name),
+        ()
+    )
 
 TYPE endpoint

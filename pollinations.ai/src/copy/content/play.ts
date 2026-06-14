@@ -37,8 +37,6 @@ export const PLAY_PAGE = {
     heightLabel: "Height",
     seedLabel: "Seed",
     seedPlaceholder: "0 = random",
-    enhanceLabel: "Enhance",
-    logoLabel: "Logo",
 
     // Reference images
     referenceImagesLabel: "Reference images",
@@ -59,7 +57,6 @@ export const PLAY_PAGE = {
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",
-    enhanceTooltip: "AI improves your prompt for better results",
 
     // Model selector
     audioLabel: "Audio",

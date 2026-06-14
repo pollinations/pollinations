@@ -1,13 +1,14 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
+import { getEstimatedPrice } from "@/utils/model-stats.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &

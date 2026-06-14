@@ -59,10 +59,10 @@ export function Header() {
                 </nav>
 
                 <div className="order-2 flex shrink-0 items-center gap-2 sm:order-3">
-                    <ColorModeToggle />
                     <ExternalLinkButton href={ENTER_HREF}>
-                        Console
+                        Dashboard
                     </ExternalLinkButton>
+                    <ColorModeToggle />
                 </div>
             </div>
         </header>

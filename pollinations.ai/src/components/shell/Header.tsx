@@ -1,7 +1,8 @@
 import {
+    AppIcon,
     ColorModeToggle,
     cn,
-    ExternalLinkButton,
+    ExternalLinkIcon,
     NavItem,
 } from "@pollinations/ui";
 import wordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
@@ -59,9 +60,16 @@ export function Header() {
                 </nav>
 
                 <div className="order-2 flex shrink-0 items-center gap-2 sm:order-3">
-                    <ExternalLinkButton href={ENTER_HREF}>
-                        Dashboard
-                    </ExternalLinkButton>
+                    <NavItem
+                        as="a"
+                        href={ENTER_HREF}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        icon={AppIcon}
+                    >
+                        <span className="hidden sm:inline">Dashboard</span>
+                        <ExternalLinkIcon className="h-4 w-4 shrink-0 opacity-60" />
+                    </NavItem>
                     <ColorModeToggle />
                 </div>
             </div>

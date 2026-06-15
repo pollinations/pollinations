@@ -1,0 +1,35 @@
+{
+  "pr_number": 11807,
+  "title": "feat: embed bridge for host-shared auth (sdk/ui + playground/websim)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11807",
+  "merged_at": "2026-06-15T12:17:55Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "Splits the SDK/UI foundation for the `/play` App Hub embed out of the website rebuild PR (#11792) so it can ship and be tested on staging independently. The `/play` host itself lands separately on that branch.\n\nAny app on `PolliProvider` + `AppUserMenu` becomes embeddable under a trusted host with no per-app code:\n\n- **sdk**: `EmbedBridge` (auto-mounted by `PolliProvider`) runs the host handshake, adopts a host-pushed API key, reports height, and reroutes login to the host top-level (OAuth providers refuse to be iframed).\n- **ui**: `AppUserMenu` self-hides when a trusted host advertises it owns the account control; `useHostThemeSync` applies a host-pushed color mode.\n- **apps**: playground/websim drop their inline height/theme glue — the packages provide it now.\n\nStandalone apps are unchanged and the auth bridge stays dormant until a trusted host handshakes. One intentional change applies **only inside an iframe**: the session is kept frame-local (in memory), so a borrowed key never persists to — and a host logout never clears — the app's own localStorage. As a result an iframed app no longer inherits a standalone localStorage session; since in-iframe OAuth can't complete anyway (providers refuse to be framed), the practical effect is limited to first-party `/play` embeds.\n\nVerified: biome, sdk 54/54, and playground/websim/react/model-monitor build clean.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Building the honeycomb",
+    "blurb": "We've added a new embed bridge to the SDK so your apps can live seamlessly inside the upcoming App Hub. Auth, themes, and sizing now sync automatically when embedded, making your creations feel right at home.",
+    "summary": "Added an EmbedBridge to PolliProvider that automatically handles host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts like the upcoming /play hub.",
+    "impact": "Developers can now embed their apps without writing custom iframe glue code, while users get a seamless, frame-local auth experience that doesn't conflict with standalone sessions.",
+    "keywords": [
+      "sdk",
+      "embed",
+      "auth",
+      "iframe",
+      "react"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot building a honeycomb structure inside a computer screen, representing the new embed bridge and iframe integration.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and the chunky monitor-head robot working together to slot a glowing golden honeycomb piece into a retro computer screen. The screen displays a smaller nested window, representing an embedded app. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EMBED BRIDGE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-15/PR-11807.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and the chunky monitor-head robot working together to slot a glowing golden honeycomb piece into a retro computer screen. The screen displays a smaller nested window, representing an embedded app. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EMBED BRIDGE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-15T12:19:06.110455+00:00"
+}

@@ -118,7 +118,7 @@ SQL >
         date,
         app_key_id,
         app_name,
-        if(GROUPING(source) = 0, source, '') AS source,
+        source,
         count() AS requests,
         sum(baseline_price) AS baseline_price,
         sum(earned) AS pollen_earned,

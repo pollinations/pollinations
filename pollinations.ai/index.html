@@ -1,11 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="polli-ui-root">
   <head>
+    <!-- Set color mode before paint to avoid a flash of light. Reads the
+         cross-subdomain cookie first, then localStorage (both written by
+         @pollinations/ui ColorModeToggle; key = polli-color-mode). -->
+    <script>
+      (() => {
+        try {
+          const cookie = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1];
+          const stored = cookie || localStorage.getItem("polli-color-mode");
+          const dark =
+            stored === "dark" ||
+            (stored !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch {
+          /* storage / matchMedia unavailable — default to light */
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Theme & Description -->
-    <meta name="theme-color" content="#E8F372" />
+    <!-- Description -->
     <meta name="description" content="Build AI apps with easy APIs, free compute, and community support" />
     
     <!-- Favicons -->
@@ -19,7 +36,7 @@
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="canonical" href="https://pollinations.ai" />
     
     <!-- iOS Meta Tags -->
@@ -47,14 +64,9 @@
     <meta name="twitter:image" content="https://pollinations.ai/og-image.png" />
     <meta name="twitter:image:alt" content="pollinations.ai logo" />
     
-    <!-- Fonts (display=swap prevents FOIT) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;700&display=swap" />
-
     <title>pollinations.ai</title>
   </head>
-  <body>
+  <body class="polli-ui-shell">
     <div id="root"></div>
     <noscript>
       <div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:0 auto">

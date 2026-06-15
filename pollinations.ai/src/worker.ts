@@ -2,9 +2,8 @@
  * Worker entry point for pollinations.ai
  * Serves static assets and rewrites meta tags per route for SEO.
  *
- * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/api.config.ts), so this worker does no
- * API proxying — it only serves assets and rewrites SEO metadata.
+ * The site talks to public APIs directly from the browser, so this worker does
+ * no API proxying — it only serves assets and rewrites SEO metadata.
  */
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
@@ -23,6 +22,35 @@ declare class HTMLRewriter {
 
 interface Env {
     ASSETS: { fetch: (request: Request) => Promise<Response> };
+}
+
+/**
+ * Map of Myceli upstream host -> public-facing host for requests proxied by the
+ * pollinations-myceli-proxy (which sets x-forwarded-host). Mirrors
+ * shared/public-origin.ts so canonical/OG URLs reflect the actual environment
+ * (prod vs staging) instead of being hardcoded to prod.
+ */
+const TRUSTED_FORWARDED_HOSTS: Record<string, string> = {
+    "pollinations.myceli.ai": "pollinations.ai",
+    "staging.pollinations.myceli.ai": "staging.pollinations.ai",
+};
+
+/**
+ * Public-facing origin of the request: honor a trusted x-forwarded-host (set by
+ * the proxy in front of prod), otherwise fall back to the request's own origin
+ * so staging serves its own canonical/OG URLs independently of prod.
+ */
+function getPublicOrigin(request: Request): string {
+    const url = new URL(request.url);
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    if (forwardedHost && TRUSTED_FORWARDED_HOSTS[url.host] === forwardedHost) {
+        const proto =
+            request.headers.get("x-forwarded-proto") === "http"
+                ? "http"
+                : "https";
+        return `${proto}://${forwardedHost}`;
+    }
+    return url.origin;
 }
 
 const ROUTE_META: Record<string, { title: string; description: string }> = {
@@ -72,10 +100,10 @@ const JSON_LD_HOME = JSON.stringify({
         "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
 });
 
-const JSON_LD_PLAY = JSON.stringify({
+const JSON_LD_PLAYGROUND = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Pollinations Play",
+    name: "Pollinations Playground",
     url: "https://pollinations.ai/play",
     applicationCategory: "MultimediaApplication",
     description: "Generate images, text, audio and video with AI models",
@@ -83,7 +111,7 @@ const JSON_LD_PLAY = JSON.stringify({
 
 function getJsonLd(path: string): string | null {
     if (path === "/") return JSON_LD_HOME;
-    if (path === "/play") return JSON_LD_PLAY;
+    if (path === "/play") return JSON_LD_PLAYGROUND;
     return null;
 }
 
@@ -105,7 +133,9 @@ export default {
         const normalizedPath =
             path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
         const meta = ROUTE_META[normalizedPath] || ROUTE_META["/"];
-        const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;
+        const publicOrigin = getPublicOrigin(request);
+        const canonical = `${publicOrigin}${normalizedPath === "/" ? "" : normalizedPath}`;
+        const ogImage = `${publicOrigin}/og-image.png`;
         const jsonLd = getJsonLd(normalizedPath);
 
         return new HTMLRewriter()
@@ -139,6 +169,11 @@ export default {
                     el.setAttribute("content", canonical);
                 },
             })
+            .on('meta[property="og:image"]', {
+                element(el) {
+                    el.setAttribute("content", ogImage);
+                },
+            })
             .on('meta[name="twitter:title"]', {
                 element(el) {
                     el.setAttribute("content", meta.title);
@@ -147,6 +182,11 @@ export default {
             .on('meta[name="twitter:description"]', {
                 element(el) {
                     el.setAttribute("content", meta.description);
+                },
+            })
+            .on('meta[name="twitter:image"]', {
+                element(el) {
+                    el.setAttribute("content", ogImage);
                 },
             })
             .on("head", {

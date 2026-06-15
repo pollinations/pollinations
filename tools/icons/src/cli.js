@@ -42,6 +42,16 @@ if (!FIELD_COLOR || !MARK_COLOR) {
 }
 
 const APPS = {
+    pollinations: {
+        outDir: "pollinations.ai/public",
+        og: true,
+        manifest: {
+            name: "pollinations.ai",
+            short_name: "pollinations.ai",
+            description:
+                "Build AI apps with easy APIs, free compute, and community support.",
+        },
+    },
     react: {
         outDir: "apps/react/public",
         og: true,

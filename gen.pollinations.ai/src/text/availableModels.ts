@@ -53,7 +53,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
     },
     {
         name: "qwen-vision",
@@ -136,10 +136,6 @@ const models: ModelDefinition[] = [
     {
         name: "claude-opus-4.8",
         config: portkeyConfig["claude-opus-4-8"],
-    },
-    {
-        name: "claude-fable-5",
-        config: portkeyConfig["claude-fable-5"],
     },
     {
         name: "gemini",
@@ -246,7 +242,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi-k2.7-code",
-        config: portkeyConfig["moonshotai/kimi-k2.7-code"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
+        transform: stripCacheControl,
     },
     {
         name: "gemini-large",
@@ -277,7 +274,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax-m3",
-        config: portkeyConfig["minimax/minimax-m3"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
     },
     {
         name: "llama",

@@ -133,6 +133,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
         }),
+    "accounts/fireworks/models/kimi-k2p7-code": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p7-code",
+        }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
@@ -176,11 +180,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-fable-5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-fable-5",
-            defaultOptions: { max_tokens: 128000 },
-        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -219,9 +218,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
     // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p6-plus": () =>
+    "accounts/fireworks/models/qwen3p7-plus": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p6-plus",
+            model: "accounts/fireworks/models/qwen3p7-plus",
         }),
     "accounts/fireworks/models/glm-5p1": () =>
         createFireworksModelConfig({
@@ -231,21 +230,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
-
-    // -- OpenRouter (MiniMax M3) ---------------------------------------------
-    // M3 is not on Fireworks/Bedrock yet (Bedrock tops out at M2.5); OpenRouter
-    // is the only route and also exposes image input.
-    "minimax/minimax-m3": () =>
-        createOpenRouterModelConfig({
-            model: "minimax/minimax-m3",
-        }),
-
-    // -- OpenRouter (Kimi K2.7 Code) -----------------------------------------
-    // K2.7 (Code variant) is not on Fireworks/Azure yet (both top out at K2.6);
-    // OpenRouter is the only route.
-    "moonshotai/kimi-k2.7-code": () =>
-        createOpenRouterModelConfig({
-            model: "moonshotai/kimi-k2.7-code",
+    "accounts/fireworks/models/minimax-m3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

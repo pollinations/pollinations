@@ -1,6 +1,6 @@
 import {
     communityChatCompletionsUrl,
-    normalizeCommunityEndpointBaseUrl,
+    communityOpenAIBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -33,10 +33,7 @@ function authorizationHeaders(bearerToken?: string): HeadersInit {
 }
 
 function communityModelsUrl(baseUrl: string): string {
-    const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    return normalized.endsWith("/chat/completions")
-        ? `${normalized.slice(0, -"/chat/completions".length)}/models`
-        : `${normalized}/models`;
+    return `${communityOpenAIBaseUrl(baseUrl)}/models`;
 }
 
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {

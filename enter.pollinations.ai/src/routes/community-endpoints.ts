@@ -59,10 +59,6 @@ const TestEndpointSchema = z.object({
     bearerToken: z.string().min(1),
     model: z.string().trim().min(1).max(253),
 });
-const SavedEndpointModelListSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().optional(),
-});
 const SavedEndpointTestSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().optional(),
@@ -274,32 +270,28 @@ export const communityEndpointsRoutes = new Hono<Env>()
             throwEndpointTestError(error);
         }
     })
-    .post(
-        "/:id/models",
-        validator("json", SavedEndpointModelListSchema),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const input = c.req.valid("json");
-            const { id } = c.req.param();
-            const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointAccess(db, c.env, user.id);
-            const endpoint = await requireOwnedEndpoint(db, id, user.id);
-            try {
-                const models = await listCommunityEndpointModels({
-                    baseUrl: input.baseUrl,
-                    bearerToken:
-                        input.bearerToken ??
-                        (await decryptSecret(
-                            endpoint.bearerTokenCiphertext,
-                            c.env.BETTER_AUTH_SECRET,
-                        )),
-                });
-                return c.json({ data: models });
-            } catch (error) {
-                throwEndpointTestError(error);
-            }
-        },
-    )
+    .post("/:id/models", validator("json", ModelListSchema), async (c) => {
+        const user = c.var.auth.requireUser();
+        const input = c.req.valid("json");
+        const { id } = c.req.param();
+        const db = drizzle(c.env.DB, { schema });
+        await requireCommunityEndpointAccess(db, c.env, user.id);
+        const endpoint = await requireOwnedEndpoint(db, id, user.id);
+        try {
+            const models = await listCommunityEndpointModels({
+                baseUrl: input.baseUrl,
+                bearerToken:
+                    input.bearerToken ??
+                    (await decryptSecret(
+                        endpoint.bearerTokenCiphertext,
+                        c.env.BETTER_AUTH_SECRET,
+                    )),
+            });
+            return c.json({ data: models });
+        } catch (error) {
+            throwEndpointTestError(error);
+        }
+    })
     .post(
         "/:id/test",
         validator("json", SavedEndpointTestSchema),

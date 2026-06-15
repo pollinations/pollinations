@@ -442,6 +442,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.05,
     },
   },
+  "ideogram-v4-balanced": {
+    "cost": {
+      "completionImageTokens": 0.06,
+    },
+    "price": {
+      "completionImageTokens": 0.06,
+    },
+  },
+  "ideogram-v4-quality": {
+    "cost": {
+      "completionImageTokens": 0.1,
+    },
+    "price": {
+      "completionImageTokens": 0.1,
+    },
+  },
+  "ideogram-v4-turbo": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
   "kimi": {
     "cost": {
       "completionTextTokens": 0.000003,

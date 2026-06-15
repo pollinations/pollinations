@@ -148,6 +148,12 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    // Ideogram 4.0 (turbo/balanced/quality) via Replicate. These are official
+    // Replicate models (is_official=true) → billed a FLAT price per output
+    // image set by the publisher, NOT per-second of GPU time. The price is
+    // therefore independent of the resolution preset the handler picks, and all
+    // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
+    // flat per-image cost is correct regardless of aspect ratio / resolution.
     "ideogram-v4-turbo": {
         aliases: [],
         modelId: "ideogram-v4-turbo",
@@ -158,7 +164,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.03, // per image — ideogram-ai/ideogram-v4-turbo
+            completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
         },
         title: "Ideogram 4.0 Turbo",
         description:
@@ -176,7 +182,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.06, // per image — ideogram-ai/ideogram-v4-balanced
+            completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
         },
         title: "Ideogram 4.0 Balanced",
         description:
@@ -194,7 +200,7 @@ export const IMAGE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.1, // per image — ideogram-ai/ideogram-v4-quality
+            completionImageTokens: 0.1, // flat per image — ideogram-ai/ideogram-v4-quality
         },
         title: "Ideogram 4.0 Quality",
         description:

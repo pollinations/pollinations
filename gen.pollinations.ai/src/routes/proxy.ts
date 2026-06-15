@@ -35,7 +35,6 @@ import {
     getTextModelsInfo,
     type ModelInfo,
 } from "@shared/registry/model-info.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -575,7 +574,7 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const serviceDef = getModelDefinition(c.var.model.resolved);
+            const serviceDef = c.var.model.definition;
             return generateEmbeddings(
                 c.env,
                 { ...requestBody, model: serviceDef.modelId },

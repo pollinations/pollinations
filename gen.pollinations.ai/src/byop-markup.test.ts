@@ -11,6 +11,10 @@ import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import {
+    getRegistryModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
@@ -40,6 +44,14 @@ function fakeLog() {
         info: () => undefined,
         warn: () => undefined,
         error: () => undefined,
+    };
+}
+
+function testModel(model: ModelName = "openai") {
+    return {
+        requested: model,
+        resolved: model,
+        definition: getRegistryModelDefinition(model),
     };
 }
 
@@ -218,7 +230,7 @@ describe("BYOP markup", () => {
                     packBalance: 2,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -252,7 +264,7 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -275,7 +287,7 @@ describe("BYOP markup", () => {
                     packBalance: 0.01,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -299,7 +311,7 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: { requested: "llama-maverick", resolved: "llama-maverick" },
+            model: testModel("llama-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -322,7 +334,7 @@ describe("BYOP markup", () => {
                     packBalance: 10,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -349,7 +361,7 @@ describe("BYOP markup", () => {
                     packBalance: 10,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
@@ -379,7 +391,7 @@ describe("BYOP markup", () => {
                     packBalance: 0,
                 }),
             },
-            model: { requested: "openai", resolved: "openai" },
+            model: testModel(),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 

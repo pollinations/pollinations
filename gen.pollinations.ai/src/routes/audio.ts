@@ -7,7 +7,7 @@ import {
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import {
-    getModelDefinition,
+    getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import {
@@ -161,7 +161,8 @@ export async function generateSpeech(opts: {
 }): Promise<Response> {
     const { modelName, text, voice, responseFormat, apiKey, log } = opts;
     const resolvedModelName: AudioModelName = modelName ?? "elevenlabs";
-    const elevenLabsModelId = getModelDefinition(resolvedModelName).modelId;
+    const elevenLabsModelId =
+        getRegistryModelDefinition(resolvedModelName).modelId;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -560,7 +561,7 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
 }
 
 function requireTextToAudioModel(model: ModelName): void {
-    const definition = getModelDefinition(model);
+    const definition = getRegistryModelDefinition(model);
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
 
@@ -594,7 +595,7 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    const model = getModelDefinition(modelName).modelId;
+    const model = getRegistryModelDefinition(modelName).modelId;
     const qwenVoice = resolveQwenVoice(voice);
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
@@ -903,7 +904,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    requireTextToAudioModel(c.var.model.resolved);
+    requireTextToAudioModel(c.var.model.resolved as ModelName);
     text = await applySafety(c, text, query.safe);
 
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -986,7 +987,7 @@ export const audioRoutes = new Hono<Env>()
                 style,
                 instruct,
             } = c.req.valid("json" as never) as CreateSpeechRequest;
-            requireTextToAudioModel(c.var.model.resolved);
+            requireTextToAudioModel(c.var.model.resolved as ModelName);
             const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })

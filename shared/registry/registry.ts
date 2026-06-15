@@ -227,14 +227,24 @@ export const getVisibleRealtimeModels = () =>
     filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
 
 /**
- * Get a model definition by public model name
+ * Get a model definition from the bundled registry.
+ *
+ * This only covers built-in Pollinations models. Runtime models, such as
+ * community endpoints, should be resolved at the request boundary and then
+ * passed around as a `ModelDefinition`.
  */
-export function getModelDefinition(model: ModelName): ModelDefinition {
+export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
+}
+
+export function getPriceDefinitionForModel(
+    svc: ModelDefinition<string>,
+): PriceDefinition {
+    return derivePrice(svc);
 }
 
 /**
@@ -250,7 +260,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];
     if (!svc) return null;
-    return derivePrice(svc);
+    return getPriceDefinitionForModel(svc);
 }
 
 /**

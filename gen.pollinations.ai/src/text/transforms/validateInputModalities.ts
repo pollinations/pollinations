@@ -1,5 +1,5 @@
 import {
-    getModelDefinition,
+    getRegistryModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import type {
@@ -56,7 +56,7 @@ export function validateInputModalities(
     } else {
         const resolvedModelName = resolveModelName(requestedModel);
         modelName = resolvedModelName;
-        definition = getModelDefinition(resolvedModelName);
+        definition = getRegistryModelDefinition(resolvedModelName);
     }
 
     if (definition.inputModalities?.includes("image")) {

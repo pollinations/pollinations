@@ -15,8 +15,8 @@ import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateCost,
     calculatePrice,
-    getModelDefinition,
     getPriceDefinition,
+    getRegistryModelDefinition,
     type Usage,
     type UsageCost,
     type UsagePrice,
@@ -390,7 +390,7 @@ function createRealtimeTrackingEvent(args: {
     payerBucket: "tier" | "pack" | null;
     balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
-    const model = getModelDefinition(DEFAULT_REALTIME_MODEL);
+    const model = getRegistryModelDefinition(DEFAULT_REALTIME_MODEL);
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
@@ -465,6 +465,8 @@ async function settleRealtimeSession(
         apiKeyPollenBalance: tracking.apiKeyPollenBalance,
         byopClientKeyId: tracking.byopClientKeyId,
         modelResolved: DEFAULT_REALTIME_MODEL,
+        modelPaidOnly: getRegistryModelDefinition(DEFAULT_REALTIME_MODEL)
+            .paidOnly,
     });
 
     if (!tracking.rateLimitConsumed) {
@@ -666,6 +668,7 @@ export async function handleRealtimeWebSocket(
     c.set("model", {
         requested: requestedModel,
         resolved: DEFAULT_REALTIME_MODEL,
+        definition: getRegistryModelDefinition(DEFAULT_REALTIME_MODEL),
     });
     await checkBalance(c.var, c.env);
 

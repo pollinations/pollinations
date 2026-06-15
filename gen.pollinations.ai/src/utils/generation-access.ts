@@ -1,10 +1,5 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { estimateCommunityRequestPrice } from "@shared/community-endpoints.ts";
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -27,23 +22,15 @@ type GenerationAccessEnv = {
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
-    requestBody?: Record<string, unknown>,
 ): Promise<void> {
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const isPaidOnly = model.communityEndpoint
-        ? false
-        : (getModelDefinition(model.resolved as ModelName).paidOnly ?? false);
-    const estimatedCost = model.communityEndpoint
-        ? estimateCommunityRequestPrice(
-              model.communityEndpoint,
-              requestBody ?? {},
-          )
-        : getEstimatedPrice(
-              await getModelStats(env.KV, log),
-              model.resolved as ModelName,
-          );
+    const isPaidOnly = model.definition.paidOnly ?? false;
+    const estimatedCost = getEstimatedPrice(
+        await getModelStats(env.KV, log),
+        model.resolved,
+    );
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
@@ -73,24 +60,15 @@ export async function checkBalance(
 export async function requireGenerationAccess(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
-    requestBody?: Record<string, unknown>,
 ): Promise<void> {
     await vars.auth.requireAuthorization();
     vars.auth.requireModelAccess();
-    await checkBalance(vars, env, requestBody);
+    await checkBalance(vars, env);
 }
 
 export const generationAccess = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
-        let requestBody: Record<string, unknown> | undefined;
-        try {
-            requestBody = c.req.valid("json" as never) as
-                | Record<string, unknown>
-                | undefined;
-        } catch {
-            requestBody = undefined;
-        }
-        await requireGenerationAccess(c.var, c.env, requestBody);
+        await requireGenerationAccess(c.var, c.env);
         await next();
     },
 );

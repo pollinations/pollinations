@@ -11,8 +11,8 @@ import {
 import {
     calculateCost,
     calculatePrice,
-    getModelDefinition,
     getPriceDefinition,
+    getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
@@ -123,7 +123,9 @@ test("AssemblyAI STT pricing is exposed per input audio second", () => {
         type: "audio",
         perSecondPrice: "0.00006",
     });
-    expect(getModelDefinition("universal-3-pro").paidOnly).toBeUndefined();
+    expect(
+        getRegistryModelDefinition("universal-3-pro").paidOnly,
+    ).toBeUndefined();
 
     expect(
         calculateCost("universal-2", { promptAudioSeconds: 3600 }).totalCost,
@@ -147,11 +149,11 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
         completionReasoningTokens: 1_000_000,
     };
 
-    const grok = getModelDefinition("grok");
-    const grokLarge = getModelDefinition("grok-large");
+    const grok = getRegistryModelDefinition("grok");
+    const grokLarge = getRegistryModelDefinition("grok-large");
 
     for (const model of ["grok", "grok-large"] as const) {
-        const definition = getModelDefinition(model);
+        const definition = getRegistryModelDefinition(model);
         const priceDefinition = getPriceDefinition(model);
         const usage = model === "grok-large" ? reasoningUsage : inputUsage;
         const cost = calculateCost(model, usage);

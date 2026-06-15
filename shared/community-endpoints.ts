@@ -1,5 +1,5 @@
 import { parseGithubIdList } from "./auth/github-id-list.ts";
-import type { PriceDefinition } from "./registry/registry.ts";
+import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
@@ -10,7 +10,6 @@ export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 export const COMMUNITY_ENDPOINT_TIERS = ["flower", "nectar", "router"] as const;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
-const DEFAULT_MAX_COMPLETION_TOKENS = 1024;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: { key: "promptTextPrice", label: "Prompt text" },
@@ -90,12 +89,6 @@ export type CommunityEndpointAllowlistEnv = {
 
 type CommunityEndpointOwnerLike = {
     githubId?: number | null;
-};
-
-type ChatRequestLike = {
-    messages?: unknown;
-    max_tokens?: unknown;
-    max_completion_tokens?: unknown;
 };
 
 export function communityModelId(
@@ -182,43 +175,25 @@ export function communityPriceDefinition(
     return pricing;
 }
 
-export function estimateCommunityRequestPrice(
-    endpoint: Pick<
-        CommunityEndpointRuntime,
-        "promptTextPrice" | "completionTextPrice" | "contextLength"
-    >,
-    request: ChatRequestLike,
-): number {
-    const promptTokens = estimateTextTokens(request.messages);
-    const maxCompletionTokens = getMaxCompletionTokens(endpoint, request);
-    return (
-        promptTokens * endpoint.promptTextPrice +
-        maxCompletionTokens * endpoint.completionTextPrice
-    );
-}
-
-function getMaxCompletionTokens(
-    endpoint: Pick<CommunityEndpointRuntime, "contextLength">,
-    request: ChatRequestLike,
-): number {
-    const requested =
-        numberOrNull(request.max_completion_tokens) ??
-        numberOrNull(request.max_tokens);
-    if (requested != null) return Math.max(0, requested);
-    return Math.min(
-        endpoint.contextLength ?? DEFAULT_MAX_COMPLETION_TOKENS,
-        DEFAULT_MAX_COMPLETION_TOKENS,
-    );
-}
-
-function estimateTextTokens(value: unknown): number {
-    if (value == null) return 0;
-    const text = typeof value === "string" ? value : JSON.stringify(value);
-    return Math.ceil(text.length / 4);
-}
-
-function numberOrNull(value: unknown): number | null {
-    return typeof value === "number" && Number.isFinite(value) ? value : null;
+export function communityModelDefinition(
+    endpoint: CommunityEndpointRuntime,
+): ModelDefinition<string> {
+    return {
+        aliases: [],
+        modelId: endpoint.modelId,
+        provider: "community",
+        brand: "Community",
+        category: "text",
+        cost: communityPriceDefinition(endpoint),
+        priceMultiplier: 1,
+        addedDate: 0,
+        title: endpoint.description?.trim() || endpoint.modelId,
+        description: endpoint.description ?? undefined,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        contextLength: endpoint.contextLength ?? undefined,
+        paidOnly: false,
+    };
 }
 
 function isBlockedHostname(hostname: string): boolean {

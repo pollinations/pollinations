@@ -12,10 +12,6 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import {
-    type CommunityEndpointRuntime,
-    communityPriceDefinition,
-} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
@@ -30,9 +26,8 @@ import {
     type CostDefinition,
     calculateCostWithDefinition,
     calculatePriceWithDefinition,
-    getModelDefinition,
-    getPriceDefinition,
-    type ModelName,
+    getPriceDefinitionForModel,
+    type ModelDefinition,
     type PriceDefinition,
     type UsageCost,
     type UsagePrice,
@@ -77,7 +72,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        communityEndpoint?: CommunityEndpointRuntime;
+        definition: ModelDefinition<string>;
     };
 };
 
@@ -90,6 +85,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
+    modelDefinition: ModelDefinition<string>;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -222,6 +218,7 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
                         modelResolved: c.var.model?.resolved,
+                        modelPaidOnly: c.var.model?.definition.paidOnly,
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
@@ -370,18 +367,10 @@ async function trackRequest(
     const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
-    const staticModelDefinition = modelInfo.communityEndpoint
-        ? null
-        : getModelDefinition(resolvedModelRequested as ModelName);
-    const modelProvider = modelInfo.communityEndpoint
-        ? "community"
-        : staticModelDefinition?.provider;
-    const modelCostDefinition = modelInfo.communityEndpoint
-        ? communityPriceDefinition(modelInfo.communityEndpoint)
-        : staticModelDefinition?.cost;
-    const modelPriceDefinition = modelInfo.communityEndpoint
-        ? communityPriceDefinition(modelInfo.communityEndpoint)
-        : getPriceDefinition(resolvedModelRequested as ModelName);
+    const modelDefinition = modelInfo.definition;
+    const modelProvider = modelDefinition.provider;
+    const modelCostDefinition = modelDefinition.cost;
+    const modelPriceDefinition = getPriceDefinitionForModel(modelDefinition);
     if (!modelCostDefinition || !modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,
@@ -394,6 +383,7 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
         streamRequested,
@@ -428,11 +418,7 @@ async function trackResponse(
     // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
     // or JSON for a stream: true request.
     const contentType = response.headers.get("content-type") || "";
-    const contentTypeGuard = getContentTypeGuard(
-        eventType,
-        requestTracking,
-        resolvedModelRequested,
-    );
+    const contentTypeGuard = getContentTypeGuard(eventType, requestTracking);
     if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
         log.warn(
             "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
@@ -488,7 +474,6 @@ async function trackResponse(
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
-    resolvedModelRequested: string,
 ): { kind: string; isExpected: (contentType: string) => boolean } | null {
     if (eventType === "generate.image") {
         return {
@@ -507,8 +492,7 @@ function getContentTypeGuard(
     }
     if (eventType === "generate.audio") {
         const isSTTModel =
-            getModelDefinition(resolvedModelRequested as ModelName)
-                ?.outputModalities?.[0] === "text";
+            requestTracking.modelDefinition.outputModalities?.[0] === "text";
         return {
             kind: "audio",
             isExpected: (contentType) =>

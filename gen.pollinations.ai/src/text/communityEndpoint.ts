@@ -1,7 +1,7 @@
 import {
     type CommunityEndpointRuntime,
+    communityModelDefinition,
     communityOpenAIBaseUrl,
-    communityPriceDefinition,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
@@ -28,19 +28,7 @@ export async function communityEndpointGatewayContext(
             authKey: normalizeCommunityEndpointBearerToken(bearerToken),
             model: endpoint.upstreamModel,
         },
-        modelDef: {
-            aliases: [],
-            provider: "community",
-            brand: "Community",
-            category: "text",
-            cost: communityPriceDefinition(endpoint),
-            priceMultiplier: 1,
-            addedDate: 0,
-            title: endpoint.description?.trim() || endpoint.modelId,
-            inputModalities: ["text"],
-            outputModalities: ["text"],
-            contextLength: endpoint.contextLength ?? undefined,
-        },
+        modelDef: communityModelDefinition(endpoint),
         dynamicModelDef: true,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,

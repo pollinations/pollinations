@@ -3,7 +3,7 @@ import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
-import { getModelDefinition } from "../registry/registry.ts";
+import { getRegistryModelDefinition } from "../registry/registry.ts";
 import {
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
@@ -30,6 +30,7 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelResolved?: string;
+    modelPaidOnly?: boolean;
 }
 
 function parseMetadata(
@@ -106,6 +107,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyPollenBalance,
         byopClientKeyId,
         modelResolved,
+        modelPaidOnly,
     } = params;
 
     if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
@@ -137,6 +139,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelResolved,
+                modelPaidOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -240,12 +243,14 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
+    modelPaidOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
 }> {
     try {
-        const isPaidOnly = isStaticPaidOnlyModel(modelResolved);
+        const isPaidOnly =
+            modelPaidOnly ?? isRegistryPaidOnlyModel(modelResolved);
 
         const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
@@ -284,10 +289,13 @@ async function deductUserBalance(
     }
 }
 
-function isStaticPaidOnlyModel(modelResolved: string | undefined): boolean {
+function isRegistryPaidOnlyModel(modelResolved: string | undefined): boolean {
     if (!modelResolved) return false;
     try {
-        return getModelDefinition(modelResolved as ModelName).paidOnly ?? false;
+        return (
+            getRegistryModelDefinition(modelResolved as ModelName).paidOnly ??
+            false
+        );
     } catch {
         return false;
     }

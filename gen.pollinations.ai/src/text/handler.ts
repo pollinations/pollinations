@@ -1,7 +1,7 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
-    getModelDefinition,
+    getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import {
@@ -72,7 +72,9 @@ function createExpressLikeRequest(
 function prepareRequestParameters(requestParams: RequestData): RequestData {
     let isAudioModel = false;
     try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
+        const serviceDef = getRegistryModelDefinition(
+            requestParams.model as ModelName,
+        );
         isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
     } catch {
         // Model not in registry.

@@ -83,10 +83,10 @@ export function CommunityEndpointDialog({
     const [error, setError] = useState<string | null>(null);
     const modelListId = useId();
 
-    // Reset the form each time the dialog opens.
+    // Reset the form on open and clear local state on close so unsaved values
+    // never survive a dismissed dialog.
     useEffect(() => {
-        if (!open) return;
-        setForm(endpoint ? endpointToForm(endpoint) : emptyForm);
+        setForm(open && endpoint ? endpointToForm(endpoint) : emptyForm);
         setModelOptions([]);
         setModelListState(idleAction);
         setTestState(idleAction);

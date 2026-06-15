@@ -208,6 +208,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
             </Section>
 
             <CommunityEndpointDialog
+                key={editing?.id ?? "edit-closed"}
                 endpoint={editing ?? undefined}
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}

@@ -77,7 +77,18 @@ export function pricePerTokenToPerMillion(value: number): string {
 }
 
 export function pricePerMillionToPerToken(value: string): number {
-    return Number(value.trim().replace(",", ".") || 0) / TOKENS_PER_MILLION;
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+    if (!isValidPriceInput(trimmed)) return Number.NaN;
+    return Number(trimmed) / TOKENS_PER_MILLION;
+}
+
+export function isValidPriceInput(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    if (trimmed.includes(",")) return false;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed >= 0;
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
@@ -100,11 +111,19 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 
 function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
     return Object.fromEntries(
-        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-            field.key,
-            pricePerMillionToPerToken(form[field.key]),
-        ]),
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+            if (!isValidPriceInput(form[field.key])) {
+                throw new Error("Prices must use dot decimals, e.g. 0.1");
+            }
+            return [field.key, pricePerMillionToPerToken(form[field.key])];
+        }),
     ) as CommunityEndpointPrices;
+}
+
+export function hasValidFormPrices(form: EndpointFormState): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) =>
+        isValidPriceInput(form[field.key]),
+    );
 }
 
 export function hasPositiveFormPrice(form: EndpointFormState): boolean {

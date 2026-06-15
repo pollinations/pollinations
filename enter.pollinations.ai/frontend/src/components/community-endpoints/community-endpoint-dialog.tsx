@@ -19,7 +19,9 @@ import {
     emptyForm,
     endpointToForm,
     hasPositiveFormPrice,
+    hasValidFormPrices,
     idleAction,
+    isValidPriceInput,
     nextFormState,
     observedUsageValue,
     pricePerMillionToPerToken,
@@ -212,6 +214,7 @@ export function CommunityEndpointDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
+        hasValidFormPrices(form) &&
         hasPositiveFormPrice(form) &&
         (isEdit || hasToken);
 
@@ -540,9 +543,12 @@ function PriceRow({
     onChange: (value: string) => void;
 }) {
     const observed = observedValue !== null;
+    const invalid = !isValidPriceInput(value);
 
     return (
-        <Field.Root className={priceRowClass(observed, showReturnedColumn)}>
+        <Field.Root
+            className={priceRowClass(observed, showReturnedColumn, invalid)}
+        >
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
                     <Field.Label className="min-w-0 truncate text-sm font-medium text-theme-text-strong">
@@ -554,8 +560,16 @@ function PriceRow({
                         </span>
                     )}
                 </div>
-                <p className="mt-0.5 text-xs text-theme-text-muted sm:hidden">
-                    Pollen per 1M tokens
+                <p
+                    className={
+                        invalid
+                            ? "mt-0.5 text-xs text-intent-danger-text"
+                            : "mt-0.5 text-xs text-theme-text-muted sm:hidden"
+                    }
+                >
+                    {invalid
+                        ? "Use a dot decimal like 0.1"
+                        : "Pollen per 1M tokens"}
                 </p>
             </div>
 
@@ -569,6 +583,7 @@ function PriceRow({
                 value={value}
                 placeholder="0"
                 autoComplete="off"
+                error={invalid}
                 className="h-9 font-mono tabular-nums sm:text-right"
                 onChange={(e) => onChange(e.target.value)}
             />
@@ -595,12 +610,19 @@ function priceHeaderClass(showReturnedColumn: boolean): string {
     return `hidden gap-3 border-b border-divider bg-theme-bg-active/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-wide text-theme-text-muted sm:grid ${columns}`;
 }
 
-function priceRowClass(observed: boolean, showReturnedColumn: boolean): string {
+function priceRowClass(
+    observed: boolean,
+    showReturnedColumn: boolean,
+    invalid: boolean,
+): string {
     const columns = showReturnedColumn
         ? "sm:grid-cols-[minmax(0,1fr)_9rem_10rem]"
         : "sm:grid-cols-[minmax(0,1fr)_9rem]";
     const base =
         "grid gap-2 border-l-4 px-3 py-2 transition-colors sm:items-center sm:gap-3";
+    if (invalid) {
+        return `${base} ${columns} border-l-intent-danger-border bg-intent-danger-bg-light/30`;
+    }
     return observed
         ? `${base} ${columns} border-l-intent-success-text bg-intent-success-bg-light/30`
         : `${base} ${columns} border-l-transparent`;

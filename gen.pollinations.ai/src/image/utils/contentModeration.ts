@@ -30,6 +30,7 @@ const MODERATION_PATTERNS = [
     "flagged", // Replicate "Content flagged for ...", "flagged as sensitive"
     "illegal material",
     "unsafe content", // Azure Content Safety "contains unsafe content"
+    "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
 ];
 
 /** True when an upstream error message indicates a content-policy rejection. */

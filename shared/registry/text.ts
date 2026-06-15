@@ -802,31 +802,6 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "claude-fable-5": {
-        aliases: [],
-        modelId: "claude-fable-5",
-        provider: "bedrock",
-        brand: "Anthropic",
-        category: "text",
-        addedDate: new Date("2026-06-11").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {
-            // Bedrock global.anthropic.claude-fable-5 global standard rates.
-            promptTextTokens: perMillion(10),
-            promptCachedTokens: perMillion(1),
-            promptCacheWriteTokens: perMillion(12.5),
-            completionTextTokens: perMillion(50),
-        },
-        title: "Claude Fable 5",
-        description: "Claude Fable 5 - Frontier reasoning & agentic work",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
-        tools: true,
-        contextLength: 1000000,
-        isSpecialized: false,
-    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",

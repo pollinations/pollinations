@@ -59,44 +59,14 @@ const getPerPollenNumeric = (perPollen: string): number => {
     return parseFloat(cleaned) || -1;
 };
 
-type SortKey = "name" | "perPollen" | "input" | "output";
-type SortDir = "asc" | "desc";
-
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
-};
-
-const sortModels = (
-    models: ModelPrice[],
-    sortKey: SortKey,
-    sortDir: SortDir,
-) => {
-    const sign = sortDir === "asc" ? 1 : -1;
+const sortModels = (models: ModelPrice[]) => {
     return [...models].sort((a, b) => {
-        if (sortKey === "name") {
-            const an = (getModelDisplayName(a) ?? a.name).toLowerCase();
-            const bn = (getModelDisplayName(b) ?? b.name).toLowerCase();
-            return an < bn ? -sign : an > bn ? sign : 0;
-        }
-        const av =
-            sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(a))
-                : sortKey === "input"
-                  ? (a.inputSortPrice ?? -1)
-                  : (a.outputSortPrice ?? -1);
-        const bv =
-            sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(b))
-                : sortKey === "input"
-                  ? (b.inputSortPrice ?? -1)
-                  : (b.outputSortPrice ?? -1);
+        const av = getPerPollenNumeric(calculatePerPollen(a));
+        const bv = getPerPollenNumeric(calculatePerPollen(b));
         // Missing values always sort last regardless of direction
         if (av < 0 && bv >= 0) return 1;
         if (bv < 0 && av >= 0) return -1;
-        return (av - bv) * sign;
+        return bv - av;
     });
 };
 
@@ -113,12 +83,10 @@ export const sectionLabels: Record<SectionType, string> = {
 
 type TabContentProps = {
     models: ModelPrice[];
-    sortKey: SortKey;
-    sortDir: SortDir;
 };
 
-const TabContent: FC<TabContentProps> = ({ models, sortKey, sortDir }) => {
-    const sorted = sortModels(models, sortKey, sortDir);
+const TabContent: FC<TabContentProps> = ({ models }) => {
+    const sorted = sortModels(models);
 
     return (
         <>
@@ -459,35 +427,17 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             : []),
     ];
 
-    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
-
-    const onSort = (key: SortKey) => {
-        if (key === sortKey) {
-            setSortDir(sortDir === "asc" ? "desc" : "asc");
-        } else {
-            setSortKey(key);
-            setSortDir(DEFAULT_DIR[key]);
-        }
-    };
-
-    const sortArrow = (key: SortKey) =>
-        sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     return (
         <div>
-            {/* Column headers (sortable) */}
+            {/* Column headers */}
             <div className="flex items-center pb-2 pr-4 md:pr-8">
-                <button
-                    type="button"
-                    onClick={() => onSort("name")}
-                    className="flex-1 min-w-6 text-left pl-4 cursor-pointer hover:text-theme-text-base"
-                >
+                <div className="flex-1 min-w-6 text-left pl-4">
                     <span className="text-sm font-bold text-ink-900">
-                        Model {sortArrow("name")}
+                        Model
                     </span>
-                </button>
+                </div>
                 <Tooltip
                     triggerAs="span"
                     content={
@@ -500,13 +450,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                         </span>
                     }
                 >
-                    <button
-                        type="button"
-                        onClick={() => onSort("perPollen")}
-                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-theme-text-base"
-                    >
+                    <div className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
                         <div className="text-sm font-bold text-ink-900">
-                            1 pollen {sortArrow("perPollen")}
+                            1 pollen
                         </div>
                         <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                             ≈{" "}
@@ -514,42 +460,24 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                 ? unitLabels[activeSection.type]
                                 : ""}
                         </div>
-                    </button>
+                    </div>
                 </Tooltip>
-                <button
-                    type="button"
-                    onClick={() => onSort("input")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Input {sortArrow("input")}
-                    </div>
+                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
+                    <div className="text-sm font-bold text-ink-900">Input</div>
                     <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onSort("output")}
-                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-theme-text-base"
-                >
-                    <div className="text-sm font-bold text-ink-900">
-                        Output {sortArrow("output")}
-                    </div>
+                </div>
+                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
+                    <div className="text-sm font-bold text-ink-900">Output</div>
                     <div className="text-xs font-normal text-ink-700 opacity-70 italic">
                         pollen
                     </div>
-                </button>
+                </div>
             </div>
 
             {/* Tab content — the selected modality */}
-            {activeSection && (
-                <TabContent
-                    models={activeSection.models}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                />
-            )}
+            {activeSection && <TabContent models={activeSection.models} />}
         </div>
     );
 };

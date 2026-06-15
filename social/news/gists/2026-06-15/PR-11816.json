@@ -1,0 +1,35 @@
+{
+  "pr_number": 11816,
+  "title": "fix: use Connect as the account menu label, prevent wrapping",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11816",
+  "merged_at": "2026-06-15T21:46:51Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Unifies the account-control wording and fixes the label wrapping seen on narrow widths (e.g. standalone websim, /play on mobile).\n\n- Shared `AppUserMenu` default label `Authorize app` → `Connect`, so standalone apps (playground, websim) and the `/play` host all show one consistent word. Previously it was split: `Authorize app` (default), `Log in` (/play override), `sign in` (site prose).\n- Make the control `shrink-0` and the login label `whitespace-nowrap` so it keeps its full width in a header flex row instead of breaking onto two lines.\n- Playground/websim pick this up via `app-deploy`. The website rebuild branch inherits it on the next `main` merge and can then drop its `labels={{ authorize: ... }}` override.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A cleaner connection",
+    "blurb": "We've unified the login button text to a simple 'Connect' across all apps and fixed a pesky text-wrapping issue on mobile screens. A small but mighty UI polish!",
+    "summary": "Unified the AppUserMenu label to 'Connect' across all standalone apps and applied whitespace-nowrap to prevent the button text from breaking on narrow screens.",
+    "impact": "Users on mobile devices and narrow windows will see a consistent, single-line 'Connect' button instead of wrapped text.",
+    "keywords": [
+      "ui",
+      "ux",
+      "mobile",
+      "frontend",
+      "menu"
+    ],
+    "visual_concept": "The bee mascot fixing a UI button sign that says 'CONNECT', while the robot holds a mobile phone showing a clean interface.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) button that says 'CONNECT' in pixel font. A chunky pixel robot companion holds up a small mobile phone screen showing a clean interface. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-15/PR-11816.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, adjusting a glowing lime green (#ecf874) button that says 'CONNECT' in pixel font. A chunky pixel robot companion holds up a small mobile phone screen showing a clean interface. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-15T21:47:57.350390+00:00"
+}

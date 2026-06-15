@@ -25,6 +25,8 @@ const REAL_MODERATION_MESSAGES = [
     "Seedream 4.5 Pro generation failed: Prediction failed: Async prediction failed: ContentModerationError: Content flagged for: sexual",
     "Seedream 4.0 generation failed: Content flagged for: sexual",
     "Seedream 4.0 generation failed: Content flagged and reported for containing illegal material",
+    // Replicate Qwen Image Edit (qwen-image, qwen-image-plus)
+    "Qwen Image Edit generation failed: All generated images contained NSFW content. Try running it again with a different prompt.",
     // Vertex AI Gemini (nanobanana)
     "Vertex AI Gemini image generation failed: Content policy violation detected in response",
     // Azure Content Safety (kontext, gpt-image)

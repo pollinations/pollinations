@@ -8,7 +8,7 @@ import {
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useId, useState } from "react";
+import { Fragment, useEffect, useId, useState } from "react";
 import { apiClient } from "../../api.ts";
 import {
     type ActionState,
@@ -469,62 +469,68 @@ function PriceGroups({
     const showReturnedColumn = testState.status === "success";
 
     return (
-        <div className="grid gap-3">
-            {PRICE_GROUPS.map((group) => {
-                const observedCount = group.fields.filter(
-                    (field) =>
-                        observedUsageValue(
-                            testState.usage,
-                            testState.billableUsage,
-                            field,
-                        ) !== null,
-                ).length;
+        <section className="overflow-hidden rounded-lg border border-divider bg-surface-opaque/35">
+            <div className={priceHeaderClass(showReturnedColumn)}>
+                <span>Usage</span>
+                <span>Price / 1M</span>
+                {showReturnedColumn && (
+                    <span className="text-right">Test returned</span>
+                )}
+            </div>
+            <div className="divide-y divide-divider">
+                {PRICE_GROUPS.map((group) => (
+                    <Fragment key={group.title}>
+                        <PriceSectionHeader
+                            group={group}
+                            testState={testState}
+                        />
+                        {group.fields.map((field) => (
+                            <PriceRow
+                                key={field.key}
+                                field={field}
+                                value={form[field.key]}
+                                observedValue={observedUsageValue(
+                                    testState.usage,
+                                    testState.billableUsage,
+                                    field,
+                                )}
+                                showReturnedColumn={showReturnedColumn}
+                                onChange={(value) => onChange(field.key, value)}
+                            />
+                        ))}
+                    </Fragment>
+                ))}
+            </div>
+        </section>
+    );
+}
 
-                return (
-                    <section
-                        key={group.title}
-                        className="overflow-hidden rounded-lg border border-divider bg-surface-opaque/35"
-                    >
-                        <div className="flex min-w-0 items-center justify-between gap-2 border-b border-divider px-3 py-2">
-                            <h3 className="text-sm font-semibold text-theme-text-strong">
-                                {group.title}
-                            </h3>
-                            {observedCount > 0 && (
-                                <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-1 text-xs font-semibold text-intent-success-text">
-                                    {observedCount} returned by test
-                                </span>
-                            )}
-                        </div>
-                        <div className={priceHeaderClass(showReturnedColumn)}>
-                            <span>Usage</span>
-                            <span>Price / 1M</span>
-                            {showReturnedColumn && (
-                                <span className="text-right">
-                                    Test returned
-                                </span>
-                            )}
-                        </div>
-                        <div className="divide-y divide-divider">
-                            {group.fields.map((field) => (
-                                <PriceRow
-                                    key={field.key}
-                                    field={field}
-                                    value={form[field.key]}
-                                    observedValue={observedUsageValue(
-                                        testState.usage,
-                                        testState.billableUsage,
-                                        field,
-                                    )}
-                                    showReturnedColumn={showReturnedColumn}
-                                    onChange={(value) =>
-                                        onChange(field.key, value)
-                                    }
-                                />
-                            ))}
-                        </div>
-                    </section>
-                );
-            })}
+function PriceSectionHeader({
+    group,
+    testState,
+}: {
+    group: (typeof PRICE_GROUPS)[number];
+    testState: ActionState;
+}) {
+    const observedCount = group.fields.filter(
+        (field) =>
+            observedUsageValue(
+                testState.usage,
+                testState.billableUsage,
+                field,
+            ) !== null,
+    ).length;
+
+    return (
+        <div className="flex min-w-0 items-center justify-between gap-2 bg-theme-bg-active/35 px-3 py-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+                {group.title}
+            </h3>
+            {observedCount > 0 && (
+                <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-0.5 text-xs font-semibold text-intent-success-text">
+                    {observedCount} returned by test
+                </span>
+            )}
         </div>
     );
 }

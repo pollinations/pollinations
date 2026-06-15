@@ -1,4 +1,4 @@
-import { type FC, useSyncExternalStore } from "react";
+import { type FC, useEffect, useSyncExternalStore } from "react";
 import { cn } from "../lib/cn.ts";
 import { MoonIcon, SunIcon } from "./icons/index.tsx";
 
@@ -187,6 +187,64 @@ export function useColorMode(): {
         isDark: mode === "dark",
         toggle: () => setColorMode(mode === "dark" ? "light" : "dark"),
     };
+}
+
+const EMBED_MESSAGE_SOURCE = "polli-embed";
+
+// Origins allowed to push a live theme into an embed: the Pollinations host
+// pages and same-site siblings, plus loopback for local dev. Theme is cosmetic,
+// so this gates on the message shape + a trusted host suffix — never auth.
+function isTrustedThemeOrigin(origin: string): boolean {
+    try {
+        const { hostname } = new URL(origin);
+        return (
+            hostname === "pollinations.ai" ||
+            hostname.endsWith(".pollinations.ai") ||
+            hostname === "localhost" ||
+            hostname === "127.0.0.1"
+        );
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Apply a color mode pushed by a trusted embedding host (e.g. /play) over
+ * `postMessage` (`{ source: "polli-embed", type: "theme", value: "light"|"dark" }`),
+ * so an already-loaded embed re-themes live when the host toggles. Initial paint
+ * is handled by the shared cross-subdomain cookie; this only covers live changes.
+ *
+ * Call once in an embeddable app. No-op when not embedded or off-DOM, so it is
+ * safe to call unconditionally. Theme application lives here (in the UI package,
+ * next to `setColorMode`) rather than in the SDK embed bridge, which is
+ * UI-agnostic and must not depend on the design system.
+ */
+export function useHostThemeSync(): void {
+    useEffect(() => {
+        if (typeof window === "undefined" || window.parent === window.self) {
+            return;
+        }
+        const onMessage = (event: MessageEvent) => {
+            if (!isTrustedThemeOrigin(event.origin)) return;
+            const data = event.data as {
+                source?: unknown;
+                type?: unknown;
+                value?: unknown;
+            } | null;
+            if (
+                !data ||
+                data.source !== EMBED_MESSAGE_SOURCE ||
+                data.type !== "theme"
+            ) {
+                return;
+            }
+            if (data.value === "dark" || data.value === "light") {
+                setColorMode(data.value);
+            }
+        };
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, []);
 }
 
 /**

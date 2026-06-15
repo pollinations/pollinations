@@ -10,7 +10,6 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useId, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { CommunityEndpointUsageCounts } from "./community-endpoint-usage.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -44,7 +43,6 @@ type PriceField = (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
 type SimulatedCostLine = {
     field: PriceField;
     tokens: number;
-    pricePerMillion: number;
     cost: number;
 };
 
@@ -387,51 +385,26 @@ export function CommunityEndpointDialog({
                         />
                     </DialogField>
 
-                    <div className="rounded-lg border border-divider bg-surface-opaque/35 p-3">
-                        <div className="flex flex-wrap items-start gap-3">
-                            <Button
-                                type="button"
-                                intent="info"
-                                onClick={() => void handleTest()}
-                                disabled={
-                                    (!isEdit && !hasToken) ||
-                                    form.baseUrl.trim() === "" ||
-                                    testState.status === "loading"
-                                }
-                            >
-                                {testState.status === "loading"
-                                    ? "Testing…"
-                                    : "Test endpoint"}
-                            </Button>
-                            {testState.status !== "idle" && (
-                                <div className="min-w-0 flex-1">
-                                    {testState.message && (
-                                        <p
-                                            className={testMessageClass(
-                                                testState.status,
-                                            )}
-                                        >
-                                            {testState.message}
-                                        </p>
-                                    )}
-                                    {testState.status === "success" && (
-                                        <>
-                                            <SimulatedCostPreview
-                                                form={form}
-                                                testState={testState}
-                                            />
-                                            <CommunityEndpointUsageCounts
-                                                usage={testState.usage}
-                                                billableUsage={
-                                                    testState.billableUsage
-                                                }
-                                                className="mt-2 rounded-md border border-divider bg-surface-opaque/50 p-2"
-                                            />
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                            type="button"
+                            intent="info"
+                            onClick={() => void handleTest()}
+                            disabled={
+                                (!isEdit && !hasToken) ||
+                                form.baseUrl.trim() === "" ||
+                                testState.status === "loading"
+                            }
+                        >
+                            {testState.status === "loading"
+                                ? "Testing…"
+                                : "Test endpoint"}
+                        </Button>
+                        {testState.status !== "idle" && testState.message && (
+                            <p className={testMessageClass(testState.status)}>
+                                {testState.message}
+                            </p>
+                        )}
                     </div>
 
                     <PriceGroups
@@ -439,6 +412,13 @@ export function CommunityEndpointDialog({
                         testState={testState}
                         onChange={updateForm}
                     />
+
+                    {testState.status === "success" && (
+                        <SimulatedCostPreview
+                            form={form}
+                            testState={testState}
+                        />
+                    )}
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
@@ -642,18 +622,18 @@ function SimulatedCostPreview({
 
     const totalCost = lines.reduce((sum, line) => sum + line.cost, 0);
     const pricedLineCount = lines.filter(
-        (line) => line.tokens > 0 && line.pricePerMillion > 0,
+        (line) => line.tokens > 0 && line.cost > 0,
     ).length;
 
     return (
-        <div className="mt-2 rounded-lg border border-divider bg-theme-bg-active/60 p-3">
+        <div className="rounded-lg border border-divider bg-theme-bg-active/60 p-3">
             <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-sm font-semibold text-theme-text-strong">
                         Simulated cost
                     </p>
                     <p className="mt-0.5 text-xs text-theme-text-muted">
-                        Based on the last test response and current prices.
+                        Current prices applied to the last test response.
                     </p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -667,15 +647,16 @@ function SimulatedCostPreview({
                 {lines.map((line) => (
                     <div
                         key={line.field.key}
-                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-xs"
+                        className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 text-xs"
                     >
                         <span className="min-w-0 truncate text-theme-text-muted">
                             {line.field.label}
                         </span>
                         <span className="whitespace-nowrap font-mono tabular-nums text-theme-text-strong">
-                            {usageNumberFormatter.format(line.tokens)} x{" "}
-                            {formatPricePerMillion(line.pricePerMillion)} /1M ={" "}
-                            {formatPollenCost(line.cost)}
+                            {usageNumberFormatter.format(line.tokens)} tokens
+                        </span>
+                        <span className="whitespace-nowrap text-right font-mono tabular-nums text-theme-text-strong">
+                            {formatPollenCost(line.cost)} pollen
                         </span>
                     </div>
                 ))}
@@ -703,19 +684,13 @@ function simulatedCostLines(
         if (tokens === null) return [];
 
         const pricePerToken = pricePerMillionToPerToken(form[field.key]);
-        const pricePerMillion = safeNumber(pricePerToken * 1_000_000);
         const cost = safeNumber(tokens * pricePerToken);
-        return [{ field, tokens, pricePerMillion, cost }];
+        return [{ field, tokens, cost }];
     });
 }
 
 function safeNumber(value: number): number {
     return Number.isFinite(value) && value > 0 ? value : 0;
-}
-
-function formatPricePerMillion(value: number): string {
-    if (value === 0) return "0";
-    return String(Number(value.toPrecision(12)));
 }
 
 function formatPollenCost(value: number): string {

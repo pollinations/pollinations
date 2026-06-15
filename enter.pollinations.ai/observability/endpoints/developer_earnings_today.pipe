@@ -32,6 +32,7 @@ SQL >
         WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
           AND community_model_reward_rate > 0
           AND dev_price > 0
+          AND community_model_reward_model_id != 'undefined'
           AND start_time >= now() - INTERVAL 7 DAY
     ) AS reward_events
 

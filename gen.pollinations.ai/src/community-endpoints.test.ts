@@ -1,7 +1,6 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
 import {
     type CommunityEndpointRuntime,
-    canManageCommunityEndpoints,
     communityChatCompletionsUrl,
     communityEndpointPrices,
     communityModelId,
@@ -116,11 +115,6 @@ function isBillingFetch(request: Request): boolean {
 }
 
 describe("community endpoint helpers", () => {
-    it("keeps the MVP tier gate disabled", () => {
-        expect(canManageCommunityEndpoints(null)).toBe(true);
-        expect(canManageCommunityEndpoints("microbe")).toBe(true);
-    });
-
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         const env = { COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS: "36901823" };
 

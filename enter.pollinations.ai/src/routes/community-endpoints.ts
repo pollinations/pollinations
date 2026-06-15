@@ -1,10 +1,8 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_TIER_GATE_ENABLED,
     type CommunityEndpointAllowlistEnv,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
-    canManageCommunityEndpoints,
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
@@ -103,7 +101,7 @@ async function requireCommunityEndpointAccess(
     userId: string,
 ): Promise<void> {
     const user = await db.query.user.findFirst({
-        columns: { githubId: true, tier: true },
+        columns: { githubId: true },
         where: eq(schema.user.id, userId),
     });
 
@@ -112,12 +110,6 @@ async function requireCommunityEndpointAccess(
             message: "Community endpoints are invite-only",
         });
     }
-
-    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return;
-    if (canManageCommunityEndpoints(user?.tier)) return;
-    throw new HTTPException(403, {
-        message: "Community endpoints require Flower tier or higher",
-    });
 }
 
 async function requireOwnerGithubUsername(

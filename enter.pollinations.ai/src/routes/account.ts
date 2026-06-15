@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -703,6 +704,11 @@ const profileResponseSchema = z.object({
         .describe(
             "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
         ),
+    communityEndpointsAllowed: z
+        .boolean()
+        .describe(
+            "Whether the account is allowed to manage community endpoints.",
+        ),
     name: z
         .string()
         .nullable()
@@ -818,6 +824,7 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
+                    githubId: userTable.githubId,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
                     tier: userTable.tier,
@@ -838,6 +845,10 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 tier: profile.tier,
                 nextResetAt: getNextRefillAt(profile.tier),
+                communityEndpointsAllowed: isCommunityEndpointOwnerAllowed(
+                    c.env,
+                    profile,
+                ),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

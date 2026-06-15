@@ -1,5 +1,4 @@
 import { Button, DownloadIcon, Section } from "@pollinations/ui";
-import { canManageCommunityEndpoints } from "@shared/community-endpoints.ts";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -113,6 +112,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            communityEndpointsAllowed:
+                profileResult?.communityEndpointsAllowed ?? false,
             billingState,
             paidWeek,
             tierWeek,
@@ -129,6 +130,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        communityEndpointsAllowed,
         billingState,
         paidWeek,
         tierWeek,
@@ -138,9 +140,7 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-    const showCommunityEndpoints = canManageCommunityEndpoints(
-        tierData?.active?.tier,
-    );
+    const showCommunityEndpoints = communityEndpointsAllowed;
 
     const selectableKeys = useMemo(
         () =>

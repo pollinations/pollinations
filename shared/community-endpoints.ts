@@ -7,8 +7,6 @@ import {
 } from "./registry/usage-headers.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
-export const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
-export const COMMUNITY_ENDPOINT_TIERS = ["flower", "nectar", "router"] as const;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
@@ -102,15 +100,6 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");
     return token;
-}
-
-export function canManageCommunityEndpoints(
-    tier: string | null | undefined,
-): boolean {
-    if (!COMMUNITY_ENDPOINT_TIER_GATE_ENABLED) return true;
-    return COMMUNITY_ENDPOINT_TIERS.includes(
-        tier as (typeof COMMUNITY_ENDPOINT_TIERS)[number],
-    );
 }
 
 export function isCommunityEndpointOwnerAllowed(

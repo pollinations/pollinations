@@ -549,6 +549,7 @@ type DeveloperEarningsRow = {
     date: string;
     app_key_id: string;
     app_name: string;
+    source?: string;
     requests: number;
     baseline_price: number;
     pollen_earned: number;
@@ -565,21 +566,27 @@ const developerEarningsRowSchema = z.object({
         ),
     app_key_id: z
         .string()
-        .describe("BYOP app key id; empty string on the global rollup row"),
-    app_name: z.string().describe("App display name"),
+        .describe(
+            "Earning entity id (BYOP app key or community model); empty string on the global rollup row",
+        ),
+    app_name: z.string().describe("Earning entity display name"),
+    source: z
+        .string()
+        .optional()
+        .describe("Reward source, such as byop_markup or community_model"),
     requests: z.number().describe("Number of billed requests"),
     baseline_price: z
         .number()
         .describe("Model cost before markup (sum over the bucket)"),
     pollen_earned: z
         .number()
-        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+        .describe("Developer credit earned over the bucket"),
     cost_usd: z
         .number()
         .describe(
-            "Markup-inclusive total charged to payers (sum over the bucket)",
+            "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
         ),
-    markup_rate: z.number().describe("Average markup rate applied"),
+    markup_rate: z.number().describe("Average reward or markup rate applied"),
     unique_users: z
         .number()
         .describe(
@@ -1149,7 +1156,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, and the global rollup across BYOP apps and community models. Each row includes `baseline_price`, `pollen_earned`, reward basis `cost_usd`, and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Combined earnings buckets and rollups",
@@ -1196,11 +1203,11 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
-            // any old cached rows that would render as undefined in CSV.
+            // v3: payload now includes community model earnings as well as
+            // BYOP rows, so old cached BYOP-only responses must be bypassed.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v2:debug:${devUserId}`
-                : `earnings:v2:${devUserId}`;
+                ? `earnings:v3:debug:${devUserId}`
+                : `earnings:v3:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;

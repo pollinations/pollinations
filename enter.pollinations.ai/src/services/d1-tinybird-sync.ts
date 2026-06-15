@@ -41,6 +41,15 @@ const TABLES: TableConfig[] = [
                 FROM apikey`,
     },
     {
+        datasource: "d1_community_model",
+        query: `SELECT id, owner_user_id, name, description, upstream_model,
+                       prompt_text_price, prompt_cached_price, prompt_cache_write_price,
+                       prompt_audio_price, prompt_image_price, completion_text_price,
+                       completion_reasoning_price, completion_audio_price, context_length,
+                       created_at, updated_at
+                FROM community_endpoint`,
+    },
+    {
         datasource: "d1_session",
         query: `SELECT id, expires_at, created_at, updated_at, user_agent, user_id,
                        impersonated_by

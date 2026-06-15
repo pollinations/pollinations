@@ -7,6 +7,7 @@ import {
 } from "./registry/usage-headers.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {

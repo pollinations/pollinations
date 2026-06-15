@@ -3,6 +3,7 @@ import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
+    type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
@@ -12,6 +13,10 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    type CommunityEndpointRuntime,
+} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
@@ -73,6 +78,7 @@ type ModelVariables = {
         requested: string;
         resolved: string;
         definition: ModelDefinition<string>;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
 };
 
@@ -206,9 +212,12 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let communityModelReward: CommunityModelRewardResolution | null =
+                    null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
+                    const communityEndpoint = c.var.model?.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -219,8 +228,16 @@ export const track = (eventType: EventType) =>
                         byopClientKeyId,
                         modelResolved: c.var.model?.resolved,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
+                        communityModelReward: communityEndpoint
+                            ? {
+                                  userId: communityEndpoint.ownerUserId,
+                                  modelId: communityEndpoint.modelId,
+                                  rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                              }
+                            : null,
                     });
                     markup = deduction.markup;
+                    communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
@@ -268,6 +285,7 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     responseTracking,
                     markup,
+                    communityModelReward,
                     billedPrice,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
@@ -286,6 +304,7 @@ export const track = (eventType: EventType) =>
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
                         "  devPrice={event.devPrice}",
+                        "  communityModelRewardRate={event.communityModelRewardRate}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -570,6 +589,7 @@ type TrackingEventInput = {
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
     markup: MarkupResolution | null;
+    communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
 };
@@ -589,6 +609,7 @@ function createTrackingEvent({
     requestTracking,
     responseTracking,
     markup,
+    communityModelReward,
     billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
@@ -625,6 +646,9 @@ function createTrackingEvent({
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
+        communityModelRewardUserId: communityModelReward?.userId,
+        communityModelRewardModelId: communityModelReward?.modelId,
+        communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

@@ -1,0 +1,35 @@
+{
+  "date": "2026-06-14",
+  "period_start": "2026-06-14",
+  "period_end": "2026-06-14",
+  "title": "Fireworks routing, Qwen3.7 Plus, and a 512K context window",
+  "summary": "A day of UI polish for embedded apps, smarter parsing for Polly, and a massive 512K context window for MiniMax M3.\n\nWe shifted Kimi K2.7 Code and MiniMax M3 over to Fireworks infrastructure, bumping MiniMax's context window to a massive 512K. Qwen Large also got an upgrade to Qwen3.7 Plus, making it faster and more accessible for heavy lifting.\n\nA concerted effort to make Playground and Websim play nicely inside the /play iframe. We killed the dreaded double scrollbars with dynamic height reporting, synced dark mode preferences across all subdomains via cookies, and fixed some jarring background color mismatches on the auth modal.\n\nPolly was getting confused by dollar signs in LaTeX and spitting out floating-point artifacts. We fixed the parsing collisions, cleaned up the decimals, and swapped generic attachment placeholders for actual filenames so the AI actually knows what it's looking at.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 11213,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11791,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11793,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11795,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11800,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11801,
+      "date": "2026-06-14"
+    }
+  ],
+  "generated_at": "2026-06-15T07:52:14.393578+00:00"
+}

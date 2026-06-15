@@ -1,0 +1,34 @@
+{
+  "pr_number": 11811,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11811",
+  "merged_at": "2026-06-15T14:59:50Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Syncing the scrolls",
+    "blurb": "Our automated bots just gave the API documentation a quick polish to keep everything perfectly in sync with production.",
+    "summary": "Automated sync of APIDOCS.md to reflect the latest OpenAPI spec changes following a production deployment.",
+    "impact": "Developers referencing the API documentation will see the most up-to-date specifications.",
+    "keywords": [
+      "docs",
+      "openapi",
+      "api",
+      "automation"
+    ],
+    "visual_concept": "The pollinations bee and the robot companion organizing scrolls or reading a glowing book of documentation. The robot is printing out a tiny receipt representing the minor automated update.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing glowing scrolls of documentation in a warm wooden library. The robot is printing a tiny receipt. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-15/PR-11811.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing glowing scrolls of documentation in a warm wooden library. The robot is printing a tiny receipt. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-06-15T15:01:18.296008+00:00"
+}

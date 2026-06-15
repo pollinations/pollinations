@@ -76,10 +76,7 @@ function PlayContent() {
                             Run a Pollinations app live, right here.
                         </p>
                     </div>
-                    <AppUserMenu
-                        dashboardHref={ENTER_URL}
-                        labels={{ authorize: "Log in" }}
-                    />
+                    <AppUserMenu dashboardHref={ENTER_URL} />
                 </div>
                 <ButtonGroup aria-label="Play">
                     {PLAY_APPS.map((playApp) => (

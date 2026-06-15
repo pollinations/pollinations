@@ -23,6 +23,7 @@ import {
     idleAction,
     nextFormState,
     observedUsageValue,
+    pricePerMillionToPerToken,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -39,6 +40,31 @@ type CommunityEndpointDialogProps = {
 };
 
 const usageNumberFormatter = new Intl.NumberFormat("en-US");
+type PriceField = (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+type SimulatedCostLine = {
+    field: PriceField;
+    tokens: number;
+    pricePerMillion: number;
+    cost: number;
+};
+
+const PRICE_GROUPS: {
+    title: string;
+    fields: PriceField[];
+}[] = [
+    {
+        title: "Prompt tokens",
+        fields: COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
+            field.usageType.startsWith("prompt"),
+        ),
+    },
+    {
+        title: "Completion tokens",
+        fields: COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
+            field.usageType.startsWith("completion"),
+        ),
+    },
+];
 
 export function CommunityEndpointDialog({
     endpoint,
@@ -75,7 +101,14 @@ export function CommunityEndpointDialog({
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
-        setTestState(idleAction);
+        if (
+            key === "name" ||
+            key === "upstreamModel" ||
+            key === "baseUrl" ||
+            key === "bearerToken"
+        ) {
+            setTestState(idleAction);
+        }
         if (key === "baseUrl" || key === "bearerToken") {
             setModelOptions([]);
             setModelListState(idleAction);
@@ -354,85 +387,58 @@ export function CommunityEndpointDialog({
                         />
                     </DialogField>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
-                            const observedValue = observedUsageValue(
-                                testState.usage,
-                                testState.billableUsage,
-                                field,
-                            );
-                            return (
-                                <DialogField
-                                    key={field.key}
-                                    label={field.label}
-                                    helper={priceFieldHelper(
-                                        field.label,
-                                        observedValue,
+                    <div className="rounded-lg border border-divider bg-surface-opaque/35 p-3">
+                        <div className="flex flex-wrap items-start gap-3">
+                            <Button
+                                type="button"
+                                intent="info"
+                                onClick={() => void handleTest()}
+                                disabled={
+                                    (!isEdit && !hasToken) ||
+                                    form.baseUrl.trim() === "" ||
+                                    testState.status === "loading"
+                                }
+                            >
+                                {testState.status === "loading"
+                                    ? "Testing…"
+                                    : "Test endpoint"}
+                            </Button>
+                            {testState.status !== "idle" && (
+                                <div className="min-w-0 flex-1">
+                                    {testState.message && (
+                                        <p
+                                            className={testMessageClass(
+                                                testState.status,
+                                            )}
+                                        >
+                                            {testState.message}
+                                        </p>
                                     )}
-                                >
-                                    <Input
-                                        name={`community-${field.key}`}
-                                        type="number"
-                                        step="any"
-                                        min="0"
-                                        inputMode="decimal"
-                                        hideNumberSteppers
-                                        value={form[field.key]}
-                                        placeholder="0"
-                                        autoComplete="off"
-                                        className={
-                                            observedValue !== null
-                                                ? "bg-intent-success-bg-light/35"
-                                                : undefined
-                                        }
-                                        onChange={(e) =>
-                                            updateForm(
-                                                field.key,
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </DialogField>
-                            );
-                        })}
+                                    {testState.status === "success" && (
+                                        <>
+                                            <SimulatedCostPreview
+                                                form={form}
+                                                testState={testState}
+                                            />
+                                            <CommunityEndpointUsageCounts
+                                                usage={testState.usage}
+                                                billableUsage={
+                                                    testState.billableUsage
+                                                }
+                                                className="mt-2 rounded-md border border-divider bg-surface-opaque/50 p-2"
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap items-start gap-3">
-                        <Button
-                            type="button"
-                            intent="info"
-                            onClick={() => void handleTest()}
-                            disabled={
-                                (!isEdit && !hasToken) ||
-                                form.baseUrl.trim() === "" ||
-                                testState.status === "loading"
-                            }
-                        >
-                            {testState.status === "loading"
-                                ? "Testing…"
-                                : "Test endpoint"}
-                        </Button>
-                        {testState.status !== "idle" && (
-                            <div className="min-w-0 flex-1">
-                                {testState.message && (
-                                    <p
-                                        className={testMessageClass(
-                                            testState.status,
-                                        )}
-                                    >
-                                        {testState.message}
-                                    </p>
-                                )}
-                                {testState.status === "success" && (
-                                    <CommunityEndpointUsageCounts
-                                        usage={testState.usage}
-                                        billableUsage={testState.billableUsage}
-                                        className="mt-2 rounded-md border border-divider bg-surface-opaque/50 p-2"
-                                    />
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <PriceGroups
+                        form={form}
+                        testState={testState}
+                        onChange={updateForm}
+                    />
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
@@ -468,11 +474,254 @@ function testMessageClass(status: ActionState["status"]): string {
     return "text-sm text-theme-text-muted";
 }
 
-function priceFieldHelper(label: string, observedValue: number | null): string {
+function PriceGroups({
+    form,
+    testState,
+    onChange,
+}: {
+    form: EndpointFormState;
+    testState: ActionState;
+    onChange: (key: keyof EndpointFormState, value: string) => void;
+}) {
+    const showReturnedColumn = testState.status === "success";
+
+    return (
+        <div className="grid gap-3">
+            {PRICE_GROUPS.map((group) => {
+                const observedCount = group.fields.filter(
+                    (field) =>
+                        observedUsageValue(
+                            testState.usage,
+                            testState.billableUsage,
+                            field,
+                        ) !== null,
+                ).length;
+
+                return (
+                    <section
+                        key={group.title}
+                        className="overflow-hidden rounded-lg border border-divider bg-surface-opaque/35"
+                    >
+                        <div className="flex min-w-0 items-center justify-between gap-2 border-b border-divider px-3 py-2">
+                            <h3 className="text-sm font-semibold text-theme-text-strong">
+                                {group.title}
+                            </h3>
+                            {observedCount > 0 && (
+                                <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-1 text-xs font-semibold text-intent-success-text">
+                                    {observedCount} returned by test
+                                </span>
+                            )}
+                        </div>
+                        <div className={priceHeaderClass(showReturnedColumn)}>
+                            <span>Usage</span>
+                            <span>Price / 1M</span>
+                            {showReturnedColumn && (
+                                <span className="text-right">
+                                    Test returned
+                                </span>
+                            )}
+                        </div>
+                        <div className="divide-y divide-divider">
+                            {group.fields.map((field) => (
+                                <PriceRow
+                                    key={field.key}
+                                    field={field}
+                                    value={form[field.key]}
+                                    observedValue={observedUsageValue(
+                                        testState.usage,
+                                        testState.billableUsage,
+                                        field,
+                                    )}
+                                    showReturnedColumn={showReturnedColumn}
+                                    onChange={(value) =>
+                                        onChange(field.key, value)
+                                    }
+                                />
+                            ))}
+                        </div>
+                    </section>
+                );
+            })}
+        </div>
+    );
+}
+
+function PriceRow({
+    field,
+    value,
+    observedValue,
+    showReturnedColumn,
+    onChange,
+}: {
+    field: PriceField;
+    value: string;
+    observedValue: number | null;
+    showReturnedColumn: boolean;
+    onChange: (value: string) => void;
+}) {
+    const observed = observedValue !== null;
+
+    return (
+        <Field.Root className={priceRowClass(observed, showReturnedColumn)}>
+            <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                    <Field.Label className="min-w-0 truncate text-sm font-medium text-theme-text-strong">
+                        {shortPriceLabel(field.label)}
+                    </Field.Label>
+                    {observed && (
+                        <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
+                            returned
+                        </span>
+                    )}
+                </div>
+                <p className="mt-0.5 text-xs text-theme-text-muted sm:hidden">
+                    Pollen per 1M tokens
+                </p>
+            </div>
+
+            <Input
+                name={`community-${field.key}`}
+                type="number"
+                step="any"
+                min="0"
+                inputMode="decimal"
+                hideNumberSteppers
+                value={value}
+                placeholder="0"
+                autoComplete="off"
+                className="h-9 font-mono tabular-nums sm:text-right"
+                onChange={(e) => onChange(e.target.value)}
+            />
+
+            {showReturnedColumn && (
+                <div className="min-w-0 text-xs sm:text-right">
+                    {observed ? (
+                        <span className="font-mono font-semibold tabular-nums text-intent-success-text">
+                            {usageNumberFormatter.format(observedValue)}
+                        </span>
+                    ) : (
+                        <span className="text-theme-text-muted">-</span>
+                    )}
+                </div>
+            )}
+        </Field.Root>
+    );
+}
+
+function priceHeaderClass(showReturnedColumn: boolean): string {
+    const columns = showReturnedColumn
+        ? "sm:grid-cols-[minmax(0,1fr)_9rem_10rem]"
+        : "sm:grid-cols-[minmax(0,1fr)_9rem]";
+    return `hidden gap-3 border-b border-divider bg-theme-bg-active/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-wide text-theme-text-muted sm:grid ${columns}`;
+}
+
+function priceRowClass(observed: boolean, showReturnedColumn: boolean): string {
+    const columns = showReturnedColumn
+        ? "sm:grid-cols-[minmax(0,1fr)_9rem_10rem]"
+        : "sm:grid-cols-[minmax(0,1fr)_9rem]";
     const base =
-        "Pollen per 1M tokens. Leave at 0 when this usage is not billed.";
-    if (observedValue === null) return base;
-    return `Test returned ${usageNumberFormatter.format(observedValue)} ${label.toLowerCase()} tokens. ${base}`;
+        "grid gap-2 border-l-4 px-3 py-2 transition-colors sm:items-center sm:gap-3";
+    return observed
+        ? `${base} ${columns} border-l-intent-success-text bg-intent-success-bg-light/30`
+        : `${base} ${columns} border-l-transparent`;
+}
+
+function shortPriceLabel(label: string): string {
+    return label.replace(/^Prompt /, "").replace(/^Completion /, "");
+}
+
+function SimulatedCostPreview({
+    form,
+    testState,
+}: {
+    form: EndpointFormState;
+    testState: ActionState;
+}) {
+    const lines = simulatedCostLines(form, testState);
+    if (lines.length === 0) return null;
+
+    const totalCost = lines.reduce((sum, line) => sum + line.cost, 0);
+    const pricedLineCount = lines.filter(
+        (line) => line.tokens > 0 && line.pricePerMillion > 0,
+    ).length;
+
+    return (
+        <div className="mt-2 rounded-lg border border-divider bg-theme-bg-active/60 p-3">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-theme-text-strong">
+                        Simulated cost
+                    </p>
+                    <p className="mt-0.5 text-xs text-theme-text-muted">
+                        Based on the last test response and current prices.
+                    </p>
+                </div>
+                <div className="shrink-0 text-right">
+                    <p className="font-mono text-base font-semibold tabular-nums text-theme-text-strong">
+                        {formatPollenCost(totalCost)}
+                    </p>
+                    <p className="text-xs text-theme-text-muted">pollen</p>
+                </div>
+            </div>
+            <div className="mt-2 grid gap-1.5">
+                {lines.map((line) => (
+                    <div
+                        key={line.field.key}
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-xs"
+                    >
+                        <span className="min-w-0 truncate text-theme-text-muted">
+                            {line.field.label}
+                        </span>
+                        <span className="whitespace-nowrap font-mono tabular-nums text-theme-text-strong">
+                            {usageNumberFormatter.format(line.tokens)} x{" "}
+                            {formatPricePerMillion(line.pricePerMillion)} /1M ={" "}
+                            {formatPollenCost(line.cost)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            {pricedLineCount === 0 && (
+                <p className="mt-2 text-xs text-theme-text-muted">
+                    Enter a price for any returned usage field to preview a
+                    non-zero charge.
+                </p>
+            )}
+        </div>
+    );
+}
+
+function simulatedCostLines(
+    form: EndpointFormState,
+    testState: ActionState,
+): SimulatedCostLine[] {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.flatMap((field) => {
+        const tokens = observedUsageValue(
+            testState.usage,
+            testState.billableUsage,
+            field,
+        );
+        if (tokens === null) return [];
+
+        const pricePerToken = pricePerMillionToPerToken(form[field.key]);
+        const pricePerMillion = safeNumber(pricePerToken * 1_000_000);
+        const cost = safeNumber(tokens * pricePerToken);
+        return [{ field, tokens, pricePerMillion, cost }];
+    });
+}
+
+function safeNumber(value: number): number {
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function formatPricePerMillion(value: number): string {
+    if (value === 0) return "0";
+    return String(Number(value.toPrecision(12)));
+}
+
+function formatPollenCost(value: number): string {
+    if (value === 0) return "0";
+    if (value < 0.01) return value.toFixed(12).replace(/\.?0+$/, "");
+    return String(Number(value.toPrecision(12)));
 }
 
 function DialogField({

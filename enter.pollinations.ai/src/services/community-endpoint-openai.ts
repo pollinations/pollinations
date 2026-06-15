@@ -3,19 +3,30 @@ import {
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import type { Usage } from "@shared/registry/registry.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
-    bearerToken: string;
+    bearerToken?: string;
 };
 
 type EndpointTestInput = EndpointAuth & {
     model: string;
+    bearerToken: string;
+};
+
+export type CommunityEndpointUsage = Record<string, unknown>;
+
+export type CommunityEndpointTestResult = {
+    usage: CommunityEndpointUsage;
+    billableUsage: Usage;
 };
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
-function authorizationHeaders(bearerToken: string): HeadersInit {
+function authorizationHeaders(bearerToken?: string): HeadersInit {
+    if (!bearerToken?.trim()) return {};
     return {
         Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
     };
@@ -106,7 +117,7 @@ export async function testCommunityEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<void> {
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -116,7 +127,6 @@ export async function testCommunityEndpoint({
         body: JSON.stringify({
             model,
             messages: [{ role: "user", content: "Reply with OK." }],
-            max_tokens: 1,
             stream: false,
         }),
     });
@@ -135,9 +145,18 @@ export async function testCommunityEndpoint({
         typeof body.usage !== "object" ||
         !("prompt_tokens" in body.usage) ||
         !("completion_tokens" in body.usage) ||
+        !("total_tokens" in body.usage) ||
         typeof body.usage.prompt_tokens !== "number" ||
-        typeof body.usage.completion_tokens !== "number"
+        typeof body.usage.completion_tokens !== "number" ||
+        typeof body.usage.total_tokens !== "number"
     ) {
         throw new Error("Endpoint did not return OpenAI token usage");
     }
+    const usage = body.usage as CommunityEndpointUsage;
+    return {
+        usage,
+        billableUsage: openaiUsageToUsage(
+            usage as Parameters<typeof openaiUsageToUsage>[0],
+        ),
+    };
 }

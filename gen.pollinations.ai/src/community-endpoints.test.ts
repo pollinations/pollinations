@@ -3,6 +3,7 @@ import {
     type CommunityEndpointRuntime,
     canManageCommunityEndpoints,
     communityChatCompletionsUrl,
+    communityEndpointPrices,
     communityModelId,
     communityOpenAIBaseUrl,
     isCommunityEndpointOwnerAllowed,
@@ -209,8 +210,10 @@ describe("community endpoint helpers", () => {
                 "sk_saved_token",
                 secret,
             ),
-            promptTextPrice: 0.1,
-            completionTextPrice: 0.1,
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
             contextLength: null,
         };
 
@@ -751,6 +754,36 @@ fixtureTest(
             const request = new Request(input, init);
 
             if (isPortkeyChatCompletionsRequest(request)) {
+                const isPortkeyRequest =
+                    request.headers.has("x-portkey-provider");
+                if (!isPortkeyRequest) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer sk_pollinations_upstream",
+                    );
+                    await expect(request.json()).resolves.toMatchObject({
+                        model: "openai",
+                        messages: [{ role: "user", content: "Reply with OK." }],
+                        stream: false,
+                    });
+                    return Response.json({
+                        id: "chatcmpl_pollinations_upstream_test",
+                        object: "chat.completion",
+                        model: "openai",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "OK" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+
                 await expectCommunityPortkeyRequest(input, init, {
                     customHost: "https://gen.pollinations.ai/v1",
                     bearerToken: "sk_pollinations_upstream",
@@ -811,6 +844,7 @@ fixtureTest(
 
         expect(registerResponse.status).toBe(200);
         const registered = (await registerResponse.json()) as {
+            id: string;
             modelId: string;
             baseUrl: string;
             upstreamModel: string;
@@ -821,6 +855,32 @@ fixtureTest(
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
             tokenConfigured: true,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/test`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: await signedSessionCookie(sessionToken),
+                    },
+                    body: JSON.stringify({
+                        baseUrl: registered.baseUrl,
+                        model: registered.upstreamModel,
+                    }),
+                },
+            ),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with usage",
+            billableUsage: {
+                promptTextTokens: 2,
+                completionTextTokens: 3,
+            },
         });
 
         const response = await SELF.fetch(
@@ -847,6 +907,6 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isPortkeyChatCompletionsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(1);
+        ).toHaveLength(2);
     },
 );

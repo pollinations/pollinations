@@ -34,11 +34,13 @@ export type ApiModelInfo = {
 type PriceField =
     | "promptTextTokens"
     | "promptCachedTokens"
+    | "promptCacheWriteTokens"
     | "promptAudioTokens"
     | "promptAudioSeconds"
     | "promptImageTokens"
     | "promptVideoTokens"
     | "completionTextTokens"
+    | "completionReasoningTokens"
     | "completionAudioTokens"
     | "completionAudioSeconds"
     | "completionImageTokens"
@@ -48,6 +50,7 @@ type PriceField =
 const INPUT_PRICE_FIELDS: PriceField[] = [
     "promptTextTokens",
     "promptCachedTokens",
+    "promptCacheWriteTokens",
     "promptAudioTokens",
     "promptAudioSeconds",
     "promptImageTokens",
@@ -56,6 +59,7 @@ const INPUT_PRICE_FIELDS: PriceField[] = [
 
 const OUTPUT_PRICE_FIELDS: PriceField[] = [
     "completionTextTokens",
+    "completionReasoningTokens",
     "completionAudioTokens",
     "completionAudioSeconds",
     "completionImageTokens",
@@ -177,11 +181,19 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
 
     const promptTextTokens = priceNumber(pricing, "promptTextTokens");
     const promptCachedTokens = priceNumber(pricing, "promptCachedTokens");
+    const promptCacheWriteTokens = priceNumber(
+        pricing,
+        "promptCacheWriteTokens",
+    );
     const promptAudioTokens = priceNumber(pricing, "promptAudioTokens");
     const promptAudioSeconds = priceNumber(pricing, "promptAudioSeconds");
     const promptImageTokens = priceNumber(pricing, "promptImageTokens");
     const promptVideoTokens = priceNumber(pricing, "promptVideoTokens");
     const completionTextTokens = priceNumber(pricing, "completionTextTokens");
+    const completionReasoningTokens = priceNumber(
+        pricing,
+        "completionReasoningTokens",
+    );
     const completionAudioTokens = priceNumber(pricing, "completionAudioTokens");
     const completionAudioSeconds = priceNumber(
         pricing,
@@ -291,10 +303,18 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         perToken: true,
         promptTextPrice: formatPrice(promptTextTokens, formatPricePer1M),
         promptCachedPrice: formatPrice(promptCachedTokens, formatPricePer1M),
+        promptCacheWritePrice: formatPrice(
+            promptCacheWriteTokens,
+            formatPricePer1M,
+        ),
         promptAudioPrice: formatPrice(promptAudioTokens, formatPricePer1M),
         promptImagePrice: formatPrice(promptImageTokens, formatPricePer1M),
         completionTextPrice: formatPrice(
             completionTextTokens,
+            formatPricePer1M,
+        ),
+        completionReasoningPrice: formatPrice(
+            completionReasoningTokens,
             formatPricePer1M,
         ),
         completionAudioPrice: formatPrice(

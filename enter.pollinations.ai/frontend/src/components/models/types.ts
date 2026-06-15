@@ -31,8 +31,10 @@ export type ModelPrice = {
     // Text pricing
     promptTextPrice?: string;
     promptCachedPrice?: string;
+    promptCacheWritePrice?: string;
     promptAudioPrice?: string;
     completionTextPrice?: string;
+    completionReasoningPrice?: string;
     completionAudioPrice?: string;
     completionAudioTokens?: string; // For audio calculation
     // Image pricing

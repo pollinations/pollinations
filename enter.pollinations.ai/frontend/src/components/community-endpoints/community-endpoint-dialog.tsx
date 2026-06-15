@@ -1,27 +1,28 @@
 import {
     Button,
-    ChevronIcon,
-    cn,
     Dialog,
     DialogTitle,
-    Dropdown,
-    DropdownItem,
     Field,
     Input,
     ScrollArea,
 } from "@pollinations/ui";
+import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { CommunityEndpointUsageCounts } from "./community-endpoint-usage.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
+    type CommunityEndpointTestResponse,
     type EndpointFormState,
     type EndpointPayload,
     emptyForm,
     endpointToForm,
+    hasPositiveFormPrice,
     idleAction,
     nextFormState,
+    observedUsageValue,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -36,6 +37,8 @@ type CommunityEndpointDialogProps = {
     /** Create-mode trigger rendered by the parent (e.g. the Section action). */
     trigger?: ReactNode;
 };
+
+const usageNumberFormatter = new Intl.NumberFormat("en-US");
 
 export function CommunityEndpointDialog({
     endpoint,
@@ -52,6 +55,7 @@ export function CommunityEndpointDialog({
     const [testState, setTestState] = useState<ActionState>(idleAction);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const modelListId = useId();
 
     // Reset the form each time the dialog opens.
     useEffect(() => {
@@ -65,6 +69,9 @@ export function CommunityEndpointDialog({
     }, [open, endpoint]);
 
     const hasToken = form.bearerToken.trim().length > 0;
+    const tokenForRequest = hasToken
+        ? { bearerToken: form.bearerToken.trim() }
+        : {};
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
@@ -78,14 +85,21 @@ export function CommunityEndpointDialog({
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
-            const response = await apiClient[
-                "community-endpoints"
-            ].models.$post({
-                json: {
-                    baseUrl: form.baseUrl.trim(),
-                    bearerToken: form.bearerToken.trim(),
-                },
-            });
+            const json = {
+                baseUrl: form.baseUrl.trim(),
+                ...tokenForRequest,
+            };
+            const response =
+                isEdit && endpoint
+                    ? await apiClient["community-endpoints"][
+                          ":id"
+                      ].models.$post({
+                          param: { id: endpoint.id },
+                          json,
+                      })
+                    : await apiClient["community-endpoints"].models.$post({
+                          json,
+                      });
             if (!response.ok) throw new Error(await readError(response));
             const body = (await response.json()) as { data: string[] };
             setModelOptions(body.data);
@@ -108,18 +122,31 @@ export function CommunityEndpointDialog({
     async function handleTest(): Promise<void> {
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
-            const response = await apiClient["community-endpoints"].test.$post({
-                json: {
-                    baseUrl: form.baseUrl.trim(),
-                    bearerToken: form.bearerToken.trim(),
-                    model: form.upstreamModel.trim() || form.name.trim(),
-                },
-            });
+            const json = {
+                baseUrl: form.baseUrl.trim(),
+                model: form.upstreamModel.trim() || form.name.trim(),
+                ...tokenForRequest,
+            };
+            const response =
+                isEdit && endpoint
+                    ? await apiClient["community-endpoints"][":id"].test.$post({
+                          param: { id: endpoint.id },
+                          json,
+                      })
+                    : await apiClient["community-endpoints"].test.$post({
+                          json: {
+                              ...json,
+                              bearerToken: form.bearerToken.trim(),
+                          },
+                      });
             if (!response.ok) throw new Error(await readError(response));
-            const body = (await response.json()) as { message?: string };
+            const body =
+                (await response.json()) as CommunityEndpointTestResponse;
             setTestState({
                 status: "success",
                 message: body.message || "Endpoint responded",
+                usage: body.usage,
+                billableUsage: body.billableUsage,
             });
         } catch (thrown) {
             setTestState({
@@ -154,8 +181,7 @@ export function CommunityEndpointDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
-        form.promptTextPrice.trim() !== "" &&
-        form.completionTextPrice.trim() !== "" &&
+        hasPositiveFormPrice(form) &&
         (isEdit || hasToken);
 
     return (
@@ -202,7 +228,7 @@ export function CommunityEndpointDialog({
                                 name="community-model-name"
                                 value={form.name}
                                 placeholder="my-model"
-                                autoComplete="new-password"
+                                autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 required
@@ -219,7 +245,7 @@ export function CommunityEndpointDialog({
                                 name="community-model-description"
                                 value={form.description}
                                 placeholder="Fast coding model, long context"
-                                autoComplete="new-password"
+                                autoComplete="off"
                                 maxLength={240}
                                 onChange={(e) =>
                                     updateForm("description", e.target.value)
@@ -239,7 +265,7 @@ export function CommunityEndpointDialog({
                                 inputMode="url"
                                 value={form.baseUrl}
                                 placeholder="https://api.example.com/v1"
-                                autoComplete="new-password"
+                                autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 required
@@ -261,7 +287,6 @@ export function CommunityEndpointDialog({
                                     intent="info"
                                     className="shrink-0 text-sm"
                                     disabled={
-                                        !hasToken ||
                                         form.baseUrl.trim() === "" ||
                                         modelListState.status === "loading"
                                     }
@@ -274,66 +299,39 @@ export function CommunityEndpointDialog({
                             }
                         >
                             <Input
-                                name="community-provider-model"
+                                name="community-upstream-id"
                                 value={form.upstreamModel}
                                 placeholder="gpt-4o-mini"
-                                autoComplete="new-password"
+                                list={
+                                    modelOptions.length > 0
+                                        ? modelListId
+                                        : undefined
+                                }
+                                autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
+                                data-lpignore="true"
+                                data-1p-ignore="true"
+                                data-bwignore="true"
                                 onChange={(e) =>
                                     updateForm("upstreamModel", e.target.value)
                                 }
                             />
                             {modelOptions.length > 0 && (
-                                <Dropdown
-                                    align="start"
-                                    className="max-h-64 w-[min(22rem,80vw)] overflow-auto p-1"
-                                    trigger={(isOpen) => (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            intent="info"
-                                            className="mt-1.5 inline-flex items-center gap-1.5 text-sm"
-                                        >
-                                            Pick from {modelOptions.length}{" "}
-                                            models
-                                            <ChevronIcon
-                                                className={cn(
-                                                    "h-4 w-4 transition-transform",
-                                                    isOpen && "rotate-180",
-                                                )}
-                                            />
-                                        </Button>
-                                    )}
-                                >
-                                    {(close) =>
-                                        modelOptions.map((model) => (
-                                            <DropdownItem
-                                                key={model}
-                                                onClick={() => {
-                                                    updateForm(
-                                                        "upstreamModel",
-                                                        model,
-                                                    );
-                                                    close();
-                                                }}
-                                            >
-                                                {model}
-                                            </DropdownItem>
-                                        ))
-                                    }
-                                </Dropdown>
+                                <datalist id={modelListId}>
+                                    {modelOptions.map((model) => (
+                                        <option key={model} value={model} />
+                                    ))}
+                                </datalist>
                             )}
                         </DialogField>
                     </div>
 
                     <DialogField
-                        label={
-                            isEdit ? "New API bearer token" : "API bearer token"
-                        }
+                        label="API bearer token"
                         helper={
                             isEdit
-                                ? "Leave blank to keep the saved token. Enter a new token to update it, fetch models, or test."
+                                ? "Saved token is configured. Leave blank to keep it; fetch models and test use it unless you enter a replacement."
                                 : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
                         }
                     >
@@ -341,7 +339,10 @@ export function CommunityEndpointDialog({
                             name="community-api-bearer-token"
                             type="password"
                             value={form.bearerToken}
-                            autoComplete="off"
+                            placeholder={
+                                isEdit ? "Saved token configured" : undefined
+                            }
+                            autoComplete="new-password"
                             autoCapitalize="none"
                             data-lpignore="true"
                             data-1p-ignore="true"
@@ -354,61 +355,55 @@ export function CommunityEndpointDialog({
                     </DialogField>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <DialogField
-                            label="Prompt price"
-                            helper="Pollen per 1M input tokens. Decimals allowed, e.g. 0.10."
-                        >
-                            <Input
-                                name="community-prompt-price"
-                                type="number"
-                                step="any"
-                                min="0"
-                                inputMode="decimal"
-                                hideNumberSteppers
-                                value={form.promptTextPrice}
-                                placeholder="0.10"
-                                autoComplete="off"
-                                required
-                                onChange={(e) =>
-                                    updateForm(
-                                        "promptTextPrice",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </DialogField>
-                        <DialogField
-                            label="Completion price"
-                            helper="Pollen per 1M output tokens. Decimals allowed, e.g. 1.25."
-                        >
-                            <Input
-                                name="community-completion-price"
-                                type="number"
-                                step="any"
-                                min="0"
-                                inputMode="decimal"
-                                hideNumberSteppers
-                                value={form.completionTextPrice}
-                                placeholder="1.00"
-                                autoComplete="off"
-                                required
-                                onChange={(e) =>
-                                    updateForm(
-                                        "completionTextPrice",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </DialogField>
+                        {COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+                            const observedValue = observedUsageValue(
+                                testState.usage,
+                                testState.billableUsage,
+                                field,
+                            );
+                            return (
+                                <DialogField
+                                    key={field.key}
+                                    label={field.label}
+                                    helper={priceFieldHelper(
+                                        field.label,
+                                        observedValue,
+                                    )}
+                                >
+                                    <Input
+                                        name={`community-${field.key}`}
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        inputMode="decimal"
+                                        hideNumberSteppers
+                                        value={form[field.key]}
+                                        placeholder="0"
+                                        autoComplete="off"
+                                        className={
+                                            observedValue !== null
+                                                ? "bg-intent-success-bg-light/35"
+                                                : undefined
+                                        }
+                                        onChange={(e) =>
+                                            updateForm(
+                                                field.key,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </DialogField>
+                            );
+                        })}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-start gap-3">
                         <Button
                             type="button"
                             intent="info"
                             onClick={() => void handleTest()}
                             disabled={
-                                !hasToken ||
+                                (!isEdit && !hasToken) ||
                                 form.baseUrl.trim() === "" ||
                                 testState.status === "loading"
                             }
@@ -417,10 +412,25 @@ export function CommunityEndpointDialog({
                                 ? "Testing…"
                                 : "Test endpoint"}
                         </Button>
-                        {testState.status !== "idle" && testState.message && (
-                            <p className={testMessageClass(testState.status)}>
-                                {testState.message}
-                            </p>
+                        {testState.status !== "idle" && (
+                            <div className="min-w-0 flex-1">
+                                {testState.message && (
+                                    <p
+                                        className={testMessageClass(
+                                            testState.status,
+                                        )}
+                                    >
+                                        {testState.message}
+                                    </p>
+                                )}
+                                {testState.status === "success" && (
+                                    <CommunityEndpointUsageCounts
+                                        usage={testState.usage}
+                                        billableUsage={testState.billableUsage}
+                                        className="mt-2 rounded-md border border-divider bg-surface-opaque/50 p-2"
+                                    />
+                                )}
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
@@ -456,6 +466,13 @@ function testMessageClass(status: ActionState["status"]): string {
     if (status === "error") return "text-sm text-intent-danger-text";
     if (status === "success") return "text-sm text-intent-success-text";
     return "text-sm text-theme-text-muted";
+}
+
+function priceFieldHelper(label: string, observedValue: number | null): string {
+    const base =
+        "Pollen per 1M tokens. Leave at 0 when this usage is not billed.";
+    if (observedValue === null) return base;
+    return `Test returned ${usageNumberFormatter.format(observedValue)} ${label.toLowerCase()} tokens. ${base}`;
 }
 
 function DialogField({

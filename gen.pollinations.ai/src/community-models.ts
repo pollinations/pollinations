@@ -1,6 +1,8 @@
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointAllowlistEnv,
     type CommunityEndpointRuntime,
+    communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     parseCommunityModelId,
@@ -44,7 +46,15 @@ export async function getCommunityTextModelsInfo(
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
+            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
+            promptCacheWritePrice:
+                schema.communityEndpoint.promptCacheWritePrice,
+            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
+            promptImagePrice: schema.communityEndpoint.promptImagePrice,
             completionTextPrice: schema.communityEndpoint.completionTextPrice,
+            completionReasoningPrice:
+                schema.communityEndpoint.completionReasoningPrice,
+            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             contextLength: schema.communityEndpoint.contextLength,
         })
         .from(schema.communityEndpoint)
@@ -60,8 +70,9 @@ export async function getCommunityTextModelsInfo(
         const pricing: Record<string, string> & { currency: "pollen" } = {
             currency: "pollen",
         };
-        addPrice(pricing, "promptTextTokens", row.promptTextPrice);
-        addPrice(pricing, "completionTextTokens", row.completionTextPrice);
+        for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+            addPrice(pricing, field.usageType, row[field.key]);
+        }
 
         const name = communityModelId(row.ownerGithubUsername, row.name);
         const title = row.description?.trim() || name;
@@ -109,7 +120,15 @@ export async function getCommunityEndpointRuntime(
             bearerTokenCiphertext:
                 schema.communityEndpoint.bearerTokenCiphertext,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
+            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
+            promptCacheWritePrice:
+                schema.communityEndpoint.promptCacheWritePrice,
+            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
+            promptImagePrice: schema.communityEndpoint.promptImagePrice,
             completionTextPrice: schema.communityEndpoint.completionTextPrice,
+            completionReasoningPrice:
+                schema.communityEndpoint.completionReasoningPrice,
+            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             contextLength: schema.communityEndpoint.contextLength,
         })
         .from(schema.communityEndpoint)
@@ -140,8 +159,7 @@ export async function getCommunityEndpointRuntime(
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
-        promptTextPrice: endpoint.promptTextPrice,
-        completionTextPrice: endpoint.completionTextPrice,
+        ...communityEndpointPrices(endpoint),
         contextLength: endpoint.contextLength,
     };
 }

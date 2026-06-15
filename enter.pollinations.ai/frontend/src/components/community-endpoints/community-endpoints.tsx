@@ -13,6 +13,7 @@ import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
+    type CommunityEndpointTestResponse,
     type EndpointPayload,
     readError,
 } from "./types.ts";
@@ -98,28 +99,37 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         }
     }
 
-    async function handleTest(id: string): Promise<void> {
+    async function handleTest(endpoint: CommunityEndpoint): Promise<void> {
         setEndpointTests((current) => ({
             ...current,
-            [id]: { status: "loading", message: "Testing…" },
+            [endpoint.id]: { status: "loading", message: "Testing…" },
         }));
         try {
             const response = await apiClient["community-endpoints"][
                 ":id"
-            ].test.$post({ param: { id } });
+            ].test.$post({
+                param: { id: endpoint.id },
+                json: {
+                    baseUrl: endpoint.baseUrl,
+                    model: endpoint.upstreamModel,
+                },
+            });
             if (!response.ok) throw new Error(await readError(response));
-            const body = (await response.json()) as { message?: string };
+            const body =
+                (await response.json()) as CommunityEndpointTestResponse;
             setEndpointTests((current) => ({
                 ...current,
-                [id]: {
+                [endpoint.id]: {
                     status: "success",
                     message: body.message || "Endpoint responded",
+                    usage: body.usage,
+                    billableUsage: body.billableUsage,
                 },
             }));
         } catch (thrown) {
             setEndpointTests((current) => ({
                 ...current,
-                [id]: {
+                [endpoint.id]: {
                     status: "error",
                     message:
                         thrown instanceof Error
@@ -180,7 +190,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 key={endpoint.id}
                                 endpoint={endpoint}
                                 testState={endpointTests[endpoint.id]}
-                                onTest={() => void handleTest(endpoint.id)}
+                                onTest={() => void handleTest(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />

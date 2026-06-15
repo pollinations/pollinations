@@ -1,7 +1,11 @@
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_TIER_GATE_ENABLED,
     type CommunityEndpointAllowlistEnv,
+    type CommunityEndpointPriceKey,
+    type CommunityEndpointPrices,
     canManageCommunityEndpoints,
+    communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
@@ -23,6 +27,12 @@ import {
 } from "../services/community-endpoint-openai.ts";
 
 const PriceSchema = z.number().finite().min(0);
+const PriceFieldsSchema = Object.fromEntries(
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+        field.key,
+        PriceSchema.optional().default(0),
+    ]),
+) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
 
 const EndpointFieldsSchema = z.object({
     name: z.string().trim().min(1).max(120),
@@ -30,26 +40,42 @@ const EndpointFieldsSchema = z.object({
     baseUrl: z.string().url(),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
-    promptTextPrice: PriceSchema,
-    completionTextPrice: PriceSchema,
+    ...PriceFieldsSchema,
     contextLength: z.number().int().positive().nullable().optional(),
 });
 
 const CreateEndpointSchema = EndpointFieldsSchema.refine(
-    (value) => value.promptTextPrice > 0 || value.completionTextPrice > 0,
+    hasPositivePrice,
     "At least one price must be greater than 0",
 );
 
 const UpdateEndpointSchema = EndpointFieldsSchema.partial();
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
-    bearerToken: z.string().min(1),
+    bearerToken: z.string().optional(),
 });
-const TestEndpointSchema = ModelListSchema.extend({
+const TestEndpointSchema = z.object({
+    baseUrl: z.string().url(),
+    bearerToken: z.string().min(1),
+    model: z.string().trim().min(1).max(253),
+});
+const SavedEndpointModelListSchema = z.object({
+    baseUrl: z.string().url(),
+    bearerToken: z.string().optional(),
+});
+const SavedEndpointTestSchema = z.object({
+    baseUrl: z.string().url(),
+    bearerToken: z.string().optional(),
     model: z.string().trim().min(1).max(253),
 });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
+
+function hasPositivePrice(value: Partial<CommunityEndpointPrices>): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        (field) => (value[field.key] ?? 0) > 0,
+    );
+}
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -122,8 +148,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         tokenConfigured: true,
-        promptTextPrice: row.promptTextPrice,
-        completionTextPrice: row.completionTextPrice,
+        ...communityEndpointPrices(row),
         contextLength: row.contextLength,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -213,8 +238,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 ),
-                promptTextPrice: input.promptTextPrice,
-                completionTextPrice: input.completionTextPrice,
+                ...communityEndpointPrices(input),
                 contextLength: input.contextLength ?? null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -240,38 +264,73 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointAccess(db, c.env, user.id);
         try {
-            await testCommunityEndpoint(input);
+            const result = await testCommunityEndpoint(input);
             return c.json({
                 ok: true,
                 message: "Endpoint responded with usage",
+                ...result,
             });
         } catch (error) {
             throwEndpointTestError(error);
         }
     })
-    .post("/:id/test", async (c) => {
-        const user = c.var.auth.requireUser();
-        const { id } = c.req.param();
-        const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, c.env, user.id);
-        const endpoint = await requireOwnedEndpoint(db, id, user.id);
-        try {
-            await testCommunityEndpoint({
-                baseUrl: endpoint.baseUrl,
-                bearerToken: await decryptSecret(
-                    endpoint.bearerTokenCiphertext,
-                    c.env.BETTER_AUTH_SECRET,
-                ),
-                model: endpoint.upstreamModel,
-            });
-            return c.json({
-                ok: true,
-                message: "Endpoint responded with usage",
-            });
-        } catch (error) {
-            throwEndpointTestError(error);
-        }
-    })
+    .post(
+        "/:id/models",
+        validator("json", SavedEndpointModelListSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+            await requireCommunityEndpointAccess(db, c.env, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            try {
+                const models = await listCommunityEndpointModels({
+                    baseUrl: input.baseUrl,
+                    bearerToken:
+                        input.bearerToken ??
+                        (await decryptSecret(
+                            endpoint.bearerTokenCiphertext,
+                            c.env.BETTER_AUTH_SECRET,
+                        )),
+                });
+                return c.json({ data: models });
+            } catch (error) {
+                throwEndpointTestError(error);
+            }
+        },
+    )
+    .post(
+        "/:id/test",
+        validator("json", SavedEndpointTestSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+            await requireCommunityEndpointAccess(db, c.env, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            try {
+                const result = await testCommunityEndpoint({
+                    baseUrl: input.baseUrl,
+                    bearerToken:
+                        input.bearerToken ??
+                        (await decryptSecret(
+                            endpoint.bearerTokenCiphertext,
+                            c.env.BETTER_AUTH_SECRET,
+                        )),
+                    model: input.model,
+                });
+                return c.json({
+                    ok: true,
+                    message: "Endpoint responded with usage",
+                    ...result,
+                });
+            } catch (error) {
+                throwEndpointTestError(error);
+            }
+        },
+    )
     .post("/:id/update", validator("json", UpdateEndpointSchema), async (c) => {
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
@@ -283,11 +342,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             user.id,
         );
         const endpoint = await requireOwnedEndpoint(db, id, user.id);
-        const nextPromptTextPrice =
-            input.promptTextPrice ?? endpoint.promptTextPrice;
-        const nextCompletionTextPrice =
-            input.completionTextPrice ?? endpoint.completionTextPrice;
-        if (nextPromptTextPrice <= 0 && nextCompletionTextPrice <= 0) {
+        const nextPrices = communityEndpointPrices({ ...endpoint, ...input });
+        if (!hasPositivePrice(nextPrices)) {
             throw new HTTPException(400, {
                 message: "At least one price must be greater than 0",
             });
@@ -318,11 +374,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 c.env.BETTER_AUTH_SECRET,
             );
         }
-        if (input.promptTextPrice !== undefined) {
-            update.promptTextPrice = input.promptTextPrice;
-        }
-        if (input.completionTextPrice !== undefined) {
-            update.completionTextPrice = input.completionTextPrice;
+        for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+            if (input[field.key] !== undefined) {
+                update[field.key] = input[field.key];
+            }
         }
         if (input.contextLength !== undefined) {
             update.contextLength = input.contextLength;

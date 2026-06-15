@@ -182,7 +182,13 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),
+  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
+  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
+  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
+  promptImagePrice: real("prompt_image_price").default(0).notNull(),
   completionTextPrice: real("completion_text_price").notNull(),
+  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
+  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
   contextLength: integer("context_length"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()

@@ -66,6 +66,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             perToken: model.perToken,
         },
         {
+            prices: [model.promptCacheWritePrice],
+            kind: "cacheWrite",
+            subKinds: ["cacheWrite"],
+            perToken: model.perToken,
+        },
+        {
             prices: [model.promptAudioPrice],
             kind: "audioIn",
             subKinds: ["audioIn"],
@@ -89,6 +95,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             prices: [model.completionTextPrice],
             kind: "text",
             subKinds: ["text"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.completionReasoningPrice],
+            kind: "reasoning",
+            subKinds: ["reasoning"],
             perToken: model.perToken,
         },
         {

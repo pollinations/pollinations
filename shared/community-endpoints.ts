@@ -1,11 +1,71 @@
 import { parseGithubIdList } from "./auth/github-id-list.ts";
 import type { PriceDefinition } from "./registry/registry.ts";
+import {
+    OPENAI_CHAT_USAGE_PATHS,
+    OPENAI_CHAT_USAGE_TYPES,
+    type OpenAIChatUsageType,
+} from "./registry/usage-headers.ts";
 
 export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_ENDPOINT_TIER_GATE_ENABLED = false;
 export const COMMUNITY_ENDPOINT_TIERS = ["flower", "nectar", "router"] as const;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 const DEFAULT_MAX_COMPLETION_TOKENS = 1024;
+
+const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
+    promptTextTokens: { key: "promptTextPrice", label: "Prompt text" },
+    promptCachedTokens: { key: "promptCachedPrice", label: "Prompt cached" },
+    promptCacheWriteTokens: {
+        key: "promptCacheWritePrice",
+        label: "Prompt cache write",
+    },
+    promptAudioTokens: { key: "promptAudioPrice", label: "Prompt audio" },
+    promptImageTokens: { key: "promptImagePrice", label: "Prompt image" },
+    completionTextTokens: {
+        key: "completionTextPrice",
+        label: "Completion text",
+    },
+    completionReasoningTokens: {
+        key: "completionReasoningPrice",
+        label: "Completion reasoning",
+    },
+    completionAudioTokens: {
+        key: "completionAudioPrice",
+        label: "Completion audio",
+    },
+} as const satisfies Record<
+    OpenAIChatUsageType,
+    { key: string; label: string }
+>;
+
+export const COMMUNITY_ENDPOINT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
+    (usageType) => ({
+        usageType,
+        rawUsagePaths: OPENAI_CHAT_USAGE_PATHS[usageType],
+        ...COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE[usageType],
+    }),
+) as readonly {
+    key: (typeof COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE)[OpenAIChatUsageType]["key"];
+    usageType: OpenAIChatUsageType;
+    label: string;
+    rawUsagePaths: readonly string[];
+}[];
+
+export type CommunityEndpointPriceKey =
+    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
+
+export type CommunityEndpointPrices = Record<CommunityEndpointPriceKey, number>;
+
+export function communityEndpointPrices(
+    source: Partial<CommunityEndpointPrices>,
+): CommunityEndpointPrices {
+    return Object.fromEntries(
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+            field.key,
+            source[field.key] ?? 0,
+        ]),
+    ) as CommunityEndpointPrices;
+}
 
 export type CommunityEndpointRuntime = {
     id: string;
@@ -16,10 +76,8 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
-    promptTextPrice: number;
-    completionTextPrice: number;
     contextLength: number | null;
-};
+} & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -112,15 +170,16 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
 }
 
 export function communityPriceDefinition(
-    endpoint: Pick<
-        CommunityEndpointRuntime,
-        "promptTextPrice" | "completionTextPrice"
-    >,
+    endpoint: CommunityEndpointPrices,
 ): PriceDefinition {
-    return {
-        promptTextTokens: endpoint.promptTextPrice,
-        completionTextTokens: endpoint.completionTextPrice,
-    };
+    const pricing: PriceDefinition = {};
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        const price = endpoint[field.key];
+        if (Number.isFinite(price) && price > 0) {
+            pricing[field.usageType] = price;
+        }
+    }
+    return pricing;
 }
 
 export function estimateCommunityRequestPrice(

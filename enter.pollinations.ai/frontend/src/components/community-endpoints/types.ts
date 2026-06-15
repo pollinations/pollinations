@@ -1,3 +1,12 @@
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointPriceKey,
+    type CommunityEndpointPrices,
+} from "@shared/community-endpoints.ts";
+import type { Usage } from "@shared/registry/registry.ts";
+
+type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
+
 export type CommunityEndpoint = {
     id: string;
     modelId: string;
@@ -6,10 +15,8 @@ export type CommunityEndpoint = {
     baseUrl: string;
     upstreamModel: string;
     tokenConfigured: boolean;
-    promptTextPrice: number;
-    completionTextPrice: number;
     contextLength: number | null;
-};
+} & CommunityEndpointPrices;
 
 export type EndpointFormState = {
     name: string;
@@ -17,23 +24,39 @@ export type EndpointFormState = {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
-    promptTextPrice: string;
-    completionTextPrice: string;
-};
+} & EndpointFormPrices;
 
 export type EndpointPayload = {
     name: string;
     description: string;
     baseUrl: string;
     upstreamModel: string;
-    promptTextPrice: number;
-    completionTextPrice: number;
+} & CommunityEndpointPrices;
+
+export type CommunityEndpointUsage = Record<string, unknown>;
+
+export type CommunityEndpointTestResponse = {
+    ok?: boolean;
+    message?: string;
+    usage?: CommunityEndpointUsage;
+    billableUsage?: Usage;
 };
 
 export type ActionState = {
     status: "idle" | "loading" | "success" | "error";
     message?: string;
+    usage?: CommunityEndpointUsage;
+    billableUsage?: Usage;
 };
+
+export type UsageCountEntry = {
+    label: string;
+    value: number;
+};
+
+const emptyPriceForm = Object.fromEntries(
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, ""]),
+) as EndpointFormPrices;
 
 export const emptyForm: EndpointFormState = {
     name: "",
@@ -41,8 +64,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
-    promptTextPrice: "",
-    completionTextPrice: "",
+    ...emptyPriceForm,
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -55,7 +77,7 @@ export function pricePerTokenToPerMillion(value: number): string {
 }
 
 export function pricePerMillionToPerToken(value: string): number {
-    return Number(value || 0) / TOKENS_PER_MILLION;
+    return Number(value.trim().replace(",", ".") || 0) / TOKENS_PER_MILLION;
 }
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
@@ -65,11 +87,80 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        promptTextPrice: pricePerTokenToPerMillion(endpoint.promptTextPrice),
-        completionTextPrice: pricePerTokenToPerMillion(
-            endpoint.completionTextPrice,
-        ),
+        ...(Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                endpoint[field.key] > 0
+                    ? pricePerTokenToPerMillion(endpoint[field.key])
+                    : "",
+            ]),
+        ) as EndpointFormPrices),
     };
+}
+
+function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
+    return Object.fromEntries(
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+            field.key,
+            pricePerMillionToPerToken(form[field.key]),
+        ]),
+    ) as CommunityEndpointPrices;
+}
+
+export function hasPositiveFormPrice(form: EndpointFormState): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        (field) => pricePerMillionToPerToken(form[field.key]) > 0,
+    );
+}
+
+export function hasObservedUsagePath(
+    usage: CommunityEndpointUsage | undefined,
+    path: string,
+): boolean {
+    if (!usage) return false;
+    let current: unknown = usage;
+    for (const part of path.split(".")) {
+        if (!current || typeof current !== "object" || !(part in current)) {
+            return false;
+        }
+        current = (current as Record<string, unknown>)[part];
+    }
+    return typeof current === "number" && Number.isFinite(current);
+}
+
+export function hasObservedPriceField(
+    usage: CommunityEndpointUsage | undefined,
+    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+): boolean {
+    return field.rawUsagePaths.some((path) =>
+        hasObservedUsagePath(usage, path),
+    );
+}
+
+export function billableUsageCountEntries(
+    usage: CommunityEndpointUsage | undefined,
+    billableUsage: Usage | undefined,
+): UsageCountEntry[] {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.flatMap((field) =>
+        hasObservedPriceField(usage, field)
+            ? [
+                  {
+                      label: field.label,
+                      value: billableUsage?.[field.usageType] ?? 0,
+                  },
+              ]
+            : [],
+    );
+}
+
+export function observedUsageValue(
+    usage: CommunityEndpointUsage | undefined,
+    billableUsage: Usage | undefined,
+    field: (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+): number | null {
+    return hasObservedPriceField(usage, field)
+        ? (billableUsage?.[field.usageType] ?? 0)
+        : null;
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
@@ -79,10 +170,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         description: form.description.trim(),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
-        promptTextPrice: pricePerMillionToPerToken(form.promptTextPrice),
-        completionTextPrice: pricePerMillionToPerToken(
-            form.completionTextPrice,
-        ),
+        ...formPricesToPayload(form),
     };
 }
 

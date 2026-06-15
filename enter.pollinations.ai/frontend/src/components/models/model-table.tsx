@@ -315,6 +315,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       perToken: model.perToken,
                   },
                   {
+                      prices: [model.promptCacheWritePrice],
+                      kind: "cacheWrite",
+                      subKinds: ["cacheWrite"],
+                      perToken: model.perToken,
+                  },
+                  {
                       prices: [model.promptAudioPrice],
                       kind: "audioIn",
                       subKinds: ["audioIn"],
@@ -338,6 +344,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       prices: [model.completionTextPrice],
                       kind: "text",
                       subKinds: ["text"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.completionReasoningPrice],
+                      kind: "reasoning",
+                      subKinds: ["reasoning"],
                       perToken: model.perToken,
                   },
                   {

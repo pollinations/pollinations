@@ -9,6 +9,8 @@ import {
     Surface,
     XIcon,
 } from "@pollinations/ui";
+import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { CommunityEndpointUsageCounts } from "./community-endpoint-usage.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -31,6 +33,10 @@ export function CommunityEndpointCard({
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
+    const priceFields = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+        (field) => endpoint[field.key] > 0,
+    );
+
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
             <div className="mb-2 flex items-center gap-2">
@@ -122,21 +128,34 @@ export function CommunityEndpointCard({
                     <span className="text-theme-text-muted">Provider: </span>
                     {endpoint.upstreamModel}
                 </span>
-                <span>
-                    <span className="text-theme-text-muted">In: </span>
-                    {pricePerTokenToPerMillion(endpoint.promptTextPrice)} /1M
-                </span>
-                <span>
-                    <span className="text-theme-text-muted">Out: </span>
-                    {pricePerTokenToPerMillion(endpoint.completionTextPrice)}{" "}
-                    /1M
-                </span>
+                {priceFields.map((field) => (
+                    <span key={field.key}>
+                        <span className="text-theme-text-muted">
+                            {field.label}:{" "}
+                        </span>
+                        {pricePerTokenToPerMillion(endpoint[field.key])} /1M
+                    </span>
+                ))}
             </div>
 
             {testState.status === "error" && testState.message && (
                 <p className="mt-3 text-sm text-intent-danger-text">
                     {testState.message}
                 </p>
+            )}
+
+            {testState.status === "success" && (
+                <div className="mt-3 rounded-md border border-divider bg-surface-opaque/50 p-2">
+                    {testState.message && (
+                        <p className="mb-2 text-sm text-intent-success-text">
+                            {testState.message}
+                        </p>
+                    )}
+                    <CommunityEndpointUsageCounts
+                        usage={testState.usage}
+                        billableUsage={testState.billableUsage}
+                    />
+                </div>
             )}
         </Surface>
     );

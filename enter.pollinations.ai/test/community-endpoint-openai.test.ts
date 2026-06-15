@@ -1,11 +1,34 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { testCommunityEndpoint } from "../src/services/community-endpoint-openai.ts";
+import {
+    listCommunityEndpointModels,
+    testCommunityEndpoint,
+} from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
     vi.unstubAllGlobals();
 });
 
 describe("community endpoint OpenAI service", () => {
+    it("fetches model lists without Authorization when no token is provided", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/models");
+            expect(request.headers.get("authorization")).toBeNull();
+            return Response.json({
+                data: [{ id: "gpt-4.1-mini" }, { id: "gpt-4.1" }],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1",
+            }),
+        ).resolves.toEqual(["gpt-4.1", "gpt-4.1-mini"]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it("sends the bearer token when testing an endpoint", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
@@ -18,7 +41,6 @@ describe("community endpoint OpenAI service", () => {
             await expect(request.json()).resolves.toMatchObject({
                 model: "gpt-4.1-mini",
                 messages: [{ role: "user", content: "Reply with OK." }],
-                max_tokens: 1,
                 stream: false,
             });
             return Response.json({
@@ -38,10 +60,28 @@ describe("community endpoint OpenAI service", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        await testCommunityEndpoint({
-            baseUrl: "https://api.example.com/v1",
-            bearerToken: "Bearer sk_saved_token",
-            model: "gpt-4.1-mini",
+        await expect(
+            testCommunityEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "gpt-4.1-mini",
+            }),
+        ).resolves.toEqual({
+            usage: {
+                prompt_tokens: 4,
+                completion_tokens: 1,
+                total_tokens: 5,
+            },
+            billableUsage: {
+                promptTextTokens: 4,
+                promptCachedTokens: 0,
+                promptCacheWriteTokens: 0,
+                promptAudioTokens: 0,
+                promptImageTokens: 0,
+                completionTextTokens: 1,
+                completionAudioTokens: 0,
+                completionReasoningTokens: 0,
+            },
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);

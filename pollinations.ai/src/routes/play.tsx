@@ -1,6 +1,9 @@
-import { ButtonGroup, cn, TabButton, useColorMode } from "@pollinations/ui";
+import { PolliProvider } from "@pollinations/sdk/react";
+import { ButtonGroup, cn, TabButton } from "@pollinations/ui";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type EmbedHost, useEmbedHost } from "../components/play/useEmbedHost";
+import { ENTER_URL, POLLI_APP_KEY } from "../config";
 
 const PLAY_APPS = [
     {
@@ -16,11 +19,6 @@ const PLAY_APPS = [
         src: "https://websim.pollinations.ai/?embed=1",
     },
 ] as const;
-
-/** Origins allowed to drive the iframe height via the embed contract. */
-const ALLOWED_APP_ORIGINS = PLAY_APPS.map((app) => new URL(app.src).origin);
-/** Safety cap so a misbehaving app can't request an unbounded iframe. */
-const MAX_IFRAME_HEIGHT = 20000;
 
 type PlayAppId = (typeof PLAY_APPS)[number]["id"];
 type PlaySearch = {
@@ -38,7 +36,20 @@ export const Route = createFileRoute("/play")({
     component: PlayRoute,
 });
 
+/**
+ * /play logs in at the site level (top-level, so OAuth works) and lends its key
+ * down to the embedded app. PolliProvider holds the site's auth; `AppUserMenu`
+ * is the site's own account control; `useEmbedHost` pushes the key to the app.
+ */
 function PlayRoute() {
+    return (
+        <PolliProvider appKey={POLLI_APP_KEY} enterUrl={ENTER_URL}>
+            <PlayContent />
+        </PolliProvider>
+    );
+}
+
+function PlayContent() {
     const { app } = Route.useSearch();
     const navigate = Route.useNavigate();
     const selectedAppId = app ?? "playground";
@@ -50,16 +61,25 @@ function PlayRoute() {
         navigate({ search: { app: nextApp } });
     };
 
+    const appOrigin = new URL(selectedApp.src).origin;
+    const host = useEmbedHost(appOrigin);
+
     return (
         <div className="mx-auto flex w-full max-w-5xl flex-col bg-app-bg py-10">
             <section className="flex flex-col gap-5 px-4 sm:px-6">
-                <div className="flex flex-col gap-3">
-                    <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
-                        Play
-                    </h1>
-                    <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                        Run a Pollinations app live, right here.
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-3">
+                        <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
+                            Play
+                        </h1>
+                        <p className="max-w-2xl font-body text-lg text-theme-text-base">
+                            Run a Pollinations app live, right here.
+                        </p>
+                    </div>
+                    <AppUserMenu
+                        dashboardHref={ENTER_URL}
+                        labels={{ authorize: "Log in" }}
+                    />
                 </div>
                 <ButtonGroup aria-label="Play">
                     {PLAY_APPS.map((playApp) => (
@@ -74,78 +94,39 @@ function PlayRoute() {
                 </ButtonGroup>
             </section>
 
-            <AppFrame key={selectedApp.id} app={selectedApp} />
+            <AppFrame key={selectedApp.id} app={selectedApp} host={host} />
         </div>
     );
 }
 
 /**
- * Embedded apps post their content height so the iframe grows to fit (no inner
- * scroll), and the host pushes the site's current color mode back so an
- * already-open app re-themes live. Small local message contract shared with the
- * apps: `{ source: "polli-embed", type: "height" | "theme", value }`. Until a
- * height message arrives we fall back to a fixed viewport-based height — so apps
- * that don't emit behave as before. Keyed by app id so switching apps resets
- * cleanly.
+ * The embedded app. Sizing, the handshake, theme sync, and the auth key push all
+ * live in `useEmbedHost`; this is just the iframe. Until a height message arrives
+ * we fall back to a fixed viewport-based height — so apps that don't emit behave
+ * as before.
  */
-function AppFrame({ app }: { app: (typeof PLAY_APPS)[number] }) {
-    const [reportedHeight, setReportedHeight] = useState<number | null>(null);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-    const { mode } = useColorMode();
-    const appOrigin = new URL(app.src).origin;
-
-    useEffect(() => {
-        const onMessage = (event: MessageEvent) => {
-            if (!ALLOWED_APP_ORIGINS.includes(event.origin)) return;
-            const data = event.data as {
-                source?: unknown;
-                type?: unknown;
-                value?: unknown;
-            } | null;
-            if (
-                !data ||
-                data.source !== "polli-embed" ||
-                data.type !== "height" ||
-                typeof data.value !== "number" ||
-                !Number.isFinite(data.value) ||
-                data.value <= 0
-            ) {
-                return;
-            }
-            setReportedHeight(Math.min(data.value, MAX_IFRAME_HEIGHT));
-        };
-        window.addEventListener("message", onMessage);
-        return () => window.removeEventListener("message", onMessage);
-    }, []);
-
-    // Push the site's current theme into the embed. Initial paint is already
-    // handled by the shared cookie; this keeps an open app in sync when the
-    // user toggles. Posted to the app's own origin only (dropped after the app
-    // navigates the iframe to a different origin, e.g. the auth screen).
-    const postTheme = useCallback(() => {
-        iframeRef.current?.contentWindow?.postMessage(
-            { source: "polli-embed", type: "theme", value: mode },
-            appOrigin,
-        );
-    }, [mode, appOrigin]);
-
-    useEffect(() => {
-        postTheme();
-    }, [postTheme]);
-
+function AppFrame({
+    app,
+    host,
+}: {
+    app: (typeof PLAY_APPS)[number];
+    host: EmbedHost;
+}) {
     return (
         <iframe
-            ref={iframeRef}
+            ref={host.iframeRef}
             title={app.title}
             src={app.src}
-            onLoad={postTheme}
+            onLoad={host.onLoad}
             className={cn(
                 "block w-full border-0 bg-app-bg",
-                reportedHeight === null &&
+                host.reportedHeight === null &&
                     "h-[calc(100vh-10rem)] min-h-[760px]",
             )}
             style={
-                reportedHeight !== null ? { height: reportedHeight } : undefined
+                host.reportedHeight !== null
+                    ? { height: host.reportedHeight }
+                    : undefined
             }
             allow="clipboard-read; clipboard-write; fullscreen"
         />

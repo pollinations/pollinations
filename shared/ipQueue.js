@@ -104,9 +104,17 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
     const url = req.url || "no-url";
     const method = req.method || "no-method";
     const path = url.split("?")[0] || "no-path";
+    // Behind the legacy double-CF hop (cache worker -> CF-proxied tunnel origin),
+    // cf-connecting-ip is rewritten to Cloudflare's egress IP, collapsing every
+    // real client onto one address and one shared anonymous queue slot. The cache
+    // worker preserves the true client IP as the first entry of x-forwarded-for,
+    // so prefer that and fall back to cf-connecting-ip / req.ip.
+    const headerVal = (name) =>
+        req.headers?.get?.(name) ?? req.headers?.[name];
+    const forwardedFor = headerVal("x-forwarded-for");
     let ip =
-        req.headers?.get?.("cf-connecting-ip") ||
-        req.headers?.["cf-connecting-ip"] ||
+        (forwardedFor && forwardedFor.split(",")[0].trim()) ||
+        headerVal("cf-connecting-ip") ||
         req.ip ||
         "unknown";
 

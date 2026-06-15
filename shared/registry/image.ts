@@ -148,6 +148,60 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "ideogram-v4-turbo": {
+        aliases: [],
+        modelId: "ideogram-v4-turbo",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.03, // per image — ideogram-ai/ideogram-v4-turbo
+        },
+        title: "Ideogram 4.0 Turbo",
+        description:
+            "Ideogram 4.0 Turbo - Fast text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-balanced": {
+        aliases: [],
+        modelId: "ideogram-v4-balanced",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.06, // per image — ideogram-ai/ideogram-v4-balanced
+        },
+        title: "Ideogram 4.0 Balanced",
+        description:
+            "Ideogram 4.0 Balanced - Text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-quality": {
+        aliases: [],
+        modelId: "ideogram-v4-quality",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.1, // per image — ideogram-ai/ideogram-v4-quality
+        },
+        title: "Ideogram 4.0 Quality",
+        description:
+            "Ideogram 4.0 Quality - High-fidelity text-to-image with typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",

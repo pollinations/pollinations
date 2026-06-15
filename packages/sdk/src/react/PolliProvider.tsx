@@ -11,8 +11,10 @@ import {
     type AuthContextValue,
     type AuthorizeRequest,
 } from "./contexts.js";
+import { EmbedBridge, requestHostLogin } from "./embed.js";
 import { consumeOAuthCallback } from "./oauth.js";
 import {
+    createMemoryStorage,
     resolveStorage,
     type StorageAdapter,
     type StorageOption,
@@ -93,6 +95,22 @@ function currentRedirectUrl(): string | null {
     return window.location.href.split("#")[0] ?? window.location.href;
 }
 
+/**
+ * True when running inside an iframe. Throw-free (cross-origin access to
+ * `window.top` throws → we're definitely framed). Deliberately ignores
+ * `?embed=1`: only real framing makes the session frame-local, so a standalone
+ * URL that happens to carry `?embed=1` still persists auth normally.
+ */
+function isFramed(): boolean {
+    if (typeof window === "undefined") return false;
+    if (window.parent !== window) return true;
+    try {
+        return window.self !== window.top;
+    } catch {
+        return true;
+    }
+}
+
 function isProductionRuntime(): boolean {
     return globalThis.process?.env?.NODE_ENV === "production";
 }
@@ -157,8 +175,12 @@ export function PolliProvider({
     enterUrl = DEFAULT_ENTER_URL,
     apiBaseUrl,
 }: PolliProviderProps) {
+    // Inside an iframe, keep the session frame-local: a borrowed/host-pushed key
+    // must never be written to (or cleared from) the app's own localStorage,
+    // which same-origin standalone tabs share. The host re-pushes on each load.
     const storage = useMemo<StorageAdapter>(
-        () => resolveStorage(storageOption),
+        () =>
+            isFramed() ? createMemoryStorage() : resolveStorage(storageOption),
         [storageOption],
     );
     const resolvedApiBaseUrl = apiBaseUrl ?? `${enterUrl}/api`;
@@ -236,6 +258,14 @@ export function PolliProvider({
     const login = useCallback(
         (request?: AuthorizeRequest) => {
             if (typeof window === "undefined") return;
+            // Embedded under a trusted host (e.g. /play)? Ask the host to log in
+            // top-level instead of redirecting this iframe — GitHub refuses to be
+            // framed, so an in-iframe OAuth redirect can't complete. The embedded
+            // app borrows the HOST's key and auth policy, so the per-call
+            // `request` (permissions/models/budget) is intentionally NOT
+            // forwarded — the host decides scope. The host's app key must cover
+            // what the embedded apps need.
+            if (requestHostLogin()) return;
             const currentUrl = currentRedirectUrl();
             if (!currentUrl) return;
             const extraPermissions = request?.permissions;
@@ -300,6 +330,7 @@ export function PolliProvider({
 
     return (
         <AuthContext.Provider value={authValue}>
+            <EmbedBridge />
             {children}
         </AuthContext.Provider>
     );

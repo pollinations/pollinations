@@ -1,3 +1,4 @@
+- **2026-06-14** – **🚀 Qwen3.7 Plus & 512K Context** Qwen3.7 Plus is now live, and MiniMax M3 just got its context window stretched to an absurd 512K tokens. Available now via the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-06-12** – **🤖 Kimi learns to code** Moonshot AI's Kimi K2.7 Code model (`kimi-k2.7-code`) is now live. 256K context and reasoning capabilities for when your scripts need adult supervision. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
 - **2026-06-12** – **🎥 1080p Wan video & cheaper Qwen** We've added `wan-pro-1080p` for high-res [video generation](https://gen.pollinations.ai), plus dropped the cost of `qwen-coder-large` by 2.5x. Better pixels, cheaper tokens.
 - **2026-06-11** – **🌱 Wikimind Joins the Showcase** A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/) <!-- app -->

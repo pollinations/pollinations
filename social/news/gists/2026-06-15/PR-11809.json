@@ -1,0 +1,35 @@
+{
+  "pr_number": 11809,
+  "title": "classify qwen-image NSFW rejections as 422, not 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11809",
+  "merged_at": "2026-06-15T12:38:00Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "qwen-image / qwen-image-plus showed a high failure rate on the model monitor. All the 5xx are the same Replicate safety-filter rejection:\n\n`Qwen Image Edit generation failed: All generated images contained NSFW content...`\n\nThese are content-policy rejections, not backend failures, but they leaked through the moderation funnel as raw 500s because `MODERATION_PATTERNS` had no `nsfw` entry — so they polluted `errors_5xx` and tripped false \"degraded\" alarms.\n\n- Adds `nsfw` to `MODERATION_PATTERNS` so these surface as `422 content_policy_violation` (same path as DashScope/Replicate/Vertex/Azure rejections)\n- Adds the real Qwen message to the moderation test corpus\n\nImpact (prod, last 24h): 34 NSFW-worded 5xx, all from qwen-image/qwen-image-plus, one identical message, none matched by existing patterns — and none of the other ~900 5xx mention nsfw, so no genuine backend failure is reclassified. These flip 500 → 422, drop out of `emitServerError`/`errors_5xx`, and users get a clear \"adjust your input\" message.\n\nTests: `contentModeration.test.ts` (34) pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Better boundaries for Qwen",
+    "blurb": "We fixed a bug where Qwen-image safety filter rejections were showing up as generic server errors. Now you'll get a proper 422 status code so you know exactly why your prompt was blocked.",
+    "summary": "Added 'nsfw' to the moderation patterns list so Qwen-image content policy rejections return as 422 errors instead of 500s.",
+    "impact": "Users will now receive a clear 'content policy violation' message instead of a generic server error when prompts are rejected by the safety filter.",
+    "keywords": [
+      "qwen",
+      "image-generation",
+      "moderation",
+      "error-handling",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly traffic cop holding a '422' sign, while the Nomnom creature eats a red '500' error log.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crossing guard hat, holding up a small '422' sign in front of a glowing picture frame. The round tan nomnom creature happily eats a red '500' error log nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-15/PR-11809.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crossing guard hat, holding up a small '422' sign in front of a glowing picture frame. The round tan nomnom creature happily eats a red '500' error log nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-15T12:39:20.058116+00:00"
+}

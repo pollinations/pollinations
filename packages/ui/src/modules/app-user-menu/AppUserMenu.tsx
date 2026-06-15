@@ -1,7 +1,11 @@
-import { useAuthActions } from "@pollinations/sdk/react";
+import {
+    useAuthActions,
+    useEmbedHostCapabilities,
+} from "@pollinations/sdk/react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
+import { LockIcon } from "../../primitives/icons/index.tsx";
 import {
     LoginButton,
     UserAvatar,
@@ -21,8 +25,6 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
-    hiddenWhenEmbedded?: boolean;
-    embedQueryParam?: string;
 };
 
 const defaultLabels: AppUserMenuLabels = {
@@ -46,10 +48,11 @@ export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
-    hiddenWhenEmbedded = false,
-    embedQueryParam = "embed",
 }: AppUserMenuProps) {
-    if (hiddenWhenEmbedded && isEmbeddedContext(embedQueryParam)) return null;
+    const hostCapabilities = useEmbedHostCapabilities();
+    // A trusted embedding host (e.g. /play) advertises that it renders the auth
+    // control in its own chrome — so don't render it inside the iframe too.
+    if (hostCapabilities?.authControl) return null;
 
     return (
         <AppUserMenuContent
@@ -67,20 +70,22 @@ function AppUserMenuContent({
     const { logout } = useAuthActions();
 
     return (
-        <div data-theme="amber" className="polli:flex polli:justify-end">
+        <div data-theme="accent" className="polli:flex polli:justify-end">
             <WhenLoggedOut>
-                <LoginButton theme="amber">{labels.authorize}</LoginButton>
+                <LoginButton className="polli:gap-1.5">
+                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                    {labels.authorize}
+                </LoginButton>
             </WhenLoggedOut>
 
             <WhenLoggedIn>
                 <Dropdown
-                    theme="amber"
                     align="end"
                     className="polli:w-64 polli:p-1"
                     trigger={(open) => (
                         <button
                             type="button"
-                            data-theme="amber"
+                            data-theme="accent"
                             aria-label={labels.appUserMenu}
                             className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-theme-bg-hover"
                         >
@@ -101,7 +106,7 @@ function AppUserMenuContent({
                 >
                     {(close) => (
                         <div
-                            data-theme="amber"
+                            data-theme="accent"
                             className="polli:flex polli:flex-col"
                         >
                             <DropdownItem

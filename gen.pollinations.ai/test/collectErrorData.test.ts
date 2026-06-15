@@ -1,5 +1,5 @@
+import { UpstreamError } from "@shared/error.ts";
 import { describe, expect, it } from "vitest";
-import { UpstreamError } from "@/error.ts";
 import { collectErrorData } from "@/middleware/track.ts";
 
 describe("collectErrorData", () => {

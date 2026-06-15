@@ -9,7 +9,7 @@ Flow: user opens issue with `TIER-APP` → workflow validates + AI generates pre
 Label state machine:
 - `TIER-APP` → `TIER-APP-REJECTED` (duplicate/spore) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
 
-Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-readme.js`.
+Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
 APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
 
@@ -94,6 +94,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
+- When adding a React browser/IIFE bundle, grep bundled dependencies'
+  published dist for `react/jsx-runtime` and `react-dom` imports before
+  choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
+  reintroduce externals the package source does not import.
 
 ## Common Mistakes to Avoid
 

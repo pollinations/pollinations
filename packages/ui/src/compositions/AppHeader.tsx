@@ -90,7 +90,7 @@ export function AppHeader({
     return (
         <header
             className={cn(
-                "polli:sticky polli:top-0 polli:z-30 polli:border-b polli:border-theme-border polli:bg-surface-white polli:py-4 polli:backdrop-blur",
+                "polli:sticky polli:top-0 polli:z-30 polli:bg-app-bg polli:py-4",
                 "polli:transition-transform polli:duration-200 polli:ease-out",
                 autoHide && "polli:will-change-transform",
                 hidden ? "polli:-translate-y-full" : "polli:translate-y-0",

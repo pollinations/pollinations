@@ -4,8 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Theme & Description -->
-    <meta name="theme-color" content="#EDE9FE" />
+    <!-- Set color mode before first paint to avoid a flash. Source of truth
+         after mount: @pollinations/ui ColorModeToggle (STORAGE_KEY must match). -->
+    <script>
+      (() => {
+        try {
+          let mode = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1] || localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+          // theme-color (browser chrome) is derived from the --polli-color-app-bg
+          // token by @pollinations/ui ColorModeToggle once styles load — no
+          // hardcoded color here.
+        } catch {
+          /* ignore storage / matchMedia failures */
+        }
+      })();
+    </script>
+
     <meta name="description" content="Real-time health monitoring for Pollinations AI models" />
 
     <!-- Favicons & touch icons (generated from @pollinations/ui via tools/icons) -->
@@ -43,7 +62,7 @@
 
     <title>Model Monitor | pollinations.ai</title>
   </head>
-  <body class="polli-ui-shell" data-theme="violet">
+  <body class="polli-ui-shell">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

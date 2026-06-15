@@ -51,14 +51,6 @@ export function getAvailableBalance(
     );
 }
 
-export function hasPositiveBalance(balances: UserBalance): boolean {
-    return balances.tierBalance > 0 || balances.packBalance > 0;
-}
-
-export function hasPositivePaidBalance(balances: UserBalance): boolean {
-    return balances.packBalance > 0;
-}
-
 /**
  * Map a deduction bucket to its meter id/slug pair. The balances sub-object
  * differs per call site, so this returns only the id/slug pair.

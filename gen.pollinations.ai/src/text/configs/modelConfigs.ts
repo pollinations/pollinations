@@ -2,7 +2,6 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
-    createDashScopeModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
@@ -134,6 +133,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
         }),
+    "accounts/fireworks/models/kimi-k2p7-code": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p7-code",
+        }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
@@ -215,9 +218,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
     // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p6-plus": () =>
+    "accounts/fireworks/models/qwen3p7-plus": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p6-plus",
+            model: "accounts/fireworks/models/qwen3p7-plus",
         }),
     "accounts/fireworks/models/glm-5p1": () =>
         createFireworksModelConfig({
@@ -227,13 +230,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
-
-    // -- OpenRouter (MiniMax M3) ---------------------------------------------
-    // M3 is not on Fireworks/Bedrock yet (Bedrock tops out at M2.5); OpenRouter
-    // is the only route and also exposes image input.
-    "minimax/minimax-m3": () =>
-        createOpenRouterModelConfig({
-            model: "minimax/minimax-m3",
+    "accounts/fireworks/models/minimax-m3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
@@ -257,11 +256,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "meta-llama/llama-4-scout",
         }),
 
-    // -- Alibaba DashScope (Qwen) ---------------------------------------------
-    "qwen3-coder-next": () =>
-        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-
-    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
+    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
+    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
+    "qwen/qwen3-coder-next": () =>
+        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",

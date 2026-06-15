@@ -22,7 +22,6 @@ interface CloudflareBindings {
         | "development";
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
-    ALLOW_ANONYMOUS_USAGE?: boolean;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_TIER_INGEST_URL?: string;
@@ -41,7 +40,6 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
-    DEEPINFRA_API_KEY: string;
     FIREWORKS_API_KEY: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;

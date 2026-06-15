@@ -11,12 +11,12 @@ import {
     Heading,
     MediaPlaceholder,
     Surface,
-    setColorMode,
     TabButton,
     TerminalIcon,
     Text,
     Textarea,
     Tooltip,
+    useHostThemeSync,
 } from "@pollinations/ui";
 import {
     AppUserMenu,
@@ -138,21 +138,6 @@ function PreviewPanel({
     );
 }
 
-// Origins allowed to push a live theme into this embedded app: the /play host
-// and same-site siblings. Theme is cosmetic, but we still gate on origin.
-function isTrustedHostOrigin(origin: string): boolean {
-    try {
-        const host = new URL(origin).hostname;
-        return (
-            host === "pollinations.ai" ||
-            host.endsWith(".pollinations.ai") ||
-            host === "localhost"
-        );
-    } catch {
-        return false;
-    }
-}
-
 export function App() {
     const { apiKey, isHydrated } = useAuthState();
     const { login } = useAuthActions();
@@ -168,51 +153,9 @@ export function App() {
         return () => activeRequest.current?.abort();
     }, []);
 
-    // Report content height to the embedding host (/play) so it can size the
-    // iframe to fit — no inner scroll. Message: { source, type, value }.
-    useEffect(() => {
-        if (!isEmbedded || window.parent === window.self) return;
-        const report = () => {
-            window.parent.postMessage(
-                {
-                    source: "polli-embed",
-                    type: "height",
-                    value: Math.ceil(document.documentElement.scrollHeight),
-                },
-                "*",
-            );
-        };
-        const observer = new ResizeObserver(report);
-        observer.observe(document.body);
-        report();
-        return () => observer.disconnect();
-    }, [isEmbedded]);
-
-    // Apply a theme the host (/play) pushes when its toggle changes, so this
-    // already-loaded embed re-themes live. Message: { source, type, value }.
-    useEffect(() => {
-        if (!isEmbedded || window.parent === window.self) return;
-        const onMessage = (event: MessageEvent) => {
-            if (!isTrustedHostOrigin(event.origin)) return;
-            const data = event.data as {
-                source?: unknown;
-                type?: unknown;
-                value?: unknown;
-            } | null;
-            if (
-                !data ||
-                data.source !== "polli-embed" ||
-                data.type !== "theme"
-            ) {
-                return;
-            }
-            if (data.value === "dark" || data.value === "light") {
-                setColorMode(data.value);
-            }
-        };
-        window.addEventListener("message", onMessage);
-        return () => window.removeEventListener("message", onMessage);
-    }, [isEmbedded]);
+    // Sizing + the auth handshake are auto-wired by the SDK's PolliProvider.
+    // Theme application is UI-owned, so opt into the host's live theme here.
+    useHostThemeSync();
 
     async function generate() {
         const trimmedPrompt = prompt.trim();

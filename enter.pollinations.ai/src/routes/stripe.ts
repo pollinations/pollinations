@@ -11,6 +11,7 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import {
     checkoutCurrencyForCohort,
+    getCheckoutCountry,
     getCohortFromCountry,
 } from "../utils/currency-router.ts";
 import { getEurMidRate, usdToEurCents } from "../utils/fx.ts";
@@ -25,8 +26,8 @@ import {
 
 /**
  * Stripe pack configuration
- * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
- * localize buyer presentment where supported.
+ * Checkout routes EU_CORE buyers to native EUR and keeps every other cohort
+ * USD-native with Stripe Adaptive Pricing presentment.
  */
 export const stripeRoutes = new Hono<Env>()
     /**
@@ -37,11 +38,14 @@ export const stripeRoutes = new Hono<Env>()
      * form ("2".."100") is no longer accepted — all first-party callers and
      * the /products endpoint expose packKey.
      *
-     * Cohort routing (Phase 1): CF-IPCountry → CohortId for analytics.
-     * Stripe Adaptive Pricing localizes presentment.
+     * Cohort routing: buyer country → CohortId for currency routing and
+     * analytics (CloudFront-Viewer-Country, falling back to CF-IPCountry).
+     * EU_CORE uses native EUR; every other cohort stays USD with Stripe
+     * Adaptive Pricing presentment.
      *
-     * Pollen is the canonical unit: 1 pollen ≈ $1. Checkout sends USD
-     * price_data and Stripe AP handles currency conversion.
+     * Pollen is the canonical unit: 1 pollen ≈ $1. Native EUR pricing uses
+     * the ECB rate for Stripe amount collection, while crediting still uses
+     * the pack's canonical USD amount.
      */
     .get("/checkout/:packKey", async (c) => {
         const packKeyParam = c.req.param("packKey");
@@ -71,9 +75,10 @@ export const stripeRoutes = new Hono<Env>()
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
 
-        // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
-        // and does not call FX at runtime.
-        const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
+        // Resolve cohort from buyer country for currency routing and analytics.
+        // CloudFront-Viewer-Country (real viewer) wins over CF-IPCountry, which
+        // behind CloudFront is the edge POP's country, not the buyer's.
+        const cohort = getCohortFromCountry(getCheckoutCountry(c));
         // Fail closed if the checkout PMC env var is missing. The alternative
         // (omit payment_method_configuration → Stripe falls back to account
         // default PMC) would hide a misconfigured deploy.
@@ -91,24 +96,12 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
             );
 
-            // Production is gated SOLELY by the EUR_CHECKOUT_ENABLED env var
-            // (wrangler types it as the literal "false", so widen with String()).
-            // Outside production, a KV key "eur-checkout-enabled"="true" also
-            // enables it — a test/sandbox runtime toggle (vitest-pool-workers
-            // can't flip string vars per-test). The && short-circuits so the KV
-            // read never runs in production.
-            const eurCheckoutEnabled =
-                String(c.env.EUR_CHECKOUT_ENABLED) === "true" ||
-                (c.env.ENVIRONMENT !== "production" &&
-                    (await c.env.KV.get("eur-checkout-enabled")) === "true");
-            const checkoutCurrency = eurCheckoutEnabled
-                ? checkoutCurrencyForCohort(cohort)
-                : "usd";
+            const checkoutCurrency = checkoutCurrencyForCohort(cohort);
 
             let currency: "eur" | "usd" = "usd";
             let unitAmount = pack.amountUsd * 100;
             if (checkoutCurrency === "eur") {
-                const rate = await getEurMidRate(c.env);
+                const rate = await getEurMidRate();
                 currency = "eur";
                 unitAmount = usdToEurCents(pack.amountUsd, rate);
             }

@@ -53,6 +53,23 @@ export function getCohortFromCountry(
 }
 
 /**
+ * Buyer country for checkout currency routing. CloudFront is the outermost
+ * proxy, so CF-IPCountry on the Worker reflects CloudFront's edge POP, not the
+ * buyer — CloudFront-Viewer-Country carries the real viewer country and wins.
+ * Falls back to cf-ipcountry for direct Cloudflare hits (local dev, no
+ * CloudFront in front). Both are ISO 3166-1 alpha-2; getCohortFromCountry
+ * upper-cases and null-handles, so no normalization is needed here.
+ */
+export function getCheckoutCountry(c: {
+    req: { header: (name: string) => string | undefined };
+}): string | undefined {
+    return (
+        c.req.header("cloudfront-viewer-country") ??
+        c.req.header("cf-ipcountry")
+    );
+}
+
+/**
  * Checkout integration currency for a cohort. EU_CORE settles natively in EUR;
  * every other cohort stays USD (+ Adaptive Pricing presentment).
  */

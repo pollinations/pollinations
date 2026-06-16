@@ -1,8 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
     checkoutCurrencyForCohort,
+    getCheckoutCountry,
     getCohortFromCountry,
 } from "../src/utils/currency-router.ts";
+
+// Minimal Hono-context stand-in: only header() is used by getCheckoutCountry.
+const ctxWithHeaders = (headers: Record<string, string>) => ({
+    req: { header: (name: string) => headers[name.toLowerCase()] },
+});
 
 describe("getCohortFromCountry", () => {
     describe("USD cohort (default)", () => {
@@ -119,6 +125,42 @@ describe("eurozone membership (Phase 2 fix)", () => {
     });
     test.each(["IS", "LI"])("%s is NOT EU_CORE (non-euro)", (c) => {
         expect(getCohortFromCountry(c)).toBe("USD");
+    });
+});
+
+describe("getCheckoutCountry", () => {
+    test("prefers CloudFront-Viewer-Country over CF-IPCountry", () => {
+        // CloudFront is outermost, so CF-IPCountry is the edge POP (e.g. US)
+        // while CloudFront-Viewer-Country is the real buyer (DE).
+        const c = ctxWithHeaders({
+            "cloudfront-viewer-country": "DE",
+            "cf-ipcountry": "US",
+        });
+        expect(getCheckoutCountry(c)).toBe("DE");
+    });
+
+    test("falls back to CF-IPCountry when CloudFront header absent", () => {
+        // Direct Cloudflare hit (local dev, no CloudFront in front).
+        const c = ctxWithHeaders({ "cf-ipcountry": "FR" });
+        expect(getCheckoutCountry(c)).toBe("FR");
+    });
+
+    test("returns undefined when neither header is present", () => {
+        expect(getCheckoutCountry(ctxWithHeaders({}))).toBeUndefined();
+    });
+
+    test("routes correctly end-to-end through CloudFront header", () => {
+        // The real bug: behind CloudFront, CF-IPCountry=US would force USD for a
+        // German buyer. CloudFront-Viewer-Country=DE restores EUR routing.
+        const c = ctxWithHeaders({
+            "cloudfront-viewer-country": "DE",
+            "cf-ipcountry": "US",
+        });
+        expect(
+            checkoutCurrencyForCohort(
+                getCohortFromCountry(getCheckoutCountry(c)),
+            ),
+        ).toBe("eur");
     });
 });
 

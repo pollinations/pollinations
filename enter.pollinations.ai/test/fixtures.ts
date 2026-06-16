@@ -12,6 +12,7 @@ import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
+import { createMockEcb } from "./mocks/ecb.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockStripe } from "./mocks/stripe.ts";
 
@@ -29,6 +30,7 @@ const createMocks = () => ({
     tinybird: createMockTinybird(),
     github: createMockGithub(),
     stripe: createMockStripe(),
+    ecb: createMockEcb(),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

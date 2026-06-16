@@ -4,7 +4,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { afterEach, beforeEach, describe, expect } from "vitest";
+import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 import {
     mockCardPaymentMethod,
@@ -324,17 +324,16 @@ test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
 });
 
-// Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends
-// USD price_data and leaves presentment localization to Stripe AP. Each cohort
-// label must round-trip header → handler → echoed metadata[cohort], holding the
-// USD-native price_data, AP-on, and buy-pollen PMC contract constant.
+// Cohort routing: non-EU cohorts stay USD-native and leave presentment
+// localization to Stripe AP. Each cohort label must round-trip header → handler
+// → echoed metadata[cohort], holding the USD-native price_data, AP-on, and
+// buy-pollen PMC contract constant.
 test.for([
     { country: "BR", cohort: "BR", pack: "p5", amountUsd: 5 },
-    { country: "NL", cohort: "EU_CORE", pack: "p10", amountUsd: 10 },
     { country: "CN", cohort: "APAC_ALIPAY", pack: "p20", amountUsd: 20 },
     { country: "IN", cohort: "INDIA", pack: "p10", amountUsd: 10 },
     { country: "GB", cohort: "UK", pack: "p5", amountUsd: 5 },
-])("cohort $cohort: cf-ipcountry=$country → USD price_data + AP on + buy-pollen PMC", async ({
+])("non-EU cohort $cohort: cf-ipcountry=$country → USD price_data + AP on + buy-pollen PMC", async ({
     country,
     cohort,
     pack,
@@ -2068,21 +2067,23 @@ test("POST /api/webhooks/stripe credits paid EUR invoice with canonical USD poll
         .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
         .where(eq(userTable.id, user.id));
 
-    // EUR attempt: $10 USD → 866 EUR cents (round($10 / 1.155 * 100))
+    // EUR attempt: $10 USD → 866 EUR cents line item, then exclusive VAT
+    // makes the paid invoice total larger. Webhook verification uses the
+    // finalized total, but credits only the canonical USD pack amount.
     const invoiceId = "in_eur_paid_verify";
     await insertAutoTopUpAttempt({
         userId: user.id,
         invoiceId,
         amountUsd: 10,
         chargedCurrency: "eur",
-        chargedAmountCents: 866,
+        chargedAmountCents: 1030,
     });
 
     const response = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
             currency: "eur",
-            amount_paid: 866,
-            amount_due: 866,
+            amount_paid: 1030,
+            amount_due: 1030,
         }),
     );
     expect(response.status).toBe(200);
@@ -2929,28 +2930,13 @@ function expectEurPriceData(
     expect(body?.["adaptive_pricing[enabled]"]).toBeUndefined(); // native EUR ⇒ no AP
 }
 
-describe("EUR checkout branch (flag on)", () => {
-    // String vars in wrangler are passed as value copies to each fetch handler —
-    // mutating the cloudflare:test `env` object does not propagate to the worker.
-    // Instead we use a KV key as a runtime toggle that IS shared across the
-    // test/worker boundary (service bindings are live references). The route
-    // checks KV key "eur-checkout-enabled" = "true" as an override of the env var.
-    beforeEach(async () => {
-        await env.KV.put("eur-checkout-enabled", "true");
-        // Pre-seed the daily rate so getEurMidRate returns 1.155 with NO outbound
-        // ECB fetch — deterministic: $5 / 1.155 = €4.33 = 433 cents.
-        await env.KV.put("fx:eur-usd:current", "1.155");
-    });
-    afterEach(async () => {
-        await env.KV.delete("eur-checkout-enabled");
-        await env.KV.delete("fx:eur-usd:current");
-    });
-
+describe("EUR checkout routing", () => {
+    // The ecb mock serves 1.155 by default ⇒ $5 / 1.155 = €4.33 = 433 cents.
     test("EU_CORE (DE) → native EUR price_data, no adaptive pricing", async ({
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("stripe", "tinybird");
+        await mocks.enable("stripe", "tinybird", "ecb");
         const response = await SELF.fetch(`${base}/checkout/p5`, {
             method: "GET",
             headers: {
@@ -2969,10 +2955,7 @@ describe("EUR checkout branch (flag on)", () => {
         expect(body?.payment_method_configuration).toBe(stripePmcId);
     });
 
-    test("non-EU (US) → still USD + AP even with flag on", async ({
-        sessionToken,
-        mocks,
-    }) => {
+    test("non-EU (US) → still USD + AP", async ({ sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
         const response = await SELF.fetch(`${base}/checkout/p5`, {
             method: "GET",
@@ -2989,6 +2972,31 @@ describe("EUR checkout branch (flag on)", () => {
         expectUsdPriceData(body, 5);
         expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
     });
+
+    test("CloudFront-Viewer-Country (DE) wins over CF-IPCountry (US) → EUR", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        // Production topology: CloudFront is outermost, so CF-IPCountry is the
+        // edge POP (US) while CloudFront-Viewer-Country is the real buyer (DE).
+        // Without the override this German buyer would be misrouted to USD.
+        await mocks.enable("stripe", "tinybird", "ecb");
+        const response = await SELF.fetch(`${base}/checkout/p5`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "cloudfront-viewer-country": "DE",
+                "cf-ipcountry": "US",
+            },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (r) => r.path === "/v1/checkout/sessions",
+        )?.body;
+        expectEurPriceData(body, 433); // $5 / 1.155
+        expect(body?.["metadata[cohort]"]).toBe("EU_CORE");
+    });
 });
 
 test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and persists charged values", async ({
@@ -2996,12 +3004,8 @@ test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and per
     mocks,
 }) => {
     void sessionToken;
-    await mocks.enable("stripe", "tinybird");
-
-    // Pre-seed FX rate so getEurMidRate does not hit the network.
-    // 1 EUR = 1.155 USD  →  $10 USD pack = round(10 / 1.155 * 100) = 866 EUR cents
-    const fxRate = "1.155";
-    await env.KV.put("fx:eur-usd:current", fxRate);
+    // ecb mock serves 1.155 ⇒ $10 pack = round(10 / 1.155 * 100) = 866 EUR cents.
+    await mocks.enable("stripe", "tinybird", "ecb");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -3017,6 +3021,10 @@ test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and per
     if (!pack) throw new Error("Expected $10 pollen pack");
 
     const expectedEurCents = Math.round((pack.amountUsd / 1.155) * 100);
+    const expectedTaxCents = 164;
+    const expectedChargedTotalCents = expectedEurCents + expectedTaxCents;
+    mocks.stripe.state.finalizeTaxAmountCentsByInvoiceId.in_mock_1 =
+        expectedTaxCents;
 
     const customer = mockCustomer("cus_auto_top_up_eur");
     customer.invoice_settings.default_payment_method = "pm_sepa_de";
@@ -3065,7 +3073,7 @@ test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and per
     expect(itemRequest?.body.currency).toBe("eur");
     expect(itemRequest?.body.amount).toBe(String(expectedEurCents));
 
-    // DB row must persist charged_currency and charged_amount_cents.
+    // DB row must persist charged_currency and the finalized total amount.
     const attempt = await env.DB.prepare(
         `SELECT charged_currency AS chargedCurrency,
             charged_amount_cents AS chargedAmountCents,
@@ -3081,7 +3089,7 @@ test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and per
         }>();
 
     expect(attempt?.chargedCurrency).toBe("eur");
-    expect(attempt?.chargedAmountCents).toBe(expectedEurCents);
+    expect(attempt?.chargedAmountCents).toBe(expectedChargedTotalCents);
     expect(attempt?.status).toBe("pending");
 
     // Pollen credit path is unchanged — pack balance not yet credited (pending).
@@ -3091,7 +3099,4 @@ test("POST /api/stripe/auto-top-up/trigger charges EUR for sepa_debit PM and per
         .bind(user.id)
         .first<{ packBalance: number | null }>();
     expect(updatedUser?.packBalance).toBe(1);
-
-    // Cleanup KV.
-    await env.KV.delete("fx:eur-usd:current");
 });

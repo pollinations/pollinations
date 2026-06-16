@@ -18,8 +18,7 @@ import {
     type EndpointPayload,
     emptyForm,
     endpointToForm,
-    hasPositiveFormPrice,
-    hasValidFormPrices,
+    hasObservedPriceField,
     idleAction,
     isValidPriceInput,
     nextFormState,
@@ -82,6 +81,7 @@ export function CommunityEndpointDialog({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const modelListId = useId();
+    const savedPriceKeys = savedEndpointPriceKeys(endpoint);
 
     // Reset the form on open and clear local state on close so unsaved values
     // never survive a dismissed dialog.
@@ -175,6 +175,16 @@ export function CommunityEndpointDialog({
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
+            const returnedFields = returnedPriceFields({
+                status: "success",
+                usage: body.usage,
+                billableUsage: body.billableUsage,
+            });
+            if (returnedFields.length === 0) {
+                throw new Error(
+                    "Endpoint responded, but did not return billable token usage",
+                );
+            }
             setTestState({
                 status: "success",
                 message: body.message || "Endpoint responded",
@@ -197,7 +207,12 @@ export function CommunityEndpointDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(toEndpointPayload(form), form.bearerToken.trim());
+            await onSubmit(
+                toEndpointPayload(
+                    formWithVisiblePrices(form, visiblePriceKeys),
+                ),
+                form.bearerToken.trim(),
+            );
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -210,12 +225,35 @@ export function CommunityEndpointDialog({
         }
     }
 
+    const returnedFields = returnedPriceFields(testState);
+    const visiblePriceKeys = visiblePriceFieldKeys(
+        savedPriceKeys,
+        returnedFields,
+    );
+    const hasVisiblePriceFields = visiblePriceKeys.size > 0;
+    const hasVisiblePositivePrice = hasPositiveVisiblePrice(
+        form,
+        visiblePriceKeys,
+    );
+    const hasValidVisiblePrices = hasValidVisibleFormPrices(
+        form,
+        visiblePriceKeys,
+    );
+    const hasRequiredReturnedPrices = returnedFields.every((field) =>
+        hasDefinedPriceInput(form, field),
+    );
+    const testRequirementMet = isEdit
+        ? testState.status !== "error"
+        : testState.status === "success" && returnedFields.length > 0;
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
-        hasValidFormPrices(form) &&
-        hasPositiveFormPrice(form) &&
+        hasVisiblePriceFields &&
+        hasValidVisiblePrices &&
+        hasVisiblePositivePrice &&
+        hasRequiredReturnedPrices &&
+        testRequirementMet &&
         (isEdit || hasToken);
 
     return (
@@ -413,6 +451,7 @@ export function CommunityEndpointDialog({
                     <PriceGroups
                         form={form}
                         testState={testState}
+                        visiblePriceKeys={visiblePriceKeys}
                         onChange={updateForm}
                     />
 
@@ -460,13 +499,21 @@ function testMessageClass(status: ActionState["status"]): string {
 function PriceGroups({
     form,
     testState,
+    visiblePriceKeys,
     onChange,
 }: {
     form: EndpointFormState;
     testState: ActionState;
+    visiblePriceKeys: Set<PriceField["key"]>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
     const showReturnedColumn = testState.status === "success";
+    const visibleGroups = PRICE_GROUPS.map((group) => ({
+        ...group,
+        fields: group.fields.filter((field) => visiblePriceKeys.has(field.key)),
+    })).filter((group) => group.fields.length > 0);
+
+    if (visibleGroups.length === 0) return null;
 
     return (
         <section className="overflow-hidden rounded-lg border border-divider bg-surface-opaque/35">
@@ -478,7 +525,7 @@ function PriceGroups({
                 )}
             </div>
             <div className="divide-y divide-divider">
-                {PRICE_GROUPS.map((group) => (
+                {visibleGroups.map((group) => (
                     <Fragment key={group.title}>
                         <PriceSectionHeader
                             group={group}
@@ -549,11 +596,16 @@ function PriceRow({
     onChange: (value: string) => void;
 }) {
     const observed = observedValue !== null;
+    const missing = observed && value.trim() === "";
     const invalid = !isValidPriceInput(value);
 
     return (
         <Field.Root
-            className={priceRowClass(observed, showReturnedColumn, invalid)}
+            className={priceRowClass(
+                observed,
+                showReturnedColumn,
+                invalid || missing,
+            )}
         >
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
@@ -568,14 +620,16 @@ function PriceRow({
                 </div>
                 <p
                     className={
-                        invalid
+                        invalid || missing
                             ? "mt-0.5 text-xs text-intent-danger-text"
                             : "mt-0.5 text-xs text-theme-text-muted sm:hidden"
                     }
                 >
                     {invalid
                         ? "Use a dot decimal like 0.1"
-                        : "Pollen per 1M tokens"}
+                        : missing
+                          ? "Required for returned usage"
+                          : "Pollen per 1M tokens"}
                 </p>
             </div>
 
@@ -589,7 +643,7 @@ function PriceRow({
                 value={value}
                 placeholder="0"
                 autoComplete="off"
-                error={invalid}
+                error={invalid || missing}
                 className="h-9 font-mono tabular-nums sm:text-right"
                 onChange={(e) => onChange(e.target.value)}
             />
@@ -606,6 +660,77 @@ function PriceRow({
                 </div>
             )}
         </Field.Root>
+    );
+}
+
+function savedEndpointPriceKeys(
+    endpoint: CommunityEndpoint | undefined,
+): Set<PriceField["key"]> {
+    return new Set(
+        endpoint
+            ? COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+                  (field) => endpoint[field.key] > 0,
+              ).map((field) => field.key)
+            : [],
+    );
+}
+
+function returnedPriceFields(testState: ActionState): PriceField[] {
+    if (testState.status !== "success") return [];
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
+        hasObservedPriceField(testState.usage, field),
+    );
+}
+
+function visiblePriceFieldKeys(
+    savedPriceKeys: Set<PriceField["key"]>,
+    returnedFields: PriceField[],
+): Set<PriceField["key"]> {
+    return new Set([
+        ...savedPriceKeys,
+        ...returnedFields.map((field) => field.key),
+    ]);
+}
+
+function formWithVisiblePrices(
+    form: EndpointFormState,
+    visiblePriceKeys: Set<PriceField["key"]>,
+): EndpointFormState {
+    const next = { ...form };
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        if (!visiblePriceKeys.has(field.key)) {
+            next[field.key] = "";
+        }
+    }
+    return next;
+}
+
+function hasDefinedPriceInput(
+    form: EndpointFormState,
+    field: PriceField,
+): boolean {
+    return form[field.key].trim() !== "" && isValidPriceInput(form[field.key]);
+}
+
+function hasValidVisibleFormPrices(
+    form: EndpointFormState,
+    visiblePriceKeys: Set<PriceField["key"]>,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
+        (field) =>
+            !visiblePriceKeys.has(field.key) ||
+            isValidPriceInput(form[field.key]),
+    );
+}
+
+function hasPositiveVisiblePrice(
+    form: EndpointFormState,
+    visiblePriceKeys: Set<PriceField["key"]>,
+): boolean {
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        (field) =>
+            visiblePriceKeys.has(field.key) &&
+            pricePerMillionToPerToken(form[field.key]) > 0,
     );
 }
 

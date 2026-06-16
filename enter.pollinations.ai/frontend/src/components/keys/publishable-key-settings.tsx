@@ -46,6 +46,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Redirect URIs
                     </Field.Label>
                 </div>
+                <p className="text-xs text-theme-text-soft">
+                    A localhost callback is pre-filled for local development —
+                    edit the path to match your dev server, and remove it before
+                    going to production.
+                </p>
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list

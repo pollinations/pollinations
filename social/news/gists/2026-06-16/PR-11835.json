@@ -1,0 +1,35 @@
+{
+  "pr_number": 11835,
+  "title": "feat(enter): pre-fill localhost redirect URI for new app keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11835",
+  "merged_at": "2026-06-16T16:23:46Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Seeds `http://localhost/callback` into the app-key creation dialog (simplified/app-key mode only)\n- Removes the friction of manually registering a localhost redirect just to develop locally\n- Keeps the per-app allowlist gate intact (no blanket localhost allow) — avoids the open-redirect/token-theft class that \"allow any URL + warn\" would open\n- Loopback ports are already wildcarded (RFC 8252 §7.3), so only the path needs editing for most dev servers\n- Adds a dev note in the editor: edit the path to match your dev server, remove before production\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Seed the localhost",
+    "blurb": "Creating a new app key now pre-fills a localhost redirect URI so you can start building immediately. Less typing, more coding, and still perfectly secure.",
+    "summary": "The app-key creation dialog now pre-fills `http://localhost/callback` as a redirect URI to reduce friction for local development.",
+    "impact": "Developers can immediately test OAuth flows locally without manually registering a localhost redirect, while maintaining strict per-app allowlist security.",
+    "keywords": [
+      "oauth",
+      "developer-experience",
+      "app-keys",
+      "localhost",
+      "security"
+    ],
+    "visual_concept": "The pollinations bee planting a glowing seed (representing the pre-filled URI) into a small retro server box or digital garden pot labeled 'localhost'.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot planting a glowing green seed into a small retro server box with a screen showing 'localhost'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-16/PR-11835.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot planting a glowing green seed into a small retro server box with a screen showing 'localhost'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-16T16:25:04.370511+00:00"
+}

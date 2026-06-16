@@ -52,7 +52,7 @@ function extractApiKeyFromFragment(): string | null {
     }
 }
 
-const APP_KEY = "pk_vbqLj6cwn05D2v5B";
+const APP_KEY = "pk_nDXh3ryXfjTkirMB";
 
 function getAuthorizeUrl(): string {
     const redirect = window.location.href.split("#")[0];

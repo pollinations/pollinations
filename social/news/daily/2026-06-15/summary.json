@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-15",
+  "period_start": "2026-06-15",
+  "period_end": "2026-06-15",
+  "title": "Ideogram 4.0 joins the image roster",
+  "summary": "Ideogram 4.0 models hit the API, plus a new SDK bridge for painless iframe embedding.\n\nWe wired up Ideogram 4.0, bringing turbo, balanced, and quality variants to the image generation endpoint. The API automatically handles mapping your requested aspect ratios to the nearest supported resolution preset so you don't have to think about it.\n\nAdded an EmbedBridge to the SDK. If you're embedding apps in trusted hosts (like our upcoming /play hub), it automatically handles the iframe handshakes, API key sharing, and theme syncing. No more writing custom glue code for frame-local auth.\n\nStandardized the account menu label to 'Connect' across standalone apps and stopped the text from awkwardly wrapping on narrow screens.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11807,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11810,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11816,
+      "date": "2026-06-15"
+    }
+  ],
+  "generated_at": "2026-06-16T07:52:46.854159+00:00"
+}

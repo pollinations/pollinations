@@ -1,0 +1,35 @@
+{
+  "pr_number": 11609,
+  "title": "feat: route gemini to Airforce with Vertex fallback",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11609",
+  "merged_at": "2026-06-16T10:19:29Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Routes public `gemini` (gemini-3-flash) to api.airforce, falling back to existing GCP/Vertex on failure\n- Same modelId on both targets → billing/pricing unchanged regardless of which serves\n- Restores the Portkey `strategy`/`targets` fallback in `portkeyUtils.ts` (revert of `04894e386`, shipped in prod Jan–Jun 2026)\n- Drops the `code_execution` default-injection from the gemini transform: Airforce returns a phantom tool_call for it; explicit code_execution requests fall back to Vertex via `on_status_codes` 400\n- `on_status_codes` includes 402 (Airforce out of balance) — the real production fallback trigger; failed attempts aren't billed, so falling back is always safe\n- Adds `AIRFORCE_API_KEY` to gen secrets (dev/staging/prod) + a unit test for the fallback header shape\n\nValidated end-to-end against the live Portkey gateway: happy path serves Airforce, forced failure falls through to Vertex.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Air traffic control for Gemini",
+    "blurb": "We've upgraded our Gemini routing! Requests now fly through Airforce by default, with a seamless safety net that catches and redirects to GCP Vertex if there's any turbulence.",
+    "summary": "Routes public gemini-3-flash requests to api.airforce by default, utilizing a restored Portkey fallback strategy to seamlessly fail over to GCP Vertex on 400 or 402 errors.",
+    "impact": "Generation reliability is improved through automatic provider failover, while keeping the model ID and billing exactly the same.",
+    "keywords": [
+      "gemini",
+      "routing",
+      "fallback",
+      "portkey",
+      "airforce"
+    ],
+    "visual_concept": "Polly the bee acting as an air traffic controller or pilot, routing glowing data packets between two different server towers (representing Airforce and Vertex).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny pilot's headset, directing glowing blue data packets between two chunky retro server towers. One server has a small cloud icon, the other a tiny jet. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-16/PR-11609.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny pilot's headset, directing glowing blue data packets between two chunky retro server towers. One server has a small cloud icon, the other a tiny jet. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-16T10:20:37.038269+00:00"
+}

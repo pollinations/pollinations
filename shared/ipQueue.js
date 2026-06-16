@@ -104,15 +104,27 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
     const url = req.url || "no-url";
     const method = req.method || "no-method";
     const path = url.split("?")[0] || "no-path";
-    // Behind the legacy double-CF hop (cache worker -> CF-proxied tunnel origin),
-    // cf-connecting-ip is rewritten to Cloudflare's egress IP, collapsing every
-    // real client onto one address and one shared anonymous queue slot. The cache
-    // worker preserves the true client IP as the first entry of x-forwarded-for,
-    // so prefer that and fall back to cf-connecting-ip / req.ip.
+    // Behind the legacy multi-hop CDN chain, cf-connecting-ip is rewritten to
+    // Cloudflare's egress IP, collapsing every real client onto one address and
+    // one shared anonymous queue slot. Recover the true client IP per fronting
+    // stack, in priority order:
+    //   1. cloudfront-viewer-address — set by CloudFront (image.pollinations.ai);
+    //      "IP:port", where the first XFF entry is only a CloudFront edge IP.
+    //   2. first entry of x-forwarded-for — the real client on the pure
+    //      Cloudflare path (image.myceli.ai), preserved by the cache worker.
+    //   3. cf-connecting-ip / req.ip — last-resort fallbacks.
     const headerVal = (name) =>
         req.headers?.get?.(name) ?? req.headers?.[name];
+    // Strip the trailing :port from "IP:port" without breaking IPv6 (which
+    // itself contains colons): drop only the segment after the last colon.
+    const stripPort = (addr) => {
+        const i = addr.lastIndexOf(":");
+        return i === -1 ? addr : addr.slice(0, i);
+    };
+    const cfViewer = headerVal("cloudfront-viewer-address");
     const forwardedFor = headerVal("x-forwarded-for");
     let ip =
+        (cfViewer && stripPort(cfViewer.trim())) ||
         (forwardedFor && forwardedFor.split(",")[0].trim()) ||
         headerVal("cf-connecting-ip") ||
         req.ip ||

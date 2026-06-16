@@ -9,11 +9,11 @@
     <script>
       (() => {
         try {
-          let mode = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1] || localStorage.getItem("polli-color-mode");
+          const storedMode = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1] || localStorage.getItem("polli-color-mode");
+          let mode = storedMode;
           if (mode !== "light" && mode !== "dark") {
-            mode = matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
+            mode = "light";
+            localStorage.setItem("polli-color-mode", mode);
           }
           if (mode === "dark") document.documentElement.classList.add("dark");
           // theme-color (browser chrome) is derived from the --polli-color-app-bg

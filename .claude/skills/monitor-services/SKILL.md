@@ -170,58 +170,75 @@ Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.s
 
 ---
 
-### 5. Flux + Z-Image Workers (RunPod 4x RTX 4090)
+### 5. Z-Image Workers (RunPod, multiple single-GPU pods)
 
-| Property | Value |
-|----------|-------|
-| **Pod** | `hsl3ksl31lvrcc` |
-| **Provider** | RunPod (4x RTX 4090, community cloud) |
-| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17` |
+> ⚠️ **Pod IDs, hostnames, SSH ports, and the worker count all change over time — DISCOVER them live, never trust hardcoded values here.** As of 2026-06-16, zimage runs as **3 separate single-GPU pods** (one 4090 + two 3090s), each serving on port 8767. The old `hsl3ksl31lvrcc` 4x-4090 pod is gone. Flux runs on its own worker(s) elsewhere — it is healthy and unrelated to zimage.
 
-**Workers:**
-
-| GPU | Port | Proxy URL | Service |
-|-----|------|-----------|---------|
-| 0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4) |
-| 1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4) |
-| 2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image |
-| 3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image |
-
-**Health check (per worker):**
+**Step 1 — discover what's actually deployed (the source of truth):**
 ```bash
-curl -s --connect-timeout 5 --max-time 15 https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate \
-  -X POST -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
-```
-Expected: HTTP 200
+# (a) Who is registered + heartbeating (= actually taking prod traffic):
+curl -s --max-time 10 https://gen.pollinations.ai/register | python3 -c "import sys,json,time; [print(f\"{w['type']:<7} {w['url']} hb={(time.time()*1000-w['lastHeartbeat'])/1000:.0f}s\") for w in json.load(sys.stdin)]"
 
-**Registry check (all image workers at once):**
-```bash
-curl -s --connect-timeout 5 --max-time 10 https://gen.pollinations.ai/register
-```
-Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`. The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
-
-**Restart a worker** (fresh containers don't have `screen`; use `nohup`):
-```bash
-ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p <runtime-port> root@<runtime-ip>
-pkill -f 'nunchaku/server.py'  # or pkill -f 'z-image/server.py'
-mkdir -p /workspace/logs
-cd /opt/pollinations/pollinations/image.pollinations.ai/nunchaku
-nohup bash -c "source venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux HF_TOKEN=<SOPS:HF_TOKEN or .testingtokens> PLN_GPU_TOKEN=<SOPS> \
-  python server.py" > /workspace/logs/flux-gpu0.log 2>&1 &
-```
-
-**Pod stop/start wipes the container overlay disk** — `/opt/pollinations/` is gone after every restart. Only `/workspace/` persists. Full rebuild = clone repo → `bash setup.sh` (~5 min: prebuilt nunchaku wheel + HF model download).
-
-**SSH port rotates on stop/start.** Get current host/port via the RunPod GraphQL API:
-```bash
+# (b) ALL RunPod pods + their GPU util (catch idle/dead pods NOT in the registry):
 RUNPOD_TOKEN=$(cat ~/.runpod/config.toml | grep apikey | cut -d\' -f2)
+runpodctl pod list
 curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Content-Type: application/json" \
-  -d '{"query":"{pod(input:{podId:\"hsl3ksl31lvrcc\"}){runtime{ports{ip privatePort publicPort type}}}}"}' \
-  | python3 -c "import sys,json;[print(p) for p in json.load(sys.stdin)['data']['pod']['runtime']['ports'] if p['privatePort']==22]"
+  -d '{"query":"{myself{pods{id name desiredStatus machine{gpuDisplayName} runtime{gpus{gpuUtilPercent}}}}}"}' \
+  | python3 -c "import sys,json; [print(p['name'], p['id'], p['desiredStatus'], (p.get('runtime') or {}).get('gpus')) for p in json.load(sys.stdin)['data']['myself']['pods']]"
 ```
+**Key failure mode (this caused the 2026-06-16 incident):** a pod can be RUNNING + costing money but **0% util and absent from `/register`** because its `server.py` died or its GPU fell off the bus. All traffic then piles onto the remaining worker(s) → 524 timeouts + 100% util on the survivor. Always cross-check (a) vs (b): every RUNNING zimage pod should appear in the registry.
+
+**SSH key:** the working key is **`SSH_RUNPOD_KLEIN`** (the documented `SSH_RUNPOD_FLUX_ZIMAGE` does NOT auth against these pods). Get the rotating SSH port per pod:
+```bash
+sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r .SSH_RUNPOD_KLEIN > /tmp/zk; chmod 600 /tmp/zk
+curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Content-Type: application/json" \
+  -d '{"query":"{pod(input:{podId:\"<POD_ID>\"}){runtime{ports{ip publicPort type}}}}"}' \
+  | python3 -c "import sys,json; [print(p) for p in json.load(sys.stdin)['data']['pod']['runtime']['ports'] if p['type']=='tcp']"
+```
+
+**Diagnose a single pod (SSH in on the discovered tcp port):**
+```bash
+ssh -i /tmp/zk -p <PORT> -o StrictHostKeyChecking=no root@<IP> \
+  "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader; ps aux | grep 'z-image/server.py' | grep -v grep; ss -ltn | grep 8767"
+```
+Code lives at `/root/pollinations/image.pollinations.ai/z-image/`; service auto-sources env from PID 1 (port 8767, `ZIMAGE_MODEL_ID`, `PLN_GPU_TOKEN`, `HF_TOKEN`). Direct `curl /generate` returns **403 without the GPU token** — a 403 still proves the server is up.
+
+**Recovery decision tree:**
+
+| Symptom | Fix |
+|---------|-----|
+| `server.py` not running, but `nvidia-smi` works | **Process relaunch** (cheap): `ssh ... "bash /root/relaunch-zimage.sh"` — kills + relaunches via `/root/launch.sh`, survives SSH disconnect. Verify `Heartbeat sent successfully` in `/root/logs/zimage.log` and that the pod reappears in `/register`. |
+| `nvidia-smi` → `Failed to initialize NVML: Unknown Error` (`/dev/nvidia*` owned by `nobody`) | **GPU off the bus — needs pod stop/start** (NOT recoverable in-container). See below. |
+| Worker in `/register` + heartbeating, but **524 timeouts route only to that one host** (and it's slow / inference rate degrades mid-request / huge RSS from long uptime) | **Stale degraded process — relaunch it, but confirm the OLD pid actually died.** A heartbeat thread keeps firing even when generation hangs, so the pod looks healthy. See pkill caveat below. |
+| All workers up + 100% util + still 524s | **Genuine capacity deficit** — add a GPU. Note 401/402 are rejected at the edge (~100ms) and do NOT load the GPU, so it's real paid demand, not abuse. |
+
+> ⚠️ **`relaunch-zimage.sh` pkill caveat (2026-06-16):** the script kills by pattern `pkill -f 'z-image/server.py'`, but the running process command is often just `python server.py` (launched from within the z-image dir), so the pattern **does not match** and the relaunch silently no-ops — the new process then fails with `address already in use` and exits while the old, degraded process keeps serving. **Always verify the old PID actually died** (`ps -o pid,etime -C python` — elapsed time should reset to seconds). If it didn't: `kill -9 <pid>; fuser -k 8767/tcp; bash /root/relaunch-zimage.sh`.
+
+**Pod stop/start (for NVML-broken GPU) — WIPES the container overlay disk.** Code is on `/root` (overlay), there is **no persistent `/workspace` volume**. So back up the provision script first, then rebuild:
+```bash
+# 1. Back up provision script BEFORE stopping:
+ssh -i /tmp/zk -p <PORT> root@<IP> "cat /root/provision-zimage.sh" > /tmp/provision-zimage.sh
+# 2. Stop + start (port rotates; GPU re-attaches on fresh container):
+runpodctl pod stop <POD_ID>;  sleep 10;  runpodctl pod start <POD_ID>
+# 3. Wait for RUNNING + tcp port, confirm GPU healthy (nvidia-smi shows the card), then re-provision:
+scp -i /tmp/zk -P <NEW_PORT> /tmp/provision-zimage.sh root@<IP>:/root/
+ssh -i /tmp/zk -p <NEW_PORT> root@<IP> \
+  "export POD_ID=<POD_ID>; setsid bash /root/provision-zimage.sh > /root/provision.log 2>&1 </dev/null & disown"
+# provision: re-clones branch feat/zimage-nf4-model-option, builds venv, downloads model (~9GB) + SPAN
+#            upscaler, writes launch.sh, starts server. ~3-6 min. Tokens come from PID1 env (auto re-injected).
+# 4. Verify: server LISTENING :8767, model loaded, heartbeat sent, pod appears in /register, e2e 200 via prod.
+```
+
+**Verify recovery end-to-end (prod success + load now shared):**
+```bash
+TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)
+for i in 1 2 3 4 5; do curl -s -o /dev/null -w "HTTP %{http_code}\n" --max-time 60 \
+  "https://gen.pollinations.ai/image/verify_${i}_$(date +%s%N)?model=zimage&width=512&height=512&seed=$i" \
+  -H "Authorization: Bearer $TOKEN"; done
+# Then confirm the 524 trend dropped in Tinybird (model_health / generation_event, model_requested='zimage').
+```
+
+The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
 
 ---
 

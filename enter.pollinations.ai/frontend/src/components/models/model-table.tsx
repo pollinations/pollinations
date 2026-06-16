@@ -447,16 +447,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
-        ...(audioModels.length > 0
-            ? [{ type: "audio" as const, models: audioModels }]
-            : []),
-        ...(realtimeModels.length > 0
-            ? [{ type: "realtime" as const, models: realtimeModels }]
-            : []),
+        { type: "audio", models: audioModels },
+        { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
-        ...(embeddingModels.length > 0
-            ? [{ type: "embedding" as const, models: embeddingModels }]
-            : []),
+        { type: "embedding", models: embeddingModels },
     ];
 
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");

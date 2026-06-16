@@ -60,7 +60,6 @@ export {
     ColorModeToggle,
     setColorMode,
     useColorMode,
-    useHostThemeSync,
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,

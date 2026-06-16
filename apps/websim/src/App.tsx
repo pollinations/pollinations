@@ -16,7 +16,6 @@ import {
     Text,
     Textarea,
     Tooltip,
-    useHostThemeSync,
 } from "@pollinations/ui";
 import {
     AppUserMenu,
@@ -152,10 +151,6 @@ export function App() {
     useEffect(() => {
         return () => activeRequest.current?.abort();
     }, []);
-
-    // Sizing + the auth handshake are auto-wired by the SDK's PolliProvider.
-    // Theme application is UI-owned, so opt into the host's live theme here.
-    useHostThemeSync();
 
     async function generate() {
         const trimmedPrompt = prompt.trim();

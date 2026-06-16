@@ -26,10 +26,6 @@ function stubWindow(href: string) {
             replaceState: vi.fn(),
         },
     };
-    // Top-level: parent/self/top all reference this window (isFramed() === false).
-    win.parent = win;
-    win.self = win;
-    win.top = win;
     vi.stubGlobal("window", win);
 }
 
@@ -62,7 +58,7 @@ describe("PolliProvider setup guidance", () => {
         expect(warn.mock.calls[0][0]).not.toContain("sk_secret_test");
     });
 
-    it("persists the key to the provided storage at top level", async () => {
+    it("persists the key to the provided storage", async () => {
         stubWindow("https://app.example/");
         const spy: StorageAdapter = {
             getItem: vi.fn(() => null),
@@ -84,7 +80,6 @@ describe("PolliProvider setup guidance", () => {
         });
         act(() => setApiKey?.("sk_live"));
 
-        // Top level (not framed) → writes through to the real adapter.
         expect(spy.setItem).toHaveBeenCalledWith(
             "polli:pk_test:token",
             "sk_live",

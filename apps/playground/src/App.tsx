@@ -1,4 +1,4 @@
-import { ColorModeToggle, cn, useHostThemeSync } from "@pollinations/ui";
+import { ColorModeToggle, cn } from "@pollinations/ui";
 import {
     AppUserMenu,
     isEmbeddedContext,
@@ -8,10 +8,6 @@ import { Playground } from "./Playground";
 
 export function App() {
     const isEmbedded = isEmbeddedContext();
-
-    // Sizing + the auth handshake are auto-wired by the SDK's PolliProvider.
-    // Theme application is UI-owned, so opt into the host's live theme here.
-    useHostThemeSync();
 
     return (
         <div

@@ -14,7 +14,6 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    tokenConfigured: boolean;
     contextLength: number | null;
 } & CommunityEndpointPrices;
 

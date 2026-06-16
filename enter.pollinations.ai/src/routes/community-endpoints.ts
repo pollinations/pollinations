@@ -122,7 +122,6 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
-        tokenConfigured: true,
         ...communityEndpointPrices(row),
         contextLength: row.contextLength,
         createdAt: row.createdAt,

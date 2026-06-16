@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-15",
+  "period_start": "2026-06-15",
+  "period_end": "2026-06-15",
+  "generated_at": "2026-06-16T07:52:46.854159+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-15/images/reddit.jpg"
+    }
+  ],
+  "title": "Ideogram 4.0 models added, embed auth bridge, and UI fixes",
+  "text": "Merged three PRs today to expand the image models and fix some integration friction.\n\nFirst, Ideogram 4.0 is now live on the image endpoints (PR #11810). We added support for their turbo, balanced, and quality tiers. You can pass the model parameter in your HTTP calls as usual. The quality bump is noticeable, especially if you are trying to generate specific text within your images.\n\nSecond, we shipped an embed bridge for host-shared auth (PR #11807). If you are building on the SDK or embedding apps via Websim or your own playgrounds, auth state now passes through the bridge cleanly. Previously, embedding apps meant dealing with iframe auth isolation, which was a headache for users. This makes dropping a Pollinations-powered component into an existing host much less annoying.\n\nFinally, some minor UI polish (PR #11816). We fixed a text wrapping bug in the mobile navigation that was breaking the layout on narrower screens, and updated the account menu label to just say 'Connect' to save space.\n\nCode is open as always at github.com/pollinations/pollinations. Let us know if the embed bridge acts up in your specific environment."
+}

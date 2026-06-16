@@ -53,7 +53,6 @@ export async function getCommunityTextModelsInfo(
             completionReasoningPrice:
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-            contextLength: schema.communityEndpoint.contextLength,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -87,7 +86,6 @@ export async function getCommunityTextModelsInfo(
                 input_modalities: ["text"],
                 output_modalities: ["text"],
                 capabilities: [],
-                context_length: row.contextLength ?? undefined,
             },
         ];
     });
@@ -126,7 +124,6 @@ export async function getCommunityEndpointRuntime(
             completionReasoningPrice:
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-            contextLength: schema.communityEndpoint.contextLength,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -157,6 +154,5 @@ export async function getCommunityEndpointRuntime(
         upstreamModel: endpoint.upstreamModel,
         bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
         ...communityEndpointPrices(endpoint),
-        contextLength: endpoint.contextLength,
     };
 }

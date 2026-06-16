@@ -461,13 +461,6 @@
           "autoincrement": false,
           "default": 0
         },
-        "context_length": {
-          "name": "context_length",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "integer",

@@ -189,7 +189,6 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   completionTextPrice: real("completion_text_price").notNull(),
   completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
   completionAudioPrice: real("completion_audio_price").default(0).notNull(),
-  contextLength: integer("context_length"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),

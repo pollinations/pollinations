@@ -198,7 +198,6 @@ describe("community endpoint helpers", () => {
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
             }),
-            contextLength: null,
         };
 
         const context = await communityEndpointGatewayContext(
@@ -215,7 +214,6 @@ describe("community endpoint helpers", () => {
         expect(context).toMatchObject({
             max_tokens: 5,
             requestedModel: endpoint.modelId,
-            dynamicModelDef: true,
             portkeyGatewayUrl: "https://portkey.test",
             userApiKey: "sk_user_key",
             modelConfig: {
@@ -260,7 +258,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1,
             completionTextPrice: 0.1,
-            contextLength: null,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -367,7 +364,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1,
             completionTextPrice: 0.1,
-            contextLength: null,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -466,7 +462,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1,
             completionTextPrice: 0.1,
-            contextLength: null,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -564,7 +559,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            contextLength: 8192,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -596,7 +590,6 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
-                context_length?: number;
             }[];
         };
 
@@ -620,7 +613,6 @@ fixtureTest(
             expect.arrayContaining([
                 expect.objectContaining({
                     id: modelId,
-                    context_length: 8192,
                     supported_endpoints: expect.arrayContaining([
                         "/v1/chat/completions",
                     ]),
@@ -685,7 +677,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1,
             completionTextPrice: 0.1,
-            contextLength: null,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -832,13 +823,11 @@ fixtureTest(
             modelId: string;
             baseUrl: string;
             upstreamModel: string;
-            tokenConfigured: boolean;
         };
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
-            tokenConfigured: true,
         });
 
         const testResponse = await fetchEnterApi(

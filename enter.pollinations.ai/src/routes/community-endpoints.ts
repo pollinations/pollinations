@@ -37,7 +37,6 @@ const EndpointFieldsSchema = z.object({
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
     ...PriceFieldsSchema,
-    contextLength: z.number().int().positive().nullable().optional(),
 });
 
 const CreateEndpointSchema = EndpointFieldsSchema;
@@ -123,7 +122,6 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         ...communityEndpointPrices(row),
-        contextLength: row.contextLength,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -213,7 +211,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 ),
                 ...communityEndpointPrices(input),
-                contextLength: input.contextLength ?? null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             })
@@ -343,10 +340,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update[field.key] = input[field.key];
             }
         }
-        if (input.contextLength !== undefined) {
-            update.contextLength = input.contextLength;
-        }
-
         const [row] = await db
             .update(schema.communityEndpoint)
             .set(update)

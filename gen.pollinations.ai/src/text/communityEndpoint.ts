@@ -29,7 +29,6 @@ export async function communityEndpointGatewayContext(
             model: endpoint.upstreamModel,
         },
         modelDef: communityModelDefinition(endpoint),
-        dynamicModelDef: true,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,
         userApiKey,

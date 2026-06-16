@@ -45,14 +45,14 @@ export function validateInputModalities(
     const requestedModel = options.requestedModel || options.model;
     if (!requestedModel) return { messages, options };
 
-    const dynamicDefinition = options.dynamicModelDef
-        ? (options.modelDef as ModelDefinitionLike | undefined)
-        : undefined;
+    const resolvedDefinition = options.modelDef as
+        | ModelDefinitionLike
+        | undefined;
     let modelName: string;
     let definition: ModelDefinitionLike;
-    if (dynamicDefinition) {
+    if (resolvedDefinition) {
         modelName = requestedModel;
-        definition = dynamicDefinition;
+        definition = resolvedDefinition;
     } else {
         const resolvedModelName = resolveModelName(requestedModel);
         modelName = resolvedModelName;

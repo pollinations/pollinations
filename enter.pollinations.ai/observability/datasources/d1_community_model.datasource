@@ -17,7 +17,6 @@ SCHEMA >
     `completion_text_price` Float64 `json:$.completion_text_price` DEFAULT 0,
     `completion_reasoning_price` Float64 `json:$.completion_reasoning_price` DEFAULT 0,
     `completion_audio_price` Float64 `json:$.completion_audio_price` DEFAULT 0,
-    `context_length` Nullable(Int64) `json:$.context_length`,
     `created_at` Int64 `json:$.created_at`,
     `updated_at` Int64 `json:$.updated_at`,
     `synced_at` DateTime `json:$.synced_at`

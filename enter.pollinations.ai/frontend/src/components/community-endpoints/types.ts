@@ -14,7 +14,6 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    contextLength: number | null;
 } & CommunityEndpointPrices;
 
 export type EndpointFormState = {

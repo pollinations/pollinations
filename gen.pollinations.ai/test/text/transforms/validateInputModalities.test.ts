@@ -66,7 +66,6 @@ describe("validateInputModalities", () => {
             validateInputModalities(imageMessage, {
                 model: "community/owner/model",
                 requestedModel: "community/owner/model",
-                dynamicModelDef: true,
                 modelDef: { inputModalities: ["text"] },
             }),
         ).toThrow(

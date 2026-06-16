@@ -74,7 +74,6 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
-    contextLength: number | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -172,7 +171,6 @@ export function communityModelDefinition(
         description: endpoint.description ?? undefined,
         inputModalities: ["text"],
         outputModalities: ["text"],
-        contextLength: endpoint.contextLength ?? undefined,
         paidOnly: false,
     };
 }

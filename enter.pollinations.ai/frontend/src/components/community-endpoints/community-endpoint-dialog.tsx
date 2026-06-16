@@ -231,10 +231,6 @@ export function CommunityEndpointDialog({
         returnedFields,
     );
     const hasVisiblePriceFields = visiblePriceKeys.size > 0;
-    const hasVisiblePositivePrice = hasPositiveVisiblePrice(
-        form,
-        visiblePriceKeys,
-    );
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
         form,
         visiblePriceKeys,
@@ -251,7 +247,6 @@ export function CommunityEndpointDialog({
         form.baseUrl.trim() !== "" &&
         hasVisiblePriceFields &&
         hasValidVisiblePrices &&
-        hasVisiblePositivePrice &&
         hasRequiredReturnedPrices &&
         testRequirementMet &&
         (isEdit || hasToken);
@@ -720,17 +715,6 @@ function hasValidVisibleFormPrices(
         (field) =>
             !visiblePriceKeys.has(field.key) ||
             isValidPriceInput(form[field.key]),
-    );
-}
-
-function hasPositiveVisiblePrice(
-    form: EndpointFormState,
-    visiblePriceKeys: Set<PriceField["key"]>,
-): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
-        (field) =>
-            visiblePriceKeys.has(field.key) &&
-            pricePerMillionToPerToken(form[field.key]) > 0,
     );
 }
 

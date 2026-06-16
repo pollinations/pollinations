@@ -120,18 +120,6 @@ function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
     ) as CommunityEndpointPrices;
 }
 
-export function hasValidFormPrices(form: EndpointFormState): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) =>
-        isValidPriceInput(form[field.key]),
-    );
-}
-
-export function hasPositiveFormPrice(form: EndpointFormState): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
-        (field) => pricePerMillionToPerToken(form[field.key]) > 0,
-    );
-}
-
 export function hasObservedUsagePath(
     usage: CommunityEndpointUsage | undefined,
     path: string,

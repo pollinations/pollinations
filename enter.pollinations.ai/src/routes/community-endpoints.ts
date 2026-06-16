@@ -2,7 +2,6 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointAllowlistEnv,
     type CommunityEndpointPriceKey,
-    type CommunityEndpointPrices,
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
@@ -42,11 +41,7 @@ const EndpointFieldsSchema = z.object({
     contextLength: z.number().int().positive().nullable().optional(),
 });
 
-const CreateEndpointSchema = EndpointFieldsSchema.refine(
-    hasPositivePrice,
-    "At least one price must be greater than 0",
-);
-
+const CreateEndpointSchema = EndpointFieldsSchema;
 const UpdateEndpointSchema = EndpointFieldsSchema.partial();
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
@@ -64,12 +59,6 @@ const SavedEndpointTestSchema = z.object({
 });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
-
-function hasPositivePrice(value: Partial<CommunityEndpointPrices>): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
-        (field) => (value[field.key] ?? 0) > 0,
-    );
-}
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -326,12 +315,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             user.id,
         );
         const endpoint = await requireOwnedEndpoint(db, id, user.id);
-        const nextPrices = communityEndpointPrices({ ...endpoint, ...input });
-        if (!hasPositivePrice(nextPrices)) {
-            throw new HTTPException(400, {
-                message: "At least one price must be greater than 0",
-            });
-        }
         await ensureModelNameAvailable(
             db,
             user.id,

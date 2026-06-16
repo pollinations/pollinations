@@ -41,8 +41,6 @@ describe("parseGithubIdList", () => {
 });
 
 describe("assertStagingAccess", () => {
-    const allowlist = "36901823,5099901";
-
     it("is a no-op outside staging, even with no allowlist", () => {
         expect(() =>
             assertStagingAccess(
@@ -58,13 +56,10 @@ describe("assertStagingAccess", () => {
         ).not.toThrow();
     });
 
-    it("allows users whose githubId is in the staging allowlist", () => {
+    it("allows users whose githubId is in the shared rollout allowlist", () => {
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
+                { ENVIRONMENT: "staging" },
                 { githubId: 36901823 },
             ),
         ).not.toThrow();
@@ -73,10 +68,7 @@ describe("assertStagingAccess", () => {
     it("denies users whose githubId is not in the allowlist", () => {
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
+                { ENVIRONMENT: "staging" },
                 { githubId: 99999 },
             ),
         ).toThrow(StagingAccessDeniedError);
@@ -84,46 +76,13 @@ describe("assertStagingAccess", () => {
 
     it("denies users with missing or null githubId (fails closed)", () => {
         expect(() =>
-            assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                { githubId: null },
-            ),
+            assertStagingAccess({ ENVIRONMENT: "staging" }, { githubId: null }),
         ).toThrow(StagingAccessDeniedError);
         expect(() =>
-            assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                {},
-            ),
+            assertStagingAccess({ ENVIRONMENT: "staging" }, {}),
         ).toThrow(StagingAccessDeniedError);
         expect(() =>
-            assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                null,
-            ),
-        ).toThrow(StagingAccessDeniedError);
-    });
-
-    it("denies everyone when the allowlist is empty or missing on staging", () => {
-        expect(() =>
-            assertStagingAccess(
-                { ENVIRONMENT: "staging", STAGING_ALLOWED_GITHUB_IDS: "" },
-                { githubId: 36901823 },
-            ),
-        ).toThrow(StagingAccessDeniedError);
-        expect(() =>
-            assertStagingAccess(
-                { ENVIRONMENT: "staging" },
-                { githubId: 36901823 },
-            ),
+            assertStagingAccess({ ENVIRONMENT: "staging" }, null),
         ).toThrow(StagingAccessDeniedError);
     });
 });

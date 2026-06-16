@@ -116,27 +116,17 @@ function isBillingFetch(request: Request): boolean {
 
 describe("community endpoint helpers", () => {
     it("checks the community endpoint owner GitHub ID allowlist", () => {
-        const env = { COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS: "36901823" };
-
         expect(
-            isCommunityEndpointOwnerAllowed(env, {
+            isCommunityEndpointOwnerAllowed({
                 githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             }),
         ).toBe(true);
         expect(
-            isCommunityEndpointOwnerAllowed(env, {
+            isCommunityEndpointOwnerAllowed({
                 githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             }),
         ).toBe(false);
-        expect(isCommunityEndpointOwnerAllowed(env, { githubId: null })).toBe(
-            false,
-        );
-        expect(
-            isCommunityEndpointOwnerAllowed(
-                { COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS: "" },
-                { githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID },
-            ),
-        ).toBe(false);
+        expect(isCommunityEndpointOwnerAllowed({ githubId: null })).toBe(false);
     });
 
     it("normalizes bearer tokens with or without the scheme", () => {

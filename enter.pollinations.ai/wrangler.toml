@@ -39,9 +39,6 @@ BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 
 [env.local]
 
@@ -72,9 +69,6 @@ BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [env.production]
 
 [env.production.triggers]
@@ -116,9 +110,6 @@ BETTER_AUTH_URL = "https://enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [env.staging]
 
 [env.staging.triggers]
@@ -155,16 +146,6 @@ BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# GitHub OAuth lockdown — only these numeric GitHub user IDs may sign in.
-# Issue #11137. Comma-separated. IDs are immutable (usernames are not).
-# ElliotEtag=36901823, voodoohop=5099901,
-# thomashmyceli=235942848, fouchyelliot-rgb=248917639, pollen-router=241978997,
-# sharktide=189873015, Circuit-Overtime=74301576,
-# Itachi-1824=158852059, Spit-fires=84981998, tomdacatto=204561696
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [env.dev]
 
 [[env.dev.routes]]
@@ -201,9 +182,6 @@ BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [env.test]
 
 [[env.test.d1_databases]]
@@ -233,7 +211,6 @@ TINYBIRD_SYNC_TOKEN = "test_tinybird_sync_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

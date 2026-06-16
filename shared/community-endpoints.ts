@@ -1,4 +1,4 @@
-import { parseGithubIdList } from "./auth/github-id-list.ts";
+import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -82,10 +82,6 @@ export type CommunityModelParts = {
     modelName: string;
 };
 
-export type CommunityEndpointAllowlistEnv = {
-    COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS?: string | null;
-};
-
 type CommunityEndpointOwnerLike = {
     githubId?: number | null;
 };
@@ -104,14 +100,9 @@ export function normalizeCommunityEndpointBearerToken(value: string): string {
 }
 
 export function isCommunityEndpointOwnerAllowed(
-    env: CommunityEndpointAllowlistEnv | undefined,
     owner: CommunityEndpointOwnerLike | null | undefined,
 ): boolean {
-    const allowed = parseGithubIdList(
-        env?.COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS,
-    );
-    const githubId = owner?.githubId;
-    return typeof githubId === "number" && allowed.has(githubId);
+    return isCommunityModelAllowedGithubId(owner?.githubId);
 }
 
 export function parseCommunityModelId(

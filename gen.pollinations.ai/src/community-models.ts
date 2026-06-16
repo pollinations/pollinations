@@ -1,6 +1,5 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    type CommunityEndpointAllowlistEnv,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelId,
@@ -34,7 +33,6 @@ function addPrice(
 
 export async function getCommunityTextModelsInfo(
     dbBinding: CloudflareBindings["DB"] | undefined,
-    allowlistEnv: CommunityEndpointAllowlistEnv | undefined,
 ): Promise<ModelInfo[]> {
     if (!dbBinding) return [];
 
@@ -66,7 +64,7 @@ export async function getCommunityTextModelsInfo(
 
     return rows.flatMap((row): ModelInfo[] => {
         if (!row.ownerGithubUsername) return [];
-        if (!isCommunityEndpointOwnerAllowed(allowlistEnv, row)) return [];
+        if (!isCommunityEndpointOwnerAllowed(row)) return [];
         const pricing: Record<string, string> & { currency: "pollen" } = {
             currency: "pollen",
         };
@@ -102,7 +100,6 @@ export function communityTextSupportedEndpoints(): string[] {
 export async function getCommunityEndpointRuntime(
     dbBinding: CloudflareBindings["DB"] | undefined,
     model: string,
-    allowlistEnv: CommunityEndpointAllowlistEnv | undefined,
 ): Promise<CommunityEndpointRuntime | null> {
     const communityModel = parseCommunityModelId(model);
     if (!communityModel || !dbBinding) return null;
@@ -149,7 +146,7 @@ export async function getCommunityEndpointRuntime(
 
     const endpoint = row[0];
     if (!endpoint) return null;
-    if (!isCommunityEndpointOwnerAllowed(allowlistEnv, endpoint)) return null;
+    if (!isCommunityEndpointOwnerAllowed(endpoint)) return null;
     return {
         id: endpoint.id,
         ownerUserId: endpoint.ownerUserId,

@@ -47,9 +47,6 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [dev]
 port = 8788
 
@@ -110,9 +107,6 @@ POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 # Staging routes
 [env.staging]
 
@@ -168,12 +162,6 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-# GitHub OAuth lockdown — must match enter.pollinations.ai staging allowlist.
-# Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-# Community text endpoint rollout — numeric GitHub user IDs only.
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,189873015,74301576,158852059,84981998,204561696"
-
 [env.test]
 
 [env.test.images]
@@ -219,7 +207,6 @@ ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
-COMMUNITY_ENDPOINT_ALLOWED_GITHUB_IDS = "36901823"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"

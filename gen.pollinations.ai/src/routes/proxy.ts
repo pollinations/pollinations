@@ -256,7 +256,7 @@ export const proxyRoutes = new Hono<Env>()
             const textModels = filterModelsByPermissions(
                 [
                     ...getTextModelsInfo(),
-                    ...(await getCommunityTextModelsInfo(c.env.DB, c.env)),
+                    ...(await getCommunityTextModelsInfo(c.env.DB)),
                 ],
                 allowedModels,
                 paidBalance,
@@ -357,7 +357,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         modelsListHandler(async (c) => [
             ...getTextModelsInfo(),
-            ...(await getCommunityTextModelsInfo(c.env.DB, c.env)),
+            ...(await getCommunityTextModelsInfo(c.env.DB)),
             ...getImageModelsInfo(),
             ...getRealtimeModelsInfo(),
             ...getAudioModelsInfo(),
@@ -416,7 +416,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         modelsListHandler(async (c) => [
             ...getTextModelsInfo(),
-            ...(await getCommunityTextModelsInfo(c.env.DB, c.env)),
+            ...(await getCommunityTextModelsInfo(c.env.DB)),
         ]),
     )
     .get(

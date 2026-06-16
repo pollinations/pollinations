@@ -852,10 +852,8 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 tier: profile.tier,
                 nextResetAt: getNextRefillAt(profile.tier),
-                communityEndpointsAllowed: isCommunityEndpointOwnerAllowed(
-                    c.env,
-                    profile,
-                ),
+                communityEndpointsAllowed:
+                    isCommunityEndpointOwnerAllowed(profile),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

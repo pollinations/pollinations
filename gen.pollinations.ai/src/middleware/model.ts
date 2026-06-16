@@ -84,7 +84,7 @@ export async function resolveModelDefinition(
                 message: "Community endpoints only support text requests",
             });
         }
-        const endpoint = await getCommunityEndpointRuntime(env.DB, model, env);
+        const endpoint = await getCommunityEndpointRuntime(env.DB, model);
         if (!endpoint) {
             throw new HTTPException(400, {
                 message: `Invalid community endpoint: "${model}"`,

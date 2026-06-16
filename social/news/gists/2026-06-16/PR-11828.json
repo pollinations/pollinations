@@ -1,0 +1,36 @@
+{
+  "pr_number": 11828,
+  "title": "fix: keep model category tabs stable",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11828",
+  "merged_at": "2026-06-16T13:22:46Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Shows all built-in model category tabs immediately\n- Keeps the table section list aligned with those tabs\n- Prevents Audio/Realtime/Embedding tabs from appearing late after catalog load\n\nValidation:\n- npx biome check --write enter.pollinations.ai/frontend/src/components/models/models.tsx enter.pollinations.ai/frontend/src/components/models/model-table.tsx\n- npm run typecheck (enter.pollinations.ai)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Nailing down the tabs",
+    "blurb": "No more jumping UI! We've pinned down the model category tabs so they load instantly, keeping your browsing experience smooth and stable.",
+    "summary": "Fixed a layout shift in the models catalog by rendering all built-in category tabs (including Audio, Realtime, and Embedding) immediately rather than waiting for the catalog data to load.",
+    "impact": "Browsing the model catalog is now smoother, with no jarring UI jumps or late-appearing tabs.",
+    "keywords": [
+      "ui",
+      "ux",
+      "frontend",
+      "models",
+      "catalog",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee acting as a carpenter or organizer, physically nailing down or organizing digital folder tabs so they don't move. Represents UI stability and fixing layout shifts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a small hammer to nail down glowing digital folder tabs on a retro computer screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-16/PR-11828.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a small hammer to nail down glowing digital folder tabs on a retro computer screen. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-16T13:23:56.984193+00:00"
+}

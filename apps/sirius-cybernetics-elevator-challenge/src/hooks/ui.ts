@@ -7,13 +7,13 @@ const ENTER_URL = "https://enter.pollinations.ai";
 const API_BASE = "https://enter.pollinations.ai/api";
 const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 
-export const DEFAULT_MODEL = "deepseek";
+// openai is fast and free (non-reasoning) — the default for snappy replies.
+export const DEFAULT_MODEL = "openai";
 
 export const AVAILABLE_MODELS = [
-    { id: "deepseek", label: "DeepSeek" },
-    { id: "kimi", label: "Kimi" },
-    { id: "gemini-fast", label: "Gemini" },
+    { id: "openai", label: "OpenAI" },
     { id: "claude-fast", label: "Claude" },
+    { id: "deepseek", label: "DeepSeek" },
 ] as const;
 
 export interface UserProfile {

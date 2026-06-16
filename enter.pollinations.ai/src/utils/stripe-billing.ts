@@ -529,9 +529,9 @@ export async function processAutoTopUpForUser(
         }
 
         const topUpCurrency = resolveAutoTopUpCurrency(paymentMethod, customer);
-        const chargedAmountCents =
+        const lineAmountCents =
             topUpCurrency === "eur"
-                ? usdToEurCents(pack.amountUsd, await getEurMidRate(env))
+                ? usdToEurCents(pack.amountUsd, await getEurMidRate())
                 : pack.amountUsd * 100;
 
         const idempotencyKey = createAutoTopUpIdempotencyKey(attemptId);
@@ -563,14 +563,14 @@ export async function processAutoTopUpForUser(
             attemptId,
             invoice.id,
             topUpCurrency,
-            chargedAmountCents,
+            lineAmountCents,
         );
 
         await stripe.invoiceItems.create(
             {
                 customer: customerId,
                 invoice: invoice.id,
-                amount: chargedAmountCents,
+                amount: lineAmountCents,
                 currency: topUpCurrency,
                 description: pack.checkoutName,
                 tax_behavior: "exclusive",
@@ -584,6 +584,11 @@ export async function processAutoTopUpForUser(
             invoice.id,
             {},
             { idempotencyKey: `${idempotencyKey}:finalize` },
+        );
+        await updateAutoTopUpAttemptChargedAmount(
+            env.DB,
+            finalized.id,
+            finalized.amount_due,
         );
         try {
             await stripe.invoices.pay(
@@ -1049,6 +1054,34 @@ async function setAutoTopUpAttemptInvoice(
     if ((result.meta.changes ?? 0) !== 1) {
         throw new Error(
             `Auto top-up attempt ${attemptId} could not be linked to invoice ${invoiceId}`,
+        );
+    }
+}
+
+async function updateAutoTopUpAttemptChargedAmount(
+    db: D1Database,
+    invoiceId: string,
+    chargedAmountCents: number,
+): Promise<void> {
+    const result = await db
+        .prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET charged_amount_cents = ?,
+                    updated_at = ?
+                WHERE stripe_invoice_id = ?
+                    AND status = ?`,
+        )
+        .bind(
+            chargedAmountCents,
+            Date.now(),
+            invoiceId,
+            AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
+        )
+        .run();
+
+    if ((result.meta.changes ?? 0) !== 1) {
+        throw new Error(
+            `Auto top-up attempt for invoice ${invoiceId} could not persist finalized charged amount`,
         );
     }
 }

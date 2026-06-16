@@ -20,7 +20,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		EUR_CHECKOUT_ENABLED: "false";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -54,7 +53,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrY4O7rcjS3l7trnGXDTuat";
-		EUR_CHECKOUT_ENABLED: "false";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -88,7 +86,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://staging.enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		EUR_CHECKOUT_ENABLED: "false";
 		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
@@ -124,7 +121,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://dev.enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		EUR_CHECKOUT_ENABLED: "false";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -158,7 +154,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		EUR_CHECKOUT_ENABLED: "false";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -193,7 +188,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg" | "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU" | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
-		EUR_CHECKOUT_ENABLED: "false";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -219,5 +213,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_TIER_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "EUR_CHECKOUT_ENABLED" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "STAGING_ALLOWED_GITHUB_IDS">> {}
+		interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_TIER_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "STAGING_ALLOWED_GITHUB_IDS">> {}
 }

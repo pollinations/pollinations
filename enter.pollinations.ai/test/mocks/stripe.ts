@@ -151,6 +151,7 @@ export type MockStripeState = {
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
+    finalizeTaxAmountCentsByInvoiceId: Record<string, number>;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
      * When set, the mock returns the configured failure (HTTP 4xx with the
@@ -376,6 +377,12 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             recordRequest(c, state);
             const invoice = findInvoice(state, c.req.param("id"));
             if (!invoice) return stripeNotFound(c);
+            const taxAmount =
+                state.finalizeTaxAmountCentsByInvoiceId[invoice.id] ?? 0;
+            if (taxAmount > 0) {
+                invoice.amount_due += taxAmount;
+                delete state.finalizeTaxAmountCentsByInvoiceId[invoice.id];
+            }
             invoice.status = "open";
             return c.json(invoice);
         })
@@ -530,6 +537,7 @@ function createInitialState(): MockStripeState {
         paymentIntents: [],
         requests: [],
         customerCreateByIdempotencyKey: {},
+        finalizeTaxAmountCentsByInvoiceId: {},
         payBehavior: {},
     };
 }

@@ -64,11 +64,11 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const availableSections: SectionType[] = [
         "image",
         "video",
-        ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
-        ...(realtimeModels.length > 0 ? (["realtime"] as SectionType[]) : []),
+        "audio",
+        "realtime",
         "text",
-        ...(communityModels.length > 0 ? (["community"] as SectionType[]) : []),
-        ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
+        "community",
+        "embedding",
     ];
 
     return (

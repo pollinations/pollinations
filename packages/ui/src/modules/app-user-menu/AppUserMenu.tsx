@@ -28,7 +28,7 @@ export type AppUserMenuProps = {
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Authorize app",
+    authorize: "Connect",
     appUserMenu: "App user menu",
     topUpAccount: "Top up account",
     logout: "Log out from this app",
@@ -70,9 +70,14 @@ function AppUserMenuContent({
     const { logout } = useAuthActions();
 
     return (
-        <div data-theme="accent" className="polli:flex polli:justify-end">
+        // shrink-0 so the account control never gets squeezed (and its label
+        // never wraps) when it sits next to flexible content in a header row.
+        <div
+            data-theme="accent"
+            className="polli:flex polli:shrink-0 polli:justify-end"
+        >
             <WhenLoggedOut>
-                <LoginButton className="polli:gap-1.5">
+                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
                     <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                     {labels.authorize}
                 </LoginButton>

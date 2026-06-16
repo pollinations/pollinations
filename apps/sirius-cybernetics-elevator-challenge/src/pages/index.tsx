@@ -26,7 +26,7 @@ import {
 import type { Message } from "@/types";
 
 export default function Index() {
-    const { messages, addMessage, setMessages } = useMessages();
+    const { messages, addMessage } = useMessages();
     const gameState = useGameState(messages);
     const [inputPrompt, setInputPrompt] = useState("");
     const { apiKey, login, logout } = useBYOP();
@@ -68,7 +68,6 @@ export default function Index() {
         gameState,
         messages,
         addMessage,
-        setMessages,
     );
 
     useEffect(() => {
@@ -245,30 +244,16 @@ export default function Index() {
 
                             <Button
                                 onClick={async () => {
-                                    if (
-                                        gameState.conversationMode ===
-                                        "autonomous"
-                                    ) {
-                                        handlePersonaSwitch();
-                                    } else {
-                                        setGuideLoading(true);
-                                        await handleGuideAdvice();
-                                        setGuideLoading(false);
-                                    }
+                                    setGuideLoading(true);
+                                    await handleGuideAdvice();
+                                    setGuideLoading(false);
                                 }}
-                                className={`${
-                                    gameState.conversationMode === "autonomous"
-                                        ? "bg-yellow-600 hover:bg-yellow-700 text-white"
-                                        : "bg-gray-700 text-green-400 hover:bg-gray-600"
-                                } text-xs py-1 px-2`}
+                                className="bg-gray-700 text-green-400 hover:bg-gray-600 text-xs py-1 px-2"
                                 disabled={guideLoading || gameState.isLoading}
                             >
                                 {guideLoading
                                     ? "Consulting the Guide..."
-                                    : gameState.conversationMode ===
-                                        "autonomous"
-                                      ? "Rewind Time"
-                                      : "Don't Panic!"}
+                                    : "Don't Panic!"}
                             </Button>
                         </div>
 

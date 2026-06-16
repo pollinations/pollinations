@@ -13,7 +13,6 @@ import {
     type PollingsMessage,
 } from "@/types";
 import { fetchFromPollinations } from "@/utils/api";
-import { findMarvinJoinStartIndex, rewindMessages } from "./rewind";
 
 // Core message management hook
 export const useMessages = () => {
@@ -213,7 +212,6 @@ export const useMessageHandlers = (
     gameState: GameState,
     messages: Message[],
     addMessage: (message: Message) => void,
-    setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 ) => {
     const handleGuideAdvice = useCallback(async () => {
         if (gameState.isLoading) return;
@@ -231,21 +229,13 @@ export const useMessageHandlers = (
     }, [gameState, messages, addMessage]);
 
     const handlePersonaSwitch = useCallback(() => {
-        if (gameState.conversationMode === "autonomous") {
-            // Rewind functionality with animation
-            const rewindIndex = findMarvinJoinStartIndex(messages);
-            if (rewindIndex !== -1) {
-                rewindMessages(messages, rewindIndex, setMessages);
-            }
-        } else {
-            // Original transition to Marvin functionality
-            addMessage({
-                persona: "guide",
-                message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
-                action: "none",
-            });
-        }
-    }, [messages, gameState.conversationMode, setMessages, addMessage]);
+        // Transition to Marvin.
+        addMessage({
+            persona: "guide",
+            message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
+            action: "none",
+        });
+    }, [addMessage]);
 
     return {
         handleGuideAdvice,

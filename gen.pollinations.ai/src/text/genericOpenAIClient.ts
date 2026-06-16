@@ -172,6 +172,13 @@ export async function genericOpenAIClient(
             throw createApiError(response, errorDetails, modelName);
         }
 
+        // Portkey reports which fallback target served the call via this header
+        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
+        // fallback). Surface it so tracking can record whether a fallback fired.
+        const fallbackTarget =
+            response.headers.get("x-portkey-last-used-option-index") ??
+            undefined;
+
         if (normalizedOptions.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
@@ -185,6 +192,7 @@ export async function genericOpenAIClient(
                 model: modelName,
                 stream: true,
                 responseStream: streamToReturn,
+                fallbackTarget,
                 choices: [
                     { delta: { content: "" }, finish_reason: null, index: 0 },
                 ],
@@ -208,6 +216,7 @@ export async function genericOpenAIClient(
             ...data,
             id: data.id || `genericopenai-${requestId}`,
             object: data.object || "chat.completion",
+            fallbackTarget,
             choices: [formattedChoice],
         };
     } catch (thrown: unknown) {

@@ -21,6 +21,13 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
 };
 
 /**
+ * Internal worker header carrying Portkey's served fallback target (e.g.
+ * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
+ * tracking can read it off the worker response like the other usage headers.
+ */
+export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
  * Convert OpenAI usage format to Usage format.
  *
  * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the

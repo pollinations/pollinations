@@ -31,17 +31,6 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Log out from this app",
 };
 
-export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
-    if (typeof window === "undefined") return false;
-    const search = new URLSearchParams(window.location.search);
-    if (search.get(embedQueryParam) === "1") return true;
-    try {
-        return window.self !== window.top;
-    } catch {
-        return true;
-    }
-}
-
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,

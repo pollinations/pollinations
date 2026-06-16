@@ -1,0 +1,35 @@
+{
+  "pr_number": 11839,
+  "title": "docs(monitor-services): correct stale Z-Image RunPod runbook",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11839",
+  "merged_at": "2026-06-16T21:37:35Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Corrects the `monitor-services` skill's Z-Image section after a 2026-06-16 incident where the runbook's stale info hid two dead GPU workers and slowed recovery.\n\n- Old pod `hsl3ksl31lvrcc` (4× 4090) is gone — zimage now runs as **3 separate single-GPU pods** (1× 4090 + 2× 3090), each on port 8767\n- Working SSH key is **`SSH_RUNPOD_KLEIN`**, not the documented `SSH_RUNPOD_FLUX_ZIMAGE`\n- Make `/register` + `runpodctl pod list` the source of truth; a RUNNING pod absent from the registry is the failure mode that piles all load onto survivors (→ 524 timeouts)\n- Adds a recovery decision tree: process relaunch vs NVML-off-bus stop/start vs genuine capacity deficit\n- Documents that code lives on `/root` overlay (wiped on stop/start; no persistent `/workspace`) and the rebuild path via `provision-zimage.sh`\n- Documents the `relaunch-zimage.sh` pkill-pattern bug that silently no-ops on long-running workers\n\nDocs-only change to a `.claude/skills` runbook; no code or runtime impact.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Z-Image Runbook Refresh",
+    "blurb": "Updated our internal Z-Image runbook to reflect the current RunPod setup. No more chasing ghosts when a GPU worker goes rogue.",
+    "summary": "Updated the monitor-services Z-Image runbook to reflect the shift from a single 4x GPU pod to three separate single-GPU pods and corrected the required SSH keys.",
+    "impact": "Developers and AI agents troubleshooting Z-Image will now have accurate recovery decision trees and pod configurations, speeding up incident resolution.",
+    "keywords": [
+      "docs",
+      "runbook",
+      "z-image",
+      "runpod",
+      "gpu"
+    ],
+    "visual_concept": "The bee mascot acting as a librarian or technician, updating a dusty old book or looking at a glowing server rack. The robot companion could be holding a magnifying glass or a new manual.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, updating a glowing digital runbook on a retro terminal. A chunky pixel robot companion holds a magnifying glass, looking at three small glowing GPU servers. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-16/PR-11839.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, updating a glowing digital runbook on a retro terminal. A chunky pixel robot companion holds a magnifying glass, looking at three small glowing GPU servers. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-06-16T21:38:40.195536+00:00"
+}

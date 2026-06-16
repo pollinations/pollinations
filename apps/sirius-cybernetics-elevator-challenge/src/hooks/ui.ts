@@ -65,7 +65,9 @@ export function useBYOP() {
     const [balance, setBalance] = useState<UserBalance | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-    // Extract API key from URL fragment on mount (OAuth redirect callback)
+    // Extract API key from URL fragment on mount (OAuth redirect callback).
+    // With no key in the fragment and none stored, bounce straight to the
+    // authorize screen — the game requires a key to play.
     useEffect(() => {
         const key = extractApiKeyFromFragment();
         if (key) {
@@ -76,6 +78,10 @@ export function useBYOP() {
                 "",
                 window.location.pathname + window.location.search,
             );
+            return;
+        }
+        if (!getStoredApiKey()) {
+            window.location.href = getAuthorizeUrl();
         }
     }, []);
 

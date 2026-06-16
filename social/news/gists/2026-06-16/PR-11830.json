@@ -1,0 +1,34 @@
+{
+  "pr_number": 11830,
+  "title": "fix: update Sirius elevator app key (old key deactivated)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11830",
+  "merged_at": "2026-06-16T14:00:53Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The Sirius Cybernetics Elevator Challenge login broke — the `/authorize` consent screen showed **\"This app key could not be verified. Authorization blocked.\"**\n\n**Root cause:** the registered app key `pk_vbqLj6cwn05D2v5B` no longer resolves. `app-lookup` returns `{\"found\":false}`, which triggers that exact error in `authorize.tsx`.\n\n**Fix:** swap to the re-issued key `pk_nDXh3ryXfjTkirMB`. Verified against the live endpoint:\n- old key → `{\"found\":false}`\n- new key → `{\"found\":true}`, app `\"Sirius Cybernetics Elevator Challenge\"`, owner `voodoohop`, redirect allowlist includes `sirius-cybernetics-elevator-challenge.pollinations.ai`, `earningsEnabled:true`\n\nOne-line change in `apps/sirius-cybernetics-elevator-challenge/src/hooks/ui.ts`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Elevator doors reopening",
+    "blurb": "Fixed a broken login key for the Sirius Cybernetics Elevator Challenge app. The doors are open and ready for your prompts again!",
+    "summary": "Swapped the deactivated app key for a newly issued key in the Sirius Cybernetics Elevator Challenge to fix the broken /authorize consent screen.",
+    "impact": "Users can successfully log into the Sirius Cybernetics Elevator Challenge again instead of hitting an 'app key could not be verified' error.",
+    "keywords": [
+      "bug_fix",
+      "community_app",
+      "auth",
+      "sirius_elevator"
+    ],
+    "visual_concept": "A retro-futuristic elevator with doors opening. Polly the bee wearing a tiny bellhop hat, fixing the elevator panel with a glowing key.",
+    "image_prompt": "Cozy pixel art scene of a retro-futuristic elevator with its doors sliding open. The cute bee mascot wearing a tiny bellhop hat is inserting a glowing lime green (#ecf874) key into the elevator's control panel. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-16/PR-11830.jpg",
+    "prompt": "Cozy pixel art scene of a retro-futuristic elevator with its doors sliding open. The cute bee mascot wearing a tiny bellhop hat is inserting a glowing lime green (#ecf874) key into the elevator's control panel. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-16T14:02:08.278214+00:00"
+}

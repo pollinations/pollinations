@@ -48,7 +48,7 @@ import type {
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 90000, // 90 seconds between requests per IP (anonymous only)
+    interval: 45000, // 45 seconds between requests per IP (anonymous only)
     cap: 1, // Max 1 concurrent request per IP
 };
 

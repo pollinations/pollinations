@@ -18,6 +18,24 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
+// Attach Portkey's served fallback target as internal, non-enumerable metadata
+// so tracking can read completion.fallbackTarget while it stays out of every
+// JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
+// has no such field).
+function withFallbackTarget(
+    completion: ChatCompletion,
+    fallbackTarget: string | undefined,
+): ChatCompletion {
+    if (fallbackTarget === undefined) return completion;
+    Object.defineProperty(completion, "fallbackTarget", {
+        value: fallbackTarget,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return completion;
+}
+
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
 ): ReadableStream<Uint8Array> | null {
@@ -185,18 +203,24 @@ export async function genericOpenAIClient(
             );
 
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return {
-                id: `genericopenai-${requestId}`,
-                object: "chat.completion.chunk",
-                created: Math.floor(startTime / 1000),
-                model: modelName,
-                stream: true,
-                responseStream: streamToReturn,
+            return withFallbackTarget(
+                {
+                    id: `genericopenai-${requestId}`,
+                    object: "chat.completion.chunk",
+                    created: Math.floor(startTime / 1000),
+                    model: modelName,
+                    stream: true,
+                    responseStream: streamToReturn,
+                    choices: [
+                        {
+                            delta: { content: "" },
+                            finish_reason: null,
+                            index: 0,
+                        },
+                    ],
+                },
                 fallbackTarget,
-                choices: [
-                    { delta: { content: "" }, finish_reason: null, index: 0 },
-                ],
-            };
+            );
         }
 
         const data = (await response.json()) as ChatCompletion;
@@ -212,13 +236,15 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
-        return {
-            ...data,
-            id: data.id || `genericopenai-${requestId}`,
-            object: data.object || "chat.completion",
+        return withFallbackTarget(
+            {
+                ...data,
+                id: data.id || `genericopenai-${requestId}`,
+                object: data.object || "chat.completion",
+                choices: [formattedChoice],
+            },
             fallbackTarget,
-            choices: [formattedChoice],
-        };
+        );
     } catch (thrown: unknown) {
         const error = thrown as ServiceError;
         errorLog(`[${requestId}] Error:`, {

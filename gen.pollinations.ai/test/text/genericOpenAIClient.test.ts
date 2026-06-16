@@ -406,6 +406,17 @@ describe("genericOpenAIClient", () => {
         );
 
         expect(completion.fallbackTarget).toBe("config.targets[1]");
+        // Internal metadata must stay out of the OpenAI-compatible body: it is
+        // non-enumerable, so JSON.stringify({ ...completion }) never includes it.
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "fallbackTarget",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "fallbackTarget",
+        );
     });
 
     it("captures the Portkey fallback target header on streaming responses", async () => {

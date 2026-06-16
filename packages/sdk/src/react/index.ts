@@ -3,6 +3,8 @@ export type {
     AuthContextValue,
     AuthStateValue,
 } from "./contexts.js";
+export { useEmbedHostCapabilities } from "./embed.js";
+export type { HostCapabilities } from "./embed-protocol.js";
 export {
     type AccountResourceValue,
     type UseAccountBalanceValue,

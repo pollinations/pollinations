@@ -5,6 +5,11 @@ import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFireworksFluxSchnellAPI } from "./models/fireworksFluxModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import {
+    callIdeogramBalancedAPI,
+    callIdeogramQualityAPI,
+    callIdeogramTurboAPI,
+} from "./models/ideogramReplicateModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callPrunaImageAPI,
@@ -644,6 +649,15 @@ const generateImage = async (
 
         case "seedream-pro":
             return await callSeedreamProAPI(prompt, safeParams);
+
+        case "ideogram-v4-turbo":
+            return await callIdeogramTurboAPI(prompt, safeParams);
+
+        case "ideogram-v4-balanced":
+            return await callIdeogramBalancedAPI(prompt, safeParams);
+
+        case "ideogram-v4-quality":
+            return await callIdeogramQualityAPI(prompt, safeParams);
 
         case "klein":
             return await callFluxKleinAPI(prompt, safeParams);

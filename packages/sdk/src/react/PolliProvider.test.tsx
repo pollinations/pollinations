@@ -1,5 +1,6 @@
 import { act, create } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useAuthActions } from "./hooks.js";
 import { PolliProvider } from "./PolliProvider.js";
 import type { StorageAdapter } from "./storage.js";
 
@@ -14,7 +15,7 @@ function memoryStorage(): StorageAdapter {
 
 function stubWindow(href: string) {
     const url = new URL(href);
-    vi.stubGlobal("window", {
+    const win: Record<string, unknown> = {
         location: {
             href,
             hash: url.hash,
@@ -24,7 +25,12 @@ function stubWindow(href: string) {
         history: {
             replaceState: vi.fn(),
         },
-    });
+    };
+    // Top-level: parent/self/top all reference this window (isFramed() === false).
+    win.parent = win;
+    win.self = win;
+    win.top = win;
+    vi.stubGlobal("window", win);
 }
 
 async function renderProvider(appKey: string) {
@@ -54,5 +60,34 @@ describe("PolliProvider setup guidance", () => {
             expect.stringContaining("publishable pk_ App Key"),
         );
         expect(warn.mock.calls[0][0]).not.toContain("sk_secret_test");
+    });
+
+    it("persists the key to the provided storage at top level", async () => {
+        stubWindow("https://app.example/");
+        const spy: StorageAdapter = {
+            getItem: vi.fn(() => null),
+            setItem: vi.fn(),
+            removeItem: vi.fn(),
+        };
+        let setApiKey: ((key: string | null) => void) | null = null;
+        function Grab() {
+            setApiKey = useAuthActions().setApiKey;
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={spy}>
+                    <Grab />
+                </PolliProvider>,
+            );
+        });
+        act(() => setApiKey?.("sk_live"));
+
+        // Top level (not framed) → writes through to the real adapter.
+        expect(spy.setItem).toHaveBeenCalledWith(
+            "polli:pk_test:token",
+            "sk_live",
+        );
     });
 });

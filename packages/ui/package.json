@@ -75,7 +75,7 @@
     "directory": "packages/ui"
   },
   "peerDependencies": {
-    "@pollinations/sdk": "^5.0.0",
+    "@pollinations/sdk": "^5.1.0-alpha.1",
     "react": "^19.0.0"
   },
   "peerDependenciesMeta": {

@@ -49,6 +49,21 @@ export const IMAGE_CONFIG = {
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
     },
 
+    // Ideogram 4.0 via Replicate (text-to-image; output resolution is preset,
+    // so width/height only signal the target aspect ratio). Default 1:1 → 2048².
+    "ideogram-v4-turbo": {
+        type: "replicate-ideogram-turbo",
+        defaultSideLength: 2048,
+    },
+    "ideogram-v4-balanced": {
+        type: "replicate-ideogram-balanced",
+        defaultSideLength: 2048,
+    },
+    "ideogram-v4-quality": {
+        type: "replicate-ideogram-quality",
+        defaultSideLength: 2048,
+    },
+
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
     nanobanana: {
         type: "vertex-ai",

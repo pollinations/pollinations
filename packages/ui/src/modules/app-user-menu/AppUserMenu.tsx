@@ -1,4 +1,7 @@
-import { useAuthActions } from "@pollinations/sdk/react";
+import {
+    useAuthActions,
+    useEmbedHostCapabilities,
+} from "@pollinations/sdk/react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
@@ -22,12 +25,10 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
-    hiddenWhenEmbedded?: boolean;
-    embedQueryParam?: string;
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Authorize app",
+    authorize: "Connect",
     appUserMenu: "App user menu",
     topUpAccount: "Top up account",
     logout: "Log out from this app",
@@ -47,10 +48,11 @@ export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
-    hiddenWhenEmbedded = false,
-    embedQueryParam = "embed",
 }: AppUserMenuProps) {
-    if (hiddenWhenEmbedded && isEmbeddedContext(embedQueryParam)) return null;
+    const hostCapabilities = useEmbedHostCapabilities();
+    // A trusted embedding host (e.g. /play) advertises that it renders the auth
+    // control in its own chrome — so don't render it inside the iframe too.
+    if (hostCapabilities?.authControl) return null;
 
     return (
         <AppUserMenuContent
@@ -68,9 +70,14 @@ function AppUserMenuContent({
     const { logout } = useAuthActions();
 
     return (
-        <div data-theme="accent" className="polli:flex polli:justify-end">
+        // shrink-0 so the account control never gets squeezed (and its label
+        // never wraps) when it sits next to flexible content in a header row.
+        <div
+            data-theme="accent"
+            className="polli:flex polli:shrink-0 polli:justify-end"
+        >
             <WhenLoggedOut>
-                <LoginButton className="polli:gap-1.5">
+                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
                     <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                     {labels.authorize}
                 </LoginButton>

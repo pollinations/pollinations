@@ -138,10 +138,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-8"],
     },
     {
-        name: "claude-fable-5",
-        config: portkeyConfig["claude-fable-5"],
-    },
-    {
         name: "gemini",
         // Airforce primary, Vertex fallback (same modelId → same billing).
         // No code_execution default-injection: it's a Gemini built-in tool

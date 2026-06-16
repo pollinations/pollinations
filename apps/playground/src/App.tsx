@@ -1,34 +1,17 @@
-import { ColorModeToggle, cn } from "@pollinations/ui";
+import { ColorModeToggle, cn, useHostThemeSync } from "@pollinations/ui";
 import {
     AppUserMenu,
     isEmbeddedContext,
 } from "@pollinations/ui/app-user-menu/sdk";
-import { useEffect } from "react";
 import { ENTER_URL } from "./config";
 import { Playground } from "./Playground";
 
 export function App() {
     const isEmbedded = isEmbeddedContext();
 
-    // Report content height to the embedding host (/play) so it can size the
-    // iframe to fit — no inner scroll. Message: { source, type, value }.
-    useEffect(() => {
-        if (!isEmbedded || window.parent === window.self) return;
-        const report = () => {
-            window.parent.postMessage(
-                {
-                    source: "polli-embed",
-                    type: "height",
-                    value: Math.ceil(document.documentElement.scrollHeight),
-                },
-                "*",
-            );
-        };
-        const observer = new ResizeObserver(report);
-        observer.observe(document.body);
-        report();
-        return () => observer.disconnect();
-    }, [isEmbedded]);
+    // Sizing + the auth handshake are auto-wired by the SDK's PolliProvider.
+    // Theme application is UI-owned, so opt into the host's live theme here.
+    useHostThemeSync();
 
     return (
         <div

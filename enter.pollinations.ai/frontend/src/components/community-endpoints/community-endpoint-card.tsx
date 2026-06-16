@@ -40,9 +40,11 @@ export function CommunityEndpointCard({
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
             <div className="mb-2 flex items-center gap-2">
-                <Chip size="sm">
-                    {endpoint.tokenConfigured ? "Token set" : "No token"}
-                </Chip>
+                {!endpoint.tokenConfigured && (
+                    <Chip size="sm" intent="warning">
+                        Missing token
+                    </Chip>
+                )}
                 {testState.status === "success" && (
                     <Chip size="sm" intent="success">
                         Tested

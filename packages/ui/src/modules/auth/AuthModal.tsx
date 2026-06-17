@@ -36,11 +36,10 @@ export function AuthModal({
     return (
         <Dialog
             open
-            theme="amber"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-theme-bg-pale"
+            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
             contentClassName={`polli:bg-surface-white polli:border-2 ${borderClass} polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto`}
         >
             {children}

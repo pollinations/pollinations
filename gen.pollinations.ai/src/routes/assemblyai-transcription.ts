@@ -1,10 +1,10 @@
 import type { Logger } from "@logtape/logtape";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import {
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,

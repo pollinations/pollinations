@@ -3,7 +3,6 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -12,7 +11,7 @@ const logError = debug("pollinations:flux-klein:error");
 
 // RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
 const getKleinGenerateUrl = () =>
-    `${getImageEnv("KLEIN_URL") || "https://yd0mjovg0nx5pc-8000.proxy.runpod.net"}/generate`;
+    `${getImageEnv("KLEIN_URL") || "https://jmrbmje2fyuy46-8000.proxy.runpod.net"}/generate`;
 const MAX_INPUT_IMAGES = 10;
 
 /**
@@ -21,21 +20,10 @@ const MAX_INPUT_IMAGES = 10;
 export const callFluxKleinAPI = async (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> => {
     try {
         const hasReferenceImages =
             safeParams.image && safeParams.image.length > 0;
-
-        progress.updateBar(
-            requestId,
-            hasReferenceImages ? 25 : 35,
-            "Processing",
-            hasReferenceImages
-                ? `Downloading ${safeParams.image.length} reference image(s)...`
-                : "Generating with Flux Klein (4B)...",
-        );
 
         // Download and encode reference images if provided
         let imagesB64: string[] = [];
@@ -49,12 +37,6 @@ export const callFluxKleinAPI = async (
             );
             imagesB64 = downloads.map(({ buffer }) =>
                 buffer.toString("base64"),
-            );
-            progress.updateBar(
-                requestId,
-                50,
-                "Processing",
-                "Generating with Flux Klein (4B) editing...",
             );
         }
 
@@ -110,13 +92,6 @@ export const callFluxKleinAPI = async (
             imageBuffer.length,
             "seed:",
             item.seed,
-        );
-
-        progress.updateBar(
-            requestId,
-            90,
-            "Success",
-            "Flux Klein generation completed",
         );
 
         return {

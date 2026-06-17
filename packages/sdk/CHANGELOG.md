@@ -2,6 +2,24 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.1] - 2026-06-12
+
+### Removed (Breaking)
+- Removed the `./client` subpath export. It resolved to exactly the same files
+  as the package root; import from `@pollinations/sdk` instead.
+
+### Changed
+- The model catalog no longer silently drops models whose `category` is not in
+  `MODEL_CATEGORIES`. Unknown categories (e.g. ones added to the registry after
+  this SDK release) now pass through `fetchModelCatalog()` and sort after the
+  known categories.
+- HTTP error parsing is now one shared parser for the client and the react
+  hooks. Unified semantics: nested `{error: {...}}` envelopes and flat error
+  bodies are both understood everywhere; the default error code without an
+  explicit `code` in the body is `UNKNOWN_ERROR` (`UNAUTHORIZED` on 401 — the
+  hooks previously defaulted to `HTTP_ERROR`); `Retry-After` is parsed on every
+  status (seconds or HTTP date, capped at 300s) with a 60s default on 429.
+
 ## [5.0.0] - 2026-06-01
 
 ### Removed (Breaking)

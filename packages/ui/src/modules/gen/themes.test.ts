@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { getModalityTheme } from "./themes.ts";
+import { getModalityKey } from "./themes.ts";
 
-// The only real logic here is normalize(): case-folding + plural aliases, plus
-// the null contract that callers' `?? fallback` depends on. The 1:1 theme table
-// is type-checked (Record<ModelCategory, ThemeName>), so it needs no test.
-describe("getModalityTheme", () => {
+// The only real logic is getModalityKey(): case-folding + plural aliases, plus
+// the null contract that callers' `?? fallback` depend on.
+describe("getModalityKey", () => {
     it("normalizes case and plural aliases, and returns null for unknown", () => {
-        expect(getModalityTheme("image")).toBe("pink");
-        expect(getModalityTheme("Images")).toBe("pink");
-        expect(getModalityTheme("AUDIO")).toBe("violet");
-        expect(getModalityTheme("nope")).toBeNull();
-        expect(getModalityTheme("")).toBeNull();
+        expect(getModalityKey("image")).toBe("image");
+        expect(getModalityKey("Images")).toBe("image");
+        expect(getModalityKey("AUDIO")).toBe("audio");
+        expect(getModalityKey("realtime")).toBe("realtime");
+        expect(getModalityKey("Embeddings")).toBe("embedding");
+        expect(getModalityKey("nope")).toBeNull();
+        expect(getModalityKey("")).toBeNull();
     });
 });

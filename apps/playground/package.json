@@ -1,31 +1,31 @@
 {
-  "name": "playground.pollinations.ai",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4179",
-    "predev": "npm run build:deps",
-    "build": "npm run build:deps && npm run build:app",
-    "build:app": "vite build",
-    "build:deps": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
-    "preview": "vite preview --host 127.0.0.1 --port 4180",
-    "pretypecheck": "npm run build:deps",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@pollinations/sdk": "file:../../packages/sdk",
-    "@pollinations/ui": "file:../../packages/ui",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.2",
-    "vite": "^7.0.0"
-  }
+    "name": "playground.pollinations.ai",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --host 127.0.0.1 --port 4179",
+        "predev": "npm run build:deps",
+        "build": "npm run build:deps && npm run build:app",
+        "build:app": "vite build",
+        "build:deps": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+        "preview": "vite preview --host 127.0.0.1 --port 4180",
+        "pretypecheck": "npm run build:deps",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@pollinations/sdk": "file:../../packages/sdk",
+        "@pollinations/ui": "file:../../packages/ui",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.1",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.7.2",
+        "vite": "^7.0.0"
+    }
 }

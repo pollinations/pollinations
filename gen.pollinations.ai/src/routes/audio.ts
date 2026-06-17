@@ -1,4 +1,6 @@
 import type { Logger } from "@logtape/logtape";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import {
     type AudioModelName,
     ELEVENLABS_VOICES,
@@ -15,12 +17,12 @@ import {
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -28,8 +30,6 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
-import { validator } from "@/middleware/validator.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";

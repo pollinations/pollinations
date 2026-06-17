@@ -1,4 +1,5 @@
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,
@@ -12,6 +13,10 @@ export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
 } from "./compositions/ExternalLinkButton.tsx";
+export {
+    FieldStack,
+    type FieldStackProps,
+} from "./compositions/FieldStack.tsx";
 export {
     FileUpload,
     type FileUploadProps,
@@ -36,7 +41,6 @@ export { Prose, type ProseProps } from "./compositions/Prose.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export { cn } from "./lib/cn-app.ts";
-export type { RejectedFile, RejectReason } from "./lib/partition-files.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
@@ -52,6 +56,11 @@ export {
 } from "./primitives/ButtonGroup.tsx";
 export { ChevronIcon } from "./primitives/ChevronIcon.tsx";
 export { Chip } from "./primitives/Chip.tsx";
+export {
+    ColorModeToggle,
+    setColorMode,
+    useColorMode,
+} from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
     type DialogProps,
@@ -98,13 +107,6 @@ export { Tooltip } from "./primitives/Tooltip.tsx";
 export {
     Heading,
     type HeadingProps,
-    type HeadingSize,
-    headingClassName,
     Text,
     type TextProps,
-    type TextSize,
-    type TextTone,
-    type TextWeight,
-    textClassName,
 } from "./primitives/Typography.tsx";
-export { type ThemeName, themes } from "./theme.ts";

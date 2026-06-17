@@ -48,13 +48,6 @@ const TABLES: TableConfig[] = [
                 FROM reward_grants`,
     },
     {
-        datasource: "d1_quest_definitions",
-        query: `SELECT id, title, description, category, status, trigger,
-                       reward_amount, balance_bucket, repeatability,
-                       criteria_json, created_at, updated_at
-                FROM quest_definitions`,
-    },
-    {
         datasource: "d1_session",
         query: `SELECT id, expires_at, created_at, updated_at, user_agent, user_id,
                        impersonated_by

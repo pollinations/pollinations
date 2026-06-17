@@ -282,26 +282,3 @@ export const rewardGrants = sqliteTable("reward_grants", {
   index("idx_reward_grants_user_id").on(table.userId),
   index("idx_reward_grants_source").on(table.source),
 ]);
-
-export const questDefinitions = sqliteTable("quest_definitions", {
-  id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  category: text("category").notNull(),
-  status: text("status").notNull(),
-  trigger: text("trigger").notNull(),
-  rewardAmount: real("reward_amount").notNull(),
-  balanceBucket: text("balance_bucket").default("pack").notNull(),
-  repeatability: text("repeatability").default("once").notNull(),
-  criteriaJson: text("criteria_json"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .defaultNow()
-    .notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_quest_definitions_status").on(table.status),
-  index("idx_quest_definitions_trigger").on(table.trigger),
-]);

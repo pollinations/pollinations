@@ -7,11 +7,13 @@ export type QuestCategory =
     | "grow"
     | "engage";
 export type QuestStatus = "active" | "planned";
-export type QuestTrigger =
+export type QuestEventType =
     | "api_key_created"
     | "first_top_up"
     | "first_chat_completion"
-    | "first_image_generation";
+    | "first_image_generation"
+    | "github_pr_merged";
+export type PayoutScope = "once_per_user" | "once_per_event_per_user";
 
 export type QuestDefinition = {
     id: string;
@@ -19,10 +21,17 @@ export type QuestDefinition = {
     description: string;
     category: QuestCategory;
     status: QuestStatus;
-    trigger: QuestTrigger;
+    eventType: QuestEventType;
     rewardAmount: number;
     balanceBucket: Bucket;
-    repeatability: "once";
+    payoutScope: PayoutScope;
+};
+
+export type GrantCandidate = {
+    userId: string;
+    eventId?: string;
+    sourceRef?: string | null;
+    metadata?: Record<string, unknown> | null;
 };
 
 export const QUEST_DEFINITIONS: QuestDefinition[] = [
@@ -32,10 +41,10 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         description: "Create a Pollinations API key from your account.",
         category: "onboarding",
         status: "active",
-        trigger: "api_key_created",
+        eventType: "api_key_created",
         rewardAmount: 0.5,
         balanceBucket: "pack",
-        repeatability: "once",
+        payoutScope: "once_per_user",
     },
     {
         id: "spend:first_top_up",
@@ -43,10 +52,10 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         description: "Buy your first Pollen pack.",
         category: "spend",
         status: "active",
-        trigger: "first_top_up",
+        eventType: "first_top_up",
         rewardAmount: 2,
         balanceBucket: "pack",
-        repeatability: "once",
+        payoutScope: "once_per_user",
     },
     {
         id: "onboarding:first_chat_completion",
@@ -54,10 +63,10 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         description: "Send a successful chat completion request.",
         category: "onboarding",
         status: "planned",
-        trigger: "first_chat_completion",
+        eventType: "first_chat_completion",
         rewardAmount: 0.5,
         balanceBucket: "pack",
-        repeatability: "once",
+        payoutScope: "once_per_user",
     },
     {
         id: "onboarding:first_image_generation",
@@ -65,10 +74,10 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         description: "Send a successful image generation request.",
         category: "onboarding",
         status: "planned",
-        trigger: "first_image_generation",
+        eventType: "first_image_generation",
         rewardAmount: 0.5,
         balanceBucket: "pack",
-        repeatability: "once",
+        payoutScope: "once_per_user",
     },
 ];
 
@@ -78,4 +87,28 @@ export function getQuestDefinition(id: string): QuestDefinition | undefined {
 
 export function activeQuestDefinitions(): QuestDefinition[] {
     return QUEST_DEFINITIONS.filter((quest) => quest.status === "active");
+}
+
+export function buildGrantKey(
+    definition: QuestDefinition,
+    candidate: GrantCandidate,
+): string {
+    const baseKey = `quest:${definition.id}:user:${candidate.userId}`;
+
+    switch (definition.payoutScope) {
+        case "once_per_user":
+            return baseKey;
+        case "once_per_event_per_user":
+            if (!candidate.eventId) {
+                throw new Error(
+                    `Quest ${definition.id} requires eventId for payoutScope ${definition.payoutScope}`,
+                );
+            }
+            return `${baseKey}:event:${candidate.eventId}`;
+        default:
+            definition.payoutScope satisfies never;
+            throw new Error(
+                `Unsupported payoutScope for quest ${definition.id}`,
+            );
+    }
 }

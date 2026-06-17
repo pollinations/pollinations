@@ -1,17 +1,16 @@
 import { getLogger } from "@logtape/logtape";
 import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { getQuestDefinition } from "@shared/quests/definitions.ts";
+import {
+    buildGrantKey,
+    type GrantCandidate,
+    getQuestDefinition,
+} from "@shared/quests/definitions.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 const log = getLogger(["enter", "quest-evaluator"]);
 const MAX_GRANTS_PER_RUN = 500;
-
-type Candidate = {
-    user_id: string;
-    source_ref: string | null;
-};
 
 type QuestEvaluatorResult = {
     questId: string;
@@ -19,20 +18,14 @@ type QuestEvaluatorResult = {
     granted: number;
 };
 
-function questGrantKey(questId: string, userId: string): string {
-    return `quest:${questId}:user:${userId}`;
-}
-
 async function grantCandidates({
     db,
     questId,
-    source,
     candidates,
 }: {
     db: ReturnType<typeof drizzle<typeof schema>>;
     questId: string;
-    source: "onboarding" | "spend";
-    candidates: Candidate[];
+    candidates: GrantCandidate[];
 }): Promise<QuestEvaluatorResult> {
     const definition = getQuestDefinition(questId);
     if (!definition) {
@@ -42,17 +35,18 @@ async function grantCandidates({
     let granted = 0;
     for (const candidate of candidates) {
         const result = await grantReward(db, {
-            idempotencyKey: questGrantKey(questId, candidate.user_id),
-            userId: candidate.user_id,
-            source,
+            idempotencyKey: buildGrantKey(definition, candidate),
+            userId: candidate.userId,
+            source: definition.eventType,
             questId,
             amount: definition.rewardAmount,
             bucket: definition.balanceBucket,
-            sourceRef: candidate.source_ref,
+            sourceRef: candidate.sourceRef,
             metadata: {
                 title: definition.title,
                 category: definition.category,
-                trigger: definition.trigger,
+                eventType: definition.eventType,
+                ...candidate.metadata,
             },
         });
         if (result.granted) granted += 1;
@@ -67,12 +61,12 @@ async function grantCandidates({
 
 async function findFirstApiKeyCandidates(
     db: ReturnType<typeof drizzle<typeof schema>>,
-): Promise<Candidate[]> {
-    return await db.all<Candidate>(
+): Promise<GrantCandidate[]> {
+    return await db.all<GrantCandidate>(
         sql`
         SELECT
-            apikey.user_id,
-            MIN(apikey.id) AS source_ref
+            apikey.user_id AS userId,
+            MIN(apikey.id) AS sourceRef
         FROM apikey
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
@@ -85,12 +79,12 @@ async function findFirstApiKeyCandidates(
 
 async function findFirstTopUpCandidates(
     db: ReturnType<typeof drizzle<typeof schema>>,
-): Promise<Candidate[]> {
-    return await db.all<Candidate>(
+): Promise<GrantCandidate[]> {
+    return await db.all<GrantCandidate>(
         sql`
         SELECT
-            stripe_checkout_credits.user_id,
-            MIN(stripe_checkout_credits.session_id) AS source_ref
+            stripe_checkout_credits.user_id AS userId,
+            MIN(stripe_checkout_credits.session_id) AS sourceRef
         FROM stripe_checkout_credits
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
@@ -110,13 +104,11 @@ export async function runQuestEvaluator(
         await grantCandidates({
             db,
             questId: "onboarding:first_api_key",
-            source: "onboarding",
             candidates: await findFirstApiKeyCandidates(db),
         }),
         await grantCandidates({
             db,
             questId: "spend:first_top_up",
-            source: "spend",
             candidates: await findFirstTopUpCandidates(db),
         }),
     ];

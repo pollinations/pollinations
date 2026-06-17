@@ -1,8 +1,8 @@
+import { QUEST_DEFINITIONS } from "@shared/quests/definitions.ts";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
-import { listQuestCatalog } from "../services/quest-definitions.ts";
 
 const questDefinitionSchema = z.object({
     id: z.string(),
@@ -10,12 +10,10 @@ const questDefinitionSchema = z.object({
     description: z.string(),
     category: z.string(),
     status: z.string(),
-    trigger: z.string(),
+    eventType: z.string(),
     rewardAmount: z.number(),
     balanceBucket: z.string(),
-    repeatability: z.string(),
-    criteria: z.record(z.string(), z.unknown()).nullable(),
-    storage: z.string(),
+    payoutScope: z.string(),
 });
 
 const questCatalogResponseSchema = z.object({
@@ -28,7 +26,7 @@ export const questsRoutes = new Hono<Env>().get(
         tags: ["Quests"],
         summary: "Get Quest Catalog",
         description:
-            "Returns the active and planned quest catalog. Checked-in definitions provide launch defaults; D1 definitions can override or extend them.",
+            "Returns the active and planned quest catalog from checked-in quest definitions.",
         responses: {
             200: {
                 description: "Quest catalog",
@@ -40,5 +38,5 @@ export const questsRoutes = new Hono<Env>().get(
             },
         },
     }),
-    async (c) => c.json({ quests: await listQuestCatalog(c.env.DB) }),
+    (c) => c.json({ quests: QUEST_DEFINITIONS }),
 );

@@ -1,5 +1,11 @@
 import { env, SELF } from "cloudflare:test";
+import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import {
+    buildGrantKey,
+    getQuestDefinition,
+    type QuestDefinition,
+} from "@shared/quests/definitions.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -21,23 +27,19 @@ async function getOnlyUser() {
     return user;
 }
 
-test("GET /api/quests/catalog returns launch catalog and D1 definitions", async () => {
-    const db = drizzle(env.DB, { schema });
-    await db.insert(schema.questDefinitions).values({
-        id: "engage:seven_day_streak",
-        title: "Use Pollinations for 7 days",
-        description: "Make at least one request on seven consecutive days.",
-        category: "engage",
-        status: "planned",
-        trigger: "first_chat_completion",
-        rewardAmount: 1,
-        balanceBucket: "pack",
-        repeatability: "once",
-        criteriaJson: JSON.stringify({ days: 7 }),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
+const mergedPrQuest: QuestDefinition = {
+    id: "github:merged_pr_author",
+    title: "Merge a pull request",
+    description: "Earn Pollen when your pull request is merged.",
+    category: "build",
+    status: "planned",
+    eventType: "github_pr_merged",
+    rewardAmount: 1,
+    balanceBucket: "pack",
+    payoutScope: "once_per_event_per_user",
+};
 
+test("GET /api/quests/catalog returns checked-in launch catalog", async () => {
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
@@ -47,9 +49,9 @@ test("GET /api/quests/catalog returns launch catalog and D1 definitions", async 
         quests: {
             id: string;
             status: string;
+            eventType: string;
             balanceBucket: string;
-            storage: string;
-            criteria: { days?: number } | null;
+            payoutScope: string;
         }[];
     };
 
@@ -58,17 +60,104 @@ test("GET /api/quests/catalog returns launch catalog and D1 definitions", async 
     ).toHaveLength(2);
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
-    ).toMatchObject({ balanceBucket: "pack", storage: "checked_in" });
-    expect(
-        payload.quests.find((quest) => quest.id === "engage:seven_day_streak"),
     ).toMatchObject({
+        eventType: "api_key_created",
         balanceBucket: "pack",
-        storage: "d1",
-        criteria: { days: 7 },
+        payoutScope: "once_per_user",
+    });
+    expect(
+        payload.quests.find(
+            (quest) => quest.id === "onboarding:first_image_generation",
+        ),
+    ).toMatchObject({
+        eventType: "first_image_generation",
+        balanceBucket: "pack",
+        payoutScope: "once_per_user",
     });
 });
 
-test("quest evaluator grants D1-backed product quests once", async ({
+test("buildGrantKey ignores eventId for once-per-user quests", () => {
+    const definition = getQuestDefinition("onboarding:first_api_key");
+    if (!definition) throw new Error("missing test quest definition");
+
+    expect(
+        buildGrantKey(definition, {
+            userId: "user-1",
+            eventId: "ignored-event",
+        }),
+    ).toBe("quest:onboarding:first_api_key:user:user-1");
+});
+
+test("buildGrantKey requires eventId for per-event quests", () => {
+    expect(() =>
+        buildGrantKey(mergedPrQuest, {
+            userId: "user-1",
+        }),
+    ).toThrow(/eventId/);
+
+    expect(
+        buildGrantKey(mergedPrQuest, {
+            userId: "user-1",
+            eventId: "pr-123",
+        }),
+    ).toBe("quest:github:merged_pr_author:user:user-1:event:pr-123");
+});
+
+test("per-event grant keys pay once per event", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+
+    const firstEventKey = buildGrantKey(mergedPrQuest, {
+        userId: user.id,
+        eventId: "pr-123",
+    });
+    const secondEventKey = buildGrantKey(mergedPrQuest, {
+        userId: user.id,
+        eventId: "pr-124",
+    });
+
+    const first = await grantReward(db, {
+        idempotencyKey: firstEventKey,
+        userId: user.id,
+        source: mergedPrQuest.eventType,
+        questId: mergedPrQuest.id,
+        amount: mergedPrQuest.rewardAmount,
+        bucket: mergedPrQuest.balanceBucket,
+        sourceRef: "pr:123",
+    });
+    const duplicate = await grantReward(db, {
+        idempotencyKey: firstEventKey,
+        userId: user.id,
+        source: mergedPrQuest.eventType,
+        questId: mergedPrQuest.id,
+        amount: mergedPrQuest.rewardAmount,
+        bucket: mergedPrQuest.balanceBucket,
+        sourceRef: "pr:123",
+    });
+    const secondEvent = await grantReward(db, {
+        idempotencyKey: secondEventKey,
+        userId: user.id,
+        source: mergedPrQuest.eventType,
+        questId: mergedPrQuest.id,
+        amount: mergedPrQuest.rewardAmount,
+        bucket: mergedPrQuest.balanceBucket,
+        sourceRef: "pr:124",
+    });
+
+    expect(first.granted).toBe(true);
+    expect(duplicate.granted).toBe(false);
+    expect(secondEvent.granted).toBe(true);
+
+    const [balance] = await db
+        .select({ packBalance: schema.user.packBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 2);
+});
+
+test("quest evaluator grants code-defined product quests once", async ({
     apiKey: _apiKey,
     sessionToken,
 }) => {

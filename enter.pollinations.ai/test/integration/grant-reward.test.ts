@@ -118,6 +118,24 @@ describe("grantReward", () => {
         expect(balance.tierBalance).toBe(0);
     });
 
+    test("defaults to the pack bucket when bucket is omitted", async () => {
+        const db = drizzle(env.DB);
+        const userId = "grant-user-default";
+        await seedUser(db, userId);
+
+        const result = await grantReward(db, {
+            idempotencyKey: `default:${userId}`,
+            userId,
+            source: "manual",
+            amount: 2,
+        });
+
+        expect(result.granted).toBe(true);
+        const balance = await getUserBalance(db, userId);
+        expect(balance.packBalance).toBe(2);
+        expect(balance.tierBalance).toBe(0);
+    });
+
     test("rejects non-positive amounts", async () => {
         const db = drizzle(env.DB);
         const userId = "grant-user-bad";

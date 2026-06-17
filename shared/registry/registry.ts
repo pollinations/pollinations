@@ -96,6 +96,9 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
+    title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    // Backward compatibility: public descriptions currently include the title
+    // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];
@@ -106,11 +109,12 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    maxReferenceImages?: number; // Models with image input: effective accepted reference images
+    maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -181,13 +185,6 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Check if a public model name exists in the registry
- */
-export function isValidModel(model: ModelName | string): model is ModelName {
-    return !!MODEL_REGISTRY[model as ModelName];
-}
-
-/**
  * Get all public model names
  */
 export function getModels(): ModelName[] {
@@ -197,21 +194,21 @@ export function getModels(): ModelName[] {
 /**
  * Get text model names
  */
-export function getTextModels(): TextModelName[] {
+function getTextModels(): TextModelName[] {
     return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**
  * Get image model names
  */
-export function getImageModels(): ImageModelName[] {
+function getImageModels(): ImageModelName[] {
     return Object.keys(IMAGE_SERVICES) as ImageModelName[];
 }
 
 /**
  * Get audio model names
  */
-export function getAudioModels(): AudioModelName[] {
+function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 

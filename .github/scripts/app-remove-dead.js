@@ -12,8 +12,8 @@
 
 const fs = require("node:fs");
 const { execFile } = require("node:child_process");
+const { APPS_FILE, parseApps: parseAppsTable } = require("./lib/parse-apps.js");
 
-const APPS_FILE = "apps/APPS.md";
 const ROUNDS = 3;
 const DELAY_MS = 5 * 60 * 1000; // 5 minutes between rounds
 const CONCURRENCY = 30;
@@ -25,38 +25,20 @@ const dryRun = args.includes("--dry-run");
 const verbose = args.includes("--verbose");
 
 function parseApps() {
-    const content = fs.readFileSync(APPS_FILE, "utf8");
-    const lines = content.split("\n");
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) {
-        console.error("Could not find header row in APPS.md");
-        process.exit(1);
-    }
-
-    const apps = [];
-    for (let i = headerIdx + 2; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.startsWith("|")) continue;
-
-        const cols = line
-            .split("|")
-            .slice(1, -1)
-            .map((c) => c.trim());
-        if (cols.length < 15) continue;
-
-        const name = cols[1];
-        const webUrl = cols[2];
-        const repo = cols[9] || "";
-        // Use web URL if available, otherwise fall back to repo URL
-        const url = webUrl?.startsWith("http")
-            ? webUrl
-            : repo?.startsWith("http")
-              ? repo
-              : null;
-        apps.push({ lineIndex: i, name, url });
-    }
-
-    return { apps, lines };
+    const { lines, apps } = parseAppsTable();
+    return {
+        lines,
+        apps: apps.map(({ lineIndex, name, webUrl, repoUrl }) => ({
+            lineIndex,
+            name,
+            // Use web URL if available, otherwise fall back to repo URL
+            url: webUrl.startsWith("http")
+                ? webUrl
+                : repoUrl.startsWith("http")
+                  ? repoUrl
+                  : null,
+        })),
+    };
 }
 
 function checkUrl(url) {

@@ -2,9 +2,17 @@ import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../assets/logo.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
 
+const authLogoMaskUrl = `url('${logoUrl}')`;
+
 const authLogoMask: CSSProperties = {
-    WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
-    mask: `url(${logoUrl}) center / contain no-repeat`,
+    WebkitMaskImage: authLogoMaskUrl,
+    WebkitMaskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskImage: authLogoMaskUrl,
+    maskPosition: "center",
+    maskRepeat: "no-repeat",
+    maskSize: "contain",
 };
 
 export type AuthModalProps = {
@@ -28,11 +36,10 @@ export function AuthModal({
     return (
         <Dialog
             open
-            theme="amber"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-theme-bg-pale"
+            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
             contentClassName={`polli:bg-surface-white polli:border-2 ${borderClass} polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto`}
         >
             {children}
@@ -50,7 +57,8 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:block polli:shrink-0 polli:text-theme-text-strong"
+            tabIndex={-1}
+            className="polli:block polli:shrink-0 polli:text-theme-text-strong polli:focus:outline-none"
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>
@@ -101,21 +109,16 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
 
 export type AuthInfoCardProps = {
     title?: string;
-    titleId?: string;
     children: ReactNode;
 };
 
 export function AuthInfoCard({
     title = "Authorize",
-    titleId,
     children,
 }: AuthInfoCardProps) {
     return (
         <div className="polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-theme-bg-pale polli:p-4">
-            <p
-                id={titleId}
-                className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft"
-            >
+            <p className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
                 {title}
             </p>
             {children}

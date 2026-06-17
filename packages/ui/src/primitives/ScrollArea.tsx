@@ -9,23 +9,17 @@ import {
     useRef,
 } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
-type ScrollAxis = "y" | "x" | "both";
+type ScrollAxis = "y" | "x";
 
 const axisClasses: Record<ScrollAxis, string> = {
     y: "polli:overflow-y-auto polli:overflow-x-hidden",
     x: "polli:overflow-x-auto polli:overflow-y-hidden",
-    both: "polli:overflow-auto",
 };
 
 type ScrollAreaOwnProps = {
-    /** Override the ambient cascade theme for this scroller's thumb. */
-    theme?: ThemeName;
     /** Scroll direction. Default `y`. */
     axis?: ScrollAxis;
-    /** Idle time before the thumb fades out, in ms. Default `2000`. */
-    hideDelayMs?: number;
     className?: string;
 };
 
@@ -41,13 +35,10 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
 
 /**
  * Themed auto-hide scroll container. Thumb color follows the nearest
- * `[data-theme="..."]` ancestor; pass `theme` to override locally.
+ * `[data-theme="..."]` ancestor.
  */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
-    (
-        { theme, axis = "y", hideDelayMs = 2000, className, children, ...rest },
-        externalRef,
-    ) => {
+    ({ axis = "y", className, children, ...rest }, externalRef) => {
         const innerRef = useRef<HTMLDivElement | null>(null);
 
         const setRef = useCallback(
@@ -83,7 +74,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
 
             const scheduleHide = () => {
                 clearHideTimer();
-                hideTimer = window.setTimeout(hide, hideDelayMs);
+                hideTimer = window.setTimeout(hide, 2000);
             };
 
             const handleInteraction = () => {
@@ -117,15 +108,14 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
                 element.removeEventListener("focusin", handleInteraction);
                 element.removeEventListener("focusout", scheduleHide);
             };
-        }, [hideDelayMs]);
+        }, []);
 
         return (
             <div
                 {...rest}
                 ref={setRef}
-                data-theme={theme}
                 className={cn(
-                    "polli-scrollbar-subtle",
+                    "polli-scrollbar-subtle polli:min-w-0 polli:max-w-full",
                     axisClasses[axis],
                     className,
                 )}

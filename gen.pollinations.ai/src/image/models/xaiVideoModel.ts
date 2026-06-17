@@ -3,9 +3,8 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { closestAspectRatio } from "../utils/aspectRatio.ts";
+import { ASPECT_RATIOS, closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
@@ -32,8 +31,6 @@ interface XaiVideoStatusResponse {
 export async function callXaiVideoAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("XAI_API_KEY");
     if (!apiKey) {
@@ -46,12 +43,6 @@ export async function callXaiVideoAPI(
     const durationSeconds = Math.min(Math.max(safeParams.duration || 5, 1), 15);
 
     logOps("Calling xAI video API:", { prompt, durationSeconds });
-    progress.updateBar(
-        requestId,
-        30,
-        "Processing",
-        "Submitting video generation request...",
-    );
 
     const requestBody: Record<string, unknown> = {
         model: "grok-imagine-video",
@@ -60,7 +51,16 @@ export async function callXaiVideoAPI(
         duration: durationSeconds,
     };
 
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    // When the caller passed explicit width/height, derive the aspect ratio
+    // from them. Otherwise honor an explicit `aspectRatio` param directly —
+    // params.ts fills width/height with a square default when dims are omitted,
+    // which would otherwise collapse every preset to 1:1.
+    const aspectRatio =
+        safeParams.dimensionsExplicit || !safeParams.aspectRatio
+            ? closestAspectRatio(safeParams.width, safeParams.height)
+            : ASPECT_RATIOS.some((ar) => ar.label === safeParams.aspectRatio)
+              ? safeParams.aspectRatio
+              : closestAspectRatio(safeParams.width, safeParams.height);
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (safeParams.image?.length) {
@@ -95,21 +95,8 @@ export async function callXaiVideoAPI(
     }
 
     logOps("Video generation submitted, ID:", videoId);
-    progress.updateBar(
-        requestId,
-        40,
-        "Processing",
-        "Video generation queued, waiting...",
-    );
 
-    const result = await pollXaiVideoStatus(
-        videoId,
-        apiKey,
-        progress,
-        requestId,
-    );
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
+    const result = await pollXaiVideoStatus(videoId, apiKey);
 
     const actualDuration = result.duration || durationSeconds;
 
@@ -129,8 +116,6 @@ export async function callXaiVideoAPI(
 async function pollXaiVideoStatus(
     videoId: string,
     apiKey: string,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<{ buffer: Buffer; duration?: number }> {
     const maxAttempts = 90; // 3 minutes max
     let delayMs = 3000;
@@ -138,14 +123,6 @@ async function pollXaiVideoStatus(
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         logOps(
             `Poll attempt ${attempt}/${maxAttempts} for video ${videoId}...`,
-        );
-
-        const progressPercent = 40 + Math.min(50, attempt);
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `Generating video... (${attempt}/${maxAttempts})`,
         );
 
         const pollUrl = `${XAI_VIDEO_POLL_URL}/${videoId}`;
@@ -194,12 +171,6 @@ async function pollXaiVideoStatus(
             }
 
             logOps("Downloading video from:", pollData.video.url);
-            progress.updateBar(
-                requestId,
-                90,
-                "Processing",
-                "Downloading video...",
-            );
 
             const downloadResponse = await fetchUpstream(pollData.video.url, {
                 errorLabel: "Failed to download xAI video",

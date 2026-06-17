@@ -263,7 +263,7 @@ describe("gen worker routing", () => {
 
 fixtureTest(
     "routes simple qwen audio requests through DashScope",
-    async ({ apiKey }) => {
+    async ({ paidApiKey }) => {
         const calls: string[] = [];
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -316,7 +316,7 @@ fixtureTest(
             new Request(
                 "https://staging.gen.pollinations.ai/audio/Hello%20Qwen?model=qwen-tts&voice=nova",
                 {
-                    headers: { Authorization: `Bearer ${apiKey}` },
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
             ),
             {

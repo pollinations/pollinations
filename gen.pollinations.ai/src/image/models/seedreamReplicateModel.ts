@@ -1,24 +1,26 @@
 /**
- * ByteDance Seedream 4.0 and 4.5 Pro image generation via Replicate.
+ * ByteDance Seedream 4.0, 4.5 Pro, and 5.0 Lite image generation via Replicate.
  *
  * Completes the BytePlus → Replicate migration started in PR #11073, which
  * moved seedream5 + seedance variants but left these legacy variants on the
  * BytePlus ARK endpoint. Replicate models:
- *   - seedream     → bytedance/seedream-4   ($0.03/img)
- *   - seedream-pro → bytedance/seedream-4.5 ($0.06/img)
+ *   - seedream     → bytedance/seedream-4      ($0.03/img)
+ *   - seedream-pro → bytedance/seedream-4.5    ($0.06/img)
+ *   - seedream5    → bytedance/seedream-5-lite (flat per-image)
  *
- * Schemas mirror seedream-5-lite (shared `aspect_ratio` enum, `image_input`
- * array, `sequential_image_generation`); the only meaningful difference is
- * the `size` enum, which is per-model.
+ * Schemas share the `aspect_ratio` enum, `image_input` array, and
+ * `sequential_image_generation`; they differ in the per-model `size` enum and
+ * whether they accept `output_format` (only seedream5 does) or a `custom` size
+ * mode (only seedream 4.0 does).
  */
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -45,41 +47,24 @@ const SEEDREAM_NUMERIC_RATIOS = SEEDREAM_ASPECT_RATIOS.filter(
     (r) => r !== "match_input_image",
 ) as readonly Exclude<SeedreamAspectRatio, "match_input_image">[];
 
-// When clients pass width/height without aspectRatio (e.g. OpenAI's
-// `size: "1792x1024"` shape), pick the closest preset by log-space distance
-// so 1920×1080 → 16:9, 720×1280 → 9:16, 800×800 → 1:1. Without this, the
-// resolver would silently default to "1:1" and produce square output.
-function deriveAspectRatioFromDimensions(
-    width: number,
-    height: number,
-): Exclude<SeedreamAspectRatio, "match_input_image"> {
-    const target = Math.log(width / height);
-    let best: Exclude<SeedreamAspectRatio, "match_input_image"> = "1:1";
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const ar of SEEDREAM_NUMERIC_RATIOS) {
-        const [w, h] = ar.split(":").map(Number);
-        const dist = Math.abs(Math.log(w / h) - target);
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = ar;
-        }
-    }
-    return best;
-}
-
 type Seedream4Size = "1K" | "2K" | "4K";
 type Seedream45Size = "2K" | "4K";
+type Seedream5Size = "2K" | "3K";
 
-// seedream-4 (4.0) supports two payload shapes; 4.5 does NOT support custom.
-//   - preset: size: "1K"|"2K"|"4K" + aspect_ratio
+// seedream-4 (4.0) supports two payload shapes; 4.5 and 5.0 do NOT support
+// custom.
+//   - preset: size: "1K"|"2K"|"4K"|"3K" + aspect_ratio
 //   - custom: size: "custom" + width + height (both 1024-4096)
 // Replicate's schema explicitly says aspect_ratio is ignored when
 // size === "custom", so they're mutually exclusive at the type level.
+// `output_format` is only sent for seedream5 — 4.5's schema strict-rejects
+// unknown fields, so it must stay opt-in.
 type SeedreamPresetInput = {
     prompt: string;
-    size: Seedream4Size | Seedream45Size;
+    size: Seedream4Size | Seedream45Size | Seedream5Size;
     aspect_ratio: SeedreamAspectRatio;
     image_input: string[];
+    output_format?: "png" | "jpeg";
     sequential_image_generation: "disabled";
     max_images: 1;
 };
@@ -106,13 +91,20 @@ interface SeedreamVariantConfig {
     /** Cap on reference images accepted by the upstream model. */
     maxReferenceImages: number;
     /** Pick the size bucket for a given longer-side pixel value. */
-    resolveSize(longerSide: number): Seedream4Size | Seedream45Size;
+    resolveSize(
+        longerSide: number,
+    ): Seedream4Size | Seedream45Size | Seedream5Size;
     /** Whether the upstream accepts size:"custom" + width/height. Only 4.0. */
     supportsCustom: boolean;
+    /**
+     * Opt-in `output_format` field — only seedream5 accepts it. 4.5's schema
+     * strict-rejects unknown fields, so leave it unset for the others.
+     */
+    outputFormat?: "png" | "jpeg";
 }
 
 const SEEDREAM_VARIANTS: Record<
-    "seedream" | "seedream-pro",
+    "seedream" | "seedream-pro" | "seedream5",
     SeedreamVariantConfig
 > = {
     seedream: {
@@ -138,6 +130,18 @@ const SEEDREAM_VARIANTS: Record<
         // 4.5's size enum is ["2K", "4K"] only — verified against live schema.
         supportsCustom: false,
     },
+    seedream5: {
+        replicateModel: "bytedance/seedream-5-lite",
+        displayName: "Seedream 5.0 Lite",
+        trackingLabel: "seedream5",
+        maxReferenceImages: 14,
+        // 5.0's size enum is ["2K", "3K"] only — no pixel dimensions, no custom.
+        resolveSize(longerSide) {
+            return longerSide > 2048 ? "3K" : "2K";
+        },
+        supportsCustom: false,
+        outputFormat: "png",
+    },
 };
 
 /**
@@ -159,9 +163,10 @@ function resolveAspectRatio(
     if (!requested) {
         if (hasImage) return "match_input_image";
         if (safeParams.width && safeParams.height) {
-            return deriveAspectRatioFromDimensions(
+            return closestRatioLogSpace(
                 safeParams.width,
                 safeParams.height,
+                SEEDREAM_NUMERIC_RATIOS,
             );
         }
         return "1:1";
@@ -198,6 +203,11 @@ function buildPresetInput(
             variant.displayName,
         ),
         image_input: imageInput,
+        // Only seedream5 carries output_format — spread it conditionally so
+        // 4.5's strict schema never sees an unknown field.
+        ...(variant.outputFormat
+            ? { output_format: variant.outputFormat }
+            : {}),
         sequential_image_generation: "disabled",
         max_images: 1,
     };
@@ -233,20 +243,11 @@ function buildCustomInput(
 }
 
 async function callSeedreamReplicateAPI(
-    variantKey: "seedream" | "seedream-pro",
+    variantKey: "seedream" | "seedream-pro" | "seedream5",
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     const variant = SEEDREAM_VARIANTS[variantKey];
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Starting ${variant.displayName} generation...`,
-    );
 
     const images = safeParams.image ?? [];
     if (images.length > variant.maxReferenceImages) {
@@ -256,24 +257,8 @@ async function callSeedreamReplicateAPI(
         );
     }
 
-    // Replicate's URL fetcher chokes on query strings and missing extensions
-    // (same issue seen in seedance-2.0 / seedream5). Download here and pass
-    // data URIs.
-    const toDataUri = async (url: string): Promise<string> => {
-        const { buffer, mimeType } = await downloadUserImage(url);
-        return `data:${mimeType};base64,${buffer.toString("base64")}`;
-    };
     const imageInput =
         images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
-
-    if (imageInput.length > 0) {
-        progress.updateBar(
-            requestId,
-            45,
-            "Processing",
-            `Processed ${imageInput.length} reference image(s)`,
-        );
-    }
 
     // Replicate's bytedance/seedream-4 and 4.5 schemas don't accept a `seed`
     // field — 4.5 strict-rejects unknown fields, 4 silently drops them.
@@ -295,13 +280,6 @@ async function callSeedreamReplicateAPI(
             ? `[${imageInput.length} data uris]`
             : [],
     });
-
-    progress.updateBar(
-        requestId,
-        55,
-        "Processing",
-        "Submitting to Replicate...",
-    );
 
     let outputUrls: string[];
     try {
@@ -333,12 +311,6 @@ async function callSeedreamReplicateAPI(
         throw new HttpError(`${variant.displayName} returned no images`, 500);
     }
 
-    progress.updateBar(
-        requestId,
-        80,
-        "Processing",
-        "Downloading generated image...",
-    );
     const imageResponse = await fetchUpstream(outputUrls[0], {
         errorLabel: `Failed to download ${variant.displayName} output image`,
     });
@@ -347,13 +319,6 @@ async function callSeedreamReplicateAPI(
         `${variant.displayName} image downloaded:`,
         (imageBuffer.length / 1024).toFixed(1),
         "KB",
-    );
-
-    progress.updateBar(
-        requestId,
-        95,
-        "Success",
-        `${variant.displayName} generation completed`,
     );
 
     return {
@@ -378,30 +343,22 @@ async function callSeedreamReplicateAPI(
 export function callSeedreamAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI(
-        "seedream",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    return callSeedreamReplicateAPI("seedream", prompt, safeParams);
 }
 
 /** Seedream 4.5 Pro via Replicate (bytedance/seedream-4.5). */
 export function callSeedreamProAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI(
-        "seedream-pro",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    return callSeedreamReplicateAPI("seedream-pro", prompt, safeParams);
+}
+
+/** Seedream 5.0 Lite via Replicate (bytedance/seedream-5-lite). */
+export function callSeedream5API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callSeedreamReplicateAPI("seedream5", prompt, safeParams);
 }

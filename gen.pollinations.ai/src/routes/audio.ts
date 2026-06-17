@@ -1,4 +1,6 @@
 import type { Logger } from "@logtape/logtape";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import {
     type AudioModelName,
     ELEVENLABS_VOICES,
@@ -15,12 +17,12 @@ import {
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -28,10 +30,9 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
-import { validator } from "@/middleware/validator.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
+import { buildTranscriptionResponse } from "./transcription-response.ts";
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -57,11 +58,6 @@ const CreateSpeechRequestSchema = z
                     "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
                 example: "mp3",
             }),
-        speed: z.number().min(0.25).max(4.0).default(1.0).meta({
-            description:
-                "The speed of the generated audio. 0.25 to 4.0, default 1.0.",
-            example: 1.0,
-        }),
         duration: z.number().min(3).max(300).optional().meta({
             description:
                 "Music duration in seconds, 3-300 (elevenmusic/acestep)",
@@ -363,22 +359,12 @@ export async function transcribeWithElevenLabs(opts: {
         duration: Math.round(duration * 10) / 10,
     });
 
-    // Return response based on format
-    if (responseFormat === "text") {
-        return new Response(elevenLabsData.text, {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                ...usageHeaders,
-            },
-        });
-    }
-
-    if (responseFormat === "verbose_json") {
-        // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse: Record<string, unknown> = {
+    // Scribe word/utterance values are already in seconds — normalize and
+    // hand off to the shared OpenAI-compatible response formatter.
+    return buildTranscriptionResponse({
+        normalized: {
             text: elevenLabsData.text,
-            task: "transcribe",
-            language: elevenLabsData.language_code || "unknown",
+            language: elevenLabsData.language_code,
             duration,
             words:
                 elevenLabsData.words?.map((w) => ({
@@ -386,40 +372,11 @@ export async function transcribeWithElevenLabs(opts: {
                     start: w.start,
                     end: w.end,
                 })) ?? [],
-            segments: [
-                {
-                    id: 0,
-                    start: 0,
-                    end: duration,
-                    text: elevenLabsData.text,
-                },
-            ],
-        };
-        return Response.json(verboseResponse, { headers: usageHeaders });
-    }
-
-    if (responseFormat === "diarized_json") {
-        const utterances = groupScribeUtterances(elevenLabsData.words);
-        return Response.json(
-            {
-                task: "transcribe",
-                duration,
-                text: elevenLabsData.text,
-                segments: toOpenAiDiarizedSegments(utterances),
-                usage: {
-                    type: "duration",
-                    seconds: duration,
-                },
-            },
-            { headers: usageHeaders },
-        );
-    }
-
-    // Default: json format
-    return Response.json(
-        { text: elevenLabsData.text },
-        { headers: usageHeaders },
-    );
+            diarizedSegments: groupScribeUtterances(elevenLabsData.words),
+        },
+        responseFormat,
+        usageHeaders,
+    });
 }
 
 function groupScribeUtterances(
@@ -486,26 +443,6 @@ function finalizeScribeUtterance(group: {
     };
 }
 
-function toOpenAiDiarizedSegments(
-    utterances: ReturnType<typeof groupScribeUtterances>,
-): {
-    type: "transcript.text.segment";
-    id: string;
-    start: number;
-    end: number;
-    text: string;
-    speaker: string;
-}[] {
-    return utterances.map((utterance, index) => ({
-        type: "transcript.text.segment",
-        id: `seg_${String(index + 1).padStart(3, "0")}`,
-        start: utterance.start,
-        end: utterance.end,
-        text: utterance.text,
-        speaker: utterance.speaker ?? "unknown",
-    }));
-}
-
 export async function generateMusic(opts: {
     prompt: string;
     durationSeconds?: number;
@@ -568,7 +505,7 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // MP3 only — parseMp4Duration falsely matches random bytes in compressed audio
+    // ElevenLabs returns MP3; estimate duration from byte size (~16 kB/s) rather than parsing the container.
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(

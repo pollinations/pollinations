@@ -1,14 +1,25 @@
 {
-    "_defaults": {
-        "themeColor": "#a3e635",
-        "backgroundColor": "#110518"
-    },
     "react": {
         "subdomain": "react",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "title": "Pollinations React",
+        "title": "React UI | pollinations.ai",
         "description": "Drop-in wallet, hooks, and primitives for Pollinations apps"
+    },
+    "playground": {
+        "subdomain": "playground",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "Playground | pollinations.ai",
+        "description": "Generate images, text, audio and video with Pollinations AI"
+    },
+    "websim": {
+        "subdomain": "websim",
+        "deployTarget": "worker",
+        "buildCommand": "npm run build",
+        "workerEntrypoint": "worker.js",
+        "title": "Websim | pollinations.ai",
+        "description": "Generate shareable single-file web pages with Pollinations"
     },
     "catgpt": {
         "subdomain": "catgpt",

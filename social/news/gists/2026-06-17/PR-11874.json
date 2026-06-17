@@ -1,0 +1,35 @@
+{
+  "pr_number": 11874,
+  "title": "fix(klein): return 400 for invalid reference image input",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11874",
+  "merged_at": "2026-06-17T19:16:10Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Bad reference-image uploads (malformed base64 / non-image bytes) raised an unhandled exception in the klein handler and surfaced as **500s**.\n- Logs show these are ~97% of klein's 5xx (`PIL.UnidentifiedImageError`) — all user bad-input, not infra failures.\n- Wrap the decode/open step and raise `HTTPException(400)` instead, so genuine 5xx (e.g. CUDA OOM) stay visible in the error rate.\n- Catches `UnidentifiedImageError`, `binascii.Error`, and `ValueError`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polite rejections for bad pixels",
+    "blurb": "We've updated the image generation API to return a helpful 400 Bad Request instead of a 500 error when you accidentally send us malformed reference images. Easier debugging for you, cleaner logs for us!",
+    "summary": "The Klein image handler now returns a 400 Bad Request instead of a 500 Internal Server Error when receiving malformed base64 or non-image bytes for reference images.",
+    "impact": "Developers sending invalid reference images will now receive a clear 400 error, making it easier to debug client-side issues while keeping our 500 error metrics accurate for real infrastructure problems.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "bug-fix",
+      "image-generation",
+      "klein"
+    ],
+    "visual_concept": "The bee (Polly) and Nomnom creature. Nomnom is trying to eat a corrupted/glitchy image file and spitting it out, while Polly holds up a polite '400' sign instead of a scary '500' sign.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding up a polite '400' sign while the round tan Nomnom creature spits out a glitchy, corrupted image file. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11874.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding up a polite '400' sign while the round tan Nomnom creature spits out a glitchy, corrupted image file. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T19:17:53.417359+00:00"
+}

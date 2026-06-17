@@ -8,19 +8,21 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     return (
         <CopyButton
             value={fullKey}
-            tooltip="Click to copy full key"
+            tooltip="Copy full key"
+            tooltipAlign="center"
+            tooltipClampToViewport={false}
             tooltipClassName="inline-flex"
             aria-label="Copy full API key"
             className={(copied) =>
                 cn(
                     "font-mono text-xs text-left cursor-pointer transition-all",
                     copied
-                        ? "text-green-600 font-semibold"
-                        : "text-blue-600 hover:text-blue-800 hover:underline",
+                        ? "text-intent-success-text font-semibold"
+                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
                 )
             }
         >
-            {(copied) => (copied ? "✓ Copied!" : `${start}...`)}
+            {(copied) => (copied ? "Copied!" : `${start}...`)}
         </CopyButton>
     );
 };

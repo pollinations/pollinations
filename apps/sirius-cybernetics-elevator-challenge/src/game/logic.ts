@@ -13,7 +13,6 @@ import {
     type PollingsMessage,
 } from "@/types";
 import { fetchFromPollinations } from "@/utils/api";
-import { findMarvinJoinStartIndex, rewindMessages } from "./rewind";
 
 // Core message management hook
 export const useMessages = () => {
@@ -102,31 +101,25 @@ export const fetchPersonaMessage = async (
     gameState: GameState,
     existingMessages: Message[] = [],
 ): Promise<Message> => {
-    const createErrorMessage = (_error: unknown): Message =>
-        createMessage(
+    // Speak failures in the voice of the world: the cabin malfunctions and the
+    // real upstream error rides along inside the dialogue.
+    const createErrorMessage = (error: unknown): Message => {
+        const detail =
+            error instanceof Error ? error.message : "Sub-Etha signal lost";
+        return createMessage(
             persona,
-            "Apologies, I'm experiencing some difficulties.",
+            `A Sirius Cybernetics malfunction shudders through the cabin — [${detail}]. Share and Enjoy. Please try again.`,
             "none",
         );
+    };
 
     try {
-        // Filter conversation history to only include relevant messages for this persona
-        // Guide gets a summary, elevator/marvin get user + their own messages
-        const relevantMessages = existingMessages.filter((msg) => {
-            if (msg.persona === "user") return true;
-            if (msg.persona === persona) return true;
-            // For elevator/marvin, include the other's messages during autonomous mode
-            if (persona === "elevator" && msg.persona === "marvin") return true;
-            if (persona === "marvin" && msg.persona === "elevator") return true;
-            return false;
-        });
-
         const messages: PollingsMessage[] = [
             {
                 role: "system",
                 content: getPersonaPrompt(persona, gameState),
             },
-            ...relevantMessages.map((msg) => ({
+            ...existingMessages.map((msg) => ({
                 role:
                     msg.persona === "user"
                         ? ("user" as const)
@@ -224,7 +217,6 @@ export const useMessageHandlers = (
     gameState: GameState,
     messages: Message[],
     addMessage: (message: Message) => void,
-    setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 ) => {
     const handleGuideAdvice = useCallback(async () => {
         if (gameState.isLoading) return;
@@ -242,21 +234,13 @@ export const useMessageHandlers = (
     }, [gameState, messages, addMessage]);
 
     const handlePersonaSwitch = useCallback(() => {
-        if (gameState.conversationMode === "autonomous") {
-            // Rewind functionality with animation
-            const rewindIndex = findMarvinJoinStartIndex(messages);
-            if (rewindIndex !== -1) {
-                rewindMessages(messages, rewindIndex, setMessages);
-            }
-        } else {
-            // Original transition to Marvin functionality
-            addMessage({
-                persona: "guide",
-                message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
-                action: "none",
-            });
-        }
-    }, [messages, gameState.conversationMode, setMessages, addMessage]);
+        // Transition to Marvin.
+        addMessage({
+            persona: "guide",
+            message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
+            action: "none",
+        });
+    }, [addMessage]);
 
     return {
         handleGuideAdvice,
@@ -276,35 +260,10 @@ const createMessage = (
 });
 
 const safeJsonParse = (data: string): { message: string; action?: Action } => {
-    // First try direct parse
     try {
         return JSON.parse(data);
-    } catch {
-        // ignore
+    } catch (error) {
+        console.error("JSON parse error:", error);
+        return { message: data };
     }
-
-    // Strip markdown code fences and try to extract JSON
-    const jsonMatch = data.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-        try {
-            return JSON.parse(jsonMatch[1].trim());
-        } catch {
-            // ignore
-        }
-    }
-
-    // Try to find a JSON object in the string
-    const braceMatch = data.match(
-        /\{[\s\S]*"message"\s*:\s*"[\s\S]*?"\s*[\s\S]*?\}/,
-    );
-    if (braceMatch) {
-        try {
-            return JSON.parse(braceMatch[0]);
-        } catch {
-            // ignore
-        }
-    }
-
-    console.error("JSON parse error, raw content:", data.slice(0, 200));
-    return { message: "Something went wrong in the circuitry... Don't Panic!" };
 };

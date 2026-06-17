@@ -1,9 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="polli-ui-root">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#DBEAFE" />
+
+        <!-- Set color mode before first paint to avoid a flash. Source of truth
+             after mount: @pollinations/ui ColorModeToggle (STORAGE_KEY must match). -->
+        <script>
+            (() => {
+                try {
+                    let mode = localStorage.getItem("polli-color-mode");
+                    if (mode !== "light" && mode !== "dark") {
+                        mode = matchMedia("(prefers-color-scheme: dark)").matches
+                            ? "dark"
+                            : "light";
+                    }
+                    if (mode === "dark") document.documentElement.classList.add("dark");
+                    // theme-color (browser chrome) is derived from the
+                    // --polli-color-app-bg token by @pollinations/ui
+                    // ColorModeToggle once styles load — no hardcoded color here.
+                } catch {
+                    /* ignore storage / matchMedia failures */
+                }
+            })();
+        </script>
         <meta
             name="description"
             content="React UI showcase for the Pollinations SDK and UI component library — auth, wallet, and design primitives."
@@ -36,15 +56,15 @@
         <meta name="twitter:image:alt" content="pollinations.ai logo" />
 
         <!-- Favicons & touch icons (generated from @pollinations/ui via tools/icons) -->
-        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=react-blue-20260601" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=react-blue-20260601" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=react-blue-20260601" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=react-blue-20260601" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png?v=react-blue-20260601" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png?v=react-blue-20260601" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=react-neutral-20260608" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=react-neutral-20260608" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=react-neutral-20260608" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=react-neutral-20260608" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png?v=react-neutral-20260608" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png?v=react-neutral-20260608" />
 
         <!-- PWA Manifest -->
-        <link rel="manifest" href="/manifest.webmanifest?v=react-blue-20260601" />
+        <link rel="manifest" href="/manifest.webmanifest?v=react-neutral-20260608" />
         <link rel="canonical" href="https://react.pollinations.ai" />
 
         <!-- iOS Meta Tags -->
@@ -53,7 +73,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="React UI" />
     </head>
-    <body data-theme="blue">
+    <body class="polli-ui-shell">
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>

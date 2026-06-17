@@ -1,7 +1,6 @@
 import { Chip, cn, Slider } from "@pollinations/ui";
 import {
     formatPollenPackValue,
-    getPackBonusPercent,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -15,11 +14,8 @@ const pollenPackSliderStyle = {
         "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
 } as CSSProperties;
 
-const formatPackAriaLabel = (pack: PollenPack): string => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
-};
+const formatPackAriaLabel = (pack: PollenPack): string =>
+    `$${pack.amountUsd} to ${formatPollenPackValue(pack.amountUsd)} pollen`;
 
 type PollenPackSliderProps = {
     value: number;
@@ -68,15 +64,13 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     style={pollenPackSliderStyle}
                 />
             </div>
-            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-amber-700/80 tabular-nums">
+            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-theme-text-muted tabular-nums">
                 <div className="relative">
                     {packs.map((pack, index) => {
                         const isSelected =
                             pack.amountUsd === selectedPack?.amountUsd;
                         const isFirst = index === 0;
                         const isLast = lastIndex > 0 && index === lastIndex;
-                        const bonusPercent = getPackBonusPercent(pack);
-                        const hasBonus = pack.bonusPollen > 0;
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -87,8 +81,14 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             : "0%",
                                 }}
                                 className={cn(
-                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
-                                    isSelected && "font-bold text-amber-900",
+                                    "absolute top-0 whitespace-nowrap",
+                                    isFirst
+                                        ? "-ml-[11px] translate-x-0 text-left"
+                                        : isLast
+                                          ? "ml-[11px] -translate-x-full text-right"
+                                          : "-translate-x-1/2 text-center",
+                                    isSelected &&
+                                        "font-bold text-theme-text-soft",
                                 )}
                             >
                                 <span className="relative inline-block">
@@ -99,11 +99,15 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                 "text-2xl leading-none text-paid-deep",
                                         )}
                                     >
-                                        ${pack.amountUsd}
+                                        {formatPollenPackValue(pack.amountUsd)}
+                                        {isSelected && (
+                                            <span className="block text-base font-normal leading-tight text-paid-deep">
+                                                pollen
+                                            </span>
+                                        )}
                                     </span>
                                     {isSelected && (
                                         <Chip
-                                            theme="amber"
                                             size="sm"
                                             className={cn(
                                                 "absolute top-full mt-1 flex-col items-stretch whitespace-nowrap",
@@ -116,6 +120,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         >
                                             <span
                                                 className={cn(
+                                                    "text-sm",
                                                     isFirst
                                                         ? "text-left"
                                                         : isLast
@@ -123,25 +128,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                           : "text-center",
                                                 )}
                                             >
-                                                {formatPollenPackValue(
-                                                    pack.pollenGrant,
-                                                )}{" "}
-                                                pollen
+                                                ${pack.amountUsd}
                                             </span>
-                                            {hasBonus && (
-                                                <span
-                                                    className={cn(
-                                                        "text-amber-700",
-                                                        isFirst
-                                                            ? "text-left"
-                                                            : isLast
-                                                              ? "text-right"
-                                                              : "text-center",
-                                                    )}
-                                                >
-                                                    +{bonusPercent}% bonus
-                                                </span>
-                                            )}
                                         </Chip>
                                     )}
                                 </span>

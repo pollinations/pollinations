@@ -1,151 +1,142 @@
-import { Chip, CopyButton, cn, InfoTip, Tooltip } from "@pollinations/ui";
-import { PaidChip } from "@pollinations/ui/wallet";
-import type { FC } from "react";
 import {
-    calculatePerPollen,
-    canAffordModel,
-    TOP_UP_TOOLTIP,
-} from "./calculations.ts";
+    CardIcon,
+    CopyButton,
+    cn,
+    InfoTip,
+    SproutIcon,
+    Surface,
+    Tooltip,
+} from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import type { FC } from "react";
+import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
-    getModelCapabilityIcons,
+    getModelCapabilities,
     getModelCapabilityLabel,
     getModelDescriptionWithoutName,
     getModelDisplayName,
-    getModelModalityIcons,
+    getModelInputModalities,
     getModelModalityLabel,
     isAlpha,
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
+import { ModelStatusChips } from "./model-status-chips.tsx";
 import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
-    tierBalance?: number;
-    packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({
-    model,
-    tierBalance,
-    packBalance,
-}) => {
-    const modelDisplayName = getModelDisplayName(model.name);
-    const modelDescription = getModelDescriptionWithoutName(model.name);
-    const brandLogoPath = getModelBrandLogoPath(model.name);
-    const modalityIcons = getModelModalityIcons(model.name);
-    const modalityLabel = getModelModalityLabel(model.name);
-    const capabilityIcons = getModelCapabilityIcons(model.name);
-    const capabilityLabel = getModelCapabilityLabel(model.name);
+export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+    const modelDisplayName = getModelDisplayName(model);
+    const modelDescription = getModelDescriptionWithoutName(model);
+    const brandLogoPath = getModelBrandLogoPath(model);
+    const inputModalities = getModelInputModalities(model);
+    const modalityLabel = getModelModalityLabel(model);
+    const capabilities = getModelCapabilities(model);
+    const capabilityLabel = getModelCapabilityLabel(model);
     const publicModelName = modelDisplayName || model.name;
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const showAlpha = isAlpha(model.name);
+    const showNew = isNewModel(model);
+    const showPaidOnly = isPaidOnly(model);
+    const showAlpha = isAlpha(model);
 
-    const isSignedIn = packBalance !== undefined;
     const genPerPollen = calculatePerPollen(model);
-    const isDisabled =
-        isSignedIn &&
-        !canAffordModel(
-            model,
-            tierBalance ?? 0,
-            packBalance ?? 0,
-            showPaidOnly,
-        );
+    const balanceLabel = showPaidOnly
+        ? "Paid balance only"
+        : "Tier or Paid balance";
+    const perPollenTooltip =
+        genPerPollen === "—"
+            ? balanceLabel
+            : `≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen\n${balanceLabel}`;
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
-            emoji: "💬",
-            subEmojis: ["💬"],
+            kind: "text",
+            subKinds: ["text"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptCachedPrice],
-            emoji: "💾",
-            subEmojis: ["💾"],
+            kind: "cached",
+            subKinds: ["cached"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptAudioPrice],
-            emoji: "🎙️",
-            subEmojis: ["🎙️"],
+            kind: "audioIn",
+            subKinds: ["audioIn"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perToken: model.perToken,
         },
         {
             prices: [model.promptVideoPrice],
-            emoji: "🎬",
-            subEmojis: ["🎬"],
+            kind: "video",
+            subKinds: ["video"],
             perToken: model.perToken,
         },
     ]);
     const outputPriceBadges = groupPriceBadges([
         {
             prices: [model.completionTextPrice],
-            emoji: "💬",
-            subEmojis: ["💬"],
+            kind: "text",
+            subKinds: ["text"],
             perToken: model.perToken,
         },
         {
             prices: [model.completionAudioPrice],
-            emoji: "🔊",
-            subEmojis: ["🔊"],
+            kind: "audioOut",
+            subKinds: ["audioOut"],
             perToken: model.perToken,
         },
         {
             prices: [model.perSecondPrice],
-            emoji: model.type === "audio" ? "🔊" : "🎬",
-            subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
+            kind: model.type === "audio" ? "audioOut" : "video",
+            subKinds: [model.type === "audio" ? "audioOut" : "video"],
             perSecond: true,
         },
         {
             prices: [model.perAudioSecondPrice],
-            emoji: "🔊",
-            subEmojis: ["🔊"],
+            kind: "audioOut",
+            subKinds: ["audioOut"],
             perSecond: true,
         },
         {
             prices: [model.perTokenPrice],
-            emoji: "🎬",
-            subEmojis: ["🎬"],
+            kind: "video",
+            subKinds: ["video"],
             perToken: true,
         },
         {
             prices: [model.perImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perImage: true,
         },
         {
             prices: [model.completionImagePrice],
-            emoji: "🖼️",
-            subEmojis: ["🖼️"],
+            kind: "image",
+            subKinds: ["image"],
             perToken: model.perToken,
         },
     ]);
 
     return (
-        <div
-            className={cn(
-                "flex items-center rounded-xl p-4",
-                isDisabled
-                    ? "bg-transparent"
-                    : "bg-white/80 hover:bg-white/90 transition-colors",
-            )}
-        >
+        <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
                 {brandLogoPath && (
                     <span
                         aria-hidden="true"
-                        className="h-8 w-8 bg-current opacity-55 text-gray-900"
+                        className="h-8 w-8 bg-current opacity-55 text-ink-900"
                         style={{
                             maskImage: `url(${brandLogoPath})`,
                             WebkitMaskImage: `url(${brandLogoPath})`,
@@ -160,95 +151,125 @@ export const ModelRow: FC<ModelRowProps> = ({
                 )}
             </div>
 
-            {/* Model info — flexible width */}
-            <div className="flex-1 min-w-0 pl-3">
+            {/* Hairline separating the brand logo from the model info —
+                spaced clear of the logo square on both sides */}
+            {brandLogoPath && (
+                <span
+                    aria-hidden="true"
+                    className="mx-3 h-10 w-px shrink-0 self-center bg-divider"
+                />
+            )}
+
+            {/* Model info — flexible width; logo-less rows pad to the same
+                start (40px logo + 25px divider footprint = 65px) */}
+            <div
+                className={
+                    brandLogoPath
+                        ? "flex-1 min-w-0"
+                        : "flex-1 min-w-0 pl-[25px]"
+                }
+            >
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="inline-flex items-center text-base font-medium leading-none">
-                        <span>{publicModelName}</span>
-                        {modelDescription && (
-                            <InfoTip text={modelDescription} />
-                        )}
-                    </span>
-                    <CopyButton
-                        value={model.name}
-                        copiedTimeoutMs={900}
-                        tooltip={`Copy API model name ${model.name}`}
-                        aria-label={`Copy API model name ${model.name}`}
-                        className={(copied) =>
-                            cn(
-                                "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-gray-500 transition-colors",
-                                copied
-                                    ? "text-teal-700"
-                                    : "hover:text-gray-700",
-                            )
-                        }
-                    >
-                        {(copied) => (
-                            <>
-                                <span>{model.name}</span>
-                                {copied && (
-                                    <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
-                                        copied
+                    <div className="flex min-w-0 items-center gap-2">
+                        <CopyButton
+                            value={model.name}
+                            tooltip={`Copy "${model.name}"`}
+                            copiedTooltip={null}
+                            aria-label={`Copy model id ${model.name}`}
+                            className={(copied) =>
+                                cn(
+                                    "flex min-w-0 cursor-pointer items-center gap-1.5 text-left text-base font-medium leading-none transition-colors",
+                                    copied
+                                        ? "text-intent-success-text"
+                                        : "hover:text-theme-text-soft",
+                                )
+                            }
+                        >
+                            {(copied) => (
+                                <>
+                                    <span className="min-w-0 truncate">
+                                        {publicModelName}
                                     </span>
-                                )}
-                            </>
+                                    {copied && (
+                                        <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
+                                            copied
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                        </CopyButton>
+                        {modelDescription && (
+                            <InfoTip
+                                content={modelDescription}
+                                label={`About ${publicModelName}`}
+                            />
                         )}
-                    </CopyButton>
-                    {(modalityIcons.length > 0 ||
-                        capabilityIcons.length > 0 ||
-                        showNew ||
-                        showAlpha ||
-                        showPaidOnly) && (
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                    </div>
+                    {(inputModalities.length > 0 ||
+                        capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            {modalityIcons.length > 0 && (
-                                <Tooltip content={modalityLabel}>
-                                    <Chip intent="neutral" size="sm">
-                                        {modalityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Chip>
-                                </Tooltip>
-                            )}
-                            {capabilityIcons.length > 0 && (
-                                <Tooltip content={capabilityLabel}>
-                                    <Chip intent="neutral" size="sm">
-                                        {capabilityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Chip>
-                                </Tooltip>
-                            )}
-                            {showNew && (
-                                <Chip intent="news" size="sm">
-                                    NEW
-                                </Chip>
-                            )}
-                            {showAlpha && (
-                                <Tooltip content="Alpha model — experimental, may be unstable">
-                                    <Chip intent="alpha" size="sm">
-                                        ALPHA
-                                    </Chip>
-                                </Tooltip>
-                            )}
-                            {showPaidOnly && (
-                                <Tooltip
-                                    content={
-                                        isDisabled
-                                            ? TOP_UP_TOOLTIP
-                                            : "This model uses paid balance only."
-                                    }
-                                >
-                                    <PaidChip size="sm">PAID</PaidChip>
-                                </Tooltip>
-                            )}
+                            <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                                {inputModalities.length > 0 && (
+                                    <Tooltip content={modalityLabel}>
+                                        <span className="inline-flex items-center gap-2">
+                                            {inputModalities.map((key) => {
+                                                const Icon = MODALITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                {inputModalities.length > 0 &&
+                                    capabilities.length > 0 && (
+                                        <span className="h-3.5 w-px bg-current opacity-30" />
+                                    )}
+                                {capabilities.length > 0 && (
+                                    <Tooltip content={capabilityLabel}>
+                                        <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                                            {capabilities.map((key) => {
+                                                const Icon =
+                                                    CAPABILITY_ICON[key];
+                                                return (
+                                                    <Icon
+                                                        key={key}
+                                                        className="h-4 w-4"
+                                                    />
+                                                );
+                                            })}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Per pollen — fixed width */}
+            {/* Per pollen — fixed width; gold + card for paid-only models, green
+                + sprout for tier-eligible models (replaces the old PAID badge) */}
             <div className="w-[90px] text-center shrink-0">
-                <Chip>{genPerPollen}</Chip>
+                <Tooltip content={perPollenTooltip} displayContents>
+                    {showPaidOnly ? (
+                        <PaidChip>
+                            <CardIcon className="h-3.5 w-3.5" />
+                            {genPerPollen}
+                        </PaidChip>
+                    ) : (
+                        <TierChip>
+                            <SproutIcon className="h-3.5 w-3.5" />
+                            {genPerPollen}
+                        </TierChip>
+                    )}
+                </Tooltip>
             </div>
 
             {/* Input prices — fixed width */}
@@ -256,7 +277,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 <div className="flex flex-col gap-1 items-end">
                     {inputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
@@ -268,12 +289,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                 <div className="flex flex-col gap-1 items-end">
                     {outputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
                 </div>
             </div>
-        </div>
+        </Surface>
     );
 };

@@ -6,6 +6,8 @@ import {
     type TierStatus,
     tierNames,
 } from "@shared/tier-config.ts";
+import { capitalize } from "@shared/util.ts";
+import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -13,8 +15,6 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { capitalize } from "../util.ts";
-import { errorResponseDescriptions } from "../utils/api-docs.ts";
 
 const TierStatusSchema = z.object({
     target: z.literal(tierNames),

@@ -4,11 +4,11 @@ import type { ImageModelName } from "@shared/registry/image.ts";
 /**
  * Image/Video-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
- * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
+ * Tier/balance gating runs in this worker (auth/balance middleware +
+ * utils/generation-access.ts) - this file only contains implementation details
  */
 interface ImageModelConfig {
     type: string;
-    enhance: boolean;
     defaultSideLength?: number; // Optional - defaults to 1024 if not specified
     minPixels?: number; // Minimum total pixels required (width * height)
     // Video-specific options
@@ -26,14 +26,12 @@ export const IMAGE_CONFIG = {
     // Azure Flux Kontext - general purpose model
     kontext: {
         type: "kontext",
-        enhance: true,
         defaultSideLength: 1024,
     },
 
     // ByteDance Seedream 5.0 Lite via Replicate
     seedream5: {
         type: "replicate-seedream5",
-        enhance: false,
         defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
     },
@@ -41,29 +39,40 @@ export const IMAGE_CONFIG = {
     // ByteDance Seedream 4.0 via Replicate
     seedream: {
         type: "replicate-seedream",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // ByteDance Seedream 4.5 Pro via Replicate
     "seedream-pro": {
         type: "replicate-seedream-pro",
-        enhance: false,
         defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
+    },
+
+    // Ideogram 4.0 via Replicate (text-to-image; output resolution is preset,
+    // so width/height only signal the target aspect ratio). Default 1:1 → 2048².
+    "ideogram-v4-turbo": {
+        type: "replicate-ideogram-turbo",
+        defaultSideLength: 2048,
+    },
+    "ideogram-v4-balanced": {
+        type: "replicate-ideogram-balanced",
+        defaultSideLength: 2048,
+    },
+    "ideogram-v4-quality": {
+        type: "replicate-ideogram-quality",
+        defaultSideLength: 2048,
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
     nanobanana: {
         type: "vertex-ai",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
     "nanobanana-2": {
         type: "vertex-ai-2",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
@@ -71,35 +80,30 @@ export const IMAGE_CONFIG = {
     // Supports 1K, 2K, and 4K output resolutions
     "nanobanana-pro": {
         type: "vertex-ai-pro",
-        enhance: false,
         defaultSideLength: 2048, // Default to 2K, supports up to 4K (3840x2160)
     },
 
     // Azure GPT Image model - gpt-image-1-mini
     gptimage: {
         type: "azure",
-        enhance: false,
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
 
     // Azure GPT Image 1.5 - advanced image generation
     "gptimage-large": {
         type: "azure-gptimage-large",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Azure GPT Image 2 - next-gen image generation
     "gpt-image-2": {
         type: "azure-gpt-image-2",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Veo 3.1 Fast - Video generation via Vertex AI
     veo: {
         type: "vertex-ai-video",
-        enhance: false,
         isVideo: true,
         defaultDuration: 4, // Cheapest option: 4 seconds
         maxDuration: 8,
@@ -111,7 +115,6 @@ export const IMAGE_CONFIG = {
     // fails (E004 1cah9wlWR9) and BytePlus is being deprecated.
     "seedance-pro": {
         type: "replicate-seedance-pro",
-        enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
@@ -121,82 +124,81 @@ export const IMAGE_CONFIG = {
     // ByteDance Seedance 2.0 via Replicate - Multimodal video gen with native audio
     "seedance-2.0": {
         type: "replicate-seedance-2",
-        enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio
+    // Alibaba Wan 2.6 via Replicate - 720p video with native audio
     wan: {
-        type: "alibaba-dashscope-video",
-        enhance: false,
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
+    // Alibaba Wan 2.2 via Replicate - fast/cheap 480p video (5s fixed, silent)
     "wan-fast": {
-        type: "alibaba-dashscope-video",
-        enhance: false,
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 5,
         defaultResolution: "480p",
     },
 
-    // Alibaba Wan 2.7 - Newer video generation (720P default, bundled audio)
+    // Alibaba Wan 2.7 via Replicate - 720p video with bundled audio + keyframes
     "wan-pro": {
-        type: "alibaba-dashscope-video",
-        enhance: false,
+        type: "replicate-wan-video",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.7 via Replicate - 1080p variant (one price: $0.15/s)
+    "wan-pro-1080p": {
+        type: "replicate-wan-video",
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "1080p",
+    },
+
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
     "wan-image": {
-        type: "alibaba-dashscope-image",
-        enhance: false,
+        type: "replicate-wan-image",
         defaultSideLength: 1024,
     },
 
     // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
     "wan-image-pro": {
-        type: "alibaba-dashscope-image",
-        enhance: false,
+        type: "replicate-wan-image-pro",
         defaultSideLength: 2048,
     },
 
     // Alibaba Qwen Image Plus - Text-to-image and image editing
     "qwen-image": {
-        type: "alibaba-dashscope-image",
-        enhance: false,
+        type: "replicate-qwen-image",
         defaultSideLength: 1024,
     },
 
     // Grok Imagine - xAI official image generation
     "grok-imagine": {
         type: "xai-image",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Grok Imagine Pro - xAI official pro image generation (Aurora)
     "grok-imagine-pro": {
         type: "xai-image-pro",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Grok Video Pro - xAI official video generation (720p)
     "grok-video-pro": {
         type: "xai-video",
-        enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 15,
@@ -206,28 +208,24 @@ export const IMAGE_CONFIG = {
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
     zimage: {
         type: "zimage",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
-    // Flux Schnell - Fast high-quality image generation (IO.net, nunchaku-quantized)
+    // Flux Schnell - Fast high-quality image generation (Fireworks serverless)
     flux: {
         type: "flux",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Klein - Fast 4B parameter model on RunPod (text-to-image + image editing)
     klein: {
         type: "runpod-klein",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // LTX-2 - Fast video generation on Lambda Labs GH200
     "ltx-2": {
         type: "vastai-ltx2",
-        enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
@@ -237,38 +235,40 @@ export const IMAGE_CONFIG = {
     // Pruna p-image - Text-to-image generation
     "p-image": {
         type: "pruna",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Pruna p-image-edit - Image-to-image editing
     "p-image-edit": {
         type: "pruna-edit",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
-    // Pruna p-video - Text/image-to-video generation
-    "p-video": {
-        type: "pruna-video",
-        enhance: false,
+    // Pruna p-video - Text/image-to-video generation (720p / 1080p tiers)
+    "p-video-720p": {
+        type: "pruna-video-720p",
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
         defaultResolution: "720p",
     },
+    "p-video-1080p": {
+        type: "pruna-video-1080p",
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "1080p",
+    },
 
     // Amazon Nova Canvas - Bedrock image generation
     "nova-canvas": {
         type: "nova-canvas",
-        enhance: false,
         defaultSideLength: 1024,
     },
 
     // Amazon Nova Reel - Bedrock video generation
     "nova-reel": {
         type: "nova-reel",
-        enhance: false,
         isVideo: true,
         defaultDuration: 6,
         maxDuration: 120,

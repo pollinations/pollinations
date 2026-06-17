@@ -1,26 +1,18 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { getModelDisplayName } from "../models/model-utils.ts";
+export type ModelModality =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "embedding"
+    | "realtime";
 
-export type ModelModality = "text" | "image" | "audio";
-
-export const ALL_MODELS = [
-    ...Object.keys(TEXT_SERVICES).map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-        type: "text" as const,
-    })),
-    ...Object.keys(IMAGE_SERVICES).map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-        type: "image" as const,
-    })),
-    ...Object.keys(AUDIO_SERVICES).map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-        type: "audio" as const,
-    })),
+export const MODEL_MODALITIES: ModelModality[] = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "embedding",
+    "realtime",
 ];
 
 export const MODALITY_META: Record<
@@ -29,5 +21,8 @@ export const MODALITY_META: Record<
 > = {
     text: { emoji: "💬", label: "text" },
     image: { emoji: "🖼️", label: "image" },
+    video: { emoji: "🎬", label: "video" },
     audio: { emoji: "🎵", label: "audio" },
+    embedding: { emoji: "🔎", label: "embedding" },
+    realtime: { emoji: "🎙️", label: "realtime" },
 };

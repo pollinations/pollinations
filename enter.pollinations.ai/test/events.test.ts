@@ -1,11 +1,11 @@
 import { env } from "cloudflare:test";
-import { usageToEventParams } from "@shared/schemas/generation-event.ts";
-import { expect } from "vitest";
 import {
     getTinybirdDatasourceIngestUrl,
     sendErrorEventToTinybird,
-} from "@/events.ts";
-import { exponentialBackoffDelay } from "@/util.ts";
+} from "@shared/events.ts";
+import { usageToEventParams } from "@shared/schemas/generation-event.ts";
+import { exponentialBackoffDelay } from "@shared/util.ts";
+import { expect } from "vitest";
 import { test } from "./fixtures.ts";
 
 test("usageToEventParams preserves fractional seconds for video and audio durations", () => {

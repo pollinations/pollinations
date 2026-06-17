@@ -11,6 +11,7 @@
 @import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
 @import "./fonts.css";
 @import "./tokens.css";
+@import "../modules/wallet/styles.css";
 
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
@@ -50,6 +51,81 @@
 
 .polli-input-number-clean {
     -moz-appearance: textfield;
+}
+
+.polli-input,
+.polli-textarea {
+    background-color: var(--polli-color-bg-pale);
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: none;
+}
+
+.polli-input:focus,
+.polli-input:focus-visible,
+.polli-textarea:focus,
+.polli-textarea:focus-visible {
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.polli-input[data-error="true"],
+.polli-textarea[data-error="true"] {
+    border-color: var(--polli-color-danger-border);
+}
+
+.polli-input[data-error="true"]:focus,
+.polli-input[data-error="true"]:focus-visible,
+.polli-textarea[data-error="true"]:focus,
+.polli-textarea[data-error="true"]:focus-visible {
+    border-color: var(--polli-color-danger-border);
+    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+}
+
+.polli-textarea {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea:focus {
+    --polli-textarea-resizer-color: var(--polli-color-border);
+    scrollbar-color: var(--polli-color-border) transparent;
+}
+
+.polli-textarea::-webkit-resizer {
+    background:
+        linear-gradient(
+            135deg,
+            transparent 0 52%,
+            var(--polli-textarea-resizer-color) 52% 58%,
+            transparent 58% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 66%,
+            var(--polli-textarea-resizer-color) 66% 72%,
+            transparent 72% 100%
+        ),
+        linear-gradient(
+            135deg,
+            transparent 0 80%,
+            var(--polli-textarea-resizer-color) 80% 86%,
+            transparent 86% 100%
+        );
+}
+
+.polli-control {
+    outline: none;
+}
+
+.polli-control:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--polli-color-border);
+}
+
+.polli-control[data-intent="danger"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
 }
 
 .polli-slider {
@@ -125,7 +201,7 @@
     appearance: none;
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
-    background: white;
+    background: var(--polli-color-surface-opaque);
     box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
@@ -135,7 +211,7 @@
     height: 22px;
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
-    background: white;
+    background: var(--polli-color-surface-opaque);
     box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
@@ -155,3 +231,16 @@
  * only if you introduce a class constructed dynamically (template
  * literal, runtime concatenation) that can't be detected statically.
  */
+
+/* Respect the OS "reduce motion" setting app-wide: collapse transitions and
+   animations to near-instant (the drawer slide, slider transforms, etc.). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

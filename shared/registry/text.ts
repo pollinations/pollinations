@@ -67,14 +67,8 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-large": {
-        aliases: [
-            "gpt-5.4",
-            "gpt-5.4-reasoning",
-            "gpt-5.2",
-            "openai-reasoning",
-            "gpt-5.2-reasoning",
-        ],
+    "gpt-5.4": {
+        aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
         modelId: "gpt-5.4",
         provider: "azure",
         brand: "OpenAI",
@@ -118,8 +112,8 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-5.5": {
-        aliases: ["gpt-5.5-reasoning"],
+    "openai-large": {
+        aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
         modelId: "gpt-5.5",
         provider: "azure",
         brand: "OpenAI",
@@ -161,12 +155,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mistral": {
+    "mistral-small-3.2": {
         aliases: [
-            "mistral-small",
             "mistral-small-3.1",
             "mistral-small-2503",
-            "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
         modelId: "mistral-small-2503",
@@ -190,8 +182,13 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistral-4": {
-        aliases: ["mistral-small-4", "mistral-small-2603"],
+    "mistral": {
+        aliases: [
+            "mistral-4",
+            "mistral-small",
+            "mistral-small-4",
+            "mistral-small-2603",
+        ],
         modelId: "mistral-small-2603",
         provider: "openrouter",
         brand: "Mistral",
@@ -264,8 +261,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
+    "gemini-3-flash": {
+        aliases: ["gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
         brand: "Google",
@@ -291,7 +288,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.5-flash": {
+    "gemini": {
         aliases: ["gemini-3.5-flash"],
         modelId: "gemini-3.5-flash",
         provider: "google",
@@ -490,13 +487,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-large": {
-        aliases: [
-            "grok-4-20",
-            "grok-4-20-reasoning",
-            "grok-reasoning",
-            "grok-4-1-fast-reasoning",
-        ],
+    "grok-4-20-reasoning": {
+        aliases: ["grok-4-20", "grok-4-1-fast-reasoning"],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
         brand: "xAI",
@@ -520,8 +512,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-4.3": {
-        aliases: ["grok-4-3"],
+    "grok-large": {
+        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
         modelId: "grok-4.3",
         provider: "azure",
         brand: "xAI",
@@ -727,8 +719,8 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
-    "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
+    "claude-opus-4.6": {
+        aliases: ["claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
         brand: "Anthropic",
@@ -777,8 +769,8 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.8": {
-        aliases: [],
+    "claude-large": {
+        aliases: ["claude-opus-4.8", "claude-opus"],
         modelId: "claude-opus-4-8",
         provider: "bedrock",
         brand: "Anthropic",
@@ -897,15 +889,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "kimi": {
-        aliases: [
-            "kimi-k2.5",
-            "kimi-k2p5",
-            "kimi-reasoning",
-            "kimi-large",
-            "kimi-k2-thinking",
-            "kimi-thinking",
-        ],
+    "kimi-k2.5": {
+        aliases: ["kimi-k2p5", "kimi-k2-thinking"],
         modelId: "accounts/fireworks/models/kimi-k2p5",
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -928,8 +913,14 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "kimi-k2.6": {
-        aliases: ["kimi-k2p6"],
+    "kimi": {
+        aliases: [
+            "kimi-k2.6",
+            "kimi-k2p6",
+            "kimi-reasoning",
+            "kimi-large",
+            "kimi-thinking",
+        ],
         modelId: "accounts/fireworks/models/kimi-k2p6",
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -952,8 +943,8 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "kimi-k2.7-code": {
-        aliases: ["kimi-k2.7", "kimi-k2p7"],
+    "kimi-code": {
+        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
         modelId: "accounts/fireworks/models/kimi-k2p7-code",
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -1146,13 +1137,8 @@ export const TEXT_SERVICES = {
         contextLength: 327680,
         isSpecialized: false,
     },
-    "minimax": {
-        aliases: [
-            "minimax-m2.7",
-            "minimax-m2p7",
-            "minimax-m2.5",
-            "minimax-m2p5",
-        ],
+    "minimax-m2.7": {
+        aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
         modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
         brand: "MiniMax",
@@ -1173,8 +1159,8 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "minimax-m3": {
-        aliases: ["minimax3", "minimax-3"],
+    "minimax": {
+        aliases: ["minimax-m3", "minimax3", "minimax-3"],
         modelId: "accounts/fireworks/models/minimax-m3",
         provider: "fireworks",
         brand: "MiniMax",

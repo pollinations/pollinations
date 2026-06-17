@@ -73,7 +73,9 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
 });
 
 test("GPT-5.5 is available on the free tier", () => {
-    const definition = getModelDefinition("gpt-5.5");
+    // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
+    // remains a back-compat alias. Resolve before the direct registry lookup.
+    const definition = getModelDefinition(resolveModelName("gpt-5.5"));
 
     expect(definition.paidOnly).toBeUndefined();
 });

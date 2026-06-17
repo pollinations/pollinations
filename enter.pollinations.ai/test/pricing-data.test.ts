@@ -117,12 +117,15 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     };
 
     const grok = getModelDefinition("grok");
-    const grokLarge = getModelDefinition("grok-large");
+    // `grok-large` now points at the newer Grok 4.3 (clean slug = newest);
+    // the 4.20 reasoning model keeps the versioned slug `grok-4-20-reasoning`.
+    const grokReasoning = getModelDefinition("grok-4-20-reasoning");
 
-    for (const model of ["grok", "grok-large"] as const) {
+    for (const model of ["grok", "grok-4-20-reasoning"] as const) {
         const definition = getModelDefinition(model);
         const priceDefinition = getPriceDefinition(model);
-        const usage = model === "grok-large" ? reasoningUsage : inputUsage;
+        const usage =
+            model === "grok-4-20-reasoning" ? reasoningUsage : inputUsage;
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
 
@@ -143,12 +146,11 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     expect(grok.reasoning).toBeUndefined();
     expect(calculateCost("grok", inputUsage).totalCost).toBeCloseTo(10.2, 8);
 
-    expect(grokLarge.modelId).toBe("grok-4-20-reasoning");
-    expect(grokLarge.reasoning).toBe(true);
-    expect(calculateCost("grok-large", reasoningUsage).totalCost).toBeCloseTo(
-        16.2,
-        8,
-    );
+    expect(grokReasoning.modelId).toBe("grok-4-20-reasoning");
+    expect(grokReasoning.reasoning).toBe(true);
+    expect(
+        calculateCost("grok-4-20-reasoning", reasoningUsage).totalCost,
+    ).toBeCloseTo(16.2, 8);
 });
 
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {

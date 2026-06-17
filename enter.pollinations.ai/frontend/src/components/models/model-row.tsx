@@ -199,7 +199,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         >
                             {(copied) => (
                                 <>
-                                    <span className="min-w-0 truncate">
+                                    <span className="min-w-0 whitespace-normal break-words">
                                         {publicModelName}
                                     </span>
                                     {copied && (

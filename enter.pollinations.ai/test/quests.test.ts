@@ -9,7 +9,10 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
+import {
+    buildQuestGrantMetadata,
+    runQuestEvaluator,
+} from "../src/services/quest-evaluator.ts";
 import { test } from "./fixtures.ts";
 
 async function getOnlyUser() {
@@ -101,6 +104,26 @@ test("buildGrantKey requires eventId for per-event quests", () => {
             eventId: "pr-123",
         }),
     ).toBe("quest:github:merged_pr_author:user:user-1:event:pr-123");
+});
+
+test("quest grant metadata keeps definition fields authoritative", () => {
+    expect(
+        buildQuestGrantMetadata(mergedPrQuest, {
+            userId: "user-1",
+            metadata: {
+                title: "Overridden title",
+                category: "engage",
+                eventType: "manual",
+                externalUrl:
+                    "https://github.com/pollinations/pollinations/pull/123",
+            },
+        }),
+    ).toEqual({
+        title: "Merge a pull request",
+        category: "build",
+        eventType: "github_pr_merged",
+        externalUrl: "https://github.com/pollinations/pollinations/pull/123",
+    });
 });
 
 test("per-event grant keys pay once per event", async ({

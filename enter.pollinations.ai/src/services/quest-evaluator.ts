@@ -5,6 +5,7 @@ import {
     buildGrantKey,
     type GrantCandidate,
     getQuestDefinition,
+    type QuestDefinition,
 } from "@shared/quests/definitions.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -17,6 +18,18 @@ type QuestEvaluatorResult = {
     scanned: number;
     granted: number;
 };
+
+export function buildQuestGrantMetadata(
+    definition: QuestDefinition,
+    candidate: GrantCandidate,
+): Record<string, unknown> {
+    return {
+        ...(candidate.metadata ?? {}),
+        title: definition.title,
+        category: definition.category,
+        eventType: definition.eventType,
+    };
+}
 
 async function grantCandidates({
     db,
@@ -42,12 +55,7 @@ async function grantCandidates({
             amount: definition.rewardAmount,
             bucket: definition.balanceBucket,
             sourceRef: candidate.sourceRef,
-            metadata: {
-                title: definition.title,
-                category: definition.category,
-                eventType: definition.eventType,
-                ...candidate.metadata,
-            },
+            metadata: buildQuestGrantMetadata(definition, candidate),
         });
         if (result.granted) granted += 1;
     }

@@ -150,9 +150,12 @@ describe("API Key Management", () => {
             }
         });
 
-        test("rejects redirect metadata through native Better Auth API-key routes", async ({
+        test("blocks native Better Auth api-key create/update routes", async ({
             sessionToken,
         }) => {
+            // Keys are created/updated only through /api/api-keys, which validates
+            // redirect URIs and strips server-only metadata. The native routes store
+            // caller metadata verbatim, so they must not be reachable over HTTP.
             const nativeCreate = await SELF.fetch(
                 "http://localhost:3000/api/auth/api-key/create",
                 {
@@ -172,9 +175,9 @@ describe("API Key Management", () => {
                     }),
                 },
             );
+            expect(nativeCreate.status).toBe(405);
 
-            expect(nativeCreate.status).toBe(400);
-
+            // The safe route still works and validates the scheme.
             const safeCreate = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
                 {
@@ -213,8 +216,7 @@ describe("API Key Management", () => {
                     }),
                 },
             );
-
-            expect(nativeUpdate.status).toBe(400);
+            expect(nativeUpdate.status).toBe(405);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({

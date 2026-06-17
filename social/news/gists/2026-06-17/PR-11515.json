@@ -1,0 +1,35 @@
+{
+  "pr_number": 11515,
+  "title": "fix: block native api key redirect metadata",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11515",
+  "merged_at": "2026-06-17T14:33:21Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Summary: Blocks native Better Auth api-key create/update routes from accepting redirect metadata directly. This keeps BYOP redirect allowlists on the Pollinations API-key routes where scheme and loopback validation runs. Testing: full api-keys integration file passed, targeted native redirect metadata test passed, git diff check passed. Note: local typecheck still fails on existing frontend UI package resolution and React DTS issues before this change.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tightening the keyhole",
+    "blurb": "We've tightened up how API keys handle redirect metadata to keep everything safe and sound. Just a little backend housekeeping to keep the hive secure!",
+    "summary": "Blocked native Better Auth API-key routes from accepting redirect metadata directly to ensure all requests pass through Pollinations' scheme and loopback validation.",
+    "impact": "This prevents potential bypasses of redirect allowlists during API key creation and updates, improving overall platform security.",
+    "keywords": [
+      "security",
+      "api-keys",
+      "validation",
+      "better-auth",
+      "backend"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly security guard or gatekeeper, checking a clipboard next to a glowing key or lock, representing the tightened validation on API key routes.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, holding a clipboard next to a glowing lime green (#ecf874) keyhole. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11515.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, holding a clipboard next to a glowing lime green (#ecf874) keyhole. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T14:34:25.622197+00:00"
+}

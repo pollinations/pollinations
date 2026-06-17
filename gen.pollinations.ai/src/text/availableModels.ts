@@ -231,11 +231,6 @@ const models: ModelDefinition[] = [
         transform: createPerplexitySearchTransform("high"),
     },
     {
-        name: "kimi-k2.5",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
-        transform: stripCacheControl,
-    },
-    {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
         transform: stripCacheControl,

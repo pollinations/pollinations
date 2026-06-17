@@ -1,0 +1,35 @@
+{
+  "pr_number": 11847,
+  "title": "feat: route more Gemini models to Airforce with Vertex fallback",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11847",
+  "merged_at": "2026-06-17T16:26:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Routes three more Gemini models primarily through Airforce (cheaper resale of the same SKU), falling back to Vertex on failure — extending the already-live `gemini` (gemini-3-flash) route.\n\n- `gemini-large` (3.1-pro), `gemini-flash-lite-3.1`, `gemini-3.5-flash` → Airforce primary / Vertex fallback\n- Same registry modelId on both targets → billing unchanged; Airforce-served calls cost us 20–50% less\n- Injects an empty system prompt (only when the user sends none) on every Airforce-routed Gemini model, to displace the coding-agent persona the resold backend occasionally defaults to. Verified: ~0 added tokens (prompt_tokens 14→14/16) and 4/4 clean identity reps; user-supplied system prompts left untouched.\n- Relaxes `createSystemPromptTransform` to accept `\"\"` (a deliberate empty value).\n\nWhy not Claude (this PR originally proposed it): parity testing showed Airforce resells Claude through coding-agent harnesses (Kiro / Claude Code) that an empty — and even a full — system prompt does not reliably suppress (sonnet/opus leaked 4/4 with `\"\"`); opus is also billed for Airforce's own ~1,400-token injected prompt. Gemini's persona leak is rare and fully fixed by the empty-prompt transform, so only Gemini is expanded.\n\nTested live against `portkey.myceli.ai` across modes (stream, tools, image) + identity reps. `tsc` clean, biome formatted, 15 tests pass.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Gemini gets a new flight path",
+    "blurb": "We've optimized the routing for our Gemini models, sending them through a more efficient backend while keeping Vertex as a reliable fallback. Plus, we fixed a quirky persona leak along the way!",
+    "summary": "Routes gemini-large, gemini-flash-lite-3.1, and gemini-3.5-flash through Airforce as the primary provider with Vertex as a fallback, reducing internal costs while maintaining reliability.",
+    "impact": "Users will experience the same Gemini models with improved backend efficiency, and an injected empty system prompt ensures the models no longer accidentally adopt a coding-agent persona.",
+    "keywords": [
+      "gemini",
+      "routing",
+      "airforce",
+      "vertex",
+      "system-prompt"
+    ],
+    "visual_concept": "Polly the bee as an air traffic controller, directing glowing data packets (representing Gemini models) along a green 'Airforce' flight path, with a backup 'Vertex' runway visible in the background.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny air traffic controller headset, holding glowing orange batons to guide glowing data packets along a lime green (#ecf874) runway. A secondary pastel runway sits in the background. Soft pastel gradient sky, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11847.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny air traffic controller headset, holding glowing orange batons to guide glowing data packets along a lime green (#ecf874) runway. A secondary pastel runway sits in the background. Soft pastel gradient sky, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T16:29:13.417164+00:00"
+}

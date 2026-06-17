@@ -1,0 +1,35 @@
+{
+  "pr_number": 11826,
+  "title": "chore: remove dormant /play iframe embed machinery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11826",
+  "merged_at": "2026-06-17T00:16:50Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Removes the `/play` iframe embed/auth/theme machinery (from #11800 + #11807). The iframe host that consumes it ships only in the still-open website rebuild (#11792), so none of this has a live consumer on `main` today — the website PR can reintroduce exactly what it needs.\n\n- **sdk**: drop the `polli-embed` bridge (`embed.tsx`/`embed-protocol.ts` + tests), the `EmbedBridge` auto-mount in `PolliProvider`, frame-local memory storage, and the host-login reroute\n- **ui**: drop `useHostThemeSync` (host→iframe theme `postMessage`) and `AppUserMenu` host-capability self-hiding\n- **ui**: drop the cross-subdomain color-mode cookie → back to per-origin `localStorage` (also removes the cookie read in the 5 pre-paint scripts)\n- **apps**: drop `useHostThemeSync` calls in playground/websim\n\n**Kept**: `isEmbeddedContext` cosmetic layout (#11791), the `localStorage` theme store + cross-tab sync.\n\n**Net**: −1039 / +17 across 18 files.\n\nVerified: sdk 30/30, ui 6/6, playground + websim typecheck against rebuilt packages, biome clean.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the iframe dust",
+    "blurb": "We're doing a little spring cleaning in the codebase, removing some dormant iframe embed machinery to keep things light and fast. Less code means fewer bugs for the hive!",
+    "summary": "Removed dormant `/play` iframe embed, auth, and theme sync machinery from the SDK and UI packages, shedding over 1,000 lines of unused code.",
+    "impact": "Developers will benefit from a cleaner, lighter codebase with the removal of the unused `polli-embed` bridge and cross-subdomain cookies.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "sdk",
+      "iframe",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee doing some spring cleaning, sweeping up old code blocks while the Nomnom creature eats the discarded iframe documents.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up glowing pixelated code blocks with a small broom. The round tan Nomnom creature happily eats a stack of discarded iframe documents nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11826.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up glowing pixelated code blocks with a small broom. The round tan Nomnom creature happily eats a stack of discarded iframe documents nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-17T00:17:58.152152+00:00"
+}

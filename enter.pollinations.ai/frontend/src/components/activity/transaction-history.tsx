@@ -55,6 +55,15 @@ function formatTimestamp(value: string, mode: Mode): string {
     });
 }
 
+// formatPollen floors to 4 decimals, so a real charge below 0.0001 Pollen
+// renders as "0" — making a billed request look free. Surface those as
+// "<0.0001" so a nonzero deduction is never shown as zero.
+function formatCost(value: number): string {
+    const formatted = formatPollen(value);
+    if (value > 0 && formatted === "0") return "<0.0001";
+    return formatted;
+}
+
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
     return <PaidChip>paid</PaidChip>;
@@ -181,7 +190,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                         {row.model || "—"}
                                     </span>
                                     <span className="tabular-nums font-semibold text-ink-900 shrink-0">
-                                        {formatPollen(row.cost_usd)}
+                                        {formatCost(row.cost_usd)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-xs">
@@ -251,7 +260,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                             />
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums font-semibold text-ink-900">
-                                            {formatPollen(row.cost_usd)}
+                                            {formatCost(row.cost_usd)}
                                         </td>
                                     </tr>
                                 ))}

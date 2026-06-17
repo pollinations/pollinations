@@ -32,45 +32,6 @@ function createVertexGeminiConfig(
     });
 }
 
-/**
- * Routes a Gemini model to Airforce, falling back to Vertex on failure.
- * Same modelId on both targets → identical billing regardless of route.
- * on_status_codes covers Airforce being out of balance (402), key/quota
- * problems (401/403/404/429), server errors (5xx), and requests Airforce can't
- * serve (400/422) — notably Gemini built-in tools like {type:"code_execution"},
- * which 400 on Airforce and fall through to Vertex where they actually run.
- * Failed attempts aren't billed, so falling back is always safe.
- * The top-level `model` keeps resolveModelConfig from sending model:undefined.
- */
-function createAirforceGeminiFallbackConfig(
-    airforceModelId: string,
-    vertexModelId: string,
-    vertexRegion: string,
-): PortkeyConfigFactory {
-    return () => ({
-        model: vertexModelId,
-        strategy: {
-            mode: "fallback",
-            on_status_codes: [400, 401, 402, 403, 404, 422, 429, 500, 502, 503],
-        },
-        targets: [
-            {
-                provider: "openai",
-                custom_host: "https://api.airforce/v1",
-                authKey: process.env.AIRFORCE_API_KEY,
-                override_params: { model: airforceModelId },
-            },
-            {
-                provider: "vertex-ai",
-                authKey: googleCloudAuth.getAccessToken,
-                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
-                vertex_region: vertexRegion,
-                override_params: { model: vertexModelId },
-            },
-        ],
-    });
-}
-
 // =============================================================================
 // Portkey Configuration Map
 // =============================================================================
@@ -238,18 +199,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3-flash-preview",
         "global",
     ),
-    // Airforce primary, Vertex fallback — same modelId, same billing.
-    "gemini-3-flash-airforce": createAirforceGeminiFallbackConfig(
-        "gemini-3-flash",
-        "gemini-3-flash-preview",
-        "global",
-    ),
     "gemini-3.1-pro-preview": createVertexGeminiConfig(
-        "gemini-3.1-pro-preview",
-        "global",
-    ),
-    "gemini-3.1-pro-airforce": createAirforceGeminiFallbackConfig(
-        "gemini-3.1-pro",
         "gemini-3.1-pro-preview",
         "global",
     ),
@@ -261,17 +211,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-3.1-flash-lite-airforce": createAirforceGeminiFallbackConfig(
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-flash-lite-preview",
-        "global",
-    ),
     "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
-    "gemini-3.5-flash-airforce": createAirforceGeminiFallbackConfig(
-        "gemini-3.5-flash",
-        "gemini-3.5-flash",
-        "global",
-    ),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

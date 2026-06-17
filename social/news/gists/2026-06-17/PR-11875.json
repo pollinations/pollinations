@@ -1,0 +1,34 @@
+{
+  "pr_number": 11875,
+  "title": "refactor(registry): point clean model slugs at newest versions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11875",
+  "merged_at": "2026-06-17T20:32:33Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Restores the convention that **unversioned clean slugs always point at the newest model** in their family. Newer versions had been added as standalone version-named slugs, so the clean slugs had quietly drifted (e.g. `claude-large` was 2 Opus versions behind).\n\n**Naming only — no model added or removed (55→55).** Every slug/alias callable today still resolves; displaced older versions keep a versioned slug.\n\n| Clean slug | now → | old version kept as |\n|---|---|---|\n| `openai-large` | GPT-5.5 | `gpt-5.4` |\n| `claude-large` | Opus 4.8 | `claude-opus-4.6` |\n| `grok-large` | Grok 4.3 (reasoning) | `grok-4-20-reasoning` |\n| `kimi` | K2.6 (general) | `kimi-k2.5` |\n| `kimi-code` | K2.7 Code | (renamed from `kimi-k2.7-code`) |\n| `minimax` | M3 | `minimax-m2.7` |\n| `mistral` | Small 4 | `mistral-small-3.2` |\n| `gemini` | 3.5 Flash | `gemini-3-flash` |\n\nBare `grok` (4.20 non-reasoning) unchanged — no newer non-reasoning model exists.\n\n### Behavior notes (intended)\n- Clean family/reasoning aliases follow to newest: `openai-reasoning`→5.5, `claude-opus`→4.8, `grok-reasoning`→4.3, `mistral-small`→Small 4, `kimi-reasoning`/`kimi-large`/`kimi-thinking`→K2.6. Version-specific `kimi-k2-thinking` stays on K2.5.\n- Callers on bare slugs get the newer model (and its pricing) automatically — same policy as the GLM-5.2 bump.\n\n### Verification\n- 55→55 entries; diff is pure key rename (no key dropped without a replacement)\n- 38/38 resolve checks pass (every new clean name + every old back-compat name)\n- aliases.test (212), pricing-data, effective-prices snapshot, gen transforms + model-permissions green\n- `availableModels.ts` `name` mapping updated in lockstep (resolver requires name==registry key); backend `portkeyConfig`/modelId layer untouched\n- biome + tsc clean\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Always the freshest nectar",
+    "blurb": "We've reorganized the pantry. Clean model slugs now automatically point to the newest versions, so you always get the latest models without updating your code.",
+    "summary": "Updated unversioned model slugs like openai-large, claude-large, and gemini to automatically resolve to the newest model versions (e.g., GPT-5.5, Opus 4.8, and 3.5 Flash) while preserving older versions under version-specific names.",
+    "impact": "Callers using bare slugs are automatically upgraded to the latest models, while those needing specific older versions can still access them via versioned slugs like gpt-5.4 or claude-opus-4.6.",
+    "keywords": [
+      "models",
+      "api",
+      "routing",
+      "registry"
+    ],
+    "visual_concept": "Polly the bee organizing a shelf of glowing jars of nectar (models). She is moving the freshest, brightest jars to the front row with clean, simple labels, while moving older jars to the back with detailed version numbers.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny shop apron, organizing glowing jars of colorful nectar on a wooden shelf. She places the brightest, freshest jars in the front row with simple clean labels, while older jars sit neatly in the back. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley shop vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11875.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny shop apron, organizing glowing jars of colorful nectar on a wooden shelf. She places the brightest, freshest jars in the front row with simple clean labels, while older jars sit neatly in the back. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley shop vibes."
+  },
+  "generated_at": "2026-06-17T20:34:20.198930+00:00"
+}

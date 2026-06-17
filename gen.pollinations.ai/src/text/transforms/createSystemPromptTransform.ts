@@ -7,16 +7,12 @@ import type {
 
 /**
  * Creates a transform that adds a default system prompt only if no system message already exists.
- *
- * An empty string is allowed: an empty system message is a deliberate value used
- * to displace the coding-agent persona some Airforce-resold models default to
- * when no system slot is present, without adding billable prompt tokens.
  */
 export function createSystemPromptTransform(
     defaultSystemPrompt: string,
 ): TransformFn {
-    if (typeof defaultSystemPrompt !== "string") {
-        throw new Error("defaultSystemPrompt must be a string");
+    if (!defaultSystemPrompt || typeof defaultSystemPrompt !== "string") {
+        throw new Error("defaultSystemPrompt must be a non-empty string");
     }
 
     return function transform(

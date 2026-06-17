@@ -139,28 +139,18 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        // Airforce primary, Vertex fallback (same modelId → same billing).
-        // No code_execution default-injection: it's a Gemini built-in tool
-        // (`{type:"code_execution"}`) that Airforce can't run, so injecting it
-        // would force every request to fall back. Requests that explicitly ask
-        // for it 400 on Airforce and fall back to Vertex (on_status_codes 400),
-        // where Gemini's real code executor runs.
-        config: portkeyConfig["gemini-3-flash-airforce"],
+        config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
-            // Empty system prompt (if none supplied) displaces the coding-agent
-            // persona Airforce's resold backend defaults to; ~0 extra tokens.
-            createSystemPromptTransform(""),
             sanitizeToolSchemas,
+            createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
         name: "gemini-3.5-flash",
-        // Airforce primary, Vertex fallback (same modelId → same billing).
-        config: portkeyConfig["gemini-3.5-flash-airforce"],
+        config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -169,9 +159,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["gemini-3.1-flash-lite-airforce"],
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -258,10 +247,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
-        // Airforce primary, Vertex fallback (same modelId → same billing).
-        config: portkeyConfig["gemini-3.1-pro-airforce"],
+        config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,

@@ -3,6 +3,7 @@ import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { frontendApi } from "./frontend-api.ts";
 import { adminRoutes } from "./routes/admin.ts";
+import { questsRoutes } from "./routes/quests.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
@@ -12,6 +13,7 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/", frontendApi)
+    .route("/quests", questsRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes);
 

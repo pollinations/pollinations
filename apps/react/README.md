@@ -1,6 +1,6 @@
 # react.pollinations.ai
 
-Public showcase for Pollinations React UI surfaces.
+Public showcase for React UI surfaces.
 
 The public app is organized around:
 

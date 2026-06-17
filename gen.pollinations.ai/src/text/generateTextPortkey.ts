@@ -2,7 +2,7 @@ import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
-import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
+import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import { validateInputModalities } from "./transforms/validateInputModalities.js";
@@ -52,10 +52,7 @@ export async function generateTextPortkey(
         state = await resolveModelConfig(state.messages, state.options);
         state = validateInputModalities(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
-        state = await createImageUrlToBase64Transform()(
-            state.messages,
-            state.options,
-        );
+        state = await imageUrlToBase64Transform(state.messages, state.options);
         state = await sanitizeMessages(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }

@@ -2,7 +2,6 @@ import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
@@ -143,24 +142,11 @@ async function enqueueLtx2Job(
     return data.prompt_id;
 }
 
-async function pollLtx2Status(
-    promptId: string,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<void> {
+async function pollLtx2Status(promptId: string): Promise<void> {
     const statusUrl = `${getLtx2BaseUrl()}/status?prompt_id=${promptId}`;
 
     for (let attempt = 1; attempt <= MAX_POLL_ATTEMPTS; attempt++) {
         logOps(`Poll attempt ${attempt}/${MAX_POLL_ATTEMPTS}...`);
-
-        const progressPercent =
-            50 + Math.min(40, Math.floor((attempt / MAX_POLL_ATTEMPTS) * 40));
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `Generating video... (${attempt}/${MAX_POLL_ATTEMPTS})`,
-        );
 
         try {
             const response = await fetch(statusUrl, {
@@ -275,17 +261,8 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
 export const callLtx2API = async (
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<VideoGenerationResult> => {
     logOps("Calling LTX-2 API with prompt:", prompt);
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Starting LTX-2 video generation...",
-    );
 
     const durationSeconds = safeParams.duration || 5;
     const frameCount = durationToFrameCount(durationSeconds);
@@ -308,24 +285,9 @@ export const callLtx2API = async (
 
     let initImage: { base64: string; mimeType: string } | undefined;
     if (imageUrl) {
-        progress.updateBar(
-            requestId,
-            38,
-            "Processing",
-            "Downloading init image...",
-        );
         const { buffer, mimeType } = await downloadUserImage(imageUrl);
         initImage = { base64: buffer.toString("base64"), mimeType };
     }
-
-    progress.updateBar(
-        requestId,
-        40,
-        "Processing",
-        imageUrl
-            ? "Enqueuing image-to-video job..."
-            : "Enqueuing video generation job...",
-    );
 
     const promptId = await enqueueLtx2Job(
         prompt,
@@ -335,20 +297,9 @@ export const callLtx2API = async (
         initImage,
     );
 
-    progress.updateBar(requestId, 50, "Processing", "Generating video...");
-
-    await pollLtx2Status(promptId, progress, requestId);
-
-    progress.updateBar(
-        requestId,
-        90,
-        "Processing",
-        "Retrieving generated video...",
-    );
+    await pollLtx2Status(promptId);
 
     const videoBuffer = await fetchLtx2Result(promptId);
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
     const actualDurationSeconds = frameCount / 24;
 

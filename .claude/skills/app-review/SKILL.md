@@ -54,7 +54,7 @@ git fetch origin main
 # 5. Add row
 export NEW_ROW="| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | SUBMITTED_DATE | ISSUE_URL | $(date +%Y-%m-%d) |"
 node .github/scripts/app-prepend-row.js
-node .github/scripts/app-update-readme.js
+node .github/scripts/app-update-greenhouse.js
 
 # 6. Commit and push
 git add -A && git commit -m "Add NAME to CATEGORY" && git push origin HEAD --force-with-lease

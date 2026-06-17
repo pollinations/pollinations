@@ -1,19 +1,22 @@
 import {
-    Button,
+    CardIcon,
     ClockIcon,
     CopyButton,
+    ExternalLinkButton,
     InfoTip,
     MailIcon,
+    SproutIcon,
+    Surface,
     Tooltip,
     WalletIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
     WalletBalanceCard,
-    WalletDot,
+    WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
-import { type FC, useState } from "react";
+import { type FC, type ReactNode, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -35,15 +38,16 @@ function normalizeDisplayBalance(value: number): number {
 
 const TooltipList: FC<{
     title: string;
-    emoji: string;
+    icon: ReactNode;
     items: string[];
     earned?: number;
-}> = ({ title, emoji, items, earned }) => (
+}> = ({ title, icon, items, earned }) => (
     <span className="block leading-snug">
-        <span className="block font-semibold text-gray-900">
-            {title} <span aria-hidden="true">{emoji}</span>
+        <span className="flex items-center gap-1 font-semibold text-ink-900">
+            {title}
+            {icon}
         </span>
-        <ul className="mt-1.5 space-y-1 text-gray-700">
+        <ul className="mt-1.5 space-y-1 text-ink-700">
             {items.map((item) => (
                 <li key={item} className="flex gap-1.5">
                     <span aria-hidden="true">•</span>
@@ -52,9 +56,9 @@ const TooltipList: FC<{
             ))}
         </ul>
         {earned !== undefined && earned > 0 && (
-            <span className="mt-2 block border-t border-gray-200 pt-1.5 text-green-700 font-semibold">
+            <span className="mt-2 block border-t border-divider pt-1.5 text-intent-success-text font-semibold">
                 +{formatPollen(earned)}{" "}
-                <span className="font-medium text-gray-600">
+                <span className="font-medium text-theme-text-muted">
                     earned past 7d
                 </span>
             </span>
@@ -97,7 +101,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             text={
                                 <TooltipList
                                     title="Paid balance"
-                                    emoji="💳"
+                                    icon={<CardIcon className="h-4 w-4" />}
                                     items={[
                                         "Pollen you bought",
                                         "Earnings from paid-side spend in your apps",
@@ -112,7 +116,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         paidWeek > 0 ? (
                             <>
                                 +{formatPollen(paidWeek)}{" "}
-                                <span className="font-medium text-amber-800/70">
+                                <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
                             </>
@@ -130,9 +134,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 text={
                                     <TooltipList
                                         title="Tier balance"
-                                        emoji="🌱"
+                                        icon={
+                                            <SproutIcon className="h-4 w-4" />
+                                        }
                                         items={[
-                                            "Free Pollen that refills hourly",
+                                            "Hourly Pollen refill from your tier",
                                             "Earnings from tier-side spend in your apps",
                                             "Used first for regular models, when it can cover",
                                         ]}
@@ -145,7 +151,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             tierWeek > 0 ? (
                                 <>
                                     +{formatPollen(tierWeek)}{" "}
-                                    <span className="font-medium text-amber-800/70">
+                                    <span className="font-medium text-theme-text-muted">
                                         / 7d
                                     </span>
                                 </>
@@ -157,22 +163,22 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
             {/* Total + 7d earnings below */}
             <div className="flex items-start justify-between gap-3 pt-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-amber-900 pt-1">
+                <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
                     Total
                 </span>
                 <div className="flex flex-col items-end leading-tight">
                     <span className="flex items-baseline gap-1.5">
-                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-amber-950">
+                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
                             {formatPollen(totalPollen)}
                         </span>
-                        <span className="text-xs font-bold text-amber-900">
+                        <span className="text-xs font-bold text-theme-text-soft">
                             pollen
                         </span>
                     </span>
                     {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-green-700">
+                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(totalWeek)}{" "}
-                            <span className="font-medium text-amber-800/70">
+                            <span className="font-medium text-theme-text-muted">
                                 / 7d
                             </span>
                         </span>
@@ -181,7 +187,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="mt-5 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+            <div className="mt-4 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <button
                     type="button"
                     onClick={() => {
@@ -194,7 +200,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             window.location.hash = slug;
                         }
                     }}
-                    className="flex items-start gap-1.5 underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                    className="flex items-start gap-1.5 underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
                 >
                     <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>Learn more</span>
@@ -225,18 +231,18 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
 
     return (
-        <div className="px-3 py-1 flex flex-col gap-1">
+        <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-                    <WalletDot kind="paid" />
+                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
+                    <WalletKindIcon kind="paid" />
                     Paid
                 </span>
                 <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
                         {formatPollen(displayPaidBalance)}
                     </span>
                     {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-green-700">
+                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(paidWeek)}
                         </span>
                     )}
@@ -244,16 +250,16 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             </div>
             {!hideTierSegment && (
                 <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-                        <WalletDot kind="tier" />
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
+                        <WalletKindIcon kind="tier" />
                         Tier
                     </span>
                     <span className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                        <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
                             {formatPollen(displayTierBalance)}
                         </span>
                         {tierWeek > 0 && (
-                            <span className="text-micro font-bold tabular-nums text-green-700">
+                            <span className="text-micro font-bold tabular-nums text-intent-success-text">
                                 +{formatPollen(tierWeek)}
                             </span>
                         )}
@@ -284,7 +290,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
 
     return (
         <>
-            <div className="space-y-4">
+            <Surface>
                 {selectedPack && (
                     <div className="flex w-full flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
                         <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
@@ -295,30 +301,40 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         </div>
                         <Tooltip
                             content={
-                                <>
-                                    {`Buy ${selectedPack.amountUsd} pollen for $${selectedPack.amountUsd}`}
-                                    <br />
-                                    confirm on the next page
-                                </>
+                                <span className="block">
+                                    Buy{" "}
+                                    <span className="font-semibold text-theme-text-strong">
+                                        {selectedPack.amountUsd} pollen
+                                    </span>{" "}
+                                    for{" "}
+                                    <span className="font-semibold text-theme-text-strong">
+                                        ${selectedPack.amountUsd}
+                                    </span>
+                                    <span className="mt-1 block text-theme-text-muted">
+                                        Confirm on the next page.
+                                    </span>
+                                </span>
                             }
                             displayContents
                         >
-                            <Button
-                                as="a"
+                            <ExternalLinkButton
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                theme="amber"
-                                className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                                target="_self"
+                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
-                                Buy
-                            </Button>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <WalletIcon className="h-4 w-4 shrink-0" />
+                                    Buy
+                                </span>
+                            </ExternalLinkButton>
                         </Tooltip>
                     </div>
                 )}
-            </div>
-            <div className="mt-5 border-t border-amber-300/70 pt-5">
+            </Surface>
+            <Surface>
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
-            </div>
-            <div className="mt-5 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+            </Surface>
+            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -327,7 +343,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             href={REFUND_POLICY_URL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
                         >
                             Refund Policy
                         </a>
@@ -340,7 +356,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         Payment issue or missing pollen?{" "}
                         <CopyButton
                             value="billing@pollinations.ai"
-                            className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
                         >
                             {(copied) =>
                                 copied ? "Copied!" : "billing@pollinations.ai"

@@ -12,8 +12,8 @@ type InfoTipProps = {
  *
  * Both the badge and the popup follow the page theme: badge reads
  * `bg-theme-bg-active`; popup uses the universal recipe via `<Tooltip>`
- * (`bg-theme-bg-pale` + `border-theme-border` + `text-theme-text-strong`,
- * viewport-clamped). Cursor on the badge is `cursor-help`.
+ * (`bg-theme-bg-pale` + `border-theme-border` + normal inherited-safe
+ * typography, viewport-clamped). Cursor on the badge is `cursor-help`.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,

@@ -16,13 +16,13 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { handleError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
-import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { createDocsRoutes } from "./routes/docs.ts";

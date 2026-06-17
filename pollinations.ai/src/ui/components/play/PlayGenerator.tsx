@@ -126,7 +126,6 @@ export function PlayGenerator({
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
     const [seed, setSeed] = useState(0);
-    const [enhance, setEnhance] = useState(false);
     const [imageUrls, setImageUrls] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -165,10 +164,9 @@ export function PlayGenerator({
             width: width.toString(),
             height: height.toString(),
             seed: seed.toString(),
-            enhance: enhance.toString(),
             ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
         }),
-        [selectedModel, width, height, seed, enhance, imageUrls],
+        [selectedModel, width, height, seed, imageUrls],
     );
 
     const textParams = useMemo(
@@ -538,49 +536,6 @@ export function PlayGenerator({
                                 placeholder={copy.seedPlaceholder}
                                 className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
                             />
-                        </div>
-                        <div>
-                            <div className="relative group/enhance inline-block mb-2">
-                                <Label
-                                    as="span"
-                                    spacing="none"
-                                    display="inline"
-                                    className="cursor-help"
-                                >
-                                    {copy.enhanceLabel}
-                                </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.enhanceTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                                </div>
-                            </div>
-                            <label className="relative flex items-center justify-center p-3 bg-white hover:bg-white transition-colors cursor-pointer select-none group rounded-input">
-                                <input
-                                    id="enhance-prompt"
-                                    name="enhance-prompt"
-                                    type="checkbox"
-                                    checked={enhance}
-                                    onChange={(e) =>
-                                        setEnhance(e.target.checked)
-                                    }
-                                    className="sr-only peer"
-                                />
-                                <div className="w-6 h-6 border-4 border-dark bg-white peer-checked:bg-white transition-colors group-hover:border-dark rounded-input" />
-                                <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-dark opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        strokeLinecap="square"
-                                        strokeLinejoin="miter"
-                                        strokeWidth="4"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                            </label>
                         </div>
                     </div>
                 </div>

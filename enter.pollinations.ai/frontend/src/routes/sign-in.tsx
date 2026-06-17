@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { Button, GitHubIcon } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "../auth.ts";
@@ -38,10 +38,9 @@ export const Route = createFileRoute("/sign-in")({
         const result = await authClient.getSession();
         if (result.data?.user) {
             // Check for pending redirect URL from authorize flow
-            const pendingRedirectUrl =
-                typeof window !== "undefined"
-                    ? localStorage.getItem("pending_redirect_url")
-                    : null;
+            const pendingRedirectUrl = localStorage.getItem(
+                "pending_redirect_url",
+            );
 
             if (pendingRedirectUrl) {
                 // Clear the stored URL and redirect to authorize
@@ -115,11 +114,12 @@ function SignedOutAccountArea({
     return (
         <Button
             as="button"
+            data-theme="accent"
             onClick={onSignIn}
             disabled={loading}
-            theme="amber"
-            className="w-full justify-center text-center"
+            className="w-full justify-center gap-2 text-center"
         >
+            <GitHubIcon className="h-4 w-4 shrink-0" />
             {loading ? "Signing in..." : "Sign in with GitHub"}
         </Button>
     );

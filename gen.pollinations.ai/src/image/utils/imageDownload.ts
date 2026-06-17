@@ -104,3 +104,14 @@ export async function downloadImageAsBase64(
     const { buffer, mimeType } = await downloadUserImage(imageUrl, signal);
     return { base64: buffer.toString("base64"), mimeType };
 }
+
+/**
+ * Download a user-supplied image and return it inlined as a base64 data URI.
+ * Some providers (Replicate, DashScope) fetch input URLs server-side and choke
+ * on query strings, redirects, or missing extensions — downloading here and
+ * passing data URIs avoids that.
+ */
+export async function toDataUri(url: string): Promise<string> {
+    const { buffer, mimeType } = await downloadUserImage(url);
+    return `data:${mimeType};base64,${buffer.toString("base64")}`;
+}

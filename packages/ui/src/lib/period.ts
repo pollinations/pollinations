@@ -104,43 +104,6 @@ export function periodToWindow(selection: PeriodSelection): PeriodWindow {
     return { start, end: addUtcMonths(start, 1) };
 }
 
-export function formatPeriodLabel(selection: PeriodSelection): string {
-    const { start, end } = periodToWindow(selection);
-
-    if (selection.granularity === "day") {
-        const today = startOfUtcDay();
-        const yesterday = addUtcDays(today, -1);
-        if (start.getTime() === today.getTime()) return "Today";
-        if (start.getTime() === yesterday.getTime()) return "Yesterday";
-        return start.toLocaleDateString("en-US", {
-            timeZone: "UTC",
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
-    }
-
-    if (selection.granularity === "week") {
-        const weekEnd = addUtcDays(end, -1);
-        return `${start.toLocaleDateString("en-US", {
-            timeZone: "UTC",
-            month: "short",
-            day: "numeric",
-        })} - ${weekEnd.toLocaleDateString("en-US", {
-            timeZone: "UTC",
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        })}`;
-    }
-
-    return start.toLocaleDateString("en-US", {
-        timeZone: "UTC",
-        month: "long",
-        year: "numeric",
-    });
-}
-
 export function getPeriodBucketKeys(selection: PeriodSelection): string[] {
     const { start, end } = periodToWindow(selection);
     const bucketKeys: string[] = [];

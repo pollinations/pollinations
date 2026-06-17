@@ -1,10 +1,13 @@
 import type { Logger } from "@logtape/logtape";
-import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import {
+    type ApiKeyType,
+    createApiKeyForUser,
+} from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -15,7 +18,6 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
     "start": "tsx bot.ts"
   },
   "dependencies": {

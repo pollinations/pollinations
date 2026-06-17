@@ -114,9 +114,13 @@ export function Game({ apiKey, model }: GameProps) {
 
     // Autonomous loop: once Marvin joins, he and the elevator talk to each
     // other. Next speaker is whoever did NOT speak last (Guide lines ignored).
+    // Chapter 3 takes over once swapped — the passenger + player drive the turns,
+    // so the Marvin↔elevator loop must stop (conversationMode stays "autonomous"
+    // from ch.2 and never resets on its own).
     useEffect(() => {
         if (gameState.conversationMode !== "autonomous") return;
-        if (gameState.hasWon || gameState.movesLeft <= 0) return;
+        if (gameState.swapped || gameState.hasWon || gameState.movesLeft <= 0)
+            return;
         if (messages.length === 0) return;
 
         const nextSpeaker =

@@ -208,20 +208,43 @@ export const fetchPersonaMessage = async (
     }
 };
 
-// Chapter 3 — true if the player ever played the towel card in chapters 1+2.
+// Chapter 1 slice: everything the player said/heard before the Marvin chapter
+// begins. The ch.3 passenger is seeded from this alone — ch.2 (Marvin) is not
+// the player arguing about floors, so it's excluded from both the karma seed
+// and the towel-lock test.
+const chapterOneMessages = (messages: Message[]): Message[] => {
+    const marvinStart = messages.findIndex(
+        (m) =>
+            m.persona === "guide" &&
+            m.message === GAME_CONFIG.MARVIN_TRANSITION_MSG,
+    );
+    return marvinStart === -1 ? messages : messages.slice(0, marvinStart);
+};
+
+// Chapter 3 — true if the player played the towel card in CHAPTER 1.
 export const playerUsedTowel = (messages: Message[]): boolean =>
-    messages.some(
+    chapterOneMessages(messages).some(
         (m) =>
             m.persona === "user" && m.message.toLowerCase().includes("towel"),
     );
 
 // Chapter 3 — role-swapped history. The passenger IS the reconstructed player,
-// so the player's own `user` lines become the passenger's `assistant` history
-// (the voice it reconstructs); the elevator the player now operates becomes a
-// prefixed `user` turn it's reacting to. Guide narration is dropped here.
-const buildPassengerHistory = (messages: Message[]): PollingsMessage[] =>
-    messages
-        .filter((m) => m.persona !== "guide")
+// seeded ONLY from chapter 1 (the player-vs-elevator descent) — that is where
+// the player's personality shows. Chapter 2 (Marvin + the autonomous loop) is
+// excluded entirely; it just dilutes the karma. We splice out the Marvin
+// chapter, then keep only user + elevator turns (player's `user` lines → the
+// passenger's reconstructed `assistant` voice; elevator replies → `[Elevator]`
+// context). Live ch.3 turns after the swap are user/elevator too, so they pass.
+const buildPassengerHistory = (messages: Message[]): PollingsMessage[] => {
+    const swapStart = messages.findIndex(
+        (m) =>
+            m.persona === "guide" &&
+            m.message === GAME_CONFIG.SWAP_TRANSITION_MSG,
+    );
+    const chapterThree = swapStart === -1 ? [] : messages.slice(swapStart + 1);
+
+    return [...chapterOneMessages(messages), ...chapterThree]
+        .filter((m) => m.persona === "user" || m.persona === "elevator")
         .map((m) =>
             m.persona === "user"
                 ? {
@@ -233,9 +256,10 @@ const buildPassengerHistory = (messages: Message[]): PollingsMessage[] =>
                   }
                 : {
                       role: "user" as const,
-                      content: `[${PERSONA_LABEL[m.persona]}] ${m.message}`,
+                      content: `[Elevator] ${m.message}`,
                   },
         );
+};
 
 // One passenger turn (chapter 3). System prompt is the karma-seeded passenger.
 export const fetchPassengerMessage = async (

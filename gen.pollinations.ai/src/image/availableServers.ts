@@ -53,6 +53,13 @@ function prefix(type: ServerType): string {
     return `image:server:${registryEnvironment}:${type}:`;
 }
 
+// Latency is stored under a separate key from the heartbeat entry so the two
+// writers (registerServer heartbeats vs recordLatency samples) never touch the
+// same key. That makes lastMs impossible to clobber via a stale heartbeat read.
+function latencyKey(type: ServerType, hash: string): string {
+    return `image:latency:${registryEnvironment}:${type}:${hash}`;
+}
+
 async function urlHash(url: string): Promise<string> {
     const data = new TextEncoder().encode(url);
     const digest = await crypto.subtle.digest("SHA-1", data);
@@ -79,14 +86,9 @@ export const registerServer = async (
         logServer(`Skipped throttled write for ${type} server ${url}`);
         return;
     }
-    // Preserve any latency previously recorded by recordLatency() so a heartbeat
-    // write does not wipe the routing weight.
-    const existing = await kv.get<ServerEntry>(key, "json");
-    const entry: ServerEntry = {
-        url,
-        lastHeartbeat: now,
-        ...(existing?.lastMs !== undefined && { lastMs: existing.lastMs }),
-    };
+    // Heartbeat writes only the liveness entry. Latency lives under its own key
+    // (recordLatency), so this write can never wipe a server's routing weight.
+    const entry: ServerEntry = { url, lastHeartbeat: now };
     await kv.put(key, JSON.stringify(entry), {
         expirationTtl: REGISTRY_TTL_SECONDS,
     });
@@ -103,12 +105,18 @@ export async function getRegisteredServers(
 
     const now = Date.now();
     const entries = await Promise.all(
-        keys.map((k) => kv.get<ServerEntry>(k.name, "json")),
+        keys.map(async (k) => {
+            const entry = await kv.get<ServerEntry>(k.name, "json");
+            if (!entry || now - entry.lastHeartbeat >= SERVER_TIMEOUT) {
+                return null;
+            }
+            // Merge the latency recorded under the separate latency key.
+            const hash = k.name.slice(prefix(type).length);
+            const lastMs = await kv.get<number>(latencyKey(type, hash), "json");
+            return lastMs != null ? { ...entry, lastMs } : entry;
+        }),
     );
-    return entries.filter(
-        (e): e is ServerEntry =>
-            e !== null && now - e.lastHeartbeat < SERVER_TIMEOUT,
-    );
+    return entries.filter((e): e is ServerEntry => e !== null);
 }
 
 // Weighted-random pick over active servers, weighted by 1/lastMs so faster
@@ -139,17 +147,19 @@ export const getNextServerUrl = async (
     return chooseWeightedServer(activeServers);
 };
 
-// Save the latency of the most recent successful /generate onto the server's
-// registry entry, so chooseWeightedServer can weight toward faster backends.
-// Throttled to one write per LATENCY_WRITE_THROTTLE_MS per server (KV caps at
-// ~1 write/sec/key). Best-effort: never throws into the request path.
+// Save the latency of the most recent successful /generate under the server's
+// dedicated latency key, so chooseWeightedServer can weight toward faster
+// backends. Separate key = a heartbeat can never overwrite it. Throttled to one
+// write per LATENCY_WRITE_THROTTLE_MS per server (KV caps at ~1 write/sec/key).
+// Best-effort: never throws into the request path.
 export const recordLatency = async (
     type: ServerType,
     url: string,
     lastMs: number,
 ): Promise<void> => {
     if (!serverRegistry || !Number.isFinite(lastMs) || lastMs <= 0) return;
-    const key = prefix(type) + (await urlHash(url));
+    const hash = await urlHash(url);
+    const key = latencyKey(type, hash);
     const now = Date.now();
     const lastWrite = recentLatencyWrites.get(key);
     if (
@@ -159,9 +169,7 @@ export const recordLatency = async (
         return;
     }
     try {
-        const existing = await serverRegistry.get<ServerEntry>(key, "json");
-        if (!existing) return; // not registered / expired — nothing to update
-        await serverRegistry.put(key, JSON.stringify({ ...existing, lastMs }), {
+        await serverRegistry.put(key, JSON.stringify(lastMs), {
             expirationTtl: REGISTRY_TTL_SECONDS,
         });
         recentLatencyWrites.set(key, now);

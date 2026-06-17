@@ -1,0 +1,35 @@
+{
+  "pr_number": 11873,
+  "title": "feat: upgrade glm slug to GLM-5.2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11873",
+  "merged_at": "2026-06-17T18:45:29Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Repoints the existing `glm` slug from GLM-5.1 to **GLM-5.2** (live day-zero on Fireworks).\n\n- **modelId** → `accounts/fireworks/models/glm-5p2`\n- **Pricing** (Fireworks list, `priceMultiplier: 1` at-cost, matching 5.1): $1.40 in / $0.26 cached / $4.40 out per 1M (was $1.0 / $0.2 / $3.2)\n- **Title** → Z.ai GLM-5.2; **contextLength** → 1048576 (full 1M Fireworks lists; 5.1 was conservatively 198k)\n- Kept `glm-5.1` / `glm-5p1` / `glm-5` as aliases — existing callers still resolve\n- `addedDate` untouched (in-place upgrade of an existing slug, not a new model)\n\nIn-place upgrade follows how this slug already rolled 4.7→5→5.1. **Note: everyone calling `glm` now bills ~40% more per token.**\n\n### Verification\n- `aliases.test.ts` (211), `pricing-data.test.ts` (6), `model-permissions.test.ts` (3) pass\n- `effective-prices.snapshot.test.ts` updated — diff is GLM-only (6 lines: cost+price blocks)\n- Empirical: probed `accounts/fireworks/models/glm-5p2` directly on Fireworks — 200, coherent output, usage block maps cleanly to our 3 cost keys (no unmapped fields → field-parity holds)\n- biome clean; no TS errors in touched files\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A million tokens of GLM",
+    "blurb": "We've upgraded the default GLM model to Z.ai's brand new GLM-5.2. Enjoy a massive 1M token context window for your biggest, most complex prompts.",
+    "summary": "Upgraded the `glm` model slug to point to Z.ai's GLM-5.2 via Fireworks, expanding the context window from 198k to a full 1M tokens.",
+    "impact": "Users calling the `glm` endpoint will automatically use the new 5.2 model and its 1M context window, with pricing updated to Fireworks' at-cost rates ($1.40 in / $4.40 out per 1M tokens).",
+    "keywords": [
+      "models",
+      "glm",
+      "fireworks",
+      "context-window",
+      "api"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot reading an endlessly long scroll of text or code, representing the massive 1M token context window. A '5.2' label on a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot reading an endlessly long, glowing scroll of code sprouting from a lime green (#ecf874) retro terminal. The terminal has a '5.2' sticker on it. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11873.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot reading an endlessly long, glowing scroll of code sprouting from a lime green (#ecf874) retro terminal. The terminal has a '5.2' sticker on it. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-17T18:46:39.847956+00:00"
+}

@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-16** – **🤖 Unkillable Gemini** Added automatic provider failover for `gemini-3-flash`. If the primary endpoint throws an error, requests instantly reroute to GCP Vertex. Same model, fewer headaches. Check the [available models](https://gen.pollinations.ai/v1/models).
+- **2026-06-16** – **🔗 Localhost by Default** New app keys now pre-fill `http://localhost/callback` for OAuth redirects. Because manually typing localhost every time you spin up a new project is a waste of keystrokes. [Manage keys](https://enter.pollinations.ai).
+- **2026-06-16** – **🎨 Back to the Terminal** The Sirius Cybernetics Elevator Challenge app dropped its heavy background animations and returned to a pure, 170kB ASCII terminal aesthetic. Sometimes less really is more.
 - **2026-06-15** – **🎨 Ideogram 4.0 Models** Three new Ideogram 4.0 image models (`ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`) are now available via the [Unified API](https://gen.pollinations.ai).
 - **2026-06-15** – **🔗 Seamless App Embedding** The [React SDK](https://react.pollinations.ai) now includes an `EmbedBridge` to automatically handle host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts.
 - **2026-06-14** – **🚀 Qwen3.7 Plus & 512K Context** Qwen3.7 Plus is now live, and MiniMax M3 just got its context window stretched to an absurd 512K tokens. Available now via the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-12** – **🎥 1080p Wan video & cheaper Qwen** We've added `wan-pro-1080p` for high-res [video generation](https://gen.pollinations.ai), plus dropped the cost of `qwen-coder-large` by 2.5x. Better pixels, cheaper tokens.
 - **2026-06-11** – **🌱 Wikimind Joins the Showcase** A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/) <!-- app -->
 - **2026-06-11** – **🚀 Claude Fable 5 is Live** Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-06-10** – **🤖 Blame the prompt, not the server** Content moderation rejections now return a 422 `content_policy_violation` instead of a generic 500 error. Your code can finally tell the difference between a blocked prompt and an actual server fire.
-- **2026-06-10** – **📱 Trimming the dead leaves** Removed legacy image parameters (`negative_prompt`, `enhance`, `nologo`) from the [API](https://gen.pollinations.ai/docs) and SDKs. They weren't doing anything anyway, so we stopped pretending.
-- **2026-06-09** – **🎬 HD Video Generation** Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai).
 ---
 
 ## 🌱 Introduction

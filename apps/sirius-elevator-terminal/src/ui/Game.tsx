@@ -132,6 +132,7 @@ export function Game({ apiKey, model }: GameProps) {
                 messages,
                 apiKey,
                 model,
+                true, // autonomous: react to the other robot, don't mirror it
             );
             add(response);
         }, delay);

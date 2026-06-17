@@ -4,12 +4,17 @@
 // effects (guide messages, autonomous loop, cold open) and calls these helpers.
 
 import { fetchFromPollinations } from "./api.js";
-import { getPassengerPrompt, getPersonaPrompt } from "./prompts.js";
+import {
+    getAutonomousSuffix,
+    getPassengerPrompt,
+    getPersonaPrompt,
+} from "./prompts.js";
 import {
     type Action,
     GAME_CONFIG,
     type GameState,
     type Message,
+    PERSONA_LABEL,
     type Persona,
     type PollingsMessage,
 } from "./types.js";
@@ -137,28 +142,57 @@ const malfunction = (persona: Persona, error: unknown): Message => {
     );
 };
 
-// A normal persona turn (elevator / marvin / guide).
+// Build chat history from the point of view of whoever is about to speak.
+//   - the speaker's OWN past lines  -> assistant, as the {message,action} JSON
+//     envelope they themselves emit (so they see their own output format)
+//   - the player's typed lines       -> user (the human addressing them)
+//   - any OTHER character's lines     -> user, as plain "[Name] text"
+//   - the Guide's narration           -> user, as plain "[Guide] text" — it's
+//     context to read, never dialogue to imitate.
+// Doing this relative to the speaker is what stops Marvin parroting Guide lines
+// and the elevator echoing the other character verbatim in the autonomous loop.
+const buildHistoryFor = (
+    speaker: Persona,
+    messages: Message[],
+): PollingsMessage[] =>
+    messages.map((msg) => {
+        if (msg.persona === speaker) {
+            return {
+                role: "assistant" as const,
+                content: JSON.stringify({
+                    message: msg.message,
+                    action: msg.action,
+                }),
+            };
+        }
+        if (msg.persona === "user") {
+            return { role: "user" as const, content: msg.message };
+        }
+        return {
+            role: "user" as const,
+            content: `[${PERSONA_LABEL[msg.persona]}] ${msg.message}`,
+        };
+    });
+
+// A normal persona turn (elevator / marvin / guide). History is built relative
+// to `persona` so the model only ever sees its own lines as assistant turns.
+// In `autonomous` mode (Marvin↔elevator) the system prompt gains a note telling
+// the bot who it's talking to and to advance — not mirror — the exchange.
 export const fetchPersonaMessage = async (
     persona: Persona,
     gameState: GameState,
     existingMessages: Message[],
     apiKey: string,
     model: string,
+    autonomous = false,
 ): Promise<Message> => {
     try {
+        const systemPrompt =
+            getPersonaPrompt(persona, gameState) +
+            (autonomous ? getAutonomousSuffix(persona) : "");
         const messages: PollingsMessage[] = [
-            { role: "system", content: getPersonaPrompt(persona, gameState) },
-            ...existingMessages.map((msg) => ({
-                role:
-                    msg.persona === "user"
-                        ? ("user" as const)
-                        : ("assistant" as const),
-                content: JSON.stringify({
-                    message: msg.message,
-                    action: msg.action,
-                }),
-                ...(msg.persona !== "user" && { name: msg.persona }),
-            })),
+            { role: "system", content: systemPrompt },
+            ...buildHistoryFor(persona, existingMessages),
         ];
 
         const data = await fetchFromPollinations(messages, apiKey, model);
@@ -181,22 +215,27 @@ export const playerUsedTowel = (messages: Message[]): boolean =>
             m.persona === "user" && m.message.toLowerCase().includes("towel"),
     );
 
-// Chapter 3 — role-swapped history: the player's own `user` lines become the
-// passenger's `assistant` history (so the model reconstructs that voice); every
-// other persona (the elevator the player now operates) becomes `user`.
+// Chapter 3 — role-swapped history. The passenger IS the reconstructed player,
+// so the player's own `user` lines become the passenger's `assistant` history
+// (the voice it reconstructs); the elevator the player now operates becomes a
+// prefixed `user` turn it's reacting to. Guide narration is dropped here.
 const buildPassengerHistory = (messages: Message[]): PollingsMessage[] =>
     messages
         .filter((m) => m.persona !== "guide")
-        .map((m) => ({
-            role:
-                m.persona === "user"
-                    ? ("assistant" as const)
-                    : ("user" as const),
-            content:
-                m.persona === "user"
-                    ? JSON.stringify({ message: m.message, action: "none" })
-                    : m.message,
-        }));
+        .map((m) =>
+            m.persona === "user"
+                ? {
+                      role: "assistant" as const,
+                      content: JSON.stringify({
+                          message: m.message,
+                          action: "none",
+                      }),
+                  }
+                : {
+                      role: "user" as const,
+                      content: `[${PERSONA_LABEL[m.persona]}] ${m.message}`,
+                  },
+        );
 
 // One passenger turn (chapter 3). System prompt is the karma-seeded passenger.
 export const fetchPassengerMessage = async (

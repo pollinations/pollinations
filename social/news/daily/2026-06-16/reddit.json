@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-16",
+  "period_start": "2026-06-16",
+  "period_end": "2026-06-16",
+  "generated_at": "2026-06-17T07:44:49.613429+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-16/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixed Gemini routing, localhost redirects, and reverted the elevator game",
+  "text": "Pushed a few updates to the Pollinations infrastructure today, mostly focused on reliability and fixing minor annoyances.\n\nFirst, Gemini routing is a lot more bulletproof now (PR #11609). We are routing Gemini requests to Airforce by default, but added a Vertex fallback if it hangs. This should eliminate the intermittent timeouts some of you were seeing during heavy load.\n\nFor anyone building locally, we tweaked the app key generation (PR #11835). It now pre-fills the localhost redirect URI when you spin up a new key. It is a tiny change, but saving those few seconds of typing out localhost every time adds up when you are iterating.\n\nWe also reverted the Sirius elevator game UI back to its pre-#9607 state (PR #11836). The graphical update was an interesting experiment, but pure ASCII just feels right for it. Sometimes you don't need a UI framework when raw text does the job perfectly.\n\nFinally, fixed a frontend bug where the model category tabs in the catalog would randomly shift around (PR #11828). It is stable now.\n\nCode is open as always at github.com/pollinations/pollinations. Let me know if the Gemini fallback behaves on your end."
+}

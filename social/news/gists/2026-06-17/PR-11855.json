@@ -1,0 +1,35 @@
+{
+  "pr_number": 11855,
+  "title": "fix: faster Sirius elevator models + in-character LLM errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11855",
+  "merged_at": "2026-06-17T02:28:07Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "The elevator game felt \"awfully slow\". Root cause: DeepSeek (the default) is a reasoning model, and `reasoning_effort: \"low\"` still let it think for thousands of tokens — on the long Guide prompt (the game's first request) replies went **past 10s** in benchmarks against `gen.pollinations.ai`.\n\nBenchmarked the free models on the game's **real** prompts (Guide + elevator floor-3 mid-game), 3 runs each, 10s cap:\n\n- `deepseek` + `low` (shipped): **timed out 3/3** on the Guide prompt\n- `mistral` / `openai` / `gemini-fast`: ~1.0–1.4s, 3/3 valid JSON\n\nChanges:\n- Default model → `mistral` (fast, reliable JSON); dropdown trimmed to mistral / openai / deepseek / claude-fast\n- `reasoning_effort: \"none\"` for `deepseek` (kept as an option for its in-character resistance); `\"low\"` for the others (no-op for non-reasoning models)\n- LLM errors now surface the **real upstream error** inside an in-character elevator line instead of a generic apology\n\nVerified: tsc + vite build pass (170kB), biome clean, mistral returns valid JSON live, error extraction pulls the clean `error.message` from a real gateway 400.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Siriusly fast elevators",
+    "blurb": "The Sirius Cybernetics Elevator Challenge just got a major speed boost. We swapped the default model to Mistral for lightning-fast replies, and even the error messages are now fully in-character.",
+    "summary": "Updated the Sirius Cybernetics Elevator Challenge app to use Mistral as the default model instead of DeepSeek, reducing response times from over 10 seconds to ~1.2 seconds, and wrapped upstream API errors in themed in-character dialogue.",
+    "impact": "Players will experience near-instant elevator responses and see actual API error details delivered with the elevator's signature personality.",
+    "keywords": [
+      "apps",
+      "sirius-elevator",
+      "mistral",
+      "performance",
+      "error-handling"
+    ],
+    "visual_concept": "Polly the bee riding a retro-futuristic elevator, looking at a fast-moving floor indicator. The Monitor Robot is riding along, displaying a lightning bolt for speed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bellhop hat, riding inside a retro-futuristic elevator with glowing lime green (#ecf874) buttons and a fast-moving floor indicator. A chunky robot with a CRT monitor head stands next to her, screen showing a lightning bolt. Soft pastel gradient background through the glass elevator doors. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11855.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bellhop hat, riding inside a retro-futuristic elevator with glowing lime green (#ecf874) buttons and a fast-moving floor indicator. A chunky robot with a CRT monitor head stands next to her, screen showing a lightning bolt. Soft pastel gradient background through the glass elevator doors. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T02:29:13.583086+00:00"
+}

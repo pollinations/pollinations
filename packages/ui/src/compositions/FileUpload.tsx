@@ -10,7 +10,6 @@ import { cn } from "../lib/cn.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
-import type { ThemeName } from "../theme.ts";
 
 const PREVIEWABLE_IMAGE_TYPES = new Set([
     "image/gif",
@@ -150,8 +149,6 @@ export type FileUploadProps = {
     previewIcon?: ReactNode;
     /** Fully locks the field: no add, no remove, drops ignored. */
     disabled?: boolean;
-    /** Optional cascade override; defaults to the inherited `[data-theme]`. */
-    theme?: ThemeName;
     className?: string;
 };
 
@@ -170,7 +167,6 @@ export function FileUpload({
     ),
     previewIcon = <ImageIcon className="polli:h-5 polli:w-5" />,
     disabled = false,
-    theme,
     className,
 }: FileUploadProps) {
     // A file dropped anywhere outside the zone otherwise triggers the browser's
@@ -214,10 +210,7 @@ export function FileUpload({
     }
 
     return (
-        <div
-            data-theme={theme}
-            className={cn("polli:flex polli:flex-col polli:gap-2", className)}
-        >
+        <div className={cn("polli:flex polli:flex-col polli:gap-2", className)}>
             <fieldset
                 disabled={disabled}
                 className={cn(

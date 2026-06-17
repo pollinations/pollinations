@@ -16,10 +16,47 @@ export function closestAspectRatio(
     height: number | undefined,
 ): string | undefined {
     if (!width || !height) return undefined;
+    return closestByRatio(width, height, ASPECT_RATIOS).label;
+}
+
+/**
+ * Pick the table entry whose ratio is closest to width/height by linear
+ * difference. Earlier entries win ties. Each caller keeps its own
+ * provider-specific table.
+ */
+export function closestByRatio<T extends { ratio: number }>(
+    width: number,
+    height: number,
+    table: readonly T[],
+): T {
     const requested = width / height;
-    return ASPECT_RATIOS.reduce((best, ar) =>
-        Math.abs(requested - ar.ratio) < Math.abs(requested - best.ratio)
-            ? ar
+    return table.reduce((best, entry) =>
+        Math.abs(requested - entry.ratio) < Math.abs(requested - best.ratio)
+            ? entry
             : best,
-    ).label;
+    );
+}
+
+/**
+ * Pick the "W:H" ratio string closest to width/height by log-space distance
+ * (symmetric for landscape/portrait): 1920×1080 → "16:9", 720×1280 → "9:16".
+ * Earlier entries win ties.
+ */
+export function closestRatioLogSpace<T extends string>(
+    width: number,
+    height: number,
+    ratios: readonly T[],
+): T {
+    const target = Math.log(width / height);
+    let best = ratios[0];
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const ar of ratios) {
+        const [w, h] = ar.split(":").map(Number);
+        const dist = Math.abs(Math.log(w / h) - target);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = ar;
+        }
+    }
+    return best;
 }

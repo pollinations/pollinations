@@ -10,6 +10,7 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateCost,
@@ -26,16 +27,16 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { getRoutePath } from "@shared/util.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { sendToTinybird } from "@/events.ts";
 import {
     type RealtimeRequestQueryParams,
     RealtimeUsageSchema,
 } from "@/schemas/realtime.ts";
-import { generateRandomId, getRoutePath } from "@/util.ts";
+import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
 // Azure OpenAI realtime endpoint. The gpt-realtime-2 deployment lives on the

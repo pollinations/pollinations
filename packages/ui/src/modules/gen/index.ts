@@ -1,13 +1,9 @@
+export { ModalityChip } from "./ModalityChip.tsx";
+export { ModalityDot } from "./ModalityDot.tsx";
+export { ModalityTab } from "./ModalityTab.tsx";
 export {
-    CATEGORY_LABELS,
     categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
-    type ModelSelectorItem,
-    type ModelSelectorProps,
 } from "./ModelSelector.tsx";
-export {
-    getModalityTheme,
-    type Modality,
-    modalityTheme,
-} from "./themes.ts";
+export { getModalityKey } from "./themes.ts";

@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-04-13
+Last updated: 2026-06-10
 
 ## Capacity Summary
 
@@ -8,9 +8,9 @@ Last updated: 2026-04-13
 |-------|---------|------|----------|---------|--------|
 | Flux (INT4) | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
 | Z-Image | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
-| Klein 4B | 1 | 1x RTX 3090 | RunPod | $0.22 | **ACTIVE** |
+| Klein 4B | 1 | 1x RTX A5000 | RunPod | $0.27 | **ACTIVE** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
-| **Total active** | **~6** | | | **~$1.58/hr** | |
+| **Total active** | **~6** | | | **~$1.40/hr RunPod** | |
 
 ## Provider: RunPod
 
@@ -22,13 +22,13 @@ runpodctl pod list             # list pods
 runpodctl pod get <id>         # pod details
 ```
 
-### Pod lqh6weiexk4sth — Klein 4B
+### Pod jmrbmje2fyuy46 — Klein 4B
 
 > Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `gen.pollinations.ai/secrets/prod.vars.json`).
 
-- **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
-- **SSH**: RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (full command from dashboard "Connect" tab)
-- **HTTP**: `https://lqh6weiexk4sth-8000.proxy.runpod.net`
+- **GPU**: 1x RTX A5000 (24GB) | **Cost**: $0.27/hr via API ($0.29/hr in UI)
+- **SSH**: full SSH using `SSH_RUNPOD_KLEIN` from SOPS; current runtime port changes on recreate/start
+- **HTTP**: `https://jmrbmje2fyuy46-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B (FastAPI on port 8000)
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
 - **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-runpod/handler.py`)
@@ -37,10 +37,10 @@ runpodctl pod get <id>         # pod details
 
 **Health check:**
 ```bash
-curl -s https://lqh6weiexk4sth-8000.proxy.runpod.net/health
+curl -s https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 ```
 
-**Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `handler.py`/`restart.sh` must be redeployed onto a fresh pod.
+**Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `/workspace/handler.py`, `/workspace/venv`, and `/workspace/restart.sh` must be redeployed onto a fresh pod. Prefer cheap A5000/3090 capacity; do not jump to 4090 unless the higher hourly cost is explicitly accepted.
 
 ### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
 
@@ -121,9 +121,10 @@ Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '
 | SOPS key | Provider | Instances |
 |----------|----------|-----------|
 | `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
+| `SSH_RUNPOD_KLEIN` | RunPod | Klein pod (`jmrbmje2fyuy46`) |
 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
 
-Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — no SOPS key. Get the full SSH command from the dashboard "Connect" tab.
+Klein uses `SSH_RUNPOD_KLEIN` from SOPS. Get the current public SSH host/port from RunPod runtime ports; the port changes when the pod is recreated or restarted.
 
 EC2 keys (not in SOPS):
 

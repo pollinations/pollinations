@@ -3,7 +3,6 @@ import { Portal } from "@ark-ui/react/portal";
 import type { FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
@@ -18,13 +17,10 @@ export type DialogProps = {
     triggerAsChild?: boolean;
     triggerClassName?: string;
     title?: ReactNode;
-    titleClassName?: string;
     ariaLabel?: string;
     labelledBy?: string;
-    theme?: ThemeName;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
-    backdropClassName?: string;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -37,13 +33,10 @@ export const Dialog: FC<DialogProps> = ({
     triggerAsChild = false,
     triggerClassName,
     title,
-    titleClassName,
     ariaLabel,
     labelledBy,
-    theme = "blue",
     size = "md",
     showBackdrop = true,
-    backdropClassName,
     positionerClassName,
     contentClassName,
     children,
@@ -67,14 +60,13 @@ export const Dialog: FC<DialogProps> = ({
             <Portal>
                 {showBackdrop && (
                     <ArkDialog.Backdrop
-                        className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-gray-950/50",
-                            backdropClassName,
-                        )}
+                        // Scrim must DARKEN in both modes — ink-950 inverts
+                        // (near-white in dark) and would brighten the page.
+                        // Fixed black + a soft blur dims and de-focuses.
+                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
                     />
                 )}
                 <ArkDialog.Positioner
-                    data-theme={theme}
                     className={cn(
                         "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
                         positionerClassName,
@@ -82,22 +74,16 @@ export const Dialog: FC<DialogProps> = ({
                 >
                     <ArkDialog.Content
                         ref={contentRef}
-                        data-theme={theme}
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-white polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
                             sizeClasses[size],
                             contentClassName,
                         )}
                     >
                         {title && (
-                            <DialogTitle
-                                className={cn(
-                                    "polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong",
-                                    titleClassName,
-                                )}
-                            >
+                            <DialogTitle className="polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
                                 {title}
                             </DialogTitle>
                         )}

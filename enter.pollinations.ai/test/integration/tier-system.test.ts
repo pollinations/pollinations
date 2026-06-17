@@ -110,10 +110,10 @@ describe("Tier System End-to-End", () => {
                     tier: "spore",
                     expectedPollen: 0.01,
                 },
-                { id: "basic-user", tier: "seed", expectedPollen: 0.15 },
-                { id: "pro-user", tier: "flower", expectedPollen: 0.4 },
-                { id: "enterprise-user", tier: "nectar", expectedPollen: 0.8 },
-                { id: "router-user", tier: "router", expectedPollen: 10 },
+                { id: "basic-user", tier: "seed", expectedPollen: 0.01 },
+                { id: "pro-user", tier: "flower", expectedPollen: 0.01 },
+                { id: "enterprise-user", tier: "nectar", expectedPollen: 0.01 },
+                { id: "router-user", tier: "router", expectedPollen: 0.01 },
             ];
 
             // Create all users with depleted balances
@@ -333,7 +333,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-depleted'`)
                 .limit(1);
 
-            expect(depletedUser[0]?.tierBalance).toBe(0.4); // Flower tier (additive: MIN(0 + 0.4, 0.4) = 0.4)
+            expect(depletedUser[0]?.tierBalance).toBe(0.01); // Flower floor (positive branch: MAX(0, 0.01) = 0.01)
             expect(depletedUser[0]?.packBalance).toBe(50); // Unchanged
         });
     });

@@ -1,10 +1,10 @@
 export const TIERS = {
     microbe: { pollen: 0, emoji: "🦠", cadence: "none" },
     spore: { pollen: 0.01, emoji: "🍄", cadence: "hourly" },
-    seed: { pollen: 0.15, emoji: "🌱", cadence: "hourly" },
-    flower: { pollen: 0.4, emoji: "🌸", cadence: "hourly" },
-    nectar: { pollen: 0.8, emoji: "🍯", cadence: "hourly" },
-    router: { pollen: 10, emoji: "🐝", cadence: "hourly" },
+    seed: { pollen: 0.01, emoji: "🌱", cadence: "hourly" },
+    flower: { pollen: 0.01, emoji: "🌸", cadence: "hourly" },
+    nectar: { pollen: 0.01, emoji: "🍯", cadence: "hourly" },
+    router: { pollen: 0.01, emoji: "🐝", cadence: "hourly" },
 } as const;
 
 export type TierName = keyof typeof TIERS;

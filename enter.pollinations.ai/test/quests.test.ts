@@ -45,6 +45,44 @@ test("GET /api/quests returns the checked-in quest catalog", async () => {
     ).toHaveLength(2);
 });
 
+test("GET /api/quests includes D1 quest definitions", async () => {
+    const db = drizzle(env.DB, { schema });
+    await db.insert(schema.questDefinitions).values({
+        id: "engage:seven_day_streak",
+        title: "Use Pollinations for 7 days",
+        description: "Make at least one request on seven consecutive days.",
+        category: "engage",
+        status: "planned",
+        trigger: "first_chat_completion",
+        rewardAmount: 1,
+        balanceBucket: "pack",
+        repeatability: "once",
+        criteriaJson: JSON.stringify({ days: 7 }),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const response = await SELF.fetch("http://localhost:3000/api/quests");
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            storage: string;
+            criteria: { days?: number } | null;
+        }[];
+    };
+
+    const inserted = payload.quests.find(
+        (quest) => quest.id === "engage:seven_day_streak",
+    );
+    expect(inserted).toMatchObject({
+        id: "engage:seven_day_streak",
+        storage: "d1",
+        criteria: { days: 7 },
+    });
+});
+
 test("quest evaluator grants D1-backed product quests once", async ({
     apiKey: _apiKey,
     sessionToken,

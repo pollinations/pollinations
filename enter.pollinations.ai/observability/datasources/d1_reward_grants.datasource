@@ -1,0 +1,21 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 reward_grants table (idempotent grant-style rewards)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `idempotency_key` String `json:$.idempotency_key`,
+    `user_id` String `json:$.user_id`,
+    `source` LowCardinality(String) `json:$.source`,
+    `quest_id` Nullable(String) `json:$.quest_id`,
+    `amount` Float64 `json:$.amount`,
+    `balance_bucket` LowCardinality(String) `json:$.balance_bucket`,
+    `source_ref` Nullable(String) `json:$.source_ref`,
+    `metadata_json` Nullable(String) `json:$.metadata_json`,
+    `created_at` Int64 `json:$.created_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

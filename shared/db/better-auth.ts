@@ -286,3 +286,26 @@ export const rewardGrantsRelations = relations(rewardGrants, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const questDefinitions = sqliteTable("quest_definitions", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  status: text("status").notNull(),
+  trigger: text("trigger").notNull(),
+  rewardAmount: real("reward_amount").notNull(),
+  balanceBucket: text("balance_bucket").notNull(),
+  repeatability: text("repeatability").default("once").notNull(),
+  criteriaJson: text("criteria_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_quest_definitions_status").on(table.status),
+  index("idx_quest_definitions_trigger").on(table.trigger),
+]);

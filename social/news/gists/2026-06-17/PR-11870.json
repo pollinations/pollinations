@@ -1,0 +1,35 @@
+{
+  "pr_number": 11870,
+  "title": "revert: stop routing Gemini through Airforce",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11870",
+  "merged_at": "2026-06-17T17:17:09Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "**Production incident revert.** A user received `gcli2api工作中` (\"gcli2api is working\") as a `gemini-3-flash` completion — `api.airforce` resells Gemini through a [gcli2api](https://github.com/su-kaka/gcli2api) proxy that leaked its own health string into a real, billed response. Reverting all Airforce routing.\n\n- `gemini`, `gemini-3.5-flash`, `gemini-flash-lite-3.1`, `gemini-large` → back to direct Vertex configs\n- Removed the 4 `*-airforce` config entries + `createAirforceGeminiFallbackConfig` factory\n- Removed the empty-system-prompt transforms (added only to mask Airforce's coding-agent persona); restored `createSystemPromptTransform`'s non-empty guard and dropped its Airforce-specific test\n\nKept: provider-agnostic `fallback_used` observability (#11843).\n\nFollow-up (not in this PR): `AIRFORCE_API_KEY` is now unused — can be pruned from gen secrets.\n\ntsc clean, biome formatted, tests pass. Gemini block matches pre-Airforce state exactly.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Cutting the Middleman",
+    "blurb": "We caught a proxy sneaking its own health checks into Gemini responses. We've cut the middleman and routed all Gemini models back to direct Vertex connections.",
+    "summary": "Reverted Gemini model routing from the Airforce provider back to direct Vertex connections to resolve an issue where proxy health strings leaked into completions.",
+    "impact": "Users of Gemini models (including flash and large variants) will see improved reliability and no longer receive unexpected proxy artifacts in their responses.",
+    "keywords": [
+      "gemini",
+      "vertex",
+      "routing",
+      "bug-fix",
+      "reliability"
+    ],
+    "visual_concept": "The bee mascot acting as a technician, bypassing a tangled messy wire to plug a clean, direct cable into a glowing crystal (representing Gemini).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, happily connecting a glowing lime green (#ecf874) cable directly into a sparkling crystal. A tangled, messy wire sits discarded in a nearby flower pot. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11870.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, happily connecting a glowing lime green (#ecf874) cable directly into a sparkling crystal. A tangled, messy wire sits discarded in a nearby flower pot. Soft pastel lavender and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-17T17:20:23.678755+00:00"
+}

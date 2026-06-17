@@ -152,17 +152,18 @@ export const recordLatency = async (
     const key = prefix(type) + (await urlHash(url));
     const now = Date.now();
     const lastWrite = recentLatencyWrites.get(key);
-    if (lastWrite !== undefined && now - lastWrite < LATENCY_WRITE_THROTTLE_MS) {
+    if (
+        lastWrite !== undefined &&
+        now - lastWrite < LATENCY_WRITE_THROTTLE_MS
+    ) {
         return;
     }
     try {
         const existing = await serverRegistry.get<ServerEntry>(key, "json");
         if (!existing) return; // not registered / expired — nothing to update
-        await serverRegistry.put(
-            key,
-            JSON.stringify({ ...existing, lastMs }),
-            { expirationTtl: REGISTRY_TTL_SECONDS },
-        );
+        await serverRegistry.put(key, JSON.stringify({ ...existing, lastMs }), {
+            expirationTtl: REGISTRY_TTL_SECONDS,
+        });
         recentLatencyWrites.set(key, now);
         logServer(`Recorded latency ${lastMs}ms for ${url}`);
     } catch (err) {

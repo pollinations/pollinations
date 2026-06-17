@@ -147,6 +147,9 @@ const models: ModelDefinition[] = [
         // where Gemini's real code executor runs.
         config: portkeyConfig["gemini-3-flash-airforce"],
         transform: pipe(
+            // Empty system prompt (if none supplied) displaces the coding-agent
+            // persona Airforce's resold backend defaults to; ~0 extra tokens.
+            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -154,8 +157,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-3.5-flash",
-        config: portkeyConfig["gemini-3.5-flash"],
+        // Airforce primary, Vertex fallback (same modelId → same billing).
+        config: portkeyConfig["gemini-3.5-flash-airforce"],
         transform: pipe(
+            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
@@ -164,8 +169,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-flash-lite-3.1",
-        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        config: portkeyConfig["gemini-3.1-flash-lite-airforce"],
         transform: pipe(
+            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -252,8 +258,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-large",
-        config: portkeyConfig["gemini-3.1-pro-preview"],
+        // Airforce primary, Vertex fallback (same modelId → same billing).
+        config: portkeyConfig["gemini-3.1-pro-airforce"],
         transform: pipe(
+            createSystemPromptTransform(""),
             sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,

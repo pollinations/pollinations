@@ -248,6 +248,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-pro-preview",
         "global",
     ),
+    "gemini-3.1-pro-airforce": createAirforceGeminiFallbackConfig(
+        "gemini-3.1-pro",
+        "gemini-3.1-pro-preview",
+        "global",
+    ),
     "gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
         "global",
@@ -256,7 +261,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
+    "gemini-3.1-flash-lite-airforce": createAirforceGeminiFallbackConfig(
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-flash-lite-preview",
+        "global",
+    ),
     "gemini-3.5-flash": createVertexGeminiConfig("gemini-3.5-flash", "global"),
+    "gemini-3.5-flash-airforce": createAirforceGeminiFallbackConfig(
+        "gemini-3.5-flash",
+        "gemini-3.5-flash",
+        "global",
+    ),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

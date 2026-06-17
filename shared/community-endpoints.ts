@@ -158,6 +158,7 @@ export function communityPriceDefinition(
 export function communityModelDefinition(
     endpoint: CommunityEndpointRuntime,
 ): ModelDefinition<string> {
+    const parsed = parseCommunityModelId(endpoint.modelId);
     return {
         aliases: [],
         modelId: endpoint.modelId,
@@ -167,7 +168,9 @@ export function communityModelDefinition(
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
         addedDate: 0,
-        title: endpoint.description?.trim() || endpoint.modelId,
+        title: parsed
+            ? `${parsed.modelName} by @${parsed.ownerGithubUsername}`
+            : endpoint.modelId,
         description: endpoint.description ?? undefined,
         inputModalities: ["text"],
         outputModalities: ["text"],

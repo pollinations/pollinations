@@ -5,7 +5,7 @@ CREATE TABLE `quest_definitions` (
 	`category` text,
 	`trigger_type` text NOT NULL,
 	`reward_amount` real NOT NULL,
-	`balance_bucket` text DEFAULT 'tier' NOT NULL,
+	`balance_bucket` text DEFAULT 'pack' NOT NULL,
 	`repeatability` text DEFAULT 'once' NOT NULL,
 	`active` integer DEFAULT true NOT NULL,
 	`criteria_json` text,

@@ -70,7 +70,7 @@ export async function checkAndGrantQuest(
             source: def.triggerType,
             questId: def.key,
             amount: def.rewardAmount,
-            bucket: (def.balanceBucket as Bucket) ?? "tier",
+            bucket: (def.balanceBucket as Bucket) ?? "pack",
             metadata: { title: def.title, category: def.category },
         });
 
@@ -84,7 +84,7 @@ export async function checkAndGrantQuest(
                     source: def.triggerType,
                     quest_id: def.key,
                     pollen_credited: def.rewardAmount,
-                    balance_bucket: def.balanceBucket ?? "tier",
+                    balance_bucket: def.balanceBucket ?? "pack",
                 },
                 ctx.tinybirdIngestUrl,
                 ctx.tinybirdIngestToken,

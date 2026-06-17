@@ -297,8 +297,8 @@ export const questDefinitions = sqliteTable("quest_definitions", {
   // first_image | first_top_up | key_created | streak | referral | spend_threshold.
   triggerType: text("trigger_type").notNull(),
   rewardAmount: real("reward_amount").notNull(),
-  // Which bucket to credit: "tier" or "pack".
-  balanceBucket: text("balance_bucket").notNull().default("tier"),
+  // Which bucket to credit: "pack" (default) or "tier".
+  balanceBucket: text("balance_bucket").notNull().default("pack"),
   // once | weekly | streak | tiered — how often it can be earned.
   repeatability: text("repeatability").notNull().default("once"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),

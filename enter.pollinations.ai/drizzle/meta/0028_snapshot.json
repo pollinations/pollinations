@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "10f18b3b-413f-4c45-b033-7bf924fddbce",
+  "id": "dddff182-50d9-4af8-b5d4-4ce9d3131778",
   "prevId": "8f529aac-b0c1-41a3-8b67-681ccebcd264",
   "tables": {
     "account": {
@@ -493,7 +493,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'tier'"
+          "default": "'pack'"
         },
         "repeatability": {
           "name": "repeatability",

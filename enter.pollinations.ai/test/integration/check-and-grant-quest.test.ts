@@ -136,6 +136,40 @@ describe("checkAndGrantQuest", () => {
         expect(balance.tierBalance).toBe(0);
     });
 
+    test("credits the pack bucket by default (no explicit balance_bucket)", async () => {
+        const db = drizzle(env.DB);
+        const userId = "cq-user-default-bucket";
+        await seedUser(db, userId);
+        // seedDef sets balanceBucket: "tier" by default in this helper, so
+        // override it to undefined to exercise the column default ("pack").
+        await db
+            .insert(questDefinitions)
+            .values({
+                id: "def-default-bucket",
+                key: "default_bucket_quest",
+                title: "default bucket",
+                triggerType: "first_top_up",
+                rewardAmount: 1,
+            })
+            .onConflictDoNothing();
+
+        const results = await checkAndGrantQuest(
+            db,
+            userId,
+            "first_top_up",
+            ctx,
+        );
+
+        expect(
+            results.some(
+                (r) => r.questKey === "default_bucket_quest" && r.granted,
+            ),
+        ).toBe(true);
+        const balance = await getUserBalance(db, userId);
+        expect(balance.packBalance).toBe(1);
+        expect(balance.tierBalance).toBe(0);
+    });
+
     test("skips non-once repeatability (not yet supported) without granting", async () => {
         const db = drizzle(env.DB);
         const userId = "cq-user-4";

@@ -1,5 +1,44 @@
 # Pollinations Model Changelog
 
+## 2026-06-17
+
+### Text
+- `kimi-k2.7-code` (Moonshot AI) — agentic coding model with CoT reasoning
+- `openai-large` (OpenAI) — increased context length to 1,050,000
+- `gpt-5.5` (OpenAI) — increased context length to 1,050,000
+- `gemini-flash-lite-3.1` (Google) — added video input support
+- `gemini-fast` (Google) — added video input support
+- `grok-4.3` (xAI) — increased context length to 1,048,576
+- `gemini-search` (Google) — added video input support
+- `gemini-search-fast` (Google) — added video input support
+- `claude` (Anthropic) — increased context length to 1,000,000
+- `claude-large` (Anthropic) — increased context length to 1,000,000
+- `claude-opus-4.7` (Anthropic) — increased context length to 1,000,000
+- `qwen-large` (Qwen) — added qwen3.7 aliases and decreased context length to 262,000
+- `minimax-m3` (MiniMax) — decreased context length to 524,288
+- `polly` (Pollinations) — now in alpha
+
+### Image
+- `ideogram-v4-turbo` (Ideogram) — fast text-to-image with accurate typography
+- `ideogram-v4-balanced` (Ideogram) — text-to-image with accurate typography
+- `ideogram-v4-quality` (Ideogram) — high-fidelity text-to-image with typography
+- `wan-pro-1080p` (Alibaba) — text/image-to-video with bundled audio (1080p)
+- `p-video-720p` (Pruna) — text/image-to-video generation (720p)
+- `p-video-1080p` (Pruna) — text/image-to-video generation (1080p)
+- `wan-pro` (Alibaba) — added end_frame video capability
+- `klein` (Black Forest Labs) — now in alpha
+- `ltx-2` (Lightricks) — now in alpha
+
+### Audio
+- `elevenlabs` (ElevenLabs) — now in alpha
+- `elevenflash` (ElevenLabs) — now in alpha
+- `elevenmusic` (ElevenLabs) — now in alpha
+- `whisper` (OpenAI) — now in alpha
+- `acestep` (ACE-Step) — now in alpha
+
+### Removed
+- `p-video` (was: image)
+
 ## 2026-06-03
 
 ### Text

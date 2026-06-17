@@ -52,6 +52,12 @@ const TABLES: TableConfig[] = [
                        refresh_token_expires_at, scope, created_at, updated_at
                 FROM account`,
     },
+    {
+        datasource: "d1_reward_grants",
+        query: `SELECT id, user_id, source, quest_id, pollen_credited, balance_bucket,
+                       source_ref, created_at
+                FROM reward_grants`,
+    },
 ];
 
 /** Delete rows matching a condition from a Tinybird datasource. */

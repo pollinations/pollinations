@@ -1,0 +1,22 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of the D1 reward_grants table (discrete pollen grants:
+    code quests, product quests, onboarding, referrals, manual credits).
+    Source of truth stays in D1; this snapshot makes grants queryable for
+    accounting/analytics pipes alongside the other d1_* snapshots.
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `user_id` String `json:$.user_id`,
+    `source` String `json:$.source`,
+    `quest_id` Nullable(String) `json:$.quest_id`,
+    `pollen_credited` Float64 `json:$.pollen_credited`,
+    `balance_bucket` String `json:$.balance_bucket`,
+    `source_ref` Nullable(String) `json:$.source_ref`,
+    `created_at` Nullable(Int64) `json:$.created_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

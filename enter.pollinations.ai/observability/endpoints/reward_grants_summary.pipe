@@ -1,0 +1,38 @@
+DESCRIPTION >
+    Per-user grant-style reward totals (quests, onboarding, referrals, manual
+    credits) from the latest d1_reward_grants snapshot. Returns one row per
+    (source, balance_bucket) with grant count and pollen totals, plus a global
+    rollup row (empty source). Pairs with developer_earnings (generation-tied
+    BYOP/community earnings) to give a complete "all rewards" accounting view.
+    Required param: user_id.
+
+TOKEN tinybird_read READ
+
+NODE latest_grants
+SQL >
+    %
+    SELECT
+        source,
+        balance_bucket,
+        pollen_credited
+    FROM d1_reward_grants
+    WHERE user_id = {{String(user_id, '')}}
+      AND synced_at = (SELECT max(synced_at) FROM d1_reward_grants)
+
+# GROUPING SETS emits, in one scan:
+#   (source, balance_bucket) -> per-source/per-bucket totals
+#   ()                       -> global rollup (source='', balance_bucket='')
+NODE reward_grants_summary_node
+SQL >
+    SELECT
+        source,
+        balance_bucket,
+        count() AS grants,
+        sum(pollen_credited) AS pollen_total
+    FROM latest_grants
+    GROUP BY GROUPING SETS (
+        (source, balance_bucket),
+        ()
+    )
+
+TYPE endpoint

@@ -1293,6 +1293,87 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Reward Grant Totals",
+            description:
+                "Returns grant-style reward totals for the current user (code quests, product quests, onboarding, referrals, manual credits) grouped by source and balance bucket, plus a global rollup. Reads the daily d1_reward_grants snapshot, so totals lag live grants by up to ~24h (the credited balance itself is always live). Cached for 1 hour.",
+            responses: {
+                200: {
+                    description:
+                        "Per-source reward grant totals + global rollup",
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            const log = c.get("log").getChild("quests");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view quest rewards",
+            });
+            const user = c.var.auth.requireUser();
+
+            type RewardGrantsSummaryRow = {
+                source: string;
+                balance_bucket: string;
+                grants: number;
+                pollen_total: number;
+            };
+            type QuestRewardsPayload = {
+                bySource: RewardGrantsSummaryRow[];
+                global: RewardGrantsSummaryRow | null;
+            };
+
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+            const kv = c.env.KV;
+            const cacheKey = `quests:v1:${user.id}`;
+
+            try {
+                let payload = await kv
+                    .get<QuestRewardsPayload>(cacheKey, "json")
+                    .catch((err) => {
+                        log.trace("KV get error: {err}", { err });
+                        return null;
+                    });
+
+                if (!payload) {
+                    const rows =
+                        await fetchTinybirdRows<RewardGrantsSummaryRow>(
+                            tinybirdOrigin,
+                            "/v0/pipes/reward_grants_summary.json",
+                            tinybirdToken,
+                            { user_id: user.id },
+                        );
+                    // Global rollup row has empty source (and empty bucket).
+                    const global = rows.find((r) => r.source === "") ?? null;
+                    const bySource = rows
+                        .filter((r) => r.source !== "")
+                        .sort((a, b) => b.pollen_total - a.pollen_total);
+                    payload = { bySource, global };
+
+                    try {
+                        await kv.put(cacheKey, JSON.stringify(payload), {
+                            expirationTtl: CACHE_TTL,
+                        });
+                    } catch (err) {
+                        log.trace("KV put error: {err}", { err });
+                    }
+                }
+
+                return c.json(payload);
+            } catch (error) {
+                log.error("Error fetching quest rewards: {error}", { error });
+                return c.json(
+                    { error: "Failed to fetch quest reward data" },
+                    500,
+                );
+            }
+        },
+    )
+    .get(
         "/keys",
         describeRoute({
             tags: ["👤 Account"],

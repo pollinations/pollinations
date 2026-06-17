@@ -89,6 +89,13 @@ const grantCommand = command({
 
         // Idempotency key is quest-scoped and uses the immutable github_id.
         const payoutKey = `quest:${questIssue}:gh:${githubId}:role:assignee`;
+        // Dual-write: keep the legacy quest_payout_credits ledger (unchanged —
+        // still the idempotency gate that guards the balance credit via
+        // `changes() = 1`) AND mirror the grant into the generic reward_grants
+        // ledger so every reward type (code quests, product quests, manual
+        // grants) shares one queryable table. The reward_grants insert reuses
+        // the same payoutKey for idempotency and is best-effort (OR IGNORE).
+        const rewardGrantId = `quest:${questIssue}:gh:${githubId}`;
         const sql = `
             INSERT OR IGNORE INTO quest_payout_credits (
                 payout_key,
@@ -110,6 +117,25 @@ const grantCommand = command({
             UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
             WHERE id = ${sqlString(user.id)} AND changes() = 1;
+            INSERT OR IGNORE INTO reward_grants (
+                id,
+                idempotency_key,
+                user_id,
+                source,
+                quest_id,
+                pollen_credited,
+                balance_bucket,
+                source_ref
+            ) VALUES (
+                ${sqlString(rewardGrantId)},
+                ${sqlString(payoutKey)},
+                ${sqlString(user.id)},
+                'code_quest',
+                ${sqlString(String(questIssue))},
+                ${amount},
+                'pack',
+                ${sqlString(`pr-${prNumber}`)}
+            );
         `;
 
         const raw = queryD1(env, sql);

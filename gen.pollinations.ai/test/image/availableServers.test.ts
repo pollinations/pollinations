@@ -113,10 +113,25 @@ describe("recordLatency", () => {
         expect(w1?.lastMs).toBe(2000);
     });
 
-    it("does nothing for an unregistered server", async () => {
+    it("does not surface a server that only has a latency key (no heartbeat)", async () => {
         await recordLatency("zimage", "https://ghost", 1234);
         const servers = await getRegisteredServers("zimage");
         expect(servers).toHaveLength(0);
+    });
+
+    it("keeps lastMs when a later heartbeat re-registers the server", async () => {
+        // The bug this fix addresses: a heartbeat must never wipe the routing
+        // weight. Latency and heartbeat live under separate keys, so a fresh
+        // registerServer cannot drop lastMs.
+        await registerServer("https://w1", "zimage");
+        await recordLatency("zimage", "https://w1", 2000);
+        // Simulate the next heartbeat (past the 30s heartbeat throttle).
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 31_000);
+        await registerServer("https://w1", "zimage");
+        const w1 = (await getRegisteredServers("zimage")).find(
+            (s) => s.url === "https://w1",
+        );
+        expect(w1?.lastMs).toBe(2000);
     });
 
     it("ignores invalid latency values (0, negative, NaN)", async () => {

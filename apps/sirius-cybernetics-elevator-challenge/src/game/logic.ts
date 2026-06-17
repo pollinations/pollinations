@@ -101,12 +101,17 @@ export const fetchPersonaMessage = async (
     gameState: GameState,
     existingMessages: Message[] = [],
 ): Promise<Message> => {
-    const createErrorMessage = (_error: unknown): Message =>
-        createMessage(
+    // Speak failures in the voice of the world: the cabin malfunctions and the
+    // real upstream error rides along inside the dialogue.
+    const createErrorMessage = (error: unknown): Message => {
+        const detail =
+            error instanceof Error ? error.message : "Sub-Etha signal lost";
+        return createMessage(
             persona,
-            "Apologies, I'm experiencing some difficulties.",
+            `A Sirius Cybernetics malfunction shudders through the cabin — [${detail}]. Share and Enjoy. Please try again.`,
             "none",
         );
+    };
 
     try {
         const messages: PollingsMessage[] = [

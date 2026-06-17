@@ -1,0 +1,35 @@
+{
+  "pr_number": 11843,
+  "title": "feat: log whether a Portkey fallback target served the request",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11843",
+  "merged_at": "2026-06-17T00:08:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Records, per text request, whether Portkey served from a non-primary fallback target (e.g. Airforce→Vertex on the public `gemini` model). Today nothing captures this — `model_provider_used` is the static registry provider, and the gateway's `x-portkey-*` headers are discarded in `genericOpenAIClient` before tracking sees them.\n\n## Approach (mirrors the existing `x-model-used` flow)\n- `genericOpenAIClient` reads `x-portkey-last-used-option-index` off the gateway response (stream + non-stream) → `ChatCompletion.fallbackTarget`\n- `handler.ts` re-emits it as the internal `x-fallback-target` worker header (in `usageHeaders` + explicitly in `sendTextStreamResponse`, which bypasses `usageHeaders`)\n- `track.ts` parses `\"config.targets[N]\"` → `fallbackUsed` (true when N > 0), recorded before the cache/billing branch so streaming and non-streaming both work\n- New `fallback_used` Bool on the `generation_event` datasource + `fallbackUsed` on the event schema\n\nVerified against the live gateway: happy path returns `config.targets[0]` (`x-portkey-provider: openai`), forced fallback returns `config.targets[1]` (`vertex-ai`). The header value is the string `config.targets[N]`, not a bare int — parser handles that.\n\n## Why not reuse `model_provider_used`\nSemantically tempting, but it's consumed by ~45 sites (4 Grafana economics dashboards, alerting rules, a billing test) that assume the static registry provider. Notably `daily-spending.json` filters paid-inference by `model_provider_used IN ('google',...)`; flipping it to `airforce` would silently move billed Gemini out of the paid bucket. A dedicated bool is lower-risk and leaves all of that untouched.\n\n## Query\n```sql\nSELECT countIf(fallback_used)/count() AS fallback_rate\nFROM generation_event WHERE model_requested = 'gemini'\n```\n\n## Tests\n- `genericOpenAIClient`: captures `fallbackTarget` on stream + non-stream; undefined when header absent\n- `tracking-observability`: `fallbackUsed` true (`config.targets[1]`), false (`config.targe",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tracking the Fallbacks",
+    "blurb": "Added internal telemetry to track when our AI gateway routes requests to backup providers. This helps us keep the hive running smoothly even when primary models take a nap.",
+    "summary": "Added a `fallback_used` boolean to generation events to track when Portkey serves text requests from non-primary fallback targets.",
+    "impact": "This improves internal observability for model routing reliability without disrupting existing billing and provider metrics.",
+    "keywords": [
+      "observability",
+      "portkey",
+      "fallback",
+      "telemetry",
+      "tracking"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot inspecting a server rack or switchboard, representing routing and observability.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, inspecting a glowing lime green (#ecf874) server rack with a chunky robot companion. The robot has a CRT monitor head and holds a clipboard with a checklist. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11843.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, inspecting a glowing lime green (#ecf874) server rack with a chunky robot companion. The robot has a CRT monitor head and holds a clipboard with a checklist. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-17T00:09:20.255199+00:00"
+}

@@ -118,4 +118,27 @@ describe("recordLatency", () => {
         const servers = await getRegisteredServers("zimage");
         expect(servers).toHaveLength(0);
     });
+
+    it("ignores invalid latency values (0, negative, NaN)", async () => {
+        await registerServer("https://w1", "zimage");
+        for (const bad of [0, -5, Number.NaN]) {
+            await recordLatency("zimage", "https://w1", bad);
+        }
+        const w1 = (await getRegisteredServers("zimage")).find(
+            (s) => s.url === "https://w1",
+        );
+        expect(w1?.lastMs).toBeUndefined();
+    });
+
+    it("records a new latency once the throttle window has passed", async () => {
+        await registerServer("https://w1", "zimage");
+        await recordLatency("zimage", "https://w1", 2000);
+        // Advance time past the 20s throttle window.
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 21_000);
+        await recordLatency("zimage", "https://w1", 3500);
+        const w1 = (await getRegisteredServers("zimage")).find(
+            (s) => s.url === "https://w1",
+        );
+        expect(w1?.lastMs).toBe(3500);
+    });
 });

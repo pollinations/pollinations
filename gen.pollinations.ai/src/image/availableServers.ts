@@ -176,7 +176,7 @@ export function __resetLatencyStateForTests(): void {
     recentWrites.clear();
 }
 
-export const fetchFromLeastBusyServer = async (
+export const fetchFromWeightedServer = async (
     type: ServerType = "flux",
     options: RequestInit,
 ): Promise<Response> => {
@@ -185,8 +185,12 @@ export const fetchFromLeastBusyServer = async (
     const response = await fetch(`${serverUrl}/generate`, options);
     // Record latency for successful responses only (a 5xx/timeout would record
     // the full timeout window and wrongly down-weight a recovering server).
+    // Awaited (not fire-and-forget): a floating promise can be cancelled when
+    // the Worker invocation completes, dropping the KV write. The cost is
+    // bounded — recordLatency hits the in-memory throttle and returns without
+    // any KV I/O on all but ~1 request per LATENCY_WRITE_THROTTLE_MS per server.
     if (response.ok) {
-        void recordLatency(type, serverUrl, Date.now() - startedAt);
+        await recordLatency(type, serverUrl, Date.now() - startedAt);
     }
     if (!response.ok) {
         let errorBody = "";

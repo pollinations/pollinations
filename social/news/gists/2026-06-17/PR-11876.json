@@ -1,0 +1,35 @@
+{
+  "pr_number": 11876,
+  "title": "feat(glm): set GLM-5.2 priceMultiplier to 0.5",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11876",
+  "merged_at": "2026-06-17T20:41:27Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Sets `glm` (GLM-5.2) `priceMultiplier` 1 → **0.5** — bills at half Fireworks cost as a deliberate subsidy\n- Cost block unchanged ($1.4/$0.26/$4.4 per 1M); effective price drops to 0.5× (completion $4.4→$2.2/1M, prompt $1.4→$0.7/1M)\n- New multiplier value (rest of registry is 1 or 1.5) — intentional\n- Snapshot updated: GLM-only, price-only diff\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GLM-5.2 gets a subsidy",
+    "blurb": "We've slashed the price of GLM-5.2 in half. Enjoy subsidized tokens and generate twice as much text for the same amount of pollen.",
+    "summary": "The price multiplier for the GLM-5.2 model has been reduced from 1.0 to 0.5, effectively cutting its billing cost in half.",
+    "impact": "Users generating text with GLM-5.2 will now be billed at half the standard Fireworks cost, dropping completion costs from $4.40 to $2.20 per 1M tokens.",
+    "keywords": [
+      "pricing",
+      "glm-5.2",
+      "models",
+      "billing",
+      "text"
+    ],
+    "visual_concept": "The bee mascot holding a pair of scissors, having just cut a pixelated price tag in half next to a glowing text terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny pair of scissors, having just cut a pixelated price tag in half. A retro computer monitor in the background glows with lime green (#ecf874) text. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11876.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny pair of scissors, having just cut a pixelated price tag in half. A retro computer monitor in the background glows with lime green (#ecf874) text. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T20:42:43.974059+00:00"
+}

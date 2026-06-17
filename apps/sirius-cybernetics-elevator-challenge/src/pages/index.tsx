@@ -2,6 +2,7 @@
 
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DebugPanel } from "@/components/DebugPanel";
 import { ElevatorAscii } from "@/components/ElevatorAscii";
 import { GargleBlaster } from "@/components/GargleBlaster";
 import { MessageDisplay } from "@/components/MessageDisplay";
@@ -18,6 +19,7 @@ import {
     useMessages,
     usePassengerColdOpen,
 } from "@/game/logic";
+import { useDebugMode, useLastDebugEntry } from "@/hooks/useDebug";
 import {
     AVAILABLE_MODELS,
     useBYOP,
@@ -34,6 +36,8 @@ export default function Index() {
     const { apiKey, login, logout } = useBYOP();
     const { model, setModel } = useModelSelector();
     const [guideLoading, setGuideLoading] = useState(false);
+    const { enabled: debugEnabled, toggle: toggleDebug } = useDebugMode();
+    const debugEntry = useLastDebugEntry();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
@@ -457,6 +461,11 @@ export default function Index() {
                 )}
             </Card>
 
+            {/* API debug panel — the exact last request sent to the model. */}
+            {debugEnabled && (
+                <DebugPanel entry={debugEntry} onClose={toggleDebug} />
+            )}
+
             {/* Attribution */}
             <div className="text-center text-green-400 mt-4 text-xs max-w-xl space-y-1">
                 <p>
@@ -475,6 +484,15 @@ export default function Index() {
                     >
                         Fork the source code
                     </a>
+                    {"  ·  "}
+                    <button
+                        type="button"
+                        onClick={toggleDebug}
+                        className="text-gray-500 hover:text-gray-400 underline"
+                    >
+                        {debugEnabled ? "hide debug" : "debug"}
+                    </button>{" "}
+                    <span className="text-gray-700">(Ctrl+D)</span>
                 </p>
             </div>
         </div>

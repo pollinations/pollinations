@@ -12,12 +12,17 @@ export const ModelsBadge: FC<{
         if (isAllModels) return "Access to all models";
         if (modelCount === 0) return "No models allowed";
         return (
-            <span className="block font-mono text-xs leading-relaxed text-left whitespace-nowrap">
-                {models?.map((model) => (
-                    <span className="block" key={model}>
-                        {model}
-                    </span>
-                ))}
+            <span className="block text-left leading-relaxed">
+                <span className="mb-1 block text-theme-text-base">
+                    Allowed models
+                </span>
+                <span className="block font-mono text-xs whitespace-nowrap">
+                    {models?.map((model) => (
+                        <span className="block" key={model}>
+                            {model}
+                        </span>
+                    ))}
+                </span>
             </span>
         );
     };
@@ -25,7 +30,7 @@ export const ModelsBadge: FC<{
     return (
         <Tooltip content={tooltipContent()} ariaLabel="Show allowed models">
             <Chip
-                theme={isAllModels ? "green" : "amber"}
+                intent={isAllModels ? "success" : undefined}
                 size="sm"
                 className="cursor-default transition-colors hover:brightness-95"
             >

@@ -276,25 +276,3 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         multi_image=True,
         metadata_fn=_instagram_metadata,
     )
-
-
-def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
-    """Add a comment to the PR"""
-    if not pr_number:
-        return
-
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.post(
-        f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments",
-        headers=headers,
-        json={"body": message}
-    )
-
-    if response.status_code in [200, 201]:
-        print(f"Added comment to PR #{pr_number}")
-    else:
-        print(f"Warning: Could not add PR comment: {response.status_code}")

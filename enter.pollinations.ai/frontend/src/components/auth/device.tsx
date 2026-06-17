@@ -115,7 +115,6 @@ export function Device({ prefilledCode }: DeviceProps) {
                             as="button"
                             onClick={signIn}
                             disabled={isSigningIn}
-                            theme="amber"
                         >
                             {isSigningIn
                                 ? "Signing in..."
@@ -154,12 +153,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 </AuthInfoCard>
 
                 <div className="flex justify-end">
-                    <Button
-                        as="button"
-                        type="submit"
-                        theme="amber"
-                        disabled={checking}
-                    >
+                    <Button as="button" type="submit" disabled={checking}>
                         {checking ? "Verifying..." : "Continue"}
                     </Button>
                 </div>

@@ -8,25 +8,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
-    grid: "#e5e7eb", // gray-200
+    // Neutral separator line — the purpose-built mode-aware token. ink-200 was
+    // invisible in dark (0.255 < app-bg 0.265) and in light (0.928 = app-bg).
+    grid: "var(--polli-color-divider)",
 } as const;
 
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
-    /** Override bar colors. Defaults to the package wallet colors. */
-    paidBarColor?: string;
-    tierBarColor?: string;
 };
 
-export const Chart: FC<ChartProps> = ({
-    data,
-    metric,
-    showModelBreakdown,
-    paidBarColor = PAID_BALANCE_CHART_COLOR,
-    tierBarColor = TIER_BALANCE_CHART_COLOR,
-}) => {
+export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -167,10 +160,10 @@ export const Chart: FC<ChartProps> = ({
         return (
             <div className="flex items-center justify-center h-[180px]">
                 <div className="text-center">
-                    <p className="text-sm text-gray-400 font-medium">
+                    <p className="text-sm text-theme-text-muted font-medium">
                         No usage data available
                     </p>
-                    <p className="text-xs text-gray-300 mt-1">
+                    <p className="text-xs text-theme-text-muted mt-1">
                         Make some API requests to see your analytics
                     </p>
                 </div>
@@ -205,7 +198,7 @@ export const Chart: FC<ChartProps> = ({
                             y={t.y}
                             textAnchor="end"
                             alignmentBaseline="middle"
-                            className="text-micro fill-gray-400 font-medium"
+                            className="text-micro fill-theme-text-muted font-medium"
                         >
                             {formatVal(t.value)}
                         </text>
@@ -219,7 +212,7 @@ export const Chart: FC<ChartProps> = ({
                             x={bars[0].x + bars[0].width / 2}
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-gray-400"
+                            className="text-micro fill-theme-text-muted"
                         >
                             {bars[0].label}
                         </text>
@@ -231,7 +224,7 @@ export const Chart: FC<ChartProps> = ({
                                 }
                                 y={height - 8}
                                 textAnchor="middle"
-                                className="text-micro fill-gray-400"
+                                className="text-micro fill-theme-text-muted"
                             >
                                 {bars[Math.floor(bars.length / 2)].label}
                             </text>
@@ -243,17 +236,17 @@ export const Chart: FC<ChartProps> = ({
                             }
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-micro fill-gray-400"
+                            className="text-micro fill-theme-text-muted"
                         >
                             {bars[bars.length - 1].label}
                         </text>
                     </>
                 )}
 
-                {/* Bars - Stacked: tier (teal) at bottom, paid (purple) on top */}
+                {/* Bars - stacked wallet split: tier at bottom, paid on top */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
-                        {/* Tier segment (bottom) - teal */}
+                        {/* Tier segment (bottom) */}
                         {bar.tierHeight > 0 && (
                             <rect
                                 x={bar.x}
@@ -269,7 +262,7 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
-                                    fill: tierBarColor,
+                                    fill: TIER_BALANCE_CHART_COLOR,
                                     opacity: hovered === idx ? 0.85 : 1,
                                     transition: "opacity 0.15s ease-out",
                                 }}
@@ -291,7 +284,7 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={2}
                                 style={{
-                                    fill: paidBarColor,
+                                    fill: PAID_BALANCE_CHART_COLOR,
                                     opacity: hovered === idx ? 0.85 : 1,
                                     transition: "opacity 0.15s ease-out",
                                 }}

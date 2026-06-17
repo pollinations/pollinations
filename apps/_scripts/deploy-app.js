@@ -315,6 +315,7 @@ async function attachWorkerDomain(account, headers, hostname, zoneId) {
                 hostname,
                 service: PROXY_WORKER,
                 environment: "production",
+                override_existing_origin: true,
                 zone_id: zoneId,
             }),
         },

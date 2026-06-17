@@ -4,10 +4,7 @@
  */
 
 import debug from "debug";
-import type {
-    AuthResult,
-    ImageGenerationResult,
-} from "./createAndReturnImages.js";
+import type { ImageGenerationResult } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
 import { base64ToBuffer, downloadUserImage } from "./utils/imageDownload.ts";
@@ -155,7 +152,6 @@ function buildNoImageDataError(result: {
 export async function callVertexAIGemini(
     prompt: string,
     safeParams: ImageParams,
-    userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     try {
         log("Starting Vertex AI Gemini image generation");

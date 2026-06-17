@@ -48,12 +48,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder-large",
-        config: portkeyConfig["qwen3-coder-next"],
+        config: portkeyConfig["qwen/qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
     },
     {
         name: "qwen-vision",
@@ -139,10 +139,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        // Airforce primary, Vertex fallback (same modelId → same billing).
+        // No code_execution default-injection: it's a Gemini built-in tool
+        // (`{type:"code_execution"}`) that Airforce can't run, so injecting it
+        // would force every request to fall back. Requests that explicitly ask
+        // for it 400 on Airforce and fall back to Vertex (on_status_codes 400),
+        // where Gemini's real code executor runs.
+        config: portkeyConfig["gemini-3-flash-airforce"],
         transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
+            sanitizeToolSchemas,
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -151,7 +156,7 @@ const models: ModelDefinition[] = [
         name: "gemini-3.5-flash",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -161,7 +166,7 @@ const models: ModelDefinition[] = [
         name: "gemini-flash-lite-3.1",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -169,7 +174,7 @@ const models: ModelDefinition[] = [
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -177,7 +182,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -186,7 +191,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search-fast",
         config: portkeyConfig["gemini-3.1-flash-lite-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -195,7 +200,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search-large",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -241,10 +246,15 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "kimi-k2.7-code",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
+        transform: stripCacheControl,
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
-            sanitizeToolSchemas(),
+            sanitizeToolSchemas,
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
@@ -269,7 +279,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax-m3",
-        config: portkeyConfig["minimax/minimax-m3"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
     },
     {
         name: "llama",

@@ -1,9 +1,6 @@
 import {
     type BalanceCheckResult,
-    createBalanceCheckResult,
     getUserBalance,
-    hasPositiveBalance,
-    hasPositivePaidBalance,
     type UserBalance,
 } from "@shared/billing/balance.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -16,11 +13,6 @@ export type { UserBalance };
 
 export type BalanceVariables = {
     balance: {
-        requirePositiveBalance: (
-            userId: string,
-            message?: string,
-        ) => Promise<void>;
-        requirePaidBalance: (userId: string, message?: string) => Promise<void>;
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
     };
@@ -57,55 +49,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         }
     };
 
-    const requirePositiveBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
-
-        log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}",
-            {
-                userId,
-                tierBalance: balances.tierBalance,
-                packBalance: balances.packBalance,
-            },
-        );
-
-        if (hasPositiveBalance(balances)) {
-            balanceState.balanceCheckResult =
-                createBalanceCheckResult(balances);
-            return;
-        }
-
-        throw new HTTPException(402, {
-            message: message || "Your pollen balance is too low.",
-        });
-    };
-
-    const requirePaidBalance = async (userId: string, message?: string) => {
-        const balances = await fetchBalanceWithErrorHandling(userId);
-
-        log.debug("Paid balance check for user {userId}: pack={packBalance}", {
-            userId,
-            packBalance: balances.packBalance,
-        });
-
-        if (hasPositivePaidBalance(balances)) {
-            balanceState.balanceCheckResult = createBalanceCheckResult(
-                balances,
-                true,
-            );
-            return;
-        }
-
-        throw new HTTPException(402, {
-            message:
-                message ||
-                "This model requires 💳 paid balance. 🌱 Tier balance cannot be used.",
-        });
-    };
-
     const balanceState: BalanceVariables["balance"] = {
-        requirePositiveBalance,
-        requirePaidBalance,
         getBalance: fetchBalanceWithErrorHandling,
     };
 

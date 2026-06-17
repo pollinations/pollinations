@@ -15,8 +15,7 @@ interface ModelEntry {
     output_modalities?: string[];
     input_modalities?: string[];
     pricing?: Record<string, string>;
-    tools?: boolean;
-    reasoning?: boolean;
+    capabilities?: string[];
     context_length?: number;
     paid_only?: boolean;
     voices?: string[];
@@ -34,9 +33,7 @@ function classifyType(m: ModelEntry): string {
 }
 
 function capabilities(m: ModelEntry): string {
-    const caps: string[] = [];
-    if (m.tools) caps.push("tools");
-    if (m.reasoning) caps.push("reasoning");
+    const caps = [...(m.capabilities ?? [])];
     if (m.input_modalities?.includes("image")) caps.push("vision");
     if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");

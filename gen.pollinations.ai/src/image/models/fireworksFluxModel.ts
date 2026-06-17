@@ -3,8 +3,8 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
-import { sanitizeString } from "../translateIfNecessary.ts";
+import { sanitizeString } from "../util.ts";
+import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { transformImage } from "../utils/imageTransform.ts";
 
@@ -27,31 +27,20 @@ const FIREWORKS_ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
     { ratio: 3 / 4, label: "3:4" },
 ];
 
-function closestFireworksAspectRatio(width: number, height: number): string {
-    const requested = width / height;
-    return FIREWORKS_ASPECT_RATIOS.reduce((best, aspectRatio) =>
-        Math.abs(requested - aspectRatio.ratio) <
-        Math.abs(requested - best.ratio)
-            ? aspectRatio
-            : best,
-    ).label;
-}
-
 export async function callFireworksFluxSchnellAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("FIREWORKS_API_KEY");
     if (!apiKey) {
         throw new HttpError("FIREWORKS_API_KEY is required for Flux", 500);
     }
 
-    const aspectRatio = closestFireworksAspectRatio(
+    const aspectRatio = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
-    );
+        FIREWORKS_ASPECT_RATIOS,
+    ).label;
     const body = {
         prompt: sanitizeString(prompt),
         aspect_ratio: aspectRatio,
@@ -63,12 +52,6 @@ export async function callFireworksFluxSchnellAPI(
         aspectRatio,
         seed: safeParams.seed,
     });
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Generating with Fireworks FLUX...",
-    );
 
     const response = await fetchUpstream(FIREWORKS_FLUX_SCHNELL_URL, {
         method: "POST",
@@ -101,12 +84,6 @@ export async function callFireworksFluxSchnellAPI(
             quality: 90,
         });
     }
-    progress.updateBar(
-        requestId,
-        80,
-        "Processing",
-        "Fireworks FLUX generation completed",
-    );
 
     return {
         buffer,

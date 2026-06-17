@@ -1,0 +1,35 @@
+{
+  "pr_number": 11860,
+  "title": "chore: update app metrics 2026-06-17",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11860",
+  "merged_at": "2026-06-17T05:52:21Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots have watered the plants and updated the daily metrics for all community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse rankings.",
+    "impact": "Keeps the community app showcase up-to-date with the latest usage statistics and health statuses.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "A cute robot (representing the automated bot) watering plants (representing apps) in a greenhouse. Polly the bee is flying nearby, holding a tiny clipboard to check the metrics.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11860.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-17T05:53:28.996762+00:00"
+}

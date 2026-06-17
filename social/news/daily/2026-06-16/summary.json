@@ -1,0 +1,27 @@
+{
+  "date": "2026-06-16",
+  "period_start": "2026-06-16",
+  "period_end": "2026-06-16",
+  "title": "Bulletproof Gemini routing and smoother local dev",
+  "summary": "A day of quiet optimizations: bulletproof Gemini routing, smoother OAuth testing, UI layout fixes, and a bundle-shrinking return to pure ASCII.\n\nWe smoothed out a couple of developer friction points today. Gemini-3-flash requests now route through api.airforce by default, with a seamless Portkey failover to GCP Vertex if things get weird. Same model, same billing, fewer dropped requests. On the frontend, new app keys now pre-fill a localhost callback so you can test OAuth flows immediately without wrestling with allowlists.\n\nThe model catalog UI got a quick fix to stop category tabs from jumping around while data loads. Meanwhile, the Sirius Cybernetics Elevator Challenge app shed its background images and animations, returning to its original, distraction-free dark-terminal ASCII roots. As a bonus, the bundle size dropped from 601kB to a breezy 170kB.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 11609,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11828,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11835,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11836,
+      "date": "2026-06-16"
+    }
+  ],
+  "generated_at": "2026-06-17T07:44:49.613429+00:00"
+}
